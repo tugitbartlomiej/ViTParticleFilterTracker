@@ -14,6 +14,8 @@ np.random.seed(0)
 torch.manual_seed(0)
 
 
+# Patchify and model classes remain unchanged
+
 def patchify(images, n_patches):
     n, c, h, w = images.shape
 
@@ -206,7 +208,7 @@ def main(start_checkpoint=None, test_checkpoint=None):
         checkpoint = torch.load(test_checkpoint)
         model.load_state_dict(checkpoint['model_state_dict'])
         print(f"Testing model from checkpoint {test_checkpoint}")
-        evaluate_model(model, test_loader, criterion, device, results_dir)
+        test(model, test_loader, criterion, device, results_dir)
         return
 
     # Training loop
@@ -230,17 +232,17 @@ def main(start_checkpoint=None, test_checkpoint=None):
         # Save checkpoint
         torch.save({
             'epoch': epoch,
-            'model_state_dict': model.load_state_dict(),
+            'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': train_loss,
-        }, os.path.join(checkpoint_dir, f"model_epoch_{epoch + 1}.pt"))
+        }, os.path.join(checkpoint_dir, f"checkpoint_epoch_{epoch + 1}.pth"))
         print(f"Epoch {epoch + 1}/{N_EPOCHS} loss: {train_loss:.2f}")
 
     # Test model after training
-    evaluate_model(model, test_loader, criterion, device, results_dir)
+    test(model, test_loader, criterion, device, results_dir)
 
 
-def evaluate_model(model, test_loader, criterion, device, results_dir):
+def test(model, test_loader, criterion, device, results_dir):
     model.eval()
     correct, total = 0, 0
     test_loss = 0.0
