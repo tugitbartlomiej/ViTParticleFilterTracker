@@ -14,11 +14,8 @@ np.random.seed(0)
 torch.manual_seed(0)
 
 
-# Patchify and model classes remain unchanged
-
 def patchify(images, n_patches):
     n, c, h, w = images.shape
-
     assert h == w, "Patchify method is implemented for square images only"
 
     patches = torch.zeros(n, n_patches ** 2, h * w * c // n_patches ** 2)
@@ -161,12 +158,15 @@ def get_positional_embeddings(sequence_length, d):
     return result
 
 
-def main(start_checkpoint=None, test_checkpoint=None):
+def main():
     # Configuring paths
     checkpoint_dir = "checkpoints"
     results_dir = "results"
     os.makedirs(checkpoint_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
+
+    # Find the latest checkpoint
+    start_checkpoint = find_latest_checkpoint(checkpoint_dir)
 
     # Loading data
     transform = ToTensor()
@@ -203,14 +203,6 @@ def main(start_checkpoint=None, test_checkpoint=None):
         start_epoch = checkpoint['epoch'] + 1
         print(f"Resuming training from checkpoint {start_checkpoint}, epoch {start_epoch}")
 
-    # Test model directly from checkpoint if specified
-    if test_checkpoint is not None:
-        checkpoint = torch.load(test_checkpoint)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        print(f"Testing model from checkpoint {test_checkpoint}")
-        test(model, test_loader, criterion, device, results_dir)
-        return
-
     # Training loop
     N_EPOCHS = 5
     for epoch in trange(start_epoch, N_EPOCHS, desc="Training"):
@@ -236,13 +228,23 @@ def main(start_checkpoint=None, test_checkpoint=None):
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': train_loss,
         }, os.path.join(checkpoint_dir, f"checkpoint_epoch_{epoch + 1}.pth"))
+
         print(f"Epoch {epoch + 1}/{N_EPOCHS} loss: {train_loss:.2f}")
 
     # Test model after training
-    test(model, test_loader, criterion, device, results_dir)
+    evaluate_model(model, test_loader, criterion, device, results_dir)
 
 
-def test(model, test_loader, criterion, device, results_dir):
+def find_latest_checkpoint(checkpoint_dir):
+    """Find the latest checkpoint in the directory."""
+    checkpoints = [f for f in os.listdir(checkpoint_dir) if f.startswith("checkpoint_epoch")]
+    if not checkpoints:
+        return None
+    latest_checkpoint = max(checkpoints, key=lambda f: int(f.split('_')[-1].split('.')[0]))
+    return os.path.join(checkpoint_dir, latest_checkpoint)
+
+
+def evaluate_model(model, test_loader, criterion, device, results_dir):
     model.eval()
     correct, total = 0, 0
     test_loss = 0.0
@@ -296,8 +298,4 @@ def show_classification_results(model, test_loader, device, n_images=5, save_dir
 
 
 if __name__ == "__main__":
-    # Replace these with paths to your checkpoints or leave as None
-    start_checkpoint_path = None  # Path to start checkpoint, or None to start fresh
-    test_checkpoint_path = None  # Path to checkpoint for testing, or None to skip testing
-
-    main(start_checkpoint=start_checkpoint_path, test_checkpoint=test_checkpoint_path)
+    main()
