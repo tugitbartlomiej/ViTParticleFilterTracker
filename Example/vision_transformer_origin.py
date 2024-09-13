@@ -16,7 +16,6 @@ Original file is located at
 ## Setup
 """
 
-
 """## Image Patching
 
 
@@ -31,6 +30,7 @@ from torchvision.transforms.functional import to_pil_image
 
 to_tensor = [Resize((144, 144)), ToTensor()]
 
+
 class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
@@ -40,15 +40,17 @@ class Compose(object):
             image = t(image)
         return image, target
 
+
 def show_images(images, num_samples=40, cols=8):
     """ Plots some samples from the dataset """
-    plt.figure(figsize=(15,15))
+    plt.figure(figsize=(15, 15))
     idx = int(len(dataset) / num_samples)
     print(images)
     for i, img in enumerate(images):
         if i % idx == 0:
-            plt.subplot(int(num_samples/cols) + 1, cols, int(i/idx) + 1)
+            plt.subplot(int(num_samples / cols) + 1, cols, int(i / idx) + 1)
             plt.imshow(to_pil_image(img[0]))
+
 
 # 200 images for each pet
 dataset = OxfordIIITPet(root=".", download=True, transforms=Compose(to_tensor))
@@ -65,7 +67,7 @@ from torch import Tensor
 
 
 class PatchEmbedding(nn.Module):
-    def __init__(self, in_channels = 3, patch_size = 8, emb_size = 128):
+    def __init__(self, in_channels=3, patch_size=8, emb_size=128):
         self.patch_size = patch_size
         super().__init__()
         self.projection = nn.Sequential(
@@ -77,6 +79,7 @@ class PatchEmbedding(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         x = self.projection(x)
         return x
+
 
 # Run a quick test
 sample_datapoint = torch.unsqueeze(dataset[0][0], 0)
@@ -90,6 +93,7 @@ Let's first implement all of the transformer building blocks. These blocks are i
 """
 
 from einops import rearrange
+
 
 class Attention(nn.Module):
     def __init__(self, dim, n_heads, dropout):
@@ -109,21 +113,26 @@ class Attention(nn.Module):
         attn_output, attn_output_weights = self.att(x, x, x)
         return attn_output
 
+
 Attention(dim=128, n_heads=4, dropout=0.)(torch.ones((1, 5, 128))).shape
+
 
 class PreNorm(nn.Module):
     def __init__(self, dim, fn):
         super().__init__()
         self.norm = nn.LayerNorm(dim)
         self.fn = fn
+
     def forward(self, x, **kwargs):
         return self.fn(self.norm(x), **kwargs)
+
 
 norm = PreNorm(128, Attention(dim=128, n_heads=4, dropout=0.))
 norm(torch.ones((1, 5, 128))).shape
 
+
 class FeedForward(nn.Sequential):
-    def __init__(self, dim, hidden_dim, dropout = 0.):
+    def __init__(self, dim, hidden_dim, dropout=0.):
         super().__init__(
             nn.Linear(dim, hidden_dim),
             nn.GELU(),
@@ -131,8 +140,11 @@ class FeedForward(nn.Sequential):
             nn.Linear(hidden_dim, dim),
             nn.Dropout(dropout)
         )
+
+
 ff = FeedForward(dim=128, hidden_dim=256)
 ff(torch.ones((1, 5, 128))).shape
+
 
 class ResidualAdd(nn.Module):
     def __init__(self, fn):
@@ -145,6 +157,7 @@ class ResidualAdd(nn.Module):
         x += res
         return x
 
+
 residual_att = ResidualAdd(Attention(dim=128, n_heads=4, dropout=0.))
 residual_att(torch.ones((1, 5, 128))).shape
 
@@ -154,9 +167,10 @@ residual_att(torch.ones((1, 5, 128))).shape
 
 from einops import repeat
 
+
 class ViT(nn.Module):
     def __init__(self, ch=3, img_size=144, patch_size=4, emb_dim=32,
-                n_layers=6, out_dim=37, dropout=0.1, heads=2):
+                 n_layers=6, out_dim=37, dropout=0.1, heads=2):
         super(ViT, self).__init__()
 
         # Attributes
@@ -180,13 +194,12 @@ class ViT(nn.Module):
         self.layers = nn.ModuleList([])
         for _ in range(n_layers):
             transformer_block = nn.Sequential(
-                ResidualAdd(PreNorm(emb_dim, Attention(emb_dim, n_heads = heads, dropout = dropout))),
-                ResidualAdd(PreNorm(emb_dim, FeedForward(emb_dim, emb_dim, dropout = dropout))))
+                ResidualAdd(PreNorm(emb_dim, Attention(emb_dim, n_heads=heads, dropout=dropout))),
+                ResidualAdd(PreNorm(emb_dim, FeedForward(emb_dim, emb_dim, dropout=dropout))))
             self.layers.append(transformer_block)
 
         # Classification head
         self.head = nn.Sequential(nn.LayerNorm(emb_dim), nn.Linear(emb_dim, out_dim))
-
 
     def forward(self, img):
         # Get patch embedding vectors
@@ -194,7 +207,7 @@ class ViT(nn.Module):
         b, n, _ = x.shape
 
         # Add cls token to inputs
-        cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b = b)
+        cls_tokens = repeat(self.cls_token, '1 1 d -> b 1 d', b=b)
         x = torch.cat([cls_tokens, x], dim=1)
         x += self.pos_embedding[:, :(n + 1)]
 
@@ -258,5 +271,3 @@ outputs = model(inputs)
 
 print("Predicted classes", outputs.argmax(-1))
 print("Actual classes", labels)
-
-"""This needs to train much longer :)"""
