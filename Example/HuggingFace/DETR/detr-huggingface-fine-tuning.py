@@ -169,7 +169,7 @@ def main():
     for i in range(min(5, len(dataset['train']))):
         print(f"Item {i}:")
         print(dataset['train'][i])
-        print("\n")
+        print("/n")
 
     train_dataset = SurgicalToolDataset(dataset['train'], processor, annotations_file, image_size=image_size)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
