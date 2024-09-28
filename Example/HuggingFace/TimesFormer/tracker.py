@@ -29,22 +29,11 @@ tracker = None
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 current_frame = 0  # Initialize current frame index
 
-# Function to add annotation to COCO
-def add_bbox_to_coco(bbox, frame_id):
-    coco_data["annotations"].append({
-        "id": frame_id,
-        "image_id": frame_id,
-        "category_id": 1,
-        "bbox": [bbox[0], bbox[1], bbox[2], bbox[3]],
-        "area": bbox[2] * bbox[3],  # width * height
-        "iscrowd": 0
-    })
-
 # Instructions for the user
-print("Press 'S' to skip to the next frame and pause.")
-print("Press 'F' to move forward one frame.")
-print("Press 'D' to move backward one frame.")
-print("Press Space to select ROI and start/stop tracking or adjust ROI during tracking.")
+print("Press 'S' or Right Arrow to move forward one frame.")
+print("Press 'A' or Left Arrow to move backward one frame.")
+print("Press Space to select ROI and adjust annotation.")
+print("Press 'T' to start/stop tracking.")
 print("Press 'Q' to quit.")
 
 while True:
@@ -66,6 +55,13 @@ while True:
             "width": frame.shape[1]
         })
 
+    # Check if there is an annotation for this frame
+    existing_annotation = next((ann for ann in coco_data["annotations"] if ann['image_id'] == frame_id), None)
+    if existing_annotation:
+        bbox = existing_annotation['bbox']
+    else:
+        bbox = None
+
     if tracking:
         # Update the tracker to get the new bounding box
         success, bbox = tracker.update(frame)
@@ -75,68 +71,100 @@ while True:
             p1 = (int(bbox[0]), int(bbox[1]))
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
             cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
-            add_bbox_to_coco(bbox, frame_id)
+            # Update or add bbox to annotations
+            if existing_annotation:
+                existing_annotation['bbox'] = list(bbox)
+                existing_annotation['area'] = bbox[2] * bbox[3]
+            else:
+                coco_data["annotations"].append({
+                    "id": len(coco_data["annotations"]) + 1,
+                    "image_id": frame_id,
+                    "category_id": 1,
+                    "bbox": list(bbox),
+                    "area": bbox[2] * bbox[3],  # width * height
+                    "iscrowd": 0
+                })
         else:
             # If tracking fails, display failure message and stop tracking
             cv2.putText(frame, "Tracking failure", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
-            print("Tracking failed. Returning to skip mode.")
+            print("Tracking failed. Stopping tracking.")
             tracking = False
+
+    else:
+        # If not tracking but annotation exists, draw it
+        if bbox is not None:
+            p1 = (int(bbox[0]), int(bbox[1]))
+            p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+            cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
 
     # Display the frame
     cv2.imshow("Tool Tracker", frame)
 
-    # Wait for key press
-    key = cv2.waitKey(0) & 0xFF
+    if tracking:
+        # Automatically proceed to next frame after a short delay
+        key = cv2.waitKey(30) & 0xFF  # Adjust delay as needed
+        current_frame += 1
+        if current_frame >= total_frames:
+            print("End of video reached during tracking.")
+            break
+    else:
+        # Wait indefinitely for a key press when not tracking
+        key = cv2.waitKey(0) & 0xFF
 
+    # Handle key presses
     if key == ord('q'):
         break
-    elif key == ord('s'):
-        # Skip to the next frame and pause
-        current_frame += 1
-    elif key == ord('f'):
+    elif key == ord('s') or key == 83:  # 'S' or Right Arrow key
         # Move forward one frame
         if current_frame < total_frames - 1:
             current_frame += 1
         else:
             print("Already at the last frame.")
-    elif key == ord('d'):
+    elif key == ord('a') or key == 81:  # 'A' or Left Arrow key
         # Move backward one frame
         if current_frame > 0:
             current_frame -= 1
-            # Remove last annotations if any
-            coco_data["images"] = [img for img in coco_data["images"] if img['id'] != frame_id]
-            coco_data["annotations"] = [ann for ann in coco_data["annotations"] if ann['image_id'] != frame_id]
         else:
             print("Already at the first frame.")
     elif key == ord(' '):
-        if tracking:
-            # Pause tracking and allow ROI adjustment
-            print("Adjust the region of interest (ROI)...")
-            bbox = cv2.selectROI("Tool Tracker", frame, False)
-            if bbox != (0, 0, 0, 0):
+        # Select ROI and adjust annotation
+        print("Select the region of interest (ROI)...")
+        bbox = cv2.selectROI("Tool Tracker", frame, False)
+        if bbox != (0, 0, 0, 0):
+            # Update or add bbox to annotations
+            if existing_annotation:
+                existing_annotation['bbox'] = list(bbox)
+                existing_annotation['area'] = bbox[2] * bbox[3]
+            else:
+                coco_data["annotations"].append({
+                    "id": len(coco_data["annotations"]) + 1,
+                    "image_id": frame_id,
+                    "category_id": 1,
+                    "bbox": list(bbox),
+                    "area": bbox[2] * bbox[3],  # width * height
+                    "iscrowd": 0
+                })
+            # Update tracker with new ROI if tracking is active
+            if tracking:
                 tracker = cv2.TrackerMIL_create()
                 tracker.init(frame, bbox)
-                add_bbox_to_coco(bbox, frame_id)
-            else:
-                print("ROI selection canceled. Continuing tracking.")
         else:
-            # Select ROI and start tracking
-            print("Select the region of interest (ROI)...")
-            bbox = cv2.selectROI("Tool Tracker", frame, False)
-            if bbox != (0, 0, 0, 0):
+            print("ROI selection canceled.")
+    elif key == ord('t'):
+        # Toggle tracking
+        tracking = not tracking
+        if tracking:
+            if bbox is not None:
                 tracker = cv2.TrackerMIL_create()
                 tracker.init(frame, bbox)
-                tracking = True
-                add_bbox_to_coco(bbox, frame_id)
+                print("Tracking started.")
             else:
-                print("ROI selection canceled.")
-    else:
-        # Continue without changing frame
-        continue
-
-    # If not tracking, update current frame
-    if not tracking:
-        current_frame += 1
+                print("No ROI selected. Please select ROI first.")
+                tracking = False
+        else:
+            print("Tracking stopped.")
+    elif key == 27:  # Escape key
+        break
 
 # Release the video capture object and close windows
 cap.release()
