@@ -29,12 +29,27 @@ tracker = None
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 current_frame = 0  # Initialize current frame index
 
+# Folder do zapisywania zannotowanych obrazów
+output_dir = "output"
+annotated_images_dir = os.path.join(output_dir, "Annotated_Images")
+if not os.path.exists(annotated_images_dir):
+    os.makedirs(annotated_images_dir)
+
 # Instructions for the user
 print("Press 'S' or Right Arrow to move forward one frame.")
 print("Press 'A' or Left Arrow to move backward one frame.")
 print("Press Space to select ROI and adjust annotation.")
 print("Press 'T' to start/stop tracking.")
 print("Press 'Q' to quit.")
+
+
+# Function to save annotated frames
+def save_annotated_frame(frame, frame_id):
+    """Save the annotated frame to the Annotated Images directory."""
+    image_filename = f"frame_{frame_id:06d}.jpg"
+    image_path = os.path.join(annotated_images_dir, image_filename)
+    cv2.imwrite(image_path, frame)
+
 
 while True:
     # Set the video frame position
@@ -71,6 +86,10 @@ while True:
             p1 = (int(bbox[0]), int(bbox[1]))
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
             cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
+
+            # Save the annotated frame
+            save_annotated_frame(frame, frame_id)
+
             # Update or add bbox to annotations
             if existing_annotation:
                 existing_annotation['bbox'] = list(bbox)
@@ -146,7 +165,7 @@ while True:
                 })
             # Update tracker with new ROI if tracking is active
             if tracking:
-                tracker = cv2.TrackerMIL_create()
+                tracker = cv2.TrackerMIL_create()  # Poprawna inicjalizacja trackera
                 tracker.init(frame, bbox)
         else:
             print("ROI selection canceled.")
@@ -155,7 +174,7 @@ while True:
         tracking = not tracking
         if tracking:
             if bbox is not None:
-                tracker = cv2.TrackerMIL_create()
+                tracker = cv2.TrackerMIL_create()  # Poprawna inicjalizacja trackera
                 tracker.init(frame, bbox)
                 print("Tracking started.")
             else:
@@ -171,7 +190,6 @@ cap.release()
 cv2.destroyAllWindows()
 
 # Save the COCO data to a JSON file
-output_dir = "output"
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 coco_output_file = os.path.join(output_dir, "annotations.json")
