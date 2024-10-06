@@ -23,25 +23,35 @@ coco_data = {
 
 tracking = False
 continuous_mode = False
+paused = False
 bbox = None
 tracker = None
+
+# Variables for drawing rectangle
+drawing = False
+ix, iy = -1, -1  # Initial x and y coordinates
+rectangle = None
 
 # Get total number of frames
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 current_frame = 0  # Initialize current frame index
 
-# Folder do zapisywania zannotowanych obrazów
+# Folder to save annotated images
 output_dir = "output"
 annotated_images_dir = os.path.join(output_dir, "Annotated_Images")
 if not os.path.exists(annotated_images_dir):
     os.makedirs(annotated_images_dir)
 
 # Instructions for the user
+print("Use the mouse to draw ROI:")
+print("- Left-click and drag to draw the rectangle.")
+print("- Release the mouse button to accept the ROI.")
 print("Press 'N' to move to the next frame with tracking.")
 print("Press 'S' to skip to the next frame without tracking.")
 print("Press 'A' to go back to the previous frame.")
 print("Press 'T' to toggle continuous mode.")
-print("Press 'Space' to select ROI and adjust annotation.")
+print("Press 'Space' to pause/resume.")
+print("Right-click to clear the ROI.")
 print("Press 'Q' to quit.")
 
 # Function to save annotated frames
@@ -51,6 +61,39 @@ def save_annotated_frame(frame, frame_id):
     image_path = os.path.join(annotated_images_dir, image_filename)
     cv2.imwrite(image_path, frame)
 
+# Mouse callback function
+def draw_rectangle(event, x, y, flags, param):
+    global ix, iy, drawing, rectangle, bbox, tracking, tracker
+
+    if event == cv2.EVENT_LBUTTONDOWN:
+        drawing = True
+        ix, iy = x, y
+        rectangle = None
+    elif event == cv2.EVENT_MOUSEMOVE:
+        if drawing:
+            rectangle = (ix, iy, x, y)
+    elif event == cv2.EVENT_LBUTTONUP:
+        drawing = False
+        rectangle = (ix, iy, x, y)
+        x0, y0 = min(ix, x), min(iy, y)
+        x1, y1 = max(ix, x), max(iy, y)
+        bbox = (x0, y0, x1 - x0, y1 - y0)
+
+        # Initialize tracker with new ROI
+        tracker = cv2.TrackerMIL_create()
+        tracker.init(frame, bbox)
+        tracking = True
+    elif event == cv2.EVENT_RBUTTONDOWN:
+        # Clear ROI
+        bbox = None
+        tracking = False
+        rectangle = None
+        print("ROI cleared. Tracking stopped.")
+
+# Create a named window and set the mouse callback
+cv2.namedWindow("Tool Tracker")
+cv2.setMouseCallback("Tool Tracker", draw_rectangle)
+
 while True:
     # Set the video frame position
     cap.set(cv2.CAP_PROP_POS_FRAMES, current_frame)
@@ -58,6 +101,8 @@ while True:
     if not ret:
         print("End of video reached or cannot read the frame.")
         break
+
+    frame_display = frame.copy()  # Copy for display purposes
 
     frame_id = current_frame + 1  # Frame IDs start from 1
 
@@ -72,23 +117,18 @@ while True:
 
     # Check if there is an annotation for this frame
     existing_annotation = next((ann for ann in coco_data["annotations"] if ann['image_id'] == frame_id), None)
-    if existing_annotation:
-        bbox = existing_annotation['bbox']
-    else:
-        bbox = None
 
-    if tracking:
+    if tracking and not paused:
         # Update the tracker to get the new bounding box
         success, bbox = tracker.update(frame)
-
-        # If tracking is successful, draw the bounding box and save to COCO
         if success:
+            # Draw the bounding box
             p1 = (int(bbox[0]), int(bbox[1]))
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-            cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
+            cv2.rectangle(frame_display, p1, p2, (255, 0, 0), 2, 1)
 
             # Save the annotated frame
-            save_annotated_frame(frame, frame_id)
+            save_annotated_frame(frame_display, frame_id)
 
             # Update or add bbox to annotations
             if existing_annotation:
@@ -100,34 +140,38 @@ while True:
                     "image_id": frame_id,
                     "category_id": 1,
                     "bbox": list(bbox),
-                    "area": bbox[2] * bbox[3],  # width * height
+                    "area": bbox[2] * bbox[3],
                     "iscrowd": 0
                 })
         else:
-            # If tracking fails, display failure message and stop tracking
-            cv2.putText(frame, "Tracking failure", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+            cv2.putText(frame_display, "Tracking failure", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
             print("Tracking failed. Stopping tracking.")
             tracking = False
 
     else:
         # If not tracking but annotation exists, draw it
-        if bbox is not None:
+        if existing_annotation and not drawing:
+            bbox = existing_annotation['bbox']
             p1 = (int(bbox[0]), int(bbox[1]))
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-            cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
+            cv2.rectangle(frame_display, p1, p2, (255, 0, 0), 2, 1)
+
+    # Draw the rectangle while drawing
+    if drawing and rectangle is not None:
+        x0, y0, x1, y1 = rectangle
+        cv2.rectangle(frame_display, (x0, y0), (x1, y1), (0, 255, 0), 2)
 
     # Display the frame
-    cv2.imshow("Tool Tracker", frame)
+    cv2.imshow("Tool Tracker", frame_display)
 
-    if continuous_mode:
+    if continuous_mode and not paused:
         key = cv2.waitKey(30) & 0xFF  # Automatically refresh during continuous mode
         current_frame += 1
         if current_frame >= total_frames:
             print("End of video reached.")
             break
     else:
-        # Wait for a key press when not in continuous mode
-        key = cv2.waitKey(0) & 0xFF
+        key = cv2.waitKey(1) & 0xFF  # Wait for a key press or mouse event
 
     # Handle key presses
     if key == ord('q'):
@@ -136,45 +180,27 @@ while True:
         if bbox is not None and not tracking:
             tracker = cv2.TrackerMIL_create()  # Initialize the tracker
             tracker.init(frame, bbox)
-        tracking = True
+            tracking = True
         current_frame += 1
         if current_frame >= total_frames:
             print("End of video reached.")
             break
     elif key == ord('s'):  # 'S' key to skip to next frame without tracking
-        if current_frame < total_frames - 1:
-            current_frame += 1
-        else:
+        current_frame += 1
+        if current_frame >= total_frames:
             print("Already at the last frame.")
+            break
     elif key == ord('a'):  # 'A' key to go back to the previous frame
         if current_frame > 0:
             current_frame -= 1
         else:
             print("Already at the first frame.")
-    elif key == ord(' '):
-        # Select ROI and adjust annotation
-        print("Select the region of interest (ROI)...")
-        bbox = cv2.selectROI("Tool Tracker", frame, False)
-        if bbox != (0, 0, 0, 0):
-            # Update or add bbox to annotations
-            if existing_annotation:
-                existing_annotation['bbox'] = list(bbox)
-                existing_annotation['area'] = bbox[2] * bbox[3]
-            else:
-                coco_data["annotations"].append({
-                    "id": len(coco_data["annotations"]) + 1,
-                    "image_id": frame_id,
-                    "category_id": 1,
-                    "bbox": list(bbox),
-                    "area": bbox[2] * bbox[3],  # width * height
-                    "iscrowd": 0
-                })
-            # Update tracker with new ROI if tracking is active
-            if tracking:
-                tracker = cv2.TrackerMIL_create()  # Proper tracker initialization
-                tracker.init(frame, bbox)
+    elif key == ord(' '):  # Space to pause/resume
+        paused = not paused
+        if paused:
+            print("Paused.")
         else:
-            print("ROI selection canceled.")
+            print("Resumed.")
     elif key == ord('t'):
         # Toggle continuous mode
         continuous_mode = not continuous_mode
@@ -183,10 +209,12 @@ while True:
                 tracker = cv2.TrackerMIL_create()  # Initialize the tracker for continuous mode
                 tracker.init(frame, bbox)
             tracking = True
+            paused = False
             print("Continuous mode started.")
         else:
             tracking = False
             print("Continuous mode stopped.")
+
     elif key == 27:  # Escape key
         break
 
