@@ -22,6 +22,7 @@ coco_data = {
 }
 
 tracking = False
+continuous_mode = False
 bbox = None
 tracker = None
 
@@ -36,12 +37,12 @@ if not os.path.exists(annotated_images_dir):
     os.makedirs(annotated_images_dir)
 
 # Instructions for the user
-print("Press 'S' or Right Arrow to move forward one frame.")
-print("Press 'A' or Left Arrow to move backward one frame.")
-print("Press Space to select ROI and adjust annotation.")
-print("Press 'T' to start/stop tracking.")
+print("Press 'N' to move to the next frame with tracking.")
+print("Press 'S' to skip to the next frame without tracking.")
+print("Press 'A' to go back to the previous frame.")
+print("Press 'T' to toggle continuous mode.")
+print("Press 'Space' to select ROI and adjust annotation.")
 print("Press 'Q' to quit.")
-
 
 # Function to save annotated frames
 def save_annotated_frame(frame, frame_id):
@@ -49,7 +50,6 @@ def save_annotated_frame(frame, frame_id):
     image_filename = f"frame_{frame_id:06d}.jpg"
     image_path = os.path.join(annotated_images_dir, image_filename)
     cv2.imwrite(image_path, frame)
-
 
 while True:
     # Set the video frame position
@@ -119,28 +119,34 @@ while True:
     # Display the frame
     cv2.imshow("Tool Tracker", frame)
 
-    if tracking:
-        # Automatically proceed to next frame after a short delay
-        key = cv2.waitKey(30) & 0xFF  # Adjust delay as needed
+    if continuous_mode:
+        key = cv2.waitKey(30) & 0xFF  # Automatically refresh during continuous mode
         current_frame += 1
         if current_frame >= total_frames:
-            print("End of video reached during tracking.")
+            print("End of video reached.")
             break
     else:
-        # Wait indefinitely for a key press when not tracking
+        # Wait for a key press when not in continuous mode
         key = cv2.waitKey(0) & 0xFF
 
     # Handle key presses
     if key == ord('q'):
         break
-    elif key == ord('s') or key == 83:  # 'S' or Right Arrow key
-        # Move forward one frame
+    elif key == ord('n'):  # 'N' key for next frame with tracking
+        if bbox is not None and not tracking:
+            tracker = cv2.TrackerMIL_create()  # Initialize the tracker
+            tracker.init(frame, bbox)
+        tracking = True
+        current_frame += 1
+        if current_frame >= total_frames:
+            print("End of video reached.")
+            break
+    elif key == ord('s'):  # 'S' key to skip to next frame without tracking
         if current_frame < total_frames - 1:
             current_frame += 1
         else:
             print("Already at the last frame.")
-    elif key == ord('a') or key == 81:  # 'A' or Left Arrow key
-        # Move backward one frame
+    elif key == ord('a'):  # 'A' key to go back to the previous frame
         if current_frame > 0:
             current_frame -= 1
         else:
@@ -165,23 +171,22 @@ while True:
                 })
             # Update tracker with new ROI if tracking is active
             if tracking:
-                tracker = cv2.TrackerMIL_create()  # Poprawna inicjalizacja trackera
+                tracker = cv2.TrackerMIL_create()  # Proper tracker initialization
                 tracker.init(frame, bbox)
         else:
             print("ROI selection canceled.")
     elif key == ord('t'):
-        # Toggle tracking
-        tracking = not tracking
-        if tracking:
-            if bbox is not None:
-                tracker = cv2.TrackerMIL_create()  # Poprawna inicjalizacja trackera
+        # Toggle continuous mode
+        continuous_mode = not continuous_mode
+        if continuous_mode:
+            if bbox is not None and not tracking:
+                tracker = cv2.TrackerMIL_create()  # Initialize the tracker for continuous mode
                 tracker.init(frame, bbox)
-                print("Tracking started.")
-            else:
-                print("No ROI selected. Please select ROI first.")
-                tracking = False
+            tracking = True
+            print("Continuous mode started.")
         else:
-            print("Tracking stopped.")
+            tracking = False
+            print("Continuous mode stopped.")
     elif key == 27:  # Escape key
         break
 
