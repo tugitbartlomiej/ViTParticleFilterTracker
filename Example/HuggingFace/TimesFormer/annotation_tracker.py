@@ -5,21 +5,54 @@ import os
 # Initialize video capture with your specified path
 cap = cv2.VideoCapture('E:/Cataract/videos/micro/train01.mp4')
 
-# Prepare to save bounding box data in COCO format
-coco_data = {
-    "info": {
-        "year": 2024,
-        "version": "1.0",
-        "description": "Tool Tracking Data",
-        "date_created": "2024-09-25"
-    },
-    "licenses": [],
-    "images": [],
-    "annotations": [],
-    "categories": [
-        {"id": 1, "name": "tool", "supercategory": "none"}
-    ]
-}
+import os
+import json
+
+# Path to annotations file
+annotations_file = os.path.join("output", "annotations.json")
+
+# Load existing annotations or initialize a new COCO format structure
+if os.path.exists(annotations_file):
+    try:
+        with open(annotations_file, 'r') as f:
+            # Attempt to load the JSON file
+            coco_data = json.load(f)
+            print("Annotations file loaded successfully.")
+    except json.JSONDecodeError:
+        # Handle the case where the JSON file is empty or invalid
+        print("Error: The annotations file is empty or contains invalid JSON. Initializing a new annotations structure.")
+        coco_data = {
+            "info": {
+                "year": 2024,
+                "version": "1.0",
+                "description": "Tool Tracking Data",
+                "date_created": "2024-09-25"
+            },
+            "licenses": [],
+            "images": [],
+            "annotations": [],
+            "categories": [
+                {"id": 1, "name": "tool", "supercategory": "none"}
+            ]
+        }
+else:
+    # If the file doesn't exist, create a new annotations structure
+    print("No annotations file found. Initializing a new annotations structure.")
+    coco_data = {
+        "info": {
+            "year": 2024,
+            "version": "1.0",
+            "description": "Tool Tracking Data",
+            "date_created": "2024-09-25"
+        },
+        "licenses": [],
+        "images": [],
+        "annotations": [],
+        "categories": [
+            {"id": 1, "name": "tool", "supercategory": "none"}
+        ]
+    }
+
 
 tracking = False
 continuous_mode = False
@@ -40,14 +73,11 @@ current_frame = 0  # Initialize current frame index
 output_dir = "output"
 annotated_images_dir = os.path.join(output_dir, "Annotated_Images")
 raw_images_dir = os.path.join(output_dir, "Raw_Images")
-frames_dir = os.path.join(output_dir, "Frames")  # Folder for saving raw frames
 
 if not os.path.exists(annotated_images_dir):
     os.makedirs(annotated_images_dir)
 if not os.path.exists(raw_images_dir):
     os.makedirs(raw_images_dir)
-if not os.path.exists(frames_dir):
-    os.makedirs(frames_dir)
 
 # Instructions for the user
 print("Use the mouse to draw ROI:")
@@ -61,12 +91,6 @@ print("Press 'Space' to pause/resume.")
 print("Right-click to clear the ROI.")
 print("Press 'Q' to quit.")
 
-# Function to save raw frame
-def save_raw_frame(frame, frame_id):
-    """Save the raw frame to the Frames directory."""
-    frame_filename = f"frame_{frame_id:06d}.jpg"
-    frame_path = os.path.join(frames_dir, frame_filename)
-    cv2.imwrite(frame_path, frame)
 
 # Function to save annotated and raw frames
 def save_frames(frame, frame_display, frame_id):
@@ -80,6 +104,29 @@ def save_frames(frame, frame_display, frame_id):
     annotated_image_filename = f"frame_{frame_id:06d}.jpg"
     annotated_image_path = os.path.join(annotated_images_dir, annotated_image_filename)
     cv2.imwrite(annotated_image_path, frame_display)
+
+
+# Function to update or add annotations without printing updates
+def update_annotation(coco_data, frame_id, bbox):
+    """Update or add a new annotation for the current frame."""
+    # Check if annotation for this image ID already exists
+    existing_annotation = next((ann for ann in coco_data["annotations"] if ann['image_id'] == frame_id), None)
+
+    if existing_annotation:
+        # If exists, update the bounding box and area
+        existing_annotation['bbox'] = list(bbox)
+        existing_annotation['area'] = bbox[2] * bbox[3]  # width * height
+    else:
+        # Otherwise, add a new annotation
+        coco_data["annotations"].append({
+            "id": len(coco_data["annotations"]) + 1,
+            "image_id": frame_id,
+            "category_id": 1,
+            "bbox": list(bbox),
+            "area": bbox[2] * bbox[3],  # width * height
+            "iscrowd": 0
+        })
+
 
 # Mouse callback function
 def draw_rectangle(event, x, y, flags, param):
@@ -110,6 +157,7 @@ def draw_rectangle(event, x, y, flags, param):
         rectangle = None
         print("ROI cleared. Tracking stopped.")
 
+
 # Create a named window and set the mouse callback
 cv2.namedWindow("Tool Tracker")
 cv2.setMouseCallback("Tool Tracker", draw_rectangle)
@@ -126,7 +174,7 @@ while True:
 
     # Copy frames for display and saving
     frame_display = frame.copy()  # For display (with annotations)
-    frame_raw = frame.copy()      # For saving raw images
+    frame_raw = frame.copy()  # For saving raw images
 
     # Add frame information to COCO if not already added
     if not any(img['id'] == frame_id for img in coco_data["images"]):
@@ -150,18 +198,8 @@ while True:
             cv2.rectangle(frame_display, p1, p2, (255, 0, 0), 2, 1)
 
             # Update or add bbox to annotations
-            if existing_annotation:
-                existing_annotation['bbox'] = list(bbox)
-                existing_annotation['area'] = bbox[2] * bbox[3]
-            else:
-                coco_data["annotations"].append({
-                    "id": len(coco_data["annotations"]) + 1,
-                    "image_id": frame_id,
-                    "category_id": 1,
-                    "bbox": list(bbox),
-                    "area": bbox[2] * bbox[3],
-                    "iscrowd": 0
-                })
+            update_annotation(coco_data, frame_id, bbox)
+
         else:
             cv2.putText(frame_display, "Tracking failure", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
             print("Tracking failed. Stopping tracking.")
@@ -185,9 +223,6 @@ while True:
 
     # Display the frame
     cv2.imshow("Tool Tracker", frame_display)
-
-    # Save every frame (raw frame without annotations) in the "Frames" folder
-    save_raw_frame(frame_raw, frame_id)
 
     # Save frames with annotations if tracking is enabled and not paused
     if tracking and not paused:
@@ -247,15 +282,12 @@ while True:
     elif key == 27:  # Escape key
         break
 
-    # Release the video capture object and close windows
+# Release the video capture object and close windows
 cap.release()
 cv2.destroyAllWindows()
 
 # Save the COCO data to a JSON file
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
-coco_output_file = os.path.join(output_dir, "annotations.json")
-with open(coco_output_file, 'w') as f:
+with open(annotations_file, 'w') as f:
     json.dump(coco_data, f, indent=4)
 
-print(f"COCO annotations saved to {coco_output_file}")
+print(f"COCO annotations saved to {annotations_file}")
