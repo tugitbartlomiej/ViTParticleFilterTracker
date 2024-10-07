@@ -36,11 +36,18 @@ rectangle = None
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 current_frame = 0  # Initialize current frame index
 
-# Folder to save annotated images
+# Folders to save images
 output_dir = "output"
 annotated_images_dir = os.path.join(output_dir, "Annotated_Images")
+raw_images_dir = os.path.join(output_dir, "Raw_Images")
+frames_dir = os.path.join(output_dir, "Frames")  # Folder for saving raw frames
+
 if not os.path.exists(annotated_images_dir):
     os.makedirs(annotated_images_dir)
+if not os.path.exists(raw_images_dir):
+    os.makedirs(raw_images_dir)
+if not os.path.exists(frames_dir):
+    os.makedirs(frames_dir)
 
 # Instructions for the user
 print("Use the mouse to draw ROI:")
@@ -54,16 +61,29 @@ print("Press 'Space' to pause/resume.")
 print("Right-click to clear the ROI.")
 print("Press 'Q' to quit.")
 
-# Function to save annotated frames
-def save_annotated_frame(frame, frame_id):
-    """Save the annotated frame to the Annotated Images directory."""
-    image_filename = f"frame_{frame_id:06d}.jpg"
-    image_path = os.path.join(annotated_images_dir, image_filename)
-    cv2.imwrite(image_path, frame)
+# Function to save raw frame
+def save_raw_frame(frame, frame_id):
+    """Save the raw frame to the Frames directory."""
+    frame_filename = f"frame_{frame_id:06d}.jpg"
+    frame_path = os.path.join(frames_dir, frame_filename)
+    cv2.imwrite(frame_path, frame)
+
+# Function to save annotated and raw frames
+def save_frames(frame, frame_display, frame_id):
+    """Save the raw and annotated frames to their respective directories."""
+    # Save raw image
+    raw_image_filename = f"frame_{frame_id:06d}.jpg"
+    raw_image_path = os.path.join(raw_images_dir, raw_image_filename)
+    cv2.imwrite(raw_image_path, frame)
+
+    # Save annotated image
+    annotated_image_filename = f"frame_{frame_id:06d}.jpg"
+    annotated_image_path = os.path.join(annotated_images_dir, annotated_image_filename)
+    cv2.imwrite(annotated_image_path, frame_display)
 
 # Mouse callback function
 def draw_rectangle(event, x, y, flags, param):
-    global ix, iy, drawing, rectangle, bbox, tracking, tracker
+    global ix, iy, drawing, rectangle, bbox, tracking, tracker, frame_display
 
     if event == cv2.EVENT_LBUTTONDOWN:
         drawing = True
@@ -102,9 +122,11 @@ while True:
         print("End of video reached or cannot read the frame.")
         break
 
-    frame_display = frame.copy()  # Copy for display purposes
-
     frame_id = current_frame + 1  # Frame IDs start from 1
+
+    # Copy frames for display and saving
+    frame_display = frame.copy()  # For display (with annotations)
+    frame_raw = frame.copy()      # For saving raw images
 
     # Add frame information to COCO if not already added
     if not any(img['id'] == frame_id for img in coco_data["images"]):
@@ -127,9 +149,6 @@ while True:
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
             cv2.rectangle(frame_display, p1, p2, (255, 0, 0), 2, 1)
 
-            # Save the annotated frame
-            save_annotated_frame(frame_display, frame_id)
-
             # Update or add bbox to annotations
             if existing_annotation:
                 existing_annotation['bbox'] = list(bbox)
@@ -150,7 +169,7 @@ while True:
 
     else:
         # If not tracking but annotation exists, draw it
-        if existing_annotation and not drawing:
+        if existing_annotation and bbox is not None:
             bbox = existing_annotation['bbox']
             p1 = (int(bbox[0]), int(bbox[1]))
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
@@ -161,8 +180,18 @@ while True:
         x0, y0, x1, y1 = rectangle
         cv2.rectangle(frame_display, (x0, y0), (x1, y1), (0, 255, 0), 2)
 
+    # Display the frame number in the top-left corner
+    cv2.putText(frame_display, f"Frame: {frame_id}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+
     # Display the frame
     cv2.imshow("Tool Tracker", frame_display)
+
+    # Save every frame (raw frame without annotations) in the "Frames" folder
+    save_raw_frame(frame_raw, frame_id)
+
+    # Save frames with annotations if tracking is enabled and not paused
+    if tracking and not paused:
+        save_frames(frame_raw, frame_display, frame_id)
 
     if continuous_mode and not paused:
         key = cv2.waitKey(30) & 0xFF  # Automatically refresh during continuous mode
@@ -218,7 +247,7 @@ while True:
     elif key == 27:  # Escape key
         break
 
-# Release the video capture object and close windows
+    # Release the video capture object and close windows
 cap.release()
 cv2.destroyAllWindows()
 
