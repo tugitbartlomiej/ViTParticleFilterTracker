@@ -5,9 +5,6 @@ import os
 # Initialize video capture with your specified path
 cap = cv2.VideoCapture('E:/Cataract/videos/micro/train01.mp4')
 
-import os
-import json
-
 # Path to annotations file
 annotations_file = os.path.join("output", "annotations.json")
 
@@ -53,7 +50,6 @@ else:
         ]
     }
 
-
 tracking = False
 continuous_mode = False
 paused = False
@@ -91,7 +87,6 @@ print("Press 'Space' to pause/resume.")
 print("Right-click to clear the ROI.")
 print("Press 'Q' to quit.")
 
-
 # Function to save annotated and raw frames
 def save_frames(frame, frame_display, frame_id):
     """Save the raw and annotated frames to their respective directories."""
@@ -105,8 +100,7 @@ def save_frames(frame, frame_display, frame_id):
     annotated_image_path = os.path.join(annotated_images_dir, annotated_image_filename)
     cv2.imwrite(annotated_image_path, frame_display)
 
-
-# Function to update or add annotations without printing updates
+# Function to update or add annotations
 def update_annotation(coco_data, frame_id, bbox):
     """Update or add a new annotation for the current frame."""
     # Check if annotation for this image ID already exists
@@ -118,8 +112,11 @@ def update_annotation(coco_data, frame_id, bbox):
         existing_annotation['area'] = bbox[2] * bbox[3]  # width * height
     else:
         # Otherwise, add a new annotation
+        # Ensure unique annotation 'id'
+        existing_ids = [ann['id'] for ann in coco_data["annotations"]]
+        new_id = max(existing_ids) + 1 if existing_ids else 1
         coco_data["annotations"].append({
-            "id": len(coco_data["annotations"]) + 1,
+            "id": new_id,
             "image_id": frame_id,
             "category_id": 1,
             "bbox": list(bbox),
@@ -127,10 +124,9 @@ def update_annotation(coco_data, frame_id, bbox):
             "iscrowd": 0
         })
 
-
 # Mouse callback function
 def draw_rectangle(event, x, y, flags, param):
-    global ix, iy, drawing, rectangle, bbox, tracking, tracker, frame_display
+    global ix, iy, drawing, rectangle, bbox, tracking, tracker, frame_display, frame_id
 
     if event == cv2.EVENT_LBUTTONDOWN:
         drawing = True
@@ -150,13 +146,18 @@ def draw_rectangle(event, x, y, flags, param):
         tracker = cv2.TrackerMIL_create()
         tracker.init(frame, bbox)
         tracking = True
+
+        # Update or add bbox to annotations immediately
+        update_annotation(coco_data, frame_id, bbox)
+
     elif event == cv2.EVENT_RBUTTONDOWN:
         # Clear ROI
         bbox = None
         tracking = False
         rectangle = None
-        print("ROI cleared. Tracking stopped.")
-
+        # Remove existing annotation for this frame, if any
+        coco_data["annotations"] = [ann for ann in coco_data["annotations"] if ann['image_id'] != frame_id]
+        print("ROI cleared. Tracking stopped. Annotation removed.")
 
 # Create a named window and set the mouse callback
 cv2.namedWindow("Tool Tracker")
@@ -171,6 +172,9 @@ while True:
         break
 
     frame_id = current_frame + 1  # Frame IDs start from 1
+
+    # Reset bbox at the beginning of each frame
+    bbox = None
 
     # Copy frames for display and saving
     frame_display = frame.copy()  # For display (with annotations)
@@ -200,15 +204,23 @@ while True:
             # Update or add bbox to annotations
             update_annotation(coco_data, frame_id, bbox)
 
+            # Save frames with annotations if tracking is enabled and not paused
+            save_frames(frame_raw, frame_display, frame_id)
         else:
             cv2.putText(frame_display, "Tracking failure", (100, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
             print("Tracking failed. Stopping tracking.")
             tracking = False
+            bbox = None  # Reset bbox if tracking fails
 
     else:
-        # If not tracking but annotation exists, draw it
-        if existing_annotation and bbox is not None:
+        # If not tracking, check for existing annotation
+        if existing_annotation:
             bbox = existing_annotation['bbox']
+        else:
+            bbox = None
+
+        if bbox is not None:
+            # Draw the bounding box from annotation
             p1 = (int(bbox[0]), int(bbox[1]))
             p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
             cv2.rectangle(frame_display, p1, p2, (255, 0, 0), 2, 1)
@@ -223,10 +235,6 @@ while True:
 
     # Display the frame
     cv2.imshow("Tool Tracker", frame_display)
-
-    # Save frames with annotations if tracking is enabled and not paused
-    if tracking and not paused:
-        save_frames(frame_raw, frame_display, frame_id)
 
     if continuous_mode and not paused:
         key = cv2.waitKey(30) & 0xFF  # Automatically refresh during continuous mode
@@ -250,6 +258,7 @@ while True:
             print("End of video reached.")
             break
     elif key == ord('s'):  # 'S' key to skip to next frame without tracking
+        tracking = False  # Ensure tracking is stopped
         current_frame += 1
         if current_frame >= total_frames:
             print("Already at the last frame.")
