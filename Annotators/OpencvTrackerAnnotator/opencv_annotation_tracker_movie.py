@@ -8,6 +8,8 @@ cap = cv2.VideoCapture('E:/Cataract/videos/micro/train01.mp4')
 # Path to annotations file
 annotations_file = os.path.join("output", "annotations.json")
 
+
+
 # Load existing annotations or initialize a new COCO format structure
 if os.path.exists(annotations_file):
     try:
@@ -90,14 +92,16 @@ print("Press 'Q' to quit.")
 # Function to save annotated and raw frames
 def save_frames(frame, frame_display, frame_id):
     """Save the raw and annotated frames to their respective directories."""
+
     # Save raw image
     raw_image_filename = f"frame_{frame_id:06d}.jpg"
     raw_image_path = os.path.join(raw_images_dir, raw_image_filename)
     cv2.imwrite(raw_image_path, frame)
 
     # Save annotated image
-    annotated_image_filename = f"frame_{frame_id:06d}.jpg"
+    annotated_image_filename = f"frame_{frame_id}.jpg"
     annotated_image_path = os.path.join(annotated_images_dir, annotated_image_filename)
+    cv2.putText(frame_display, f"Frame: {frame_id}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
     cv2.imwrite(annotated_image_path, frame_display)
 
 # Function to update or add annotations
@@ -124,9 +128,28 @@ def update_annotation(coco_data, frame_id, bbox):
             "iscrowd": 0
         })
 
+def remove_annotation_and_images(coco_data, frame_id):
+    """Remove the annotation for the specified frame_id and associated images from both folders."""
+    # Remove annotation
+    coco_data["annotations"] = [ann for ann in coco_data["annotations"] if ann['image_id'] != frame_id]
+
+    # Remove associated images from both Raw_Images and Annotated_Images folders
+    raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id:06d}.jpg")
+    annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id:06d}.jpg")
+
+    if os.path.exists(raw_image_path):
+        os.remove(raw_image_path)
+        print(f"Raw image for frame {frame_id} removed from Raw_Images folder.")
+
+    if os.path.exists(annotated_image_path):
+        os.remove(annotated_image_path)
+        print(f"Annotated image for frame {frame_id} removed from Annotated_Images folder.")
+
+    print(f"Annotation and images for frame {frame_id} removed from both folders.")
+
 # Mouse callback function
 def draw_rectangle(event, x, y, flags, param):
-    global ix, iy, drawing, rectangle, bbox, tracking, tracker, frame_display, frame_id
+    global ix, iy, drawing, rectangle, bbox, tracking, tracker, frame_display, frame_id, coco_data
 
     if event == cv2.EVENT_LBUTTONDOWN:
         drawing = True
@@ -151,13 +174,24 @@ def draw_rectangle(event, x, y, flags, param):
         update_annotation(coco_data, frame_id, bbox)
 
     elif event == cv2.EVENT_RBUTTONDOWN:
-        # Clear ROI
+        # Check if there's an existing annotation for this frame
+        existing_annotation = next((ann for ann in coco_data["annotations"] if ann['image_id'] == frame_id), None)
+
+        if existing_annotation:
+            # Remove the annotation and associated images
+            remove_annotation_and_images(coco_data, frame_id)
+
+            # Clear the display
+            frame_display = frame.copy()
+            cv2.putText(frame_display, f"Frame: {frame_id}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
+            cv2.imshow("Tool Tracker", frame_display)
+        else:
+            print(f"No annotation found for frame {frame_id}.")
+
+        # Clear ROI and stop tracking
         bbox = None
         tracking = False
         rectangle = None
-        # Remove existing annotation for this frame, if any
-        coco_data["annotations"] = [ann for ann in coco_data["annotations"] if ann['image_id'] != frame_id]
-        print("ROI cleared. Tracking stopped. Annotation removed.")
 
 # Create a named window and set the mouse callback
 cv2.namedWindow("Tool Tracker")

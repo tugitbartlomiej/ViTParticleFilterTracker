@@ -31,7 +31,7 @@ def create_video_from_images(image_folder, output_video, fps=5):  # Set fps to 5
 
 # Main function to call the video creation
 if __name__ == "__main__":
-    image_folder = "./output/Annotated_Images"  # Path to your folder containing images
+    image_folder = "../DetrAnnotator/output/sorted_images/75_100/Annotated_Images/"  # Path to your folder containing images
     output_video = "./output/output_annotated_images_video.mp4"  # Name of the output video file
     fps = 5  # Set the playback speed to 5 frames per second
 
