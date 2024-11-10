@@ -64,12 +64,22 @@ class YOLOTrainer:
         )
         print("Training completed successfully.")  # Punkt kontrolny
 
-        # Wyświetlenie podsumowania wyników dla każdej epoki
-        for epoch, result in enumerate(results.epoch_results):
-            print(f"Epoch {epoch+1}/{self.epochs} - "
-                  f"box_loss: {result['box_loss']:.4f}, "
-                  f"cls_loss: {result['cls_loss']:.4f}, "
-                  f"dfl_loss: {result['dfl_loss']:.4f}")
+        # Wyświetlenie podsumowania wyników
+        if hasattr(results, 'mean_results'):
+            # Jeśli mean_results() istnieje, użyj go, aby wyświetlić średnie metryki
+            mean_results = results.mean_results()
+            print("Mean training results:")
+            print(f"box_loss: {mean_results['box_loss']:.4f}, "
+                  f"cls_loss: {mean_results['cls_loss']:.4f}, "
+                  f"dfl_loss: {mean_results['dfl_loss']:.4f}")
+        elif hasattr(results, 'results_dict'):
+            # Alternatywnie, użyj results_dict(), jeśli jest dostępne
+            results_dict = results.results_dict()
+            print("Training results (summary):")
+            for key, value in results_dict.items():
+                print(f"{key}: {value}")
+        else:
+            print("Unable to retrieve detailed epoch results.")
 
 
 def main():
