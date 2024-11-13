@@ -7,7 +7,7 @@ from PIL import Image
 from tqdm.auto import tqdm
 from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
-
+import time
 
 class SurgicalToolDataset(torch.utils.data.Dataset):
     def __init__(self, images_dir, annotations_file, processor, image_size=(800, 800), augment=False):
@@ -134,24 +134,34 @@ def check_data_integrity(dataset):
     print("\nDataset is ready for training with available data.")
 
 
+def print_gpu_memory():
+    print(f"Memory Allocated: {torch.cuda.memory_allocated() / 1024 ** 2:.2f} MB")
+    print(f"Memory Cached: {torch.cuda.memory_reserved() / 1024 ** 2:.2f} MB")
+
+
 def train_epoch(model, data_loader, optimizer, device, epoch, scheduler, writer=None):
     model.train()
     total_loss = 0
     progress_bar = tqdm(data_loader, desc=f"Training Epoch {epoch + 1}", leave=False)
 
     for batch_idx, batch in enumerate(progress_bar):
+        # Move data to device
         pixel_values = batch["pixel_values"].to(device)
         labels = [{k: v.to(device) for k, v in t.items()} for t in batch["labels"]]
 
-        # Forward pass
+        # Measure forward pass time
+        start_time = time.time()
         outputs = model(pixel_values=pixel_values, labels=labels)
         loss = outputs.loss
+        forward_time = time.time() - start_time
 
-        # Backward pass and optimization
+        # Measure backward pass time
+        start_time = time.time()
         optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.1)
         optimizer.step()
+        backward_time = time.time() - start_time
 
         total_loss += loss.item()
         progress_bar.set_postfix({"loss": loss.item()})
@@ -162,6 +172,10 @@ def train_epoch(model, data_loader, optimizer, device, epoch, scheduler, writer=
 
         if batch_idx % 10 == 0:
             print(f"Epoch [{epoch + 1}], Batch [{batch_idx}/{len(data_loader)}], Loss: {loss.item():.4f}")
+
+    # GPU memory usage after epoch
+    print("GPU memory usage after epoch:")
+    print_gpu_memory()
 
     avg_loss = total_loss / len(data_loader)
     scheduler.step(avg_loss)
@@ -180,12 +194,6 @@ def main():
 
     # Training settings
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    if torch.cuda.is_available():
-        print("Training will be performed on GPU.")
-    else:
-        print("Training will be performed on CPU.")
-
     num_epochs = 100
     learning_rate = 1e-5
     batch_size = 8
@@ -241,13 +249,13 @@ def main():
     train_size = len(dataset) - val_size
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-    # Prepare data loaders with num_workers=0 for debugging
+    # Prepare data loaders
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
         collate_fn=collate_fn,
-        num_workers=0,  # Set to 0 to debug DataLoader issues
+        num_workers=0,
         pin_memory=True
     )
 
@@ -260,20 +268,8 @@ def main():
         pin_memory=True
     )
 
-    # Prepare parameters for optimization with different learning rates
-    param_dicts = [
-        {
-            "params": [p for n, p in model.named_parameters() if "backbone" in n],
-            "lr": learning_rate / 10,
-        },
-        {
-            "params": [p for n, p in model.named_parameters() if "backbone" not in n],
-            "lr": learning_rate,
-        },
-    ]
-
     # Set up optimizer and scheduler
-    optimizer = torch.optim.AdamW(param_dicts, weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         mode='min',
@@ -312,7 +308,6 @@ def main():
 
     # Close TensorBoard writer
     writer.close()
-
 
 if __name__ == "__main__":
     main()

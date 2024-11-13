@@ -102,12 +102,13 @@ def inference_and_sort(model, processor, video_path, output_dir, thresholds, dev
 
 
 def main():
-    model_dir = "./detr_tool_tracking_model"
+    model_dir = "./detr_tool_tracking_model_best"
     video_path = 'E:/Cataract/videos/micro/train01.mp4'
     output_dir = "output/sorted_frames"
     thresholds = [0, 0.25, 0.5, 0.75]
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Device: {device}, will be use")
 
     model = DetrForObjectDetection.from_pretrained(model_dir).to(device)
     processor = DetrImageProcessor.from_pretrained(model_dir)
