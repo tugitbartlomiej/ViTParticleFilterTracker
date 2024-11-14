@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 from transformers import DetrForObjectDetection, DetrImageProcessor
 import os
 import json
@@ -8,6 +8,7 @@ from tqdm.auto import tqdm
 from torchvision import transforms
 from torch.utils.tensorboard import SummaryWriter
 import time
+import numpy as np
 
 class SurgicalToolDataset(torch.utils.data.Dataset):
     def __init__(self, images_dir, annotations_file, processor, image_size=(800, 800), augment=False):
@@ -120,26 +121,26 @@ def check_data_integrity(dataset):
     print(f"Images without annotations: {images_without_annotations}")
 
     if missing_files > 0:
-        print("\nFirst 10 missing files:")
+        print("/nFirst 10 missing files:")
         for img in dataset.annotations['images'][:10]:
             if img['id'] not in dataset.id_to_filename:
                 print(f" - {img['file_name']}")
 
     if images_without_annotations > 0:
-        print("\nFirst 10 images without annotations:")
+        print("/nFirst 10 images without annotations:")
         for img in dataset.valid_images[:10]:
             if img['id'] not in dataset.id_to_annotations:
                 print(f" - {img['file_name']}")
 
-    print("\nDataset is ready for training with available data.")
+    print("/nDataset is ready for training with available data.")
 
 
 def print_gpu_memory():
     print(f"Memory Allocated: {torch.cuda.memory_allocated() / 1024 ** 2:.2f} MB")
-    print(f"Memory Cached: {torch.cuda.memory_reserved() / 1024 ** 2:.2f} MB")
+    print(f"Memory Reserved: {torch.cuda.memory_reserved() / 1024 ** 2:.2f} MB")
 
 
-def train_epoch(model, data_loader, optimizer, device, epoch, scheduler, writer=None):
+def train_epoch(model, data_loader, optimizer, device, epoch, writer=None):
     model.train()
     total_loss = 0
     progress_bar = tqdm(data_loader, desc=f"Training Epoch {epoch + 1}", leave=False)
@@ -149,26 +150,23 @@ def train_epoch(model, data_loader, optimizer, device, epoch, scheduler, writer=
         pixel_values = batch["pixel_values"].to(device)
         labels = [{k: v.to(device) for k, v in t.items()} for t in batch["labels"]]
 
-        # Measure forward pass time
-        start_time = time.time()
+        # Forward pass
         outputs = model(pixel_values=pixel_values, labels=labels)
         loss = outputs.loss
-        forward_time = time.time() - start_time
 
-        # Measure backward pass time
-        start_time = time.time()
+        # Backward pass
         optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.1)
         optimizer.step()
-        backward_time = time.time() - start_time
 
         total_loss += loss.item()
         progress_bar.set_postfix({"loss": loss.item()})
 
         # TensorBoard logging
         if writer is not None:
-            writer.add_scalar("Loss/train", loss.item(), epoch * len(data_loader) + batch_idx)
+            global_step = epoch * len(data_loader) + batch_idx
+            writer.add_scalar("Loss/train", loss.item(), global_step)
 
         if batch_idx % 10 == 0:
             print(f"Epoch [{epoch + 1}], Batch [{batch_idx}/{len(data_loader)}], Loss: {loss.item():.4f}")
@@ -178,8 +176,54 @@ def train_epoch(model, data_loader, optimizer, device, epoch, scheduler, writer=
     print_gpu_memory()
 
     avg_loss = total_loss / len(data_loader)
-    scheduler.step(avg_loss)
     return avg_loss
+
+
+def validate_epoch(model, data_loader, device, epoch, writer=None):
+    model.eval()
+    total_loss = 0
+    progress_bar = tqdm(data_loader, desc=f"Validation Epoch {epoch + 1}", leave=False)
+
+    with torch.no_grad():
+        for batch_idx, batch in enumerate(progress_bar):
+            # Move data to device
+            pixel_values = batch["pixel_values"].to(device)
+            labels = [{k: v.to(device) for k, v in t.items()} for t in batch["labels"]]
+
+            outputs = model(pixel_values=pixel_values, labels=labels)
+            loss = outputs.loss
+
+            total_loss += loss.item()
+            progress_bar.set_postfix({"val_loss": loss.item()})
+
+            # TensorBoard logging
+            if writer is not None:
+                global_step = epoch * len(data_loader) + batch_idx
+                writer.add_scalar("Loss/validation", loss.item(), global_step)
+
+    avg_loss = total_loss / len(data_loader)
+    return avg_loss
+
+
+def split_dataset(dataset, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
+    assert train_ratio + val_ratio + test_ratio == 1, "Ratios must sum to 1."
+
+    dataset_size = len(dataset)
+    indices = list(range(dataset_size))
+    np.random.shuffle(indices)
+
+    train_end = int(train_ratio * dataset_size)
+    val_end = train_end + int(val_ratio * dataset_size)
+
+    train_indices = indices[:train_end]
+    val_indices = indices[train_end:val_end]
+    test_indices = indices[val_end:]
+
+    train_dataset = Subset(dataset, train_indices)
+    val_dataset = Subset(dataset, val_indices)
+    test_dataset = Subset(dataset, test_indices)
+
+    return train_dataset, val_dataset, test_dataset
 
 
 def main():
@@ -187,17 +231,17 @@ def main():
 
     # Paths
     images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output_frames/raw_images/76_100"
-    annotations_file = (
-        "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output"
-        "/coco_annotations_75_100.json"
-    )
+    annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output/coco_annotations_76_100.json"
 
     # Training settings
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    num_epochs = 100
-    learning_rate = 1e-5
+    num_epochs = 20
+    learning_rate = 1e-6
     batch_size = 8
     image_size = (800, 800)
+
+    # Early stopping and thresholds
+    validation_loss_threshold = 0.1  # Desired validation loss threshold
 
     # TensorBoard writer
     writer = SummaryWriter(log_dir='./runs/detr_training')
@@ -219,12 +263,6 @@ def main():
     num_channels = model.class_labels_classifier.in_features
     model.class_labels_classifier = torch.nn.Linear(num_channels, model.config.num_labels + 1)
 
-    # Adjust the criterion's empty_weight
-    if hasattr(model, 'criterion') and hasattr(model.criterion, 'empty_weight'):
-        model.criterion.empty_weight = torch.ones(model.config.num_labels + 1)
-        model.criterion.empty_weight[0] = 0.1  # Lower weight for the background
-        model.criterion.empty_weight = model.criterion.empty_weight.to(device)
-
     # Updated processor initialization
     processor = DetrImageProcessor.from_pretrained(
         "facebook/detr-resnet-50",
@@ -238,16 +276,17 @@ def main():
         annotations_file=annotations_file,
         processor=processor,
         image_size=image_size,
-        augment=True
+        augment=True  # Augmentation can be enabled or disabled
     )
 
     # Check data integrity
     check_data_integrity(dataset)
 
     # Split dataset
-    val_size = int(0.2 * len(dataset))
-    train_size = len(dataset) - val_size
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    np.random.seed(42)  # For reproducibility
+    train_dataset, val_dataset, test_dataset = split_dataset(dataset, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15)
+
+    print(f"Dataset split into {len(train_dataset)} training, {len(val_dataset)} validation, and {len(test_dataset)} test samples.")
 
     # Prepare data loaders
     train_loader = DataLoader(
@@ -268,43 +307,75 @@ def main():
         pin_memory=True
     )
 
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        collate_fn=collate_fn,
+        num_workers=0,
+        pin_memory=True
+    )
+
     # Set up optimizer and scheduler
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         mode='min',
         factor=0.1,
-        patience=5
+        patience=5,
+        verbose=True
     )
 
     # Move model to device
     model.to(device)
 
     # Training loop
-    best_loss = float('inf')
-    for epoch in range(num_epochs):
-        print(f"Starting epoch {epoch + 1}/{num_epochs}...")
-        avg_loss = train_epoch(model, train_loader, optimizer, device, epoch, scheduler, writer)
+    best_val_loss = float('inf')
 
-        # Save the best model
-        if avg_loss < best_loss:
-            best_loss = avg_loss
-            print(f"New best loss: {best_loss:.4f}. Saving model...")
-            model.save_pretrained("./detr_tool_tracking_model_best")
-            processor.save_pretrained("./detr_tool_tracking_model_best")
+    try:
+        for epoch in range(num_epochs):
+            print(f"Starting epoch {epoch + 1}/{num_epochs}...")
+            avg_train_loss = train_epoch(model, train_loader, optimizer, device, epoch, writer)
 
-        print(f"Epoch {epoch + 1} finished. Average Loss: {avg_loss:.4f}")
+            # Perform validation
+            avg_val_loss = validate_epoch(model, val_loader, device, epoch, writer)
 
-        # Early stopping check
-        if optimizer.param_groups[0]['lr'] < 1e-7:
-            print("Learning rate too small. Stopping training...")
-            break
+            # Adjust the learning rate based on validation loss
+            scheduler.step(avg_val_loss)
+
+            # Save the best model based on validation loss
+            if avg_val_loss < best_val_loss:
+                best_val_loss = avg_val_loss
+                print(f"New best validation loss: {best_val_loss:.4f}. Saving model...")
+                model.save_pretrained("./detr_tool_tracking_model_best")
+                processor.save_pretrained("./detr_tool_tracking_model_best")
+                print("Best model saved to: ./detr_tool_tracking_model_best")  # Dodano ścieżkę
+
+            print(f"Epoch {epoch + 1} finished. Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+
+            # Stop if validation loss is below threshold
+            if avg_val_loss <= validation_loss_threshold:
+                print(f"Validation loss has reached the threshold of {validation_loss_threshold}. Stopping training.")
+                break
+
+    except KeyboardInterrupt:
+        print("Training interrupted by user. Saving the current model...")
+        model.save_pretrained("./detr_tool_tracking_model_interrupted")
+        processor.save_pretrained("./detr_tool_tracking_model_interrupted")
+        print("Model and processor saved successfully.")
+        print("Interrupted model saved to: ./detr_tool_tracking_model_interrupted")  # Dodano ścieżkę
 
     # Save final model
     print("Saving final model and processor...")
     model.save_pretrained("./detr_tool_tracking_model_final")
     processor.save_pretrained("./detr_tool_tracking_model_final")
     print("Model and processor saved successfully.")
+    print("Final model saved to: ./detr_tool_tracking_model_final")  # Dodano ścieżkę
+
+    # Optional: Evaluate on test set
+    print("Evaluating on test set...")
+    test_loss = validate_epoch(model, test_loader, device, epoch, writer)
+    print(f"Test Loss: {test_loss:.4f}")
 
     # Close TensorBoard writer
     writer.close()

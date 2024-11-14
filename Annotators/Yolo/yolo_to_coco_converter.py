@@ -43,8 +43,8 @@ class YOLOtoCOCOConverter:
             ],
             "categories": [
                 {
-                    "id": 0,
-                    "name": "surgical_tool",
+                    "id": 1,
+                    "name": "tool",
                     "supercategory": "none"
                 }
             ],
@@ -52,7 +52,6 @@ class YOLOtoCOCOConverter:
             "annotations": []
         }
 
-        self.image_id = 0
         self.annotation_id = 0
 
     def convert_bbox_yolo_to_coco(
@@ -79,13 +78,17 @@ class YOLOtoCOCOConverter:
     def process_image(self, image_file: Path) -> None:
         """Process a single image and its corresponding label file."""
         try:
+            # Extract frame number from filename
+            # Assuming filenames are like 'frame_123.jpg'
+            frame_number = int(image_file.stem.split('_')[1])
+
             # Read image dimensions
             with Image.open(image_file) as img:
                 img_width, img_height = img.size
 
             # Add image info to COCO format
             self.coco_format["images"].append({
-                "id": self.image_id,
+                "id": frame_number,  # Use frame number as id
                 "file_name": image_file.name,
                 "width": img_width,
                 "height": img_height,
@@ -112,16 +115,14 @@ class YOLOtoCOCOConverter:
                         # Add annotation to COCO format
                         self.coco_format["annotations"].append({
                             "id": self.annotation_id,
-                            "image_id": self.image_id,
-                            "category_id": int(class_id),
+                            "image_id": frame_number,  # Use frame number as image_id
+                            "category_id": 1,
                             "bbox": bbox,
                             "area": area,
                             "iscrowd": 0
                         })
 
                         self.annotation_id += 1
-
-            self.image_id += 1
 
         except Exception as e:
             print(f"Error processing {image_file}: {str(e)}")
@@ -157,10 +158,10 @@ class YOLOtoCOCOConverter:
 
 
 def main():
-    # Ścieżki do folderów z przedziału 75-100
+    # Paths to directories
     images_dir = "output_frames/raw_images/76_100"
     labels_dir = "output_frames/annotations/76_100"
-    output_file = "output/coco_annotations_75_100.json"
+    output_file = "output/coco_annotations_76_100.json"
 
     converter = YOLOtoCOCOConverter(
         images_dir=images_dir,

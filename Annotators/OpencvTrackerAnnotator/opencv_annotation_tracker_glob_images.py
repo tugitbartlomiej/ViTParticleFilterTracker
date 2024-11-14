@@ -4,14 +4,15 @@ import os
 from glob import glob
 
 # Ścieżka do folderu z obrazami
-image_folder = 'F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output_frames/raw_images/0_25'
+image_folder = 'F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output_frames/annotations/76_100'
 image_files = sorted(
     glob(os.path.join(image_folder, "*.jpg")),
     key=lambda x: int(os.path.splitext(os.path.basename(x))[0].split('_')[1])
 )
 
 # Ścieżka do pliku z adnotacjami
-annotations_file = os.path.join("output", "annotations.json")
+# annotations_file = os.path.join("output", "annotations.json")
+annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output/coco_annotations_76_100.json"
 
 # Wczytaj istniejące adnotacje lub zainicjalizuj nową strukturę w formacie COCO
 if os.path.exists(annotations_file):
@@ -139,7 +140,7 @@ def remove_annotation_and_images(coco_data, frame_id):
 
 # Funkcja callback myszy
 def draw_rectangle(event, x, y, flags, param):
-    global ix, iy, drawing, rectangle, bbox, tracking, tracker, frame_display, frame_id, coco_data
+    global ix, iy, drawing, rectangle, bbox, tracking, tracker, frame_display, frame_id, coco_data, current_frame_image
 
     if event == cv2.EVENT_LBUTTONDOWN:
         drawing = True
@@ -183,18 +184,9 @@ def draw_rectangle(event, x, y, flags, param):
         tracking = False
         rectangle = None
 
-# Utwórz okno i ustaw callback myszy
-cv2.namedWindow("Tool Tracker")
-cv2.setMouseCallback("Tool Tracker", draw_rectangle)
-
-# Inicjalizacja zmiennych do nawigacji
-current_frame_index = 0
-total_frames = len(image_files)
-current_frame_image = None
-
 # Funkcja do ładowania i przygotowania obrazu
 def load_frame(index):
-    global current_frame_image, frame_display, frame_id, coco_data
+    global current_frame_image, frame_display, frame_id, coco_data, bbox, tracking, rectangle
     img_path = image_files[index]
     frame = cv2.imread(img_path)
     if frame is None:
@@ -228,14 +220,35 @@ def load_frame(index):
 
     cv2.putText(frame_display, f"Frame: {frame_id}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
     cv2.imshow("Tool Tracker", frame_display)
+
+    # Wypisz aktualnie przetwarzany frame i jego frame_id
+    print(f"Przetwarzany frame index: {index}, frame_id: {frame_id}")
+
+    # Zresetuj tracker i śledzenie przy ładowaniu nowej klatki
+    tracking = False
+    tracker = None
+    rectangle = None
+
     return True
+
+# Inicjalizacja zmiennych do nawigacji
+current_frame_index = 0
+total_frames = len(image_files)
+current_frame_image = None
+frame_display = None
+frame_id = None
+
+# Załaduj pierwszy obraz przed ustawieniem callbacku myszy
+if not load_frame(current_frame_index):
+    print("Failed to load initial frame.")
+    exit()
+
+# Utwórz okno i ustaw callback myszy
+cv2.namedWindow("Tool Tracker")
+cv2.setMouseCallback("Tool Tracker", draw_rectangle)
 
 # Główna pętla
 while True:
-    if current_frame_image is None:
-        if not load_frame(current_frame_index):
-            break
-
     if tracking and not paused:
         success, bbox = tracker.update(current_frame_image)
         if success:
@@ -256,8 +269,10 @@ while True:
 
     # Rysuj aktualny prostokąt podczas rysowania
     if drawing and rectangle is not None:
+        frame_display = current_frame_image.copy()
         x0, y0, x1, y1 = rectangle
         cv2.rectangle(frame_display, (x0, y0), (x1, y1), (0, 255, 0), 2)
+        cv2.putText(frame_display, f"Frame: {frame_id}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
     cv2.imshow("Tool Tracker", frame_display)
 
@@ -267,6 +282,9 @@ while True:
         if current_frame_index >= total_frames:
             print("Osiągnięto koniec folderu z obrazami.")
             break
+        else:
+            if not load_frame(current_frame_index):
+                break
     else:
         key = cv2.waitKey(1) & 0xFF  # Oczekiwanie na naciśnięcie klawisza lub zdarzenie myszy
 
@@ -283,7 +301,8 @@ while True:
             print("Osiągnięto koniec folderu z obrazami.")
             break
         else:
-            load_frame(current_frame_index)
+            if not load_frame(current_frame_index):
+                break
     elif key == ord('s'):  # Klawisz 'S' do pominięcia następnego obrazu bez śledzenia
         tracking = False  # Zatrzymanie śledzenia
         current_frame_index += 1
@@ -291,11 +310,13 @@ while True:
             print("Osiągnięto koniec folderu z obrazami.")
             break
         else:
-            load_frame(current_frame_index)
+            if not load_frame(current_frame_index):
+                break
     elif key == ord('a'):  # Klawisz 'A' do powrotu do poprzedniego obrazu
         if current_frame_index > 0:
             current_frame_index -= 1
-            load_frame(current_frame_index)
+            if not load_frame(current_frame_index):
+                break
         else:
             print("Już na pierwszym obrazie.")
     elif key == ord(' '):  # Spacja do pauzowania/wznawiania
