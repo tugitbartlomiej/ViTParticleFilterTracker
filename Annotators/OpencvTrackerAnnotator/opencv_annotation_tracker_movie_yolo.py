@@ -1,43 +1,46 @@
 import cv2
 import json
 import os
-from ultralytics import YOLO  # Import modelu YOLO
+from ultralytics import YOLO  # Import YOLO model
 import warnings
+import numpy as np
 
-# Tymczasowe wyciszenie FutureWarning (jeśli potrzebne)
+# Temporarily suppress FutureWarning (if needed)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# Ścieżka do pliku wideo
-video_path = 'E:/Cataract/videos/micro/train01.mp4'  # Podaj ścieżkę do swojego pliku wideo
+# Path to the video file
+video_path = 'E:/Cataract/videos/micro/train01.mp4'  # Provide your video file path
 
-# Ścieżka do modelu YOLO
-yolo_model_path = 'F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/surgical_tool_detection/exp11/weights/best.pt'  # Podaj ścieżkę do wytrenowanego modelu YOLO
+# Path to the YOLO model
+yolo_model_path = 'F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/surgical_tool_detection/exp11/weights/best.pt'  # Provide your YOLO model path
 
-# Inicjalizacja modelu YOLO
+frame_id = None
+
+# Initialize the YOLO model
 try:
     model = YOLO(yolo_model_path)
 except Exception as e:
-    print(f"Błąd podczas ładowania modelu YOLO: {e}")
+    print(f"Error loading YOLO model: {e}")
     exit()
 
-# Inicjalizacja wideo
+# Initialize video
 cap = cv2.VideoCapture(video_path)
 
 if not cap.isOpened():
-    print("Nie można otworzyć pliku wideo.")
+    print("Cannot open video file.")
     exit()
 
-# Ścieżka do pliku z adnotacjami
-annotations_file = os.path.join("output", "annotations.json")
+# Path to the annotations file
+annotations_file = os.path.join("output/Yolo", "annotations.json")
 
-# Wczytaj istniejące adnotacje lub zainicjalizuj nowe w formacie COCO
+# Load existing annotations or initialize new in COCO format
 if os.path.exists(annotations_file):
     try:
         with open(annotations_file, 'r') as f:
             coco_data = json.load(f)
-            print("Plik z adnotacjami został pomyślnie wczytany.")
+            print("Annotations file successfully loaded.")
     except json.JSONDecodeError:
-        print("Błąd: Plik z adnotacjami jest pusty lub zawiera nieprawidłowy JSON. Inicjalizacja nowej struktury adnotacji.")
+        print("Error: Annotations file is empty or contains invalid JSON. Initializing new annotation structure.")
         coco_data = {
             "info": {
                 "year": 2024,
@@ -53,7 +56,7 @@ if os.path.exists(annotations_file):
             ]
         }
 else:
-    print("Nie znaleziono pliku z adnotacjami. Inicjalizacja nowej struktury adnotacji.")
+    print("Annotations file not found. Initializing new annotation structure.")
     coco_data = {
         "info": {
             "year": 2024,
@@ -69,38 +72,48 @@ else:
         ]
     }
 
-# Zmienne do rysowania prostokąta
+# Variables for drawing rectangle
 drawing = False
-ix, iy = -1, -1  # Początkowe współrzędne x i y
+ix, iy = -1, -1  # Initial x and y coordinates
 rectangle = None
 
-# Pobierz całkowitą liczbę klatek
+# Get total number of frames
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-current_frame = 0  # Inicjalizacja bieżącego indeksu klatki
+current_frame = -1  # Initialize current frame index to -1
 
-# Foldery do zapisywania obrazów
-output_dir = "output"
+# Folders to save images
+output_dir = "output/Yolo"
 annotated_images_dir = os.path.join(output_dir, "Annotated_Images")
 raw_images_dir = os.path.join(output_dir, "Raw_Images")
 
 os.makedirs(annotated_images_dir, exist_ok=True)
 os.makedirs(raw_images_dir, exist_ok=True)
 
-# Instrukcje dla użytkownika
-print("Instrukcje:")
-print("- Naciśnij 'N', aby wykonać detekcję narzędzi za pomocą YOLO w bieżącej klatce.")
-print("- Użyj myszy, aby ręcznie zaznaczyć obszar (lewy przycisk myszy).")
-print("- Kliknij prawym przyciskiem myszy, aby usunąć istniejący bounding box dla bieżącej klatki.")
-print("- Naciśnij 'S', aby pominąć bieżącą klatkę.")
-print("- Naciśnij 'A', aby cofnąć się do poprzedniej klatki.")
-print("- Naciśnij 'Q' lub 'ESC', aby zakończyć.")
+# User instructions
+print("Instructions:")
+print("- Press 'N' to go to the next frame and perform tool detection using YOLO.")
+print("- Use the mouse to manually select an area (left mouse button).")
+print("- Right-click to remove existing bounding boxes for the current frame.")
+print("- Press 'S' to skip the current frame without detection.")
+print("- Press 'A' to go back to the previous frame.")
+print("- Press 'K' to save all annotations and raw images.")
+print("- Press 'Q' or 'ESC' to quit.")
 
-# Funkcja do zapisywania adnotacji
-def update_annotations(coco_data, frame_id, bbox, frame_shape, source='manual'):
-    """Aktualizuj adnotacje dla bieżącej klatki na podstawie podanego bounding boxa."""
+# Function to save annotations to JSON file
+def save_annotations(coco_data, annotations_file):
+    try:
+        with open(annotations_file, 'w') as f:
+            json.dump(coco_data, f, indent=4)
+        print(f"Annotations saved to {annotations_file}")
+    except TypeError as e:
+        print(f"Error saving annotations: {e}")
+
+# Modified update_annotations function
+def update_annotations(coco_data, frame_id, bboxes, frame_shape, source='manual', remove_existing=True):
+    """Update annotations for the current frame based on the given bounding boxes."""
     image_height, image_width = frame_shape[:2]
 
-    # Dodaj informacje o obrazie, jeśli nie istnieją
+    # Add image info if not exists
     if not any(img['id'] == frame_id for img in coco_data["images"]):
         coco_data["images"].append({
             "id": frame_id,
@@ -109,47 +122,60 @@ def update_annotations(coco_data, frame_id, bbox, frame_shape, source='manual'):
             "width": image_width
         })
 
-    # Usuń istniejące adnotacje dla tej klatki i tego źródła
-    coco_data["annotations"] = [ann for ann in coco_data["annotations"] if not (ann['image_id'] == frame_id and ann.get('source') == source)]
+    if remove_existing:
+        # Remove existing annotations of the same source for this frame
+        coco_data["annotations"] = [
+            ann for ann in coco_data["annotations"]
+            if not (ann['image_id'] == frame_id and ann['source'] == source)
+        ]
 
-    x_min, y_min, width, height = bbox
-    area = width * height
-
-    # Zapewnij unikalne ID adnotacji
     existing_ids = [ann['id'] for ann in coco_data["annotations"]]
     ann_id = max(existing_ids) + 1 if existing_ids else 1
 
-    coco_data["annotations"].append({
-        "id": ann_id,
-        "image_id": frame_id,
-        "category_id": 1,  # Zakładamy jedną kategorię
-        "bbox": [x_min, y_min, width, height],
-        "area": area,
-        "iscrowd": 0,
-        "source": source  # Dodaj źródło adnotacji
-    })
+    for bbox in bboxes:
+        x_min, y_min, width, height = bbox
 
-# Funkcja do usuwania adnotacji i obrazów
+        # Convert coordinates to native Python float types
+        x_min = float(x_min)
+        y_min = float(y_min)
+        width = float(width)
+        height = float(height)
+        area = width * height
+
+        coco_data["annotations"].append({
+            "id": ann_id,
+            "image_id": frame_id,
+            "category_id": 1,  # Assuming one category
+            "bbox": [x_min, y_min, width, height],
+            "area": area,
+            "iscrowd": 0,
+            "source": source  # Add source of annotation
+        })
+        ann_id += 1
+
+# Function to remove annotations and images
 def remove_annotation_and_images(coco_data, frame_id):
-    """Usuń adnotacje pochodzące z YOLO dla określonej klatki i powiązane obrazy z obu folderów."""
-    # Usuń adnotacje pochodzące z YOLO
-    coco_data["annotations"] = [ann for ann in coco_data["annotations"] if not (ann['image_id'] == frame_id and ann.get('source') == 'yolo')]
+    """Remove annotations for a specific frame and associated images from both folders."""
+    # Remove all annotations for this frame
+    coco_data["annotations"] = [
+        ann for ann in coco_data["annotations"] if ann['image_id'] != frame_id
+    ]
 
-    # Usuń powiązane obrazy z folderów Raw_Images i Annotated_Images
+    # Remove associated images from Raw_Images and Annotated_Images folders
     raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id:06d}.jpg")
     annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id:06d}.jpg")
 
     if os.path.exists(raw_image_path):
         os.remove(raw_image_path)
-        print(f"Surowy obraz dla klatki {frame_id} usunięty z folderu Raw_Images.")
+        print(f"Raw image for frame {frame_id} removed from Raw_Images folder.")
 
     if os.path.exists(annotated_image_path):
         os.remove(annotated_image_path)
-        print(f"Adnotowany obraz dla klatki {frame_id} usunięty z folderu Annotated_Images.")
+        print(f"Annotated image for frame {frame_id} removed from Annotated_Images folder.")
 
-    print(f"Adnotacja i obrazy dla klatki {frame_id} usunięte z obu folderów.")
+    print(f"Annotations and images for frame {frame_id} removed from both folders.")
 
-# Funkcja zwrotna myszy
+# Mouse callback function
 def mouse_callback(event, x, y, flags, param):
     global drawing, ix, iy, rectangle, frame_display, coco_data, frame_id, frame
 
@@ -173,68 +199,66 @@ def mouse_callback(event, x, y, flags, param):
         height = y1 - y0
         bbox = [x0, y0, width, height]
 
-        # Aktualizuj adnotacje jako ręczne
-        update_annotations(coco_data, frame_id, bbox, frame_display.shape, source='manual')
+        # Update annotations as 'manual', removing existing 'manual' annotations
+        update_annotations(coco_data, frame_id, [bbox], frame_display.shape, source='manual', remove_existing=True)
 
-        # Narysuj prostokąt na stałe (czerwony dla ręcznych)
-        cv2.rectangle(frame_display, (x0, y0), (x1, y1), (0, 0, 255), 2)
+        # Refresh frame_display and redraw all annotations
+        frame_display = frame.copy()
+        existing_annotations = [ann for ann in coco_data["annotations"] if ann['image_id'] == frame_id]
+        for ann in existing_annotations:
+            bbox_ann = ann['bbox']
+            x_min, y_min, width_ann, height_ann = bbox_ann
+            x0_ann = int(x_min)          # Corrected assignment
+            y0_ann = int(y_min)          # Corrected assignment
+            x1_ann = int(x_min + width_ann)
+            y1_ann = int(y_min + height_ann)
+            if ann.get('source') == 'manual':
+                color = (0, 0, 255)  # Manual annotations in red
+            else:
+                color = (255, 0, 0)  # YOLO annotations in blue
+            cv2.rectangle(frame_display, (x0_ann, y0_ann), (x1_ann, y1_ann), color, 2)
+
         cv2.imshow("Tool Tracker", frame_display)
 
-        # Zapisz obrazy
+        # Save images
         raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id:06d}.jpg")
         cv2.imwrite(raw_image_path, frame)
 
         annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id:06d}.jpg")
         cv2.imwrite(annotated_image_path, frame_display)
 
+        # Save annotations after manual update
+        save_annotations(coco_data, annotations_file)
+
     elif event == cv2.EVENT_RBUTTONDOWN:
-        # Usuń adnotacje pochodzące z YOLO dla bieżącej klatki
+        # Remove all annotations for the current frame
         remove_annotation_and_images(coco_data, frame_id)
 
-        # Odśwież wyświetlanie klatki bez YOLO bounding boxów
+        # Refresh frame display without bounding boxes
         frame_display = frame.copy()
-        # Dodaj ręczne adnotacje, jeśli istnieją
-        manual_annotations = [ann for ann in coco_data["annotations"] if ann['image_id'] == frame_id and ann.get('source') == 'manual']
-        for ann in manual_annotations:
-            bbox = ann['bbox']
-            x_min, y_min, width, height = bbox
-            p1 = (int(x_min), int(y_min))
-            p2 = (int(x_min + width), int(y_min + height))
-            cv2.rectangle(frame_display, p1, p2, (0, 0, 255), 2)  # Ręczne adnotacje na czerwono
-
-        # Dodaj informacje o obrazie do COCO, jeśli nie zostały jeszcze dodane
-        if not any(img['id'] == frame_id for img in coco_data["images"]):
-            coco_data["images"].append({
-                "id": frame_id,
-                "file_name": f"frame_{frame_id:06d}.jpg",
-                "height": frame.shape[0],
-                "width": frame.shape[1]
-            })
-
-        # Wyświetl numer klatki w lewym górnym rogu
-        cv2.putText(frame_display, f"Frame: {frame_id}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
-
-        # Wyświetl klatkę
+        # Display the frame
         cv2.imshow("Tool Tracker", frame_display)
 
-# Utwórz okno i ustaw funkcję zwrotną myszy
+        # Save annotations after deletion
+        save_annotations(coco_data, annotations_file)
+
+# Create window and set mouse callback function
 cv2.namedWindow("Tool Tracker")
 cv2.setMouseCallback("Tool Tracker", mouse_callback)
 
-# Funkcja do ładowania i wyświetlania klatki
+# Function to load and display a frame
 def load_and_display_frame(cap, current_frame, coco_data):
     cap.set(cv2.CAP_PROP_POS_FRAMES, current_frame)
     ret, frame = cap.read()
     if not ret:
-        print(f"Nie można odczytać klatki {current_frame}.")
+        print(f"Cannot read frame {current_frame}.")
         return None, None, None
 
     frame_id = current_frame + 1
 
     frame_display = frame.copy()
-    frame_raw = frame.copy()
 
-    # Dodaj informacje o obrazie do COCO, jeśli nie zostały jeszcze dodane
+    # Add image info to COCO if not already added
     if not any(img['id'] == frame_id for img in coco_data["images"]):
         coco_data["images"].append({
             "id": frame_id,
@@ -243,10 +267,10 @@ def load_and_display_frame(cap, current_frame, coco_data):
             "width": frame.shape[1]
         })
 
-    # Sprawdź, czy istnieją adnotacje dla tej klatki
+    # Check if there are annotations for this frame
     existing_annotations = [ann for ann in coco_data["annotations"] if ann['image_id'] == frame_id]
 
-    # Jeśli są adnotacje, narysuj je
+    # If there are annotations, draw them
     if existing_annotations:
         for ann in existing_annotations:
             bbox = ann['bbox']
@@ -254,134 +278,175 @@ def load_and_display_frame(cap, current_frame, coco_data):
             p1 = (int(x_min), int(y_min))
             p2 = (int(x_min + width), int(y_min + height))
             if ann.get('source') == 'manual':
-                color = (0, 0, 255)  # Ręczne adnotacje na czerwono
+                color = (0, 0, 255)  # Manual annotations in red
             else:
-                color = (255, 0, 0)  # YOLO adnotacje na niebiesko
+                color = (255, 0, 0)  # YOLO annotations in blue
             cv2.rectangle(frame_display, p1, p2, color, 2)
 
-    # Wyświetl numer klatki w lewym górnym rogu
+    # Display frame number in the top-left corner
     cv2.putText(frame_display, f"Frame: {frame_id}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
 
-    # Wyświetl klatkę
+    # Display the frame
     cv2.imshow("Tool Tracker", frame_display)
 
     return frame, frame_display, frame_id
 
-# Ładowanie i wyświetlanie pierwszej klatki
-frame, frame_display, frame_id = load_and_display_frame(cap, current_frame, coco_data)
-if frame is None:
+# Function to load the next frame
+def load_next_frame():
+    global current_frame, frame, frame_display, frame_id
+    current_frame += 1
+    if current_frame >= total_frames:
+        print("End of video.")
+        return False
+
+    frame_data = load_and_display_frame(cap, current_frame, coco_data)
+    if frame_data[0] is None:
+        return False
+
+    frame, frame_display, frame_id = frame_data
+    return True
+
+# Initially load the first frame
+if not load_next_frame():
     cap.release()
     cv2.destroyAllWindows()
     exit()
 
-# Dodaj flagę oznaczającą, czy aktualna klatka została już oznaczona przez YOLO
-annotated = False
-
 while True:
-    # Odczytaj naciśnięty klawisz (nie blokuj pętli)
+    # Read pressed key (do not block the loop)
     key = cv2.waitKey(1) & 0xFF
 
-    # Obsługa naciśnięć klawiszy
-    if key == ord('q') or key == 27:  # 'q' lub 'ESC' aby zakończyć
+    # Key press handling
+    if key == ord('q') or key == 27:  # 'q' or 'ESC' to quit
         break
-    elif key in [ord('n'), ord('N')]:  # Klawisz 'N' lub 'n' do wykonania detekcji YOLO i przejścia do następnej klatki
-        if not annotated:
-            # Sprawdź, czy manualne adnotacje istnieją dla tej klatki
-            manual_annotations = [ann for ann in coco_data["annotations"] if ann['image_id'] == frame_id and ann.get('source') == 'manual']
-            if manual_annotations:
-                print(f"Manualne adnotacje istnieją dla klatki {frame_id}. YOLO nie zostanie uruchomione.")
-            else:
-                # Wykonaj detekcję za pomocą YOLO
-                results = model(frame)
-                detections = results[0].boxes  # Pobierz detekcje z pierwszego wyniku
+    elif key in [ord('n'), ord('N')]:  # 'N' or 'n' to go to the next frame and YOLO detection
+        # Go to the next frame
+        if not load_next_frame():
+            break
 
-                print(f"Number of YOLO detections: {len(detections)}")
+        # Perform detection using YOLO
+        results = model(frame)
+        detections = results[0].boxes  # Get detections from the first result
 
-                if len(detections) > 0:
-                    for det in detections:
-                        bbox_xyxy = det.xyxy[0].cpu().numpy()  # [x_min, y_min, x_max, y_max]
-                        x_min, y_min, x_max, y_max = bbox_xyxy
-                        width = x_max - x_min
-                        height = y_max - y_min
-                        bbox = [x_min, y_min, width, height]
+        if len(detections) > 0:
+            bboxes = []
+            for det in detections:
+                bbox_xyxy = det.xyxy[0].cpu().numpy()  # [x_min, y_min, x_max, y_max]
+                x_min, y_min, x_max, y_max = bbox_xyxy
 
-                        # Aktualizuj adnotacje z 'source'='yolo'
-                        update_annotations(coco_data, frame_id, bbox, frame.shape, source='yolo')
+                # Convert to native Python float types
+                x_min = float(x_min)
+                y_min = float(y_min)
+                x_max = float(x_max)
+                y_max = float(y_max)
 
-                        # Narysuj prostokąt (niebieski dla YOLO)
-                        p1 = (int(x_min), int(y_min))
-                        p2 = (int(x_max), int(y_max))
-                        cv2.rectangle(frame_display, p1, p2, (255, 0, 0), 2)
+                width = x_max - x_min
+                height = y_max - y_min
+                bbox = [x_min, y_min, width, height]
+                bboxes.append(bbox)
 
-                        print(f"YOLO detected bbox: {bbox}")
+            # Update annotations with 'source'='yolo', removing existing 'yolo' annotations
+            update_annotations(coco_data, frame_id, bboxes, frame.shape, source='yolo', remove_existing=True)
 
-                    print(f"Detekcja zakończona dla klatki {frame_id}.")
+            # Refresh frame_display and redraw all annotations
+            frame_display = frame.copy()
+            existing_annotations = [ann for ann in coco_data["annotations"] if ann['image_id'] == frame_id]
+            for ann in existing_annotations:
+                bbox_ann = ann['bbox']
+                x_min, y_min, width_ann, height_ann = bbox_ann
+                x0_ann = int(x_min)          # Corrected assignment
+                y0_ann = int(y_min)          # Corrected assignment
+                x1_ann = int(x_min + width_ann)
+                y1_ann = int(y_min + height_ann)
+                if ann.get('source') == 'manual':
+                    color = (0, 0, 255)  # Manual annotations in red
                 else:
-                    print("Nie wykryto narzędzi w bieżącej klatce.")
+                    color = (255, 0, 0)  # YOLO annotations in blue
+                cv2.rectangle(frame_display, (x0_ann, y0_ann), (x1_ann, y1_ann), color, 2)
 
-                # Zapisz obrazy
-                raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id:06d}.jpg")
-                cv2.imwrite(raw_image_path, frame)
-                print(f"Raw image saved to {raw_image_path}")
+            print(f"Detection completed for frame {frame_id}.")
 
-                annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id:06d}.jpg")
-                cv2.imwrite(annotated_image_path, frame_display)
-                print(f"Annotated image saved to {annotated_image_path}")
-
-                # Wyświetl zaktualizowaną klatkę
-                cv2.imshow("Tool Tracker", frame_display)
-
-                # Ustaw flagę, że aktualna klatka została oznaczona przez YOLO
-                annotated = True
+            # Save annotations after YOLO detection
+            save_annotations(coco_data, annotations_file)
         else:
-            # Przejdź do następnej klatki
-            current_frame += 1
-            if current_frame >= total_frames:
-                print("Koniec wideo.")
-                break
+            print("No tools detected in the current frame.")
 
-            frame, frame_display, frame_id = load_and_display_frame(cap, current_frame, coco_data)
-            if frame is None:
-                break
+        # Save images
+        raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id:06d}.jpg")
+        cv2.imwrite(raw_image_path, frame)
 
-            # Reset flagi
-            annotated = False
+        annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id:06d}.jpg")
+        cv2.imwrite(annotated_image_path, frame_display)
 
-    elif key in [ord('s'), ord('S')]:  # 'S' lub 's' aby pominąć bieżącą klatkę
-        current_frame += 1
-        if current_frame >= total_frames:
-            print("Koniec wideo.")
+        # Display the updated frame
+        cv2.imshow("Tool Tracker", frame_display)
+
+    elif key in [ord('s'), ord('S')]:  # 'S' or 's' to skip the current frame
+        # Go to the next frame without detection
+        if not load_next_frame():
             break
 
-        frame, frame_display, frame_id = load_and_display_frame(cap, current_frame, coco_data)
-        if frame is None:
-            break
-
-        # Reset flagi
-        annotated = False
-
-    elif key in [ord('a'), ord('A')]:  # 'A' lub 'a' aby cofnąć się do poprzedniej klatki
+    elif key in [ord('a'), ord('A')]:  # 'A' or 'a' to go back to the previous frame
         if current_frame > 0:
-            current_frame -= 1
-            frame, frame_display, frame_id = load_and_display_frame(cap, current_frame, coco_data)
-            if frame is None:
-                current_frame += 1  # Cofnij, jeśli nie można odczytać
-            # Reset flagi
-            annotated = False
+            current_frame -= 2  # Go back by 2 because load_next_frame() will increment by 1
+            if not load_next_frame():
+                break
         else:
-            print("Już jesteś na pierwszej klatce.")
+            print("You are already at the first frame.")
 
-    elif key == ord(' '):  # Spacja aby wstrzymać/wznowić
-        # Możesz zaimplementować tutaj logikę wstrzymywania/wznawiania wideo
-        # Obecnie, przyciski kontrolują wszystko, więc spacja nie jest przypisana do żadnej akcji
-        print("Spacja została naciśnięta. Aktualnie nie jest przypisana żadna akcja.")
+    elif key in [ord('k'), ord('K')]:  # 'K' or 'k' to save all annotations and images
+        # Save annotations
+        save_annotations(coco_data, annotations_file)
 
-# Zwolnij obiekt VideoCapture i zamknij okna
+        # Save all raw images
+        for img in coco_data["images"]:
+            frame_num = img['id']
+            raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_num:06d}.jpg")
+            annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_num:06d}.jpg")
+
+            # Check if raw image exists before saving
+            if not os.path.exists(raw_image_path):
+                # Reconstruct frame filename based on current_frame and frame_id
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num - 1)
+                ret, frame_to_save = cap.read()
+                if ret:
+                    cv2.imwrite(raw_image_path, frame_to_save)
+                else:
+                    print(f"Failed to read frame {frame_num} for saving raw image.")
+
+            # Check if annotated image exists before saving
+            if not os.path.exists(annotated_image_path):
+                # Reconstruct frame_display based on annotations
+                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num - 1)
+                ret, frame_to_save = cap.read()
+                if ret:
+                    frame_display_to_save = frame_to_save.copy()
+                    annotations = [ann for ann in coco_data["annotations"] if ann['image_id'] == frame_num]
+                    for ann in annotations:
+                        bbox = ann['bbox']
+                        x_min, y_min, width, height = bbox
+                        x0 = int(x_min)
+                        y0 = int(y_min)
+                        x1 = int(x_min + width)
+                        y1 = int(y_min + height)
+                        if ann.get('source') == 'manual':
+                            color = (0, 0, 255)  # Manual annotations in red
+                        else:
+                            color = (255, 0, 0)  # YOLO annotations in blue
+                        cv2.rectangle(frame_display_to_save, (x0, y0), (x1, y1), color, 2)
+                    cv2.imwrite(annotated_image_path, frame_display_to_save)
+                else:
+                    print(f"Failed to read frame {frame_num} for saving annotated image.")
+
+        print("All annotations and images have been saved.")
+
+    elif key == ord(' '):  # Space to pause/resume
+        # Currently, space is not assigned to any action
+        print("Space was pressed. No action is currently assigned.")
+
+# Release the VideoCapture object and close windows
 cap.release()
 cv2.destroyAllWindows()
 
-# Zapisz dane COCO do pliku JSON
-with open(annotations_file, 'w') as f:
-    json.dump(coco_data, f, indent=4)
-
-print(f"Adnotacje COCO zapisane do {annotations_file}")
+# Save COCO data to JSON file upon exit
+save_annotations(coco_data, annotations_file)
