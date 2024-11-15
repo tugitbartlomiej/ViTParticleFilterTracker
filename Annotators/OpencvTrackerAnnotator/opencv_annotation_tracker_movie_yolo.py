@@ -33,6 +33,10 @@ if not cap.isOpened():
 # Path to the annotations file
 annotations_file = os.path.join("output/Yolo", "annotations.json")
 
+# Path to the YOLO annotations directory
+yolo_annotations_dir = os.path.join("output/Yolo", "Yolo_Annotations")
+os.makedirs(yolo_annotations_dir, exist_ok=True)
+
 # Load existing annotations or initialize new in COCO format
 if os.path.exists(annotations_file):
     try:
@@ -52,7 +56,7 @@ if os.path.exists(annotations_file):
             "images": [],
             "annotations": [],
             "categories": [
-                {"id": 1, "name": "tool", "supercategory": "none"}
+                {"id": 0, "name": "tool", "supercategory": "none"}  # Changed category_id to 0 for YOLO compatibility
             ]
         }
 else:
@@ -68,7 +72,7 @@ else:
         "images": [],
         "annotations": [],
         "categories": [
-            {"id": 1, "name": "tool", "supercategory": "none"}
+            {"id": 0, "name": "tool", "supercategory": "none"}  # Changed category_id to 0 for YOLO compatibility
         ]
     }
 
@@ -108,6 +112,60 @@ def save_annotations(coco_data, annotations_file):
     except TypeError as e:
         print(f"Error saving annotations: {e}")
 
+# Function to save annotations in YOLO format
+def save_yolo_annotations(coco_data, yolo_annotations_dir, frame_id):
+    """
+    Saves the annotations for a specific frame in YOLO format.
+    """
+    # Get image dimensions
+    image_info = next((img for img in coco_data["images"] if img["id"] == frame_id), None)
+    if not image_info:
+        print(f"No image info found for frame {frame_id}. Skipping YOLO annotation.")
+        return
+
+    img_width = image_info["width"]
+    img_height = image_info["height"]
+
+    # Get annotations for the frame
+    annotations = [ann for ann in coco_data["annotations"] if ann["image_id"] == frame_id]
+    if not annotations:
+        # If no annotations, remove existing YOLO annotation file if exists
+        yolo_file_path = os.path.join(yolo_annotations_dir, f"frame_{frame_id}.txt")
+        if os.path.exists(yolo_file_path):
+            os.remove(yolo_file_path)
+            print(f"Removed existing YOLO annotation file for frame {frame_id}.")
+        return
+
+    yolo_lines = []
+    for ann in annotations:
+        class_id = ann["category_id"]
+        x_min, y_min, width, height = ann["bbox"]
+
+        # Convert to YOLO format
+        x_center = (x_min + width / 2) / img_width
+        y_center = (y_min + height / 2) / img_height
+        norm_width = width / img_width
+        norm_height = height / img_height
+
+        # Ensure values are between 0 and 1
+        x_center = min(max(x_center, 0), 1)
+        y_center = min(max(y_center, 0), 1)
+        norm_width = min(max(norm_width, 0), 1)
+        norm_height = min(max(norm_height, 0), 1)
+
+        yolo_line = f"{class_id} {x_center:.6f} {y_center:.6f} {norm_width:.6f} {norm_height:.6f}"
+        yolo_lines.append(yolo_line)
+
+    # Write to YOLO annotation file
+    yolo_file_path = os.path.join(yolo_annotations_dir, f"frame_{frame_id}.txt")
+    try:
+        with open(yolo_file_path, 'w') as f:
+            for line in yolo_lines:
+                f.write(line + "\n")
+        print(f"YOLO annotations saved to {yolo_file_path}")
+    except Exception as e:
+        print(f"Error saving YOLO annotations for frame {frame_id}: {e}")
+
 # Modified update_annotations function
 def update_annotations(coco_data, frame_id, bboxes, frame_shape, source='manual', remove_existing=True):
     """Update annotations for the current frame based on the given bounding boxes."""
@@ -117,7 +175,7 @@ def update_annotations(coco_data, frame_id, bboxes, frame_shape, source='manual'
     if not any(img['id'] == frame_id for img in coco_data["images"]):
         coco_data["images"].append({
             "id": frame_id,
-            "file_name": f"frame_{frame_id:06d}.jpg",
+            "file_name": f"frame_{frame_id}.jpg",
             "height": image_height,
             "width": image_width
         })
@@ -130,7 +188,7 @@ def update_annotations(coco_data, frame_id, bboxes, frame_shape, source='manual'
         ]
 
     existing_ids = [ann['id'] for ann in coco_data["annotations"]]
-    ann_id = max(existing_ids) + 1 if existing_ids else 1
+    ann_id = max(existing_ids) + 1 if existing_ids else 0  # Start from 0 if no annotations
 
     for bbox in bboxes:
         x_min, y_min, width, height = bbox
@@ -145,13 +203,16 @@ def update_annotations(coco_data, frame_id, bboxes, frame_shape, source='manual'
         coco_data["annotations"].append({
             "id": ann_id,
             "image_id": frame_id,
-            "category_id": 1,  # Assuming one category
+            "category_id": 0,  # Assuming one category with ID 0 for YOLO compatibility
             "bbox": [x_min, y_min, width, height],
             "area": area,
             "iscrowd": 0,
             "source": source  # Add source of annotation
         })
         ann_id += 1
+
+    # After updating COCO annotations, also update YOLO annotations
+    save_yolo_annotations(coco_data, yolo_annotations_dir, frame_id)
 
 # Function to remove annotations and images
 def remove_annotation_and_images(coco_data, frame_id):
@@ -162,8 +223,9 @@ def remove_annotation_and_images(coco_data, frame_id):
     ]
 
     # Remove associated images from Raw_Images and Annotated_Images folders
-    raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id:06d}.jpg")
-    annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id:06d}.jpg")
+    raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id}.jpg")
+    annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id}.jpg")
+    yolo_file_path = os.path.join(yolo_annotations_dir, f"frame_{frame_id}.txt")
 
     if os.path.exists(raw_image_path):
         os.remove(raw_image_path)
@@ -173,7 +235,11 @@ def remove_annotation_and_images(coco_data, frame_id):
         os.remove(annotated_image_path)
         print(f"Annotated image for frame {frame_id} removed from Annotated_Images folder.")
 
-    print(f"Annotations and images for frame {frame_id} removed from both folders.")
+    if os.path.exists(yolo_file_path):
+        os.remove(yolo_file_path)
+        print(f"YOLO annotation file for frame {frame_id} removed from Yolo_Annotations folder.")
+
+    print(f"Annotations and images for frame {frame_id} removed from all folders.")
 
 # Mouse callback function
 def mouse_callback(event, x, y, flags, param):
@@ -221,10 +287,10 @@ def mouse_callback(event, x, y, flags, param):
         cv2.imshow("Tool Tracker", frame_display)
 
         # Save images
-        raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id:06d}.jpg")
+        raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id}.jpg")
         cv2.imwrite(raw_image_path, frame)
 
-        annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id:06d}.jpg")
+        annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id}.jpg")
         cv2.imwrite(annotated_image_path, frame_display)
 
         # Save annotations after manual update
@@ -262,7 +328,7 @@ def load_and_display_frame(cap, current_frame, coco_data):
     if not any(img['id'] == frame_id for img in coco_data["images"]):
         coco_data["images"].append({
             "id": frame_id,
-            "file_name": f"frame_{frame_id:06d}.jpg",
+            "file_name": f"frame_{frame_id}.jpg",
             "height": frame.shape[0],
             "width": frame.shape[1]
         })
@@ -288,6 +354,9 @@ def load_and_display_frame(cap, current_frame, coco_data):
 
     # Display the frame
     cv2.imshow("Tool Tracker", frame_display)
+
+    # After loading, save YOLO annotations
+    save_yolo_annotations(coco_data, yolo_annotations_dir, frame_id)
 
     return frame, frame_display, frame_id
 
@@ -372,10 +441,10 @@ while True:
             print("No tools detected in the current frame.")
 
         # Save images
-        raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id:06d}.jpg")
+        raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_id}.jpg")
         cv2.imwrite(raw_image_path, frame)
 
-        annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id:06d}.jpg")
+        annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_id}.jpg")
         cv2.imwrite(annotated_image_path, frame_display)
 
         # Display the updated frame
@@ -398,15 +467,20 @@ while True:
         # Save annotations
         save_annotations(coco_data, annotations_file)
 
+        # Save all YOLO annotations
+        for img in coco_data["images"]:
+            frame_num = img['id']
+            save_yolo_annotations(coco_data, yolo_annotations_dir, frame_num)
+
         # Save all raw images
         for img in coco_data["images"]:
             frame_num = img['id']
-            raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_num:06d}.jpg")
-            annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_num:06d}.jpg")
+            raw_image_path = os.path.join(raw_images_dir, f"frame_{frame_num}.jpg")
+            annotated_image_path = os.path.join(annotated_images_dir, f"frame_{frame_num}.jpg")
 
             # Check if raw image exists before saving
             if not os.path.exists(raw_image_path):
-                # Reconstruct frame filename based on current_frame and frame_id
+                # Reconstruct frame filename based on frame_num
                 cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num - 1)
                 ret, frame_to_save = cap.read()
                 if ret:
@@ -450,3 +524,10 @@ cv2.destroyAllWindows()
 
 # Save COCO data to JSON file upon exit
 save_annotations(coco_data, annotations_file)
+
+# Save YOLO annotations for all frames upon exit
+for img in coco_data["images"]:
+    frame_num = img['id']
+    save_yolo_annotations(coco_data, yolo_annotations_dir, frame_num)
+
+print("Final annotations saved. Program terminated successfully.")

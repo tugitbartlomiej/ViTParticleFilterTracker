@@ -4,7 +4,7 @@ from ultralytics import YOLO
 import os
 
 # Inicjalizacja modelu z pliku best.pt
-model = YOLO("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/surgical_tool_detection/exp11/weights/best.pt")
+model = YOLO("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/surgical_tool_detection/exp13/weights/best.pt")
 
 # Ścieżka do wideo
 video_path = "E:/Cataract/videos/micro/train01.mp4"

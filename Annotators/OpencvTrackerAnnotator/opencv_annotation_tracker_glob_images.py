@@ -4,7 +4,7 @@ import os
 from glob import glob
 
 # Ścieżka do folderu z obrazami
-image_folder = 'F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output_frames/annotations/76_100'
+image_folder = 'F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/Yolo/Raw_Images'
 image_files = sorted(
     glob(os.path.join(image_folder, "*.jpg")),
     key=lambda x: int(os.path.splitext(os.path.basename(x))[0].split('_')[1])
@@ -12,7 +12,7 @@ image_files = sorted(
 
 # Ścieżka do pliku z adnotacjami
 # annotations_file = os.path.join("output", "annotations.json")
-annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output/coco_annotations_76_100.json"
+annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/Yolo/annotations.json"
 
 # Wczytaj istniejące adnotacje lub zainicjalizuj nową strukturę w formacie COCO
 if os.path.exists(annotations_file):

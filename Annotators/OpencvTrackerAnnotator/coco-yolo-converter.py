@@ -47,9 +47,25 @@ class COCOtoYOLOConverter:
         print(f"Loading annotations from: {self.coco_annotations_path}")
         print(f"Loading images from: {self.images_dir}")
 
-        # Load COCO annotations
-        with open(self.coco_annotations_path, 'r') as f:
-            self.coco_data = json.load(f)
+        # Check if annotations file exists and is not empty
+        if not self.coco_annotations_path.exists():
+            raise FileNotFoundError(f"Annotations file not found: {self.coco_annotations_path}")
+
+        if self.coco_annotations_path.stat().st_size == 0:
+            raise ValueError(f"Annotations file is empty: {self.coco_annotations_path}")
+
+        # Load COCO annotations with error handling
+        try:
+            with open(self.coco_annotations_path, 'r', encoding='utf-8') as f:
+                self.coco_data = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
+            # Opcjonalnie: Wyświetlenie ostatnich kilku linii pliku w celu diagnostyki
+            with open(self.coco_annotations_path, 'r', encoding='utf-8') as f:
+                data = f.read()
+                print("Ostatnie 500 znaków pliku JSON:")
+                print(data[-500:])
+            raise
 
         # Get list of actual image files
         self.available_images = set(f.name for f in self.images_dir.glob("*.jpg"))
@@ -58,16 +74,16 @@ class COCOtoYOLOConverter:
         self.image_map = {}
         self.valid_image_info = []
 
-        print("\nVerifying image files...")
-        for img in self.coco_data['images']:
+        print("/nVerifying image files...")
+        for img in self.coco_data.get('images', []):
             if img['file_name'] in self.available_images:
                 self.image_map[img['id']] = img
                 self.valid_image_info.append(img)
             else:
                 print(f"Warning: Image {img['file_name']} from annotations not found in {self.images_dir}")
 
-        print(f"\nFound {len(self.available_images)} images in directory")
-        print(f"Found {len(self.coco_data['images'])} images in annotations")
+        print(f"/nFound {len(self.available_images)} images in directory")
+        print(f"Found {len(self.coco_data.get('images', []))} images in annotations")
         print(f"Found {len(self.valid_image_info)} valid images with matching files")
 
         # Create necessary directories
@@ -83,7 +99,7 @@ class COCOtoYOLOConverter:
     def _get_image_annotations(self) -> Dict[int, List]:
         """Group annotations by image ID."""
         image_annotations = {}
-        for ann in self.coco_data['annotations']:
+        for ann in self.coco_data.get('annotations', []):
             if ann['image_id'] in self.image_map:  # Only include annotations for valid images
                 if ann['image_id'] not in image_annotations:
                     image_annotations[ann['image_id']] = []
@@ -118,6 +134,7 @@ class COCOtoYOLOConverter:
         try:
             image_path = self.images_dir / image_info['file_name']
             if not image_path.exists():
+                print(f"Warning: Image file does not exist: {image_path}")
                 return False
 
             # Copy image
@@ -139,11 +156,12 @@ class COCOtoYOLOConverter:
                         img_width,
                         img_height
                     )
+                    # Zakładając, że klasa jest zawsze 'surgical_tool' z ID 0
                     yolo_ann = f"0 {bbox[0]:.6f} {bbox[1]:.6f} {bbox[2]:.6f} {bbox[3]:.6f}"
                     yolo_annotations.append(yolo_ann)
 
-                with open(label_path, 'w') as f:
-                    f.write('\n'.join(yolo_annotations))
+                with open(label_path, 'w', encoding='utf-8') as f:
+                    f.write("/n".join(yolo_annotations))
 
             return True
 
@@ -153,7 +171,7 @@ class COCOtoYOLOConverter:
 
     def convert(self):
         """Convert and split the dataset."""
-        print("\nStarting dataset conversion and splitting...")
+        print("/nStarting dataset conversion and splitting...")
 
         # Get valid image IDs and their annotations
         image_annotations = self._get_image_annotations()
@@ -181,7 +199,7 @@ class COCOtoYOLOConverter:
         # Process each split
         successful_conversions = 0
         for split_name, image_ids in splits_data.items():
-            print(f"\nProcessing {split_name} split ({len(image_ids)} images)...")
+            print(f"/nProcessing {split_name} split ({len(image_ids)} images)...")
             split_dir = self.dataset_dirs[split_name]
 
             with tqdm(total=len(image_ids)) as pbar:
@@ -196,24 +214,24 @@ class COCOtoYOLOConverter:
         # Create YAML config
         yaml_config = {
             'path': str(self.output_dir.absolute()),
-            'train': str(Path('train/images')),
-            'val': str(Path('val/images')),
-            'test': str(Path('test/images')),
+            'train': 'train/images',
+            'val': 'val/images',
+            'test': 'test/images',
             'names': {0: 'surgical_tool'},
             'nc': 1
         }
 
         yaml_path = self.output_dir / 'dataset.yaml'
-        with open(yaml_path, 'w') as f:
+        with open(yaml_path, 'w', encoding='utf-8') as f:
             yaml.dump(yaml_config, f, default_flow_style=False)
 
         # Print summary
-        print("\nDataset conversion completed!")
+        print("/nDataset conversion completed!")
         print(f"Successfully processed {successful_conversions} out of {total_images} images")
         print(f"Train set: {len(splits_data['train'])} images")
         print(f"Validation set: {len(splits_data['val'])} images")
         print(f"Test set: {len(splits_data['test'])} images")
-        print(f"\nDataset saved to: {self.output_dir}")
+        print(f"/nDataset saved to: {self.output_dir}")
         print("YAML configuration file created: dataset.yaml")
 
 
@@ -222,15 +240,15 @@ def main():
     current_dir = Path(__file__).parent
 
     # Wyświetl zawartość folderu Raw_Images
-    raw_images_dir = current_dir / "output" / "Raw_Images"
-    print("\nContents of Raw_Images directory:")
+    raw_images_dir = current_dir / "output" / "Yolo" / "Raw_Images"
+    print("/nContents of Raw_Images directory:")
     for file in raw_images_dir.glob("*"):
         print(f" - {file.name}")
 
     converter = COCOtoYOLOConverter(
-        coco_annotations_path=current_dir / "output" / "annotations.json",
-        images_dir=raw_images_dir,
-        output_dir=current_dir / "output" / "yolo_dataset"
+        coco_annotations_path="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/annotations.json",
+        images_dir="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/Raw_Images",
+        output_dir="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/yolo_dataset"
     )
 
     converter.convert()

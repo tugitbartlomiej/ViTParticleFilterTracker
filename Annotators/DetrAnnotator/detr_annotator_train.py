@@ -230,12 +230,12 @@ def main():
     print("Starting training...")
 
     # Paths
-    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output_frames/raw_images/76_100"
+    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/yolo_dataset/train/images"
     annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output/coco_annotations_76_100.json"
 
     # Training settings
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    num_epochs = 20
+    num_epochs = 68
     learning_rate = 1e-6
     batch_size = 8
     image_size = (800, 800)

@@ -129,7 +129,7 @@ class YOLOtoCOCOConverter:
 
     def convert(self) -> None:
         """Convert the entire dataset from YOLO to COCO format."""
-        print("\nStarting conversion from YOLO to COCO format...")
+        print("/nStarting conversion from YOLO to COCO format...")
 
         # Get all image files
         image_files = sorted(
@@ -151,7 +151,7 @@ class YOLOtoCOCOConverter:
         with open(self.output_file, 'w') as f:
             json.dump(self.coco_format, f, indent=2)
 
-        print(f"\nConversion completed. Results:")
+        print(f"/nConversion completed. Results:")
         print(f"Total images processed: {len(self.coco_format['images'])}")
         print(f"Total annotations: {len(self.coco_format['annotations'])}")
         print(f"COCO format annotations saved to: {self.output_file}")
@@ -159,8 +159,8 @@ class YOLOtoCOCOConverter:
 
 def main():
     # Paths to directories
-    images_dir = "output_frames/raw_images/76_100"
-    labels_dir = "output_frames/annotations/76_100"
+    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/yolo_dataset/train/images"
+    labels_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/yolo_dataset/train/labels"
     output_file = "output/coco_annotations_76_100.json"
 
     converter = YOLOtoCOCOConverter(
