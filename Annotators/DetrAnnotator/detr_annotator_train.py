@@ -32,7 +32,7 @@ class SurgicalToolDataset(torch.utils.data.Dataset):
         with open(annotations_file, 'r') as f:
             self.annotations = json.load(f)
 
-        # Map all category_ids to 0
+        # Ustawienie category_id na 0 dla wszystkich anotacji
         for ann in self.annotations['annotations']:
             ann['category_id'] = 0
 
@@ -205,7 +205,7 @@ def validate_epoch(model, data_loader, device, epoch, writer=None):
     return avg_loss
 
 
-def split_dataset(dataset, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
+def split_dataset(dataset, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1):
     assert train_ratio + val_ratio + test_ratio == 1, "Ratios must sum to 1."
 
     dataset_size = len(dataset)
@@ -230,14 +230,14 @@ def main():
     print("Starting training...")
 
     # Paths
-    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/yolo_dataset/train/images"
-    annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output/coco_annotations_76_100.json"
+    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/images"
+    annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/augmented_annotations_20241115_175519.json"
 
     # Training settings
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    num_epochs = 68
-    learning_rate = 1e-6
-    batch_size = 8
+    num_epochs = 50
+    learning_rate = 1e-5
+    batch_size = 4
     image_size = (800, 800)
 
     # Early stopping and thresholds
@@ -250,16 +250,16 @@ def main():
     print("Loading pre-trained DETR model and processor...")
     model = DetrForObjectDetection.from_pretrained(
         "facebook/detr-resnet-50",
-        num_labels=1,  # Setting one class
+        num_labels=1,  # Ustawiamy num_labels na 1 dla jednej klasy
         ignore_mismatched_sizes=True
     )
 
-    # Configure the model for one class
+    # Konfiguracja modelu dla jednej klasy
     model.config.id2label = {0: "surgical_tool"}
     model.config.label2id = {"surgical_tool": 0}
     model.config.num_labels = 1
 
-    # Initialize weights for the classifier
+    # Inicjalizacja warstwy klasyfikacyjnej
     num_channels = model.class_labels_classifier.in_features
     model.class_labels_classifier = torch.nn.Linear(num_channels, model.config.num_labels + 1)
 
@@ -284,7 +284,7 @@ def main():
 
     # Split dataset
     np.random.seed(42)  # For reproducibility
-    train_dataset, val_dataset, test_dataset = split_dataset(dataset, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15)
+    train_dataset, val_dataset, test_dataset = split_dataset(dataset, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1)
 
     print(f"Dataset split into {len(train_dataset)} training, {len(val_dataset)} validation, and {len(test_dataset)} test samples.")
 
@@ -349,7 +349,7 @@ def main():
                 print(f"New best validation loss: {best_val_loss:.4f}. Saving model...")
                 model.save_pretrained("./detr_tool_tracking_model_best")
                 processor.save_pretrained("./detr_tool_tracking_model_best")
-                print("Best model saved to: ./detr_tool_tracking_model_best")  # Dodano ścieżkę
+                print("Best model saved to: ./detr_tool_tracking_model_best")
 
             print(f"Epoch {epoch + 1} finished. Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
@@ -362,15 +362,14 @@ def main():
         print("Training interrupted by user. Saving the current model...")
         model.save_pretrained("./detr_tool_tracking_model_interrupted")
         processor.save_pretrained("./detr_tool_tracking_model_interrupted")
-        print("Model and processor saved successfully.")
-        print("Interrupted model saved to: ./detr_tool_tracking_model_interrupted")  # Dodano ścieżkę
+        print("Interrupted model saved to: ./detr_tool_tracking_model_interrupted")
 
     # Save final model
     print("Saving final model and processor...")
     model.save_pretrained("./detr_tool_tracking_model_final")
     processor.save_pretrained("./detr_tool_tracking_model_final")
     print("Model and processor saved successfully.")
-    print("Final model saved to: ./detr_tool_tracking_model_final")  # Dodano ścieżkę
+    print("Final model saved to: ./detr_tool_tracking_model_final")
 
     # Optional: Evaluate on test set
     print("Evaluating on test set...")
