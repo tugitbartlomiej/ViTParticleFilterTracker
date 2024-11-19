@@ -96,13 +96,13 @@ while True:
     elif key == ord(','):  # Przecinek - poprzednia klatka
         if current_frame > 0:
             current_frame -= 1
-    elif key == ord('d'):  # 'd' - skok o 40 klatek do przodu
+    elif key == ord('d'):  # 'd' - skok o 20 klatek do przodu
         current_frame = min(current_frame + 20, total_frames - 1)
-    elif key == ord('a'):  # 'a' - skok o 40 klatek do tyłu
+    elif key == ord('a'):  # 'a' - skok o 20 klatek do tyłu
         current_frame = max(current_frame - 20, 0)
-    elif key == ord('+') or key == ord('='):  # '+' - skok o 20 klatek do przodu
+    elif key == ord('+') or key == ord('='):  # '+' - skok o 8 klatek do przodu
         current_frame = min(current_frame + 8, total_frames - 1)
-    elif key == ord('-'):  # '-' - skok o 20 klatek do tyłu
+    elif key == ord('-'):  # '-' - skok o 8 klatek do tyłu
         current_frame = max(current_frame - 8, 0)
     elif key >= ord('1') and key <= ord('4'):  # Klawisze 1-4 - zapis sekwencji
         label_number = key - ord('0')
@@ -111,7 +111,7 @@ while True:
         # Określ zakres klatek do zapisania
         if label_number == 4:
             # Dla etykiety 4 (przebicie) zapisujemy sekwencję kończącą się na aktualnej klatce
-            start_frame = max(last_saved_frame + 1, current_frame - sequence_length)
+            start_frame = max(last_saved_frame + 1, current_frame - sequence_length + 1)
             end_frame = current_frame
         else:
             # Dla etykiet 1-3 zapisujemy sekwencję kończącą się tuż przed aktualną klatką
@@ -167,8 +167,8 @@ while True:
             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         })
 
-        # **Nowość:** Przesunięcie current_frame o liczbę zapisanych klatek
-        current_frame = end_frame + 1
+        # **Nowość:** Przesunięcie current_frame o liczbę zapisanych klatek (8)
+        current_frame += sequence_length
         if current_frame >= total_frames:
             current_frame = total_frames - 1
 
