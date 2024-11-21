@@ -22,6 +22,9 @@ class SurgicalVideoPredictor:
         self.class_mapping = self._load_class_mapping()
         print(f"Załadowano mapowanie klas: {self.class_mapping}")
 
+        # Utwórz odwrotne mapowanie z id klasy na nazwę klasy
+        self.id_to_class = {v: k for k, v in self.class_mapping.items()}
+
         # Inicjalizacja procesora i modelu
         self.processor = AutoImageProcessor.from_pretrained("facebook/timesformer-base-finetuned-k400")
         self.model = TimesformerForVideoClassification.from_pretrained(
@@ -43,34 +46,19 @@ class SurgicalVideoPredictor:
 
     def _load_class_mapping(self):
         """
-        Generuje i wczytuje mapowanie klas z plików description.txt.
-        Jeśli mapping już istnieje w pliku JSON, wczytuje go.
+        Wczytuje mapowanie klas z pliku JSON w formacie {"nazwa_klasy": id_klasy}.
         """
-        mapping_file = "class_mapping.json"
+        mapping_file = "./zapisane_sekwencje/class_mapping.json"
 
-        # Jeśli plik mapowania już istnieje, wczytaj go
+        # Sprawdź, czy plik mapowania istnieje
         if os.path.exists(mapping_file):
             with open(mapping_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-
-        # W przeciwnym razie wygeneruj nowe mapowanie
-        class_mapping = {}
-        seq_folders = sorted([d for d in os.listdir('zapisane_sekwencje')
-                              if os.path.isdir(os.path.join('zapisane_sekwencje', d))])
-
-        for folder in seq_folders:
-            desc_file = os.path.join('zapisane_sekwencje', folder, 'description.txt')
-            if os.path.exists(desc_file):
-                with open(desc_file, 'r', encoding='utf-8') as f:
-                    class_name = f.read().strip()
-                    if class_name not in class_mapping.values():
-                        class_mapping[str(len(class_mapping))] = class_name
-
-        # Zapisz wygenerowane mapowanie do pliku JSON
-        with open(mapping_file, 'w', encoding='utf-8') as f:
-            json.dump(class_mapping, f, ensure_ascii=False, indent=2)
-
-        return class_mapping
+                class_mapping = json.load(f)
+                # Upewnij się, że identyfikatory klas są liczbami całkowitymi
+                class_mapping = {k: int(v) for k, v in class_mapping.items()}
+                return class_mapping
+        else:
+            raise FileNotFoundError(f"Nie znaleziono pliku mapowania klas: {mapping_file}")
 
     def add_text_with_background(self, image, text, position, font_scale=0.7, thickness=2,
                                  text_color=(255, 255, 255), bg_color=(0, 0, 0)):
@@ -154,15 +142,15 @@ class SurgicalVideoPredictor:
                     predicted_class = torch.argmax(probs, dim=1).item()
                     confidence = probs[0][predicted_class].item()
 
-                    # Sprawdź pewność predykcji
-                # if confidence < 0.75:  # próg 75%
-                #     prediction_text = "Brak wykrycia czynnosci"
-                # else:
-                    # Pobierz nazwę klasy z mapowania
-                class_name = self.class_mapping.get(str(predicted_class), f"Nieznana klasa {predicted_class}")
-                prediction_text = f"{class_name} ({confidence:.2f})"
+                # Sprawdź pewność predykcji
+                if confidence < 0.15:  # próg 15%
+                    prediction_text = "Brak wykrycia czynności. Pewność poniżej 0.15"
+                else:
+                    # Pobierz nazwę klasy z odwrotnego mapowania
+                    class_name = self.id_to_class.get(predicted_class, f"Nieznana klasa {predicted_class}")
+                    prediction_text = f"{class_name} ({confidence:.2f})"
 
-                    # Dodaj numer klatki w lewym górnym rogu z tłem
+                # Dodaj numer klatki w lewym górnym rogu z tłem
                 frame_text = f"Frame: {frame_count}/{total_frames}"
                 self.add_text_with_background(frame, frame_text, (10, 30))
 
