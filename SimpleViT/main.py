@@ -1,7 +1,8 @@
+import torch
+
 from data_handler import DatasetHandler
 from trainer import Trainer
 from vision_transformer import VisionTransformer
-import torch
 
 # Sprawdzenie dostępności CUDA
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -1,12 +1,14 @@
+import os
+
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from einops.layers.torch import Rearrange
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-from einops.layers.torch import Rearrange
-import matplotlib.pyplot as plt
-import os
-import numpy as np
+
 
 # Definicja modelu Vision Transformer (ViT)
 class PatchEmbedding(nn.Module):

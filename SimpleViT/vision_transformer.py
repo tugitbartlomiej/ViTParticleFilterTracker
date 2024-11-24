@@ -1,7 +1,7 @@
+import torch
 from einops.layers.torch import Rearrange
 from torch import nn
 from vit_pytorch.ats_vit import pair
-import torch
 
 from attention import Attention
 from feed_forward import FeedForward
