@@ -6,7 +6,7 @@ import cv2
 
 # Parametry
 video_path = 'E:/Cataract/videos/micro/train01.mp4'  # Ścieżka do pliku wideo
-save_folder = 'zapisane_sekwencje'  # Główny folder do zapisywania sekwencji
+save_folder = 'SavedSequences'  # Główny folder do zapisywania sekwencji
 sequence_length = 8  # Liczba klatek przed aktualną klatką do zapisania
 
 # Upewnij się, że główny folder do zapisywania istnieje

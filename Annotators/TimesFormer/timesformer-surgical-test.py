@@ -20,7 +20,7 @@ class SurgicalVideoPredictor:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # Załaduj mapowanie klas
-        with open('class_mapping.json', 'r') as f:
+        with open('ClassMapping/class_mapping.json', 'r') as f:
             self.class_mapping = json.load(f)
 
         # Inicjalizacja modelu
@@ -159,7 +159,7 @@ class SurgicalVideoPredictor:
 
 def main():
     # Ścieżki
-    model_path = 'best_surgical_timesformer.pth'
+    model_path = 'Models/best_surgical_timesformer.pth'
     video_path = 'E:/Cataract/videos/micro/train01.mp4'
     output_path = 'predictions_output.mp4'
 

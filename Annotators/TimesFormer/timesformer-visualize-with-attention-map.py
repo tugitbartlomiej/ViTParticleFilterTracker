@@ -15,7 +15,7 @@ class SurgicalVideoPredictor:
         torch.cuda.empty_cache()
 
         # Wczytanie mapowania klas
-        with open('class_mapping.json', 'r', encoding='utf-8') as f:
+        with open('ClassMapping/class_mapping.json', 'r', encoding='utf-8') as f:
             self.class_mapping = json.load(f)
 
         # Inicjalizacja modelu
@@ -190,7 +190,7 @@ def main():
     predictor = SurgicalVideoPredictor()
     predictor.process_video(
         video_path='E:/Cataract/videos/micro/train01.mp4',
-        output_path='output_predictions.mp4',
+        output_path='Video/output_predictions.mp4',
         show_preview=True
     )
 

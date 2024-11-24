@@ -25,7 +25,7 @@ class SurgicalVideoDataset(Dataset):
         self.num_frames = num_frames
         self.samples = []
         self.classes = {}
-        self.class_mapping_file = os.path.join(sequences_dir, 'class_mapping.json')
+        self.class_mapping_file = os.path.join(sequences_dir, 'ClassMapping/class_mapping.json')
         self._load_class_mapping()
         self._load_sequences()
 
@@ -207,12 +207,12 @@ def train_model(model, train_loader, val_loader, num_epochs, device, writer=None
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'val_acc': val_acc,
-            }, 'best_surgical_timesformer.pth')
+            }, 'Models/best_surgical_timesformer.pth')
 
 
 def main():
     # Konfiguracja
-    sequences_dir = './zapisane_sekwencje'
+    sequences_dir = 'SavedSequences'
     num_frames = 8  # Ustawienie liczby klatek na 8
     batch_size = 2
     num_epochs = 5
@@ -227,7 +227,7 @@ def main():
         return
 
     # Wczytaj mapping klas
-    class_mapping_file = os.path.join(sequences_dir, 'class_mapping.json')
+    class_mapping_file = os.path.join(sequences_dir, 'ClassMapping/class_mapping.json')
     with open(class_mapping_file, 'r', encoding='utf-8') as f:
         class_mapping = json.load(f)
 

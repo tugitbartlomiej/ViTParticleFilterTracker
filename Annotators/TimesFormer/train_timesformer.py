@@ -38,7 +38,7 @@ def train_one_epoch(model, dataloader, optimizer, criterion, device):
 
 def main():
     # Konfiguracja
-    seq_dir = './zapisane_sekwencje/'
+    seq_dir = 'SavedSequences/'
     num_frames = 8  # Zmieniono na 8 klatek
     batch_size = 2
     num_epochs = 5

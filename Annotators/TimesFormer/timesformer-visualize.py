@@ -9,7 +9,7 @@ from transformers import TimesformerForVideoClassification, AutoImageProcessor
 
 
 class SurgicalVideoPredictor:
-    def __init__(self, model_path='best_surgical_timesformer.pth'):
+    def __init__(self, model_path='./Models/best_surgical_timesformer.pth'):
         """
         Inicjalizacja predyktora dla sekwencji chirurgicznych.
 
@@ -48,7 +48,7 @@ class SurgicalVideoPredictor:
         """
         Wczytuje mapowanie klas z pliku JSON w formacie {"nazwa_klasy": id_klasy}.
         """
-        mapping_file = "./zapisane_sekwencje/class_mapping.json"
+        mapping_file = "SavedSequences/class_mapping.json"
 
         # Sprawdź, czy plik mapowania istnieje
         if os.path.exists(mapping_file):
@@ -188,7 +188,7 @@ def main():
     predictor = SurgicalVideoPredictor()
     predictor.predict_video_with_visualization(
         video_path='E:/Cataract/videos/micro/train01.mp4',
-        output_path='output_predictions.mp4'
+        output_path='Video/output_predictions.mp4'
     )
 
 
