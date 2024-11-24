@@ -186,7 +186,6 @@ class SurgicalVideoPredictor:
                 cv2.destroyAllWindows()
             torch.cuda.empty_cache()
 
-
 def main():
     predictor = SurgicalVideoPredictor()
     predictor.process_video(
