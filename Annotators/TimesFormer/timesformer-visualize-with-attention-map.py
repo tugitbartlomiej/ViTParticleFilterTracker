@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 
 import cv2
 import numpy as np
@@ -186,13 +187,20 @@ class SurgicalVideoPredictor:
                 cv2.destroyAllWindows()
             torch.cuda.empty_cache()
 
+
 def main():
+    os.makedirs('Video', exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename = f'Video/predictions_attention_{timestamp}.mp4'
+
     predictor = SurgicalVideoPredictor()
     predictor.process_video(
         video_path='E:/Cataract/videos/micro/train01.mp4',
-        output_path='Video/output_predictions.mp4',
+        output_path=output_filename,
         show_preview=True
     )
+
+    print(f"Zapisano wideo z mapą uwagi do: {output_filename}")
 
 
 if __name__ == "__main__":

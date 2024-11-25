@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 
 import cv2
 import torch
@@ -184,12 +185,20 @@ class SurgicalVideoPredictor:
 
 
 def main():
-    # Przykład użycia
+    # Utwórz folder Video jeśli nie istnieje
+    os.makedirs('Video', exist_ok=True)
+
+    # Generuj nazwę pliku ze znacznikiem czasowym
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename = f'Video/predictions_{timestamp}.mp4'
+
     predictor = SurgicalVideoPredictor()
     predictor.predict_video_with_visualization(
         video_path='E:/Cataract/videos/micro/train01.mp4',
-        output_path='Video/output_predictions.mp4'
+        output_path=output_filename
     )
+
+    print(f"Zapisano wideo z predykcjami do: {output_filename}")
 
 
 if __name__ == "__main__":
