@@ -1,9 +1,9 @@
-import json
 import os
+import json
 from datetime import datetime
-
 import cv2
 import torch
+import numpy as np
 from PIL import Image
 from transformers import TimesformerForVideoClassification, AutoImageProcessor
 
@@ -250,16 +250,20 @@ class TimesformerAutoAnnotator:
                     elif key & 0xFF == ord('s') and self.mode == 'step':
                         self.save_sequence(self.frames_buffer, class_name, confidence)
                     elif key & 0xFF == ord(','):  # Poprzednia klatka
-                        if self.current_frame > 1:
-                            self.current_frame -= 2
+                        if self.current_frame > 8:  # Upewnij się, że jest wystarczająco klatek do tyłu
+                            # Przesunięcie o jedną klatkę do tyłu
+                            self.current_frame -= 9  # -9 bo zostanie zwiększone o 1 w następnej iteracji
                             cap.set(cv2.CAP_PROP_POS_FRAMES, self.current_frame)
-                            self.frames_buffer = []
+                            self.frames_buffer = []  # Wyczyść bufor
+                            self.all_frames = []  # Wyczyść historię
+                            continue
                     elif key & 0xFF == ord('.'):  # Następna klatka
                         if self.current_frame < total_frames:
                             continue
 
-                # Usuń najstarszą klatkę z bufora
-                self.frames_buffer.pop(0)
+                # Usuń najstarszą klatkę z bufora jeśli nie jest pusty
+                if self.frames_buffer:
+                    self.frames_buffer.pop(0)
 
                 # Zachowaj tylko ostatnie 16 klatek w historii (dla trybu ciągłego)
                 if len(self.all_frames) > 16:
