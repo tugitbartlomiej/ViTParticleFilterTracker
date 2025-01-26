@@ -1,15 +1,16 @@
 import os
+import warnings
+
 import torch
 from ultralytics import YOLO
 
-import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="torch")
 
 # Sprawdzenie dostępności CUDA
 print("CUDA is available:", torch.cuda.is_available())
 
 # Wczytanie modelu YOLO
-model = YOLO("yolov8n.pt")  # Wersja 'n' (nano) modelu
+model = YOLO("yolov8l.pt")  # Wersja 'n' (nano) modelu
 print("YOLOv8 is ready.")
 
 # Wyświetlenie wersji bibliotek

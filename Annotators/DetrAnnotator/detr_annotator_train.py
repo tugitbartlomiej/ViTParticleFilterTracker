@@ -1,14 +1,15 @@
-import torch
-from torch.utils.data import DataLoader, random_split, Subset
-from transformers import DetrForObjectDetection, DetrImageProcessor
-import os
 import json
-from PIL import Image
-from tqdm.auto import tqdm
-from torchvision import transforms
-from torch.utils.tensorboard import SummaryWriter
-import time
+import os
+
 import numpy as np
+import torch
+from PIL import Image
+from torch.utils.data import DataLoader, Subset
+from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
+from tqdm.auto import tqdm
+from transformers import DetrForObjectDetection, DetrImageProcessor
+
 
 class SurgicalToolDataset(torch.utils.data.Dataset):
     def __init__(self, images_dir, annotations_file, processor, image_size=(800, 800), augment=False):
@@ -230,12 +231,12 @@ def main():
     print("Starting training...")
 
     # Paths
-    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/images"
-    annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/augmented_annotations_20241115_175519.json"
+    images_dir = "./augmented_dataset/images"
+    annotations_file = "./augmented_dataset/augmented_annotations_20241115_175519.json"
 
     # Training settings
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    num_epochs = 50
+    num_epochs = 40
     learning_rate = 1e-5
     batch_size = 4
     image_size = (800, 800)
