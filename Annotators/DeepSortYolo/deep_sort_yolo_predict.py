@@ -2,115 +2,91 @@ import os
 import random
 
 import cv2
-from deep_sort_realtime.deepsort_tracker import DeepSort
+import numpy as np
 from ultralytics import YOLO
+
+from Annotators.DeepSortYolo.sort.sort import Sort  # Upewnij się, że moduł SORT jest zainstalowany
 
 
 class ObjectTracker:
     def __init__(self, yolo_weights_path: str, conf_threshold: float = 0.5, iou_threshold: float = 0.45):
         """
-        Inicjalizacja trackera obiektów.
-
-        Args:
-            yolo_weights_path: Ścieżka do wag modelu YOLO
-            conf_threshold: Próg pewności dla detekcji YOLO
-            iou_threshold: Próg IoU dla non-maximum suppression
+        Inicjalizacja trackera obiektów z użyciem YOLOv8 do detekcji oraz SORT do śledzenia.
         """
         self.conf_threshold = conf_threshold
         self.iou_threshold = iou_threshold
 
-        # Inicjalizacja modelu YOLO
+        # Inicjalizacja modelu YOLOv8
         self.model = YOLO(yolo_weights_path)
 
-        # Inicjalizacja DeepSort z dostosowanymi parametrami
-        self.tracker = DeepSort(
-            max_age=30,
-            n_init=3,
-            max_cosine_distance=0.3,
-            nn_budget=100,
-            min_detection_height=20,
-        )
+        # Inicjalizacja algorytmu SORT
+        self.tracker = Sort(max_age=30, min_hits=3, iou_threshold=0.3)
 
-        # Słownik do przechowywania kolorów dla poszczególnych ID
+        # Słownik do przypisywania kolorów dla poszczególnych ID
         self.color_map = {}
 
-        # Słownik do przechowywania historii trajektorii
-        self.track_history = {}
-
     def generate_random_color(self):
-        """Generuje losowy kolor w formacie BGR."""
+        """Generates a random BGR color."""
         return tuple(random.randint(0, 255) for _ in range(3))
 
     def get_track_color(self, track_id: int):
-        """Zwraca kolor dla danego ID, generując nowy jeśli nie istnieje."""
+        """Returns a consistent color for a given track ID."""
         if track_id not in self.color_map:
             self.color_map[track_id] = self.generate_random_color()
         return self.color_map[track_id]
 
     def validate_bbox_size(self, bbox, frame_shape, max_ratio=0.5):
         """
-        Sprawdza czy bounding box nie jest zbyt duży względem klatki.
-
-        Args:
-            bbox: Bounding box w formacie [x1, y1, x2, y2]
-            frame_shape: Kształt klatki (height, width, channels)
-            max_ratio: Maksymalny dozwolony stosunek wymiarów boksu do wymiarów klatki
+        Sprawdza, czy rozmiar bounding boxa nie przekracza ustalonego stosunku względem rozmiarów klatki.
         """
         frame_height, frame_width = frame_shape[:2]
         bbox_width = bbox[2] - bbox[0]
         bbox_height = bbox[3] - bbox[1]
-
         width_ratio = bbox_width / frame_width
         height_ratio = bbox_height / frame_height
-
         return width_ratio < max_ratio and height_ratio < max_ratio
 
-    def scale_bbox(self, bbox, scale_factor=0.8):
+    def scale_bbox(self, bbox, scale_factor=0.6):
         """
         Skaluje bounding box względem jego środka.
-
-        Args:
-            bbox: Bounding box w formacie [x1, y1, x2, y2]
-            scale_factor: Współczynnik skalowania (< 1 zmniejsza, > 1 zwiększa)
+        Dzięki temu, podobnie jak w poprzednich rozwiązaniach, okno wychwytuje końcówkę narzędzia.
         """
-        width = bbox[2] - bbox[0]
-        height = bbox[3] - bbox[1]
-        center_x = (bbox[0] + bbox[2]) / 2
-        center_y = (bbox[1] + bbox[3]) / 2
+        x1, y1, x2, y2 = bbox
+        width = x2 - x1
+        height = y2 - y1
+        center_x = (x1 + x2) / 2
+        center_y = (y1 + y2) / 2
 
         new_width = width * scale_factor
         new_height = height * scale_factor
 
-        x1 = center_x - new_width / 2
-        y1 = center_y - new_height / 2
-        x2 = center_x + new_width / 2
-        y2 = center_y + new_height / 2
+        new_x1 = center_x - new_width / 2
+        new_y1 = center_y - new_height / 2
+        new_x2 = center_x + new_width / 2
+        new_y2 = center_y + new_height / 2
 
-        return [x1, y1, x2, y2]
+        return [new_x1, new_y1, new_x2, new_y2]
 
     def draw_debug_info(self, frame, bbox, color=(0, 255, 0), label=""):
         """
-        Rysuje bounding box z dodatkowymi informacjami debugowania.
+        Rysuje bounding box oraz etykietę na klatce.
         """
         x1, y1, x2, y2 = map(int, bbox)
-        width = x2 - x1
-        height = y2 - y1
-
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-        debug_text = f"{label} {width}x{height}"
-        cv2.putText(frame, debug_text, (x1, y1 - 10),
+        cv2.putText(frame, label, (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
         return frame
+
+    def convert_yolo_to_sort_format(self, yolo_box, confidence):
+        """
+        Konwertuje bounding box z YOLO ([x1, y1, x2, y2]) do formatu SORT ([x1, y1, x2, y2, confidence]).
+        """
+        x1, y1, x2, y2 = yolo_box
+        return [x1, y1, x2, y2, confidence]
 
     def process_video(self, input_video_path: str, output_video_path: str = None, debug_mode: bool = False):
         """
-        Przetwarza wideo, wykonując detekcję i śledzenie obiektów.
-
-        Args:
-            input_video_path: Ścieżka do pliku wejściowego
-            output_video_path: Ścieżka do pliku wyjściowego (opcjonalna)
-            debug_mode: Czy wyświetlać dodatkowe informacje debugowania
+        Przetwarza wideo: wykrywanie obiektów przy użyciu YOLOv8 oraz śledzenie przy użyciu SORT.
         """
         if output_video_path is None:
             base_name = os.path.splitext(os.path.basename(input_video_path))[0]
@@ -138,82 +114,61 @@ class ObjectTracker:
                 frame_count += 1
                 print(f"\rPrzetwarzanie klatki: {frame_count}/{total_frames}", end="")
 
-                # Detekcja YOLO
+                # Detekcja przy użyciu YOLOv8
                 results = self.model(frame, conf=self.conf_threshold, iou=self.iou_threshold)
                 detections = []
 
-                # Przetwarzanie detekcji
+                # Przetwarzanie wyników detekcji
                 for r in results:
                     boxes = r.boxes.xyxy.cpu().numpy()
                     confs = r.boxes.conf.cpu().numpy()
-                    clss = r.boxes.cls.cpu().numpy()
-
-                    for box, conf, cls_ in zip(boxes, confs, clss):
-                        # Skalowanie i walidacja rozmiaru boksu
-                        scaled_box = self.scale_bbox(box, scale_factor=0.8)
-
+                    for box, conf in zip(boxes, confs):
+                        # Skalowanie boksu, aby wychwycić końcówkę narzędzia
+                        scaled_box = self.scale_bbox(box, scale_factor=0.6)
                         if self.validate_bbox_size(scaled_box, frame.shape):
-                            detections.append((scaled_box, conf, int(cls_)))
-
+                            detection = self.convert_yolo_to_sort_format(scaled_box, conf)
+                            detections.append(detection)
                             if debug_mode:
-                                # Pokaż oryginalne detekcje YOLO
                                 self.draw_debug_info(frame, box, (0, 255, 0), "YOLO")
-                                # Pokaż przeskalowane boxy
-                                self.draw_debug_info(frame, scaled_box, (255, 0, 0), "Scaled")
+                                # self.draw_debug_info(frame, scaled_box, (255, 0, 0), "Scaled")
 
-                # Aktualizacja trackera
-                tracks = self.tracker.update_tracks(detections, frame=frame)
+                # SORT oczekuje numpy array o kształcie (N, 5)
+                if len(detections) > 0:
+                    dets = np.array(detections)
+                else:
+                    dets = np.empty((0, 5))
 
-                # Rysowanie śledzonych obiektów
+                # Aktualizacja trackera SORT
+                tracks = self.tracker.update(dets)
+                # Każdy rekord w tracks ma postać [x1, y1, x2, y2, track_id]
                 for track in tracks:
-                    if not track.is_confirmed():
-                        continue
-
-                    bbox = track.to_ltrb()
-                    track_id = track.track_id
-                    color = self.get_track_color(track_id)
-
+                    x1, y1, x2, y2, track_id = track
+                    color = self.get_track_color(int(track_id))
                     if debug_mode:
-                        self.draw_debug_info(frame, bbox, color, f"ID:{track_id}")
+                        self.draw_debug_info(frame, [x1, y1, x2, y2], color, f"ID:{int(track_id)}")
                     else:
-                        # Standardowe rysowanie bez informacji debugowania
-                        cv2.rectangle(frame,
-                                      (int(bbox[0]), int(bbox[1])),
-                                      (int(bbox[2]), int(bbox[3])),
-                                      color, 2)
-                        cv2.putText(frame, f"ID:{track_id}",
-                                    (int(bbox[0]), int(bbox[1]) - 5),
+                        cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
+                        cv2.putText(frame, f"ID:{int(track_id)}", (int(x1), int(y1) - 5),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
                 writer.write(frame)
-
-                # Wyświetl podgląd
                 cv2.imshow("Tracking", frame)
-                if cv2.waitKey(1) & 0xFF == 27:  # ESC
+                if cv2.waitKey(1) & 0xFF == 27:  # ESC do przerwania
                     break
 
         finally:
             cap.release()
             writer.release()
             cv2.destroyAllWindows()
-            print(f"\n[INFO] Zapisano wynik do: {output_video_path}")
-
+            print(f"\n[INFO] Wynik zapisano do: {output_video_path}")
 
 def main():
-    # Konfiguracja ścieżek
+    # Używamy tych samych ścieżek co poprzednio
     YOLO_WEIGHTS = r"F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/surgical_tool_detection/exp14/weights/best.pt"
     VIDEO_PATH = r"E:/Cataract/videos/micro/one_video/test01.mp4"
 
-    # Inicjalizacja trackera
-    tracker = ObjectTracker(
-        yolo_weights_path=YOLO_WEIGHTS,
-        conf_threshold=0.5,
-        iou_threshold=0.45
-    )
-
-    # Przetwarzanie wideo z włączonym trybem debugowania
+    tracker = ObjectTracker(yolo_weights_path=YOLO_WEIGHTS, conf_threshold=0.5, iou_threshold=0.45)
     tracker.process_video(VIDEO_PATH, debug_mode=True)
-
 
 if __name__ == "__main__":
     main()
