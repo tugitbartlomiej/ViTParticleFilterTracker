@@ -1,8 +1,8 @@
-import os
 import json
-from PIL import Image
 from datetime import datetime
 from pathlib import Path
+
+from PIL import Image
 from tqdm import tqdm
 
 
@@ -80,7 +80,7 @@ class YOLOtoCOCOConverter:
         try:
             # Extract frame number from filename
             # Assuming filenames are like 'frame_123.jpg'
-            frame_number = int(image_file.stem.split('_')[1])
+            frame_number = int(image_file.stem.split('_')[-1])
 
             # Read image dimensions
             with Image.open(image_file) as img:
@@ -134,7 +134,7 @@ class YOLOtoCOCOConverter:
         # Get all image files
         image_files = sorted(
             [f for f in self.images_dir.glob("*.jpg")],
-            key=lambda x: int(x.stem.split('_')[1])
+            key=lambda x: int(x.stem.split('_')[-1])
         )
 
         if not image_files:
@@ -159,9 +159,9 @@ class YOLOtoCOCOConverter:
 
 def main():
     # Paths to directories
-    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/yolo_dataset/train/images"
-    labels_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/OpencvTrackerAnnotator/output/yolo_dataset/train/labels"
-    output_file = "output/coco_annotations_76_100.json"
+    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DeepSortYolo/ProcessedVideos/yolo_dataset_20250218/images/train"
+    labels_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DeepSortYolo/ProcessedVideos/yolo_dataset_20250218/labels/train"
+    output_file = "output/coco_annotations_from_yolo_dataset_20250218.json"
 
     converter = YOLOtoCOCOConverter(
         images_dir=images_dir,

@@ -3,8 +3,9 @@ import os
 import cv2
 from ultralytics import YOLO
 
+skip_frames = 5
 videos_dir = r"E:\Cataract\videos\micro"
-output_dir = "output_frames_0_25"
+output_dir = "output_frames_0_45"
 annotated_dir = os.path.join(output_dir, "annotated")
 raw_dir = os.path.join(output_dir, "raw")
 os.makedirs(annotated_dir, exist_ok=True)
@@ -23,13 +24,15 @@ for video_file in os.listdir(videos_dir):
         if not ret:
             break
         frame_count += 1
+        if frame_count % skip_frames != 0:
+            continue
         results = model(frame)
         if len(results) == 0:
             continue
         boxes = results[0].boxes.xyxy
         confidences = results[0].boxes.conf
         classes = results[0].boxes.cls
-        valid_idx = [i for i, conf in enumerate(confidences) if conf <= 0.25]
+        valid_idx = [i for i, conf in enumerate(confidences) if conf <= 0.45]
         if not valid_idx:
             continue
         annotated = frame.copy()
