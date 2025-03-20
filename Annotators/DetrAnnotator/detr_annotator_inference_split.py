@@ -1,9 +1,9 @@
-import torch
-from transformers import DetrForObjectDetection, DetrImageProcessor
 import os
+
 import cv2
+import torch
 from PIL import Image, ImageDraw, ImageFont
-import numpy as np
+from transformers import DetrForObjectDetection, DetrImageProcessor
 
 
 def box_cxcywh_to_xyxy(box, img_w, img_h):
@@ -102,9 +102,9 @@ def inference_and_sort(model, processor, video_path, output_dir, thresholds, dev
 
 
 def main():
-    model_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/detr_tool_tracking_model_final"
+    model_dir = "F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\Annotators\DetrAnnotator\detr_tool_tracking_model_best\BestEDEN\detr_tool_tracking_model_best_2"
     video_path = 'E:/Cataract/videos/micro/train02.mp4'
-    output_dir = "output/sorted_frames"
+    output_dir = "output/sorted_frames_eden"
     thresholds = [0, 0.25, 0.5, 0.75]
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

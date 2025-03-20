@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 
@@ -122,18 +123,18 @@ def check_data_integrity(dataset):
     print(f"Images without annotations: {images_without_annotations}")
 
     if missing_files > 0:
-        print("/nFirst 10 missing files:")
+        print("\nFirst 10 missing files:")
         for img in dataset.annotations['images'][:10]:
             if img['id'] not in dataset.id_to_filename:
                 print(f" - {img['file_name']}")
 
     if images_without_annotations > 0:
-        print("/nFirst 10 images without annotations:")
+        print("\nFirst 10 images without annotations:")
         for img in dataset.valid_images[:10]:
             if img['id'] not in dataset.id_to_annotations:
                 print(f" - {img['file_name']}")
 
-    print("/nDataset is ready for training with available data.")
+    print("\nDataset is ready for training with available data.")
 
 
 def print_gpu_memory():
@@ -227,19 +228,96 @@ def split_dataset(dataset, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1):
     return train_dataset, val_dataset, test_dataset
 
 
+def save_checkpoint(model, optimizer, scheduler, epoch, best_val_loss, checkpoint_dir):
+    """Zapisuje stan treningu jako checkpoint"""
+    os.makedirs(checkpoint_dir, exist_ok=True)
+
+    checkpoint_path = os.path.join(checkpoint_dir, f"checkpoint_epoch_{epoch}.pt")
+
+    checkpoint = {
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'scheduler_state_dict': scheduler.state_dict(),
+        'best_val_loss': best_val_loss
+    }
+
+    torch.save(checkpoint, checkpoint_path)
+    print(f"[CHECKPOINT] Zapisano w: {checkpoint_path}")
+
+    return checkpoint_path
+
+
+def find_latest_checkpoint(checkpoint_dir):
+    """Znajduje najnowszy checkpoint w katalogu"""
+    if not os.path.exists(checkpoint_dir):
+        return None
+
+    checkpoint_files = glob.glob(os.path.join(checkpoint_dir, "checkpoint_epoch_*.pt"))
+
+    if not checkpoint_files:
+        return None
+
+    # Sortuj pliki według numeru epoki
+    checkpoint_files.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]))
+
+    # Zwróć najnowszy checkpoint
+    latest = checkpoint_files[-1]
+    print(f"[CHECKPOINT] Znaleziono najnowszy checkpoint: {latest}")
+    return latest
+
+
+def load_checkpoint(checkpoint_path, model, optimizer, scheduler, device):
+    """Wczytuje stan treningu z checkpointu"""
+    if not os.path.exists(checkpoint_path):
+        print(f"[CHECKPOINT] Checkpoint {checkpoint_path} nie istnieje")
+        return None, 0, float('inf')
+
+    print(f"[CHECKPOINT] Wczytywanie checkpointu z: {checkpoint_path}")
+
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+
+    start_epoch = checkpoint['epoch'] + 1  # Rozpocznij od następnej epoki
+    best_val_loss = checkpoint['best_val_loss']
+
+    print(f"[CHECKPOINT] Wczytano checkpoint z epoki {checkpoint['epoch']}")
+    print(f"[CHECKPOINT] Najlepsza dotychczasowa walidacyjna strata: {best_val_loss:.4f}")
+
+    return model, start_epoch, best_val_loss
+
+
 def main():
-    print("Starting training...")
+    print("=" * 80)
+    print("DETR SURGICAL TOOL DETECTION - STARTING TRAINING")
+    print("=" * 80)
 
     # Paths
-    images_dir = "./augmented_dataset/images"
-    annotations_file = "./augmented_dataset/augmented_annotations_20241115_175519.json"
+    images_dir = "/mnt/evafs/faculty/home/bpiotrowski/datasets/DETR_augmented_dataset_20250218/images"
+    annotations_file = "/mnt/evafs/faculty/home/bpiotrowski/datasets/DETR_augmented_dataset_20250218/augmented_annotations_20250310_001344.json"
+    checkpoint_dir = "./checkpoints"  # Katalog do zapisywania checkpointów
+    best_model_dir = "/mnt/evafs/faculty/home/bpiotrowski/DETR/detr_tool_tracking_model_best"
+
+    # Wyświetl ścieżki bezwzględne dla lepszej diagnostyki
+    print(f"[PATHS] Absolute path to images: {os.path.abspath(images_dir)}")
+    print(f"[PATHS] Absolute path to annotations: {os.path.abspath(annotations_file)}")
+    print(f"[PATHS] Absolute path to checkpoint dir: {os.path.abspath(checkpoint_dir)}")
+    print(f"[PATHS] Absolute path to best model dir: {os.path.abspath(best_model_dir)}")
+
+    # Tworzenie katalogu checkpointów, jeśli nie istnieje
+    os.makedirs(checkpoint_dir, exist_ok=True)
 
     # Training settings
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"[DEVICE] Using device: {device}")
     num_epochs = 40
     learning_rate = 1e-5
     batch_size = 4
     image_size = (800, 800)
+    checkpoint_interval = 4  # Zapisuj checkpoint co 4 epoki
 
     # Early stopping and thresholds
     validation_loss_threshold = 0.1  # Desired validation loss threshold
@@ -247,31 +325,72 @@ def main():
     # TensorBoard writer
     writer = SummaryWriter(log_dir='./runs/detr_training')
 
-    # Load pre-trained DETR model and processor
-    print("Loading pre-trained DETR model and processor...")
-    model = DetrForObjectDetection.from_pretrained(
-        "facebook/detr-resnet-50",
-        num_labels=1,  # Ustawiamy num_labels na 1 dla jednej klasy
-        ignore_mismatched_sizes=True
-    )
+    print("=" * 80)
+    print("MODEL INITIALIZATION")
+    print("=" * 80)
 
-    # Konfiguracja modelu dla jednej klasy
-    model.config.id2label = {0: "surgical_tool"}
-    model.config.label2id = {"surgical_tool": 0}
-    model.config.num_labels = 1
+    # Najpierw sprawdź czy istnieje zapisany najlepszy model
+    if os.path.exists(best_model_dir) and os.path.isdir(best_model_dir):
+        print(f"[MODEL] Znaleziono zapisany najlepszy model w {best_model_dir}")
+        try:
+            print(f"[MODEL] Próba wczytania modelu z {best_model_dir}...")
+            # Wczytaj zapisany model i procesor
+            model = DetrForObjectDetection.from_pretrained(best_model_dir)
+            processor = DetrImageProcessor.from_pretrained(best_model_dir)
+            print("[MODEL] SUKCES! Pomyślnie wczytano wcześniej zapisany model i procesor.")
+        except Exception as e:
+            print(f"[MODEL] BŁĄD podczas wczytywania modelu: {e}")
+            print("[MODEL] Wczytywanie modelu domyślnego...")
+            # Wczytaj domyślny model w przypadku błędu
+            model = DetrForObjectDetection.from_pretrained(
+                "facebook/detr-resnet-50",
+                num_labels=1,
+                ignore_mismatched_sizes=True
+            )
+            # Konfiguracja modelu dla jednej klasy
+            model.config.id2label = {0: "surgical_tool"}
+            model.config.label2id = {"surgical_tool": 0}
+            model.config.num_labels = 1
 
-    # Inicjalizacja warstwy klasyfikacyjnej
-    num_channels = model.class_labels_classifier.in_features
-    model.class_labels_classifier = torch.nn.Linear(num_channels, model.config.num_labels + 1)
+            # Inicjalizacja warstwy klasyfikacyjnej
+            num_channels = model.class_labels_classifier.in_features
+            model.class_labels_classifier = torch.nn.Linear(num_channels, model.config.num_labels + 1)
 
-    # Updated processor initialization
-    processor = DetrImageProcessor.from_pretrained(
-        "facebook/detr-resnet-50",
-        size={'shortest_edge': image_size[0], 'longest_edge': image_size[1]}
-    )
+            # Inicjalizacja procesora
+            processor = DetrImageProcessor.from_pretrained(
+                "facebook/detr-resnet-50",
+                size={'shortest_edge': image_size[0], 'longest_edge': image_size[1]}
+            )
+    else:
+        print(f"[MODEL] Nie znaleziono wcześniej zapisanego modelu w {best_model_dir}")
+        print("[MODEL] Wczytywanie modelu domyślnego...")
+        # Load pre-trained DETR model and processor
+        model = DetrForObjectDetection.from_pretrained(
+            "facebook/detr-resnet-50",
+            num_labels=1,  # Ustawiamy num_labels na 1 dla jednej klasy
+            ignore_mismatched_sizes=True
+        )
+
+        # Konfiguracja modelu dla jednej klasy
+        model.config.id2label = {0: "surgical_tool"}
+        model.config.label2id = {"surgical_tool": 0}
+        model.config.num_labels = 1
+
+        # Inicjalizacja warstwy klasyfikacyjnej
+        num_channels = model.class_labels_classifier.in_features
+        model.class_labels_classifier = torch.nn.Linear(num_channels, model.config.num_labels + 1)
+
+        # Updated processor initialization
+        processor = DetrImageProcessor.from_pretrained(
+            "facebook/detr-resnet-50",
+            size={'shortest_edge': image_size[0], 'longest_edge': image_size[1]}
+        )
 
     # Load dataset
-    print("Loading dataset...")
+    print("=" * 80)
+    print("DATASET LOADING")
+    print("=" * 80)
+
     dataset = SurgicalToolDataset(
         images_dir=images_dir,
         annotations_file=annotations_file,
@@ -287,7 +406,8 @@ def main():
     np.random.seed(42)  # For reproducibility
     train_dataset, val_dataset, test_dataset = split_dataset(dataset, train_ratio=0.8, val_ratio=0.1, test_ratio=0.1)
 
-    print(f"Dataset split into {len(train_dataset)} training, {len(val_dataset)} validation, and {len(test_dataset)} test samples.")
+    print(
+        f"Dataset split into {len(train_dataset)} training, {len(val_dataset)} validation, and {len(test_dataset)} test samples.")
 
     # Prepare data loaders
     train_loader = DataLoader(
@@ -330,11 +450,28 @@ def main():
     # Move model to device
     model.to(device)
 
-    # Training loop
-    best_val_loss = float('inf')
+    print("=" * 80)
+    print("CHECKPOINT CHECKING")
+    print("=" * 80)
 
+    # Sprawdź, czy istnieją checkpointy, i wczytaj najnowszy
+    latest_checkpoint = find_latest_checkpoint(checkpoint_dir)
+    if latest_checkpoint:
+        model, start_epoch, best_val_loss = load_checkpoint(
+            latest_checkpoint, model, optimizer, scheduler, device
+        )
+    else:
+        start_epoch = 0
+        best_val_loss = float('inf')
+        print("[CHECKPOINT] Nie znaleziono checkpointów, rozpoczynanie treningu od początku.")
+
+    print("=" * 80)
+    print(f"TRAINING STARTING FROM EPOCH {start_epoch + 1}")
+    print("=" * 80)
+
+    # Training loop
     try:
-        for epoch in range(num_epochs):
+        for epoch in range(start_epoch, num_epochs):
             print(f"Starting epoch {epoch + 1}/{num_epochs}...")
             avg_train_loss = train_epoch(model, train_loader, optimizer, device, epoch, writer)
 
@@ -348,25 +485,38 @@ def main():
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 print(f"New best validation loss: {best_val_loss:.4f}. Saving model...")
-                model.save_pretrained("./detr_tool_tracking_model_best")
-                processor.save_pretrained("./detr_tool_tracking_model_best")
-                print("Best model saved to: ./detr_tool_tracking_model_best")
+                model.save_pretrained(best_model_dir)
+                processor.save_pretrained(best_model_dir)
+                print(f"Best model saved to: {best_model_dir}")
 
-            print(f"Epoch {epoch + 1} finished. Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+            # Zapisuj checkpoint co określoną liczbę epok
+            if (epoch + 1) % checkpoint_interval == 0:
+                save_checkpoint(model, optimizer, scheduler, epoch, best_val_loss, checkpoint_dir)
+
+            print(
+                f"Epoch {epoch + 1} finished. Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
             # Stop if validation loss is below threshold
             if avg_val_loss <= validation_loss_threshold:
                 print(f"Validation loss has reached the threshold of {validation_loss_threshold}. Stopping training.")
+                # Zapisz ostatni checkpoint przed zakończeniem
+                save_checkpoint(model, optimizer, scheduler, epoch, best_val_loss, checkpoint_dir)
                 break
 
     except KeyboardInterrupt:
-        print("Training interrupted by user. Saving the current model...")
+        print("Training interrupted by user. Saving the current model and checkpoint...")
+        save_checkpoint(model, optimizer, scheduler, epoch, best_val_loss, checkpoint_dir)
         model.save_pretrained("./detr_tool_tracking_model_interrupted")
         processor.save_pretrained("./detr_tool_tracking_model_interrupted")
         print("Interrupted model saved to: ./detr_tool_tracking_model_interrupted")
 
     # Save final model
-    print("Saving final model and processor...")
+    print("=" * 80)
+    print("TRAINING FINISHED - SAVING FINAL MODEL")
+    print("=" * 80)
+
+    # Zapisz ostatni checkpoint
+    save_checkpoint(model, optimizer, scheduler, epoch, best_val_loss, checkpoint_dir)
     model.save_pretrained("./detr_tool_tracking_model_final")
     processor.save_pretrained("./detr_tool_tracking_model_final")
     print("Model and processor saved successfully.")
@@ -379,6 +529,7 @@ def main():
 
     # Close TensorBoard writer
     writer.close()
+
 
 if __name__ == "__main__":
     main()
