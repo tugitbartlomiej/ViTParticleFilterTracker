@@ -467,7 +467,7 @@ def save_images_with_annotations(dataset, indices, output_dir, max_images=100):
 
 
 def model_on_training_data_testing(model, processor, dataset, full_dataset, epoch,
-                                num_samples=10, confidence_threshold=0.1,
+                                num_samples=50, confidence_threshold=0.1,
                                 output_dir="./training_ranged/model_test_on_training"):
     """
     Testuje model na próbkach z danych treningowych po każdej epoce.
@@ -654,7 +654,7 @@ def main():
     test_output_dir = "./training_ranged/model_test_on_training"  # Nowy katalog na wyniki testów
 
     # Image selection range - MODIFY THESE TO SELECT DIFFERENT IMAGES
-    start_idx =700  # Start from image 0
+    start_idx =750  # Start from image 0
     end_idx = 800  # End at image 800 (exclusive)
 
     # Training parameters
