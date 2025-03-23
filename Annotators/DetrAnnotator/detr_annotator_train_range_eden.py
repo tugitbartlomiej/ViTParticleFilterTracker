@@ -19,9 +19,8 @@ from transformers import DetrForObjectDetection, DetrImageProcessor, DetrConfig
 # Configuration class to centralize all parameters
 class Config:
     # Data paths
-    TRAIN_IMAGES_DIR = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DeepSortYolo/ProcessedVideos/yolo_dataset_20250218/images/train"
-    TRAIN_ANNOTATIONS_FILE = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Datasets/Detr/coco_annotations_from_yolo_dataset_20250218.json"
-
+    TRAIN_IMAGES_DIR = "/mnt/evafs/faculty/home/bpiotrowski/datasets/yolo_dataset_20250218/images/train"
+    TRAIN_ANNOTATIONS_FILE = "/mnt/evafs/faculty/home/bpiotrowski/datasets/yolo_dataset_20250218/coco_annotations_from_yolo_dataset_20250218.json"
     OUTPUT_DIR = "./training_ranged/output_ranged"
     CHECKPOINT_DIR = "./training_ranged/checkpoints_ranged"
     BEST_MODEL_DIR = "./training_ranged/best_model"
@@ -32,8 +31,8 @@ class Config:
     END_IDX = 2000  # Use first 2000 images (increased from 50)
 
     # Training parameters
-    NUM_EPOCHS = 20  # Increased from 10 to 20 for better training
-    BATCH_SIZE = 16
+    NUM_EPOCHS = 50  # Increased from 10 to 20 for better training
+    BATCH_SIZE = 32
     LEARNING_RATE = 1e-4
     IMAGE_SIZE = (640, 640)
     NUM_QUERIES = 25  # Increased from 10 to 25 for more flexibility
@@ -804,30 +803,24 @@ def find_latest_checkpoint(checkpoint_dir):
 
 
 def load_checkpoint(checkpoint_path, model, optimizer, scheduler=None, device=None):
-    """
-    Load training state from checkpoint with error handling.
-
-    Args:
-        checkpoint_path: Path to checkpoint file
-        model: Model to load state into
-        optimizer: Optimizer to load state into
-        scheduler: Learning rate scheduler (optional)
-        device: Device to load tensors to
-
-    Returns:
-        tuple: (loaded_model, start_epoch, metrics_dict)
-    """
+    """Load training state from checkpoint with error handling."""
     if not os.path.exists(checkpoint_path):
         print(f"[CHECKPOINT] Checkpoint {checkpoint_path} does not exist")
-        return None, 0, {}
+        return model, 0, {}  # Return original model, not None
 
     print(f"[CHECKPOINT] Loading checkpoint from: {checkpoint_path}")
 
     try:
         checkpoint = torch.load(checkpoint_path, map_location=device if device else 'cpu')
 
-        # Load model weights
-        model.load_state_dict(checkpoint['model_state_dict'])
+        # Try to load model weights
+        try:
+            model.load_state_dict(checkpoint['model_state_dict'])
+        except RuntimeError as e:
+            print(f"[CHECKPOINT] Error loading model state: {e}")
+            print("[CHECKPOINT] Continuing with original model")
+            # Return original model instead of None
+            return model, 0, {}
 
         # Load optimizer state
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -849,9 +842,8 @@ def load_checkpoint(checkpoint_path, model, optimizer, scheduler=None, device=No
 
     except Exception as e:
         print(f"[CHECKPOINT] Error loading checkpoint: {e}")
-        import traceback
-        traceback.print_exc()
-        return None, 0, {}
+        # Return original model instead of None
+        return model, 0, {}
 
 
 def select_image_range(dataset, start_idx, end_idx):
