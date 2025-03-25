@@ -21,7 +21,7 @@ class SurgicalToolDataset(Dataset):
             images_dir: Katalog z obrazami
             annotations_file: Ścieżka do pliku z adnotacjami w formacie COCO
             processor: Procesor obrazów DETR (opcjonalny, tylko do przetwarzania)
-            image_size: Docelowy rozmiar obrazu
+            image_size: Docelowy rozmiar obrazu - MUSI być zgodny z rozmiarem treningowym
         """
         print("Inicjalizacja datasetu...")
         self.images_dir = Path(images_dir)
@@ -33,6 +33,8 @@ class SurgicalToolDataset(Dataset):
             with open(annotations_file, 'r') as f:
                 self.annotations = json.load(f)
             print(f"Pomyślnie wczytano adnotacje z {annotations_file}")
+            print(f"Liczba obrazów w adnotacjach: {len(self.annotations['images'])}")
+            print(f"Liczba adnotacji: {len(self.annotations['annotations'])}")
         except Exception as e:
             print(f"Błąd wczytywania adnotacji: {e}")
             raise
@@ -47,7 +49,6 @@ class SurgicalToolDataset(Dataset):
         self.id_to_annotations = {}
 
         print(f"Wyszukiwanie obrazów w: {images_dir}")
-        print(f"Liczba obrazów w adnotacjach: {len(self.annotations['images'])}")
 
         try:
             existing_files = set(os.listdir(images_dir)) if os.path.exists(images_dir) else set()
@@ -93,7 +94,7 @@ class SurgicalToolDataset(Dataset):
         - image_id: ID obrazu
         - image_path: Ścieżka do obrazu
         - annotations: Lista adnotacji
-        - processed_image: Przetworzony obraz (jeśli procesor jest dostępny)
+        - width, height: Oryginalne wymiary obrazu
         """
         image_info = self.valid_images[idx]
         image_id = image_info['id']
@@ -113,14 +114,9 @@ class SurgicalToolDataset(Dataset):
             "image_id": image_id,
             "image_path": image_path,
             "annotations": annotations,
-            "width": image_info['width'],
-            "height": image_info['height']
+            "width": image_info.get('width', image.width),
+            "height": image_info.get('height', image.height)
         }
-
-        # Jeśli dostępny jest procesor, przetwórz obraz dla modelu
-        if self.processor is not None:
-            inputs = self.processor(images=image, return_tensors="pt")
-            result["processed_image"] = inputs
 
         return result
 
@@ -135,8 +131,11 @@ def select_image_range(dataset, start_idx, end_idx):
         end_idx: Indeks końcowy (wyłącznie)
 
     Returns:
-        Podzbiór datasetu
+        Podzbiór datasetu i rozmiar obrazu (subset, image_size)
     """
+    # Zapamiętaj rozmiar obrazu z oryginalnego datasetu
+    image_size = dataset.image_size
+
     # Określ prawidłowe indeksy
     start = max(0, min(start_idx, len(dataset) - 1))
     end = min(end_idx, len(dataset))
@@ -158,28 +157,76 @@ def select_image_range(dataset, start_idx, end_idx):
     print(f"Wybrano {len(valid_indices)} obrazów z adnotacjami z zakresu {start} do {end}")
 
     # Utwórz podzbiór z wybranymi indeksami
-    return Subset(dataset, valid_indices)
+    subset = Subset(dataset, valid_indices)
+
+    # Dodajemy atrybut image_size do obiektu Subset
+    subset.image_size = image_size
+
+    return subset
 
 
 def load_model(model_path, device):
-    print(f"Wczytywanie modelu z {model_path}...")
+    """
+    Load the DETR model and processor.
+
+    Args:
+        model_path: Path to the model directory
+        device: Device to load the model on (cpu/cuda)
+
+    Returns:
+        Tuple of (model, processor)
+    """
+    print(f"Attempting to load model from {model_path}...")
 
     try:
-        model = DetrForObjectDetection.from_pretrained(
-            model_path,
-            ignore_mismatched_sizes=True  # Add this parameter
-        )
-        processor = DetrImageProcessor.from_pretrained(model_path)
-        model.to(device)
-        model.eval()
-        print("Model wczytany pomyślnie.")
-        return model, processor
+        # Approach 1: Try fixing the model configuration directly
+        from transformers import AutoConfig, DetrConfig
+
+        # Load existing config and explicitly set num_queries to match checkpoint
+        config = AutoConfig.from_pretrained(model_path)
+
+        # Force the num_queries parameter to match the checkpoint's value
+        if isinstance(config, DetrConfig):
+            print(f"Original config num_queries: {config.num_queries}")
+            config.num_queries = 1  # Explicitly set to match the checkpoint
+            print(f"Updated config num_queries: {config.num_queries}")
+
+        # Create model with the modified config
+        model = DetrForObjectDetection.from_config(config)
+
+        # Load the state dict manually
+        import torch
+        import os
+
+        # Load state dict from the pytorch_model.bin file
+        state_dict_path = os.path.join(model_path, "pytorch_model.bin")
+        if os.path.exists(state_dict_path):
+            print(f"Loading state dict from {state_dict_path}")
+            state_dict = torch.load(state_dict_path, map_location=device)
+            model.load_state_dict(state_dict)
+        else:
+            raise FileNotFoundError(f"State dict not found at {state_dict_path}")
+
     except Exception as e:
-        print(f"Błąd wczytywania modelu: {e}")
-        raise
+        print(f"Approach 1 failed with error: {e}")
+        print("Falling back to ignore_mismatched_sizes=True")
 
+        # Approach 2: Use ignore_mismatched_sizes as a fallback
+        model = DetrForObjectDetection.from_pretrained(model_path, ignore_mismatched_sizes=True)
 
-def run_inference(model, processor, dataset, device, confidence_threshold=0.5):
+    # Load the processor
+    processor = DetrImageProcessor.from_pretrained(model_path)
+
+    # Post-loading checks
+    if hasattr(model.config, 'num_queries'):
+        print(f"Loaded model has num_queries={model.config.num_queries}")
+
+    # Move the model to the specified device and set to evaluation mode
+    model.to(device)
+    model.eval()
+
+    return model, processor
+def run_inference(model, processor, dataset, device, confidence_threshold=0.3, debug_mode=False, image_size=(800, 800)):
     """
     Przeprowadź inferencję na wybranym zestawie danych.
 
@@ -189,11 +236,31 @@ def run_inference(model, processor, dataset, device, confidence_threshold=0.5):
         dataset: Dataset z obrazami
         device: Urządzenie (cpu/cuda)
         confidence_threshold: Próg pewności detekcji
+        debug_mode: Czy wyświetlać szczegółowe informacje diagnostyczne
+        image_size: Rozmiar obrazu używany do przetwarzania (z parametru lub datasetu)
 
     Returns:
         Lista wyników inferencji
     """
     results = []
+
+    # Pobierz rozmiar obrazu z datasetu (jeśli to możliwe) lub użyj przekazanego parametru
+    try:
+        if hasattr(dataset, 'image_size'):
+            # Dataset ma bezpośrednio atrybut image_size
+            actual_image_size = dataset.image_size
+        elif hasattr(dataset, 'dataset') and hasattr(dataset.dataset, 'image_size'):
+            # Dataset jest typu Subset
+            actual_image_size = dataset.dataset.image_size
+        else:
+            # Użyj domyślnego rozmiaru
+            actual_image_size = image_size
+    except Exception:
+        # W razie problemów, użyj domyślnego rozmiaru
+        actual_image_size = image_size
+
+    print(f"Uruchamianie inferencji z progiem pewności: {confidence_threshold}")
+    print(f"Używany rozmiar obrazu: {actual_image_size}")
 
     with torch.no_grad():
         for idx in tqdm(range(len(dataset)), desc="Przeprowadzanie inferencji"):
@@ -205,14 +272,26 @@ def run_inference(model, processor, dataset, device, confidence_threshold=0.5):
             image_path = sample["image_path"]
             ground_truth = sample["annotations"]
 
-            # Przetwórz obraz dla modelu
-            inputs = processor(images=image, return_tensors="pt").to(device)
+            # ISTOTNE: Przetwórz obraz używając TYCH SAMYCH parametrów co podczas treningu
+            inputs = processor(
+                images=image,
+                return_tensors="pt",
+                size={'shortest_edge': dataset.image_size[0], 'longest_edge': dataset.image_size[1]}
+            ).to(device)
 
             # Przeprowadź inferencję
             outputs = model(**inputs)
 
+            # Wyświetl informacje diagnostyczne jeśli włączony tryb debug
+            if debug_mode:
+                probs = outputs.logits.softmax(-1)
+                scores = probs[0, :, :-1].max(-1).values
+                top_scores = torch.sort(scores, descending=True)[0][:5].tolist()
+                print(f"\nObraz {idx}, ID {image_id}: {image_path}")
+                print(f"Top 5 pewności: {[f'{s:.4f}' for s in top_scores]}")
+
             # Przetwórz wyniki
-            target_sizes = torch.tensor([image.size[::-1]]).to(device)
+            target_sizes = torch.tensor([[sample["height"], sample["width"]]]).to(device)
             processed_outputs = processor.post_process_object_detection(
                 outputs,
                 target_sizes=target_sizes,
@@ -230,6 +309,16 @@ def run_inference(model, processor, dataset, device, confidence_threshold=0.5):
                     "box": box.tolist()  # [x1, y1, x2, y2]
                 })
 
+            if debug_mode and predictions:
+                print(f"Znaleziono {len(predictions)} detekcji:")
+                for i, p in enumerate(predictions):
+                    print(f"  {i + 1}: Pewność: {p['score']:.4f}, Box: {[round(x, 1) for x in p['box']]}")
+
+            # KOD FILTRUJĄCY
+            if len(predictions) > 1:
+                # Wybierz tylko detekcję o najwyższej pewności
+                predictions = [max(predictions, key=lambda x: x["score"])]
+
             # Zapisz wyniki
             results.append({
                 "idx": idx,
@@ -242,7 +331,7 @@ def run_inference(model, processor, dataset, device, confidence_threshold=0.5):
     return results
 
 
-def visualize_predictions(results, output_dir, dataset):
+def visualize_predictions(results, output_dir, dataset, draw_all_gt=True):
     """
     Wizualizuj wyniki inferencji i zapisz obrazy z oznaczonymi detekcjami.
 
@@ -250,6 +339,7 @@ def visualize_predictions(results, output_dir, dataset):
         results: Lista wyników inferencji
         output_dir: Katalog wyjściowy
         dataset: Dataset z oryginalnymi obrazami
+        draw_all_gt: Czy rysować wszystkie ground truth boxes, nawet jeśli nie ma detekcji
     """
     os.makedirs(output_dir, exist_ok=True)
     print(f"Zapisywanie wizualizacji do {output_dir}...")
@@ -258,7 +348,11 @@ def visualize_predictions(results, output_dir, dataset):
     try:
         font = ImageFont.truetype("arial.ttf", 15)
     except:
-        font = ImageFont.load_default()
+        try:
+            # Próba znalezienia czcionki systemowej
+            font = ImageFont.truetype("DejaVuSans.ttf", 15)
+        except:
+            font = ImageFont.load_default()
 
     for result in tqdm(results, desc="Generowanie wizualizacji"):
         # Pobierz obraz z datasetu
@@ -325,6 +419,25 @@ def calculate_metrics(results):
     all_scores = [pred["score"] for result in results for pred in result["predictions"]]
     avg_confidence = np.mean(all_scores) if all_scores else 0
 
+    # Dodatkowe analizy metryczne
+    gt_match_stats = []
+    for r in results:
+        gt_count = len(r["ground_truth"])
+        pred_count = len(r["predictions"])
+        gt_match_stats.append({
+            "gt_count": gt_count,
+            "pred_count": pred_count,
+            "match": gt_count == pred_count
+        })
+
+    # Oblicz rozkład liczby detekcji
+    pred_counts = {}
+    for stat in gt_match_stats:
+        pred_count = stat["pred_count"]
+        if pred_count not in pred_counts:
+            pred_counts[pred_count] = 0
+        pred_counts[pred_count] += 1
+
     metrics = {
         "total_images": total_images,
         "images_with_detections": images_with_detections,
@@ -335,7 +448,8 @@ def calculate_metrics(results):
         "avg_pred_per_image": total_pred_boxes / total_images if total_images > 0 else 0,
         "correct_detection_count": correct_detection_count,
         "correct_detection_rate": correct_detection_count / total_images if total_images > 0 else 0,
-        "avg_confidence": avg_confidence
+        "avg_confidence": avg_confidence,
+        "prediction_counts": pred_counts
     }
 
     return metrics
@@ -356,6 +470,13 @@ def print_metrics(metrics):
     print(
         f"Obrazy z poprawną liczbą detekcji: {metrics['correct_detection_count']} ({metrics['correct_detection_rate']:.2%})")
     print(f"Średni wynik pewności detekcji: {metrics['avg_confidence']:.4f}")
+
+    # Wyświetl rozkład detekcji
+    print("\nRozkład liczby detekcji na obraz:")
+    for count, num_images in sorted(metrics["prediction_counts"].items()):
+        percent = num_images / metrics["total_images"] * 100
+        print(f"  {count} detekcji: {num_images} obrazów ({percent:.1f}%)")
+
     print("=" * 50)
 
 
@@ -388,18 +509,22 @@ def main():
     model_dir = "./training_ranged/best_model"
     output_dir = "./inference_ranged"
 
-    # Zakres obrazów do inferencji - ZMODYFIKUJ TE WARTOŚCI, ABY WYBRAĆ INNY ZAKRES
-    start_idx = 900  # Indeks początkowy (włącznie)
-    end_idx = 1000  # Indeks końcowy (wyłącznie)
+    # Zakres obrazów do inferencji
+    start_idx = 500
+    end_idx = 600
 
     # Parametry inferencji
-    confidence_threshold = 0.2
+    confidence_threshold = 0.1  # Obniżono z 0.2 dla lepszego wychwytywania detekcji
+    debug_mode = True  # Pokaż szczegółowe informacje (pomocne przy diagnozowaniu)
+    image_size = (800, 800)  # MUSI być zgodny z rozmiarem treningowym!
     # =============================================
 
     print("=" * 80)
     print("INFERENCJA MODELU DETR NA ZAKRESIE OBRAZÓW")
     print("=" * 80)
     print(f"Zakres obrazów: od {start_idx} do {end_idx}")
+    print(f"Rozmiar obrazu: {image_size}")
+    print(f"Próg pewności: {confidence_threshold}")
 
     # Utwórz katalogi wyjściowe
     os.makedirs(output_dir, exist_ok=True)
@@ -414,10 +539,12 @@ def main():
         # Wczytaj model i procesor
         model, processor = load_model(model_dir, device)
 
-        # Wczytaj dataset
+        # Wczytaj dataset z POPRAWNYM rozmiarem obrazu
         dataset = SurgicalToolDataset(
             images_dir=images_dir,
-            annotations_file=annotations_file
+            annotations_file=annotations_file,
+            processor=processor,
+            image_size=image_size  # Używaj tego samego rozmiaru co podczas treningu
         )
 
         if len(dataset) == 0:
@@ -437,7 +564,9 @@ def main():
             processor=processor,
             dataset=selected_dataset,
             device=device,
-            confidence_threshold=confidence_threshold
+            confidence_threshold=confidence_threshold,
+            debug_mode=debug_mode,
+            image_size=image_size  # Przekaż jawnie rozmiar obrazu
         )
 
         # Wizualizuj wyniki
