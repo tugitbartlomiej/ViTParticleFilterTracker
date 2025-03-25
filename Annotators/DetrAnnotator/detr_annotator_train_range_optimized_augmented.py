@@ -8,9 +8,11 @@ import time
 import numpy as np
 import torch
 from PIL import Image, ImageDraw
+from torch.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
-from torch.utils.data import DataLoader, Subset, random_split
+from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
 from tqdm.auto import tqdm
 from transformers import DetrForObjectDetection, DetrImageProcessor
 
@@ -26,16 +28,17 @@ def worker_init_function(worker_id):
 
 class SurgicalToolDataset(torch.utils.data.Dataset):
     def __init__(self, images_dir, annotations_file, processor, image_size=(800, 800),
-                 augment=False, cache_dir=None, max_cache_size=1000):
+                 augment=False, augment_strength='mild', cache_dir=None, max_cache_size=1000):
         """
-        Initialize dataset with optimized loading and caching.
+        Initialize dataset with optimized loading and caching and gentle augmentations.
 
         Args:
             images_dir: Directory containing images
             annotations_file: Path to COCO format annotations
             processor: DetrImageProcessor for preprocessing
             image_size: Target image size (height, width)
-            augment: Whether to apply data augmentation (not used in this version)
+            augment: Whether to apply data augmentation
+            augment_strength: Controls augmentation intensity ('mild', 'medium', or 'strong')
             cache_dir: Directory to store cache files (None = use annotations directory)
             max_cache_size: Maximum number of processed images to keep in memory
         """
@@ -53,6 +56,89 @@ class SurgicalToolDataset(torch.utils.data.Dataset):
         if cache_dir is None:
             cache_dir = os.path.dirname(annotations_file)
         os.makedirs(cache_dir, exist_ok=True)
+
+        # Set augmentation parameters based on strength
+        if augment_strength == 'mild':
+            # Very gentle augmentations appropriate for medical imagery
+            rotation_degrees = 5
+            translate = (0.05, 0.05)
+            scale = (0.95, 1.05)
+            brightness = 0.1
+            contrast = 0.1
+            saturation = 0.05
+            hue = 0.02
+            blur_sigma = (0.1, 1.0)
+            flip_prob = 0.3
+        elif augment_strength == 'medium':
+            # Moderate augmentations
+            rotation_degrees = 10
+            translate = (0.1, 0.1)
+            scale = (0.9, 1.1)
+            brightness = 0.2
+            contrast = 0.2
+            saturation = 0.1
+            hue = 0.05
+            blur_sigma = (0.1, 1.5)
+            flip_prob = 0.5
+        elif augment_strength == 'strong':
+            # Stronger augmentations, but still controlled
+            rotation_degrees = 15
+            translate = (0.15, 0.15)
+            scale = (0.85, 1.15)
+            brightness = 0.3
+            contrast = 0.3
+            saturation = 0.15
+            hue = 0.07
+            blur_sigma = (0.1, 2.0)
+            flip_prob = 0.5
+        else:
+            raise ValueError(f"Unknown augmentation strength: {augment_strength}")
+
+        print(f"Using {augment_strength} augmentations with rotation {rotation_degrees}°")
+
+        # Augmentation pipeline with gentle transforms suitable for medical imagery
+        if self.augment:
+            # Create a list of transforms that will be applied with probability
+            transform_list = []
+
+            # Add geometric transforms
+            transform_list.append(
+                transforms.RandomApply([
+                    transforms.RandomAffine(
+                        degrees=rotation_degrees,
+                        translate=translate,
+                        scale=scale,
+                        fill=0,  # Fill with black
+                    ),
+                ], p=0.7)  # Apply geometric transforms with 70% probability
+            )
+
+            # Add horizontal flip if appropriate
+            transform_list.append(transforms.RandomHorizontalFlip(p=flip_prob))
+
+            # Add color transforms
+            transform_list.append(
+                transforms.RandomApply([
+                    transforms.ColorJitter(
+                        brightness=brightness,
+                        contrast=contrast,
+                        saturation=saturation,
+                        hue=hue
+                    ),
+                ], p=0.5)  # Apply color transforms with 50% probability
+            )
+
+            # Add slight blur occasionally
+            transform_list.append(
+                transforms.RandomApply([
+                    transforms.GaussianBlur(kernel_size=3, sigma=blur_sigma)
+                ], p=0.2)  # Apply blur with only 20% probability
+            )
+
+            # Create the final composition of transforms
+            self.augmentations = transforms.Compose(transform_list)
+        else:
+            self.augmentations = None
 
         # Create a unique cache file name based on dataset parameters
         cache_name = f"dataset_cache_{os.path.basename(annotations_file).split('.')[0]}"
@@ -168,6 +254,10 @@ class SurgicalToolDataset(torch.utils.data.Dataset):
             raise e
 
         annotations = self.id_to_annotations.get(image_id, [])
+
+        # Apply augmentations
+        if self.augmentations and self.augment:
+            image = self.augmentations(image)
 
         # Prepare annotations in COCO format
         coco_annotations = {
@@ -420,7 +510,7 @@ def train_epoch(model, data_loader, optimizer, device, epoch, scaler,
     total_loss = 0
     progress_bar = tqdm(data_loader, desc=f"Training Epoch {epoch + 1}", leave=False)
 
-    # Track time for benchmarking
+    # Track time for benchmarking using CUDA events if available
     if torch.cuda.is_available():
         start_event = torch.cuda.Event(enable_timing=True)
         end_event = torch.cuda.Event(enable_timing=True)
@@ -441,8 +531,7 @@ def train_epoch(model, data_loader, optimizer, device, epoch, scaler,
         labels = [{k: v.to(device, non_blocking=True) for k, v in t.items()} for t in batch["labels"]]
 
         # Forward pass with mixed precision
-        device_type = 'cuda' if torch.cuda.is_available() else 'cpu'
-        with torch.amp.autocast(device_type=device_type, enabled=scaler.is_enabled()):
+        with autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu', enabled=scaler.is_enabled()):
             outputs = model(pixel_values=pixel_values, labels=labels)
             loss = outputs.loss / grad_accum_steps  # Normalize loss for gradient accumulation
 
@@ -505,7 +594,7 @@ def train_epoch(model, data_loader, optimizer, device, epoch, scaler,
         scaler.update()
         optimizer.zero_grad()
 
-    # Report epoch statistics
+    # Report epoch statistics using CUDA timing if available
     if torch.cuda.is_available():
         end_event.record()
         torch.cuda.synchronize()
@@ -584,6 +673,10 @@ def validate_epoch(model, data_loader, device, epoch, writer=None):
 
                 # Record confidence scores
                 all_confidences.extend(scores[keep].cpu().numpy().tolist())
+
+                # TODO: Calculate IoU between predictions and ground truth
+                # This requires more detailed processing of the DETR outputs
+                # Placeholder for now
 
     avg_loss = total_loss / len(data_loader)
 
@@ -680,8 +773,8 @@ def main():
 
     # ========== CONFIGURABLE PARAMETERS ==========
     # Paths for data and output
-    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/images"
-    annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/augmented_coco_200-300_20250325_022605.json"
+    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DeepSortYolo/ProcessedVideos/yolo_dataset_20250218/images/train"
+    annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Datasets/Detr/coco_annotations_from_yolo_dataset_20250218.json"
     output_dir = "./training_ranged/output"
     checkpoint_dir = "./training_ranged/checkpoints"
     best_model_dir = "./training_ranged/best_model"
@@ -689,16 +782,23 @@ def main():
     cache_dir = "./training_ranged/cache"  # New: cache directory
 
     # Image selection range
-    start_idx = 500
-    end_idx = 600
+    start_idx = 992
+    end_idx = 1000
 
     # Training parameters
-    num_epochs = 280
+    num_epochs = 80
     learning_rate = 5e-5  # Increased from 1e-5
     batch_size = 8  # Increased from 4
     gradient_accumulation_steps = 2  # New: each effective batch = batch_size * gradient_accumulation_steps
-    image_size = (800, 800)
-    early_stopping_patience = 14 # New: stop training after N epochs without improvement
+    image_size = (640, 640)  # Reduced from (800, 800) for faster training
+    early_stopping_patience = 10  # New: stop training after N epochs without improvement
+
+    # Augmentation settings
+    apply_augmentations = True  # Whether to use data augmentation
+    augmentation_strength = 'mild'  # Options: 'mild', 'medium', 'strong'
+
+    # Memory optimization
+    empty_cache_freq = 20  # Empty CUDA cache every N batches
 
     # Checkpointing and validation
     checkpoint_interval = 4  # Save checkpoint every N epochs
@@ -707,8 +807,7 @@ def main():
 
     # Performance optimization
     mixed_precision = True  # Enable mixed precision training
-    # FIXED: Do NOT enable torch.compile by default
-    torch_compile = False  # Don't enable by default due to Triton dependency issues
+    torch_compile = hasattr(torch, 'compile')  # Use torch.compile if available (PyTorch 2.0+)
     pin_memory = True
     num_workers = 0  # Use 0 to avoid multiprocessing issues on Windows
     prefetch_factor = 2
@@ -717,6 +816,7 @@ def main():
     print(f"Training on images from {start_idx} to {end_idx}")
     print(f"Using mixed precision: {mixed_precision}")
     print(f"Using torch.compile: {torch_compile}")
+    print(f"Image size: {image_size}")
     print(
         f"Gradient accumulation steps: {gradient_accumulation_steps} (effective batch size: {batch_size * gradient_accumulation_steps})")
 
@@ -747,10 +847,8 @@ def main():
     print(f"[TRAINING] Learning rate: {learning_rate}")
     print(f"[TRAINING] Image size: {image_size}")
 
-    # Initialize mixed precision scaler
-    # FIXED: Use the correct syntax for GradScaler
-    scaler = torch.amp.GradScaler(enabled=mixed_precision) if torch.cuda.is_available() else torch.amp.GradScaler(
-        device_type='cpu', enabled=mixed_precision)
+    # Initialize mixed precision scaler with proper device type
+    scaler = GradScaler(enabled=mixed_precision)
 
     # TensorBoard writer
     writer = SummaryWriter(log_dir=os.path.join(output_dir, 'tensorboard'))
@@ -761,7 +859,7 @@ def main():
 
     # DETR model configuration optimized for single-class detection
     custom_config = {
-        "num_queries": 1,  # Reduced from 5 to 4 - one tool per image
+        "num_queries": 4,  # Reduced from 5 to 4 - one tool per image
         "bbox_cost": 5,  # Increased from 2 to 5 - more weight on bbox accuracy
         "class_cost": 1,  # Reduced from 2 to 1 - less important for single class
         "giou_cost": 4,  # Increased from 2 to 4 - better localization
@@ -849,25 +947,23 @@ def main():
             size={'shortest_edge': image_size[0], 'longest_edge': image_size[1]}
         )
 
-    # FIXED: Safe handling of torch.compile
+    # Apply torch.compile if available (safely with Triton checking)
     if torch_compile:
         try:
-            # Check if Triton is available
-            triton_available = False
-            try:
-                import triton
-                triton_available = True
-            except ImportError:
-                print("[MODEL] Triton library not found, cannot use torch.compile()")
-                print("[MODEL] To use torch.compile(), install with: pip install triton")
-                torch_compile = False
+            # First check if Triton is available
+            import importlib.util
+            triton_available = importlib.util.find_spec("triton") is not None
 
-            if triton_available and torch_compile:
-                print("[MODEL] Applying torch.compile...")
+            if triton_available:
+                print("[MODEL] Triton library found, applying torch.compile()...")
                 model = torch.compile(model)
                 print("[MODEL] Successfully applied torch.compile.")
+            else:
+                print("[MODEL] Triton library not found, skipping torch.compile()")
+                print("[MODEL] To use torch.compile(), install with: pip install triton")
+                torch_compile = False
         except Exception as e:
-            print(f"[MODEL] Error applying torch.compile: {e}")
+            print(f"[MODEL] Error during torch.compile(): {e}")
             print("[MODEL] Continuing without compilation")
             torch_compile = False
 
@@ -881,7 +977,8 @@ def main():
         annotations_file=annotations_file,
         processor=processor,
         image_size=image_size,
-        augment=False,  # Don't apply augmentations to the full dataset
+        augment=False,  # Don't apply augmentations to the full dataset for initial loading
+        augment_strength=augmentation_strength,
         cache_dir=cache_dir
     )
 
@@ -915,23 +1012,44 @@ def main():
 
     # Set seed for reproducibility
     torch.manual_seed(42)
-    train_dataset, val_dataset = random_split(selected_dataset, [train_size, val_size])
 
+    # Apply augmentation only to training dataset
+    # First create the splits
+    train_indices, val_indices = torch.utils.data.random_split(
+        range(len(selected_dataset)),
+        [train_size, val_size],
+        generator=torch.Generator().manual_seed(42)
+    )
+
+    # Create a new augmented dataset for training
+    train_dataset = SurgicalToolDataset(
+        images_dir=images_dir,
+        annotations_file=annotations_file,
+        processor=processor,
+        image_size=image_size,
+        augment=apply_augmentations,  # Apply augmentations only to training set
+        augment_strength=augmentation_strength,
+        cache_dir=cache_dir
+    )
+
+    # Create a specialized subset using only training indices
+    train_dataset = Subset(train_dataset, train_indices.indices)
+
+    # Create a non-augmented dataset for validation
+    val_dataset = Subset(selected_dataset, val_indices.indices)
+
+    print(f"[AUGMENTATION] Applied {augmentation_strength} augmentations to training set: {apply_augmentations}")
     print(f"[DATASET] Training set size: {len(train_dataset)}")
     print(f"[DATASET] Validation set size: {len(val_dataset)}")
 
-    # Prepare data loaders - set persistent_workers to False if num_workers=0
-    persistent_workers = (num_workers > 0)
-
+    # Create data loaders - use num_workers=0 for Windows to avoid multiprocessing issues
     train_loader = DataLoader(
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
         collate_fn=collate_fn,
         num_workers=num_workers,
-        pin_memory=pin_memory,
-        persistent_workers=persistent_workers,
-        worker_init_fn=worker_init_function if num_workers > 0 else None
+        pin_memory=pin_memory
     )
 
     val_loader = DataLoader(
@@ -940,10 +1058,12 @@ def main():
         shuffle=False,
         collate_fn=collate_fn,
         num_workers=num_workers,
-        pin_memory=pin_memory,
-        persistent_workers=persistent_workers,
-        worker_init_fn=worker_init_function if num_workers > 0 else None
+        pin_memory=pin_memory
     )
+
+    # Calculate steps per epoch for scheduler
+    steps_per_epoch = len(train_loader) // gradient_accumulation_steps
+    total_steps = steps_per_epoch * num_epochs
 
     # Set up optimizer with weight decay for regularization
     optimizer = torch.optim.AdamW(
@@ -1025,7 +1145,7 @@ def main():
                     writer=writer,
                     log_every=10,
                     grad_accum_steps=gradient_accumulation_steps,
-                    empty_cache_freq=20
+                    empty_cache_freq=empty_cache_freq
                 )
 
                 # Update scheduler
@@ -1117,6 +1237,10 @@ def main():
             "learning_rate": learning_rate,
             "mixed_precision": mixed_precision,
             "image_size": image_size
+        },
+        "augmentation": {
+            "enabled": apply_augmentations,
+            "strength": augmentation_strength
         },
         "model_config": custom_config,
         "best_validation_loss": float(best_val_loss),

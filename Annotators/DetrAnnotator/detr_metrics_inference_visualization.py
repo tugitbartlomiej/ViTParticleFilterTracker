@@ -5,8 +5,8 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 # HARDCODED PATHS - REPLACE THESE WITH YOUR ACTUAL PATHS
-METRICS_FILE = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/inference_ranged/metrics_400_1000.json"
-INFERENCE_FILE = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/inference_ranged/inference_results_400_1000.json"
+METRICS_FILE = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/inference_ranged/metrics_500_600.json"
+INFERENCE_FILE = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/inference_ranged/inference_results_500_600.json"
 OUTPUT_DIR = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/inference_ranged/visualizations"
 
 
