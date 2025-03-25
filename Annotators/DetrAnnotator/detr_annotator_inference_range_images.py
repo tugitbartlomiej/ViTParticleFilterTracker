@@ -506,7 +506,7 @@ def main():
     # Ścieżki
     images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/images"
     annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/augmented_coco_200-300_20250325_022605.json"
-    model_dir = "./training_ranged/best_model"
+    model_dir = "./detr_tool_tracking_model_final"
     output_dir = "./inference_ranged"
 
     # Zakres obrazów do inferencji
