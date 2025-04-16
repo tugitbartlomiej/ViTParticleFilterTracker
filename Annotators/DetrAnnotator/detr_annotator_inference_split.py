@@ -102,9 +102,9 @@ def inference_and_sort(model, processor, video_path, output_dir, thresholds, dev
 
 
 def main():
-    model_dir = "F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\Annotators\DetrAnnotator\detr_tool_tracking_model_best\BestEDEN\detr_tool_tracking_model_best_2"
+    model_dir = "./detr_tool_tracking_model_final"
     video_path = 'E:/Cataract/videos/micro/train02.mp4'
-    output_dir = "output/sorted_frames_eden"
+    output_dir = "output/sorted_frames_checkpoint"
     thresholds = [0, 0.25, 0.5, 0.75]
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

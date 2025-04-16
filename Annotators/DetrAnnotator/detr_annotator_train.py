@@ -297,7 +297,7 @@ def main():
 
     # Paths
     images_dir = "/mnt/evafs/faculty/home/bpiotrowski/datasets/DETR_augmented_dataset_20250218/images"
-    annotations_file = "/mnt/evafs/faculty/home/bpiotrowski/datasets/DETR_augmented_dataset_20250218/augmented_annotations_20250310_001344.json"
+    annotations_file = "./coco_annotations_from_yolo_dataset_20250218.json"
     checkpoint_dir = "./checkpoints"  # Katalog do zapisywania checkpointów
     best_model_dir = "/mnt/evafs/faculty/home/bpiotrowski/DETR/detr_tool_tracking_model_best"
 
