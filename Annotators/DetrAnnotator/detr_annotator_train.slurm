@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH -A transformers_vsc
 #SBATCH -p long             # Change to common partition where dgx-2 is accessible
+#SBATCH -w dgx-4             # Explicitly request the dgx-4 node
 #SBATCH --gres=gpu:3         # Request 2 GPUs (since dgx-2 shows 2/8 GPUs available)
 #SBATCH --mem=45G            # Adjust memory based on availability (dgx-2 has 192GB free)
 #SBATCH --time=24:00:00      # Longer time limit for common partition
@@ -33,7 +34,7 @@ cd /mnt/evafs/faculty/home/bpiotrowski/DETR/DETR_fo_a100
 # Uruchom skrypt treningowy z parametrami
 $PYTHON_PATH detr_annotator_train.py \
   --train_images_dir "/mnt/evafs/faculty/home/bpiotrowski/datasets/DETR_augmented_dataset_20250218/images" \
-  --train_annotations_file "/mnt/evafs/faculty/home/bpiotrowski/datasets/DETR_augmented_dataset_20250218/augmented_coco_20250417_015137.json" \
+  --train_annotations_file "/mnt/evafs/faculty/home/bpiotrowski/datasets/DETR_augmented_dataset_20250218/augmented_coco_20250417_030014.json" \
   --checkpoint_dir "./checkpoints" \
   --best_model_dir "./detr_tool_tracking_model_best" \
   --num_epochs 10 \
