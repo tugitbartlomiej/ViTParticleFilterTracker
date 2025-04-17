@@ -1,11 +1,14 @@
+import argparse
 import json
 import os
+import random
 
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 
 
-def visualize_coco_annotations(images_dir, annotations_file, output_dir, draw_labels=True, color="green"):
+def visualize_coco_annotations(images_dir, annotations_file, output_dir, num_samples=None, draw_labels=True,
+                               color="green"):
     """
     Visualize COCO annotations on images and save them to output directory.
 
@@ -13,6 +16,7 @@ def visualize_coco_annotations(images_dir, annotations_file, output_dir, draw_la
         images_dir (str): Directory containing images
         annotations_file (str): Path to COCO annotations JSON file
         output_dir (str): Directory where annotated images will be saved
+        num_samples (int, optional): Number of random images to sample. If None, process all images.
         draw_labels (bool): Whether to draw class labels on the bounding boxes
         color (str): Color of the bounding boxes (e.g., "red", "green", "blue")
     """
@@ -49,13 +53,20 @@ def visualize_coco_annotations(images_dir, annotations_file, output_dir, draw_la
         print("Warning: Arial font not found, using default font")
         font = ImageFont.load_default()
 
+    # Get list of all image ids with annotations
+    image_ids_with_annotations = list(annotations_by_image.keys())
+
+    # Sample random images if num_samples is specified
+    if num_samples is not None and num_samples < len(image_ids_with_annotations):
+        print(f"Randomly sampling {num_samples} images from {len(image_ids_with_annotations)} available")
+        image_ids_with_annotations = random.sample(image_ids_with_annotations, num_samples)
+    else:
+        print(f"Processing all {len(image_ids_with_annotations)} images with annotations")
+
     # Process each image
     processed_count = 0
     error_count = 0
     print(f"Processing images from: {images_dir}")
-
-    # Get list of all image ids with annotations
-    image_ids_with_annotations = list(annotations_by_image.keys())
 
     # Use tqdm to show a progress bar
     for image_id in tqdm(image_ids_with_annotations, desc="Visualizing annotations"):
@@ -75,8 +86,56 @@ def visualize_coco_annotations(images_dir, annotations_file, output_dir, draw_la
             image = Image.open(image_path).convert("RGB")
             draw = ImageDraw.Draw(image)
 
+            # Get annotations for this image and filter out duplicates
+            image_annotations = annotations_by_image[image_id]
+
+            # Filter annotations to remove near-duplicates
+            filtered_annotations = []
+            for ann in image_annotations:
+                bbox1 = ann['bbox']
+                is_duplicate = False
+
+                # Check if this annotation is a duplicate of one we've already filtered
+                for filtered_ann in filtered_annotations:
+                    bbox2 = filtered_ann['bbox']
+
+                    # Convert COCO format [x, y, width, height] to corners [x1, y1, x2, y2]
+                    x1_1, y1_1 = bbox1[0], bbox1[1]
+                    x2_1, y2_1 = bbox1[0] + bbox1[2], bbox1[1] + bbox1[3]
+
+                    x1_2, y1_2 = bbox2[0], bbox2[1]
+                    x2_2, y2_2 = bbox2[0] + bbox2[2], bbox2[1] + bbox2[3]
+
+                    # Calculate area of each box
+                    area1 = bbox1[2] * bbox1[3]
+                    area2 = bbox2[2] * bbox2[3]
+
+                    # Calculate intersection
+                    x1_i = max(x1_1, x1_2)
+                    y1_i = max(y1_1, y1_2)
+                    x2_i = min(x2_1, x2_2)
+                    y2_i = min(y2_1, y2_2)
+
+                    # Check if there is intersection
+                    if x2_i <= x1_i or y2_i <= y1_i:
+                        continue
+
+                    intersection_area = (x2_i - x1_i) * (y2_i - y1_i)
+                    union_area = area1 + area2 - intersection_area
+
+                    # Calculate IoU
+                    iou = intersection_area / union_area if union_area > 0 else 0
+
+                    # Consider as duplicate if IoU is high
+                    if iou > 0.7:
+                        is_duplicate = True
+                        break
+
+                if not is_duplicate:
+                    filtered_annotations.append(ann)
+
             # Draw the bounding boxes
-            for ann in annotations_by_image[image_id]:
+            for ann in filtered_annotations:
                 # COCO bbox format is [x, y, width, height]
                 bbox = ann['bbox']
                 x, y, width, height = bbox
@@ -109,6 +168,14 @@ def visualize_coco_annotations(images_dir, annotations_file, output_dir, draw_la
                         font=font
                     )
 
+            # Debug annotation info
+            draw.text(
+                (10, 10),
+                f"Image ID: {image_id}, Annotations: {len(filtered_annotations)} (filtered from {len(image_annotations)})",
+                fill="blue",
+                font=font
+            )
+
             # Save the image with annotations
             output_path = os.path.join(output_dir, filename)
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -123,23 +190,37 @@ def visualize_coco_annotations(images_dir, annotations_file, output_dir, draw_la
     print(f"Annotated images saved to: {output_dir}")
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Visualize COCO annotations on images')
+    parser.add_argument('--images_dir',
+                        default="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/images",
+                        help='Directory containing images')
+    parser.add_argument('--annotations_file',
+                        default="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/augmented_coco_14655-14660_20250417_011402.json",
+                        help='Path to COCO annotations JSON file')
+    parser.add_argument('--output_dir',
+                        default="./visualized_annotations",
+                        help='Directory where annotated images will be saved')
+    parser.add_argument('--num_samples', type=int, default=None,
+                        help='Number of random images to sample. If not specified, process all images.')
+    parser.add_argument('--draw_labels', action='store_true', default=True,
+                        help='Whether to draw class labels on the bounding boxes')
+    parser.add_argument('--color', default='green',
+                        help='Color of the bounding boxes (e.g., "red", "green", "blue")')
+    return parser.parse_args()
+
+
+
 def main():
-    # Hardcoded paths
-    images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/images"
-    annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/augmented_coco_200-300_20250325_022605.json"
-    output_dir = "./visualized_annotations"
-
-
-    # Configuration
-    color = "green"  # Change to "red", "blue", etc. if needed
-    draw_labels = True
+    args = parse_arguments()
 
     visualize_coco_annotations(
-        images_dir,
-        annotations_file,
-        output_dir,
-        draw_labels=draw_labels,
-        color=color
+        args.images_dir,
+        args.annotations_file,
+        args.output_dir,
+        num_samples=args.num_samples,
+        draw_labels=args.draw_labels,
+        color=args.color
     )
 
 

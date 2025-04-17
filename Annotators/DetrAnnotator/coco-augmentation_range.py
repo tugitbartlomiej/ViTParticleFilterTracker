@@ -1,3 +1,4 @@
+import argparse
 import json
 import shutil
 from datetime import datetime
@@ -8,39 +9,98 @@ import cv2
 from tqdm import tqdm
 
 
+def calculate_iou(box1, box2):
+    """
+    Calculate IoU between two bounding boxes in COCO format [x, y, width, height].
+
+    Args:
+        box1: First box in COCO format [x, y, width, height]
+        box2: Second box in COCO format [x, y, width, height]
+
+    Returns:
+        IoU value
+    """
+    # Convert COCO format [x, y, width, height] to corners [x1, y1, x2, y2]
+    x1_1, y1_1 = box1[0], box1[1]
+    x2_1, y2_1 = box1[0] + box1[2], box1[1] + box1[3]
+
+    x1_2, y1_2 = box2[0], box2[1]
+    x2_2, y2_2 = box2[0] + box2[2], box2[1] + box2[3]
+
+    # Calculate area of each box
+    area1 = box1[2] * box1[3]
+    area2 = box2[2] * box2[3]
+
+    # Calculate intersection
+    x1_i = max(x1_1, x1_2)
+    y1_i = max(y1_1, y1_2)
+    x2_i = min(x2_1, x2_2)
+    y2_i = min(y2_1, y2_2)
+
+    # Check if there is intersection
+    if x2_i <= x1_i or y2_i <= y1_i:
+        return 0.0
+
+    intersection_area = (x2_i - x1_i) * (y2_i - y1_i)
+    union_area = area1 + area2 - intersection_area
+
+    # Avoid division by zero
+    if union_area == 0:
+        return 0.0
+
+    return intersection_area / union_area
+
 class COCORangeAugmenter:
     """
     A class for augmenting a specified range of images in a COCO dataset and creating
     a new COCO dataset with the original and augmented images.
     """
 
-    def __init__(self):
-        """Initialize the COCO dataset range augmenter with hardcoded parameters."""
-        # HARDCODED PARAMETERS - MODIFY THESE AS NEEDED
-        # --------------------------------------------------------------------------
-        # Input/output paths
-        self.json_path = Path(
-            "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/output/coco_annotations_from_yolo_dataset_20250218.json")
-        self.images_dir = Path(
-            "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DeepSortYolo/ProcessedVideos/yolo_dataset_20250218/images/train")
-        self.output_dir = Path(
-            "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset")
+    def __init__(
+            self,
+            json_path,
+            images_dir,
+            output_dir,
+            start_idx=200,
+            end_idx=300,
+            augmentations_per_image=3,
+            augmentation_strength='mild',
+            preserve_original_images=True,
+            verbose=True
+    ):
+        """
+        Initialize the COCO dataset range augmenter.
 
-        # Range selection
-        self.start_idx = 200  # Starting index (inclusive)
-        self.end_idx = 300  # Ending index (exclusive), None to process until the end
-
-        # Augmentation settings
-        self.augmentations_per_image = 10  # Number of augmentations to create per image
-        self.augmentation_strength = 'strong'  # Options: 'mild', 'medium', 'strong'
-        self.preserve_original_images = True  # Whether to include original images in output
-
-        # Debug/logging
-        self.verbose = True  # Enable detailed logging
-        # --------------------------------------------------------------------------
+        Args:
+            json_path: Path to COCO annotations JSON file
+            images_dir: Directory containing original images
+            output_dir: Directory to save augmented dataset
+            start_idx: Starting index (inclusive) for processing a subset of images
+            end_idx: Ending index (exclusive) for processing a subset of images
+            augmentations_per_image: Number of augmentations to create per image
+            augmentation_strength: Intensity of augmentations ('mild', 'medium', 'strong')
+            preserve_original_images: Whether to include original images in output
+            verbose: Enable detailed debug messages
+        """
+        self.json_path = Path(json_path)
+        self.images_dir = Path(images_dir)
+        self.output_dir = Path(output_dir)
+        self.start_idx = start_idx
+        self.end_idx = end_idx
+        self.augmentations_per_image = augmentations_per_image
+        self.augmentation_strength = augmentation_strength
+        self.preserve_original_images = preserve_original_images
+        self.verbose = verbose
 
         # Create a timestamp for unique output filenames
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # Verify input files exist
+        if not self.json_path.exists():
+            raise FileNotFoundError(f"JSON file does not exist: {self.json_path}")
+
+        if not self.images_dir.exists():
+            raise FileNotFoundError(f"Images directory does not exist: {self.images_dir}")
 
         # Create output directories
         self.output_images_dir = self.output_dir / "images"
@@ -106,7 +166,7 @@ class COCORangeAugmenter:
                 "date_created": datetime.now().strftime("%Y-%m-%d")
             },
             "licenses": self.coco_data.get("licenses", [
-                {"id": 1, "name": "Unknown", "url": ""}
+                {"id": 1, "name": "Unknown", "url": "Unknown"}
             ]),
             "categories": self.coco_data["categories"],
             "images": [],
@@ -173,6 +233,8 @@ class COCORangeAugmenter:
             noise_prob = 0.4
             blur_prob = 0.3
 
+        self.log(f"Using {self.augmentation_strength} augmentation settings")
+
         # Create the augmentation pipeline
         return A.Compose([
             # Geometric transformations
@@ -184,11 +246,12 @@ class COCORangeAugmenter:
                     border_mode=cv2.BORDER_CONSTANT,
                     p=1.0
                 ),
-                A.IAAAffine(
-                    scale=(1.0 - scale_limit, 1.0 + scale_limit),
-                    translate_percent=(-shift_limit, shift_limit),
-                    rotate=(-rotate_limit, rotate_limit),
-                    shear=None,
+                # Using another ShiftScaleRotate instead of IAAAffine which causes errors
+                A.ShiftScaleRotate(
+                    shift_limit=shift_limit * 1.2,
+                    scale_limit=scale_limit * 1.2,
+                    rotate_limit=rotate_limit * 1.2,
+                    border_mode=cv2.BORDER_REFLECT,  # Different border mode for variety
                     p=1.0
                 ),
             ], p=geometric_prob),
@@ -246,7 +309,7 @@ class COCORangeAugmenter:
         sorted_images = sorted(all_images, key=lambda x: x['file_name'])
 
         # Determine actual indices to use
-        actual_start = min(self.start_idx, total_images)
+        actual_start = min(self.start_idx, total_images) if self.start_idx is not None else 0
         actual_end = min(self.end_idx or total_images, total_images)
 
         # Get the selected range of images
@@ -262,7 +325,6 @@ class COCORangeAugmenter:
     def _process_original_image(self, img_info):
         """
         Process an original image and add it to the new dataset.
-        Keeps only ONE annotation per image.
 
         Args:
             img_info: Image information dictionary from COCO data
@@ -281,12 +343,6 @@ class COCORangeAugmenter:
 
         # Get annotations for this image
         annotations = self._get_annotations_for_image(image_id)
-
-        # *** MODIFY HERE ***
-        # Keep only one annotation if there are multiple
-        if len(annotations) > 1:
-            annotations = [annotations[0]]
-        # *** END MODIFICATION ***
 
         if not annotations:
             self.log(f"WARNING: Image {image_filename} has no annotations", level='warning')
@@ -315,10 +371,11 @@ class COCORangeAugmenter:
 
         return True  # Successfully processed even if we didn't copy the image
 
+
+
     def _create_augmentations(self, image, img_info, annotations):
         """
         Create augmented versions of a single image and its annotations.
-        Keeps only ONE annotation per image.
 
         Args:
             image: Original image as numpy array
@@ -330,22 +387,46 @@ class COCORangeAugmenter:
         """
         image_filename = img_info['file_name']
 
-        # *** MODIFY HERE ***
-        # Select only one annotation (the first one, or you could implement logic to choose the best)
-        if len(annotations) > 0:
-            # Use only the first annotation
-            selected_annotation = annotations[0]
-            bboxes = [selected_annotation['bbox']]
-            category_ids = [selected_annotation['category_id']]
-        else:
-            bboxes = []
-            category_ids = []
-        # *** END MODIFICATION ***
+        # Prepare bounding boxes and category ids for transformation
+        bboxes = [ann['bbox'] for ann in annotations]
+        category_ids = [ann['category_id'] for ann in annotations]
 
         # Skip augmentation if there are no annotations
         if not bboxes:
             self.log(f"Skipping augmentation for {image_filename} - no annotations")
             return 0
+
+        # Filter out very small boxes that might be noise
+        filtered_bboxes = []
+        filtered_category_ids = []
+        filtered_annotations = []
+
+        for i, (bbox, cat_id, ann) in enumerate(zip(bboxes, category_ids, annotations)):
+            # Skip very small boxes
+            if bbox[2] < 10 or bbox[3] < 10:  # Width or height too small
+                self.log(f"Skipping small box with dimensions {bbox[2]}x{bbox[3]}", level='warning')
+                continue
+
+            # Check if this box overlaps too much with any already filtered box
+            is_duplicate = False
+            for j, existing_bbox in enumerate(filtered_bboxes):
+                iou = calculate_iou(bbox, existing_bbox)
+                if iou > 0.8:  # High overlap threshold
+                    self.log(f"Found duplicate box with IoU={iou:.2f}", level='warning')
+                    is_duplicate = True
+                    break
+
+            if not is_duplicate:
+                filtered_bboxes.append(bbox)
+                filtered_category_ids.append(cat_id)
+                filtered_annotations.append(ann)
+
+        self.log(f"Filtered {len(bboxes) - len(filtered_bboxes)} potentially problematic boxes")
+
+        # Use filtered annotations
+        bboxes = filtered_bboxes
+        category_ids = filtered_category_ids
+        annotations = filtered_annotations
 
         # Counter for successful augmentations
         successful_augmentations = 0
@@ -392,21 +473,35 @@ class COCORangeAugmenter:
                 }
                 self.new_coco_data['images'].append(new_image)
 
-                # Create new annotations for the augmented image
-                # *** MODIFY HERE ***
-                # Now we should only have one bbox and one category_id
-                if transformed['bboxes'] and len(transformed['bboxes']) > 0:
-                    bbox = transformed['bboxes'][0]
-                    cat_id = transformed['category_ids'][0]
+                # Post-process transformed bounding boxes to avoid duplicates
+                transformed_bboxes = []
+                transformed_category_ids = []
 
+                for i, (bbox, cat_id) in enumerate(zip(transformed['bboxes'], transformed['category_ids'])):
                     # Ensure all bbox values are positive
                     bbox = [max(0, val) for val in bbox]
 
-                    # Ensure width and height are positive
-                    if bbox[2] <= 0 or bbox[3] <= 0:
-                        self.log(f"WARNING: Skipped bbox with width/height <= 0: {bbox}", level='warning')
+                    # Ensure width and height are positive and not too small
+                    if bbox[2] <= 10 or bbox[3] <= 10:
+                        self.log(f"WARNING: Skipped transformed bbox with width/height too small: {bbox}",
+                                 level='warning')
                         continue
 
+                    # Check for duplicates in transformed boxes
+                    is_duplicate = False
+                    for existing_bbox in transformed_bboxes:
+                        iou = calculate_iou(bbox, existing_bbox)
+                        if iou > 0.7:  # Slightly lower threshold for transformed boxes
+                            is_duplicate = True
+                            break
+
+                    if not is_duplicate:
+                        transformed_bboxes.append(bbox)
+                        transformed_category_ids.append(cat_id)
+
+                # Create new annotations for the augmented image
+                annotations_created = 0
+                for bbox, cat_id in zip(transformed_bboxes, transformed_category_ids):
                     # Create new annotation
                     new_ann = {
                         'id': self.next_ann_id,
@@ -417,14 +512,12 @@ class COCORangeAugmenter:
                         'iscrowd': 0
                     }
 
-                    # Add segmentation if present in original annotations
-                    if annotations and 'segmentation' in annotations[0]:
-                        new_ann['segmentation'] = []  # Empty segmentation for now
-
                     self.new_coco_data['annotations'].append(new_ann)
                     self.next_ann_id += 1
-                    self.stats["annotations_created"] += 1
-                # *** END MODIFICATION ***
+                    annotations_created += 1
+
+                self.log(f"Created {annotations_created} annotations for {new_filename}")
+                self.stats["annotations_created"] += annotations_created
 
                 # Update counters for next image
                 self.next_image_id += 1
@@ -497,7 +590,8 @@ class COCORangeAugmenter:
 
             # Create augmentations for this image
             augmented_count = self._create_augmentations(image, img_info, annotations)
-            self.stats["augmented_images"] += 1 if augmented_count > 0 else 0
+            if augmented_count > 0:
+                self.stats["augmented_images"] += 1
             self.stats["processed_images"] += 1
 
             # Log progress every 10 images
@@ -535,40 +629,87 @@ class COCORangeAugmenter:
         self.log(f"Total images in output dataset: {len(self.new_coco_data['images'])}")
         self.log(f"Total annotations in output dataset: {len(self.new_coco_data['annotations'])}")
         self.log(f"Output directory: {self.output_dir}")
+        self.log("=" * 70)
+
+
+def parse_arguments():
+    """Parse command line arguments for the script."""
+    parser = argparse.ArgumentParser(description='COCO Dataset Augmenter for a Range of Images')
+
+    # Required arguments with defaults
+    parser.add_argument('--json_path', required=False, type=str,
+                        default="F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\Annotators\Datasets\Detr\coco_annotations_from_yolo_dataset_20250218.json",
+                        help='Path to the COCO annotations JSON file')
+    parser.add_argument('--images_dir', required=False, type=str,
+                        default="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DeepSortYolo/ProcessedVideos/yolo_dataset_20250218/images/train",
+                        help='Directory containing the original images')
+    parser.add_argument('--output_dir', required=False, type=str,
+                        default='F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset',
+                        help='Directory to save the augmented dataset')
+
+    # Optional arguments with defaults
+    parser.add_argument('--start_idx', type=int, default=14655,
+                        help='Starting index for processing a subset of images (default: 250)')
+    parser.add_argument('--end_idx', type=int, default=14660,
+                        help='Ending index for processing a subset of images (default: 300)')
+    parser.add_argument('--augmentations_per_image', type=int, default=2,
+                        help='Number of augmentations to create per image (default: 2)')
+    parser.add_argument('--augmentation_strength', type=str, default='strong',
+                        choices=['mild', 'medium', 'strong'],
+                        help='Intensity of augmentations (default: strong)')
+    parser.add_argument('--preserve_original_images', action='store_true', default=True,
+                        help='Include original images in output dataset (default: True)')
+    parser.add_argument('--verbose', action='store_true', default=True,
+                        help='Enable detailed logging (default: True)')
+
+    return parser.parse_args()
 
 
 def main():
     """Main function to run the augmentation process."""
     try:
-        print("COCO Range Augmenter - Hardcoded Parameters Version")
+        # Parse command line arguments
+        args = parse_arguments()
+
+        print("COCO Range Augmenter")
+        print("=" * 70)
+
+        # Display parameter values
+        print(f"JSON file: {args.json_path}")
+        print(f"Images directory: {args.images_dir}")
+        print(f"Output directory: {args.output_dir}")
+        print(f"Processing image range: {args.start_idx} to {args.end_idx}")
+        print(f"Augmentations per image: {args.augmentations_per_image}")
+        print(f"Augmentation strength: {args.augmentation_strength}")
+        print(f"Include original images: {args.preserve_original_images}")
+        print(f"Verbose output: {args.verbose}")
         print("=" * 70)
 
         # Create and run the augmenter
-        augmenter = COCORangeAugmenter()
-
-        # Display parameter values
-        print(f"JSON file: {augmenter.json_path}")
-        print(f"Images directory: {augmenter.images_dir}")
-        print(f"Output directory: {augmenter.output_dir}")
-        print(f"Processing image range: {augmenter.start_idx} to {augmenter.end_idx or 'end'}")
-        print(f"Augmentations per image: {augmenter.augmentations_per_image}")
-        print(f"Augmentation strength: {augmenter.augmentation_strength}")
-        print(f"Include original images: {augmenter.preserve_original_images}")
-        print("=" * 70)
+        augmenter = COCORangeAugmenter(
+            json_path=args.json_path,
+            images_dir=args.images_dir,
+            output_dir=args.output_dir,
+            start_idx=args.start_idx,
+            end_idx=args.end_idx,
+            augmentations_per_image=args.augmentations_per_image,
+            augmentation_strength=args.augmentation_strength,
+            preserve_original_images=args.preserve_original_images,
+            verbose=args.verbose
+        )
 
         # Execute the augmentation
         output_json = augmenter.augment_dataset()
 
         print(f"\nAugmentation completed successfully!")
         print(f"Output JSON: {output_json}")
+        return 0
 
     except Exception as e:
         print(f"\nERROR: {str(e)}")
         import traceback
         traceback.print_exc()
         return 1
-
-    return 0
 
 
 if __name__ == "__main__":

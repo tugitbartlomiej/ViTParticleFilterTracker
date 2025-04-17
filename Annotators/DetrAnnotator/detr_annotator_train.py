@@ -1,3 +1,4 @@
+import argparse
 import glob
 import json
 import os
@@ -288,19 +289,83 @@ def load_checkpoint(checkpoint_path, model, optimizer, device):
         return None, 0
 
 
+def parse_args():
+    """Parse command line arguments for the training script."""
+    parser = argparse.ArgumentParser(description='DETR Surgical Tool Detection - Training')
+    
+    # Data paths
+    parser.add_argument('--train_images_dir', type=str, 
+                        default="/mnt/evafs/faculty/home/bpiotrowski/datasets/yolo_dataset_20250218/images/train",
+                        help='Directory containing training images')
+    parser.add_argument('--train_annotations_file', type=str, 
+                        default="./coco_annotations_from_yolo_dataset_20250218.json",
+                        help='Path to COCO annotations JSON file')
+    parser.add_argument('--checkpoint_dir', type=str, 
+                        default="./checkpoints",
+                        help='Directory to save checkpoints')
+    parser.add_argument('--best_model_dir', type=str, 
+                        default="./detr_tool_tracking_model_best",
+                        help='Directory to save the best model')
+    
+    # Training parameters
+    parser.add_argument('--num_epochs', type=int, default=10,
+                        help='Number of training epochs')
+    parser.add_argument('--learning_rate', type=float, default=5e-5,
+                        help='Initial learning rate')
+    parser.add_argument('--batch_size', type=int, default=8,
+                        help='Training batch size')
+    parser.add_argument('--image_size', type=int, nargs=2, default=[800, 800],
+                        help='Image size for training (height, width)')
+    parser.add_argument('--warmup_steps', type=int, default=100,
+                        help='Number of warmup steps for learning rate scheduler')
+    parser.add_argument('--lr_scheduler_patience', type=int, default=5,
+                        help='Patience for learning rate scheduler')
+    parser.add_argument('--lr_scheduler_factor', type=float, default=0.8,
+                        help='Factor for learning rate scheduler')
+    parser.add_argument('--val_split', type=float, default=0.1,
+                        help='Validation split ratio (0-1)')
+    
+    # Model parameters
+    parser.add_argument('--num_queries', type=int, default=2,
+                        help='Number of queries for DETR model')
+    parser.add_argument('--bbox_cost', type=float, default=5,
+                        help='Bbox cost weight')
+    parser.add_argument('--class_cost', type=float, default=1,
+                        help='Class cost weight')
+    parser.add_argument('--giou_cost', type=float, default=4,
+                        help='GIoU cost weight')
+    parser.add_argument('--giou_loss_coefficient', type=float, default=4,
+                        help='GIoU loss coefficient')
+    parser.add_argument('--bbox_loss_coefficient', type=float, default=5,
+                        help='Bbox loss coefficient')
+    parser.add_argument('--eos_coefficient', type=float, default=0.1,
+                        help='EOS coefficient')
+    
+    # Other settings
+    parser.add_argument('--resume_training', action='store_true',
+                        help='Resume training from latest checkpoint')
+    parser.add_argument('--use_best_model', action='store_true',
+                        help='Use saved best model if available')
+    parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for reproducibility')
+    
+    args = parser.parse_args()
+    return args
+
+
 def main():
     print("=" * 80)
     print("DETR SURGICAL TOOL DETECTION - TRAINING START")
     print("=" * 80)
 
-    # Manually set absolute paths to training set
-    train_images_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DeepSortYolo/ProcessedVideos/yolo_dataset_20250218/images/train"
-    # train_images_dir = "/mnt/evafs/faculty/home/bpiotrowski/datasets/yolo_dataset_20250218/images/train"
-    train_annotations_file = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Datasets/Detr/coco_annotations_from_yolo_dataset_20250218.json"
-    # train_annotations_file = "/mnt/evafs/faculty/home/bpiotrowski/datasets/yolo_dataset_20250218/coco_annotations_from_yolo_dataset_20250218.json"
-    checkpoint_dir = Path("./checkpoints")
-    best_model_dir = Path(
-        "./detr_tool_tracking_model_best")
+    # Parse arguments
+    args = parse_args()
+
+    # Set paths from arguments
+    train_images_dir = args.train_images_dir
+    train_annotations_file = args.train_annotations_file
+    checkpoint_dir = Path(args.checkpoint_dir)
+    best_model_dir = Path(args.best_model_dir)
 
     print(f"[PATHS] Train Images Directory: {train_images_dir}")
     print(f"[PATHS] Train Annotations File: {train_annotations_file}")
@@ -309,18 +374,18 @@ def main():
 
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    # Training settings
+    # Training settings from arguments
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"[DEVICE] Using device: {device}")
-    num_epochs = 10  # Increased from 40 to 100
-    learning_rate = 5e-5  # Increased from 1e-5 to 5e-5
-    batch_size = 8  # Increased from 4 to 8
-    image_size = (800, 800)
+    num_epochs = args.num_epochs
+    learning_rate = args.learning_rate
+    batch_size = args.batch_size
+    image_size = tuple(args.image_size)
 
     # Learning rate scheduler parameters
-    warmup_steps = 100
-    lr_scheduler_patience = 5
-    lr_scheduler_factor = 0.8
+    warmup_steps = args.warmup_steps
+    lr_scheduler_patience = args.lr_scheduler_patience
+    lr_scheduler_factor = args.lr_scheduler_factor
 
     # Initialize TensorBoard
     writer = SummaryWriter(log_dir='./runs/detr_training')
@@ -329,21 +394,20 @@ def main():
     print("MODEL INITIALIZATION")
     print("=" * 80)
 
-    # CRITICAL CHANGE: Reduced from 5 to 2 for only one tool per image
-    num_queries = 2
+    # Model parameters from arguments
+    num_queries = args.num_queries
     custom_config = {
         "num_queries": num_queries,
-        # Adjusted weights to penalize bbox and giou losses more heavily
-        "bbox_cost": 5,  # Increased from 2 to 5
-        "class_cost": 1,  # Decreased from 2 to 1
-        "giou_cost": 4,  # Increased from 2 to 4
-        "giou_loss_coefficient": 4,  # Increased from 2 to 4
-        "bbox_loss_coefficient": 5,  # Increased from 2 to 5
-        "eos_coefficient": 0.1,  # Decreased from 0.8 to 0.1
+        "bbox_cost": args.bbox_cost,
+        "class_cost": args.class_cost,
+        "giou_cost": args.giou_cost,
+        "giou_loss_coefficient": args.giou_loss_coefficient,
+        "bbox_loss_coefficient": args.bbox_loss_coefficient,
+        "eos_coefficient": args.eos_coefficient,
     }
 
-    # Try to load saved model if it exists
-    if best_model_dir.exists() and best_model_dir.is_dir():
+    # Try to load saved model if it exists and if requested
+    if best_model_dir.exists() and best_model_dir.is_dir() and args.use_best_model:
         print(f"[MODEL] Found saved model in {best_model_dir}")
         try:
             print(f"[MODEL] Attempting to load model from {best_model_dir}...")
@@ -377,7 +441,7 @@ def main():
                 size={'shortest_edge': image_size[0], 'longest_edge': image_size[1]}
             )
     else:
-        print(f"[MODEL] No previously saved model found in {best_model_dir}")
+        print(f"[MODEL] No previously saved model found in {best_model_dir} or not requested")
         print("[MODEL] Loading default pre-trained model...")
         model = DetrForObjectDetection.from_pretrained(
             "facebook/detr-resnet-50",
@@ -416,14 +480,14 @@ def main():
         print("Aborting training due to data issues in the dataset.")
         return
 
-    # NEW: Create validation split
+    # Create validation split
     dataset_size = len(full_dataset)
-    val_split = 0.1  # 10% for validation
+    val_split = args.val_split
     train_size = int((1 - val_split) * dataset_size)
     val_size = dataset_size - train_size
 
     # Set seed for reproducibility
-    torch.manual_seed(42)
+    torch.manual_seed(args.seed)
     train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
     print(f"Training dataset size: {len(train_dataset)}")
     print(f"Validation dataset size: {len(val_dataset)}")
@@ -433,7 +497,7 @@ def main():
         batch_size=batch_size,
         shuffle=True,
         collate_fn=collate_fn,
-        num_workers=2,  # Increased from 0 to 2
+        num_workers=2,
         pin_memory=True
     )
 
@@ -446,9 +510,9 @@ def main():
         pin_memory=True
     )
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-4)  # Added weight decay
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-4)
 
-    # NEW: Add learning rate scheduler
+    # Add learning rate scheduler
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer,
         mode='min',
@@ -463,18 +527,21 @@ def main():
     print("CHECKPOINT CHECKING")
     print("=" * 80)
 
-    latest_checkpoint = find_latest_checkpoint(str(checkpoint_dir))
-    if latest_checkpoint:
-        loaded_model, start_epoch = load_checkpoint(latest_checkpoint, model, optimizer, device)
-        if loaded_model is not None:
-            model = loaded_model
-            print(f"Resuming training from epoch {start_epoch}")
+    start_epoch = 0
+    if args.resume_training:
+        latest_checkpoint = find_latest_checkpoint(str(checkpoint_dir))
+        if latest_checkpoint:
+            loaded_model, start_epoch = load_checkpoint(latest_checkpoint, model, optimizer, device)
+            if loaded_model is not None:
+                model = loaded_model
+                print(f"Resuming training from epoch {start_epoch}")
+            else:
+                start_epoch = 0
+                print("Starting training from beginning (checkpoint loading failed)")
         else:
-            start_epoch = 0
-            print("Starting training from beginning (checkpoint loading failed)")
+            print("[CHECKPOINT] No checkpoints found, starting training from scratch.")
     else:
-        start_epoch = 0
-        print("[CHECKPOINT] No checkpoints found, starting training from scratch.")
+        print("[CHECKPOINT] Not resuming from checkpoint, starting training from scratch.")
 
     print("=" * 80)
     print(f"TRAINING STARTING FROM EPOCH {start_epoch + 1}")
