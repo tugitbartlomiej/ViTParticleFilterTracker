@@ -648,7 +648,7 @@ def parse_arguments():
                         help='Directory to save the augmented dataset')
 
     # Optional arguments with defaults
-    parser.add_argument('--start_idx', type=int, default=14655,
+    parser.add_argument('--start_idx', type=int, default=450,
                         help='Starting index for processing a subset of images (default: 250)')
     parser.add_argument('--end_idx', type=int, default=14660,
                         help='Ending index for processing a subset of images (default: 300)')
