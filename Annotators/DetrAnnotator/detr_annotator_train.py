@@ -292,23 +292,23 @@ def load_checkpoint(checkpoint_path, model, optimizer, device):
 def parse_args():
     """Parse command line arguments for the training script."""
     parser = argparse.ArgumentParser(description='DETR Surgical Tool Detection - Training')
-    
+
     # Data paths
-    parser.add_argument('--train_images_dir', type=str, 
-                        default="/mnt/evafs/faculty/home/bpiotrowski/datasets/yolo_dataset_20250218/images/train",
+    parser.add_argument('--train_images_dir', type=str,
+                        default="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/images",
                         help='Directory containing training images')
-    parser.add_argument('--train_annotations_file', type=str, 
-                        default="./coco_annotations_from_yolo_dataset_20250218.json",
+    parser.add_argument('--train_annotations_file', type=str,
+                        default="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/augmented_coco_450-14660_20250417_133558.json",
                         help='Path to COCO annotations JSON file')
-    parser.add_argument('--checkpoint_dir', type=str, 
+    parser.add_argument('--checkpoint_dir', type=str,
                         default="./checkpoints",
                         help='Directory to save checkpoints')
-    parser.add_argument('--best_model_dir', type=str, 
+    parser.add_argument('--best_model_dir', type=str,
                         default="./detr_tool_tracking_model_best",
                         help='Directory to save the best model')
-    
+
     # Training parameters
-    parser.add_argument('--num_epochs', type=int, default=10,
+    parser.add_argument('--num_epochs', type=int, default=70,
                         help='Number of training epochs')
     parser.add_argument('--learning_rate', type=float, default=5e-5,
                         help='Initial learning rate')
@@ -324,7 +324,7 @@ def parse_args():
                         help='Factor for learning rate scheduler')
     parser.add_argument('--val_split', type=float, default=0.1,
                         help='Validation split ratio (0-1)')
-    
+
     # Model parameters
     parser.add_argument('--num_queries', type=int, default=2,
                         help='Number of queries for DETR model')
@@ -340,7 +340,7 @@ def parse_args():
                         help='Bbox loss coefficient')
     parser.add_argument('--eos_coefficient', type=float, default=0.1,
                         help='EOS coefficient')
-    
+
     # Other settings
     parser.add_argument('--resume_training', action='store_true',
                         help='Resume training from latest checkpoint')
@@ -348,7 +348,7 @@ def parse_args():
                         help='Use saved best model if available')
     parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for reproducibility')
-    
+
     args = parser.parse_args()
     return args
 
@@ -551,7 +551,10 @@ def main():
     best_val_loss = float('inf')
     patience = 10  # Wait for 10 epochs without improvement before stopping
     patience_counter = 0
-
+    
+    # Initialize epoch variable in case training loop is skipped
+    epoch = start_epoch - 1
+    
     try:
         for epoch in range(start_epoch, num_epochs):
             print(f"Starting epoch {epoch + 1}/{num_epochs}...")
@@ -602,6 +605,7 @@ def main():
     print("TRAINING FINISHED - SAVING FINAL MODEL")
     print("=" * 80)
 
+    # Save final checkpoint with proper epoch value
     save_checkpoint(model, optimizer, epoch, str(checkpoint_dir))
     model.save_pretrained("./detr_tool_tracking_model_final")
     processor.save_pretrained("./detr_tool_tracking_model_final")
