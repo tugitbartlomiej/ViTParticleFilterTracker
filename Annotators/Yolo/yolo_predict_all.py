@@ -4,13 +4,13 @@ import cv2
 from ultralytics import YOLO
 
 skip_frames = 5
-videos_dir = r"E:\Cataract\videos\micro"
-output_dir = "output_frames_0_45"
+videos_dir = r"E:/Cataract/videos/micro"
+output_dir = "output_frames_80_100"
 annotated_dir = os.path.join(output_dir, "annotated")
 raw_dir = os.path.join(output_dir, "raw")
 os.makedirs(annotated_dir, exist_ok=True)
 os.makedirs(raw_dir, exist_ok=True)
-model = YOLO("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/surgical_tool_detection/exp14/weights/best.pt")
+model = YOLO("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/surgical_tool_detection/Eden/exp/weights/best.pt")
 
 for video_file in os.listdir(videos_dir):
     if not video_file.lower().endswith(".mp4"):
@@ -32,7 +32,7 @@ for video_file in os.listdir(videos_dir):
         boxes = results[0].boxes.xyxy
         confidences = results[0].boxes.conf
         classes = results[0].boxes.cls
-        valid_idx = [i for i, conf in enumerate(confidences) if conf <= 0.45]
+        valid_idx = [i for i, conf in enumerate(confidences) if conf >= 0.80]
         if not valid_idx:
             continue
         annotated = frame.copy()
@@ -54,5 +54,5 @@ for video_file in os.listdir(videos_dir):
         cv2.imwrite(os.path.join(annotated_dir, f"{frame_prefix}.jpg"), annotated)
         with open(os.path.join(annotated_dir, f"{frame_prefix}.txt"), "w") as f:
             for line in label_data:
-                f.write(line + "\n")
+                f.write(line + "/n")
     cap.release()

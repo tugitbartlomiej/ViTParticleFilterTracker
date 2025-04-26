@@ -1,20 +1,19 @@
-tak, że... #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import argparse
-import os
-import torch
-import cv2
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
-from torchvision import transforms
 import json
+import os
 
-from models.detr import DETR
-from models.backbone import build_backbone
-from models.transformer import build_transformer
+import torch
+from PIL import Image, ImageDraw
+from torchvision import transforms
+
 from data.dataset import CocoDetectionDataset
 from data.transforms import get_transforms
+from models.backbone import build_backbone
+from models.detr import DETR
+from models.transformer import build_transformer
 
 
 def get_args_parser():
@@ -55,6 +54,13 @@ def box_cxcywh_to_xyxy(x):
         Tensor: boxy w formacie [x_min, y_min, x_max, y_max]
     """
     x_c, y_c, w, h = x.unbind(-1)
+    
+    # Opcjonalne ograniczenie wielkości bounding boxów jeśli są zbyt duże
+    # Zakładamy, że końcówka narzędzia jest mała, więc limitujemy maksymalną wielkość
+    max_size = 0.2  # maksymalnie 20% wymiaru obrazu
+    w = torch.clamp(w, max=max_size)
+    h = torch.clamp(h, max=max_size)
+    
     b = [(x_c - 0.5 * w), (y_c - 0.5 * h),
          (x_c + 0.5 * w), (y_c + 0.5 * h)]
     return torch.stack(b, dim=-1)
@@ -89,13 +95,30 @@ def visualize_predictions(image, outputs, threshold=0.7, class_names=None):
     probas = outputs['pred_logits'].softmax(-1)[0, :, :-1]  # Ignorujemy klasę "no object"
     keep = probas.max(-1).values > threshold
     
-    # Konwertuj boxy do formatu xyxy
+    # Konwertuj boxy do formatu xyxy z ograniczaniem wielkości
     boxes = box_cxcywh_to_xyxy(outputs['pred_boxes'][0, keep])
     
     # Skaluj boxy do wymiarów obrazu
     width, height = image.size
     boxes[:, [0, 2]] *= width
     boxes[:, [1, 3]] *= height
+    
+    # Opcjonalne dodatkowe ograniczenie rozmiaru bezpośrednio w pikselach
+    # Zakładamy, że końcówka narzędzia nie powinna być większa niż 150px w obu wymiarach
+    max_pixel_size = 150
+    for i in range(len(boxes)):
+        box_width = boxes[i, 2] - boxes[i, 0]
+        box_height = boxes[i, 3] - boxes[i, 1]
+        
+        if box_width > max_pixel_size:
+            center_x = (boxes[i, 0] + boxes[i, 2]) / 2
+            boxes[i, 0] = center_x - max_pixel_size / 2
+            boxes[i, 2] = center_x + max_pixel_size / 2
+            
+        if box_height > max_pixel_size:
+            center_y = (boxes[i, 1] + boxes[i, 3]) / 2
+            boxes[i, 1] = center_y - max_pixel_size / 2
+            boxes[i, 3] = center_y + max_pixel_size / 2
     
     # Pobierz klasy i pewność detekcji
     scores, labels = probas[keep].max(-1)
@@ -163,7 +186,7 @@ def main(args):
         model_args = argparse.Namespace(
             backbone='resnet50',
             num_classes=2,
-            num_queries=100,
+            num_queries=100,  # Można zmniejszyć do 10-20 dla pojedynczego obiektu
             hidden_dim=256,
             nheads=8,
             num_encoder_layers=6,
@@ -189,8 +212,13 @@ def main(args):
     model.to(device)
     model.eval()
     
+    # Dodajemy informację o debugowaniu bounding boxów
+    print("UWAGA: Zastosowano ograniczenie wielkości bounding boxów do 20% obrazu")
+    print("Maksymalny rozmiar w pikselach ustawiono na 150px")
+    
     # Wczytaj dataset
     print("Loading dataset...")
+    # Używamy fixed_size=True aby zapewnić spójność rozmiarów
     transform_val, _ = get_transforms(fixed_size=True)
     
     # Przygotuj ścieżki

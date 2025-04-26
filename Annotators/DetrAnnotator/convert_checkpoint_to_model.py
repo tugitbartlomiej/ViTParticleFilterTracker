@@ -5,7 +5,7 @@ from transformers import DetrForObjectDetection, DetrImageProcessor
 
 # ========== HARDCODED PARAMETERS ==========
 # Ścieżka do checkpointa
-CHECKPOINT_PATH = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/checkpoint_epoch_27.pt"
+CHECKPOINT_PATH = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/checkpoints/checkpoint_epoch_44.pt"
 # Katalog docelowy dla gotowego modelu
 OUTPUT_DIR = "./detr_tool_tracking_model_final"
 # Rozmiar obrazów używany podczas treningu
