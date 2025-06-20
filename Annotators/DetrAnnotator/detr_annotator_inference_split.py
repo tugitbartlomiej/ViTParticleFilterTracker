@@ -125,7 +125,7 @@ def inference_and_sort(model, processor, video_path, output_dir, thresholds, dev
 
 
 def main():
-    model_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/training_ranged/best_model/detr_tool_model_epoch_9"
+    model_dir = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/detr_training_output/final_model"
     video_path = 'E:/Cataract/videos/micro/train02.mp4'
     output_dir = "output/sorted_frames_mycomp"
     thresholds = [0, 0.25, 0.5, 0.75]

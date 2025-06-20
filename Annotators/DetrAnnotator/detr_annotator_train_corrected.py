@@ -18,6 +18,7 @@ from transformers import (
 
 
 # --- Dataset Class ---
+# (Dataset class remains the same as in the previous version)
 class SurgicalToolDataset(Dataset):
     def __init__(self, images_dir, annotations_file, processor, augment=False):
         print("Initializing dataset...")
@@ -136,6 +137,7 @@ class SurgicalToolDataset(Dataset):
         return {"pixel_values": pixel_values, "pixel_mask": pixel_mask, "labels": labels}
 
 # --- Collate Function ---
+# (Collate function remains the same)
 def collate_fn(batch):
     # Filter out None items
     batch = [item for item in batch if item is not None]
@@ -151,13 +153,72 @@ def collate_fn(batch):
         print(f"Error during collate_fn: {e}")
         return None
 
+# --- Checkpoint Helper Functions ---
+def find_latest_checkpoint(checkpoint_dir):
+    """Finds the latest checkpoint file based on epoch number."""
+    checkpoint_dir = Path(checkpoint_dir)
+    if not checkpoint_dir.exists():
+        print(f"[Checkpoint] Directory not found: {checkpoint_dir}")
+        return None
+
+    checkpoint_files = list(checkpoint_dir.glob("checkpoint_epoch_*.pth"))
+    if not checkpoint_files:
+        print(f"[Checkpoint] No checkpoints found in {checkpoint_dir}")
+        return None
+
+    try:
+        # Sort by epoch number extracted from filename
+        checkpoint_files.sort(key=lambda x: int(x.stem.split('_')[-1]))
+        latest_checkpoint = checkpoint_files[-1]
+        print(f"[Checkpoint] Found latest checkpoint: {latest_checkpoint}")
+        return latest_checkpoint
+    except Exception as e:
+        print(f"[Checkpoint] Error parsing checkpoint filenames: {e}")
+        return None
+
+
+def load_checkpoint(checkpoint_path, model, optimizer, device):
+    """Loads model and optimizer state from a checkpoint file."""
+    checkpoint_path = Path(checkpoint_path)
+    if not checkpoint_path.is_file():
+        print(f"[Checkpoint] Checkpoint file not found: {checkpoint_path}")
+        return model, optimizer, 0 # Return original model/optimizer, start from epoch 0
+
+    print(f"[Checkpoint] Loading checkpoint from: {checkpoint_path}")
+    try:
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+
+        # Load model state dict
+        model.load_state_dict(checkpoint['model_state_dict'])
+
+        # Load optimizer state dict
+        if optimizer is not None and 'optimizer_state_dict' in checkpoint:
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        elif optimizer is None:
+            print("[Checkpoint] Warning: Optimizer not provided, skipping loading its state.")
+        else:
+            print("[Checkpoint] Warning: Optimizer state not found in checkpoint, skipping loading.")
+
+
+        # Load epoch number
+        start_epoch = checkpoint.get('epoch', 0) # Default to 0 if epoch key is missing
+        print(f"[Checkpoint] Successfully loaded state from epoch {start_epoch}")
+        # Return epoch number to START FROM (the next one)
+        return model, optimizer, start_epoch + 1
+    except KeyError as e:
+        print(f"[Checkpoint] Error loading checkpoint: Missing key {e}. Checkpoint might be corrupt or incomplete.")
+        return model, optimizer, 0
+    except Exception as e:
+        print(f"[Checkpoint] Error loading checkpoint: {e}")
+        return model, optimizer, 0
+
 
 # --- Main Training Function ---
 def train(args):
     print("Starting training script...")
-    print(f"Arguments passed or defaults used: {args}") # Print effective arguments
+    print(f"Arguments passed or defaults used: {args}")
 
-    # --- Sanity check defaults (important if user doesn't provide args) ---
+    # --- Sanity check defaults ---
     if not Path(args.images_dir).is_dir():
         print(f"Error: Default or provided images directory not found: {args.images_dir}")
         exit(1)
@@ -166,23 +227,22 @@ def train(args):
         exit(1)
     # --- End Sanity check ---
 
-
     # --- Setup ---
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
 
     # Use specific paths from args for outputs
-    output_dir = Path(args.output_dir) # Main directory for logs
+    output_dir = Path(args.output_dir)
     checkpoint_dir = Path(args.checkpoint_dir)
     best_model_dir = Path(args.best_model_dir)
-    final_model_dir = output_dir / "final_model" # Keep final model in output dir for clarity
+    final_model_dir = output_dir / "final_model"
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    checkpoint_dir.mkdir(parents=True, exist_ok=True) # Ensure checkpoint dir exists
-    best_model_dir.mkdir(parents=True, exist_ok=True) # Ensure best model dir exists
-    final_model_dir.mkdir(parents=True, exist_ok=True) # Ensure final model dir exists
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    best_model_dir.mkdir(parents=True, exist_ok=True)
+    final_model_dir.mkdir(parents=True, exist_ok=True)
 
-    logging_dir = output_dir / "logs" # Logs go into the main output dir
+    logging_dir = output_dir / "logs"
     logging_dir.mkdir(exist_ok=True)
 
     writer = SummaryWriter(log_dir=str(logging_dir))
@@ -239,18 +299,16 @@ def train(args):
             val_dataset = None
         else:
             train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
-    else: # Split is 1.0, use all for training
+    else:
          print("Using entire dataset for training (train_val_split=1.0).")
          train_dataset = full_dataset
          val_dataset = None
-
 
     print(f"Train dataset size: {len(train_dataset)}")
     if val_dataset:
         print(f"Validation dataset size: {len(val_dataset)}")
     else:
         print("Validation dataset size: 0")
-
 
     print("Creating data loaders...")
     train_dataloader = DataLoader(
@@ -285,7 +343,6 @@ def train(args):
         print(f"Error loading config: {e}")
         return
 
-    # *** CRITICAL: Set num_queries consistently ***
     print(f"Setting num_queries in config to: {args.num_queries}")
     config.num_queries = args.num_queries
 
@@ -294,13 +351,12 @@ def train(args):
         model = DetrForObjectDetection.from_pretrained(
             args.model_checkpoint,
             config=config,
-            ignore_mismatched_sizes=True # Load pre-trained weights into new config structure
+            ignore_mismatched_sizes=True # Keep True for fine-tuning
         ).to(device)
         print(f"Model loaded successfully with num_queries={model.config.num_queries}.")
     except Exception as e:
         print(f"Error loading pre-trained model: {e}")
         return
-
 
     # --- Optimizer ---
     print("Setting up optimizer...")
@@ -317,21 +373,36 @@ def train(args):
         print(f"Error setting up optimizer: {e}")
         return
 
+    # --- Checkpoint Resuming Logic ---
+    start_epoch = 0
+    if args.resume_training:
+        latest_checkpoint_path = find_latest_checkpoint(args.checkpoint_dir)
+        if latest_checkpoint_path:
+            # Pass optimizer to load its state as well
+            model, optimizer, start_epoch = load_checkpoint(latest_checkpoint_path, model, optimizer, device)
+            print(f"Resuming training from epoch {start_epoch}")
+        else:
+            print("[Resume] No checkpoint found to resume from, starting from scratch.")
+    else:
+        print("[Resume] Not resuming training, starting from scratch.")
+
+
     # --- Training Loop ---
-    print("Starting training loop...")
+    print(f"Starting training loop from epoch {start_epoch}...")
     best_val_loss = float('inf')
     patience_counter = 0
-    last_epoch = -1
-    global_step_counter = 0
+    last_epoch = start_epoch -1 # Initialize correctly based on start_epoch
+    global_step_counter = start_epoch * len(train_dataloader) # Approx global step if resuming
 
     try:
-        for epoch in range(args.epochs):
+        # Loop starts from start_epoch (0 if not resuming, N if resuming from epoch N-1)
+        for epoch in range(start_epoch, args.epochs):
             last_epoch = epoch
-            print(f"\n--- Epoch {epoch+1}/{args.epochs} ---")
+            print(f"\n--- Epoch {epoch+1}/{args.epochs} ---") # Display 1-based epoch
             model.train()
             train_loss = 0.0
             processed_batches = 0
-            progress_bar = tqdm(train_dataloader, desc="Training")
+            progress_bar = tqdm(train_dataloader, desc=f"Training E{epoch+1}") # Use 1-based epoch in desc
 
             for i, batch in enumerate(progress_bar):
                 if batch is None:
@@ -391,13 +462,13 @@ def train(args):
                 writer.add_scalar("Loss/train_batch", batch_loss, global_step_counter)
                 for k,v_loss in loss_dict.items():
                     writer.add_scalar(f"Loss_detail/train_{k}", v_loss.item(), global_step_counter)
-                global_step_counter += 1
+                global_step_counter += 1 # Increment global step
 
 
             if processed_batches > 0:
                  avg_train_loss = train_loss / processed_batches
                  print(f"Epoch {epoch+1} Average Training Loss: {avg_train_loss:.4f}")
-                 writer.add_scalar("Loss/train_epoch", avg_train_loss, epoch)
+                 writer.add_scalar("Loss/train_epoch", avg_train_loss, epoch) # Log per epoch
             else:
                  print(f"Epoch {epoch+1} - No training batches processed successfully.")
                  avg_train_loss = float('inf')
@@ -408,7 +479,7 @@ def train(args):
                 val_loss = 0.0
                 processed_val_batches = 0
                 print("Running validation...")
-                progress_bar_val = tqdm(val_dataloader, desc="Validation")
+                progress_bar_val = tqdm(val_dataloader, desc=f"Validation E{epoch+1}")
                 last_val_loss_dict = {}
 
                 with torch.no_grad():
@@ -460,7 +531,7 @@ def train(args):
                 if processed_val_batches > 0:
                     avg_val_loss = val_loss / processed_val_batches
                     print(f"Epoch {epoch+1} Average Validation Loss: {avg_val_loss:.4f}")
-                    writer.add_scalar("Loss/validation_epoch", avg_val_loss, epoch)
+                    writer.add_scalar("Loss/validation_epoch", avg_val_loss, epoch) # Log per epoch
                     for k, v_item in last_val_loss_dict.items():
                         writer.add_scalar(f"Loss_detail/val_{k}_epoch_lastbatch", v_item, epoch)
                 else:
@@ -470,10 +541,11 @@ def train(args):
                 # --- Checkpointing & Early Stopping ---
                 if val_dataloader and processed_val_batches > 0:
                     # Save checkpoint every N epochs using args.checkpoint_dir
+                    # Saving based on 1-based epoch number
                     if (epoch + 1) % args.save_interval == 0:
-                        chkpt_path = checkpoint_dir / f"checkpoint_epoch_{epoch+1}.pth" # Use args.checkpoint_dir
+                        chkpt_path = checkpoint_dir / f"checkpoint_epoch_{epoch+1}.pth"
                         torch.save({
-                            'epoch': epoch + 1,
+                            'epoch': epoch + 1, # Save 1-based epoch for clarity
                             'model_state_dict': model.state_dict(),
                             'optimizer_state_dict': optimizer.state_dict(),
                             'loss': avg_val_loss,
@@ -497,10 +569,11 @@ def train(args):
                             break
 
             elif not val_dataloader: # No validation
+                 # Saving based on 1-based epoch number
                  if (epoch + 1) % args.save_interval == 0:
-                      chkpt_path = checkpoint_dir / f"checkpoint_epoch_{epoch+1}.pth" # Use args.checkpoint_dir
+                      chkpt_path = checkpoint_dir / f"checkpoint_epoch_{epoch+1}.pth"
                       torch.save({
-                          'epoch': epoch + 1,
+                          'epoch': epoch + 1, # Save 1-based epoch
                           'model_state_dict': model.state_dict(),
                           'optimizer_state_dict': optimizer.state_dict(),
                           'loss': avg_train_loss,
@@ -510,6 +583,7 @@ def train(args):
 
     except KeyboardInterrupt:
         print("\nTraining interrupted by user.")
+        # 'last_epoch' variable should hold the epoch number during which interruption occurred
     finally:
         # --- Final Save ---
         print("\nTraining loop finished or interrupted. Saving final model state...")
@@ -522,15 +596,22 @@ def train(args):
             print(f"Error saving final model/processor: {e}")
 
 
-        if last_epoch >= 0:
-             # Save final checkpoint to args.checkpoint_dir
+        # Save final checkpoint only if training actually ran at least one iteration
+        if last_epoch >= start_epoch: # Check if loop ran at least once after potential resume
              final_chkpt_path = checkpoint_dir / "final_checkpoint.pth"
              try:
+                 # Determine the loss to save based on whether validation ran
+                 final_loss = float('inf')
+                 if val_dataloader and 'avg_val_loss' in locals() and processed_val_batches > 0 :
+                      final_loss = avg_val_loss
+                 elif 'avg_train_loss' in locals():
+                      final_loss = avg_train_loss
+
                  torch.save({
-                     'epoch': last_epoch + 1,
+                     'epoch': last_epoch + 1, # Save the number of the last completed epoch + 1 (or interrupted epoch + 1)
                      'model_state_dict': model.state_dict(),
                      'optimizer_state_dict': optimizer.state_dict(),
-                     'loss': avg_val_loss if val_dataloader and 'avg_val_loss' in locals() and processed_val_batches > 0 else avg_train_loss,
+                     'loss': final_loss,
                  }, final_chkpt_path)
                  print(f"Final checkpoint state saved to: {final_chkpt_path}")
              except Exception as e:
@@ -538,7 +619,6 @@ def train(args):
 
 
         if val_dataloader and best_val_loss != float('inf'):
-             # Best model was already saved to args.best_model_dir
              print(f"Best model location: {best_model_dir} (Validation Loss: {best_val_loss:.4f})")
         elif not val_dataloader:
              print("Best model not tracked as validation was disabled or did not run successfully.")
@@ -569,6 +649,14 @@ if __name__ == "__main__":
                         help="Main directory for logs and final model state.")
     # --- End of path arguments ---
 
+    # --- Added Resume Argument ---
+    # Przykład JAWNEGO ustawienia default=False (nie zmienia zachowania)
+    parser.add_argument("--resume_training",
+                        action='store_true',
+                        default=True,
+                        help="Resume training from the latest checkpoint in checkpoint_dir.")
+    # --- End Added Argument ---
+
     # Model & Config
     parser.add_argument("--model_checkpoint", type=str, default="facebook/detr-resnet-50", help="Pre-trained model checkpoint name.")
     parser.add_argument("--num_queries", type=int, default=50, help="Number of object queries (MUST match inference). Recommended: >=10, e.g., 50 or 100.")
@@ -593,7 +681,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # --- Sanity Checks ---
-    # No need for the warning about default paths now, as they are explicitly set from user's script
     if not Path(args.images_dir).is_dir():
         print(f"Error: Images directory not found: {args.images_dir}")
         exit(1)
