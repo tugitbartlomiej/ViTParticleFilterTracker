@@ -1,0 +1,42 @@
+The Gareth was very much more into the stamp. Do you kick a repository? He git login. I. # Benchmark Configuration
+# Data utworzenia: 2025-05-20
+
+detr:
+  model_name: "DETR (oparty o facebook/detr-resnet-50)"
+  data:
+    # Zakładając, że podział na zbiór treningowy/walidacyjny jest robiony przez skrypt detr_annotator_train_corrected.py
+    # na podstawie tych danych źródłowych.
+    images_base_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/images"
+    annotations_file: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/augmented_dataset/augmented_coco_450-14660_20250417_133558.json"
+    # Uwaga: Rzeczywisty podział na zbiór treningowy/walidacyjny jest wykonywany przez skrypt trenujący.
+    # Do testów porównawczych powinien być użyty dedykowany zbiór testowy, pochodzący z tych źródeł.
+  paths:
+    # Najlepszy model zapisany na podstawie straty walidacyjnej podczas treningu
+    best_model_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/detr_tool_tracking_model_best"
+    # Model końcowy zapisany po zakończeniu treningu
+    final_model_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/detr_training_output/final_model" # Zawiera model.safetensors, config.json
+    # Katalog na checkpointy (zgodnie z domyślnymi ustawieniami skryptu, jeśli tam były zapisywane)
+    # Jeśli checkpointy są bezpośrednio w Annotators/DetrAnnotator/, dostosuj lub użyj poniższej ścieżki do konkretnego pliku.
+    checkpoints_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/checkpoints"
+    latest_checkpoint_known: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/checkpoint_epoch_44.pt" # Przykład, zweryfikuj lub znajdź dynamicznie
+
+yolo:
+  model_name: "YOLOv8 (trenowany na tym samym datasecie co DETR - tooltip detection)"
+  data:
+    # NOWY dataset skonwertowany z datasetu DETR
+    yolo_dataset_config_yaml: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/Datasets/Yolo/dataset.yaml"
+    # Poprzedni dataset (do porównania)
+    original_yolo_dataset_config_yaml: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DeepSortYolo/ProcessedVideos/yolo_dataset_20250218/yolo_dataset_config.yaml"
+  paths:
+    # Nowe ścieżki dla modelu trenowanego na datasecie DETR  
+    experiment_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/yolo_detr_dataset/exp1"
+    best_model_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/yolo_detr_dataset/exp1/weights/best.pt"
+    last_checkpoint_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/yolo_detr_dataset/exp1/weights/last.pt"
+    # Poprzednie ścieżki (do porównania)
+    original_experiment_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/surgical_tool_detection/exp14"
+    original_best_model_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Yolo/surgical_tool_detection/exp14/weights/best.pt"
+
+general_notes:
+  - "Ten plik konfiguracyjny zawiera ścieżki aktualne na dzień 2025-05-20."
+  - "Do przeprowadzenia benchmarków upewnij się, że używasz spójnego, dedykowanego zbioru testowego dla obu modeli."
+  - "Ścieżki są absolutne. Dostosuj je, jeśli projekt zostanie przeniesiony."

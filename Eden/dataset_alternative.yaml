@@ -1,0 +1,20 @@
+# YOLOv8 Dataset Configuration - Alternative Version
+# Tooltip Detection Dataset
+# Ta wersja używa bezpośrednich ścieżek do katalogów zamiast plików list
+
+# Dataset root - gdzie są foldery labels/ i images/
+path: /tmp/bpiotrowski_1030319/datasets/YOLO_03062025/yolo_dataset
+
+# Ścieżki do obrazów - bezpośrednio do katalogów
+train: /tmp/bpiotrowski_1030319/datasets/DETR_augmented_dataset_20250218/images
+val: /tmp/bpiotrowski_1030319/datasets/DETR_augmented_dataset_20250218/images
+test: /tmp/bpiotrowski_1030319/datasets/DETR_augmented_dataset_20250218/images
+
+# Klasy
+nc: 1
+names: ['tooltip']
+
+# Informacja o strukturze (komentarz dla użytkownika)
+# Etykiety są w: path/labels/[train|val|test]/
+# Obrazy są w katalogach train/val/test (wszystkie w tym samym katalogu images)
+# YOLO automatycznie dopasuje obrazy do etykiet na podstawie nazw plików

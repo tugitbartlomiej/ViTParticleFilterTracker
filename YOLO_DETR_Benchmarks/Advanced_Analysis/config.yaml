@@ -1,0 +1,29 @@
+# Konfiguracja Środowiska do Zaawansowanej Analizy Modeli
+
+# Ścieżki do modeli (wytrenowane przez 100 epok)
+# Uzupełnij na podstawie swoich wytrenowanych modeli. Poniżej przykłady z Twojego pliku benchmark_config.yaml
+models:
+  yolo:
+    # Przykład z Twojego pliku: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/yolo_detr_dataset/exp1/weights/best.pt"
+    path: "SCIEZKA/DO/TWOJEGO/yolo_100_epochs.pt"
+  detr:
+    # Przykład z Twojego pliku: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/detr_tool_tracking_model_best"
+    path: "SCIEZKA/DO/TWOJEGO/detr_100_epochs_model_directory"
+
+# Zbiór testowy
+# Użyj dedykowanego, spójnego zbioru testowego dla obu modeli.
+dataset:
+  # Katalog z obrazami testowymi (klatkami z filmów)
+  images_dir: "SCIEZKA/DO/TEST/images"
+  # Plik z adnotacjami w formacie COCO dla zbioru testowego
+  annotations_path: "SCIEZKA/DO/TEST/ground_truth.json"
+
+# Ustawienia wyjściowe
+output:
+  # Katalog, w którym zostaną zapisane wszystkie wyniki, raporty i wizualizacje
+  directory: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/Advanced_Analysis/benchmark_results"
+
+# Parametry inferencji
+inference_params:
+  confidence_threshold: 0.5 # Próg pewności dla detekcji
+  iou_threshold: 0.5 # Próg IoU dla metryki mAP@.50

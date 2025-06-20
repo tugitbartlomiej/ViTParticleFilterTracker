@@ -1,0 +1,111 @@
+{
+  "nodes": [
+    {
+      "id": "Surgical Tool Detection",
+      "type": "Task",
+      "description": "The primary goal of the project: to detect and localize surgical tools in images and videos."
+    },
+    {
+      "id": "YOLOv8",
+      "type": "Model",
+      "description": "A fast, real-time object detection model based on a convolutional neural network architecture (local context)."
+    },
+    {
+      "id": "DETR",
+      "type": "Model",
+      "description": "An object detection model based on the Transformer architecture, using attention for global context analysis."
+    },
+    {
+      "id": "Benchmarking Framework",
+      "type": "Process",
+      "description": "The structured environment and methodology for comparing YOLOv8 and DETR."
+    },
+    {
+      "id": "Attention Mechanism",
+      "type": "Concept",
+      "description": "Core concept of Transformers, allowing the model to weigh the importance of different parts of the input data (global context)."
+    },
+    {
+      "id": "Convolutional Layers",
+      "type": "Concept",
+      "description": "Core concept of CNNs, using filters to process input data in a local neighborhood."
+    },
+    {
+      "id": "mAP",
+      "type": "Metric",
+      "description": "Mean Average Precision, a standard metric for evaluating the accuracy of object detectors."
+    },
+    {
+      "id": "Temporal IoU",
+      "type": "Metric",
+      "description": "Measures the stability of bounding boxes across consecutive video frames. Key for the research hypothesis."
+    },
+    {
+      "id": "Detection Flicker",
+      "type": "Metric",
+      "description": "Measures the consistency of detection over time, penalizing models for losing track of objects."
+    },
+    {
+      "id": "Research Hypothesis",
+      "type": "Concept",
+      "description": "The core assumption that DETR's attention mechanism provides superior temporal stability over YOLO's local approach."
+    }
+  ],
+  "edges": [
+    {
+      "source": "YOLOv8",
+      "target": "Surgical Tool Detection",
+      "relationship": "is_applied_to"
+    },
+    {
+      "source": "DETR",
+      "target": "Surgical Tool Detection",
+      "relationship": "is_applied_to"
+    },
+    {
+      "source": "Benchmarking Framework",
+      "target": "YOLOv8",
+      "relationship": "evaluates"
+    },
+    {
+      "source": "Benchmarking Framework",
+      "target": "DETR",
+      "relationship": "evaluates"
+    },
+    {
+      "source": "YOLOv8",
+      "target": "Convolutional Layers",
+      "relationship": "is_based_on"
+    },
+    {
+      "source": "DETR",
+      "target": "Attention Mechanism",
+      "relationship": "is_based_on"
+    },
+    {
+      "source": "mAP",
+      "target": "Benchmarking Framework",
+      "relationship": "is_a_metric_in"
+    },
+    {
+      "source": "Temporal IoU",
+      "target": "Benchmarking Framework",
+      "relationship": "is_a_metric_in"
+    },
+    {
+      "source": "Detection Flicker",
+      "target": "Benchmarking Framework",
+      "relationship": "is_a_metric_in"
+    },
+    {
+      "source": "Benchmarking Framework",
+      "target": "Research Hypothesis",
+      "relationship": "aims_to_verify"
+    },
+    {
+      "source": "Attention Mechanism",
+      "target": "Temporal IoU",
+      "relationship": "hypothesized_to_improve"
+    }
+  ]
+}
