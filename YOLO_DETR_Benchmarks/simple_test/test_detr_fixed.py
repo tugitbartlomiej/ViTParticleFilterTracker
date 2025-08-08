@@ -11,13 +11,13 @@ from transformers import DetrForObjectDetection, DetrImageProcessor
 # Configuration
 FRAMES_DIR = r"F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\YOLO_DETR_Benchmarks\simple_test\test_frames"
 MODEL_PATH = r"F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\YOLO_DETR_Benchmarks\models\DETR\detr_inference_model.pth"
-OUTPUT_DIR = r"F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\YOLO_DETR_Benchmarks\simple_test\detr_results_fixed"
+OUTPUT_DIR = r"F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\YOLO_DETR_Benchmarks\simple_test\detr_results_tooltip_optimized"
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# CRITICAL FIX: Use high threshold to filter out false positives
-CONFIDENCE_THRESHOLD = 0.5  # Initial threshold for post-processing
-MIN_CONFIDENCE_FOR_SINGLE_BOX = 0.9  # Minimum confidence for the single best box
-NUM_LABELS = 1  # DETR adds +1, so 1 -> 2 classes in checkpoint
+# OPTIMIZATION: Lower threshold for better recall, higher confidence for precision
+CONFIDENCE_THRESHOLD = 0.3  # Lower initial threshold 
+MIN_CONFIDENCE_FOR_SINGLE_BOX = 0.95  # Higher final threshold - only very confident predictions
+NUM_LABELS = 1  # Original tooltip model
 
 def load_detr_model():
     """Load DETR model with proper configuration"""
@@ -27,21 +27,21 @@ def load_detr_model():
     # Checkpoint has 2 classes, not 3
     model = DetrForObjectDetection.from_pretrained(
         "facebook/detr-resnet-50",
-        num_labels=NUM_LABELS,  # 2 classes
+        num_labels=NUM_LABELS,  # 2 classes total in checkpoint (tool + no_object)  
         ignore_mismatched_sizes=True
     )
     
-    # Load checkpoint - it has nested structure!
+    # Load checkpoint - check if it's direct state dict or nested
     checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)
-    
-    # Navigate nested structure
     if 'model_state_dict' in checkpoint:
-        inner_dict = checkpoint['model_state_dict']
-        if 'model_state_dict' in inner_dict:
-            model_state_dict = inner_dict['model_state_dict']
+        if 'model_state_dict' in checkpoint['model_state_dict']:
+            # Double nested structure (old checkpoint)
+            model_state_dict = checkpoint['model_state_dict']['model_state_dict'] 
         else:
-            model_state_dict = inner_dict
+            # Single nested structure
+            model_state_dict = checkpoint['model_state_dict']
     else:
+        # Direct state dict (new model)
         model_state_dict = checkpoint
     
     # Load weights
