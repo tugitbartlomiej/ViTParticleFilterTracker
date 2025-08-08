@@ -1,0 +1,53 @@
+{
+  "model_paths": {
+    "yolo_model": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/YOLO/yolo_inference_model_final/yolo_inference_model.pt",
+    "detr_model": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/DETR/detr_inference_model.pth",
+    "dino_model": "dino_vits16"
+  },
+  "processing_settings": {
+    "frame_extraction": {
+      "frame_interval": 30,
+      "max_frames_per_video": 200,
+      "video_extensions": ["mp4", "avi", "mov"]
+    },
+    "detection_thresholds": {
+      "yolo_confidence": 0.3,
+      "detr_confidence": 0.3,
+      "consensus_required": true
+    },
+    "clustering_settings": {
+      "n_clusters": 20,
+      "frames_per_cluster": 5,
+      "selection_method": "centroid",
+      "clustering_algorithm": "kmeans"
+    },
+    "dataset_settings": {
+      "train_ratio": 0.8,
+      "create_coco_annotations": true,
+      "include_background_class": true
+    }
+  },
+  "directories": {
+    "videos_dir": "E:/Cataract/videos/micro",
+    "output_dir": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/Intelligent_Background_Selector_2025-07-17",
+    "temp_dir": "temp"
+  },
+  "hardware_settings": {
+    "device": "auto",
+    "batch_size": 1,
+    "num_workers": 4,
+    "memory_limit_gb": 8
+  },
+  "logging": {
+    "level": "INFO",
+    "save_intermediate_results": true,
+    "create_visualizations": true,
+    "detailed_analysis": true
+  },
+  "quality_filters": {
+    "min_content_score": 0.1,
+    "blur_detection": false,
+    "brightness_filter": false,
+    "contrast_filter": false
+  }
+}
