@@ -1,0 +1,32 @@
+# Single Video Test Configuration
+video_directory: "E:/Cataract/videos/test_single"
+tooltip_dataset_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Datasets/Yolo/yolo_dataset_20250218/images/train"
+tooltip_annotations_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Datasets/Yolo/yolo_dataset_20250218/coco_annotations_from_yolo_dataset_20250218.json"
+original_model_checkpoint: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/DETR/checkpoint_epoch_100.pth"
+output_directory: "pipeline_output_single_test"
+
+# DINO extraction parameters
+dino_model: "facebook/dino-vitb16"
+frames_per_video: 30
+clustering_threshold: 0.7
+min_cluster_size: 3
+
+# Dataset mixing parameters  
+tooltip_ratio: 0.7
+background_ratio: 0.3
+validation_split: 0.2
+
+# Training parameters
+gentle_lr: 1e-6
+max_epochs: 1
+batch_size: 1
+gradient_accumulation_steps: 4
+
+# Detection thresholds - make DETR more strict to find background
+yolo_threshold: 0.3
+detr_threshold: 0.8
+
+# Execution settings
+python_executable: "py"
+max_retries: 1
+timeout_hours: 2

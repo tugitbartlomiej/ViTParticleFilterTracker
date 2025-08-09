@@ -56,7 +56,7 @@ class IntelligentBackgroundFrameSelector:
     
     def __init__(self, 
                  yolo_model_path="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/YOLO/yolo_inference_model_final/yolo_inference_model.pt",
-                 detr_model_path="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/DETR/detr_inference_model_final",
+                 detr_model_path="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/DETR/detr_inference_model.pth",
                  output_dir="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/Intelligent_Background_Selector_2025-07-17",
                  device='auto'):
         """
@@ -131,17 +131,52 @@ class IntelligentBackgroundFrameSelector:
         
         # Load DETR model
         try:
-            self.detr_model = DetrForObjectDetection.from_pretrained(
-                str(self.detr_model_path)
-            )
-            self.detr_processor = DetrImageProcessor.from_pretrained(
-                str(self.detr_model_path)
-            )
+            if str(self.detr_model_path).endswith('.pth'):
+                # Load from PyTorch checkpoint
+                checkpoint = torch.load(self.detr_model_path, map_location='cpu')
+                
+                # Initialize base model
+                self.detr_model = DetrForObjectDetection.from_pretrained(
+                    "facebook/detr-resnet-50",
+                    num_labels=1,  # Single class model
+                    ignore_mismatched_sizes=True
+                )
+                
+                # Load checkpoint weights
+                if 'model_state_dict' in checkpoint:
+                    model_state_dict = checkpoint['model_state_dict']
+                elif 'model' in checkpoint:
+                    model_state_dict = checkpoint['model']
+                else:
+                    model_state_dict = checkpoint
+                
+                # Load state dict with strict=False to ignore size mismatches
+                missing_keys, unexpected_keys = self.detr_model.load_state_dict(model_state_dict, strict=False)
+                
+                # Initialize processor with standard DETR settings
+                self.detr_processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
+                
+                print(f"✓ DETR model loaded from checkpoint: {self.detr_model_path}")
+                if missing_keys:
+                    print(f"  - Missing keys: {len(missing_keys)}")
+                if unexpected_keys:
+                    print(f"  - Unexpected keys: {len(unexpected_keys)}")
+            else:
+                # Load from HuggingFace model directory
+                self.detr_model = DetrForObjectDetection.from_pretrained(
+                    str(self.detr_model_path)
+                )
+                self.detr_processor = DetrImageProcessor.from_pretrained(
+                    str(self.detr_model_path)
+                )
+                print(f"✓ DETR model loaded from directory: {self.detr_model_path}")
+            
             self.detr_model.to(self.device)
             self.detr_model.eval()
-            print(f"✓ DETR model loaded from: {self.detr_model_path}")
         except Exception as e:
             print(f"✗ Error loading DETR model: {e}")
+            import traceback
+            traceback.print_exc()
             return False
         
         # Initialize DINO extractor
@@ -694,7 +729,7 @@ def main():
                         default='F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/YOLO/yolo_inference_model_final/yolo_inference_model.pt',
                         help='Path to YOLO model')
     parser.add_argument('--detr_model_path', type=str,
-                        default='F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/DETR/detr_inference_model_final',
+                        default='F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/DETR/detr_inference_model.pth',
                         help='Path to DETR model')
     
     # Output directory

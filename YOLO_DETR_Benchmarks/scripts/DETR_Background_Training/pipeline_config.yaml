@@ -1,0 +1,33 @@
+# DETR Background Training Pipeline Configuration
+# Edit these paths to match your setup
+
+# Input paths (REQUIRED - update these!)
+video_directory: "E:/Cataract/videos/micro"  # Cataract surgery videos directory
+tooltip_dataset_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Datasets/Yolo/yolo_dataset_20250218/images/train"
+tooltip_annotations_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Datasets/Yolo/yolo_dataset_20250218/coco_annotations_from_yolo_dataset_20250218.json"
+original_model_checkpoint: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/DETR/checkpoint_epoch_100.pth"
+
+# Output paths
+output_directory: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/scripts/DETR_Background_Training/pipeline_output"
+
+# DINO extraction parameters
+dino_model: "facebook/dino-vitb16"
+frames_per_video: 50
+clustering_threshold: 0.7
+min_cluster_size: 5
+
+# Dataset mixing parameters
+tooltip_ratio: 0.7      # 70% tooltip data
+background_ratio: 0.3   # 30% background data
+validation_split: 0.2   # 20% for validation
+
+# Training parameters
+gentle_lr: 1.0e-6       # Very gentle learning rate
+max_epochs: 3           # Conservative epoch count
+batch_size: 2           # Small batch for stability
+gradient_accumulation_steps: 8
+
+# Execution settings
+python_executable: "python"  # or "py" on Windows
+max_retries: 2
+timeout_hours: 24       # Maximum pipeline runtime
