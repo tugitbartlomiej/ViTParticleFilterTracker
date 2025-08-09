@@ -281,38 +281,50 @@ class DETRPipelineOrchestrator:
             # Execute DINO quality analysis and dataset creation
             await self._apply_dino_information_analysis(interesting_frames_dir)
             
-            # Validate DINO analysis results
+            # Validate DINO mixed classification results
             train_dir = interesting_frames_dir / "train"
             val_dir = interesting_frames_dir / "val"
             annotations_dir = interesting_frames_dir / "annotations"
+            tooltip_frames_dir = interesting_frames_dir / "tooltip_frames"
+            background_frames_dir = interesting_frames_dir / "background_frames"
             
-            if train_dir.exists() and val_dir.exists() and annotations_dir.exists():
+            if (train_dir.exists() and val_dir.exists() and annotations_dir.exists() and 
+                tooltip_frames_dir.exists() and background_frames_dir.exists()):
+                
                 train_count = len(list(train_dir.glob("*.jpg")))
                 val_count = len(list(val_dir.glob("*.jpg")))
+                tooltip_count = len(list(tooltip_frames_dir.glob("*.jpg")))
+                background_count = len(list(background_frames_dir.glob("*.jpg")))
                 total_count = train_count + val_count
                 
-                self.reporter.log_info(f"DINO Background Analysis: {total_count} high-quality frames selected")
+                self.reporter.log_info(f"DINO → YOLO → DETR Mixed Classification: {total_count} frames selected")
                 self.reporter.log_info(f"  - Train frames: {train_count}")
                 self.reporter.log_info(f"  - Val frames: {val_count}")
+                self.reporter.log_info(f"  - Tooltip frames: {tooltip_count}")
+                self.reporter.log_info(f"  - Background frames: {background_count}")
                 
                 if total_count < 10:
                     self.reporter.log_warning(f"Only {total_count} frames selected. Consider lowering quality threshold.")
                 
                 return True
             else:
-                self.reporter.report_error("DINO analysis did not create expected output structure")
+                self.reporter.report_error("DINO mixed classification did not create expected output structure")
         
         return False
     
     async def _apply_dino_information_analysis(self, frames_dir: Path):
-        """Apply DINO information richness analysis to background frames"""
+        """Apply DINO → YOLO → DETR classification for mixed tooltip/background training"""
         
         try:
-            # Import DINO components
+            # Import required components
             import sys
             sys.path.append(str(Path("../../DINO_Frame_Selection").resolve()))
             
             from dino_information_analyzer import DINOInformationAnalyzer
+            from ultralytics import YOLO
+            from transformers import DetrImageProcessor, DetrForObjectDetection
+            import torch
+            from PIL import Image
             import numpy as np
             import cv2
             import json
@@ -324,75 +336,178 @@ class DETRPipelineOrchestrator:
                 device='cuda' if torch.cuda.is_available() else 'cpu'
             )
             
-            self.reporter.log_info("DINO Information Analyzer loaded successfully")
+            # Initialize YOLO and DETR models for classification
+            yolo_model = YOLO("../../models/YOLO/yolo_inference_model_final/yolo_inference_model.pt")
+            detr_processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
+            detr_model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50")
+            detr_device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            detr_model.to(detr_device)
+            detr_model.eval()
             
-            # Find background frames from intelligent selector output
-            background_frames_dir = frames_dir / "selected_frames" / "Background_Selected"
+            self.reporter.log_info("DINO + YOLO + DETR models loaded successfully")
             
-            if not background_frames_dir.exists():
-                self.reporter.log_warning("No background frames found, using all frames")
-                background_frames_dir = frames_dir
+            # Find all extracted frames (from intelligent selector output)
+            # intelligent_background_frame_selector creates train/ and val/ directories directly
+            train_frames_dir = frames_dir / "train"
+            val_frames_dir = frames_dir / "val"
             
-            # Analyze all background frames
-            frame_quality_scores = []
-            background_frames = list(background_frames_dir.glob("*.jpg"))
+            all_frames = []
+            if train_frames_dir.exists():
+                all_frames.extend(list(train_frames_dir.glob("*.jpg")))
+            if val_frames_dir.exists():
+                all_frames.extend(list(val_frames_dir.glob("*.jpg")))
             
-            self.reporter.log_info(f"Analyzing {len(background_frames)} frames with DINO...")
+            if not all_frames:
+                self.reporter.report_error("No frames found for DINO analysis")
+                return
             
-            for frame_path in background_frames:
+            # Stage 1: DINO Quality Analysis - select high information frames
+            self.reporter.log_info(f"Stage 1: DINO analyzing {len(all_frames)} frames...")
+            
+            high_quality_frames = []
+            quality_threshold = 0.3  # Lower threshold to get more frames
+            
+            for frame_path in all_frames:
                 try:
                     analysis = dino_analyzer.extract_comprehensive_features(str(frame_path))
                     if analysis:
                         quality_score = analysis.get('information_score', 0.0)
-                        frame_quality_scores.append({
-                            'path': frame_path,
-                            'quality_score': quality_score,
-                            'attention_entropy': analysis.get('attention_entropy', 0.0),
-                            'feature_variance': analysis.get('feature_variance', 0.0)
-                        })
+                        if quality_score >= quality_threshold:
+                            high_quality_frames.append({
+                                'path': frame_path,
+                                'quality_score': quality_score,
+                                'attention_entropy': analysis.get('attention_entropy', 0.0),
+                                'feature_variance': analysis.get('feature_variance', 0.0)
+                            })
                 except Exception as e:
                     self.reporter.log_warning(f"DINO analysis failed for {frame_path.name}: {e}")
-                    # Use fallback score
-                    frame_quality_scores.append({
-                        'path': frame_path,
-                        'quality_score': 0.5,
-                        'attention_entropy': 0.0,
-                        'feature_variance': 0.0
-                    })
             
-            # Sort by quality score (highest first)
-            frame_quality_scores.sort(key=lambda x: x['quality_score'], reverse=True)
+            # If too few high-quality, use best available frames
+            if len(high_quality_frames) < 10:
+                self.reporter.log_warning(f"Only {len(high_quality_frames)} high-quality frames, using all frames")
+                high_quality_frames = []
+                for frame_path in all_frames:
+                    try:
+                        analysis = dino_analyzer.extract_comprehensive_features(str(frame_path))
+                        quality_score = analysis.get('information_score', 0.0) if analysis else 0.5
+                        high_quality_frames.append({
+                            'path': frame_path,
+                            'quality_score': quality_score,
+                            'attention_entropy': analysis.get('attention_entropy', 0.0) if analysis else 0.0,
+                            'feature_variance': analysis.get('feature_variance', 0.0) if analysis else 0.0
+                        })
+                    except:
+                        high_quality_frames.append({
+                            'path': frame_path,
+                            'quality_score': 0.5,
+                            'attention_entropy': 0.0,
+                            'feature_variance': 0.0
+                        })
             
-            # Select top quality frames (limit to max_frames_per_video)
-            max_frames = min(len(frame_quality_scores), self.config.frames_per_video)
-            selected_frames = frame_quality_scores[:max_frames]
+            # Stage 2: YOLO + DETR Classification
+            self.reporter.log_info(f"Stage 2: YOLO + DETR classifying {len(high_quality_frames)} high-quality frames...")
             
-            # Filter by quality threshold
-            quality_threshold = 0.4
-            high_quality_frames = [f for f in selected_frames if f['quality_score'] >= quality_threshold]
+            tooltip_frames = []
+            background_frames = []
+            discarded_frames = []
             
-            if not high_quality_frames and selected_frames:
-                # Use best frames even if below threshold
-                high_quality_frames = selected_frames[:max(10, len(selected_frames) // 2)]
-                self.reporter.log_warning(f"Using {len(high_quality_frames)} frames below quality threshold")
+            for frame_info in high_quality_frames:
+                frame_path = frame_info['path']
+                image = Image.open(frame_path).convert("RGB")
+                
+                # Step 1: YOLO detection
+                yolo_results = yolo_model(image, conf=self.config.yolo_threshold)
+                yolo_detected = len(yolo_results[0].boxes) > 0 if yolo_results[0].boxes is not None else False
+                
+                if yolo_detected:
+                    # YOLO found something - check with DETR
+                    inputs = detr_processor(images=image, return_tensors="pt")
+                    inputs = {k: v.to(detr_device) for k, v in inputs.items()}
+                    
+                    with torch.no_grad():
+                        outputs = detr_model(**inputs)
+                    
+                    # Check if DETR detected anything with confidence > threshold
+                    probas = outputs.logits.softmax(-1)[0, :, :-1]
+                    keep = probas.max(-1).values > self.config.detr_threshold
+                    detr_detected = keep.sum().item() > 0
+                    
+                    if not detr_detected:
+                        # YOLO detected, DETR didn't → TOOLTIP FRAME ✓
+                        tooltip_frames.append(frame_info)
+                        frame_info['classification'] = 'tooltip'
+                        frame_info['yolo_detected'] = True
+                        frame_info['detr_detected'] = False
+                    else:
+                        # Both detected → uncertain, discard
+                        discarded_frames.append(frame_info)
+                        frame_info['classification'] = 'discarded'
+                        frame_info['yolo_detected'] = True
+                        frame_info['detr_detected'] = True
+                else:
+                    # YOLO didn't detect - check DETR
+                    inputs = detr_processor(images=image, return_tensors="pt")
+                    inputs = {k: v.to(detr_device) for k, v in inputs.items()}
+                    
+                    with torch.no_grad():
+                        outputs = detr_model(**inputs)
+                    
+                    probas = outputs.logits.softmax(-1)[0, :, :-1]
+                    keep = probas.max(-1).values > self.config.detr_threshold
+                    detr_detected = keep.sum().item() > 0
+                    
+                    if not detr_detected:
+                        # Neither detected → BACKGROUND FRAME ✓
+                        background_frames.append(frame_info)
+                        frame_info['classification'] = 'background'
+                        frame_info['yolo_detected'] = False
+                        frame_info['detr_detected'] = False
+                    else:
+                        # DETR detected but YOLO didn't → discard (uncertain)
+                        discarded_frames.append(frame_info)
+                        frame_info['classification'] = 'discarded'
+                        frame_info['yolo_detected'] = False
+                        frame_info['detr_detected'] = True
             
-            # Create train/val split (80/20)
+            # Stage 3: Create Mixed Dataset
+            self.reporter.log_info(f"Stage 3: Creating mixed dataset...")
+            self.reporter.log_info(f"  - Tooltip frames: {len(tooltip_frames)}")
+            self.reporter.log_info(f"  - Background frames: {len(background_frames)}")
+            self.reporter.log_info(f"  - Discarded frames: {len(discarded_frames)}")
+            
+            # Ensure we have both types for mixed training
+            if len(tooltip_frames) == 0:
+                self.reporter.log_warning("No tooltip frames found! Using top DINO quality frames as tooltips")
+                # Use top 30% of quality scores as tooltip fallback
+                sorted_frames = sorted(background_frames, key=lambda x: x['quality_score'], reverse=True)
+                fallback_tooltips = sorted_frames[:max(1, len(sorted_frames) // 3)]
+                for frame in fallback_tooltips:
+                    frame['classification'] = 'tooltip'
+                    tooltip_frames.extend(fallback_tooltips)
+                    background_frames = [f for f in background_frames if f not in fallback_tooltips]
+            
+            if len(background_frames) == 0:
+                self.reporter.log_warning("No background frames found!")
+                return
+            
+            # Mix tooltip and background frames for train/val split
+            all_mixed_frames = tooltip_frames + background_frames
             np.random.seed(42)
-            shuffled_frames = high_quality_frames.copy()
-            np.random.shuffle(shuffled_frames)
+            np.random.shuffle(all_mixed_frames)
             
-            split_idx = int(len(shuffled_frames) * 0.8)
-            train_frames = shuffled_frames[:split_idx]
-            val_frames = shuffled_frames[split_idx:]
+            split_idx = int(len(all_mixed_frames) * 0.8)
+            train_frames = all_mixed_frames[:split_idx]
+            val_frames = all_mixed_frames[split_idx:]
             
             # Create output directories
             train_dir = frames_dir / "train"
             val_dir = frames_dir / "val"
             annotations_dir = frames_dir / "annotations"
+            tooltip_frames_dir = frames_dir / "tooltip_frames"
+            background_frames_dir = frames_dir / "background_frames"
             
-            train_dir.mkdir(exist_ok=True)
-            val_dir.mkdir(exist_ok=True)
-            annotations_dir.mkdir(exist_ok=True)
+            for directory in [train_dir, val_dir, annotations_dir, tooltip_frames_dir, background_frames_dir]:
+                directory.mkdir(exist_ok=True)
             
             # Copy frames to train/val
             for frame_info in train_frames:
@@ -401,9 +516,19 @@ class DETRPipelineOrchestrator:
             for frame_info in val_frames:
                 shutil.copy2(frame_info['path'], val_dir / frame_info['path'].name)
             
-            # Create COCO annotations
-            def create_coco_annotations(frames, split_name):
+            # Also copy to classification directories
+            for frame_info in tooltip_frames:
+                shutil.copy2(frame_info['path'], tooltip_frames_dir / frame_info['path'].name)
+            
+            for frame_info in background_frames:
+                shutil.copy2(frame_info['path'], background_frames_dir / frame_info['path'].name)
+            
+            # Create COCO annotations with mixed tooltip/background
+            def create_mixed_coco_annotations(frames, split_name):
                 images = []
+                annotations = []
+                annotation_id = 1
+                
                 for img_id, frame_info in enumerate(frames, 1):
                     frame_path = frame_info['path']
                     img = cv2.imread(str(frame_path))
@@ -414,18 +539,35 @@ class DETRPipelineOrchestrator:
                             "file_name": frame_path.name,
                             "width": width,
                             "height": height,
-                            "dino_quality_score": frame_info['quality_score']
+                            "dino_quality_score": frame_info['quality_score'],
+                            "classification": frame_info['classification'],
+                            "yolo_detected": frame_info.get('yolo_detected', False),
+                            "detr_detected": frame_info.get('detr_detected', False)
                         })
+                        
+                        # Add annotation only for tooltip frames
+                        if frame_info['classification'] == 'tooltip':
+                            # Create dummy annotation for tooltip (since we don't have exact bbox from this pipeline)
+                            annotations.append({
+                                "id": annotation_id,
+                                "image_id": img_id,
+                                "category_id": 1,
+                                "bbox": [width * 0.3, height * 0.3, width * 0.4, height * 0.4],  # Dummy bbox
+                                "area": (width * 0.4) * (height * 0.4),
+                                "iscrowd": 0,
+                                "source": "yolo_detected_detr_not_detected"
+                            })
+                            annotation_id += 1
                 
                 return {
                     "info": {
-                        "description": f"High-quality background frames selected by DINO ({split_name} set)",
-                        "version": "2.0",
+                        "description": f"Mixed tooltip/background frames selected by DINO+YOLO+DETR ({split_name} set)",
+                        "version": "2.0", 
                         "year": 2025,
-                        "contributor": "DINO Information Analysis Pipeline"
+                        "contributor": "DINO Mixed Classification Pipeline"
                     },
                     "images": images,
-                    "annotations": [],  # No objects in background frames
+                    "annotations": annotations,
                     "categories": [{
                         "id": 1,
                         "name": "surgical_tool",
@@ -433,9 +575,9 @@ class DETRPipelineOrchestrator:
                     }]
                 }
             
-            # Save annotations
-            train_annotations = create_coco_annotations(train_frames, "train")
-            val_annotations = create_coco_annotations(val_frames, "val")
+            # Save mixed annotations
+            train_annotations = create_mixed_coco_annotations(train_frames, "train")
+            val_annotations = create_mixed_coco_annotations(val_frames, "val")
             
             with open(annotations_dir / "train_annotations.json", "w") as f:
                 json.dump(train_annotations, f, indent=2)
@@ -443,76 +585,136 @@ class DETRPipelineOrchestrator:
             with open(annotations_dir / "val_annotations.json", "w") as f:
                 json.dump(val_annotations, f, indent=2)
             
-            # Save quality report
-            avg_quality = np.mean([f['quality_score'] for f in high_quality_frames])
-            quality_report = {
-                "dino_analysis_summary": {
-                    "total_analyzed": len(background_frames),
-                    "high_quality_selected": len(high_quality_frames),
-                    "train_frames": len(train_frames),
-                    "val_frames": len(val_frames),
-                    "average_quality_score": float(avg_quality),
+            # Save comprehensive classification report
+            train_tooltips = len([f for f in train_frames if f['classification'] == 'tooltip'])
+            train_backgrounds = len([f for f in train_frames if f['classification'] == 'background'])
+            val_tooltips = len([f for f in val_frames if f['classification'] == 'tooltip'])
+            val_backgrounds = len([f for f in val_frames if f['classification'] == 'background'])
+            
+            classification_report = {
+                "dino_yolo_detr_analysis": {
+                    "total_frames_analyzed": len(all_frames),
+                    "high_quality_frames": len(high_quality_frames),
+                    "tooltip_frames": len(tooltip_frames),
+                    "background_frames": len(background_frames),
+                    "discarded_frames": len(discarded_frames),
                     "quality_threshold": quality_threshold
+                },
+                "mixed_dataset_composition": {
+                    "train": {
+                        "total": len(train_frames),
+                        "tooltips": train_tooltips,
+                        "backgrounds": train_backgrounds,
+                        "tooltip_ratio": train_tooltips / len(train_frames) if train_frames else 0
+                    },
+                    "val": {
+                        "total": len(val_frames),
+                        "tooltips": val_tooltips,
+                        "backgrounds": val_backgrounds,
+                        "tooltip_ratio": val_tooltips / len(val_frames) if val_frames else 0
+                    }
                 },
                 "frame_details": [{
                     "filename": f['path'].name,
+                    "classification": f['classification'],
                     "quality_score": f['quality_score'],
+                    "yolo_detected": f.get('yolo_detected', False),
+                    "detr_detected": f.get('detr_detected', False),
                     "attention_entropy": f['attention_entropy'],
                     "feature_variance": f['feature_variance']
-                } for f in high_quality_frames]
+                } for f in all_mixed_frames]
             }
             
-            with open(frames_dir / "dino_quality_report.json", "w") as f:
-                json.dump(quality_report, f, indent=2)
+            with open(frames_dir / "dino_mixed_classification_report.json", "w") as f:
+                json.dump(classification_report, f, indent=2)
             
-            self.reporter.log_info(f"DINO analysis complete:")
-            self.reporter.log_info(f"  - Analyzed frames: {len(background_frames)}")
-            self.reporter.log_info(f"  - High quality selected: {len(high_quality_frames)}")
-            self.reporter.log_info(f"  - Average quality: {avg_quality:.3f}")
+            # Log final results
+            avg_quality = np.mean([f['quality_score'] for f in all_mixed_frames])
+            tooltip_ratio = len(tooltip_frames) / len(all_mixed_frames) if all_mixed_frames else 0
+            
+            self.reporter.log_info(f"DINO → YOLO → DETR Mixed Classification Complete:")
+            self.reporter.log_info(f"  - Total high-quality frames: {len(high_quality_frames)}")
+            self.reporter.log_info(f"  - Tooltip frames: {len(tooltip_frames)} ({tooltip_ratio:.1%})")
+            self.reporter.log_info(f"  - Background frames: {len(background_frames)} ({1-tooltip_ratio:.1%})")
+            self.reporter.log_info(f"  - Train: {len(train_frames)} ({train_tooltips} tooltips, {train_backgrounds} backgrounds)")
+            self.reporter.log_info(f"  - Val: {len(val_frames)} ({val_tooltips} tooltips, {val_backgrounds} backgrounds)")
+            self.reporter.log_info(f"  - Average DINO quality: {avg_quality:.3f}")
             
         except Exception as e:
-            self.reporter.report_error(f"DINO analysis failed: {e}")
+            self.reporter.report_error(f"DINO → YOLO → DETR classification failed: {e}")
             import traceback
             traceback.print_exc()
     
     async def stage_2_dataset_mixing(self) -> bool:
-        """Stage 2: Use DINO-selected high-quality background frames directly"""
+        """Stage 2: Use DINO → YOLO → DETR mixed classification results directly"""
         
-        # Enhanced background selector already created DETR-ready dataset structure
+        # DINO mixed classification already created DETR-ready mixed dataset
         interesting_frames_dir = self.output_dir / "interesting_frames"
         train_dir = interesting_frames_dir / "train"
         val_dir = interesting_frames_dir / "val"
         annotations_dir = interesting_frames_dir / "annotations"
+        tooltip_frames_dir = interesting_frames_dir / "tooltip_frames"
+        background_frames_dir = interesting_frames_dir / "background_frames"
         
-        if not (train_dir.exists() and val_dir.exists() and annotations_dir.exists()):
-            self.reporter.report_error("DINO background selection must produce train/val/annotations structure")
+        # Validate that both tooltip and background frames were created
+        if not (train_dir.exists() and val_dir.exists() and annotations_dir.exists() and
+                tooltip_frames_dir.exists() and background_frames_dir.exists()):
+            self.reporter.report_error("DINO mixed classification must produce train/val/annotations/tooltip_frames/background_frames structure")
             return False
         
-        # Copy DINO results to mixed_dataset for consistency with training stage
+        # Copy DINO mixed results to mixed_dataset for consistency with training stage
         mixed_dataset_dir = self.output_dir / "mixed_dataset"
         mixed_dataset_dir.mkdir(exist_ok=True)
         
         import shutil
         
-        # Copy train/val directories
-        if (mixed_dataset_dir / "train").exists():
-            shutil.rmtree(mixed_dataset_dir / "train")
-        if (mixed_dataset_dir / "val").exists():
-            shutil.rmtree(mixed_dataset_dir / "val")
-        if (mixed_dataset_dir / "annotations").exists():
-            shutil.rmtree(mixed_dataset_dir / "annotations")
+        # Clean and copy directories
+        directories_to_copy = ["train", "val", "annotations", "tooltip_frames", "background_frames"]
         
-        shutil.copytree(train_dir, mixed_dataset_dir / "train")
-        shutil.copytree(val_dir, mixed_dataset_dir / "val")
-        shutil.copytree(annotations_dir, mixed_dataset_dir / "annotations")
+        for directory in directories_to_copy:
+            src_dir = interesting_frames_dir / directory
+            dst_dir = mixed_dataset_dir / directory
+            
+            if dst_dir.exists():
+                shutil.rmtree(dst_dir)
+            
+            if src_dir.exists():
+                shutil.copytree(src_dir, dst_dir)
         
-        # Count frames
+        # Count mixed frames by type
         train_count = len(list((mixed_dataset_dir / "train").glob("*.jpg")))
         val_count = len(list((mixed_dataset_dir / "val").glob("*.jpg")))
+        tooltip_count = len(list((mixed_dataset_dir / "tooltip_frames").glob("*.jpg")))
+        background_count = len(list((mixed_dataset_dir / "background_frames").glob("*.jpg")))
         
-        self.reporter.log_info(f"DINO dataset prepared for training:")
-        self.reporter.log_info(f"  - Train: {train_count} frames")
-        self.reporter.log_info(f"  - Val: {val_count} frames")
+        # Read classification report for detailed stats
+        try:
+            report_path = interesting_frames_dir / "dino_mixed_classification_report.json"
+            if report_path.exists():
+                import json
+                with open(report_path, 'r') as f:
+                    report = json.load(f)
+                
+                train_tooltips = report['mixed_dataset_composition']['train']['tooltips']
+                train_backgrounds = report['mixed_dataset_composition']['train']['backgrounds']
+                val_tooltips = report['mixed_dataset_composition']['val']['tooltips']
+                val_backgrounds = report['mixed_dataset_composition']['val']['backgrounds']
+                tooltip_ratio = report['mixed_dataset_composition']['train']['tooltip_ratio']
+                
+                self.reporter.log_info(f"DINO Mixed Dataset prepared for training:")
+                self.reporter.log_info(f"  - Total frames: {train_count + val_count}")
+                self.reporter.log_info(f"  - Train: {train_count} ({train_tooltips} tooltips, {train_backgrounds} backgrounds)")
+                self.reporter.log_info(f"  - Val: {val_count} ({val_tooltips} tooltips, {val_backgrounds} backgrounds)")
+                self.reporter.log_info(f"  - Tooltip ratio: {tooltip_ratio:.1%}")
+                self.reporter.log_info(f"  - Source classification: {tooltip_count} tooltip frames, {background_count} background frames")
+                
+        except Exception as e:
+            self.reporter.log_warning(f"Could not read detailed classification report: {e}")
+            self.reporter.log_info(f"DINO Mixed Dataset prepared for training:")
+            self.reporter.log_info(f"  - Train: {train_count} frames")
+            self.reporter.log_info(f"  - Val: {val_count} frames")
+            self.reporter.log_info(f"  - Tooltip source: {tooltip_count} frames")
+            self.reporter.log_info(f"  - Background source: {background_count} frames")
         
         return True
     
