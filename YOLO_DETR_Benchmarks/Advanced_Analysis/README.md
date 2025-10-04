@@ -23,6 +23,14 @@ python run_inference.py --model_type yolo
 python run_inference.py --model_type detr
 ```
 
+Albo uruchom cały benchmark jednym poleceniem:
+
+```bash
+python run_benchmark.py                 # YOLO + DETR + metryki
+python run_benchmark.py --only yolo     # tylko YOLO end-to-end
+python run_benchmark.py --only detr     # tylko DETR end-to-end
+```
+
 ### Krok 3: Obliczenie Metryk
 Po wygenerowaniu plików z predykcjami, uruchom skrypt `evaluate_metrics.py`.
 
@@ -41,3 +49,27 @@ python visualize_results.py
 -   **Konfiguracja**: `config.yaml`
 -   **Skrypty**: `run_inference.py`, `evaluate_metrics.py`, `visualize_results.py`
 -   **Wyniki**: Wszystkie wygenerowane pliki (predykcje, raporty, filmy, wykresy) znajdą się w folderze `benchmark_results`.
+
+## Dodatkowe uwagi (ważne dla poprawności i wydajności)
+-   `run_inference.py` dopasowuje `image_id` na podstawie COCO `ground_truth.json` (jeśli ścieżka jest ustawiona w `config.yaml`). Dzięki temu ewaluacja COCO używa poprawnych ID obrazów.
+-   Logi wydajności (FPS, VRAM) są zapisywane automatycznie do `yolo_performance.json` i `detr_performance.json` w katalogu wyjściowym. `evaluate_metrics.py` wczyta je, jeśli są dostępne.
+-   Jeśli mapowanie klas modelu na ID kategorii COCO nie jest 1:1, możesz dodać w `config.yaml` sekcję `label_map`:
+
+```yaml
+label_map:
+  yolo: { 0: 1, 1: 2 }   # YOLO klasa 0 -> COCO id 1, YOLO klasa 1 -> COCO id 2, itd.
+  detr: { 0: 1, 1: 2 }   # analogicznie dla DETR, jeśli wymagane
+```
+
+-   Jeśli nie ustawisz `label_map`:
+    - YOLO użyje domyślnie `category_id = cls_idx + 1`.
+    - DETR użyje `category_id = cls_idx` (zakłada zgodność z COCO).
+
+### Konwersja DETR `.pth` → folder HuggingFace
+Jeśli masz checkpoint `checkpoint_epoch_100.pth`, możesz go przekonwertować do formatu HuggingFace za pomocą skryptu:
+
+```bash
+python ../../YOLO_DETR_Benchmarks/models/convert_detr_checkpoint.py
+```
+
+Po konwersji wskaż w `config.yaml` ścieżkę do folderu z `config.json` i `model.safetensors` (np. `../../YOLO_DETR_Benchmarks/DETR/detr_inference_model_final`).

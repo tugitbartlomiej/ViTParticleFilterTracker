@@ -4,26 +4,34 @@
 # Uzupełnij na podstawie swoich wytrenowanych modeli. Poniżej przykłady z Twojego pliku benchmark_config.yaml
 models:
   yolo:
-    # Przykład z Twojego pliku: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/yolo_detr_dataset/exp1/weights/best.pt"
-    path: "SCIEZKA/DO/TWOJEGO/yolo_100_epochs.pt"
+    # Główna waga YOLO do testów
+    path: "../models/YOLO/yolo_inference_model_final/yolo_inference_model.pt"
+    # Alternatywnie możesz szybko podmienić na epokę 100:
+    # path: "../models/YOLO/epoch100.pt"
   detr:
-    # Przykład z Twojego pliku: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/DetrAnnotator/detr_tool_tracking_model_best"
-    path: "SCIEZKA/DO/TWOJEGO/detr_100_epochs_model_directory"
+    # Użyj skonwertowanego modelu HF (folder z config.json + model.safetensors)
+    path: "../DETR/detr_inference_model_final"
 
 # Zbiór testowy
 # Użyj dedykowanego, spójnego zbioru testowego dla obu modeli.
 dataset:
-  # Katalog z obrazami testowymi (klatkami z filmów)
-  images_dir: "SCIEZKA/DO/TEST/images"
-  # Plik z adnotacjami w formacie COCO dla zbioru testowego
-  annotations_path: "SCIEZKA/DO/TEST/ground_truth.json"
+  # Katalog z obrazami testowymi (np. walidacja)
+  images_dir: "../Datasets/Yolo/images/val"
+  # Plik z adnotacjami COCO – zawiera pełny zbiór; ewaluacja ograniczana jest do klatek z images_dir
+  annotations_path: "../Datasets/Detr/coco_annotations_from_yolo_dataset_20250218.json"
 
 # Ustawienia wyjściowe
 output:
   # Katalog, w którym zostaną zapisane wszystkie wyniki, raporty i wizualizacje
-  directory: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/Advanced_Analysis/benchmark_results"
+  directory: "./benchmark_results"
 
 # Parametry inferencji
 inference_params:
   confidence_threshold: 0.5 # Próg pewności dla detekcji
   iou_threshold: 0.5 # Próg IoU dla metryki mAP@.50
+
+# Mapowanie etykiet modelowych -> id kategorii COCO
+# Twój COCO ma kategorię z id=0 ("tool"). YOLO zwykle zwraca klasy od 0.
+label_map:
+  yolo: { 0: 0 }
+  detr: { 0: 0 }

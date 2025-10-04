@@ -51,7 +51,8 @@ def create_side_by_side_video(config):
         gt_by_image.setdefault(ann['image_id'], []).append(ann)
 
     image_files = get_image_files(images_dir)
-    image_id_map = {i: name for i, name in enumerate(image_files)}
+    # Map filename -> COCO image_id for alignment with predictions
+    file_to_id = {img['file_name']: img['id'] for img in gt_data.get('images', [])}
 
     # Video writer setup
     first_image_path = os.path.join(images_dir, image_files[0])
@@ -60,9 +61,16 @@ def create_side_by_side_video(config):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video_writer = cv2.VideoWriter(video_path, fourcc, 10, (w * 2, h))
 
-    for img_id, img_name in tqdm(image_id_map.items(), desc="Generating video"):
+    for img_name in tqdm(image_files, desc="Generating video"):
         img_path = os.path.join(images_dir, img_name)
         image = cv2.imread(img_path)
+        img_id = file_to_id.get(img_name)
+        # Fallback: try basename (if GT stores only basename)
+        if img_id is None:
+            img_id = file_to_id.get(os.path.basename(img_name))
+        # If still None, fallback to implicit index (won't match pred ids, but avoids crash)
+        if img_id is None:
+            img_id = image_files.index(img_name)
         
         yolo_frame = image.copy()
         detr_frame = image.copy()

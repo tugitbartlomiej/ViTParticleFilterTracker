@@ -11,9 +11,13 @@ def load_config(config_path='config.yaml'):
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)
 
-def calculate_standard_metrics(gt_coco, pred_coco):
-    """Oblicza standardowe metryki COCO (mAP, Precision, Recall)."""
+def calculate_standard_metrics(gt_coco, pred_coco, img_ids=None):
+    """Oblicza standardowe metryki COCO (mAP, Precision, Recall).
+    Jeśli podano img_ids, ewaluacja będzie ograniczona do tych obrazów (np. tylko walidacja).
+    """
     coco_eval = COCOeval(gt_coco, pred_coco, 'bbox')
+    if img_ids:
+        coco_eval.params.imgIds = list(sorted(set(img_ids)))
     coco_eval.evaluate()
     coco_eval.accumulate()
     coco_eval.summarize()
@@ -101,6 +105,24 @@ def measure_performance(model_type, config):
     
     return {"fps": fps, "vram_mb": vram_mb}
 
+def load_performance_metrics(model_type, config):
+    """Load measured performance if available, otherwise return estimates."""
+    output_dir = config['output']['directory']
+    perf_path = os.path.join(output_dir, f'{model_type}_performance.json')
+    if os.path.exists(perf_path):
+        try:
+            with open(perf_path, 'r') as f:
+                data = json.load(f)
+            return {
+                "fps": data.get("fps"),
+                "vram_mb": data.get("vram_mb"),
+                "frames": data.get("frames"),
+                "total_seconds": data.get("total_seconds"),
+            }
+        except Exception:
+            pass
+    return measure_performance(model_type, config)
+
 def main():
     config = load_config()
     output_dir = config['output']['directory']
@@ -121,9 +143,12 @@ def main():
         with open(pred_path, 'r') as f:
             pred_results = json.load(f)
 
+        # Ogranicz ewaluację do obrazów obecnych w predykcjach
+        img_ids = [p['image_id'] for p in pred_results]
+
         # 1. Standardowe metryki
         print("\n[Standard COCO Metrics]")
-        standard_stats = calculate_standard_metrics(gt_coco, pred_coco)
+        standard_stats = calculate_standard_metrics(gt_coco, pred_coco, img_ids=img_ids)
 
         # 2. Metryki stabilności czasowej
         print("\n[Temporal Stability Metrics]")
@@ -132,8 +157,8 @@ def main():
         print(f"Detection Flicker Count: {temporal_stats['detection_flicker_count']}")
 
         # 3. Metryki wydajności
-        print("\n[Performance Metrics (Estimated)]")
-        performance_stats = measure_performance(model_type, config)
+        print("\n[Performance Metrics]")
+        performance_stats = load_performance_metrics(model_type, config)
         print(f"Frames Per Second (FPS): {performance_stats['fps']}")
         print(f"VRAM Usage (MB): {performance_stats['vram_mb']}")
 

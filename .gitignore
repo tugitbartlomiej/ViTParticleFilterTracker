@@ -5,14 +5,34 @@
 *.bmp
 *.gif
 *.tiff
+*.tif
 *.webp
+*.svg
+*.ico
+*.heic
+*.heif
+*.raw
+*.dng
+*.nef
+*.cr2
+*.arw
 **/*.png
 **/*.jpg
 **/*.jpeg
 **/*.bmp
 **/*.gif
 **/*.tiff
+**/*.tif
 **/*.webp
+**/*.svg
+**/*.ico
+**/*.heic
+**/*.heif
+**/*.raw
+**/*.dng
+**/*.nef
+**/*.cr2
+**/*.arw
 
 # Ignoruj wszystkie pliki tekstowe w całym repozytorium
 *.txt
@@ -22,14 +42,99 @@
 *.pt
 *.pth
 *.safetensors
+*.ckpt
+*.pkl
+*.h5
+*.bin
+*.onnx
+*.pb
+*.tflite
+*.mlmodel
+*.json.gz
+*.weights
+*.model
+*.joblib
+*.npy
+*.npz
 **/models/
 **/checkpoints/
+**/weights/
+**/pretrained/
+
+# Ignoruj pliki wideo
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.flv
+*.wmv
+*.webm
+*.m4v
+*.mpg
+*.mpeg
+*.3gp
+*.asf
+*.f4v
+*.ogv
+*.ts
+*.vob
+*.rmvb
+*.m2v
+*.mxf
+**/*.mp4
+**/*.avi
+**/*.mov
+**/*.mkv
+**/*.flv
+**/*.wmv
+**/*.webm
+**/*.m4v
+**/*.mpg
+**/*.mpeg
+**/*.3gp
+**/*.asf
+**/*.f4v
+**/*.ogv
+**/*.ts
+**/*.vob
+**/*.rmvb
+**/*.m2v
+**/*.mxf
+
+# Ignoruj pliki audio
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+*.wma
+*.m4a
+*.opus
+*.ape
+**/*.mp3
+**/*.wav
+**/*.flac
+**/*.aac
+**/*.ogg
+**/*.wma
+**/*.m4a
+**/*.opus
+**/*.ape
 
 # Ignoruj archiwa
 *.zip
 *.tar
 *.tar.gz
 *.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+*.lz
+*.lzma
+*.cab
+*.deb
+*.rpm
 
 # Ignoruj pliki tymczasowe i cache
 __pycache__/
@@ -105,3 +210,32 @@ yolo_dataset_*/
 Annotators/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224/
 Annotators/medgemma-27b-it/
 Annotators/medgemma-4b-it/
+
+# Ignoruj duże katalogi z fine-tuningiem i testami
+BackgroundFinetuned/
+BackgroundFinetuned_wt_dev_refactor/
+**/test_dino_dataset/
+**/pipeline_output*/
+
+# Logs
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+
+# Task files
+# tasks.json
+# tasks/ 
