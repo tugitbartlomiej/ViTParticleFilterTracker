@@ -5,20 +5,20 @@
 models:
   yolo:
     # Główna waga YOLO do testów (podane: models/YOLO/epoch100.pt)
-    path: "../models/YOLO/epoch100.pt"
+    path: "models/YOLO/epoch100.pt"
   detr:
     # DETR w formacie HuggingFace (folder z config.json + model.safetensors)
     # Obecny pipeline inferencji wymaga formatu HF.
     # Dostępny eksport: DETR/detr_inference_model_final
-    path: "../DETR/detr_inference_model_final"
+    path: "DETR/detr_inference_model_final"
 
 # Zbiór testowy
 # Użyj dedykowanego, spójnego zbioru testowego dla obu modeli.
 dataset:
-  # Użyjemy walidacji jako zbioru testowego
-  images_dir: "../BackgroundFinetuned/Datasets/TooltipMining/val"
-  # Adnotacje COCO odpowiadające zbiorowi walidacyjnemu
-  annotations_path: "../BackgroundFinetuned/Datasets/TooltipMining/annotations/val_annotations.json"
+  # Użyjemy train jako zbioru testowego (val folder nie istnieje)
+  images_dir: "../BackgroundFinetuned/Datasets/TooltipMining/train"
+  # Adnotacje COCO odpowiadające zbiorowi treningowemu
+  annotations_path: "../BackgroundFinetuned/Datasets/TooltipMining/annotations/tool_train_annotations.json"
 
 # Ustawienia wyjściowe
 output:
