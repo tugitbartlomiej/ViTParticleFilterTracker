@@ -302,15 +302,61 @@ def run_yolo_inference(config):
         json.dump(perf, f, indent=4)
     print(f"YOLO performance saved to {perf_path}")
 
+def load_detr_from_checkpoint(checkpoint_path, device):
+    """
+    Load DETR model from original training checkpoint to preserve Query81 specialization.
+    Query 81 achieved 96.3% hit rate in original checkpoint vs 0% in converted model.
+    """
+    print(f"Loading DETR from original checkpoint: {checkpoint_path}")
+
+    # Load checkpoint
+    checkpoint = torch.load(checkpoint_path, map_location='cpu')
+
+    # Create model with appropriate configuration
+    # Use num_labels=1 for single class (surgical_tool)
+    model = DetrForObjectDetection.from_pretrained(
+        "facebook/detr-resnet-50",
+        num_labels=1,  # SURGICAL TOOL CLASS ONLY
+        ignore_mismatched_sizes=True
+    )
+
+    # Load weights with STRICT validation to preserve Query81
+    model.load_state_dict(checkpoint['model_state_dict'], strict=True)
+
+    model.to(device)
+    model.eval()
+    print("Successfully loaded DETR with Query81 specialization preserved")
+    return model
+
 def run_detr_inference(config):
     print("Running DETR inference...")
-    model_path = resolve_path(
-        config['models']['detr']['path'],
-        candidates=[
-            'DETR/detr_inference_model_final',
-        ],
-        expect_dir=True,
-    )
+
+    # Try to load from checkpoint first (preserves Query81), fallback to HF model
+    checkpoint_candidates = [
+        'models/DETR/checkpoint_epoch_100.pth',
+        '../BackgroundFinetuned/Models/DETR/checkpoint_epoch_100.pth',
+    ]
+
+    checkpoint_path = None
+    for candidate in checkpoint_candidates:
+        try:
+            p = resolve_path(candidate, must_exist=True, expect_dir=False)
+            checkpoint_path = p
+            break
+        except FileNotFoundError:
+            continue
+
+    if not checkpoint_path:
+        # Fallback to HF converted model (will lose Query81 specialization)
+        print("WARNING: Original checkpoint not found, using converted model (Query81 specialization will be lost)")
+        model_path = resolve_path(
+            config['models']['detr']['path'],
+            candidates=[
+                'DETR/detr_inference_model_final',
+            ],
+            expect_dir=True,
+        )
+
     images_dir = resolve_path(
         config['dataset']['images_dir'],
         expect_dir=True,
@@ -319,8 +365,15 @@ def run_detr_inference(config):
     conf_threshold = config['inference_params']['confidence_threshold']
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    processor = DetrImageProcessor.from_pretrained(model_path)
-    model = DetrForObjectDetection.from_pretrained(model_path).to(device)
+
+    # Load model from checkpoint or HF
+    if checkpoint_path:
+        model = load_detr_from_checkpoint(checkpoint_path, device)
+        # Create processor from base model
+        processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
+    else:
+        processor = DetrImageProcessor.from_pretrained(model_path)
+        model = DetrForObjectDetection.from_pretrained(model_path).to(device)
     
     image_files = get_image_files(images_dir)
     coco_results = []

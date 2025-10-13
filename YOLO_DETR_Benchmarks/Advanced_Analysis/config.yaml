@@ -7,10 +7,11 @@ models:
     # Główna waga YOLO do testów (podane: models/YOLO/epoch100.pt)
     path: "models/YOLO/epoch100.pt"
   detr:
-    # DETR w formacie HuggingFace (folder z config.json + model.safetensors)
-    # Obecny pipeline inferencji wymaga formatu HF.
-    # Dostępny eksport: DETR/detr_inference_model_final
-    path: "DETR/detr_inference_model_final"
+    # DETR - używamy ORYGINALNEGO CHECKPOINTA aby zachować specjalizację Query81
+    # Query 81: 96.3% hit rate (182/189 detections) w oryginalnym checkpoincie
+    # vs 0% hit rate w skonwertowanym modelu HF
+    # Pipeline automatycznie wykrywa checkpoint i ładuje go z strict=True
+    path: "models/DETR/checkpoint_epoch_100.pth"
 
 # Zbiór testowy
 # Użyj dedykowanego, spójnego zbioru testowego dla obu modeli.
