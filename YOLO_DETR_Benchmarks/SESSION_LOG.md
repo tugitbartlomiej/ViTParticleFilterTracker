@@ -41,8 +41,33 @@ How to run (Windows PowerShell, Python 3.11)
 - Optional visualizations (after predictions exist):
   - py -3.11 Advanced_Analysis/visualize_results.py
 
+Benchmark Results (218 images, surgical tool detection)
+**YOLO Performance:**
+- mAP@0.5:0.95 = 79.9%
+- mAP@0.5 = 86.5%
+- mAP@0.75 = 85.2%
+- Average Recall = 94.6%
+- Speed = 34.6 fps
+- VRAM = 344 MB
+
+**DETR Performance (with Query81 preserved):**
+- mAP@0.5:0.95 = 63.6%
+- mAP@0.5 = 82.9%
+- mAP@0.75 = 79.8%
+- Average Recall = 78.6%
+- Speed = 8.0 fps
+- VRAM = 2386 MB
+
+**Key Findings:**
+- YOLO outperforms DETR by 16.3% in mAP@0.5:0.95
+- YOLO is 4.3x faster (34.6 fps vs 8.0 fps)
+- YOLO uses 7x less VRAM (344 MB vs 2386 MB)
+- Both models show good detection at IoU=0.5 threshold
+- Zero detection flicker for both models (excellent temporal stability)
+
 What you should see on console
 - "Running YOLOv8 inference..." and tqdm progress bar (YOLO Inference)
+- "Successfully loaded DETR with Query81 specialization preserved"
 - "Running DETR inference..." and tqdm progress bar (DETR Inference)
 - COCOeval summary table (mAP / AR), temporal stability metrics, and final report path
 

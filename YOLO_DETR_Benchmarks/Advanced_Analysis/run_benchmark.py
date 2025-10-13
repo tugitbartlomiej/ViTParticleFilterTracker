@@ -13,7 +13,7 @@ sys.path.insert(0, str(HERE))
 import yaml
 from pycocotools.coco import COCO
 
-from run_inference import load_config, run_yolo_inference, run_detr_inference
+from run_inference import load_config, run_yolo_inference, run_detr_inference, resolve_path
 from evaluate_metrics import calculate_standard_metrics, calculate_temporal_stability
 
 
@@ -45,7 +45,10 @@ def main():
             run_detr_inference(config)
 
     # Evaluation
-    gt_path = config['dataset']['annotations_path']
+    gt_path = resolve_path(
+        config['dataset']['annotations_path'],
+        expect_dir=False,
+    )
     gt_coco = COCO(gt_path)
 
     report = {}

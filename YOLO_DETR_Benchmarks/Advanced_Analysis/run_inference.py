@@ -244,7 +244,13 @@ def run_yolo_inference(config):
 
     coco_results = []
     # Prefer COCO image id mapping if GT is available; fallback to enumeration
-    gt_map = build_coco_image_id_map(config['dataset'].get('annotations_path'))
+    ann_path = config['dataset'].get('annotations_path')
+    if ann_path:
+        try:
+            ann_path = resolve_path(ann_path, expect_dir=False)
+        except FileNotFoundError:
+            ann_path = None
+    gt_map = build_coco_image_id_map(ann_path)
     image_id_map = gt_map if gt_map else {name: i for i, name in enumerate(image_files)}
     # Optional category mapper
     cat_map = get_category_id_mapper(config, 'yolo')
@@ -378,7 +384,13 @@ def run_detr_inference(config):
     image_files = get_image_files(images_dir)
     coco_results = []
     # Prefer COCO image id mapping if GT is available; fallback to enumeration
-    gt_map = build_coco_image_id_map(config['dataset'].get('annotations_path'))
+    ann_path = config['dataset'].get('annotations_path')
+    if ann_path:
+        try:
+            ann_path = resolve_path(ann_path, expect_dir=False)
+        except FileNotFoundError:
+            ann_path = None
+    gt_map = build_coco_image_id_map(ann_path)
     image_id_map = gt_map if gt_map else {name: i for i, name in enumerate(image_files)}
     # Optional category mapper
     cat_map = get_category_id_mapper(config, 'detr')
