@@ -4,21 +4,21 @@
 # Uzupełnij na podstawie swoich wytrenowanych modeli. Poniżej przykłady z Twojego pliku benchmark_config.yaml
 models:
   yolo:
-    # Główna waga YOLO do testów
-    path: "../models/YOLO/yolo_inference_model_final/yolo_inference_model.pt"
-    # Alternatywnie możesz szybko podmienić na epokę 100:
-    # path: "../models/YOLO/epoch100.pt"
+    # Główna waga YOLO do testów (podane: models/YOLO/epoch100.pt)
+    path: "../models/YOLO/epoch100.pt"
   detr:
-    # Użyj skonwertowanego modelu HF (folder z config.json + model.safetensors)
+    # DETR w formacie HuggingFace (folder z config.json + model.safetensors)
+    # Obecny pipeline inferencji wymaga formatu HF.
+    # Dostępny eksport: DETR/detr_inference_model_final
     path: "../DETR/detr_inference_model_final"
 
 # Zbiór testowy
 # Użyj dedykowanego, spójnego zbioru testowego dla obu modeli.
 dataset:
-  # Katalog z obrazami testowymi (np. walidacja)
-  images_dir: "../Datasets/Yolo/images/val"
-  # Plik z adnotacjami COCO – zawiera pełny zbiór; ewaluacja ograniczana jest do klatek z images_dir
-  annotations_path: "../Datasets/Detr/coco_annotations_from_yolo_dataset_20250218.json"
+  # Użyjemy walidacji jako zbioru testowego
+  images_dir: "../BackgroundFinetuned/Datasets/TooltipMining/val"
+  # Adnotacje COCO odpowiadające zbiorowi walidacyjnemu
+  annotations_path: "../BackgroundFinetuned/Datasets/TooltipMining/annotations/val_annotations.json"
 
 # Ustawienia wyjściowe
 output:
@@ -31,7 +31,8 @@ inference_params:
   iou_threshold: 0.5 # Próg IoU dla metryki mAP@.50
 
 # Mapowanie etykiet modelowych -> id kategorii COCO
-# Twój COCO ma kategorię z id=0 ("tool"). YOLO zwykle zwraca klasy od 0.
+# Zbiór TooltipMining ma jedną kategorię z id=1 ("surgical_tool").
+# Wymuś zgodność: indeks klasy 0 -> category_id 1 dla obu modeli.
 label_map:
-  yolo: { 0: 0 }
-  detr: { 0: 0 }
+  yolo: { 0: 1 }
+  detr: { 0: 1 }

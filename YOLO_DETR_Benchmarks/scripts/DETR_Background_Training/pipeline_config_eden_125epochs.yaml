@@ -1,0 +1,40 @@
+# DETR Background Training Pipeline Configuration - Eden Cluster 125 epochs
+# Configuration for main_pipeline.py on eden-cluster with 125 epochs training
+
+# Input paths (EDEN CLUSTER PATHS)
+video_directory: "~/datasets/DETR_BACKGROUNG/video/"  # Cataract surgery videos
+tooltip_dataset_path: "~/datasets/tooltip_images"
+tooltip_annotations_path: "~/datasets/tooltip_annotations.json"
+original_model_checkpoint: "~/DETR/Checkpoints/checkpoint_epoch_125.pth"
+
+# Model paths (EDEN CLUSTER PATHS)
+yolo_model_path: "~/models/YOLO/yolo_inference_model_final/yolo_inference_model.pt"
+detr_model_path: "~/models/DETR/detr_inference_model.pth"
+
+# Output paths
+output_directory: "~/ViT/YOLO_DETR_Benchmarks/scripts/DETR_Background_Training/pipeline_output_eden_125epochs"
+
+# DINO extraction parameters
+dino_model: "facebook/dino-vitb16"
+frames_per_video: 50
+clustering_threshold: 0.7
+min_cluster_size: 5
+
+# Dataset mixing parameters
+tooltip_ratio: 0.7      # 70% tooltip data
+background_ratio: 0.3   # 30% background data
+validation_split: 0.2   # 20% for validation
+
+# Training parameters - LONG TRAINING WITH 125 EPOCHS
+gentle_lr: 1.0e-6       # Very gentle learning rate for long training
+max_epochs: 125         # FULL 125 EPOCHS as requested
+batch_size: 4           # Optimized for DGX-4 GPU memory
+gradient_accumulation_steps: 4
+
+# YOLO threshold for classification
+yolo_threshold: 0.5
+
+# Execution settings
+python_executable: "python3"  # Linux python executable
+max_retries: 3
+timeout_hours: 48       # Extended timeout for 125 epochs (48 hours)

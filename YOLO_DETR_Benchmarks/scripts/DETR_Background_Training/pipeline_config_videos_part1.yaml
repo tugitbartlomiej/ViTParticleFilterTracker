@@ -1,0 +1,32 @@
+# Videos Part1 Multi-Video Configuration - Optimized for Tool Detection Improvement
+video_directory: "E:/Cataract/videos/micro/videos_part1"
+tooltip_dataset_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Datasets/Yolo/yolo_dataset_20250218/images/train"
+tooltip_annotations_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Annotators/Datasets/Yolo/yolo_dataset_20250218/coco_annotations_from_yolo_dataset_20250218.json"
+original_model_checkpoint: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/DETR/checkpoint_epoch_100.pth"
+output_directory: "pipeline_output_videos_part1"
+
+# DINO extraction parameters - increased for multiple videos
+dino_model: "facebook/dino-vitb16"
+frames_per_video: 100  # Increased from 30 to 100 for 8 videos = 800 total frames
+clustering_threshold: 0.6  # Slightly lower for more diverse frames
+min_cluster_size: 5  # Higher for better quality clusters
+
+# Dataset mixing parameters - optimized for tool detection
+tooltip_ratio: 0.6  # Slightly lower to get more background frames
+background_ratio: 0.4  # More background for better negative examples
+validation_split: 0.2
+
+# Training parameters - optimized for multiple videos
+gentle_lr: 1e-6  # Keep gentle for anti-catastrophic forgetting
+max_epochs: 5  # Increased from 1 to 5 for better convergence with more data
+batch_size: 2  # Increased from 1 to 2 for better training
+gradient_accumulation_steps: 8  # Increased for effective batch size of 16
+
+# Detection thresholds - optimized for surgical tool detection
+yolo_threshold: 0.4  # Slightly higher for more confident detections
+detr_threshold: 0.7  # Lower than 0.8 to capture more potential tools
+
+# Execution settings
+python_executable: "py"
+max_retries: 0  # No retries to avoid conflicts
+timeout_hours: 6  # Increased for longer training with more data
