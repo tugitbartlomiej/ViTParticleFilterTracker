@@ -1,22 +1,22 @@
 #!/bin/bash
 ###############################################################################
-#  DETR OPTIMIZED – DDP training on 3×GPU | Klaster Eden (pascal)
+#  DETR OPTIMIZED – DDP training on 3×GPU | Klaster Eden (dgx-3)
 ###############################################################################
 #SBATCH -A transformers_vsc
 #SBATCH -p long
-#SBATCH --nodelist=pascal
+#SBATCH --nodelist=dgx-3
 #SBATCH --gres=gpu:3
-#SBATCH --mem=350G
+#SBATCH --mem=200G
 #SBATCH --time=5-00:00:00
-#SBATCH --job-name=detr_ddp_3gpu_pascal
+#SBATCH --job-name=detr_ddp_3gpu_dgx3
 #SBATCH --chdir=/mnt/evafs/faculty/home/bpiotrowski/DETR
-#SBATCH --output=logs/detr_ddp_3gpu_pascal_%j.log
-#SBATCH --error=logs/detr_ddp_3gpu_pascal_%j.log
+#SBATCH --output=logs/detr_ddp_3gpu_dgx3_%j.log
+#SBATCH --error=logs/detr_ddp_3gpu_dgx3_%j.log
 #SBATCH --open-mode=append
 
 set -euo pipefail
 echo "=== DETR OPTIMIZED DDP 3×GPU on $(hostname) | $(date) ==="
-echo "=== Mixed Precision + Performance Optimizations (Pascal) ==="
+echo "=== Mixed Precision + Performance Optimizations (DGX-3) ==="
 
 # ───────────────────── TMPDIR (NVMe węzła) ───────────────────────────────────
 TMPDIR=${SLURM_TMPDIR:-/tmp/${USER}_${SLURM_JOB_ID}}
@@ -52,7 +52,7 @@ echo "                 images → $IMAGES_DIR"
 # Liczba GPU - DGX-3 ma 3 wolne GPU
 export WORLD_SIZE=3
 export MASTER_ADDR=localhost
-export MASTER_PORT=29503  # Unikalny port dla dgx-3!
+export MASTER_PORT=29503  # Unikalny port dla DGX-3!
 
 # Optymalizacje dla DDP
 export OMP_NUM_THREADS=1
@@ -66,12 +66,12 @@ export NCCL_P2P_DISABLE=0
 export NCCL_IB_DISABLE=0
 
 # ───────────────────── Uruchomienie treningu DDP OPTIMIZED ───────────────────
-echo "🚀 Startuję ZOPTYMALIZOWANY trening DETR z DistributedDataParallel na Pascal..."
+echo "🚀 Startuję ZOPTYMALIZOWANY trening DETR z DistributedDataParallel na DGX-3..."
 echo "📊 Włączone: Mixed Precision (AMP), 3×GPU, zwiększony batch size"
 echo "💡 Effective batch size: 3 GPU × 16 batch = 48 samples/step"
-echo "🎯 Node: Pascal (P100 GPUs) - 300 epochs training"
+echo "🎯 Node: DGX-3 (V100 GPUs) - 300 epochs training"
 
-# WAŻNE: Dedykowane foldery dla Pascal!
+# WAŻNE: Dedykowane foldery dla DGX-3!
 torchrun \
     --nproc_per_node=$WORLD_SIZE \
     --master_addr=$MASTER_ADDR \
@@ -79,9 +79,9 @@ torchrun \
     detr_train_optimized.py \
     --images_dir        "$IMAGES_DIR" \
     --annotations_path  "$ANNOT_JSON" \
-    --output_dir        "./train_out_ddp_3gpu_pascal" \
-    --checkpoint_dir    "./ckpt_ddp_3gpu_pascal" \
-    --best_model_dir    "./best_ddp_3gpu_pascal" \
+    --output_dir        "./train_out_ddp_3gpu_dgx3" \
+    --checkpoint_dir    "./ckpt_ddp_3gpu_dgx3" \
+    --best_model_dir    "./best_ddp_3gpu_dgx3" \
     --epochs            300 \
     --batch_size        16 \
     --num_workers       6 \
@@ -98,4 +98,4 @@ torchrun \
     --compile_model \
     --resume_training
 
-echo -e "\n✓ Zadanie Pascal OPTIMIZED DDP zakończone: kod $?"
+echo -e "\n✓ Zadanie DGX-3 OPTIMIZED DDP zakończone: kod $?"
