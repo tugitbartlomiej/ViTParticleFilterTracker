@@ -41,7 +41,7 @@ sys.path.append(str(Path(__file__).parent.parent / "Advanced_Analysis"))
 from run_inference import load_detr_from_checkpoint
 
 # Configuration - VALIDATION SET
-YOLO_CHECKPOINT = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Models/YOLO/epoch100.pt"
+YOLO_CHECKPOINT = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch100.pt"
 DETR_CHECKPOINT = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Eden/Checkpoints/DETR/checkpoint_epoch_100.pth"
 
 # PROPER VALIDATION SET - NOT TRAINING DATA!

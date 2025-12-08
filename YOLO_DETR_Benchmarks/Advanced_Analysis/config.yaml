@@ -7,24 +7,23 @@ models:
     # Główna waga YOLO do testów (podane: models/YOLO/epoch100.pt)
     path: "models/YOLO/epoch100.pt"
   detr:
-    # DETR - używamy ORYGINALNEGO CHECKPOINTA aby zachować specjalizację Query81
-    # Query 81: 96.3% hit rate (182/189 detections) w oryginalnym checkpoincie
-    # vs 0% hit rate w skonwertowanym modelu HF
-    # Pipeline automatycznie wykrywa checkpoint i ładuje go z strict=True
-    path: "models/DETR/checkpoint_epoch_100.pth"
+    # DETR epoch 140 - najnowszy dostępny checkpoint z 4x H100 training
+    # Resume from epoch 140 after mixed precision crash at epoch 148
+    # Training: 4x H100, batch 64, no AMP, gentle fine-tuning 1e-4 LR
+    path: "models/DETR/checkpoint_epoch_140.pth"
 
 # Zbiór testowy
 # Użyj dedykowanego, spójnego zbioru testowego dla obu modeli.
 dataset:
   # Użyjemy train jako zbioru testowego (val folder nie istnieje)
-  images_dir: "../BackgroundFinetuned/Datasets/TooltipMining/train"
+  images_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Datasets/TooltipMining/train"
   # Adnotacje COCO odpowiadające zbiorowi treningowemu
-  annotations_path: "../BackgroundFinetuned/Datasets/TooltipMining/annotations/tool_train_annotations.json"
+  annotations_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Datasets/TooltipMining/annotations/tool_train_annotations.json"
 
 # Ustawienia wyjściowe
 output:
   # Katalog, w którym zostaną zapisane wszystkie wyniki, raporty i wizualizacje
-  directory: "./benchmark_results"
+  directory: "./benchmark_results_epoch140"
 
 # Parametry inferencji
 inference_params:

@@ -31,7 +31,7 @@ from run_inference import (
 # Configuration
 # Using epoch100.pt from BackgroundFinetuned (working checkpoint)
 # Note: Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch70.pt has pickle compatibility issues with PyTorch 2.6+
-YOLO_CHECKPOINT = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Models/YOLO/epoch100.pt"
+YOLO_CHECKPOINT = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch100.pt"
 DETR_CHECKPOINT = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Eden/Checkpoints/DETR/checkpoint_epoch_100.pth"
 COCO_ANNOTATIONS = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Datasets/TooltipMining/annotations/tool_train_annotations.json"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

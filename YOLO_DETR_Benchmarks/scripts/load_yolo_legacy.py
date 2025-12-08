@@ -52,7 +52,7 @@ def load_yolo_legacy(checkpoint_path, device='cuda'):
 
 if __name__ == "__main__":
     # Test loading
-    checkpoint = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Models/YOLO/epoch100.pt"
+    checkpoint = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch100.pt"
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     print(f"Loading YOLO from: {checkpoint}")
