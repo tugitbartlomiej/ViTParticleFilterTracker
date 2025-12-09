@@ -1,0 +1,111 @@
+# Ultra-Aggressive Config for DETR Epoch 160 vs YOLO
+# Goal: Make DETR beat YOLO with all optimizations enabled
+
+# Models
+models:
+  yolo:
+    # YOLO epoch 100 - baseline
+    path: "../models/YOLO/epoch100.pt"
+    # Standard YOLO settings
+    conf_threshold: 0.5
+    iou_threshold: 0.5
+    tta_enabled: false
+
+  detr:
+    # DETR epoch 160 - NEW CHECKPOINT from 4x H100 training
+    path: "../../DETR_Checkpoints/checkpoint_epoch_160.pth"
+
+    # OPTIMIZATION 1: Lower confidence threshold (from analysis: +8% AR, +2% mAP@0.5)
+    conf_threshold: 0.2  # Was 0.5 - many true positives have 0.3-0.5 confidence
+
+    # OPTIMIZATION 2: Test-Time Augmentation (TTA)
+    tta_enabled: true
+    tta_scales: [0.8, 1.0, 1.2]  # Multi-scale inference
+    tta_flips: [false, true]     # Horizontal flip augmentation
+
+    # OPTIMIZATION 3: Box refinement
+    box_refinement: true
+    refinement_iterations: 2
+
+    # OPTIMIZATION 4: NMS tuning for better recall
+    iou_threshold: 0.4  # Lower = more boxes survive NMS
+
+# Dataset
+dataset:
+  images_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Datasets/TooltipMining/train"
+  annotations_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Datasets/TooltipMining/annotations/tool_train_annotations.json"
+
+# Output
+output:
+  directory: "./benchmark_results_epoch160_ULTRA_OPTIMIZED"
+
+  # Detailed analysis files
+  save_predictions: true
+  save_visualizations: true
+  save_per_image_metrics: true
+
+  # Query analysis (to verify Query 81 still dominates)
+  analyze_queries: true
+  query_heatmaps: true
+
+# Advanced inference parameters
+inference_params:
+  # Device
+  device: "cuda"
+  batch_size: 1  # TTA requires sequential processing
+
+  # DETR-specific optimizations
+  detr:
+    # Confidence calibration
+    calibrate_scores: true  # Apply temperature scaling to confidence scores
+    temperature: 1.5  # Soften confidence distribution
+
+    # Query filtering
+    min_box_area: 100  # Filter tiny false positives
+    max_detections: 100  # Keep all 100 queries initially
+
+  # YOLO baseline (no special treatment)
+  yolo:
+    augment: false  # No TTA for YOLO (fair comparison)
+
+# Label mapping
+label_map:
+  yolo: { 0: 1 }
+  detr: { 0: 1 }
+
+# Metrics to compute
+metrics:
+  - "mAP@0.5"
+  - "mAP@0.5:0.95"
+  - "mAP@0.75"
+  - "AR@100"
+  - "AR@small"
+  - "AR@medium"
+  - "AR@large"
+  - "FPS"
+  - "VRAM"
+  - "Precision"
+  - "Recall"
+
+# Analysis flags
+analysis:
+  # Deep dive into why DETR wins or loses
+  per_category_analysis: true
+  per_size_analysis: true
+  error_analysis: true
+
+  # Query specialization analysis
+  query_distribution: true
+  dominant_queries: true
+
+  # Confidence distribution
+  confidence_histograms: true
+  calibration_curves: true
+
+# Experimental features
+experimental:
+  # Ensemble Query 81 with other queries
+  ensemble_queries: false  # Disabled - previous analysis showed no benefit
+
+  # Weighted ensemble of YOLO + DETR
+  yolo_detr_ensemble: false  # Maybe future work

@@ -1,0 +1,24 @@
+# Proper Validation Test Configuration
+# Tests models on UNSEEN validation set (not training data!)
+
+models:
+  yolo:
+    path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Models/YOLO/epoch100.pt"
+  detr:
+    path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/DETR_Checkpoints/checkpoint_epoch_100.pth"
+
+# VALIDATION SET (proper test set)
+dataset:
+  images_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Datasets/TooltipMining/val"
+  annotations_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Datasets/TooltipMining/annotations/val_annotations.json"
+
+output:
+  directory: "./validation_benchmark_results"
+
+inference_params:
+  confidence_threshold: 0.5
+  iou_threshold: 0.5
+
+label_map:
+  yolo: { 0: 1 }
+  detr: { 0: 1 }

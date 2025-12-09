@@ -1,0 +1,33 @@
+# Config for CaDTD Dataset Multi-Epoch Benchmark
+
+models:
+  yolo:
+    path: "E:/Cataract/yolo11/train5/weights/best.pt"
+
+  detr:
+    # Will be replaced dynamically by multi_epoch_query_benchmark.py
+    path: "Eden/Checkpoints/DETR/checkpoint_epoch_100.pth"
+
+# CaDTD Dataset
+dataset:
+  # PNG frame images
+  images_dir: "E:/CaDTD-main/Setup 2/Labels"
+
+  # COCO annotations (converted from VOC XML)
+  # This will be created by the benchmark script if it doesn't exist
+  annotations_path: "YOLO_DETR_Benchmarks/Degradation_Analysis/cadtd_coco_annotations.json"
+
+# Output
+output:
+  directory: "./benchmark_results_cadtd_multi_epoch"
+
+# Inference parameters
+inference_params:
+  confidence_threshold: 0.5
+  iou_threshold: 0.5
+  device: "cuda"
+
+# Label mapping (all tools → category_id 1)
+label_map:
+  yolo: { 0: 1 }
+  detr: { 0: 1 }
