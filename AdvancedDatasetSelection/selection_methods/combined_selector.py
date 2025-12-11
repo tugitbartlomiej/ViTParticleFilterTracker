@@ -8,18 +8,20 @@ Implements 4-step selection strategy:
 4. EL2N ranking (difficulty)
 """
 
-import numpy as np
-from typing import List, Dict, Optional, Tuple
-from pathlib import Path
 import logging
-from tqdm import tqdm
 import pickle
+from pathlib import Path
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+
+import numpy as np
+from tqdm import tqdm
 
 from ..feature_extractors.fourier_analyzer import FourierAnalyzer
-from ..feature_extractors.dino_extractor import DINOExtractor
-from ..feature_extractors.sam_extractor import SAMExtractor
-from .el2n_scorer import EL2NScorer, compute_proxy_el2n_from_features
 from .k_center_greedy import KCenterGreedy
+
+if TYPE_CHECKING:  # pragma: no cover - avoids heavy imports at runtime
+    from ..feature_extractors.dino_extractor import DINOExtractor
+    from ..feature_extractors.sam_extractor import SAMExtractor
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,9 +32,9 @@ class CombinedSelector:
 
     def __init__(self,
                  fourier_analyzer: Optional[FourierAnalyzer] = None,
-                 dino_extractor: Optional[DINOExtractor] = None,
-                 sam_extractor: Optional[SAMExtractor] = None,
-                 el2n_scorer: Optional[EL2NScorer] = None,
+                 dino_extractor: Optional["DINOExtractor"] = None,
+                 sam_extractor: Optional["SAMExtractor"] = None,
+                 el2n_scorer=None,
                  k_center: Optional[KCenterGreedy] = None,
                  weights: Optional[Dict[str, float]] = None,
                  cache_dir: Optional[str] = None):
@@ -49,9 +51,23 @@ class CombinedSelector:
             cache_dir: Directory for caching features
         """
         self.fourier = fourier_analyzer or FourierAnalyzer()
-        self.dino = dino_extractor or DINOExtractor()
-        self.sam = sam_extractor or SAMExtractor()
-        self.el2n = el2n_scorer or EL2NScorer()
+
+        if dino_extractor is None:
+            from ..feature_extractors.dino_extractor import DINOExtractor
+
+            dino_extractor = DINOExtractor()
+        if sam_extractor is None:
+            from ..feature_extractors.sam_extractor import SAMExtractor
+
+            sam_extractor = SAMExtractor()
+
+        self.dino = dino_extractor
+        self.sam = sam_extractor
+        self.el2n = el2n_scorer
+        if self.el2n is None:
+            from .el2n_scorer import EL2NScorer
+
+            self.el2n = EL2NScorer()
         self.k_center = k_center or KCenterGreedy()
 
         self.weights = weights or {
@@ -167,6 +183,8 @@ class CombinedSelector:
 
         if len(labels) != len(valid_image_paths):
             labels = labels[:len(valid_image_paths)]
+
+        from .el2n_scorer import compute_proxy_el2n_from_features
 
         self.el2n_scores = compute_proxy_el2n_from_features(
             self.dino_features, np.array(labels)
