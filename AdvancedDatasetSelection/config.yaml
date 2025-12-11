@@ -1,4 +1,9 @@
 models:
+  # FastSAM (preferred for complexity - much faster than SAM3)
+  fastsam:
+    model_path: ../External/Models/FastSAM/FastSAM-x.pt
+    device: cuda
+  # SAM3 (fallback - very slow, uses video model)
   sam:
     model_path: ../External/Models/sam3  # SAM3 HuggingFace format
     device: cuda

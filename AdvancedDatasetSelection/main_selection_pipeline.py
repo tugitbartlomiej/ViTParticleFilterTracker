@@ -142,6 +142,18 @@ class AdvancedDatasetSelectionPipeline:
         if detr_checkpoint and not os.path.isabs(detr_checkpoint):
             detr_checkpoint = os.path.join(os.path.dirname(self.config_path), detr_checkpoint)
 
+        # Get FastSAM path from config (preferred over SAM3)
+        fastsam_config = self.config.get('models', {}).get('fastsam', {})
+        fastsam_path = fastsam_config.get('model_path')
+        if fastsam_path and not os.path.isabs(fastsam_path):
+            fastsam_path = os.path.join(os.path.dirname(self.config_path), fastsam_path)
+        # Check if FastSAM model exists
+        if fastsam_path and os.path.exists(fastsam_path):
+            logger.info(f"FastSAM model found: {fastsam_path}")
+        else:
+            logger.warning(f"FastSAM model not found at {fastsam_path}, will use proxy method")
+            fastsam_path = None
+
         # Cache directory
         cache_dir = self.config.get('processing', {}).get('cache_dir')
         if cache_dir and not os.path.isabs(cache_dir):
@@ -155,6 +167,7 @@ class AdvancedDatasetSelectionPipeline:
             fourier_analyzer=self.fourier,
             dino_extractor=self.dino,
             sam_extractor=self.sam,
+            fastsam_path=fastsam_path,
             detr_checkpoint_path=detr_checkpoint,
             detr_device=detr_config.get('device', 'cuda'),
             weights=self.config.get('weights'),
@@ -352,14 +365,6 @@ class AdvancedDatasetSelectionPipeline:
             report_path = os.path.join(output_dir, 'selection_reasons.json')
             self.cluster_selector.save_selection_report(selected_indices, strategy, report_path)
 
-            # Save DETR Q81 detection visualizations for selected images
-            # DISABLED: Visualization copying no longer needed
-            # if self.cluster_selector.detr_el2n is not None:
-            #     detr_vis_dir = os.path.join(output_dir, 'visualizations', 'detr_q81_detections')
-            #     self.cluster_selector.detr_el2n.save_selected_visualizations(
-            #         selected_paths, detr_vis_dir
-            #     )
-
         # Generate report
         self._generate_report(output_dir)
 
@@ -383,14 +388,13 @@ class AdvancedDatasetSelectionPipeline:
         images_dir = output_path / 'images'
         images_dir.mkdir(parents=True, exist_ok=True)
 
-        # Copy selected images
+        # Copy selected images (preserve original filenames for COCO annotation lookup!)
         path_mapping = {}
-        for i, src_path in enumerate(tqdm(selected_paths, desc="Copying images")):
-            ext = Path(src_path).suffix
-            new_name = f"img_{i:05d}{ext}"
-            dst_path = images_dir / new_name
+        for src_path in tqdm(selected_paths, desc="Copying images"):
+            original_name = Path(src_path).name  # Keep original filename!
+            dst_path = images_dir / original_name
             shutil.copy2(src_path, dst_path)
-            path_mapping[src_path] = new_name
+            path_mapping[src_path] = original_name
 
         # Generate annotations
         if annotations is not None:

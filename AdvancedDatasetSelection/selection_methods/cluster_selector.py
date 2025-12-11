@@ -27,6 +27,7 @@ import pickle
 from ..feature_extractors.fourier_analyzer import FourierAnalyzer
 from ..feature_extractors.dino_extractor import DINOExtractor
 from ..feature_extractors.sam_extractor import SAMExtractor
+from ..feature_extractors.fastsam_extractor import FastSAMExtractor
 from .detr_el2n_scorer import DETR_EL2N_Scorer
 
 logging.basicConfig(level=logging.INFO)
@@ -48,6 +49,7 @@ class ClusterBasedSelector:
                  fourier_analyzer: Optional[FourierAnalyzer] = None,
                  dino_extractor: Optional[DINOExtractor] = None,
                  sam_extractor: Optional[SAMExtractor] = None,
+                 fastsam_path: Optional[str] = None,
                  detr_checkpoint_path: Optional[str] = None,
                  detr_device: str = "cuda",
                  weights: Optional[Dict[str, float]] = None,
@@ -58,7 +60,8 @@ class ClusterBasedSelector:
         Args:
             fourier_analyzer: Fourier analyzer instance
             dino_extractor: DINO feature extractor
-            sam_extractor: SAM feature extractor
+            sam_extractor: SAM feature extractor (fallback)
+            fastsam_path: Path to FastSAM model (preferred, much faster)
             detr_checkpoint_path: Path to DETR checkpoint for EL2N
             detr_device: Device for DETR model
             weights: Weights for feature combination (for normalization scaling)
@@ -67,6 +70,13 @@ class ClusterBasedSelector:
         self.fourier = fourier_analyzer or FourierAnalyzer()
         self.dino = dino_extractor or DINOExtractor()
         self.sam = sam_extractor or SAMExtractor()
+
+        # FastSAM (preferred over SAM3 - much faster)
+        self.fastsam_path = fastsam_path
+        self.fastsam = None
+        if fastsam_path:
+            logger.info(f"Using FastSAM for complexity: {fastsam_path}")
+            self.fastsam = FastSAMExtractor(model_path=fastsam_path, device=detr_device)
 
         # DETR-based EL2N scorer
         self.detr_checkpoint_path = detr_checkpoint_path
@@ -126,32 +136,47 @@ class ClusterBasedSelector:
         logger.info(f"Saved {name} to cache")
 
     def _compute_sam_scores(self, image_paths: List[str], show_progress: bool = True) -> np.ndarray:
-        """Compute SAM3 complexity scores using full model."""
+        """Compute complexity scores using FastSAM or fallback to proxy method.
+
+        Priority:
+        1. FastSAM (if fastsam_path provided) - fast and accurate (~0.1s/image)
+        2. Proxy method (edge detection + color analysis) - very fast (~0.01s/image)
+
+        NOTE: SAM3 video model is NOT used because it's too slow (~33s/image).
+        """
         import cv2
+
+        # Use FastSAM if available
+        if self.fastsam is not None:
+            logger.info("Using FastSAM for complexity computation")
+            scores, valid_paths = self.fastsam.compute_complexity_batch(image_paths, show_progress)
+            # Handle missing scores (map back to original order)
+            valid_set = set(valid_paths)
+            result = []
+            score_idx = 0
+            for path in image_paths:
+                if path in valid_set:
+                    result.append(scores[score_idx])
+                    score_idx += 1
+                else:
+                    result.append(0.5)
+            return np.array(result)
+
+        # Fallback: fast proxy method (edge detection + color analysis)
+        logger.info("Using proxy method for complexity (FastSAM not configured)")
         scores = []
-        iterator = tqdm(image_paths, desc="Computing SAM3 complexity") if show_progress else image_paths
+        iterator = tqdm(image_paths, desc="Computing complexity (fast proxy)") if show_progress else image_paths
         for path in iterator:
             try:
                 image = cv2.imread(path)
                 if image is None:
                     scores.append(0.5)
                     continue
-                # Try full SAM3 first
-                result = self.sam.compute_features(image)
-                if result and 'complexity_score' in result:
-                    scores.append(result['complexity_score'])
-                else:
-                    # Fallback to proxy if SAM3 fails
-                    complexity = self.sam.compute_complexity_without_sam(image)
-                    scores.append(complexity['complexity_score'])
+                complexity = self.sam.compute_complexity_without_sam(image)
+                scores.append(complexity['complexity_score'])
             except Exception as e:
-                logger.warning(f"SAM3 failed for {path}: {e}, using proxy")
-                try:
-                    image = cv2.imread(path)
-                    complexity = self.sam.compute_complexity_without_sam(image)
-                    scores.append(complexity['complexity_score'])
-                except:
-                    scores.append(0.5)
+                logger.warning(f"Complexity computation failed for {path}: {e}")
+                scores.append(0.5)
         return np.array(scores)
 
     def extract_all_features(self,
@@ -213,17 +238,21 @@ class ClusterBasedSelector:
             except:
                 pass
 
-        # 3. SAM3 complexity scores (1-dim) - LOAD -> EXTRACT -> UNLOAD
-        logger.info("\n[3/4] SAM3 complexity (GPU - will unload after)...")
+        # 3. Complexity scores (1-dim) - FastSAM (preferred) or proxy method
+        complexity_method = "FastSAM" if self.fastsam else "proxy"
+        logger.info(f"\n[3/4] Complexity scores using {complexity_method} (GPU - will unload after)...")
         cached = self._load_cache('sam_scores') if use_cache else None
         if cached is not None:
             self.sam_scores = cached
-            logger.info("Loaded SAM scores from cache (model not loaded)")
+            logger.info("Loaded complexity scores from cache (model not loaded)")
         else:
             self.sam_scores = self._compute_sam_scores(valid_image_paths, show_progress)
             self._save_cache('sam_scores', self.sam_scores)
-            # UNLOAD SAM3 to free GPU memory
-            self.sam.unload()
+            # UNLOAD FastSAM/SAM to free GPU memory
+            if self.fastsam:
+                self.fastsam.unload()
+            else:
+                self.sam.unload()
 
         # 4. EL2N scores (1-dim) - LOAD -> EXTRACT -> UNLOAD
         logger.info("\n[4/4] DETR EL2N scores (GPU - will unload after)...")

@@ -390,9 +390,9 @@ class DETR_EL2N_Scorer:
                     draw.text((10, 35), f"Q81 Score: {score:.3f}", fill=(255, 255, 255), font=small_font)
                     draw.text((10, 55), f"Status: {status}", fill=color, font=small_font)
 
-                # Save
-                img_name = Path(path).stem
-                save_path = output_dir / f"{img_name}_selected.jpg"
+                # Save with original filename (preserving name for COCO lookup)
+                original_filename = Path(path).name
+                save_path = output_dir / original_filename
                 image.save(save_path, quality=95)
 
             except Exception as e:
