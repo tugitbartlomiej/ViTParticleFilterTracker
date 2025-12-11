@@ -37,7 +37,20 @@ Total: 6/6 tests passed
 ALL TESTS PASSED!
 ```
 
-### 3. Struktura utworzona
+### 3. Pipeline uruchomiony i przetestowany
+
+```
+Selection complete!
+  Input: 2083 images
+  Output: 50 images
+  Reduction: 2.4%
+
+Metryki:
+  EL2N difficulty mean: 0.68
+  SAM complexity mean: 0.38
+```
+
+### 4. Struktura utworzona
 
 ```
 AdvancedDatasetSelection/
@@ -45,6 +58,7 @@ AdvancedDatasetSelection/
 ├── config.yaml
 ├── main_selection_pipeline.py
 ├── test_pipeline.py
+├── README.md                    # NOWE - instrukcja uruchomienia
 ├── feature_extractors/
 │   ├── __init__.py
 │   ├── dino_extractor.py      # 768-dim semantic features
@@ -60,8 +74,11 @@ AdvancedDatasetSelection/
 │   ├── coco_handler.py        # COCO format I/O
 │   └── visualization.py       # PCA, histograms
 └── output/
-    └── selected_dataset/
-        └── images/
+    ├── feature_cache/         # Cache dla features
+    └── selected_dataset/      # Output zdjęć
+        ├── images/
+        ├── selection_report.json
+        └── visualizations/
 ```
 
 ## Kluczowe komponenty
@@ -75,7 +92,7 @@ AdvancedDatasetSelection/
 - **EL2NScorer**: difficulty = ||softmax(pred) - one_hot(label)||₂
 - **KCenterGreedy**: maximizes min distance between selected samples
 - **CombinedSelector**: 4-step pipeline:
-  1. Fourier pre-filtering (redundancy)
+  1. Fourier pre-filtering (redundancy) - wyłączony dla danych medycznych
   2. Feature combination (DINO + SAM)
   3. k-Center Greedy (diversity)
   4. EL2N ranking (difficulty)
@@ -83,20 +100,28 @@ AdvancedDatasetSelection/
 ## Uruchomienie
 
 ```bash
-# Pełny pipeline
-py -3.11 AdvancedDatasetSelection/main_selection_pipeline.py \
-    -c AdvancedDatasetSelection/config.yaml \
-    -t 5000
+# Z głównego folderu projektu:
+cd F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker
 
-# Testy
+# Podstawowe (50 zdjęć):
+py -3.11 AdvancedDatasetSelection/main_selection_pipeline.py --config AdvancedDatasetSelection/config.yaml --target-size 50
+
+# Pełny dataset (5000 zdjęć):
+py -3.11 AdvancedDatasetSelection/main_selection_pipeline.py --config AdvancedDatasetSelection/config.yaml --target-size 5000
+
+# Testy:
 py -3.11 AdvancedDatasetSelection/test_pipeline.py
 ```
 
 ## Konfiguracja (config.yaml)
 
 ```yaml
+datasets:
+  new_source: "E:/cataract_surgery_Instruments_detection.v1i.coco/train"
+  output: "./output/selected_dataset"
+
 fourier:
-  similarity_threshold: 0.85
+  similarity_threshold: 1.1  # >1 = wyłączony
 
 selection:
   k_center:
@@ -107,21 +132,16 @@ weights:
   dino_diversity: 0.35
   sam_complexity: 0.20
   el2n_difficulty: 0.30
-
-output:
-  target_size: 5000
 ```
 
 ## Bug fixes
 - Naprawiono EL2N dla single-class (unsupervised mode)
 - Naprawiono sqrt dla ujemnych wartości w k-Center
+- **Fourier threshold**: zmieniony z 0.85 na 1.1 (wyłączony) - cosine similarity dla danych medycznych wynosi ~0.9999 dla wszystkich obrazów
 
-## Git commit
-- Hash: `7615ab17`
-- Message: "Add Advanced Dataset Selection Pipeline plan and benchmark analysis"
-
-## Serena Memory
-- Zapisano: `AdvancedDatasetSelection_module.md`
+## Git commits
+- `7615ab17` - Add Advanced Dataset Selection Pipeline plan
+- `dab1795d` - Implement Advanced Dataset Selection Pipeline with 4-step hybrid selector
 
 ## Następne kroki
 1. Pobranie SAM checkpoint (2.5GB) dla pełnej funkcjonalności

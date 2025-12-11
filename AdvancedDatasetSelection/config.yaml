@@ -1,78 +1,63 @@
-# Advanced Dataset Selection Pipeline Configuration
-# For DETR Fine-tuning with intelligent sample selection
-
-# Model configurations
 models:
   sam:
-    checkpoint: "../External/Models/sam_vit_h_4b8939.pth"
-    model_type: "vit_h"
-    device: "cuda"
+    checkpoint: ../External/Models/sam_vit_h_4b8939.pth
+    model_type: vit_h
+    device: cuda
   dino:
-    model_name: "dino_vitb16"
-    device: "cuda"
-
-# Dataset paths
+    model_name: dino_vitb16
+    device: cuda
 datasets:
-  existing: "../Eden/Datasets/datasets_20250606.tar/datasets_20250606"
-  new_source: "E:/cataract_surgery_Instruments_detection.v1i.coco/train"
-  output: "../Eden/Datasets/SelectedFramesDataset"
-
-# Fourier analysis settings
+  existing: ../Eden/Datasets/datasets_20250606.tar/datasets_20250606
+  new_source: E:/cataract_surgery_Instruments_detection.v1i.coco/train
+  output: ./output/selected_dataset
 fourier:
-  similarity_threshold: 0.85
+  similarity_threshold: 1.1
   frequency_bands:
-    low: [0.0, 0.1]      # 0-10% of frequency range
-    mid: [0.1, 0.5]      # 10-50% of frequency range
-    high: [0.5, 1.0]     # 50-100% of frequency range
+    low:
+    - 0.0
+    - 0.1
+    mid:
+    - 0.1
+    - 0.5
+    high:
+    - 0.5
+    - 1.0
   features:
-    - "low_band_energy"
-    - "mid_band_energy"
-    - "high_band_energy"
-    - "spectral_entropy"
-    - "frequency_centroid"
-
-# SAM settings
+  - low_band_energy
+  - mid_band_energy
+  - high_band_energy
+  - spectral_entropy
+  - frequency_centroid
 sam:
   points_per_side: 32
   pred_iou_thresh: 0.88
   stability_score_thresh: 0.95
   min_mask_region_area: 100
-
-# DINO settings
 dino:
   feature_dim: 768
   batch_size: 16
-
-# EL2N settings
 selection:
   el2n:
     proxy_epochs: 20
     batch_size: 16
     learning_rate: 0.001
-    aggregation: "mean"  # mean or max
-
+    aggregation: mean
   k_center:
     target_size: 5000
     oversampling_factor: 2.0
     min_distance: 0.1
-
-# Combined selection weights
 weights:
   fourier_uniqueness: 0.15
   dino_diversity: 0.35
-  sam_complexity: 0.20
-  el2n_difficulty: 0.30
-
-# Output settings
+  sam_complexity: 0.2
+  el2n_difficulty: 0.3
 output:
   target_size: 5000
   save_features: true
   generate_visualizations: true
-  report_format: "json"
-
-# Processing settings
+  report_format: json
 processing:
   num_workers: 4
   batch_size: 32
-  use_cache: true
-  cache_dir: "./output/feature_cache"
+  use_cache: false
+  cache_dir: ./output/feature_cache
