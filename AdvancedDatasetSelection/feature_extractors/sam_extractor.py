@@ -1,12 +1,12 @@
 """
-SAM (Segment Anything Model) Feature Extractor for Dataset Selection.
+SAM3 (Segment Anything Model 3) Feature Extractor for Dataset Selection.
 
+Uses HuggingFace transformers SAM3 for automatic mask generation.
 Extracts segmentation masks and computes scene complexity metrics:
 - Number of segments
 - Segment size distribution
 - Coverage ratio
 - Edge density
-- Tool region features
 """
 
 import numpy as np
@@ -22,100 +22,166 @@ logger = logging.getLogger(__name__)
 
 
 class SAMExtractor:
-    """Extracts segmentation-based features using SAM."""
+    """Extracts segmentation-based features using SAM3 from HuggingFace."""
 
     def __init__(self,
-                 checkpoint_path: Optional[str] = None,
-                 model_type: str = "vit_h",
+                 model_path: Optional[str] = None,
                  device: str = "cuda",
-                 points_per_side: int = 32,
+                 points_per_batch: int = 64,
                  pred_iou_thresh: float = 0.88,
                  stability_score_thresh: float = 0.95,
-                 min_mask_region_area: int = 100):
+                 min_mask_region_area: int = 100,
+                 # Legacy parameters (ignored, kept for compatibility)
+                 checkpoint_path: Optional[str] = None,
+                 model_type: str = "vit_h",
+                 points_per_side: int = 32):
         """
-        Initialize SAM Extractor.
+        Initialize SAM3 Extractor.
 
         Args:
-            checkpoint_path: Path to SAM checkpoint file
-            model_type: SAM model type ('vit_h', 'vit_l', 'vit_b')
+            model_path: Path to local SAM3 HuggingFace model or "facebook/sam3"
             device: Device to run on ('cuda' or 'cpu')
-            points_per_side: Points per side for automatic mask generation
+            points_per_batch: Points per batch for automatic mask generation
             pred_iou_thresh: Predicted IoU threshold
             stability_score_thresh: Stability score threshold
             min_mask_region_area: Minimum mask region area
         """
-        self.checkpoint_path = checkpoint_path
-        self.model_type = model_type
+        self.model_path = model_path or "facebook/sam3"
         self.device = device if torch.cuda.is_available() else "cpu"
-        self.points_per_side = points_per_side
+        self.points_per_batch = points_per_batch
         self.pred_iou_thresh = pred_iou_thresh
         self.stability_score_thresh = stability_score_thresh
         self.min_mask_region_area = min_mask_region_area
 
-        self.sam = None
-        self.mask_generator = None
+        self.model = None
+        self.processor = None
+        self.pipeline = None
         self._initialized = False
 
-    def _initialize_model(self):
-        """Lazy initialization of SAM model."""
-        if self._initialized:
-            return
+    def unload(self):
+        """Unload model from GPU memory."""
+        if self.pipeline is not None:
+            del self.pipeline
+            self.pipeline = None
+        if self.model is not None:
+            del self.model
+            self.model = None
+        if self.processor is not None:
+            del self.processor
+            self.processor = None
+        self._initialized = False
 
-        if self.checkpoint_path is None:
-            logger.warning("No checkpoint path provided, SAM features will not be available")
-            return
+        # Force CUDA memory cleanup
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        import gc
+        gc.collect()
+        logger.info("SAM3 model unloaded from memory")
+
+    def _initialize_model(self):
+        """Lazy initialization of SAM3 model."""
+        if self._initialized:
+            return True
 
         try:
-            from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
+            from transformers import pipeline as hf_pipeline
 
-            logger.info(f"Loading SAM model ({self.model_type}) from {self.checkpoint_path}")
-            self.sam = sam_model_registry[self.model_type](checkpoint=self.checkpoint_path)
-            self.sam.to(device=self.device)
+            logger.info(f"Loading SAM3 model from {self.model_path}")
 
-            self.mask_generator = SamAutomaticMaskGenerator(
-                model=self.sam,
-                points_per_side=self.points_per_side,
-                pred_iou_thresh=self.pred_iou_thresh,
-                stability_score_thresh=self.stability_score_thresh,
-                min_mask_region_area=self.min_mask_region_area,
+            # Use mask-generation pipeline for automatic segmentation
+            self.pipeline = hf_pipeline(
+                "mask-generation",
+                model=self.model_path,
+                device=0 if self.device == "cuda" else -1,
+                points_per_batch=self.points_per_batch
             )
-            self._initialized = True
-            logger.info("SAM model initialized successfully")
 
-        except ImportError:
-            logger.error("segment_anything not installed. Install with: "
-                        "pip install git+https://github.com/facebookresearch/segment-anything.git")
+            self._initialized = True
+            logger.info("SAM3 model initialized successfully")
+            return True
+
+        except ImportError as e:
+            logger.error(f"transformers not installed or SAM3 not available: {e}")
+            logger.error("Install with: pip install transformers>=4.50")
+            return False
         except Exception as e:
-            logger.error(f"Failed to initialize SAM: {e}")
+            logger.error(f"Failed to initialize SAM3: {e}")
+            return False
 
     def extract_masks(self, image: np.ndarray) -> List[Dict]:
         """
-        Extract automatic masks from image.
+        Extract automatic masks from image using SAM3.
 
         Args:
-            image: Input image (BGR format)
+            image: Input image (BGR or RGB format)
 
         Returns:
             List of mask dictionaries with keys:
-            - 'segmentation': Binary mask
+            - 'segmentation': Binary mask (numpy array)
             - 'area': Mask area
             - 'bbox': Bounding box [x, y, w, h]
-            - 'predicted_iou': Predicted IoU score
-            - 'stability_score': Stability score
+            - 'predicted_iou': Predicted IoU score (if available)
+            - 'stability_score': Stability score (if available)
         """
-        self._initialize_model()
-
-        if self.mask_generator is None:
+        if not self._initialize_model():
             return []
 
-        # Convert BGR to RGB
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
         try:
-            masks = self.mask_generator.generate(image_rgb)
+            # Convert BGR to RGB if needed (check if image looks BGR)
+            if len(image.shape) == 3 and image.shape[2] == 3:
+                # Assume BGR from cv2, convert to RGB
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            else:
+                image_rgb = image
+
+            # Convert to PIL Image for pipeline
+            from PIL import Image
+            pil_image = Image.fromarray(image_rgb)
+
+            # Run mask generation pipeline
+            outputs = self.pipeline(pil_image, points_per_batch=self.points_per_batch)
+
+            # Convert outputs to standard format
+            masks = []
+            for mask_data in outputs.get('masks', []):
+                # mask_data is already a numpy array from pipeline
+                if isinstance(mask_data, np.ndarray):
+                    mask_np = mask_data
+                else:
+                    mask_np = np.array(mask_data)
+
+                # Ensure binary mask
+                if mask_np.dtype != bool:
+                    mask_np = mask_np > 0.5
+
+                area = int(np.sum(mask_np))
+
+                # Skip small masks
+                if area < self.min_mask_region_area:
+                    continue
+
+                # Compute bounding box
+                rows = np.any(mask_np, axis=1)
+                cols = np.any(mask_np, axis=0)
+                if not np.any(rows) or not np.any(cols):
+                    continue
+
+                rmin, rmax = np.where(rows)[0][[0, -1]]
+                cmin, cmax = np.where(cols)[0][[0, -1]]
+                bbox = [int(cmin), int(rmin), int(cmax - cmin), int(rmax - rmin)]
+
+                masks.append({
+                    'segmentation': mask_np,
+                    'area': area,
+                    'bbox': bbox,
+                    'predicted_iou': 1.0,  # Not available from pipeline
+                    'stability_score': 1.0  # Not available from pipeline
+                })
+
             return masks
+
         except Exception as e:
-            logger.error(f"Error generating masks: {e}")
+            logger.error(f"Error generating masks with SAM3: {e}")
             return []
 
     def compute_scene_complexity(self, masks: List[Dict], image_shape: Tuple[int, int]) -> Dict:
@@ -123,7 +189,7 @@ class SAMExtractor:
         Compute scene complexity metrics from masks.
 
         Args:
-            masks: List of mask dictionaries from SAM
+            masks: List of mask dictionaries from SAM3
             image_shape: (height, width) of original image
 
         Returns:
@@ -146,8 +212,8 @@ class SAMExtractor:
 
         # Extract metrics from masks
         areas = [m['area'] for m in masks]
-        stability_scores = [m.get('stability_score', 0) for m in masks]
-        iou_scores = [m.get('predicted_iou', 0) for m in masks]
+        stability_scores = [m.get('stability_score', 1.0) for m in masks]
+        iou_scores = [m.get('predicted_iou', 1.0) for m in masks]
 
         # Compute edge density from masks
         edge_pixels = 0
@@ -187,60 +253,9 @@ class SAMExtractor:
             'complexity_score': float(complexity_score)
         }
 
-    def extract_tool_region_features(self, masks: List[Dict], image_shape: Tuple[int, int]) -> np.ndarray:
-        """
-        Extract features for potential tool regions (largest masks).
-
-        Args:
-            masks: List of mask dictionaries
-            image_shape: (height, width) of original image
-
-        Returns:
-            Feature vector for tool regions
-        """
-        if not masks:
-            return np.zeros(6, dtype=np.float32)
-
-        height, width = image_shape[:2]
-
-        # Sort by area, take top 3 largest
-        sorted_masks = sorted(masks, key=lambda x: x['area'], reverse=True)[:3]
-
-        features = []
-        for mask_dict in sorted_masks:
-            mask = mask_dict['segmentation']
-            bbox = mask_dict['bbox']  # [x, y, w, h]
-
-            # Centroid position (normalized)
-            y_coords, x_coords = np.where(mask)
-            if len(x_coords) > 0:
-                centroid_x = np.mean(x_coords) / width
-                centroid_y = np.mean(y_coords) / height
-            else:
-                centroid_x, centroid_y = 0.5, 0.5
-
-            # Aspect ratio
-            aspect_ratio = bbox[2] / max(bbox[3], 1)
-
-            # Compactness (4*pi*area/perimeter^2)
-            area = mask_dict['area']
-            contours, _ = cv2.findContours(mask.astype(np.uint8),
-                                           cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            perimeter = sum(cv2.arcLength(c, True) for c in contours)
-            compactness = 4 * np.pi * area / (perimeter**2 + 1e-10)
-
-            features.extend([centroid_x, centroid_y, aspect_ratio, compactness])
-
-        # Pad if less than 3 masks
-        while len(features) < 12:
-            features.extend([0, 0, 1, 0])
-
-        # Return first 6 features (2 largest masks)
-        return np.array(features[:6], dtype=np.float32)
-
     def compute_features(self, image: np.ndarray) -> Dict:
         """
-        Compute all SAM-based features for an image.
+        Compute all SAM3-based features for an image.
 
         Args:
             image: Input image (BGR format)
@@ -250,12 +265,10 @@ class SAMExtractor:
         """
         masks = self.extract_masks(image)
         complexity = self.compute_scene_complexity(masks, image.shape)
-        tool_features = self.extract_tool_region_features(masks, image.shape)
 
         return {
             'masks': masks,
             'complexity': complexity,
-            'tool_features': tool_features,
             'complexity_score': complexity['complexity_score']
         }
 
@@ -287,7 +300,7 @@ class SAMExtractor:
         scores = []
         valid_paths = []
 
-        iterator = tqdm(image_paths, desc="Computing SAM complexity") if show_progress else image_paths
+        iterator = tqdm(image_paths, desc="Computing SAM3 complexity") if show_progress else image_paths
 
         for path in iterator:
             result = self.compute_features_from_path(path)
@@ -302,6 +315,8 @@ class SAMExtractor:
         """
         Compute approximate complexity without SAM model.
         Uses edge detection and blob detection as proxy.
+
+        FALLBACK METHOD - used when SAM3 is not available.
 
         Args:
             image: Input image (BGR format)
@@ -358,17 +373,28 @@ class SAMExtractor:
 
 
 if __name__ == "__main__":
-    # Test the SAM extractor (without actual SAM model)
-    print("Testing SAMExtractor...")
+    print("Testing SAM3Extractor...")
 
-    extractor = SAMExtractor(checkpoint_path=None)
+    # Test with local model path
+    extractor = SAMExtractor(
+        model_path="F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/External/Models/sam3"
+    )
 
     # Create test image
     test_image = np.random.randint(0, 255, (256, 256, 3), dtype=np.uint8)
 
-    # Test without SAM (using proxy methods)
+    # Test proxy method (always works)
+    print("\nTesting proxy method...")
     complexity = extractor.compute_complexity_without_sam(test_image)
     print(f"Complexity metrics (proxy): {complexity}")
 
-    print("\nSAMExtractor test completed!")
-    print("Note: Full SAM functionality requires checkpoint file.")
+    # Test full SAM3 (requires model)
+    print("\nTesting SAM3 model...")
+    try:
+        result = extractor.compute_features(test_image)
+        print(f"SAM3 complexity: {result['complexity_score']:.3f}")
+        print(f"Number of masks: {len(result['masks'])}")
+    except Exception as e:
+        print(f"SAM3 test failed (expected if model not available): {e}")
+
+    print("\nSAM3Extractor test completed!")

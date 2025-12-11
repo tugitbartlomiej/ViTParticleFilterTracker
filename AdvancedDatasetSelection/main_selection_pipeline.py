@@ -2,17 +2,30 @@
 Advanced Dataset Selection Pipeline for DETR Fine-tuning.
 
 Main orchestrator that combines all selection methods:
-- DINO semantic features
-- SAM segmentation complexity
-- Fourier frequency analysis
-- EL2N + k-Center selection
+- DINO semantic features (1024-dim from DINOv3)
+- SAM segmentation complexity (proxy score)
+- Fourier frequency analysis (9-dim with directional features)
+- EL2N difficulty scoring (from trained DETR model)
+
+Selection Methods:
+- 'cluster': Cluster-based selection (recommended, based on ELFS/CCS literature)
+- 'kcenter': Legacy k-Center Greedy + EL2N ranking
 
 Usage:
-    python main_selection_pipeline.py --config config.yaml
+    python main_selection_pipeline.py --config config.yaml --target 50
+    python main_selection_pipeline.py --config config.yaml --target 50 --method cluster
 """
 
 import os
 import sys
+import warnings
+
+# Suppress PyTorch weight loading warnings
+warnings.filterwarnings('ignore', message='.*copying from a non-meta parameter.*')
+warnings.filterwarnings('ignore', message='.*were not used when initializing.*')
+warnings.filterwarnings('ignore', message='.*were not initialized from the model checkpoint.*')
+warnings.filterwarnings('ignore', message='.*Using `TRANSFORMERS_CACHE`.*')
+
 import yaml
 import json
 import argparse
@@ -28,12 +41,17 @@ from tqdm import tqdm
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Setup model cache BEFORE importing torch/transformers
+from External.model_cache_config import setup_model_cache
+setup_model_cache()
+
 from AdvancedDatasetSelection.feature_extractors.fourier_analyzer import FourierAnalyzer
 from AdvancedDatasetSelection.feature_extractors.dino_extractor import DINOExtractor
 from AdvancedDatasetSelection.feature_extractors.sam_extractor import SAMExtractor
 from AdvancedDatasetSelection.selection_methods.el2n_scorer import EL2NScorer
 from AdvancedDatasetSelection.selection_methods.k_center_greedy import KCenterGreedy
 from AdvancedDatasetSelection.selection_methods.combined_selector import CombinedSelector
+from AdvancedDatasetSelection.selection_methods.cluster_selector import ClusterBasedSelector
 from AdvancedDatasetSelection.utils.coco_handler import COCOHandler
 from AdvancedDatasetSelection.utils.visualization import Visualizer
 
@@ -80,18 +98,33 @@ class AdvancedDatasetSelectionPipeline:
             similarity_threshold=fourier_config.get('similarity_threshold', 0.85)
         )
 
-        # DINO extractor
+        # DINO extractor (supports local HuggingFace model or torch.hub)
         dino_config = self.config.get('models', {}).get('dino', {})
+
+        # Resolve relative paths
+        dino_model_path = dino_config.get('model_path')
+        if dino_model_path and not os.path.isabs(dino_model_path):
+            dino_model_path = os.path.join(os.path.dirname(self.config_path), dino_model_path)
+
+        dino_cache_dir = dino_config.get('cache_dir')
+        if dino_cache_dir and not os.path.isabs(dino_cache_dir):
+            dino_cache_dir = os.path.join(os.path.dirname(self.config_path), dino_cache_dir)
+
         self.dino = DINOExtractor(
-            model_name=dino_config.get('model_name', 'dino_vitb16'),
-            device=dino_config.get('device', 'cuda')
+            model_name=dino_config.get('model_name', 'dinov2_vitl14'),
+            device=dino_config.get('device', 'cuda'),
+            cache_dir=dino_cache_dir,
+            model_path=dino_model_path
         )
 
-        # SAM extractor
+        # SAM3 extractor
         sam_config = self.config.get('models', {}).get('sam', {})
+        sam_model_path = sam_config.get('model_path')
+        if sam_model_path and not os.path.isabs(sam_model_path):
+            sam_model_path = os.path.join(os.path.dirname(self.config_path), sam_model_path)
+
         self.sam = SAMExtractor(
-            checkpoint_path=sam_config.get('checkpoint'),
-            model_type=sam_config.get('model_type', 'vit_h'),
+            model_path=sam_model_path,
             device=sam_config.get('device', 'cuda')
         )
 
@@ -101,31 +134,61 @@ class AdvancedDatasetSelectionPipeline:
         """Initialize selection methods."""
         selection_config = self.config.get('selection', {})
 
-        # EL2N scorer
+        # Get DETR checkpoint path from config
+        detr_config = self.config.get('models', {}).get('detr', {})
+        detr_checkpoint = detr_config.get('checkpoint')
+
+        # Resolve relative path
+        if detr_checkpoint and not os.path.isabs(detr_checkpoint):
+            detr_checkpoint = os.path.join(os.path.dirname(self.config_path), detr_checkpoint)
+
+        # Cache directory
+        cache_dir = self.config.get('processing', {}).get('cache_dir')
+        if cache_dir and not os.path.isabs(cache_dir):
+            cache_dir = os.path.join(os.path.dirname(self.config_path), cache_dir)
+
+        # Selection method from config (default: cluster for new approach)
+        self.selection_method = selection_config.get('method', 'cluster')
+
+        # Initialize ClusterBasedSelector (new, recommended)
+        self.cluster_selector = ClusterBasedSelector(
+            fourier_analyzer=self.fourier,
+            dino_extractor=self.dino,
+            sam_extractor=self.sam,
+            detr_checkpoint_path=detr_checkpoint,
+            detr_device=detr_config.get('device', 'cuda'),
+            weights=self.config.get('weights'),
+            cache_dir=cache_dir
+        )
+
+        # Initialize legacy CombinedSelector (k-Center + EL2N ranking)
         el2n_config = selection_config.get('el2n', {})
         self.el2n = EL2NScorer(
             proxy_epochs=el2n_config.get('proxy_epochs', 20),
             batch_size=el2n_config.get('batch_size', 16)
         )
 
-        # k-Center selector
         k_center_config = selection_config.get('k_center', {})
         self.k_center = KCenterGreedy(
             feature_dim=self.config.get('dino', {}).get('feature_dim', 768)
         )
 
-        # Combined selector
-        self.selector = CombinedSelector(
+        self.combined_selector = CombinedSelector(
             fourier_analyzer=self.fourier,
             dino_extractor=self.dino,
             sam_extractor=self.sam,
             el2n_scorer=self.el2n,
             k_center=self.k_center,
             weights=self.config.get('weights'),
-            cache_dir=self.config.get('processing', {}).get('cache_dir')
+            cache_dir=cache_dir,
+            detr_checkpoint_path=detr_checkpoint,
+            detr_device=detr_config.get('device', 'cuda')
         )
 
-        logger.info("Initialized selectors")
+        # Default selector based on config
+        self.selector = self.cluster_selector if self.selection_method == 'cluster' else self.combined_selector
+
+        logger.info(f"Initialized selectors (method: {self.selection_method})")
 
     def _init_utils(self):
         """Initialize utility classes."""
@@ -241,16 +304,29 @@ class AdvancedDatasetSelectionPipeline:
         # Get selection parameters
         fourier_config = self.config.get('fourier', {})
         selection_config = self.config.get('selection', {})
+        use_cache = self.config.get('processing', {}).get('use_cache', True)
 
-        # Run combined selection
-        selected_indices, selected_paths, stats = self.selector.select_optimal_subset(
-            image_paths=image_paths,
-            target_size=target_size,
-            fourier_threshold=fourier_config.get('similarity_threshold', 0.85),
-            oversampling=selection_config.get('k_center', {}).get('oversampling_factor', 2.0),
-            keep_hard=True,
-            use_cache=self.config.get('processing', {}).get('use_cache', True)
-        )
+        # Run selection based on method
+        if self.selection_method == 'cluster':
+            # New cluster-based approach (ELFS/CCS literature)
+            strategy = selection_config.get('strategy', 'centroid')  # 'centroid', 'max_el2n', 'medoid'
+            selected_indices, selected_paths, stats = self.cluster_selector.select_optimal_subset(
+                image_paths=image_paths,
+                target_size=target_size,
+                strategy=strategy,
+                use_cache=use_cache,
+                normalize=True
+            )
+        else:
+            # Legacy k-Center Greedy + EL2N ranking
+            selected_indices, selected_paths, stats = self.combined_selector.select_optimal_subset(
+                image_paths=image_paths,
+                target_size=target_size,
+                fourier_threshold=fourier_config.get('similarity_threshold', 0.85),
+                oversampling=selection_config.get('k_center', {}).get('oversampling_factor', 2.0),
+                keep_hard=True,
+                use_cache=use_cache
+            )
 
         # Store results
         self.results = {
@@ -269,6 +345,19 @@ class AdvancedDatasetSelectionPipeline:
         # Generate visualizations
         if self.config.get('output', {}).get('generate_visualizations', True):
             self._generate_visualizations(selected_indices, output_dir)
+
+        # Generate detailed selection report (why each image was selected)
+        if self.selection_method == 'cluster':
+            strategy = self.config.get('selection', {}).get('strategy', 'centroid')
+            report_path = os.path.join(output_dir, 'selection_reasons.json')
+            self.cluster_selector.save_selection_report(selected_indices, strategy, report_path)
+
+            # Save DETR Q81 detection visualizations for selected images
+            if self.cluster_selector.detr_el2n is not None:
+                detr_vis_dir = os.path.join(output_dir, 'visualizations', 'detr_q81_detections')
+                self.cluster_selector.detr_el2n.save_selected_visualizations(
+                    selected_paths, detr_vis_dir
+                )
 
         # Generate report
         self._generate_report(output_dir)
@@ -357,19 +446,40 @@ class AdvancedDatasetSelectionPipeline:
                     self.selector.fourier_features
                 )
 
+            # Cluster visualization (for cluster-based method)
+            if self.selection_method == 'cluster' and hasattr(self.cluster_selector, 'cluster_labels'):
+                if self.cluster_selector.cluster_labels is not None:
+                    self.visualizer.plot_cluster_visualization(
+                        self.cluster_selector.get_cluster_info(),
+                        selected_indices
+                    )
+
             # Selection summary
             if 'statistics' in self.results:
                 stats = self.results['statistics']
-                summary_stats = {
-                    'stages': ['Original', 'Valid', 'After Fourier', 'After k-Center', 'Final'],
-                    'counts': [
-                        stats.get('original_count', 0),
-                        stats.get('valid_count', 0),
-                        stats.get('after_fourier', 0),
-                        stats.get('after_k_center', 0),
-                        stats.get('final_count', 0)
-                    ]
-                }
+                if self.selection_method == 'cluster':
+                    # Cluster-based stages
+                    summary_stats = {
+                        'stages': ['Original', 'Valid', 'Clusters', 'Final'],
+                        'counts': [
+                            stats.get('original_count', 0),
+                            stats.get('valid_count', 0),
+                            stats.get('n_clusters', 0),
+                            stats.get('final_count', 0)
+                        ]
+                    }
+                else:
+                    # Legacy k-center stages
+                    summary_stats = {
+                        'stages': ['Original', 'Valid', 'After Fourier', 'After k-Center', 'Final'],
+                        'counts': [
+                            stats.get('original_count', 0),
+                            stats.get('valid_count', 0),
+                            stats.get('after_fourier', 0),
+                            stats.get('after_k_center', 0),
+                            stats.get('final_count', 0)
+                        ]
+                    }
                 self.visualizer.plot_selection_summary(summary_stats)
 
             logger.info("Visualizations saved")
@@ -437,6 +547,20 @@ def main():
         default=None,
         help='Override output directory from config'
     )
+    parser.add_argument(
+        '--method', '-m',
+        type=str,
+        choices=['cluster', 'kcenter'],
+        default=None,
+        help='Selection method: cluster (new, recommended) or kcenter (legacy)'
+    )
+    parser.add_argument(
+        '--strategy', '-s',
+        type=str,
+        choices=['centroid', 'max_el2n', 'medoid'],
+        default=None,
+        help='Cluster representative strategy (only for cluster method)'
+    )
 
     args = parser.parse_args()
 
@@ -456,6 +580,18 @@ def main():
     # Override output if specified
     if args.output:
         pipeline.config['datasets']['output'] = args.output
+
+    # Override method if specified
+    if args.method:
+        pipeline.selection_method = args.method
+        pipeline.selector = pipeline.cluster_selector if args.method == 'cluster' else pipeline.combined_selector
+        pipeline.config.setdefault('selection', {})['method'] = args.method
+        logger.info(f"Selection method overridden to: {args.method}")
+
+    # Override strategy if specified (only for cluster method)
+    if args.strategy:
+        pipeline.config.setdefault('selection', {})['strategy'] = args.strategy
+        logger.info(f"Selection strategy overridden to: {args.strategy}")
 
     results = pipeline.run(target_size=args.target_size)
 

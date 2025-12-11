@@ -1,17 +1,23 @@
 models:
   sam:
-    checkpoint: ../External/Models/sam_vit_h_4b8939.pth
-    model_type: vit_h
+    model_path: ../External/Models/sam3  # SAM3 HuggingFace format
     device: cuda
   dino:
-    model_name: dino_vitb16
+    model_name: dinov3_vitl16
+    model_path: ../External/Models/dinov3-vitl16-pretrain-lvd1689m  # local HuggingFace model
     device: cuda
+    cache_dir: ../External/Models  # fallback for torch.hub
+  detr:
+    checkpoint: ../Eden/Checkpoints/DETR/checkpoint_epoch_170.pth
+    device: cuda
+    num_labels: 1  # 1 class (tooltip) + no-object = 2 outputs
+    confidence_threshold: 0.5
 datasets:
-  existing: ../Eden/Datasets/datasets_20250606.tar/datasets_20250606
-  new_source: E:/cataract_surgery_Instruments_detection.v1i.coco/train
+  #existing: ../Eden/Datasets/datasets_20250606.tar/datasets_20250606
+  new_source: E:/cataract_surgery_Instruments_detection.v1i.coco/valid
   output: ./output/selected_dataset
 fourier:
-  similarity_threshold: 1.1
+  similarity_threshold: 0.7  # Euclidean-based similarity (lower = stricter filtering)
   frequency_bands:
     low:
     - 0.0
@@ -34,9 +40,17 @@ sam:
   stability_score_thresh: 0.95
   min_mask_region_area: 100
 dino:
-  feature_dim: 768
-  batch_size: 16
+  feature_dim: 1024  # DINOv3 ViT-L/16 has 1024-dim features
+  batch_size: 8  # Adjust for ViT-L memory requirements
 selection:
+  # Selection method: 'cluster' (new, recommended) or 'kcenter' (legacy)
+  method: cluster
+  # Strategy for cluster-based selection:
+  # - 'centroid': Select sample closest to cluster center (most typical)
+  # - 'max_el2n': Select hardest sample per cluster (best for active learning)
+  # - 'medoid': Select sample minimizing distance to all cluster members
+  strategy: centroid
+  # Legacy k-Center parameters (used when method: kcenter)
   el2n:
     proxy_epochs: 20
     batch_size: 16

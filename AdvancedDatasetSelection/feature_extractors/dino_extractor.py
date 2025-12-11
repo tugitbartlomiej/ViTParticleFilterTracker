@@ -1,21 +1,26 @@
 """
-DINO (Self-Distillation with No Labels) Feature Extractor for Dataset Selection.
+DINO/DINOv2/DINOv3 Feature Extractor for Dataset Selection.
 
-Extracts semantic features using DINO ViT:
-- CLS token features (768-dim)
-- Attention-based features
+Supports:
+- DINOv1 (torch.hub facebookresearch/dino)
+- DINOv2 (torch.hub facebookresearch/dinov2)
+- DINOv3 (torch.hub facebookresearch/dinov3 OR local HuggingFace model)
+
+Extracts semantic features:
+- CLS token features (384/768/1024-dim depending on model)
 - Semantic similarity computation
 """
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torchvision import transforms
 from PIL import Image
 import cv2
-from typing import List, Dict, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 from pathlib import Path
 import logging
+import os
+import json
 from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
@@ -23,37 +28,73 @@ logger = logging.getLogger(__name__)
 
 
 class DINOExtractor:
-    """Extracts semantic features using DINO ViT model."""
+    """Extracts semantic features using DINO/DINOv2/DINOv3 models."""
+
+    # Default cache directory for models
+    DEFAULT_CACHE_DIR = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/External/Models"
+
+    # Available models and their feature dimensions (for torch.hub)
+    MODELS = {
+        # DINOv1 (patch 16 and 8)
+        'dino_vits16': {'repo': 'facebookresearch/dino:main', 'dim': 384},
+        'dino_vits8': {'repo': 'facebookresearch/dino:main', 'dim': 384},
+        'dino_vitb16': {'repo': 'facebookresearch/dino:main', 'dim': 768},
+        'dino_vitb8': {'repo': 'facebookresearch/dino:main', 'dim': 768},
+        # DINOv2 (official, patch 14)
+        'dinov2_vits14': {'repo': 'facebookresearch/dinov2:main', 'dim': 384},
+        'dinov2_vitb14': {'repo': 'facebookresearch/dinov2:main', 'dim': 768},
+        'dinov2_vitl14': {'repo': 'facebookresearch/dinov2:main', 'dim': 1024},
+        'dinov2_vitg14': {'repo': 'facebookresearch/dinov2:main', 'dim': 1536},
+        # DINOv3 (official, patch 16)
+        'dinov3_vits16': {'repo': 'facebookresearch/dinov3:main', 'dim': 384},
+        'dinov3_vitb16': {'repo': 'facebookresearch/dinov3:main', 'dim': 768},
+        'dinov3_vitl16': {'repo': 'facebookresearch/dinov3:main', 'dim': 1024},
+        'dinov3_vith16': {'repo': 'facebookresearch/dinov3:main', 'dim': 1280},
+    }
 
     def __init__(self,
-                 model_name: str = "dino_vitb16",
+                 model_name: str = "dinov2_vitl14",
                  device: str = "cuda",
-                 image_size: int = 224):
+                 image_size: int = 224,
+                 cache_dir: str = None,
+                 model_path: str = None):
         """
-        Initialize DINO Extractor.
+        Initialize DINO/DINOv2/DINOv3 Extractor.
 
         Args:
-            model_name: DINO model name ('dino_vits16', 'dino_vits8', 'dino_vitb16', 'dino_vitb8')
+            model_name: Model name for torch.hub (e.g., 'dinov3_vitl16', 'dinov2_vitl14')
             device: Device to run on ('cuda' or 'cpu')
-            image_size: Input image size for DINO
+            image_size: Input image size
+            cache_dir: Directory for caching downloaded models (torch.hub)
+            model_path: Path to local HuggingFace model directory (overrides torch.hub)
         """
         self.model_name = model_name
         self.device = device if torch.cuda.is_available() else "cpu"
         self.image_size = image_size
+        self.cache_dir = cache_dir or self.DEFAULT_CACHE_DIR
+        self.model_path = model_path
+
+        # If local model path provided, detect feature dim from config
+        if model_path and os.path.isdir(model_path):
+            self.use_local_model = True
+            self.feature_dim = self._detect_feature_dim_from_config(model_path)
+            logger.info(f"Using local HuggingFace model from {model_path}")
+            logger.info(f"Detected feature_dim={self.feature_dim}")
+        else:
+            self.use_local_model = False
+            # Get model info from MODELS dict
+            if model_name not in self.MODELS:
+                logger.warning(f"Unknown model {model_name}, defaulting to dinov2_vitl14")
+                model_name = 'dinov2_vitl14'
+                self.model_name = model_name
+            self.model_info = self.MODELS[model_name]
+            self.feature_dim = self.model_info['dim']
 
         self.model = None
+        self.processor = None
         self._initialized = False
 
-        # Feature dimension based on model
-        self.feature_dims = {
-            'dino_vits16': 384,
-            'dino_vits8': 384,
-            'dino_vitb16': 768,
-            'dino_vitb8': 768
-        }
-        self.feature_dim = self.feature_dims.get(model_name, 768)
-
-        # Image preprocessing
+        # Image preprocessing (same for all DINO models)
         self.transform = transforms.Compose([
             transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
@@ -61,41 +102,103 @@ class DINOExtractor:
                                std=[0.229, 0.224, 0.225])
         ])
 
+    def _detect_feature_dim_from_config(self, model_path: str) -> int:
+        """Detect feature dimension from HuggingFace config.json."""
+        config_path = os.path.join(model_path, "config.json")
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            hidden_size = config.get('hidden_size', 384)
+            return hidden_size
+        return 384  # Default to ViT-S
+
+    def unload(self):
+        """Unload model from GPU memory."""
+        if self.model is not None:
+            del self.model
+            self.model = None
+        if self.processor is not None:
+            del self.processor
+            self.processor = None
+        self._initialized = False
+
+        # Force CUDA memory cleanup
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        import gc
+        gc.collect()
+        logger.info("DINO model unloaded from memory")
+
     def _initialize_model(self):
-        """Lazy initialization of DINO model."""
+        """Lazy initialization of model."""
         if self._initialized:
             return
 
+        if self.use_local_model:
+            self._initialize_from_huggingface()
+        else:
+            self._initialize_from_torch_hub()
+
+    def _initialize_from_huggingface(self):
+        """Load model from local HuggingFace directory."""
         try:
-            logger.info(f"Loading DINO model: {self.model_name}")
-            self.model = torch.hub.load('facebookresearch/dino:main', self.model_name)
+            from transformers import AutoModel, AutoImageProcessor
+
+            logger.info(f"Loading model from local path: {self.model_path}")
+
+            self.model = AutoModel.from_pretrained(self.model_path, trust_remote_code=True)
+            self.model.to(self.device)
+            self.model.eval()
+
+            # Try to load processor, fall back to manual transform
+            try:
+                self.processor = AutoImageProcessor.from_pretrained(self.model_path)
+                logger.info("Loaded HuggingFace image processor")
+            except Exception:
+                self.processor = None
+                logger.info("Using manual image preprocessing")
+
+            self._initialized = True
+            logger.info(f"Model loaded successfully (feature_dim={self.feature_dim})")
+
+        except Exception as e:
+            logger.error(f"Failed to load HuggingFace model: {e}")
+            raise
+
+    def _initialize_from_torch_hub(self):
+        """Load model from torch.hub."""
+        # Set cache directory
+        os.makedirs(self.cache_dir, exist_ok=True)
+        torch.hub.set_dir(self.cache_dir)
+
+        repo = self.model_info['repo']
+        logger.info(f"Loading {self.model_name} from {repo}")
+        logger.info(f"Model cache directory: {self.cache_dir}")
+
+        try:
+            self.model = torch.hub.load(repo, self.model_name)
             self.model.to(self.device)
             self.model.eval()
             self._initialized = True
-            logger.info(f"DINO model loaded successfully (feature_dim={self.feature_dim})")
+            logger.info(f"Model loaded successfully (feature_dim={self.feature_dim})")
         except Exception as e:
-            logger.error(f"Failed to load DINO model: {e}")
+            logger.error(f"Failed to load model: {e}")
             raise
 
     def preprocess_image(self, image: Union[np.ndarray, str, Image.Image]) -> torch.Tensor:
-        """
-        Preprocess image for DINO.
-
-        Args:
-            image: Input image (numpy array BGR, file path, or PIL Image)
-
-        Returns:
-            Preprocessed tensor
-        """
+        """Preprocess image for model input."""
         if isinstance(image, str):
             image = Image.open(image).convert('RGB')
         elif isinstance(image, np.ndarray):
-            # Assume BGR format from cv2
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             image = Image.fromarray(image)
 
-        tensor = self.transform(image)
-        return tensor.unsqueeze(0)  # Add batch dimension
+        # Use HuggingFace processor if available
+        if self.processor is not None:
+            inputs = self.processor(images=image, return_tensors="pt")
+            return inputs['pixel_values']
+
+        return self.transform(image).unsqueeze(0)
 
     def extract_cls_features(self, image: Union[np.ndarray, str, Image.Image]) -> np.ndarray:
         """
@@ -112,112 +215,25 @@ class DINOExtractor:
         tensor = self.preprocess_image(image).to(self.device)
 
         with torch.no_grad():
-            features = self.model(tensor)
+            if self.use_local_model:
+                # HuggingFace model returns BaseModelOutput
+                outputs = self.model(tensor)
+                # Get CLS token (first token of last_hidden_state)
+                if hasattr(outputs, 'last_hidden_state'):
+                    features = outputs.last_hidden_state[:, 0, :]
+                elif hasattr(outputs, 'pooler_output'):
+                    features = outputs.pooler_output
+                else:
+                    features = outputs[0][:, 0, :]
+            else:
+                # torch.hub model returns tensor directly
+                features = self.model(tensor)
 
         return features.cpu().numpy().flatten()
 
-    def extract_attention_maps(self, image: Union[np.ndarray, str, Image.Image]) -> Dict:
-        """
-        Extract attention maps from DINO.
-
-        Args:
-            image: Input image
-
-        Returns:
-            Dictionary with attention information
-        """
-        self._initialize_model()
-
-        tensor = self.preprocess_image(image).to(self.device)
-
-        # Get attention from last layer
-        with torch.no_grad():
-            # Forward pass to get attention
-            attentions = self.model.get_last_selfattention(tensor)
-
-        # attentions shape: (1, num_heads, num_patches+1, num_patches+1)
-        nh = attentions.shape[1]  # Number of heads
-
-        # Get CLS token attention to patches
-        cls_attention = attentions[0, :, 0, 1:]  # (num_heads, num_patches)
-
-        # Reshape to spatial
-        patch_size = 16 if '16' in self.model_name else 8
-        num_patches_side = self.image_size // patch_size
-        cls_attention = cls_attention.reshape(nh, num_patches_side, num_patches_side)
-
-        # Compute attention metrics
-        attention_np = cls_attention.cpu().numpy()
-
-        # Entropy per head
-        attention_flat = attention_np.reshape(nh, -1)
-        attention_probs = attention_flat / (attention_flat.sum(axis=1, keepdims=True) + 1e-10)
-        attention_probs = np.clip(attention_probs, 1e-10, 1.0)
-        entropy_per_head = -np.sum(attention_probs * np.log2(attention_probs), axis=1)
-
-        # Average entropy
-        max_entropy = np.log2(attention_flat.shape[1])
-        avg_entropy = np.mean(entropy_per_head) / max_entropy
-
-        # Attention diversity (std across heads)
-        attention_diversity = np.std(attention_np.mean(axis=(1, 2)))
-
-        # Spatial coverage (fraction of patches with significant attention)
-        threshold = attention_np.mean() + attention_np.std()
-        coverage = np.mean(attention_np > threshold)
-
-        return {
-            'attention_maps': attention_np,
-            'attention_entropy': float(avg_entropy),
-            'attention_diversity': float(attention_diversity),
-            'spatial_coverage': float(coverage),
-            'num_heads': nh
-        }
-
-    def extract_attention_features(self, image: Union[np.ndarray, str, Image.Image]) -> Dict:
-        """
-        Extract attention-based features (lightweight version).
-
-        Args:
-            image: Input image
-
-        Returns:
-            Dictionary with attention metrics
-        """
-        try:
-            return self.extract_attention_maps(image)
-        except Exception as e:
-            logger.warning(f"Could not extract attention maps: {e}")
-            return {
-                'attention_entropy': 0.5,
-                'attention_diversity': 0.1,
-                'spatial_coverage': 0.5,
-                'num_heads': 0
-            }
-
-    def compute_features(self, image: Union[np.ndarray, str, Image.Image]) -> Dict:
-        """
-        Compute all DINO features for an image.
-
-        Args:
-            image: Input image
-
-        Returns:
-            Dictionary with CLS features and attention metrics
-        """
-        cls_features = self.extract_cls_features(image)
-        attention_info = self.extract_attention_features(image)
-
-        return {
-            'cls_features': cls_features,
-            'attention_entropy': attention_info['attention_entropy'],
-            'attention_diversity': attention_info['attention_diversity'],
-            'spatial_coverage': attention_info['spatial_coverage']
-        }
-
     def compute_features_batch(self,
                                image_paths: List[str],
-                               batch_size: int = 16,
+                               batch_size: int = 8,
                                show_progress: bool = True) -> Tuple[np.ndarray, List[str]]:
         """
         Extract features for a batch of images.
@@ -235,10 +251,9 @@ class DINOExtractor:
         features_list = []
         valid_paths = []
 
-        # Process in batches
         iterator = range(0, len(image_paths), batch_size)
         if show_progress:
-            iterator = tqdm(iterator, desc="Extracting DINO features",
+            iterator = tqdm(iterator, desc=f"Extracting {self.model_name} features",
                            total=len(image_paths) // batch_size + 1)
 
         for i in iterator:
@@ -257,7 +272,16 @@ class DINOExtractor:
                 batch = torch.cat(batch_tensors, dim=0).to(self.device)
 
                 with torch.no_grad():
-                    batch_features = self.model(batch)
+                    if self.use_local_model:
+                        outputs = self.model(batch)
+                        if hasattr(outputs, 'last_hidden_state'):
+                            batch_features = outputs.last_hidden_state[:, 0, :]
+                        elif hasattr(outputs, 'pooler_output'):
+                            batch_features = outputs.pooler_output
+                        else:
+                            batch_features = outputs[0][:, 0, :]
+                    else:
+                        batch_features = self.model(batch)
 
                 features_list.append(batch_features.cpu().numpy())
 
@@ -271,16 +295,7 @@ class DINOExtractor:
     def compute_semantic_similarity(self,
                                     features1: np.ndarray,
                                     features2: np.ndarray) -> float:
-        """
-        Compute cosine similarity between feature vectors.
-
-        Args:
-            features1: First feature vector
-            features2: Second feature vector
-
-        Returns:
-            Cosine similarity (0-1)
-        """
+        """Compute cosine similarity between feature vectors."""
         norm1 = np.linalg.norm(features1)
         norm2 = np.linalg.norm(features2)
 
@@ -290,70 +305,41 @@ class DINOExtractor:
         return float(np.dot(features1, features2) / (norm1 * norm2))
 
     def compute_similarity_matrix(self, features: np.ndarray) -> np.ndarray:
-        """
-        Compute pairwise cosine similarity matrix.
-
-        Args:
-            features: Feature matrix (N x D)
-
-        Returns:
-            Similarity matrix (N x N)
-        """
-        # Normalize features
+        """Compute pairwise cosine similarity matrix."""
         norms = np.linalg.norm(features, axis=1, keepdims=True)
         norms = np.maximum(norms, 1e-10)
         features_norm = features / norms
-
-        # Cosine similarity
         similarity = np.dot(features_norm, features_norm.T)
         return similarity
 
-    def cluster_features(self,
-                        features: np.ndarray,
-                        n_clusters: int = 10) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Cluster features using K-means.
-
-        Args:
-            features: Feature matrix (N x D)
-            n_clusters: Number of clusters
-
-        Returns:
-            Tuple of (cluster labels, cluster centers)
-        """
-        from sklearn.cluster import KMeans
-
-        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-        labels = kmeans.fit_predict(features)
-        centers = kmeans.cluster_centers_
-
-        return labels, centers
-
 
 if __name__ == "__main__":
-    # Test the DINO extractor
     print("Testing DINOExtractor...")
+    print(f"Available torch.hub models: {list(DINOExtractor.MODELS.keys())}")
 
-    # Test with dummy data (no actual model loading)
-    print("Creating DINOExtractor instance...")
-    extractor = DINOExtractor(model_name="dino_vitb16")
-    print(f"Feature dimension: {extractor.feature_dim}")
+    # Test with local HuggingFace model
+    local_model_path = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/External/Models/dinov3-vitl16-pretrain-lvd1689m"
 
-    # Test preprocessing
-    test_image = np.random.randint(0, 255, (256, 256, 3), dtype=np.uint8)
-    tensor = extractor.preprocess_image(test_image)
-    print(f"Preprocessed tensor shape: {tensor.shape}")
+    if os.path.isdir(local_model_path):
+        print(f"\nTesting with local model: {local_model_path}")
+        extractor = DINOExtractor(
+            model_path=local_model_path,
+            device='cuda'
+        )
+        print(f"Feature dim: {extractor.feature_dim}")
 
-    # Test similarity computation
-    features1 = np.random.randn(768)
-    features2 = np.random.randn(768)
-    sim = extractor.compute_semantic_similarity(features1, features2)
-    print(f"Test similarity: {sim:.3f}")
+        # Test with a few images
+        from glob import glob
+        test_dir = "E:/cataract_surgery_Instruments_detection.v1i.coco/train"
+        test_images = glob(f"{test_dir}/*.jpg")[:3]
 
-    # Test similarity matrix
-    test_features = np.random.randn(10, 768)
-    sim_matrix = extractor.compute_similarity_matrix(test_features)
-    print(f"Similarity matrix shape: {sim_matrix.shape}")
+        if test_images:
+            print(f"\nTesting on {len(test_images)} images...")
+            features, valid = extractor.compute_features_batch(test_images, show_progress=False)
+            print(f"Features shape: {features.shape}")
+        else:
+            print("No test images found")
+    else:
+        print(f"Local model not found at {local_model_path}")
 
     print("\nDINOExtractor test completed!")
-    print("Note: Full feature extraction requires model download from torch.hub")
