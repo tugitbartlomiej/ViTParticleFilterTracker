@@ -19,6 +19,7 @@ from ..feature_extractors.fourier_analyzer import FourierAnalyzer
 from ..feature_extractors.dino_extractor import DINOExtractor
 from ..feature_extractors.sam_extractor import SAMExtractor
 from .el2n_scorer import EL2NScorer, compute_proxy_el2n_from_features
+from .detr_el2n_scorer import DETR_EL2N_Scorer
 from .k_center_greedy import KCenterGreedy
 
 logging.basicConfig(level=logging.INFO)
@@ -35,7 +36,9 @@ class CombinedSelector:
                  el2n_scorer: Optional[EL2NScorer] = None,
                  k_center: Optional[KCenterGreedy] = None,
                  weights: Optional[Dict[str, float]] = None,
-                 cache_dir: Optional[str] = None):
+                 cache_dir: Optional[str] = None,
+                 detr_checkpoint_path: Optional[str] = None,
+                 detr_device: str = "cuda"):
         """
         Initialize Combined Selector.
 
@@ -43,16 +46,32 @@ class CombinedSelector:
             fourier_analyzer: Fourier analyzer instance
             dino_extractor: DINO feature extractor
             sam_extractor: SAM feature extractor
-            el2n_scorer: EL2N scorer
+            el2n_scorer: EL2N scorer (used if detr_checkpoint_path is None)
             k_center: k-Center greedy selector
             weights: Weights for combining scores
             cache_dir: Directory for caching features
+            detr_checkpoint_path: Path to DETR checkpoint for EL2N scoring (recommended)
+            detr_device: Device for DETR model
         """
         self.fourier = fourier_analyzer or FourierAnalyzer()
         self.dino = dino_extractor or DINOExtractor()
         self.sam = sam_extractor or SAMExtractor()
-        self.el2n = el2n_scorer or EL2NScorer()
         self.k_center = k_center or KCenterGreedy()
+
+        # Use DETR-based EL2N if checkpoint provided, otherwise fallback to proxy
+        self.detr_checkpoint_path = detr_checkpoint_path
+        if detr_checkpoint_path:
+            logger.info(f"Using DETR-based EL2N scorer with checkpoint: {detr_checkpoint_path}")
+            self.detr_el2n = DETR_EL2N_Scorer(
+                checkpoint_path=detr_checkpoint_path,
+                device=detr_device
+            )
+            self.use_detr_el2n = True
+        else:
+            logger.info("Using proxy-based EL2N scorer (no DETR checkpoint provided)")
+            self.el2n = el2n_scorer or EL2NScorer()
+            self.detr_el2n = None
+            self.use_detr_el2n = False
 
         self.weights = weights or {
             'fourier_uniqueness': 0.15,
@@ -161,16 +180,24 @@ class CombinedSelector:
             logger.warning(f"DINO extraction failed: {e}. Using Fourier features as proxy.")
             self.dino_features = self.fourier_features
 
-        # EL2N scores (using features directly)
-        if labels is None:
-            labels = [0] * len(valid_image_paths)  # All same label for unsupervised
+        # EL2N scores - use DETR if available, otherwise proxy
+        if self.use_detr_el2n:
+            logger.info("Computing EL2N scores using DETR model...")
+            detr_scores = self.detr_el2n.compute_el2n_scores(valid_image_paths, show_progress=show_progress)
+            # Convert dict to array in same order as valid_paths
+            self.el2n_scores = np.array([detr_scores.get(p, 0.5) for p in valid_image_paths])
+            logger.info(f"DETR EL2N stats: {self.detr_el2n.get_score_statistics()}")
+        else:
+            # Fallback to proxy-based EL2N
+            if labels is None:
+                labels = [0] * len(valid_image_paths)  # All same label for unsupervised
 
-        if len(labels) != len(valid_image_paths):
-            labels = labels[:len(valid_image_paths)]
+            if len(labels) != len(valid_image_paths):
+                labels = labels[:len(valid_image_paths)]
 
-        self.el2n_scores = compute_proxy_el2n_from_features(
-            self.dino_features, np.array(labels)
-        )
+            self.el2n_scores = compute_proxy_el2n_from_features(
+                self.dino_features, np.array(labels)
+            )
 
         return {
             'fourier_features': self.fourier_features,

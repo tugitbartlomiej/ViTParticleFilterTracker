@@ -241,3 +241,57 @@ node_modules/
 .gemini/
 .taskmaster/
 .mcp.json
+
+# Session management system
+# Ignore large logs and data files but keep documentation
+.sessions/**/*.log
+.sessions/**/logs/
+.sessions/**/checkpoints/*.pth
+.sessions/**/checkpoints/*.pt
+.sessions/**/data/large_files/
+
+# Keep these tracked
+!.sessions/SESSION_RULES.md
+!.sessions/**/README.md
+!.sessions/**/SESSION_SUMMARY.md
+!.sessions/templates/**
+!.sessions/tools/**
+!.sessions/archive/**/README.md
+!.sessions/archive/**/SESSION_SUMMARY.md
+!.sessions/archive/**/*.md
+
+serena
+
+# .serena - ignore cache, keep memories
+.serena/*
+!.serena/memories/
+.serena/memories/*
+!.serena/memories/*.md
+
+# Heavy data folders - not for git
+Eden/Datasets/
+Eden/DETR_Checkpoints/
+Eden/DETR_Training_Sessions/
+External/
+YOLO_DETR_BENCHAMRKS_VER2_CODEX/
+nul
+
+# YOLO_DETR_Benchmarks - ignore heavy data, keep code files
+YOLO_DETR_Benchmarks/**/*.zip
+YOLO_DETR_Benchmarks/**/*.pth
+YOLO_DETR_Benchmarks/**/*.pt
+YOLO_DETR_Benchmarks/**/*.onnx
+YOLO_DETR_Benchmarks/**/*.safetensors
+YOLO_DETR_Benchmarks/models/
+YOLO_DETR_Benchmarks/Datasets/
+YOLO_DETR_Benchmarks/data/
+YOLO_DETR_Benchmarks/results/
+YOLO_DETR_Benchmarks/visualizations/
+YOLO_DETR_Benchmarks/.claude/
+YOLO_DETR_Benchmarks/Intelligent_Background_Selector_2025-07-17/
+YOLO_DETR_Benchmarks/Most_advanced_Intelligent_Background_Selector_2025-07-17/
+YOLO_DETR_Benchmarks/simple_test/
+YOLO_DETR_Benchmarks/Benchmarks/
+YOLO_DETR_Benchmarks/Degradation_Analysis/
+YOLO_DETR_Benchmarks/YOLO_DETR_Benchmarks/
+YOLO_DETR_Benchmarks/benchmark_results/

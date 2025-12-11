@@ -1,0 +1,38 @@
+# Konfiguracja Środowiska do Zaawansowanej Analizy Modeli
+
+# Ścieżki do modeli (wytrenowane przez 100 epok)
+# Uzupełnij na podstawie swoich wytrenowanych modeli. Poniżej przykłady z Twojego pliku benchmark_config.yaml
+models:
+  yolo:
+    # Główna waga YOLO do testów (podane: models/YOLO/epoch100.pt)
+    path: "models/YOLO/epoch100.pt"
+  detr:
+    # DETR epoch 140 - najnowszy dostępny checkpoint z 4x H100 training
+    # Resume from epoch 140 after mixed precision crash at epoch 148
+    # Training: 4x H100, batch 64, no AMP, gentle fine-tuning 1e-4 LR
+    path: "models/DETR/checkpoint_epoch_140.pth"
+
+# Zbiór testowy
+# Użyj dedykowanego, spójnego zbioru testowego dla obu modeli.
+dataset:
+  # Użyjemy train jako zbioru testowego (val folder nie istnieje)
+  images_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Datasets/TooltipMining/train"
+  # Adnotacje COCO odpowiadające zbiorowi treningowemu
+  annotations_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/BackgroundFinetuned/Datasets/TooltipMining/annotations/tool_train_annotations.json"
+
+# Ustawienia wyjściowe
+output:
+  # Katalog, w którym zostaną zapisane wszystkie wyniki, raporty i wizualizacje
+  directory: "./benchmark_results_epoch140"
+
+# Parametry inferencji
+inference_params:
+  confidence_threshold: 0.5 # Próg pewności dla detekcji
+  iou_threshold: 0.5 # Próg IoU dla metryki mAP@.50
+
+# Mapowanie etykiet modelowych -> id kategorii COCO
+# Zbiór TooltipMining ma jedną kategorię z id=1 ("surgical_tool").
+# Wymuś zgodność: indeks klasy 0 -> category_id 1 dla obu modeli.
+label_map:
+  yolo: { 0: 1 }
+  detr: { 0: 1 }

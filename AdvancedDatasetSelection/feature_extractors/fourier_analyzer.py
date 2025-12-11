@@ -39,7 +39,7 @@ class FourierAnalyzer:
             'high': (0.5, 1.0)
         }
         self.similarity_threshold = similarity_threshold
-        self.feature_dim = 5  # low, mid, high energy + entropy + centroid
+        self.feature_dim = 9  # low, mid, high energy + entropy + centroid + 4 directional
 
     def compute_frequency_features(self, image: np.ndarray) -> np.ndarray:
         """
@@ -99,7 +99,34 @@ class FourierAnalyzer:
         # Frequency centroid (weighted average of frequencies)
         frequency_centroid = np.sum(normalized_radius * magnitude) / (np.sum(magnitude) + 1e-10)
 
-        features = np.array(band_energies + [spectral_entropy, frequency_centroid], dtype=np.float32)
+        # Directional energy features (more discriminative!)
+        # Create angle map
+        angle = np.arctan2(y - center_row, x - center_col)
+
+        # 4 directional sectors (horizontal, vertical, diagonal1, diagonal2)
+        # Each sector is 45 degrees wide
+        dir_energies = []
+        sector_width = np.pi / 4  # 45 degrees
+
+        for sector_center in [0, np.pi/2, np.pi/4, -np.pi/4]:  # H, V, D1, D2
+            # Create sector mask (considering both positive and negative directions)
+            angle_diff1 = np.abs(angle - sector_center)
+            angle_diff2 = np.abs(angle - (sector_center + np.pi))
+            angle_diff3 = np.abs(angle - (sector_center - np.pi))
+            angle_diff = np.minimum(angle_diff1, np.minimum(angle_diff2, angle_diff3))
+
+            sector_mask = angle_diff < sector_width
+            # Exclude DC component (center)
+            sector_mask = sector_mask & (normalized_radius > 0.05)
+
+            sector_energy = np.sum(magnitude[sector_mask])
+            dir_energies.append(sector_energy)
+
+        # Normalize directional energies
+        total_dir_energy = sum(dir_energies) + 1e-10
+        dir_energies = [e / total_dir_energy for e in dir_energies]
+
+        features = np.array(band_energies + [spectral_entropy, frequency_centroid] + dir_energies, dtype=np.float32)
         return features
 
     def compute_features_from_path(self, image_path: str) -> Optional[np.ndarray]:
@@ -156,23 +183,40 @@ class FourierAnalyzer:
         logger.info(f"Extracted features for {len(valid_paths)}/{len(image_paths)} images")
         return features_array, valid_paths
 
-    def compute_similarity_matrix(self, features: np.ndarray) -> np.ndarray:
+    def compute_similarity_matrix(self, features: np.ndarray, method: str = 'euclidean') -> np.ndarray:
         """
-        Compute cosine similarity matrix between feature vectors.
+        Compute similarity matrix between feature vectors.
 
         Args:
             features: Feature matrix (N x D)
+            method: 'cosine' or 'euclidean' (recommended for Fourier features)
 
         Returns:
-            Similarity matrix (N x N)
+            Similarity matrix (N x N) where higher = more similar
         """
-        # Normalize features
-        norms = np.linalg.norm(features, axis=1, keepdims=True)
-        norms = np.maximum(norms, 1e-10)
-        features_norm = features / norms
+        if method == 'cosine':
+            # Normalize features
+            norms = np.linalg.norm(features, axis=1, keepdims=True)
+            norms = np.maximum(norms, 1e-10)
+            features_norm = features / norms
+            # Cosine similarity
+            similarity = np.dot(features_norm, features_norm.T)
+        else:
+            # Euclidean distance converted to similarity
+            # First standardize features (z-score) for fair comparison
+            mean = features.mean(axis=0)
+            std = features.std(axis=0) + 1e-10
+            features_std = (features - mean) / std
 
-        # Cosine similarity
-        similarity = np.dot(features_norm, features_norm.T)
+            # Compute pairwise Euclidean distances
+            # ||a-b||^2 = ||a||^2 + ||b||^2 - 2*a.b
+            sq_norms = np.sum(features_std**2, axis=1)
+            distances = sq_norms[:, np.newaxis] + sq_norms[np.newaxis, :] - 2 * np.dot(features_std, features_std.T)
+            distances = np.sqrt(np.maximum(distances, 0))
+
+            # Convert distance to similarity: sim = 1 / (1 + distance)
+            similarity = 1.0 / (1.0 + distances)
+
         return similarity
 
     def filter_redundant(self,
@@ -278,7 +322,8 @@ class FourierAnalyzer:
     def get_feature_names(self) -> List[str]:
         """Get names of computed features."""
         band_names = [f"{band}_band_energy" for band in self.frequency_bands.keys()]
-        return band_names + ['spectral_entropy', 'frequency_centroid']
+        directional_names = ['horizontal_energy', 'vertical_energy', 'diagonal1_energy', 'diagonal2_energy']
+        return band_names + ['spectral_entropy', 'frequency_centroid'] + directional_names
 
     def analyze_diversity(self, features: np.ndarray) -> Dict:
         """

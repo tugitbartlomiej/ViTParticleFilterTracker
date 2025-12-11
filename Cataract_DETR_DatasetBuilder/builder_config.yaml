@@ -1,0 +1,28 @@
+# Example config for Cataract DETR Dataset Builder
+
+source_videos_dir: "E:/Cataract/videos/micro"  # use /mnt/e/... on WSL
+output_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/output_cataract"  # use /mnt/f/... on WSL
+
+sampling:
+  target_fps: 2                # frames per second to sample
+  max_frames_per_video: 1500   # hard cap; set null to disable
+  blur_threshold: 80           # variance of Laplacian min value
+  phash_threshold: 10          # Hamming distance (0..64); higher = keep more
+
+category:
+  id: 1
+  name: "tooltip"
+
+yolo_pseudo_labels:
+  enabled: true
+  weights_path: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/YOLO_DETR_Benchmarks/models/YOLO/epoch100.pt"
+  conf_threshold: 0.25
+
+negatives:
+  include: true
+  max_ratio: 0.3   # up to 30% negatives per split
+
+splits:
+  train: 0.7
+  val: 0.15
+  test: 0.15

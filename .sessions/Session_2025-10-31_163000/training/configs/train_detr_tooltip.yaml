@@ -1,0 +1,18 @@
+# Snapshot of DETR single-class training parameters
+
+images_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/output_cataract/images"
+train_json: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/output_cataract/annotations_train.json"
+val_json: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/output_cataract/annotations_val.json"
+output_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/output_cataract/detr_tooltip_train"
+
+model_checkpoint: "facebook/detr-resnet-50"
+num_queries: 100
+
+batch_size: 8
+epochs: 50
+lr: 1.0e-4
+lr_backbone: 1.0e-5
+weight_decay: 1.0e-4
+num_workers: 4
+use_amp: true
+coco_eval_every: 1

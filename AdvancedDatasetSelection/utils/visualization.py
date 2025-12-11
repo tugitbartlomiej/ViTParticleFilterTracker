@@ -126,22 +126,33 @@ class Visualizer:
             axes[1, 0].set_title('Low vs High Frequency (colored by Mid)')
             plt.colorbar(scatter, ax=axes[1, 0], label='Mid Band Energy')
 
-        # Similarity matrix sample (if small enough)
+        # Similarity matrix using Euclidean distance (more discriminative for Fourier)
+        def compute_euclidean_similarity(features):
+            """Compute Euclidean-based similarity matrix."""
+            # Standardize features
+            mean = features.mean(axis=0)
+            std = features.std(axis=0) + 1e-10
+            features_std = (features - mean) / std
+            # Euclidean distances
+            from sklearn.metrics.pairwise import euclidean_distances
+            distances = euclidean_distances(features_std)
+            # Convert to similarity
+            similarity = 1.0 / (1.0 + distances)
+            return similarity
+
         if len(fourier_features) <= 500:
-            from sklearn.metrics.pairwise import cosine_similarity
-            sim_matrix = cosine_similarity(fourier_features)
+            sim_matrix = compute_euclidean_similarity(fourier_features)
             im = axes[1, 1].imshow(sim_matrix, cmap='RdYlBu_r', vmin=0, vmax=1)
-            axes[1, 1].set_title('Fourier Similarity Matrix')
-            plt.colorbar(im, ax=axes[1, 1], label='Cosine Similarity')
+            axes[1, 1].set_title('Fourier Similarity Matrix (Euclidean)')
+            plt.colorbar(im, ax=axes[1, 1], label='Euclidean Similarity')
         else:
             # Sample for visualization
             sample_idx = np.random.choice(len(fourier_features), 200, replace=False)
             sample_features = fourier_features[sample_idx]
-            from sklearn.metrics.pairwise import cosine_similarity
-            sim_matrix = cosine_similarity(sample_features)
+            sim_matrix = compute_euclidean_similarity(sample_features)
             im = axes[1, 1].imshow(sim_matrix, cmap='RdYlBu_r', vmin=0, vmax=1)
-            axes[1, 1].set_title('Fourier Similarity Matrix (200 samples)')
-            plt.colorbar(im, ax=axes[1, 1], label='Cosine Similarity')
+            axes[1, 1].set_title('Fourier Similarity Matrix (200 samples, Euclidean)')
+            plt.colorbar(im, ax=axes[1, 1], label='Euclidean Similarity')
 
         plt.tight_layout()
         save_path = self.output_dir / save_name
@@ -240,6 +251,86 @@ class Visualizer:
         plt.savefig(save_path, dpi=150)
         plt.close()
         logger.info(f"Saved selection summary plot to {save_path}")
+
+    def plot_cluster_visualization(self,
+                                   cluster_info: Dict,
+                                   selected_indices: List[int],
+                                   save_name: str = "cluster_visualization.png"):
+        """Plot cluster-based selection visualization with PCA projection."""
+        from sklearn.decomposition import PCA
+
+        labels = cluster_info.get('labels')
+        combined_features = cluster_info.get('combined_features')
+        el2n_scores = cluster_info.get('el2n_scores')
+        n_clusters = cluster_info.get('n_clusters', 0)
+
+        if labels is None or combined_features is None:
+            logger.warning("Cannot create cluster visualization: missing data")
+            return
+
+        fig, axes = plt.subplots(2, 2, figsize=(14, 12))
+
+        # 1. PCA projection with cluster coloring
+        pca = PCA(n_components=2)
+        features_2d = pca.fit_transform(combined_features)
+
+        # Plot all points colored by cluster
+        scatter = axes[0, 0].scatter(features_2d[:, 0], features_2d[:, 1],
+                                      c=labels, cmap='tab20', alpha=0.5, s=15)
+        # Highlight selected points
+        selected_mask = np.zeros(len(labels), dtype=bool)
+        selected_mask[selected_indices] = True
+        axes[0, 0].scatter(features_2d[selected_mask, 0], features_2d[selected_mask, 1],
+                           c='red', marker='*', s=100, edgecolors='black',
+                           label=f'Selected ({len(selected_indices)})')
+        axes[0, 0].set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
+        axes[0, 0].set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)')
+        axes[0, 0].set_title(f'Cluster Visualization (PCA) - {n_clusters} clusters')
+        axes[0, 0].legend()
+
+        # 2. Cluster size distribution
+        unique, counts = np.unique(labels, return_counts=True)
+        axes[0, 1].bar(unique, counts, color='steelblue', alpha=0.7, edgecolor='black')
+        axes[0, 1].set_xlabel('Cluster ID')
+        axes[0, 1].set_ylabel('Size')
+        axes[0, 1].set_title('Cluster Size Distribution')
+        axes[0, 1].axhline(np.mean(counts), color='red', linestyle='--',
+                          label=f'Mean: {np.mean(counts):.1f}')
+        axes[0, 1].legend()
+
+        # 3. EL2N distribution per cluster (box plot)
+        if el2n_scores is not None:
+            cluster_el2n = [el2n_scores[labels == i] for i in range(n_clusters)]
+            # Limit to 20 clusters for readability
+            if n_clusters > 20:
+                sample_clusters = np.random.choice(n_clusters, 20, replace=False)
+                cluster_el2n = [cluster_el2n[i] for i in sorted(sample_clusters)]
+                axes[1, 0].boxplot(cluster_el2n, labels=[str(i) for i in sorted(sample_clusters)])
+                axes[1, 0].set_title('EL2N Distribution per Cluster (20 sampled)')
+            else:
+                axes[1, 0].boxplot(cluster_el2n)
+                axes[1, 0].set_title('EL2N Distribution per Cluster')
+            axes[1, 0].set_xlabel('Cluster ID')
+            axes[1, 0].set_ylabel('EL2N Score')
+            axes[1, 0].tick_params(axis='x', rotation=45)
+
+        # 4. Selected vs All EL2N comparison
+        if el2n_scores is not None:
+            axes[1, 1].hist(el2n_scores, bins=40, alpha=0.5, color='blue',
+                           label=f'All (mean: {np.mean(el2n_scores):.3f})')
+            selected_el2n = el2n_scores[selected_indices]
+            axes[1, 1].hist(selected_el2n, bins=20, alpha=0.7, color='red',
+                           label=f'Selected (mean: {np.mean(selected_el2n):.3f})')
+            axes[1, 1].set_xlabel('EL2N Score')
+            axes[1, 1].set_ylabel('Count')
+            axes[1, 1].set_title('EL2N: All vs Selected Samples')
+            axes[1, 1].legend()
+
+        plt.tight_layout()
+        save_path = self.output_dir / save_name
+        plt.savefig(save_path, dpi=150)
+        plt.close()
+        logger.info(f"Saved cluster visualization to {save_path}")
 
     def create_sample_grid(self,
                            image_paths: List[str],
