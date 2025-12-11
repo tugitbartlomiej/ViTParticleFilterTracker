@@ -353,11 +353,12 @@ class AdvancedDatasetSelectionPipeline:
             self.cluster_selector.save_selection_report(selected_indices, strategy, report_path)
 
             # Save DETR Q81 detection visualizations for selected images
-            if self.cluster_selector.detr_el2n is not None:
-                detr_vis_dir = os.path.join(output_dir, 'visualizations', 'detr_q81_detections')
-                self.cluster_selector.detr_el2n.save_selected_visualizations(
-                    selected_paths, detr_vis_dir
-                )
+            # DISABLED: Visualization copying no longer needed
+            # if self.cluster_selector.detr_el2n is not None:
+            #     detr_vis_dir = os.path.join(output_dir, 'visualizations', 'detr_q81_detections')
+            #     self.cluster_selector.detr_el2n.save_selected_visualizations(
+            #         selected_paths, detr_vis_dir
+            #     )
 
         # Generate report
         self._generate_report(output_dir)

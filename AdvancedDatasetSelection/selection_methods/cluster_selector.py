@@ -13,6 +13,7 @@ Pipeline:
 4. Select representative from each cluster (centroid or max EL2N)
 """
 
+import os
 import numpy as np
 from typing import List, Dict, Optional, Tuple, Literal
 from pathlib import Path
@@ -296,16 +297,155 @@ class ClusterBasedSelector:
         self.combined_features = combined
         return combined
 
+    def _cluster_with_faiss_gpu(self, features: np.ndarray, n_clusters: int,
+                                 niter: int = 300, seed: int = 42) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        GPU-accelerated K-means using Facebook's faiss library.
+        10-50x faster than scikit-learn for large datasets.
+
+        Uses subprocess to run in conda environment (avoids numpy version conflicts).
+
+        Args:
+            features: Feature matrix (n_samples, n_features)
+            n_clusters: Number of clusters
+            niter: Number of iterations
+            seed: Random seed
+
+        Returns:
+            Tuple of (cluster_labels, cluster_centers)
+        """
+        import subprocess
+        import tempfile
+
+        n_samples, d = features.shape
+        logger.info(f"FAISS K-Means: {n_samples:,} samples x {d} features -> {n_clusters:,} clusters")
+
+        # Paths
+        conda_python = r"F:\Instalki\Conda\python.exe"
+        worker_script = Path(__file__).parent / "faiss_clustering_worker.py"
+
+        if not os.path.exists(conda_python):
+            logger.warning(f"Conda Python not found at {conda_python}, falling back to faiss-cpu")
+            # Try direct faiss import (will use CPU if available)
+            return self._cluster_with_faiss_direct(features, n_clusters, niter, seed)
+
+        if not worker_script.exists():
+            raise FileNotFoundError(f"Worker script not found: {worker_script}")
+
+        # Use temp files to pass data
+        with tempfile.TemporaryDirectory() as tmpdir:
+            features_path = os.path.join(tmpdir, "features.pkl")
+            output_path = os.path.join(tmpdir, "result.pkl")
+
+            # Save features
+            logger.info(f"Saving features to temp file...")
+            with open(features_path, 'wb') as f:
+                pickle.dump(features, f)
+
+            # Run faiss worker in conda environment
+            cmd = [
+                conda_python,
+                str(worker_script),
+                features_path,
+                str(n_clusters),
+                output_path,
+                str(niter),
+                str(seed)
+            ]
+
+            logger.info(f"Running FAISS worker in conda environment...")
+            print(f"\n{'='*60}")
+            print(f"FAISS GPU K-Means (conda subprocess)")
+            print(f"{'='*60}")
+
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=False,  # Show output in real-time
+                    text=True,
+                    timeout=3600  # 1 hour timeout
+                )
+
+                if result.returncode != 0:
+                    raise RuntimeError(f"FAISS worker failed with return code {result.returncode}")
+
+            except subprocess.TimeoutExpired:
+                raise RuntimeError("FAISS worker timed out after 1 hour")
+
+            # Load results
+            logger.info(f"Loading clustering results...")
+            with open(output_path, 'rb') as f:
+                clustering_result = pickle.load(f)
+
+            labels = clustering_result['labels']
+            centers = clustering_result['centers']
+            n_gpus = clustering_result['n_gpus']
+            elapsed = clustering_result['elapsed_seconds']
+
+            print(f"{'='*60}")
+            mode = "GPU" if n_gpus > 0 else "CPU"
+            print(f"FAISS {mode} clustering complete in {elapsed:.1f}s ({elapsed/60:.1f} min)")
+            print(f"{'='*60}\n")
+
+            logger.info(f"Clustering complete! ({n_gpus} GPU(s), {elapsed:.1f}s)")
+
+        return labels, centers
+
+    def _cluster_with_faiss_direct(self, features: np.ndarray, n_clusters: int,
+                                    niter: int = 300, seed: int = 42) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Direct faiss clustering (fallback when conda not available).
+        Uses faiss-cpu if installed.
+        """
+        try:
+            import faiss
+        except ImportError:
+            raise ImportError(
+                "faiss not installed. Install with:\n"
+                "  pip install faiss-cpu  (for CPU)\n"
+                "  conda install -c conda-forge faiss-gpu  (for GPU)"
+            )
+
+        n_samples, d = features.shape
+        n_gpus = faiss.get_num_gpus()
+        use_gpu = n_gpus > 0
+
+        logger.info(f"{'GPU' if use_gpu else 'CPU'} K-means: {n_samples:,} x {d} -> {n_clusters:,} clusters")
+
+        features_f32 = np.ascontiguousarray(features.astype(np.float32))
+
+        kmeans = faiss.Kmeans(
+            d, n_clusters,
+            niter=niter,
+            gpu=use_gpu,
+            seed=seed,
+            verbose=True,
+            spherical=False,
+            min_points_per_centroid=1
+        )
+
+        kmeans.train(features_f32)
+
+        _, labels = kmeans.index.search(features_f32, 1)
+        labels = labels.flatten()
+        centers = kmeans.centroids
+
+        return labels, centers
+
     def cluster_features(self,
                          n_clusters: int,
-                         method: Literal['kmeans', 'minibatch'] = 'kmeans',
+                         method: Literal['kmeans', 'minibatch', 'faiss-gpu', 'auto'] = 'auto',
                          random_state: int = 42) -> np.ndarray:
         """
         Cluster combined features using k-means.
 
         Args:
             n_clusters: Number of clusters (= target coreset size)
-            method: 'kmeans' (exact) or 'minibatch' (faster for large datasets)
+            method:
+                - 'kmeans': scikit-learn exact K-means (slow)
+                - 'minibatch': scikit-learn MiniBatchKMeans (faster)
+                - 'faiss-gpu': Facebook faiss GPU K-means (fastest, 10-50x speedup)
+                - 'auto': Smart selection based on problem size
             random_state: Random seed for reproducibility
 
         Returns:
@@ -314,30 +454,90 @@ class ClusterBasedSelector:
         if self.combined_features is None:
             raise ValueError("Features not combined. Call combine_features first.")
 
-        logger.info(f"Clustering {len(self.combined_features)} samples into {n_clusters} clusters")
+        n_samples = len(self.combined_features)
+        import time
+
+        # AUTO MODE: Intelligently select method and parameters based on problem size
+        if method == 'auto':
+            # Try faiss first for large problems (best performance)
+            if n_samples > 10000 or n_clusters > 5000:
+                try:
+                    import faiss
+                    n_gpus = faiss.get_num_gpus()
+                    if n_gpus > 0:
+                        method = 'faiss-gpu'
+                        logger.info(f"Auto-selected faiss-gpu ({n_gpus} GPU(s)) (n_samples={n_samples}, n_clusters={n_clusters})")
+                    else:
+                        # faiss-cpu is still 2-5x faster than sklearn due to AVX/SIMD
+                        method = 'faiss-gpu'  # Will fallback to CPU in _cluster_with_faiss_gpu
+                        logger.info(f"Auto-selected faiss-cpu (faster than sklearn) (n_samples={n_samples}, n_clusters={n_clusters})")
+                except ImportError:
+                    method = 'minibatch'
+                    logger.info(f"Auto-selected MiniBatchKMeans - faiss not installed (n_samples={n_samples}, n_clusters={n_clusters})")
+            else:
+                method = 'kmeans'
+                logger.info(f"Auto-selected standard KMeans (n_samples={n_samples}, n_clusters={n_clusters})")
+
+        # FAISS-GPU: Fastest option (10-50x speedup)
+        if method == 'faiss-gpu':
+            logger.info(f"Clustering {n_samples} samples into {n_clusters} clusters (method=faiss-gpu)")
+            start_time = time.time()
+
+            self.cluster_labels, self.cluster_centers = self._cluster_with_faiss_gpu(
+                self.combined_features, n_clusters, niter=300, seed=random_state
+            )
+
+            elapsed = time.time() - start_time
+            self.n_clusters = n_clusters
+
+            unique, counts = np.unique(self.cluster_labels, return_counts=True)
+            logger.info(f"Clustering completed in {elapsed/60:.1f} minutes (faiss-gpu)")
+            logger.info(f"Cluster sizes: min={counts.min()}, max={counts.max()}, mean={counts.mean():.1f}")
+
+            return self.cluster_labels
+
+        # SKLEARN METHODS: MiniBatch or standard KMeans
+        # Adaptive n_init: fewer restarts for large k (diminishing returns)
+        if n_clusters > 10000:
+            n_init = 3  # Very large k: 3 restarts enough
+        elif n_clusters > 5000:
+            n_init = 5  # Large k: 5 restarts
+        else:
+            n_init = 10  # Standard: 10 restarts
+
+        logger.info(f"Clustering {n_samples} samples into {n_clusters} clusters (method={method}, n_init={n_init})")
 
         if method == 'minibatch':
-            # Faster for large datasets (>10k samples)
+            # MiniBatchKMeans: O(n * k * batch_size * n_init) - much faster for large datasets
+            batch_size = min(4096, n_samples)  # Larger batch = better quality, still fast
             clusterer = MiniBatchKMeans(
                 n_clusters=n_clusters,
                 random_state=random_state,
-                batch_size=min(1024, len(self.combined_features)),
-                n_init=10
+                batch_size=batch_size,
+                n_init=n_init,
+                max_iter=300,
+                verbose=1 if n_clusters > 5000 else 0  # Progress for large jobs
             )
         else:
+            # Standard KMeans: O(n * k * d * max_iter * n_init) - exact but slow
             clusterer = KMeans(
                 n_clusters=n_clusters,
                 random_state=random_state,
-                n_init=10,
-                max_iter=300
+                n_init=n_init,
+                max_iter=300,
+                verbose=1 if n_clusters > 5000 else 0
             )
 
+        start_time = time.time()
         self.cluster_labels = clusterer.fit_predict(self.combined_features)
+        elapsed = time.time() - start_time
+
         self.cluster_centers = clusterer.cluster_centers_
         self.n_clusters = n_clusters
 
         # Log cluster sizes
         unique, counts = np.unique(self.cluster_labels, return_counts=True)
+        logger.info(f"Clustering completed in {elapsed/60:.1f} minutes")
         logger.info(f"Cluster sizes: min={counts.min()}, max={counts.max()}, mean={counts.mean():.1f}")
 
         return self.cluster_labels

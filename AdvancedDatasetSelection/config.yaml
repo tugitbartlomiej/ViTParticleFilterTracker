@@ -13,7 +13,7 @@ models:
     num_labels: 1  # 1 class (tooltip) + no-object = 2 outputs
     confidence_threshold: 0.5
 datasets:
-  #existing: ../Eden/Datasets/datasets_20250606.tar/datasets_20250606
+  existing: ../Eden/Datasets/datasets_20250606.tar/datasets_20250606
   new_source: E:/cataract_surgery_Instruments_detection.v1i.coco/valid
   output: ./output/selected_dataset
 fourier:
@@ -73,5 +73,5 @@ output:
 processing:
   num_workers: 4
   batch_size: 32
-  use_cache: false
+  use_cache: true  # Wczyta DINO, EL2N, Fourier, SAM z cache - przeskoczy do clustering
   cache_dir: ./output/feature_cache
