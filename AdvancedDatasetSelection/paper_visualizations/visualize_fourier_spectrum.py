@@ -46,9 +46,117 @@ from tqdm import tqdm
 import seaborn as sns
 from scipy import stats
 from scipy.optimize import curve_fit
+import json
+from datetime import datetime
+import pickle
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Metadata version for JSON files
+METADATA_VERSION = "1.0"
+
+# Default cache path
+DEFAULT_CACHE_PATH = Path(__file__).parent.parent / "output" / "feature_cache" / "fourier_features.pkl"
+
+# Cache feature indices (from FourierAnalyzer)
+CACHE_FEATURE_NAMES = [
+    'low_band_energy',      # 0
+    'mid_band_energy',      # 1
+    'high_band_energy',     # 2
+    'spectral_entropy',     # 3
+    'frequency_centroid',   # 4
+    'horizontal_energy',    # 5
+    'vertical_energy',      # 6
+    'diagonal1_energy',     # 7
+    'diagonal2_energy'      # 8
+]
+
+
+def get_base_image_name(filename):
+    """
+    Extract base image name without augmentation suffix.
+
+    Examples:
+        'train02_frame_0000458_aug_2.jpg' -> 'train02_frame_0000458'
+        'test25_frame_0000524_aug_3.jpg' -> 'test25_frame_0000524'
+        'frame_00123.jpg' -> 'frame_00123'
+    """
+    import re
+    stem = Path(filename).stem
+    # Remove _aug_N suffix if present
+    base = re.sub(r'_aug_\d+$', '', stem)
+    return base
+
+
+def load_fourier_cache(cache_path):
+    """
+    Load fourier features from pickle cache.
+
+    Returns:
+        dict: {filename_stem: {'features': array, 'full_path': str}}
+    """
+    cache_path = Path(cache_path)
+    if not cache_path.exists():
+        print(f"Cache not found: {cache_path}")
+        return None
+
+    print(f"Loading cache from: {cache_path}")
+    with open(cache_path, 'rb') as f:
+        features_array, filenames = pickle.load(f)
+
+    print(f"Loaded {len(filenames)} entries from cache")
+
+    # Create dict indexed by filename stem for fast lookup
+    cache_dict = {}
+    for i, filepath in enumerate(filenames):
+        # Extract just the filename without extension
+        stem = Path(filepath).stem
+        cache_dict[stem] = {
+            'features': features_array[i],
+            'full_path': filepath,
+            'index': i
+        }
+
+    return cache_dict, features_array, filenames
+
+
+def cache_features_to_metrics(features_array):
+    """
+    Convert cache feature array to our metrics dict format.
+
+    Args:
+        features_array: numpy array of 9 features from cache
+
+    Returns:
+        dict with metrics compatible with visualizer
+    """
+    # Cache order: [low, mid, high, entropy, centroid, h, v, d1, d2]
+    low = float(features_array[0])
+    mid = float(features_array[1])
+    high = float(features_array[2])
+
+    return {
+        'spectral_entropy': float(features_array[3]),
+        'frequency_centroid': float(features_array[4]),
+        'band_energies': {
+            'low': low,
+            'mid': mid,
+            'high': high
+        },
+        'directional_energies': {
+            'Horizontal': float(features_array[5]),
+            'Vertical': float(features_array[6]),
+            'Diagonal 1': float(features_array[7]),
+            'Diagonal 2': float(features_array[8])
+        },
+        # Computed metrics (not in cache, but we can derive some)
+        'high_low_ratio': high / (low + 1e-10),
+        # These aren't in cache - will be None/estimated
+        'psd_slope': None,
+        'psd_r_squared': None,
+        'anisotropy_index': max(features_array[5:9]) / (np.mean(features_array[5:9]) + 1e-10)
+    }
 
 
 class FourierVisualizer:
@@ -201,8 +309,108 @@ class FourierVisualizer:
             'high_low_ratio': high_low_ratio
         }
 
-    def visualize_single_image(self, image_path, output_path, show=False):
-        """Create comprehensive Fourier visualization for a single image."""
+    def features_to_metadata(self, features, source_path=None, image_shape=None):
+        """
+        Convert FFT features dict to JSON-serializable metadata dict.
+
+        Args:
+            features: Dict from compute_fft() or cache_features_to_metrics()
+            source_path: Path to source image
+            image_shape: Tuple (height, width) of source image
+
+        Returns:
+            Dict with all metrics in JSON-serializable format
+        """
+        # Helper to safely convert to float (handles None)
+        def safe_float(val):
+            return float(val) if val is not None else None
+
+        # Handle different key names for directional energies
+        dir_energies = features.get('directional_energies', {})
+        metadata = {
+            'spectral_entropy': safe_float(features.get('spectral_entropy')),
+            'frequency_centroid': safe_float(features.get('frequency_centroid')),
+            'psd_slope': safe_float(features.get('psd_slope')),
+            'psd_r_squared': safe_float(features.get('psd_r_squared')),
+            'anisotropy_index': safe_float(features.get('anisotropy_index')),
+            'high_low_ratio': safe_float(features.get('high_low_ratio')),
+            'band_energies': {
+                'low': safe_float(features.get('band_energies', {}).get('low')),
+                'mid': safe_float(features.get('band_energies', {}).get('mid')),
+                'high': safe_float(features.get('band_energies', {}).get('high'))
+            },
+            'directional_energies': {
+                'horizontal': safe_float(dir_energies.get('Horizontal') or dir_energies.get('horizontal')),
+                'vertical': safe_float(dir_energies.get('Vertical') or dir_energies.get('vertical')),
+                'diagonal_1': safe_float(dir_energies.get('Diagonal 1') or dir_energies.get('diagonal_1')),
+                'diagonal_2': safe_float(dir_energies.get('Diagonal 2') or dir_energies.get('diagonal_2'))
+            }
+        }
+
+        if source_path:
+            metadata['source'] = {
+                'filename': Path(source_path).name,
+                'stem': Path(source_path).stem,
+                'path': str(source_path)
+            }
+
+        if image_shape:
+            metadata['source'] = metadata.get('source', {})
+            metadata['source']['dimensions'] = {
+                'height': image_shape[0],
+                'width': image_shape[1]
+            }
+
+        return metadata
+
+    def save_metadata(self, metadata, output_path, visualization_type='single_image',
+                     extra_info=None):
+        """
+        Save metadata to JSON file alongside visualization.
+
+        Args:
+            metadata: Dict with Fourier metrics (from features_to_metadata)
+            output_path: Path to visualization PNG (JSON will have same name)
+            visualization_type: Type of visualization
+            extra_info: Additional info to include (dict)
+
+        Returns:
+            Path to saved JSON file
+        """
+        output_path = Path(output_path)
+        json_path = output_path.with_suffix('.json')
+
+        full_metadata = {
+            'version': METADATA_VERSION,
+            'generated_at': datetime.now().isoformat(),
+            'visualization_type': visualization_type,
+            'output': {
+                'visualization': output_path.name,
+                'metadata': json_path.name
+            },
+            'fourier_metrics': metadata
+        }
+
+        if extra_info:
+            full_metadata.update(extra_info)
+
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(full_metadata, f, indent=2, ensure_ascii=False)
+
+        return json_path
+
+    def visualize_single_image(self, image_path, output_path, show=False, save_json=True):
+        """Create comprehensive Fourier visualization for a single image.
+
+        Args:
+            image_path: Path to source image
+            output_path: Path to save visualization PNG
+            show: Whether to display plot interactively
+            save_json: Whether to save JSON metadata sidecar (default: True)
+
+        Returns:
+            Dict with FFT features
+        """
         image = cv2.imread(image_path)
         if image is None:
             print(f"Could not read: {image_path}")
@@ -351,11 +559,17 @@ class FourierVisualizer:
             plt.show()
         plt.close()
 
+        # Save JSON metadata sidecar
+        if save_json:
+            metadata = self.features_to_metadata(result, image_path, image.shape[:2])
+            json_path = self.save_metadata(metadata, output_path, 'single_image')
+            print(f"Saved metadata: {json_path}")
+
         return result
 
     def visualize_tooltip_vs_background(self, image1_path, image2_path, output_path,
                                          label1="With Tooltip", label2="Background",
-                                         show=False):
+                                         show=False, save_json=True):
         """
         Create scientific comparison visualization for tooltip vs background frames.
 
@@ -576,10 +790,176 @@ class FourierVisualizer:
             plt.show()
         plt.close()
 
+        # Save JSON metadata for comparison
+        if save_json:
+            image1 = cv2.imread(image1_path)
+            image2 = cv2.imread(image2_path)
+            comparison_metadata = {
+                'comparison': {
+                    'image1': {
+                        'label': label1,
+                        **self.features_to_metadata(result1, image1_path,
+                                                   image1.shape[:2] if image1 is not None else None)
+                    },
+                    'image2': {
+                        'label': label2,
+                        **self.features_to_metadata(result2, image2_path,
+                                                   image2.shape[:2] if image2 is not None else None)
+                    },
+                    'differences': {
+                        'spectral_entropy': float(result1['spectral_entropy'] - result2['spectral_entropy']),
+                        'frequency_centroid': float(result1['frequency_centroid'] - result2['frequency_centroid']),
+                        'psd_slope': float(result1['psd_slope'] - result2['psd_slope']),
+                        'anisotropy_index': float(result1['anisotropy_index'] - result2['anisotropy_index']),
+                        'high_low_ratio': float(result1['high_low_ratio'] - result2['high_low_ratio']),
+                        'e_high': float(result1['band_energies']['high'] - result2['band_energies']['high'])
+                    }
+                }
+            }
+            json_path = self.save_metadata(comparison_metadata, output_path, 'comparison')
+            print(f"Saved metadata: {json_path}")
+
         return {'image1': result1, 'image2': result2}
 
+    def visualize_gallery(self, images_dir, output_dir, n_images=5, show=False,
+                          save_json=True, random_select=True, seed=None):
+        """
+        Visualize N random images with their FFT spectra in a gallery grid.
+
+        Args:
+            images_dir: Directory with images
+            output_dir: Output directory for visualizations
+            n_images: Number of images to display (default: 5)
+            show: Whether to display plots interactively
+            save_json: Whether to save JSON metadata
+            random_select: If True, randomly select images
+            seed: Random seed for reproducibility
+        """
+        import random
+        from tqdm import tqdm
+
+        if seed is not None:
+            random.seed(seed)
+
+        images_dir = Path(images_dir)
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Get all images
+        all_images = list(images_dir.glob('*.jpg')) + list(images_dir.glob('*.png'))
+        if not all_images:
+            print(f"No images found in {images_dir}")
+            return None
+
+        # Filter to unique base images
+        base_to_images = {}
+        for img in all_images:
+            base = get_base_image_name(img.name)
+            if base not in base_to_images:
+                base_to_images[base] = img
+
+        unique_images = list(base_to_images.values())
+        print(f"Found {len(all_images)} images ({len(unique_images)} unique base images)")
+
+        # Select images
+        if random_select:
+            selected = random.sample(unique_images, min(n_images, len(unique_images)))
+        else:
+            selected = unique_images[:n_images]
+
+        print(f"Selected {len(selected)} images for gallery")
+
+        # Compute FFT for each
+        results = []
+        for img_path in tqdm(selected, desc="Computing FFT"):
+            img = cv2.imread(str(img_path))
+            if img is not None:
+                feat = self.compute_fft(img)
+                results.append({
+                    'path': img_path,
+                    'image': img,
+                    'features': feat
+                })
+
+        # Create gallery visualization
+        n = len(results)
+        fig = plt.figure(figsize=(5 * n, 12))
+        gs = GridSpec(3, n, figure=fig, hspace=0.3, wspace=0.2,
+                     height_ratios=[1, 1, 0.5])
+
+        for i, res in enumerate(results):
+            # Row 1: Original image
+            ax_img = fig.add_subplot(gs[0, i])
+            img_rgb = cv2.cvtColor(res['image'], cv2.COLOR_BGR2RGB)
+            ax_img.imshow(img_rgb)
+            h_l_ratio = res['features']['high_low_ratio']
+            ax_img.set_title(f"H/L={h_l_ratio:.2f}", fontsize=12, fontweight='bold')
+            ax_img.axis('off')
+            ax_img.text(0.5, -0.08, res['path'].stem[:30], transform=ax_img.transAxes,
+                       ha='center', fontsize=8, color='gray')
+
+            # Row 2: FFT magnitude
+            ax_fft = fig.add_subplot(gs[1, i])
+            ax_fft.imshow(res['features']['magnitude_log'], cmap='inferno')
+            ax_fft.set_title('FFT Magnitude', fontsize=10)
+            ax_fft.axis('off')
+
+            # Row 3: Band energies bar
+            ax_bar = fig.add_subplot(gs[2, i])
+            bands = res['features']['band_energies']
+            colors = ['#2ecc71', '#f39c12', '#e74c3c']
+            bars = ax_bar.bar(['Low', 'Mid', 'High'],
+                            [bands['low'], bands['mid'], bands['high']],
+                            color=colors, edgecolor='black')
+            ax_bar.set_ylim(0, 0.7)
+            ax_bar.set_ylabel('Energy')
+            for bar, val in zip(bars, [bands['low'], bands['mid'], bands['high']]):
+                ax_bar.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.02,
+                           f'{val:.2f}', ha='center', fontsize=9)
+
+        plt.suptitle(f'Fourier Spectrum Gallery\n({n} random images from {len(unique_images)} unique)',
+                    fontsize=16, fontweight='bold', y=0.98)
+
+        # Save
+        output_path = output_dir / f"fourier_gallery_n{n}.png"
+        plt.savefig(output_path, dpi=200, bbox_inches='tight', facecolor='white')
+        print(f"\nSaved: {output_path}")
+
+        if show:
+            plt.show()
+        plt.close()
+
+        # Save JSON manifest
+        if save_json:
+            manifest = {
+                'version': METADATA_VERSION,
+                'generated_at': datetime.now().isoformat(),
+                'visualization_type': 'gallery',
+                'parameters': {
+                    'n_images': n,
+                    'total_unique_images': len(unique_images),
+                    'random_select': random_select,
+                    'seed': seed
+                },
+                'images': [
+                    {
+                        'filename': res['path'].name,
+                        'base_name': get_base_image_name(res['path'].name),
+                        'metrics': self.features_to_metadata(res['features'], res['path'])
+                    }
+                    for res in results
+                ]
+            }
+            manifest_path = output_dir / f"fourier_gallery_n{n}.json"
+            with open(manifest_path, 'w', encoding='utf-8') as f:
+                json.dump(manifest, f, indent=2)
+            print(f"Saved manifest: {manifest_path}")
+
+        return results
+
     def visualize_extremes(self, images_dir, output_dir, n_extremes=3,
-                           metric='high_low', sample_size=200, show=False):
+                           metric='high_low', sample_size=200, show=False, save_json=True,
+                           cache_data=None, use_all=False):
         """
         Visualize images with extreme (lowest vs highest) metric values.
 
@@ -593,6 +973,9 @@ class FourierVisualizer:
             metric: Which metric to use for sorting (default: 'high_low')
             sample_size: How many images to sample for analysis (default: 200)
             show: Whether to display plots interactively
+            save_json: Whether to save JSON metadata
+            cache_data: Tuple of (cache_dict, features_array, filenames) from load_fourier_cache()
+            use_all: If True and cache provided, use ALL cached images (ignore sample_size)
         """
         import random
         from tqdm import tqdm
@@ -615,72 +998,159 @@ class FourierVisualizer:
             print(f"Unknown metric: {metric}. Available: {list(metric_names.keys())}")
             return None
 
-        # Get all images
+        # Get all images in directory
         all_images = list(images_dir.glob('*.jpg')) + list(images_dir.glob('*.png'))
         if not all_images:
             print(f"No images found in {images_dir}")
             return None
 
-        # Sample if too many
-        if len(all_images) > sample_size:
-            sample = random.sample(all_images, sample_size)
-            print(f"Sampling {sample_size} images from {len(all_images)} total")
+        print(f"Found {len(all_images)} images in directory")
+
+        # === CACHE MODE: Use pre-computed features ===
+        if cache_data is not None:
+            cache_dict, features_array, cache_filenames = cache_data
+            print(f"Using cache with {len(cache_dict)} entries")
+
+            # Match images in directory to cache entries by stem
+            results = []
+            matched = 0
+            not_found = 0
+
+            # Build set of stems in images_dir for fast lookup
+            dir_stems = {img.stem: img for img in all_images}
+
+            # Process cache entries that match images in directory
+            print("Matching cache entries to directory images...")
+            for stem, img_path in tqdm(dir_stems.items(), desc="Matching"):
+                if stem in cache_dict:
+                    cache_entry = cache_dict[stem]
+                    feat = cache_features_to_metrics(cache_entry['features'])
+
+                    # Extract the metric value
+                    if metric == 'high_low':
+                        value = feat['high_low_ratio']
+                    elif metric == 'e_high':
+                        value = feat['band_energies']['high']
+                    elif metric == 'psd_slope':
+                        # psd_slope is None in cache - use high_low as proxy
+                        value = feat['high_low_ratio'] if feat['psd_slope'] is None else feat['psd_slope']
+                    elif metric == 'anisotropy':
+                        value = feat['anisotropy_index']
+                    elif metric == 'entropy':
+                        value = feat['spectral_entropy']
+                    elif metric == 'centroid':
+                        value = feat['frequency_centroid']
+
+                    results.append({
+                        'path': img_path,
+                        'value': value,
+                        'features': feat,
+                        'from_cache': True
+                    })
+                    matched += 1
+                else:
+                    not_found += 1
+
+            print(f"Matched {matched} images from cache, {not_found} not found in cache")
+
+            # If use_all, keep all matched results; otherwise sample
+            if not use_all and len(results) > sample_size:
+                results = random.sample(results, sample_size)
+                print(f"Sampled {sample_size} from {matched} matched images")
+            else:
+                print(f"Using all {len(results)} matched images (--all mode)")
+
+        # === COMPUTE MODE: Calculate FFT for each image ===
         else:
-            sample = all_images
-            print(f"Analyzing all {len(sample)} images")
+            # Sample if too many
+            if len(all_images) > sample_size and not use_all:
+                sample = random.sample(all_images, sample_size)
+                print(f"Sampling {sample_size} images from {len(all_images)} total")
+            else:
+                sample = all_images
+                print(f"Analyzing all {len(sample)} images")
 
-        # Compute features for all sampled images
-        print(f"\nComputing Fourier features for {len(sample)} images...")
-        results = []
-        for img_path in tqdm(sample, desc="Analyzing"):
-            img = cv2.imread(str(img_path))
-            if img is not None:
-                feat = self.compute_fft(img)
-                # Extract the metric value
-                if metric == 'high_low':
-                    value = feat['high_low_ratio']
-                elif metric == 'e_high':
-                    value = feat['band_energies']['high']
-                elif metric == 'psd_slope':
-                    value = feat['psd_slope']
-                elif metric == 'anisotropy':
-                    value = feat['anisotropy_index']
-                elif metric == 'entropy':
-                    value = feat['spectral_entropy']
-                elif metric == 'centroid':
-                    value = feat['frequency_centroid']
+            # Compute features for all sampled images
+            print(f"\nComputing Fourier features for {len(sample)} images...")
+            results = []
+            for img_path in tqdm(sample, desc="Analyzing"):
+                img = cv2.imread(str(img_path))
+                if img is not None:
+                    feat = self.compute_fft(img)
+                    # Extract the metric value
+                    if metric == 'high_low':
+                        value = feat['high_low_ratio']
+                    elif metric == 'e_high':
+                        value = feat['band_energies']['high']
+                    elif metric == 'psd_slope':
+                        value = feat['psd_slope']
+                    elif metric == 'anisotropy':
+                        value = feat['anisotropy_index']
+                    elif metric == 'entropy':
+                        value = feat['spectral_entropy']
+                    elif metric == 'centroid':
+                        value = feat['frequency_centroid']
 
-                results.append({
-                    'path': img_path,
-                    'value': value,
-                    'features': feat
-                })
+                    results.append({
+                        'path': img_path,
+                        'value': value,
+                        'features': feat,
+                        'from_cache': False
+                    })
 
         # Sort by metric value
         results.sort(key=lambda x: x['value'])
 
-        # Get extremes
-        lowest = results[:n_extremes]
-        highest = results[-n_extremes:][::-1]  # Reverse to show highest first
+        # Add base image name to each result for unique filtering
+        for r in results:
+            r['base_name'] = get_base_image_name(r['path'].name)
 
-        print(f"\n{metric_names[metric]} - Extremes:")
+        # Filter to unique base images (keep first occurrence = most extreme for that base)
+        # For LOWEST: iterate from start (lowest values first)
+        seen_bases_low = set()
+        unique_lowest = []
+        for r in results:
+            if r['base_name'] not in seen_bases_low:
+                seen_bases_low.add(r['base_name'])
+                unique_lowest.append(r)
+                if len(unique_lowest) >= n_extremes:
+                    break
+
+        # For HIGHEST: iterate from end (highest values first)
+        seen_bases_high = set()
+        unique_highest = []
+        for r in reversed(results):
+            if r['base_name'] not in seen_bases_high:
+                seen_bases_high.add(r['base_name'])
+                unique_highest.append(r)
+                if len(unique_highest) >= n_extremes:
+                    break
+
+        lowest = unique_lowest
+        highest = unique_highest  # Already in descending order
+
+        print(f"\n{metric_names[metric]} - Extremes (unique base images):")
         low_vals_str = [f"{r['value']:.3f}" for r in lowest]
         high_vals_str = [f"{r['value']:.3f}" for r in highest]
         print(f"  LOWEST:  {low_vals_str}")
         print(f"  HIGHEST: {high_vals_str}")
+        print(f"  (filtered from {len(results)} total to {len(set(r['base_name'] for r in results))} unique base images)")
 
         # === Create visualization ===
-        fig = plt.figure(figsize=(6 * n_extremes, 16))
-        gs = GridSpec(4, n_extremes, figure=fig, hspace=0.4, wspace=0.25,
+        # Use at least 2 columns for FFT comparison row
+        n_cols = max(2, n_extremes)
+        fig = plt.figure(figsize=(6 * n_cols, 16))
+        gs = GridSpec(4, n_cols, figure=fig, hspace=0.4, wspace=0.25,
                      height_ratios=[1, 1, 0.8, 0.5])
 
         # Colors
         color_low = '#3498db'   # Blue for low values
         color_high = '#e74c3c'  # Red for high values
 
-        # Row 1: Lowest N images
+        # Row 1: Lowest N images (centered if n_extremes < n_cols)
+        offset = (n_cols - n_extremes) // 2
         for i, res in enumerate(lowest):
-            ax = fig.add_subplot(gs[0, i])
+            ax = fig.add_subplot(gs[0, offset + i])
             img = cv2.imread(str(res['path']))
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             ax.imshow(img_rgb)
@@ -691,9 +1161,9 @@ class FourierVisualizer:
             ax.text(0.5, -0.05, res['path'].stem[:25], transform=ax.transAxes,
                    ha='center', fontsize=8, color='gray')
 
-        # Row 2: Highest N images
+        # Row 2: Highest N images (centered if n_extremes < n_cols)
         for i, res in enumerate(highest):
-            ax = fig.add_subplot(gs[1, i])
+            ax = fig.add_subplot(gs[1, offset + i])
             img = cv2.imread(str(res['path']))
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             ax.imshow(img_rgb)
@@ -704,16 +1174,35 @@ class FourierVisualizer:
                    ha='center', fontsize=8, color='gray')
 
         # Row 3: FFT magnitude comparison (first from each group)
-        ax_fft_low = fig.add_subplot(gs[2, :n_extremes//2 + n_extremes%2])
-        ax_fft_low.imshow(lowest[0]['features']['magnitude_log'], cmap='inferno')
-        ax_fft_low.set_title(f"FFT Magnitude - LOWEST ({metric_names[metric]}={lowest[0]['value']:.3f})",
-                            fontweight='bold', color=color_low)
+        # If using cache, we need to compute FFT for display
+        if lowest[0].get('from_cache', False):
+            # Compute FFT for lowest image
+            img_low = cv2.imread(str(lowest[0]['path']))
+            fft_low = self.compute_fft(img_low)
+            mag_log_low = fft_low['magnitude_log']
+        else:
+            mag_log_low = lowest[0]['features']['magnitude_log']
+
+        if highest[0].get('from_cache', False):
+            # Compute FFT for highest image
+            img_high = cv2.imread(str(highest[0]['path']))
+            fft_high = self.compute_fft(img_high)
+            mag_log_high = fft_high['magnitude_log']
+        else:
+            mag_log_high = highest[0]['features']['magnitude_log']
+
+        # Split FFT row into two halves
+        half = n_cols // 2
+        ax_fft_low = fig.add_subplot(gs[2, :half])
+        ax_fft_low.imshow(mag_log_low, cmap='inferno')
+        ax_fft_low.set_title(f"FFT - LOW ({lowest[0]['value']:.2f})",
+                            fontweight='bold', color=color_low, fontsize=12)
         ax_fft_low.axis('off')
 
-        ax_fft_high = fig.add_subplot(gs[2, n_extremes//2 + n_extremes%2:])
-        ax_fft_high.imshow(highest[0]['features']['magnitude_log'], cmap='inferno')
-        ax_fft_high.set_title(f"FFT Magnitude - HIGHEST ({metric_names[metric]}={highest[0]['value']:.3f})",
-                             fontweight='bold', color=color_high)
+        ax_fft_high = fig.add_subplot(gs[2, half:])
+        ax_fft_high.imshow(mag_log_high, cmap='inferno')
+        ax_fft_high.set_title(f"FFT - HIGH ({highest[0]['value']:.2f})",
+                             fontweight='bold', color=color_high, fontsize=12)
         ax_fft_high.axis('off')
 
         # Row 4: Statistics comparison bar chart
@@ -734,8 +1223,11 @@ class FourierVisualizer:
                 low_vals.append(np.mean([r['features']['band_energies']['high'] for r in lowest]))
                 high_vals.append(np.mean([r['features']['band_energies']['high'] for r in highest]))
             elif m == 'psd_slope':
-                low_vals.append(np.mean([abs(r['features']['psd_slope']) for r in lowest]))
-                high_vals.append(np.mean([abs(r['features']['psd_slope']) for r in highest]))
+                # Handle None values from cache (psd_slope not available in cache)
+                low_slopes = [abs(r['features']['psd_slope']) for r in lowest if r['features'].get('psd_slope') is not None]
+                high_slopes = [abs(r['features']['psd_slope']) for r in highest if r['features'].get('psd_slope') is not None]
+                low_vals.append(np.mean(low_slopes) if low_slopes else 0.0)
+                high_vals.append(np.mean(high_slopes) if high_slopes else 0.0)
             elif m == 'anisotropy':
                 low_vals.append(np.mean([r['features']['anisotropy_index'] for r in lowest]))
                 high_vals.append(np.mean([r['features']['anisotropy_index'] for r in highest]))
@@ -766,7 +1258,7 @@ class FourierVisualizer:
 
         # Main title
         plt.suptitle(f'Dataset Diversity Analysis: {metric_names[metric]} Extremes\n'
-                    f'(N={n_extremes} from each end, sampled {len(sample)} images)',
+                    f'(N={n_extremes} from each end, analyzed {len(results)} images)',
                     fontsize=16, fontweight='bold', y=0.98)
 
         # Save
@@ -787,8 +1279,64 @@ class FourierVisualizer:
             str(detail_path),
             label1=f"HIGH {metric_names[metric]} ({highest[0]['value']:.2f})",
             label2=f"LOW {metric_names[metric]} ({lowest[0]['value']:.2f})",
-            show=show
+            show=show,
+            save_json=save_json
         )
+
+        # Save comprehensive manifest JSON
+        if save_json:
+            import statistics
+
+            all_values = [r['value'] for r in results]
+            manifest = {
+                'version': METADATA_VERSION,
+                'generated_at': datetime.now().isoformat(),
+                'analysis_type': 'extremes',
+                'parameters': {
+                    'metric': metric,
+                    'metric_display_name': metric_names[metric],
+                    'n_extremes': n_extremes,
+                    'sample_size': len(results),
+                    'total_images_in_dir': len(all_images)
+                },
+                'statistics': {
+                    'min': float(min(all_values)),
+                    'max': float(max(all_values)),
+                    'mean': float(statistics.mean(all_values)),
+                    'std': float(statistics.stdev(all_values)) if len(all_values) > 1 else 0,
+                    'median': float(statistics.median(all_values)),
+                    'cv_percent': float(statistics.stdev(all_values) / abs(statistics.mean(all_values)) * 100)
+                                  if len(all_values) > 1 and statistics.mean(all_values) != 0 else 0
+                },
+                'lowest': [
+                    {
+                        'rank': i + 1,
+                        'filename': res['path'].name,
+                        'value': float(res['value']),
+                        'all_metrics': self.features_to_metadata(res['features'], res['path'])
+                    }
+                    for i, res in enumerate(lowest)
+                ],
+                'highest': [
+                    {
+                        'rank': i + 1,
+                        'filename': res['path'].name,
+                        'value': float(res['value']),
+                        'all_metrics': self.features_to_metadata(res['features'], res['path'])
+                    }
+                    for i, res in enumerate(highest)
+                ],
+                'output_files': [
+                    f"extremes_{metric}_n{n_extremes}.png",
+                    f"extremes_{metric}_detailed_comparison.png",
+                    f"extremes_{metric}_manifest.json"
+                ]
+            }
+
+            manifest_path = output_dir / f"extremes_{metric}_manifest.json"
+            with open(manifest_path, 'w', encoding='utf-8') as f:
+                json.dump(manifest, f, indent=2, ensure_ascii=False)
+            print(f"Saved manifest: {manifest_path}")
 
         return {
             'lowest': lowest,
@@ -925,6 +1473,17 @@ Examples:
                         help='Metric to use for extremes analysis (default: high_low)')
     extremes_group.add_argument('--sample_size', type=int, default=200,
                         help='Number of images to sample for extremes analysis (default: 200)')
+    extremes_group.add_argument('--all', action='store_true',
+                        help='Process ALL images instead of sampling (can be slow without --cache)')
+    extremes_group.add_argument('--cache', type=str, default=None, metavar='PATH',
+                        help='Path to fourier_features.pkl cache file for fast analysis. '
+                             'Default: AdvancedDatasetSelection/output/feature_cache/fourier_features.pkl')
+
+    # Gallery mode - N random images with FFT spectra
+    gallery_group = parser.add_argument_group('Gallery Mode (--gallery)')
+    gallery_group.add_argument('--gallery', type=int, default=None, metavar='N',
+                        help='Show N random unique images with their FFT spectra. '
+                             'Displays original image, FFT magnitude, and band energies.')
 
     # Output options
     output_group = parser.add_argument_group('Output Options')
@@ -933,8 +1492,11 @@ Examples:
                         help='Output directory for visualizations')
     output_group.add_argument('--show', action='store_true',
                         help='Show plots interactively (default: save only)')
+    output_group.add_argument('--no-json', action='store_true', dest='no_json',
+                        help='Disable JSON metadata generation (default: JSON enabled)')
 
     args = parser.parse_args()
+    save_json = not args.no_json
 
     # Set random seed if provided
     if args.seed is not None:
@@ -990,16 +1552,55 @@ Examples:
             str(output_path),
             label1=args.labels[0],
             label2=args.labels[1],
-            show=args.show
+            show=args.show,
+            save_json=save_json
         )
 
         print(f"\n=== Done! Comparison saved to: {output_path} ===")
         return
 
-    # === MODE 2: Extremes analysis ===
+    # === MODE 2: Gallery of N random images with FFT ===
+    if args.gallery:
+        print(f"\n=== Gallery Mode ===")
+        print(f"Showing {args.gallery} random unique images with FFT spectra")
+
+        visualizer.visualize_gallery(
+            images_dir=args.images_dir,
+            output_dir=output_dir,
+            n_images=args.gallery,
+            show=args.show,
+            save_json=save_json,
+            random_select=True,
+            seed=args.seed
+        )
+
+        print(f"\n=== Done! Gallery saved to: {output_dir} ===")
+        return
+
+    # === MODE 3: Extremes analysis ===
     if args.extremes:
         print("\n=== Extremes Analysis Mode ===")
         print(f"Finding {args.extremes} images with LOWEST and HIGHEST {args.metric}")
+
+        # Load cache if specified
+        cache_data = None
+        if args.cache:
+            cache_path = Path(args.cache)
+            if cache_path.exists():
+                cache_data = load_fourier_cache(cache_path)
+                if cache_data is None:
+                    print("WARNING: Failed to load cache, falling back to compute mode")
+            else:
+                print(f"WARNING: Cache file not found: {cache_path}")
+                print("Falling back to compute mode")
+        elif args.all:
+            # Check if default cache exists when --all is used without --cache
+            if DEFAULT_CACHE_PATH.exists():
+                print(f"Using default cache: {DEFAULT_CACHE_PATH}")
+                cache_data = load_fourier_cache(DEFAULT_CACHE_PATH)
+            else:
+                print("WARNING: --all specified without --cache and no default cache found")
+                print("This may be very slow! Consider using --cache option.")
 
         visualizer.visualize_extremes(
             images_dir=args.images_dir,
@@ -1007,7 +1608,10 @@ Examples:
             n_extremes=args.extremes,
             metric=args.metric,
             sample_size=args.sample_size,
-            show=args.show
+            show=args.show,
+            save_json=save_json,
+            cache_data=cache_data,
+            use_all=args.all
         )
 
         print(f"\n=== Done! Extremes analysis saved to: {output_dir} ===")
@@ -1063,7 +1667,8 @@ Examples:
     print("\n=== Generating individual Fourier visualizations ===")
     for img_path in tqdm(image_files, desc="Processing"):
         output_path = output_dir / f"{img_path.stem}_fourier_analysis.png"
-        visualizer.visualize_single_image(str(img_path), str(output_path), show=args.show)
+        visualizer.visualize_single_image(str(img_path), str(output_path),
+                                          show=args.show, save_json=save_json)
 
     # Generate comparison
     print("\n=== Generating comparison grid ===")

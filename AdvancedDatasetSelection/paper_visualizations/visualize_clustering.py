@@ -169,6 +169,12 @@ class ClusteringVisualizer:
         scaler = StandardScaler()
         features_norm = scaler.fit_transform(features)
 
+        # Ensure n_clusters doesn't exceed n_samples
+        n_samples = len(features)
+        if n_clusters > n_samples:
+            print(f"Warning: n_clusters ({n_clusters}) > n_samples ({n_samples}). Reducing to {n_samples}.")
+            n_clusters = n_samples
+
         # Use MiniBatchKMeans for large datasets
         if len(features) > 1000:
             kmeans = MiniBatchKMeans(n_clusters=n_clusters, random_state=42, batch_size=256)
@@ -191,14 +197,32 @@ class ClusteringVisualizer:
         """Compute t-SNE embedding."""
         print("Computing t-SNE embedding...")
 
+        n_samples = len(features)
+
+        # t-SNE requires n_samples > perplexity * 3 and perplexity > 0
+        if n_samples < 4:
+            print(f"Warning: Too few samples ({n_samples}) for t-SNE. Need at least 4.")
+            # Return simple 2D projection for very small datasets
+            if features.shape[1] >= 2:
+                return features[:, :2]
+            else:
+                return np.column_stack([features[:, 0], np.zeros(n_samples)])
+
+        # Calculate safe perplexity: must be < n_samples and ideally n_samples > 3*perplexity
+        max_perplexity = max(1, (n_samples - 1) // 3)
+        safe_perplexity = min(perplexity, max_perplexity, n_samples - 1)
+        safe_perplexity = max(1, safe_perplexity)  # Ensure at least 1
+
+        print(f"Using perplexity={safe_perplexity} for {n_samples} samples")
+
         # Use PCA first if high-dimensional
         if features.shape[1] > 50:
-            pca = PCA(n_components=50)
+            pca = PCA(n_components=min(50, n_samples - 1))
             features_pca = pca.fit_transform(features)
         else:
             features_pca = features
 
-        tsne = TSNE(n_components=2, perplexity=min(perplexity, len(features) - 1),
+        tsne = TSNE(n_components=2, perplexity=safe_perplexity,
                    n_iter=n_iter, random_state=42, init='pca')
         embedding = tsne.fit_transform(features_pca)
 
