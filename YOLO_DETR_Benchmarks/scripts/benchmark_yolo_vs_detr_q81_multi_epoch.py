@@ -23,9 +23,15 @@ import sys
 import json
 import time
 import random
+import warnings
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
+
+# Suppress PyTorch meta-parameter warnings (harmless during checkpoint loading)
+warnings.filterwarnings("ignore", message=".*copying from a non-meta parameter.*")
+warnings.filterwarnings("ignore", message=".*pass `assign=True`.*")
+
 import torch
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -70,30 +76,44 @@ BASE_PATH = Path("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker")
 # Dostępne: 70, 100, 120, 140, 160, 170
 YOLO_CHECKPOINTS = {
     70: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch70.pt",
-    # 100: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch100.pt",
-    # 120: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch120.pt",
-    # 140: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch140.pt",
-    # 160: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch160.pt",
-    # 170: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch170.pt",
+    100: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch100.pt",
+    120: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch120.pt",
+    170: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch170.pt",
 }
 
 # DETR Checkpoints - ZMIEŃ TUTAJ KTÓRE EPOKI DETR CHCESZ TESTOWAĆ
-# Dostępne: 100, 120, 140, 160, 170
+# Dostępne: 40, 60, 80, 100, 120, 140, 160, 170
 DETR_CHECKPOINTS = {
-    # 100: BASE_PATH / "Eden/Checkpoints/DETR/checkpoint_epoch_100.pth",
-    # 120: BASE_PATH / "Eden/Checkpoints/DETR/checkpoint_epoch_120.pth",
-    # 140: BASE_PATH / "Eden/Checkpoints/DETR/checkpoint_epoch_140.pth",
-    # 160: BASE_PATH / "Eden/Checkpoints/DETR/checkpoint_epoch_160.pth",
-    170: BASE_PATH / "Eden/Checkpoints/DETR/checkpoint_epoch_170.pth",
+    100: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_100.pth",
+    140: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_140.pth",
+    160: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_160.pth",
+    170: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_170.pth",
 }
 
 # =============================================================================
 # >>> KONIEC SEKCJI KONFIGURACJI EPOK <<<
 # =============================================================================
 
-# Dataset - all splits combined
-DATASET_ROOT = Path("E:/cataract_surgery_Instruments_detection.v1i.coco")
-ALL_SPLITS = ["train", "valid", "test"]
+# =============================================================================
+# >>> TUTAJ MOŻNA ZMIENIĆ DATASET <<<
+# =============================================================================
+
+# OPCJA 1: Original Training Dataset (same-distribution test)
+# - Ten sam dataset co trening, testuje accuracy na znanej dystrybucji
+DATASET_ROOT = Path("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/TestDatasetGenerator/output")
+ANNOTATION_FILE = DATASET_ROOT / "annotations_reviewed_1040_coco.json"  # Single annotation file
+IMAGES_DIR = DATASET_ROOT / "test_frames"  # Images directory
+ALL_SPLITS = ["original_test"]  # Single split name for reporting
+
+# OPCJA 2: External Roboflow Dataset (cross-dataset test) - zakomentowane
+# DATASET_ROOT = Path("E:/cataract_surgery_Instruments_detection.v1i.coco")
+# ANNOTATION_FILE = None  # Use per-split annotation files
+# IMAGES_DIR = None  # Use split directories
+# ALL_SPLITS = ["train", "valid", "test"]
+
+# =============================================================================
+# >>> KONIEC SEKCJI KONFIGURACJI DATASETU <<<
+# =============================================================================
 
 # Output
 OUTPUT_DIR = BASE_PATH / "YOLO_DETR_Benchmarks/Benchmarks"
@@ -181,13 +201,24 @@ def load_yolo_model(checkpoint_path):
 def load_detr_model(checkpoint_path):
     """Load DETR model from checkpoint"""
     print(f"  Loading DETR from {checkpoint_path.name}...")
+
+    # Suppress HuggingFace loading messages temporarily
+    import logging
+    logging.getLogger("transformers.modeling_utils").setLevel(logging.ERROR)
+
     model = DetrForObjectDetection.from_pretrained(
         "facebook/detr-resnet-50",
         num_labels=1,
         ignore_mismatched_sizes=True
     )
     checkpoint = torch.load(str(checkpoint_path), map_location=DEVICE)
-    model.load_state_dict(checkpoint['model_state_dict'])
+
+    # Use strict=False to ignore extra keys like num_batches_tracked (harmless BatchNorm stats)
+    model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+
+    # Restore logging level
+    logging.getLogger("transformers.modeling_utils").setLevel(logging.WARNING)
+
     model.to(DEVICE)
     model.eval()
     return model
@@ -197,27 +228,57 @@ def load_detr_model(checkpoint_path):
 # =============================================================================
 
 def load_all_images():
-    """Load images from all splits combined"""
-    print(f"\nLoading images from all splits: {ALL_SPLITS}...")
+    """Load images from configured directory
+
+    Supports two modes:
+    1. Single images directory (IMAGES_DIR is set) - for original training dataset
+    2. Per-split directories - for Roboflow dataset
+    """
+    print(f"\nLoading images...")
     image_files = []
 
-    for split in ALL_SPLITS:
-        split_dir = DATASET_ROOT / split
-        if split_dir.exists():
-            split_images = sorted(list(split_dir.glob("*.jpg")) + list(split_dir.glob("*.png")))
-            image_files.extend(split_images)
-            print(f"  {split}: {len(split_images)} images")
-        else:
-            print(f"  {split}: NOT FOUND")
+    if IMAGES_DIR is not None and IMAGES_DIR.exists():
+        # Mode 1: Single images directory
+        split_images = sorted(list(IMAGES_DIR.glob("*.jpg")) + list(IMAGES_DIR.glob("*.png")))
+        image_files.extend(split_images)
+        print(f"  {IMAGES_DIR.name}: {len(split_images)} images")
+    else:
+        # Mode 2: Per-split directories
+        for split in ALL_SPLITS:
+            split_dir = DATASET_ROOT / split
+            if split_dir.exists():
+                split_images = sorted(list(split_dir.glob("*.jpg")) + list(split_dir.glob("*.png")))
+                image_files.extend(split_images)
+                print(f"  {split}: {len(split_images)} images")
+            else:
+                print(f"  {split}: NOT FOUND")
 
     print(f"  TOTAL: {len(image_files)} images")
     return image_files
 
 def prepare_coco_annotations(split_name):
-    """Load and normalize COCO annotations (map all categories to id=1)"""
-    ann_path = DATASET_ROOT / split_name / "_annotations.coco.json"
+    """Load and normalize COCO annotations (map all categories to id=1)
+
+    Supports two modes:
+    1. Single annotation file (ANNOTATION_FILE is set) - for original training dataset
+    2. Per-split annotation files (_annotations.coco.json in each split dir) - for Roboflow
+    """
+    # Determine annotation path and images directory
+    if ANNOTATION_FILE is not None and ANNOTATION_FILE.exists():
+        # Mode 1: Single annotation file (original training dataset)
+        ann_path = ANNOTATION_FILE
+        images_dir = IMAGES_DIR
+    else:
+        # Mode 2: Per-split annotation files (Roboflow dataset)
+        ann_path = DATASET_ROOT / split_name / "_annotations.coco.json"
+        images_dir = DATASET_ROOT / split_name
 
     if not ann_path.exists():
+        print(f"  WARNING: Annotation file not found: {ann_path}")
+        return None, None
+
+    if not images_dir.exists():
+        print(f"  WARNING: Images directory not found: {images_dir}")
         return None, None
 
     with open(ann_path) as f:
@@ -233,7 +294,6 @@ def prepare_coco_annotations(split_name):
         json.dump(coco_data, f)
 
     coco = COCO(str(temp_ann_path))
-    images_dir = DATASET_ROOT / split_name
 
     return coco, images_dir
 
@@ -599,6 +659,38 @@ def evaluate_predictions(coco, predictions, model_name, split_name):
     return metrics
 
 # =============================================================================
+# AGGREGATION FUNCTIONS
+# =============================================================================
+
+def aggregate_model_results(model_data):
+    """Aggregate results across all splits (train+valid+test) for a model"""
+    total_tp = 0
+    total_fp = 0
+    total_fn = 0
+    total_images = 0
+
+    for split_name, split_data in model_data.get("splits", {}).items():
+        metrics = split_data.get("metrics", {})
+        total_tp += metrics.get("true_positives", 0)
+        total_fp += metrics.get("false_positives", 0)
+        total_fn += metrics.get("false_negatives", 0)
+        total_images += split_data.get("num_predictions", 0) // max(1, metrics.get("true_positives", 0) + metrics.get("false_positives", 0))
+
+    # Calculate aggregated metrics
+    precision = (total_tp / (total_tp + total_fp) * 100) if (total_tp + total_fp) > 0 else 0
+    recall = (total_tp / (total_tp + total_fn) * 100) if (total_tp + total_fn) > 0 else 0
+    f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0
+
+    return {
+        "total_tp": total_tp,
+        "total_fp": total_fp,
+        "total_fn": total_fn,
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1
+    }
+
+# =============================================================================
 # REPORT GENERATION
 # =============================================================================
 
@@ -633,6 +725,45 @@ def generate_report(results):
             report += f"{m['mAP@0.5']:.2f}% | {m['mAP@0.5:0.95']:.2f}% | {m['AR@100']:.2f}% | "
             report += f"{m['true_positives']} | {m['false_positives']} | {m['false_negatives']} | "
             report += f"{m['precision']:.1f}% | {m['recall']:.1f}% |\n"
+
+    # AGGREGATED RESULTS TABLE (train + valid + test combined)
+    report += f"""
+---
+
+## AGGREGATED Results (train + valid + test combined)
+
+This is the most important table - shows model performance across ALL data splits.
+
+| Model | Epoch | Total TP | Total FP | Total FN | Precision | Recall | F1-Score |
+|-------|-------|----------|----------|----------|-----------|--------|----------|
+"""
+
+    for model_name, model_data in sorted_models:
+        agg = aggregate_model_results(model_data)
+        report += f"| {model_data.get('type', 'N/A')} | {model_data.get('epoch', 'N/A')} | "
+        report += f"{agg['total_tp']} | {agg['total_fp']} | {agg['total_fn']} | "
+        report += f"{agg['precision']:.1f}% | {agg['recall']:.1f}% | {agg['f1_score']:.1f}% |\n"
+
+    # Add per-split breakdown
+    report += f"""
+---
+
+## Per-Split Breakdown
+
+"""
+
+    for model_name, model_data in sorted_models:
+        report += f"### {model_data.get('type', 'N/A')} Epoch {model_data.get('epoch', 'N/A')}\n\n"
+        report += "| Split | TP | FP | FN | Precision | Recall |\n"
+        report += "|-------|----|----|----|-----------| -------|\n"
+        for split_name in ["train", "valid", "test"]:
+            if split_name in model_data.get("splits", {}):
+                m = model_data["splits"][split_name]["metrics"]
+                report += f"| {split_name} | {m['true_positives']} | {m['false_positives']} | {m['false_negatives']} | "
+                report += f"{m['precision']:.1f}% | {m['recall']:.1f}% |\n"
+        agg = aggregate_model_results(model_data)
+        report += f"| **TOTAL** | **{agg['total_tp']}** | **{agg['total_fp']}** | **{agg['total_fn']}** | "
+        report += f"**{agg['precision']:.1f}%** | **{agg['recall']:.1f}%** |\n\n"
 
     report += f"""
 ---
@@ -874,10 +1005,16 @@ def main():
     print("SAVING RESULTS")
     print(f"{'='*60}")
 
-    # Save raw results
+    # Add aggregated results to each model
+    results_with_aggregated = {}
+    for model_name, model_data in results.items():
+        results_with_aggregated[model_name] = dict(model_data)
+        results_with_aggregated[model_name]["aggregated"] = aggregate_model_results(model_data)
+
+    # Save raw results with aggregation
     results_file = BENCHMARK_DIR / "results_summary.json"
     with open(results_file, 'w') as f:
-        json.dump(dict(results), f, indent=2, default=str)
+        json.dump(results_with_aggregated, f, indent=2, default=str)
     print(f"  Results: {results_file}")
 
     # Generate and save report
