@@ -1,19 +1,19 @@
 #!/bin/bash
 #SBATCH -A transformers_vsc
-#SBATCH -p experimental
-#SBATCH --gres=gpu:4
+#SBATCH -p long
+#SBATCH --nodelist=dgx-2
+#SBATCH --gres=gpu:3
 #SBATCH --mem=250G
 #SBATCH --time=5-00:00:00
-#SBATCH --job-name=detr_20k_finetune
+#SBATCH --job-name=detr_20k_finetune_dgx2
 #SBATCH --chdir=/mnt/evafs/faculty/home/bpiotrowski/DETR
-#SBATCH --output=logs/detr_20k_finetune_%j.log
-#SBATCH --error=logs/detr_20k_finetune_%j.log
+#SBATCH --output=logs/detr_20k_finetune_dgx2_%j.log
+#SBATCH --error=logs/detr_20k_finetune_dgx2_%j.log
 #SBATCH --open-mode=append
 
 set -euo pipefail
 echo '============================================================'
-echo '  DETR FINE-TUNING ON 20K SELECTED DATASET'
-echo '  Resume from checkpoint_epoch_170.pth'
+echo '  DETR FINE-TUNING ON 20K SELECTED DATASET (DGX-2)'
 echo '============================================================'
 echo "Job ID: $SLURM_JOB_ID"
 echo "Start Time: $(date)"
@@ -80,12 +80,22 @@ if [[ "$IMAGE_COUNT" -lt 1000 ]]; then
 fi
 
 # === DDP CONFIGURATION ===
-export WORLD_SIZE=4
 export MASTER_ADDR=localhost
-export MASTER_PORT=29501
+export MASTER_PORT=$((29500 + (SLURM_JOB_ID % 1000)))
 export OMP_NUM_THREADS=1
 export CUDA_LAUNCH_BLOCKING=0
-export NCCL_DEBUG=WARN
+
+# === NCCL SETTINGS ===
+export NCCL_DEBUG=INFO
+export NCCL_DEBUG_SUBSYS=COLL,NET
+export NCCL_TIMEOUT=1800
+export NCCL_ASYNC_ERROR_HANDLING=1
+export TORCH_NCCL_BLOCKING_WAIT=1
+export NCCL_IB_DISABLE=0
+export NCCL_P2P_DISABLE=0
+export TORCH_DISTRIBUTED_DEBUG=DETAIL
+export NCCL_SOCKET_NTHREADS=4
+export NCCL_NSOCKS_PERTHREAD=4
 
 # === CHECKPOINT CONFIGURATION ===
 ARCHIVE_DIR=/mnt/evafs/faculty/home/bpiotrowski/DETR/Checkpoints
@@ -93,7 +103,7 @@ CHECKPOINT_DIR=./ckpt_20k_finetune
 OUTPUT_DIR=./train_out_20k_finetune
 BEST_MODEL_DIR=./best_20k_finetune
 
-mkdir -p "$ARCHIVE_DIR"
+mkdir -p "$ARCHIVE_DIR/20k_finetune"
 mkdir -p "$CHECKPOINT_DIR"
 mkdir -p "$OUTPUT_DIR"
 mkdir -p "$BEST_MODEL_DIR"
@@ -101,32 +111,18 @@ mkdir -p logs
 
 echo ""
 echo "=== CHECKPOINT CONFIGURATION ==="
-echo "  Archive checkpoints: $ARCHIVE_DIR"
+echo "  Archive checkpoints: $ARCHIVE_DIR/20k_finetune"
 echo "  Working checkpoints: $CHECKPOINT_DIR"
-echo "  Resume from: checkpoint_epoch_170.pth"
-
-# Copy checkpoint from archive if not in working dir
-if [[ ! -f "$CHECKPOINT_DIR/checkpoint_epoch_170.pth" ]]; then
-    if [[ -f "$ARCHIVE_DIR/checkpoint_epoch_170.pth" ]]; then
-        echo "Copying checkpoint_epoch_170.pth from archive..."
-        rsync -av "$ARCHIVE_DIR/checkpoint_epoch_170.pth" "$CHECKPOINT_DIR/"
-    else
-        echo "WARNING: checkpoint_epoch_170.pth not found in archive!"
-        echo "Training will start from pretrained facebook/detr-resnet-50"
-    fi
-fi
 
 # === CHECKPOINT SYNC FUNCTIONS ===
 sync_checkpoints() {
     echo "[$(date)] Syncing checkpoints to archive..."
-    rsync -av --update "$CHECKPOINT_DIR/" "$ARCHIVE_DIR/20k_finetune/" 2>&1 | grep -E "(checkpoint|sent|total)" || true
+    rsync -av --update "$CHECKPOINT_DIR/" "$ARCHIVE_DIR/20k_finetune/" 2>&1 | grep -E "(checkpoint|final_checkpoint|sent|total)" || true
     echo "[$(date)] Sync completed"
 }
 
-# Trap for final sync
 trap 'echo "EXIT trap triggered"; sync_checkpoints' EXIT INT TERM
 
-# Background sync every 10 minutes
 (
     while true; do
         sleep 600
@@ -136,27 +132,23 @@ trap 'echo "EXIT trap triggered"; sync_checkpoints' EXIT INT TERM
 SYNC_PID=$!
 echo "Background checkpoint sync started (PID: $SYNC_PID)"
 
-# === TRAINING CONFIGURATION ===
 echo ""
 echo "=== TRAINING CONFIGURATION ==="
-echo "  GPUs: 4x P100 (16GB each)"
-echo "  Epochs: 300 (fine-tuning on smaller dataset)"
+echo "  GPUs: 3x A100"
+echo "  Epochs: 300"
 echo "  Batch size per GPU: 4"
-echo "  Effective batch: 16 (4 GPU x 4)"
-echo "  Learning rate: 5e-5 (reduced for fine-tuning)"
-echo "  Backbone LR: 5e-6"
-echo "  LR Scheduler: Cosine Annealing (min_lr=1e-7)"
-echo "  Mixed Precision: DISABLED (checkpoint compatibility)"
-echo "  Dataset: 20k selected images"
+echo "  Effective batch: 12 (3 GPU x 4)"
+echo "  Mixed Precision: DISABLED (stability)"
 echo ""
 
-# === START TRAINING ===
 cd /mnt/evafs/faculty/home/bpiotrowski/DETR
 
 torchrun \
-    --nproc_per_node=4 \
-    --master_addr=localhost \
-    --master_port=29501 \
+    --nproc_per_node=3 \
+    --master_addr="$MASTER_ADDR" \
+    --master_port="$MASTER_PORT" \
+    --rdzv_backend=c10d \
+    --rdzv_endpoint="$MASTER_ADDR:$MASTER_PORT" \
     detr_train_optimized.py \
     --images_dir "$IMAGES_DIR" \
     --annotations_path "$ANNOT_JSON" \
@@ -168,7 +160,7 @@ torchrun \
     --num_workers 4 \
     --num_queries 100 \
     --save_interval 5 \
-    --patience 20 \
+    --patience 30 \
     --augment \
     --model_checkpoint facebook/detr-resnet-50 \
     --lr 5e-5 \
@@ -185,26 +177,14 @@ echo ""
 echo "=== TRAINING FINISHED ==="
 echo "Exit code: $TRAIN_EXIT_CODE"
 
-# Stop background sync
 kill $SYNC_PID 2>/dev/null || true
 wait $SYNC_PID 2>/dev/null || true
 
-# Final sync
 echo "Performing final checkpoint sync..."
 sync_checkpoints
-
-# Copy best model to permanent location
-if [[ -d "$BEST_MODEL_DIR" ]] && [[ -n "$(ls -A $BEST_MODEL_DIR 2>/dev/null)" ]]; then
-    echo "Copying best model to archive..."
-    rsync -av "$BEST_MODEL_DIR/" "$ARCHIVE_DIR/best_20k_finetune/"
-fi
 
 echo ""
 echo "============================================================"
 echo "  JOB COMPLETED"
 echo "  Finished at: $(date)"
 echo "  Checkpoints archived to: $ARCHIVE_DIR/20k_finetune/"
-echo "  Best model at: $ARCHIVE_DIR/best_20k_finetune/"
-echo "============================================================"
-
-exit $TRAIN_EXIT_CODE

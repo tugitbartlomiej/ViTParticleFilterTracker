@@ -175,6 +175,7 @@ def collate_fn(batch):
     if not batch:
         return None
 
+    training_status = "completed"
     try:
         # Pre-allocate tensory dla wydajności
         batch_size = len(batch)
@@ -202,6 +203,46 @@ def collate_fn(batch):
     except Exception as e:
         if dist.get_rank() == 0:
             print(f"Error during collate_fn: {e}")
+        return None
+
+# --- Padded Collate Function (DDP-safe) ---
+def collate_fn_padded(batch):
+    batch = [item for item in batch if item is not None]
+    if not batch:
+        return None
+
+    try:
+        batch_size = len(batch)
+
+        max_height = max(item["pixel_values"].shape[-2] for item in batch)
+        max_width = max(item["pixel_values"].shape[-1] for item in batch)
+
+        first_item = batch[0]
+        channels = first_item["pixel_values"].shape[0]
+
+        pixel_values = torch.zeros(
+            (batch_size, channels, max_height, max_width),
+            dtype=first_item["pixel_values"].dtype,
+        )
+        pixel_mask = torch.zeros(
+            (batch_size, max_height, max_width),
+            dtype=first_item["pixel_mask"].dtype,
+        )
+
+        labels = []
+        for i, item in enumerate(batch):
+            pv = item["pixel_values"]
+            pm = item["pixel_mask"]
+
+            height, width = pv.shape[-2], pv.shape[-1]
+            pixel_values[i, :, :height, :width] = pv
+            pixel_mask[i, :height, :width] = pm
+            labels.append(item["labels"])
+
+        return {"pixel_values": pixel_values, "pixel_mask": pixel_mask, "labels": labels}
+    except Exception as e:
+        if dist.is_initialized() and dist.get_rank() == 0:
+            print(f"Error during collate_fn_padded: {e}")
         return None
 
 # --- Checkpoint Helper Functions (modified for DDP) ---
@@ -385,7 +426,8 @@ def train(args):
             val_dataset,
             num_replicas=world_size,
             rank=rank,
-            shuffle=False
+            shuffle=False,
+            drop_last=True
         )
 
     # Create optimized data loaders
@@ -394,7 +436,7 @@ def train(args):
         batch_size=args.batch_size,
         sampler=train_sampler,
         num_workers=args.num_workers,
-        collate_fn=collate_fn,
+        collate_fn=collate_fn_padded,
         pin_memory=True,
         drop_last=True,  # Important for DDP
         persistent_workers=True if args.num_workers > 0 else False,  # Optymalizacja
@@ -408,10 +450,11 @@ def train(args):
             batch_size=args.batch_size,
             sampler=val_sampler,
             num_workers=args.num_workers,
-            collate_fn=collate_fn,
+            collate_fn=collate_fn_padded,
             pin_memory=True,
             persistent_workers=True if args.num_workers > 0 else False,
             prefetch_factor=2 if args.num_workers > 0 else None,
+            drop_last=True,
         )
 
     # Load model
@@ -522,7 +565,13 @@ def train(args):
             optimizer.zero_grad()
             
             for i, batch in enumerate(progress_bar):
-                if batch is None:
+                batch_is_none = batch is None
+                if dist.is_initialized():
+                    should_skip = torch.tensor([1 if batch_is_none else 0], device=device, dtype=torch.int32)
+                    dist.all_reduce(should_skip, op=dist.ReduceOp.MAX)
+                    if should_skip.item() == 1:
+                        continue
+                elif batch_is_none:
                     continue
 
                 # Move batch to device (optimized)
@@ -594,7 +643,13 @@ def train(args):
 
                 with torch.no_grad():
                     for i_val, batch_val in enumerate(progress_bar_val):
-                        if batch_val is None:
+                        batch_val_is_none = batch_val is None
+                        if dist.is_initialized():
+                            should_skip = torch.tensor([1 if batch_val_is_none else 0], device=device, dtype=torch.int32)
+                            dist.all_reduce(should_skip, op=dist.ReduceOp.MAX)
+                            if should_skip.item() == 1:
+                                continue
+                        elif batch_val_is_none:
                             continue
 
                         # Move batch to device (optimized)
@@ -661,8 +716,12 @@ def train(args):
                             break
 
     except KeyboardInterrupt:
+        training_status = "interrupted"
         if rank == 0:
             print("\nTraining interrupted by user.")
+    except Exception:
+        training_status = "failed"
+        raise
     finally:
         # Save final model (only on main process)
         if rank == 0:
@@ -689,7 +748,12 @@ def train(args):
         cleanup_ddp()
         
         if rank == 0:
-            print("Training completed!")
+            if training_status == "failed":
+                print("Training exited with error.")
+            elif training_status == "interrupted":
+                print("Training interrupted.")
+            else:
+                print("Training completed!")
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ import cv2
 from pathlib import Path
 from tqdm import tqdm
 import json
+import argparse
 from scipy import stats
 from scipy.stats import kurtosis, skew
 import random
@@ -19,6 +20,13 @@ import random
 TOOLTIP_DIR = Path(r"F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\AdvancedDatasetSelection\output\selected_dataset\images")
 BACKGROUND_TRAIN = Path(r"F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\BackgroundFinetuned\Datasets\Background\train")
 BACKGROUND_VAL = Path(r"F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\BackgroundFinetuned\Datasets\Background\val")
+
+
+def filter_images_by_filename_token(image_paths, token):
+    """Exclude images whose filename contains the given token (case-insensitive)."""
+    token_upper = token.upper()
+    filtered = [p for p in image_paths if token_upper not in p.name.upper()]
+    return filtered, len(image_paths) - len(filtered)
 
 
 def compute_advanced_fft_features(image):
@@ -220,25 +228,58 @@ def compute_auc(group1, group2):
         return 0.5
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Find Fourier features that discriminate tooltip vs background images.\n"
+            "By default, excludes augmented images whose filename contains 'AUG'."
+        )
+    )
+    parser.add_argument("--n_samples", type=int, default=200, help="Number of samples per class")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed for sampling")
+    parser.add_argument(
+        "--include_aug",
+        action="store_true",
+        help="Include augmented images (do NOT filter filenames containing the token)",
+    )
+    parser.add_argument(
+        "--aug_token",
+        type=str,
+        default="AUG",
+        help="Filename token marking augmented images (case-insensitive)",
+    )
+    return parser.parse_args()
+
+
 def main():
     print("=" * 60)
     print("Finding Discriminative Fourier Features")
     print("Tooltip vs Background Analysis")
     print("=" * 60)
 
+    args = parse_args()
+
     # Sample images
-    n_samples = 200  # Per class
+    n_samples = args.n_samples  # Per class
+    random.seed(args.seed)
 
     # Get tooltip images
-    tooltip_images = list(TOOLTIP_DIR.glob('*.jpg'))
-    random.seed(42)
+    tooltip_images = sorted(TOOLTIP_DIR.glob('*.jpg'))
+    if not args.include_aug:
+        tooltip_images, tooltip_excluded = filter_images_by_filename_token(tooltip_images, args.aug_token)
+        print(f"\nExcluded {tooltip_excluded} tooltip images containing '{args.aug_token}' in filename")
+
     tooltip_sample = random.sample(tooltip_images, min(n_samples, len(tooltip_images)))
     print(f"\nTooltip images: {len(tooltip_images)} total, sampling {len(tooltip_sample)}")
 
     # Get background images
-    bg_train = list(BACKGROUND_TRAIN.glob('*.jpg'))
-    bg_val = list(BACKGROUND_VAL.glob('*.jpg'))
+    bg_train = sorted(BACKGROUND_TRAIN.glob('*.jpg'))
+    bg_val = sorted(BACKGROUND_VAL.glob('*.jpg'))
     bg_images = bg_train + bg_val
+    if not args.include_aug:
+        bg_images, bg_excluded = filter_images_by_filename_token(bg_images, args.aug_token)
+        print(f"Excluded {bg_excluded} background images containing '{args.aug_token}' in filename")
+
     bg_sample = random.sample(bg_images, min(n_samples, len(bg_images)))
     print(f"Background images: {len(bg_images)} total, sampling {len(bg_sample)}")
 
@@ -258,6 +299,11 @@ def main():
         if img is not None:
             feat = compute_advanced_fft_features(img)
             bg_features.append(feat)
+
+    if not tooltip_features:
+        raise RuntimeError("No tooltip features computed (no readable images after filtering/sampling).")
+    if not bg_features:
+        raise RuntimeError("No background features computed (no readable images after filtering/sampling).")
 
     # Analyze discriminative power
     print("\n" + "=" * 60)

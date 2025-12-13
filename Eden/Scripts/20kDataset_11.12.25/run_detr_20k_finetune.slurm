@@ -1,7 +1,8 @@
 #!/bin/bash
 #SBATCH -A transformers_vsc
 #SBATCH -p experimental
-#SBATCH --gres=gpu:4
+#SBATCH --nodelist=dgx-2
+#SBATCH --gres=gpu:3
 #SBATCH --mem=250G
 #SBATCH --time=5-00:00:00
 #SBATCH --job-name=detr_20k_finetune
@@ -80,7 +81,7 @@ if [[ "$IMAGE_COUNT" -lt 1000 ]]; then
 fi
 
 # === DDP CONFIGURATION ===
-export WORLD_SIZE=4
+export WORLD_SIZE=3
 export MASTER_ADDR=localhost
 export MASTER_PORT=29501
 export OMP_NUM_THREADS=1
@@ -166,7 +167,7 @@ echo ""
 cd /mnt/evafs/faculty/home/bpiotrowski/DETR
 
 torchrun \
-    --nproc_per_node=4 \
+    --nproc_per_node=3 \
     --master_addr=localhost \
     --master_port=29501 \
     --rdzv_backend=c10d \

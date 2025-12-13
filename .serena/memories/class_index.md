@@ -1,8 +1,9 @@
-# Indeks Klas Projektu
+# Indeks Klas Projektu (Auto-generated)
 
-**Ostatnia aktualizacja:** 2025-12-12 20:25:00
-**Liczba klas:** 98
-**Liczba plików:** 78
+**Ostatnia aktualizacja:** 2025-12-13 01:30:00
+**Metoda skanowania:** Grep `^class \w+` + ręczna kategoryzacja
+**Liczba klas:** 107
+**Liczba plików przeskanowanych:** 50+
 
 ---
 
@@ -11,400 +12,422 @@
 ### AdvancedDatasetSelection/
 
 #### feature_extractors/
-- **dino_extractor.py:30**
+- **dino_extractor.py**
   - `DINOExtractor` - ekstrakcja cech DINO ViT
+    - `extract_cls_features()` - ekstrakcja CLS token
+    - `compute_features_batch()` - batch processing
+    - `compute_semantic_similarity()` - podobieństwo semantyczne
+    - `compute_similarity_matrix()` - macierz podobieństwa
 
-- **fastsam_extractor.py:30**
+- **fourier_analyzer.py**
+  - `FourierAnalyzer` - analiza spektrum Fouriera
+    - `compute_frequency_features()` - cechy częstotliwościowe
+    - `compute_features_batch()` - przetwarzanie wsadowe
+    - `filter_redundant()` - filtrowanie redundancji
+    - `analyze_diversity()` - analiza różnorodności
+
+- **fastsam_extractor.py**
   - `FastSAMExtractor` - segmentacja FastSAM
 
-- **fourier_analyzer.py:22**
-  - `FourierAnalyzer` - analiza spektrum Fouriera
-
-- **sam_extractor.py:24**
+- **sam_extractor.py**
   - `SAMExtractor` - segmentacja SAM
 
 #### selection_methods/
-- **cluster_selector.py:37**
-  - `ClusterBasedSelector` - selekcja oparta na klastrach
-
-- **combined_selector.py:29**
-  - `CombinedSelector` - kombinowana selekcja
-
-- **detr_el2n_scorer.py:32**
-  - `DETR_EL2N_Scorer` - scoring EL2N dla DETR z Q81
+- **detr_el2n_scorer.py**
+  - `DETR_EL2N_Scorer` - scoring EL2N dla DETR Query 81
+    - `compute_single_image_difficulty()` - trudność obrazu
+    - `compute_el2n_scores()` - obliczanie EL2N
+    - `get_detection_report()` - raport detekcji
+    - `save_selected_visualizations()` - wizualizacje
 
 - **el2n_scorer.py**
-  - `SimpleProxyModel(nn.Module):25` - prosty model proxy
-  - `ImageDataset(Dataset):56` - dataset obrazów
-  - `EL2NScorer:81` - scoring EL2N
+  - `SimpleProxyModel(nn.Module)` - prosty model proxy
+  - `ImageDataset(Dataset)` - dataset obrazów
+  - `EL2NScorer` - scoring EL2N
+    - `train_proxy_model()` - trening proxy
+    - `compute_el2n_scores()` - obliczanie EL2N
+    - `rank_by_difficulty()` - ranking trudności
 
-- **k_center_greedy.py:19**
+- **cluster_selector.py**
+  - `ClusterBasedSelector` - selekcja oparta na klastrach
+    - `extract_all_features()` - ekstrakcja cech
+    - `cluster_features()` - klasteryzacja
+    - `select_representatives()` - wybór reprezentantów
+    - `select_optimal_subset()` - optymalny podzbiór
+
+- **combined_selector.py**
+  - `CombinedSelector` - kombinowana selekcja wieloetapowa
+    - `step1_fourier_prefilter()` - prefiltrowanie Fouriera
+    - `step2_combine_features()` - kombinowanie cech
+    - `step3_k_center_select()` - selekcja K-center
+    - `step4_el2n_rank()` - ranking EL2N
+
+- **k_center_greedy.py**
   - `KCenterGreedy` - zachłanna selekcja K-center
+    - `compute_distances()` - obliczanie odległości
+    - `select()` - selekcja punktów
 
 #### paper_visualizations/
-- **visualize_clustering.py:54**
+- **visualize_clustering.py**
   - `ClusteringVisualizer` - wizualizacja klastrów z t-SNE
+    - `compute_tsne()` - embedding t-SNE
+    - `visualize_clustering()` - główna wizualizacja
 
-- **visualize_dino_features.py:49**
+- **visualize_fourier_spectrum.py**
+  - `FourierVisualizer` - wizualizacja spektrum Fouriera
+    - `compute_fft()` - obliczanie FFT
+    - `visualize_single_image()` - pojedynczy obraz
+    - `visualize_comparison()` - porównanie obrazów
+
+- **visualize_dino_features.py**
   - `DINOVisualizer` - wizualizacja cech DINO
+    - `get_attention_maps()` - mapy uwagi
 
-- **visualize_fastsam_segmentation.py:55**
+- **visualize_discriminative_per_image.py**
+  - `PerImageDiscriminativeVisualizer` - analiza cech dyskryminacyjnych per image
+    - `visualize_single()` - pojedynczy obraz
+    - `visualize_compare()` - porównanie dwóch obrazów
+    - `visualize_compare_multi()` - tryb --multi (5 osobnych plików)
+
+- **visualize_discriminative_features.py**
+  - `DiscriminativeVisualizer` - batch analiza cech dyskryminacyjnych
+    - `compute_batch_features()` - cechy dla batcha
+    - `generate_report()` - raport JSON
+
+- **visualize_fastsam_segmentation.py**
   - `FastSAMVisualizer` - wizualizacja segmentacji FastSAM
 
-- **visualize_fourier_spectrum.py:162**
-  - `FourierVisualizer` - wizualizacja spektrum Fouriera
-
 #### utils/
-- **coco_handler.py:17**
+- **coco_handler.py**
   - `COCOHandler` - obsługa formatu COCO
+    - `load_annotations()` - ładowanie adnotacji
+    - `merge_datasets()` - łączenie datasetów
 
-- **visualization.py:15**
+- **visualization.py**
   - `Visualizer` - narzędzia wizualizacji
+    - `plot_pca_coverage()` - pokrycie PCA
+    - `plot_difficulty_distribution()` - rozkład trudności
 
 #### main
-- **main_selection_pipeline.py:65**
+- **main_selection_pipeline.py**
   - `AdvancedDatasetSelectionPipeline` - główny pipeline selekcji
+    - `load_datasets()` - ładowanie danych
+    - `run()` - uruchomienie pipeline'u
+    - `_generate_visualizations()` - wizualizacje
 
 ---
 
-### YOLO_DETR_Benchmarks/scripts/
+### YOLO_DETR_Benchmarks/
 
-#### Main Scripts
+#### scripts/
+- **cadtd_benchmark.py**
+  - `CaDTDBenchmark` - benchmark CaDTD dataset
+
 - **benchmark_visualizer.py**
-  - `BenchmarkVisualizer:54` - wizualizacja benchmarków
-  - `YOLOWrapper:361` - wrapper YOLO
-  - `DETRWrapper:395` - wrapper DETR
+  - `BenchmarkVisualizer` - wizualizacja wyników benchmarków
+  - `YOLOWrapper` - wrapper dla modelu YOLO
+  - `DETRWrapper` - wrapper dla modelu DETR
 
-- **cadtd_benchmark.py:53**
-  - `CaDTDBenchmark` - benchmark CaDTD
-
-- **detr_annotator_train_corrected.py:47**
+- **detr_train_optimized.py**
   - `SurgicalToolDataset(Dataset)` - dataset narzędzi chirurgicznych
 
-- **detr_train_optimized.py:51**
-  - `SurgicalToolDataset(Dataset)` - zoptymalizowany dataset
-
-- **detr_training_degradation_analysis.py**
-  - `QueryAnalyzer:74` - analiza query DETR
-  - `DETRBenchmark:162` - benchmark DETR
-
-- **generate_benchmark_report.py:22**
-  - `BenchmarkReportGenerator` - generator raportów
-
-- **multi_epoch_query_benchmark.py:24**
-  - `MultiEpochQueryBenchmark` - benchmark wielu epok
-
-- **voc_to_coco_converter.py:12**
-  - `VOCToCOCOConverter` - konwerter VOC→COCO
-
-- **yolo-train.py:36**
+- **yolo-train.py**
   - `YOLOTrainer` - trener YOLO
 
-#### DETR_Background_Training/
-- **background_task_executor.py**
-  - `TaskExecutionConfig:38` - konfiguracja tasków
-  - `BackgroundProcess:64` - proces w tle
-  - `BackgroundTaskExecutor:360` - executor tasków
+- **detr_training_degradation_analysis.py**
+  - `QueryAnalyzer` - analiza query DETR
+  - `DETRBenchmark` - benchmark DETR
 
-- **detr_background_finetune_fixed.py:52**
-  - `SurgicalToolDataset(Dataset)` - dataset z fixami
+- **voc_to_coco_converter.py**
+  - `VOCToCOCOConverter` - konwerter VOC do COCO
 
-- **detr_background_finetune_single.py:25**
-  - `SurgicalToolDataset(Dataset)` - single dataset
+- **multi_epoch_query_benchmark.py**
+  - `MultiEpochQueryBenchmark` - benchmark query po wielu epokach
 
-- **detr_background_only_finetune.py:46**
-  - `BackgroundDataset(Dataset)` - dataset tła
+- **generate_benchmark_report.py**
+  - `BenchmarkReportGenerator` - generator raportów
 
-- **detr_finetune_background.py:46**
-  - `SurgicalToolDataset(Dataset)` - finetune tła
-
-- **dino_one_time_extraction.py:28**
-  - `DINOTestDatasetExtractor` - jednorazowa ekstrakcja DINO
-
+#### scripts/DETR_Background_Training/
 - **main_pipeline.py**
-  - `PipelineConfig:54` - konfiguracja pipeline'u
-  - `DETRPipelineOrchestrator:139` - orkiestrator pipeline'u
-
-- **model_comparison_validator.py:24**
-  - `DETRModelComparator` - porównanie modeli DETR
-
-- **pipeline_monitor.py**
-  - `LogProgressPattern:35` - wzorce postępu
-  - `LogFileMonitor(FileSystemEventHandler):82` - monitor logów
-  - `ProcessMonitor:185` - monitor procesów
-  - `TaskMonitor:256` - monitor tasków
-  - `PipelineMonitor:379` - główny monitor
-
-- **pipeline_watcher.py:25**
-  - `PipelineWatcher` - obserwator pipeline'u
-
-- **progress_reporter.py**
-  - `ProgressReporter:34` - reporter postępu
-  - `TimedStageContext:257` - kontekst etapów
-
-- **run_strategy_tests.py:21**
-  - `StrategyTestRunner` - runner testów strategii
-
-- **simple_pipeline.py:28**
-  - `SimpleDETRPipeline` - prosty pipeline DETR
+  - `PipelineConfig` - konfiguracja pipeline'u
+  - `DETRPipelineOrchestrator` - orkiestrator pipeline'u
+    - `stage_1_dino_extraction()` - DINO ekstrakcja
+    - `stage_2_dataset_mixing()` - miksowanie datasetów
+    - `stage_3_model_preparation()` - przygotowanie modelu
+    - `stage_4_gentle_training()` - delikatny trening
+    - `stage_5_validation()` - walidacja
 
 - **status_manager.py**
-  - `TaskStatus(Enum):28` - enum statusów
-  - `ProgressType(Enum):37` - typy postępu
-  - `TaskProgress:45` - postęp zadań
-  - `TaskError:58` - błędy zadań
-  - `TaskInfo:72` - info o zadaniach
-  - `StatusManager:89` - manager statusów
+  - `TaskStatus(Enum)` - enum statusów
+  - `ProgressType(Enum)` - typy postępu
+  - `TaskProgress` - dataclass postępu
+  - `TaskError` - dataclass błędów
+  - `TaskInfo` - informacje o tasku
+  - `StatusManager` - manager statusów
 
-- **strategy_testing_framework.py:25**
-  - `StrategyTestingFramework` - framework testów
+- **pipeline_monitor.py**
+  - `LogProgressPattern` - wzorce postępu w logach
+  - `LogFileMonitor(FileSystemEventHandler)` - monitor plików logów
+  - `ProcessMonitor` - monitor procesów
+  - `TaskMonitor` - monitor tasków
+  - `PipelineMonitor` - główny monitor pipeline'u
+
+- **background_task_executor.py**
+  - `TaskExecutionConfig` - konfiguracja wykonania
+  - `BackgroundProcess` - proces w tle
+  - `BackgroundTaskExecutor` - executor tasków
+
+- **progress_reporter.py**
+  - `ProgressReporter` - raportowanie postępu
+  - `TimedStageContext` - context manager dla etapów
 
 - **strategy_trainer.py**
-  - `COCODataset(Dataset):26` - dataset COCO
-  - `MixedDataset(Dataset):90` - mieszany dataset
-  - `StrategyTrainer:122` - trener strategii
+  - `COCODataset(Dataset)` - dataset COCO
+  - `MixedDataset(Dataset)` - mieszany dataset
+  - `StrategyTrainer` - trener strategii
 
-#### local/
-- **detr_local_train.py:29**
+- **strategy_testing_framework.py**
+  - `StrategyTestingFramework` - framework testowania strategii
+
+- **model_comparison_validator.py**
+  - `DETRModelComparator` - porównywarka modeli DETR
+
+- **dino_one_time_extraction.py**
+  - `DINOTestDatasetExtractor` - jednorazowa ekstrakcja DINO
+
+- **simple_pipeline.py**
+  - `SimpleDETRPipeline` - uproszczony pipeline
+
+- **run_strategy_tests.py**
+  - `StrategyTestRunner` - runner testów strategii
+
+- **pipeline_watcher.py**
+  - `PipelineWatcher` - obserwator pipeline'u
+
+- **local/mixed_gentle_training.py**
+  - `COCODataset(Dataset)` - lokalny dataset COCO
+  - `MixedDataset(Dataset)` - lokalny mieszany dataset
+
+- **local/detr_local_train.py**
   - `SurgicalToolDataset(Dataset)` - lokalny dataset
 
-- **mixed_gentle_training.py**
-  - `COCODataset(Dataset):24` - COCO dataset
-  - `MixedDataset(Dataset):91` - mieszany dataset
+#### DINO_Frame_Selection/
+- **visualize_dino_attention.py**
+  - `DINOAttentionVisualizer` - wizualizacja uwagi DINO
+
+- **validation_framework.py**
+  - `ValidationFramework` - framework walidacji
+
+- **scripts/dino_feature_extractor.py**
+  - `DINOFeatureExtractor` - ekstraktor cech DINO
+
+- **scripts/dino_clustering.py**
+  - `DINOClustering` - klasteryzacja DINO
+
+- **realtime_pipeline_monitor.py**
+  - `RealTimePipelineMonitor` - monitor w czasie rzeczywistym
+
+- **enhanced_background_selector.py**
+  - `EnhancedBackgroundSelector` - zaawansowany selektor tła
+
+- **dino_information_analyzer.py**
+  - `DINOInformationAnalyzer` - analizator informacji DINO
+
+- **dino_frame_selector.py**
+  - `DINOFrameSelector` - selektor ramek DINO
+
+- **integrated_detr_dataset_creator.py**
+  - `IntegratedDETRDatasetCreator` - twórca datasetu DETR
+
+- **progressive_fine_tuning_strategy.py**
+  - `ProgressiveFinetuningStrategy` - strategia progresywnego fine-tuningu
+  - `ProgressiveTrainer` - trener progresywny
+
+---
+
+### Eden/Scripts/
+
+- **YOLOYamlCreator.py**
+  - `YOLOYamlCreator` - twórca plików YAML dla YOLO
+
+- **COCOToYOLOLabelsConverter.py**
+  - `COCOToYOLOLabelsConverter` - konwerter etykiet COCO do YOLO
+
+- **yolo-train.py / yolo-train_the_best_11062025.py**
+  - `YOLOTrainer` - trener YOLO (wersje lokalne)
+
+- **detr_train_optimized.py**
+  - `SurgicalToolDataset(Dataset)` - dataset dla treningu DETR
+
+- **20kDataset_11.12.25/detr_train_optimized.py**
+  - `SurgicalToolDataset(Dataset)` - dataset 20k fine-tuning
+    - **LR Reset Fix** (linie 592-614) - naprawiony bug resetowania LR po resume
 
 ---
 
 ### BareDetr/
 
-- **data/dataset.py:10**
+- **data/dataset.py**
   - `CocoDetectionDataset(torch.utils.data.Dataset)` - bazowy dataset COCO
 
 - **data/transforms.py**
-  - `Compose:11` - kompozycja transformacji
-  - `Normalize:27` - normalizacja
-  - `ToTensor:44` - konwersja do tensora
-  - `RandomHorizontalFlip:53` - losowe odbicie
-  - `RandomResize:78` - losowa zmiana rozmiaru
-  - `FixedResize:106` - stała zmiana rozmiaru
+  - `Compose` - kompozycja transformacji
+  - `Normalize` - normalizacja
+  - `ToTensor` - konwersja do tensora
+  - `RandomHorizontalFlip` - losowe odbicie poziome
+  - `RandomResize` - losowa zmiana rozmiaru
+  - `FixedResize` - stała zmiana rozmiaru
 
 - **engine.py**
-  - `SmoothedValue:251` - wygładzona wartość
-  - `MetricLogger:292` - logger metryk
+  - `SmoothedValue` - wygładzona wartość metryki
+  - `MetricLogger` - logger metryk treningowych
 
 ---
 
 ### Annotators/
 
 #### DetrAnnotator/
-- **coco-augmentation.py:55**
-  - `COCOAugmenter` - augmentacja COCO
-
-- **coco-augmentation_range.py:53**
-  - `COCORangeAugmenter` - augmentacja zakresowa
-
-- **coco_augmentation_archivier.py:14**
-  - `COCOAugmenter` - archiwalna augmentacja
-
-- **detr_annotator_train.py:16**
-  - `SurgicalToolDataset(torch.utils.data.Dataset)` - bazowy dataset
-
-- **detr_annotator_train_corrected.py:22**
-  - `SurgicalToolDataset(Dataset)` - poprawiony dataset
-
-- **detr_annotator_train_range.py:14**
-  - `SurgicalToolDataset(torch.utils.data.Dataset)` - zakresowy dataset
+- **detr_annotator_train.py / detr_annotator_train_corrected.py**
+  - `SurgicalToolDataset(Dataset)` - dataset DETR
 
 - **detr_annotator_train_range_eden.py**
-  - `Config:20` - konfiguracja Eden
-  - `SurgicalToolDataset(torch.utils.data.Dataset):67` - dataset Eden
+  - `Config` - konfiguracja
+  - `SurgicalToolDataset` - dataset z range
 
-- **detr_annotator_train_range_optimized.py:27**
-  - `SurgicalToolDataset(torch.utils.data.Dataset)` - zoptymalizowany
+- **coco-augmentation.py**
+  - `COCOAugmenter` - augmentacja COCO
 
-- **detr_annotator_train_range_optimized_augmented.py:29**
-  - `SurgicalToolDataset(torch.utils.data.Dataset)` - z augmentacją
-
-- **detr_annotator_inference_range_images.py:13**
-  - `SurgicalToolDataset(Dataset)` - inference dataset
-
-#### DeepSortYolo/
-- **deep_sort_yolo_predict.py:15**
-  - `ObjectTracker` - tracker obiektów
-
-- **sort/sort.py**
-  - `KalmanBoxTracker(object):94` - tracker Kalman
-  - `Sort(object):199` - algorytm SORT
+- **coco-augmentation_range.py**
+  - `COCORangeAugmenter` - augmentacja z range
 
 #### Hybrid/
-- **yolo_opencv_hybrid.py:50**
-  - `ParticleFilter` - filtr cząsteczkowy
+- **yolo_opencv_hybrid.py**
+  - `ParticleFilter` - filtr cząsteczkowy dla trackingu
+
+#### DeepSortYolo/
+- **deep_sort_yolo_predict.py**
+  - `ObjectTracker` - tracker obiektów Deep SORT + YOLO
 
 #### TimesFormer/
-- **timesformer-auto-annotator.py:11**
-  - `TimesformerAutoAnnotator` - auto-annotator
+- **timesformer-visualize.py**
+  - `SurgicalVideoPredictor` - predyktor wideo chirurgicznego
 
-- **timesformer-surgical-train.py:13**
-  - `SurgicalVideoDataset(Dataset)` - dataset video
+- **timesformer-surgical-train.py**
+  - `SurgicalVideoDataset(Dataset)` - dataset wideo
 
-- **timesformer-surgical-test.py:11**
-  - `SurgicalVideoPredictor` - predyktor
-
-- **timesformer-visualize*.py**
-  - `SurgicalVideoPredictor` - wizualizacja (3 warianty)
-
-#### Utils/
-- **yolo_to_coco_converter.py:10**
-  - `YOLOtoCOCOConverter` - konwerter YOLO→COCO
-
-#### Utils/SignificantImageSelector/
-- **image_feature_extractor.py:21**
-  - `ImageFeatureExtractor` - ekstraktor cech obrazów
-
-- **annotation_feature_extractor.py:18**
-  - `YOLOAnnotationFeatureExtractor` - ekstraktor cech YOLO
-
-- **image_clustering.py:20**
-  - `ImageClusterer` - klasteryzacja obrazów
-
-- **results_visualizer.py:23**
-  - `ResultsVisualizer` - wizualizacja wyników
-
-#### OpencvTrackerAnnotator/
-- **coco-yolo-converter.py:13**
-  - `COCOtoYOLOConverter` - konwerter COCO→YOLO
+- **timesformer-auto-annotator.py**
+  - `TimesformerAutoAnnotator` - auto-adnotator
 
 #### Yolo/
-- **yolo-train.py:27**
+- **yolo-train.py**
   - `YOLOTrainer` - trener YOLO
+
+#### Utils/
+- **yolo_to_coco_converter.py**
+  - `YOLOtoCOCOConverter` - konwerter YOLO do COCO
+
+#### OpencvTrackerAnnotator/
+- **coco-yolo-converter.py**
+  - `COCOtoYOLOConverter` - konwerter COCO do YOLO
 
 ---
 
-### BackgroundFinetuned/
+### Cataract_DETR_DatasetBuilder/
 
-#### Main Scripts
-- **evaluate_mixed_detr.py:50**
-  - `MixedDetrDataset(torch.utils.data.Dataset)` - ewaluacja
+- **eval_coco_offline.py**
+  - `InferenceCocoImages(Dataset)` - dataset do inferencji
 
-- **main_train.py:19**
-  - `ConfigurableTrainer` - konfigurowalny trener
+- **detr_single_class_train.py**
+  - `CocoSingleClassDataset(Dataset)` - dataset single class
 
-- **main_generate.py:79**
-  - `DatasetGenerator` - generator datasetów
+---
 
-- **production_finetune_mixed.py:122**
-  - `MixedDetrDataset(Dataset)` - produkcyjny mixed dataset
+### Utilities/
 
-- **production_finetune_mixed_v_2.py:103**
-  - `MixedDetrDataset(Dataset)` - v2
+- **copy_code_only.py**
+  - `CodeOnlyCopier` - kopiowanie tylko kodu (bez danych)
 
-- **production_q81_trainer.py**
-  - `BalancedSurgicalDataset(Dataset):38` - zbalansowany dataset
-  - `DETRLoss(nn.Module):177` - loss DETR
-
-- **proper_detr_trainer.py**
-  - `ProperDETRDataset(Dataset):34` - proper dataset
-  - `HungarianMatcher(nn.Module):164` - Hungarian matcher
-  - `DETRLoss(nn.Module):233` - loss funkcja
-
-- **query81_trainer.py**
-  - `MixedDataset(Dataset):30` - mixed dataset
-  - `Query81SpecializedLoss(nn.Module):97` - specjalizowany loss Q81
-  - `Query81Trainer:151` - trener Q81
-
-- **simple_production_trainer.py**
-  - `SimpleDETRDataset(Dataset):24` - prosty dataset
-  - `SimpleQ81Loss(nn.Module):93` - prosty loss Q81
-
-- **simple_q81_finetuner.py**
-  - `SimpleDataset(Dataset):25` - prosty dataset
-  - `Query81Loss(nn.Module):88` - Q81 loss
-
-- **test_model.py**
-  - `ValidationDataset(Dataset):36` - walidacyjny dataset
-  - `ModelTester:71` - tester modeli
-
-- **test_query81_quality.py:28**
-  - `Query81Tester` - tester jakości Q81
-
-- **visualize_q81_results.py:22**
-  - `QueryVisualizationTester` - wizualizacja Q81
-
-- **wsl6_production_detector.py:37**
-  - `ProductionQuery81Detector` - produkcyjny detektor
-
-#### Src/trainer/
-- **mixed_detr_finetune.py**
-  - `MixedDatasetItem:138` - item datasetu
-  - `MixedCOCODataset(Dataset):144` - mixed COCO
-
-- **mixed_detr_trainer_v2.py**
-  - `BackgroundAndToolMixDataset(Dataset):54` - mix tła i narzędzi
-  - `SimplifiedDETRLoss(nn.Module):185` - uproszczony loss
-  - `MixedDETRTrainerV2:198` - trener v2
-
-#### Src/dataset_creator/
-- **dino_information_analyzer.py:41**
-  - `DINOInformationAnalyzer` - analizator DINO
-
-- **intelligent_background_frame_selectorDYD.py**
-  - `TorchLoadPatcher:67` - patcher torch.load
-  - `IntelligentBackgroundFrameSelector:108` - inteligentny selektor
-
-- **mix_background_and_tooltip_coco.py:50**
-  - `Coco` - helper COCO
+- **.sessions/tools/save_session.py**
+  - `Colors` - kolory do terminala
 
 ---
 
 ## Statystyki
 
-| Moduł | Pliki | Klasy |
-|-------|-------|-------|
-| AdvancedDatasetSelection | 17 | 18 |
-| YOLO_DETR_Benchmarks | 26 | 48 |
-| BareDetr | 4 | 9 |
-| Annotators | 21 | 28 |
-| BackgroundFinetuned | 22 | 31 |
-| **TOTAL** | **90** | **134** |
+| Moduł | Klasy |
+|-------|-------|
+| AdvancedDatasetSelection | 22 |
+| YOLO_DETR_Benchmarks/scripts | 15 |
+| YOLO_DETR_Benchmarks/DETR_Background_Training | 25 |
+| YOLO_DETR_Benchmarks/DINO_Frame_Selection | 12 |
+| Eden/Scripts | 6 |
+| BareDetr | 8 |
+| Annotators | 14 |
+| Cataract_DETR_DatasetBuilder | 2 |
+| Other | 3 |
+| **TOTAL** | **107** |
 
 ---
 
 ## Kluczowe klasy według funkcji
 
-### Datasety (Dataset/torch.utils.data.Dataset)
-- `SurgicalToolDataset` - główny dataset narzędzi (wiele wariantów)
-- `MixedDataset` / `MixedCOCODataset` - mieszane datasety
-- `BackgroundDataset` - dataset tła
-- `CocoDetectionDataset` - bazowy COCO
-
-### Trenery
-- `ConfigurableTrainer` - konfigurowalny trener
-- `Query81Trainer` - specjalizowany trener Q81
-- `StrategyTrainer` - trener strategii
-- `YOLOTrainer` - trener YOLO
+### Datasety
+- `CocoDetectionDataset` - bazowy dataset COCO (BareDetr)
+- `SurgicalToolDataset` - dataset narzędzi chirurgicznych (wielokrotnie)
+- `MixedDataset` - mieszany dataset tooltip/background
+- `ImageDataset` - prosty dataset obrazów
 
 ### Feature Extractors
 - `DINOExtractor` - cechy DINO ViT
+- `DINOFeatureExtractor` - ekstrakcja cech DINO (YOLO_DETR)
 - `FourierAnalyzer` - analiza Fouriera
 - `FastSAMExtractor` / `SAMExtractor` - segmentacja
 
-### Selektory/Pipeline
-- `AdvancedDatasetSelectionPipeline` - główny pipeline
-- `CombinedSelector` - kombinowana selekcja
+### Selektory
+- `CombinedSelector` - główny selektor wieloetapowy
 - `ClusterBasedSelector` - selekcja klastrowa
-- `DETRPipelineOrchestrator` - orkiestrator DETR
+- `KCenterGreedy` - zachłanna selekcja
+- `DETR_EL2N_Scorer` - scoring trudności
+- `DINOFrameSelector` - selekcja ramek DINO
+- `EnhancedBackgroundSelector` - selektor tła
+
+### Pipeline & Orchestration
+- `AdvancedDatasetSelectionPipeline` - główny pipeline selekcji
+- `DETRPipelineOrchestrator` - orkiestrator treningu DETR
+- `StatusManager` - zarządzanie statusem
+- `PipelineMonitor` - monitoring
+- `BackgroundTaskExecutor` - wykonywanie tasków w tle
+- `ProgressReporter` - raportowanie postępu
 
 ### Wizualizacje
 - `FourierVisualizer` - spektrum Fouriera
 - `ClusteringVisualizer` - klastry t-SNE
-- `DINOVisualizer` - cechy DINO
-- `BenchmarkVisualizer` - benchmarki
+- `DINOVisualizer` / `DINOAttentionVisualizer` - cechy DINO
+- `PerImageDiscriminativeVisualizer` - cechy dyskryminacyjne per image
+- `DiscriminativeVisualizer` - batch cechy dyskryminacyjne
+- `BenchmarkVisualizer` - wyniki benchmarków
 
-### Loss Functions (nn.Module)
-- `DETRLoss` - standardowy loss DETR
-- `Query81Loss` / `Query81SpecializedLoss` - loss Q81
-- `HungarianMatcher` - matching Węgierski
+### Training
+- `YOLOTrainer` - trener YOLO
+- `StrategyTrainer` - trener strategii
+- `ProgressiveTrainer` - trener progresywny
+
+### Transforms
+- `Compose`, `Normalize`, `ToTensor`
+- `RandomHorizontalFlip`, `RandomResize`, `FixedResize`
+
+### Benchmarks
+- `CaDTDBenchmark` - benchmark CaDTD
+- `DETRBenchmark` - benchmark DETR
+- `MultiEpochQueryBenchmark` - benchmark query
+
+### Converters
+- `VOCToCOCOConverter` - VOC do COCO
+- `COCOToYOLOLabelsConverter` - COCO do YOLO labels
+- `YOLOtoCOCOConverter` - YOLO do COCO
+- `COCOtoYOLOConverter` - COCO do YOLO
 
 ---
 
-*Indeks wygenerowany: 2025-12-12 20:25:00*
+*Indeks wygenerowany automatycznie: 2025-12-13 01:30:00*
 *Projekt: ViTParticleFilterTracker*

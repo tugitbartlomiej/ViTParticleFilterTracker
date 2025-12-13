@@ -80,7 +80,12 @@ torchrun \
     --master_port=29501 \
     my_script.py \
     --batch_size 4 \
-    --epochs 300
+    --epochs 300 \
+    --lr 5e-5 \
+    --lr_backbone 5e-6 \
+    --lr_scheduler cosine \
+    --lr_min 1e-7 \
+    --resume_training  # jeśli wznawiasz z checkpointu
 ```
 
 ## Typowe Problemy i Rozwiązania
@@ -155,6 +160,10 @@ Error during collate_fn: The expanded size of the tensor (1333) must match
 ```
 **Rozwiązanie:** Napraw collate_fn lub użyj stałego rozmiaru obrazów
 
+**Uwaga (DDP):** jeżeli `collate_fn`/dataset zwraca `None` tylko na jednym ranku, nie można robić lokalnego `continue`, bo ranki wykonują różne collectives (BROADCAST/REDUCE/BARRIER) i pojawia się błąd `Detected mismatch between collectives on ranks`.
+
+**Praktyczny fix:** padding w collate_fn (żeby nie było wyjątków od różnych rozmiarów) + wspólny skip batcha na wszystkich rankach (np. `dist.all_reduce(MAX)` na fladze `batch is None`).
+
 ### 7. Job w kolejce (Priority)
 ```
 (Priority) lub (Resources)
@@ -169,6 +178,63 @@ Error during collate_fn: The expanded size of the tensor (1333) must match
 # Rozwiązanie:
 mv images_tmp/* images/ 2>/dev/null; rmdir images_tmp
 ```
+
+### 9. Resume training używa STAREGO LR z checkpointu
+```
+[Checkpoint] Successfully loaded state from epoch 172
+Starting training loop from epoch 172...
+Current LR: 1.00e-04   # ← ZŁE! Powinno być 5e-5
+```
+**Przyczyna:** `optimizer.load_state_dict()` nadpisuje nowe wartości LR starymi z checkpointu. Scheduler też jest źle skonfigurowany (myśli że trening trwa 0→epochs zamiast start_epoch→epochs).
+
+**Rozwiązanie:** Dodaj LR Reset po wczytaniu checkpointu w `detr_train_optimized.py`:
+```python
+# Po load_checkpoint():
+if args.resume_training and latest_checkpoint_path:
+    # Reset LR to new values
+    optimizer.param_groups[0]['lr'] = args.lr
+    if len(optimizer.param_groups) > 1:
+        optimizer.param_groups[1]['lr'] = args.lr_backbone
+
+    # Re-initialize scheduler for remaining epochs
+    remaining_epochs = args.epochs - start_epoch
+    if scheduler is not None and args.lr_scheduler == "cosine":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=remaining_epochs, eta_min=args.lr_min
+        )
+```
+
+**Lokalizacja w kodzie:** `~/DETR/detr_train_optimized.py` linie ~592-614
+
+**Weryfikacja że fix działa:**
+```
+[LR Reset] Resetting learning rates to new fine-tuning values...
+  Old LR (from checkpoint): 1.00e-04
+  New LR: 5.00e-05 (backbone: 5.00e-06)
+[Scheduler] Re-initialized cosine scheduler for 128 remaining epochs
+Current LR: 5.00e-05   # ← POPRAWNE!
+```
+
+### 10. Brak LR Scheduler = oscylacje loss
+```
+Epoch 100: loss=0.19
+Epoch 120: loss=0.23  # ← wzrost!
+Epoch 140: loss=0.24  # ← dalszy wzrost!
+Epoch 160: loss=0.16  # ← nagle spadek
+```
+**Przyczyna:** Stały LR bez decay powoduje niestabilność w późnych epokach treningu DETR (Hungarian matching).
+
+**Rozwiązanie:** Zawsze używaj cosine scheduler z małym lr_min:
+```bash
+--lr_scheduler cosine \
+--lr_min 1e-7
+```
+
+**Zalecane parametry fine-tuning:**
+- LR: `5e-5` (2x mniej niż początkowe 1e-4)
+- Backbone LR: `5e-6` (10x mniej niż main)
+- Scheduler: `cosine`
+- lr_min: `1e-7`
 
 ## Komendy SLURM
 
@@ -240,3 +306,5 @@ scp eden-cluster:~/remote_file.pth ./local/
 - [ ] AMP wyłączone jeśli problemy z optimizer state
 - [ ] JSON annotations przesłany na Eden
 - [ ] Katalog logs/ istnieje
+- [ ] **LR scheduler ustawiony** (`--lr_scheduler cosine --lr_min 1e-7`)
+- [ ] **LR Reset fix** w `detr_train_optimized.py` (jeśli resume z nowym LR)

@@ -205,6 +205,46 @@ def collate_fn(batch):
             print(f"Error during collate_fn: {e}")
         return None
 
+# --- Padded Collate Function (DDP-safe) ---
+def collate_fn_padded(batch):
+    batch = [item for item in batch if item is not None]
+    if not batch:
+        return None
+
+    try:
+        batch_size = len(batch)
+
+        max_height = max(item["pixel_values"].shape[-2] for item in batch)
+        max_width = max(item["pixel_values"].shape[-1] for item in batch)
+
+        first_item = batch[0]
+        channels = first_item["pixel_values"].shape[0]
+
+        pixel_values = torch.zeros(
+            (batch_size, channels, max_height, max_width),
+            dtype=first_item["pixel_values"].dtype,
+        )
+        pixel_mask = torch.zeros(
+            (batch_size, max_height, max_width),
+            dtype=first_item["pixel_mask"].dtype,
+        )
+
+        labels = []
+        for i, item in enumerate(batch):
+            pv = item["pixel_values"]
+            pm = item["pixel_mask"]
+
+            height, width = pv.shape[-2], pv.shape[-1]
+            pixel_values[i, :, :height, :width] = pv
+            pixel_mask[i, :height, :width] = pm
+            labels.append(item["labels"])
+
+        return {"pixel_values": pixel_values, "pixel_mask": pixel_mask, "labels": labels}
+    except Exception as e:
+        if dist.is_initialized() and dist.get_rank() == 0:
+            print(f"Error during collate_fn_padded: {e}")
+        return None
+
 # --- Checkpoint Helper Functions (modified for DDP) ---
 def find_latest_checkpoint(checkpoint_dir):
     """Finds the latest checkpoint file based on epoch number or final_checkpoint."""
@@ -409,7 +449,7 @@ def train(args):
         batch_size=args.batch_size,
         sampler=train_sampler,
         num_workers=args.num_workers,
-        collate_fn=collate_fn,
+        collate_fn=collate_fn_padded,
         pin_memory=True,
         drop_last=True,  # Important for DDP
         persistent_workers=True if args.num_workers > 0 else False,  # Optymalizacja
@@ -423,7 +463,7 @@ def train(args):
             batch_size=args.batch_size,
             sampler=val_sampler,
             num_workers=args.num_workers,
-            collate_fn=collate_fn,
+            collate_fn=collate_fn_padded,
             pin_memory=True,
             persistent_workers=True if args.num_workers > 0 else False,
             prefetch_factor=2 if args.num_workers > 0 else None,
@@ -549,6 +589,30 @@ def train(args):
                 latest_checkpoint_path, model.module, optimizer, scaler, scheduler, device
             )
 
+            # CRITICAL: Reset LR to new values after loading checkpoint
+            # (checkpoint may have old LR values that we want to override)
+            if rank == 0:
+                print(f"[LR Reset] Resetting learning rates to new fine-tuning values...")
+                print(f"  Old LR (from checkpoint): {optimizer.param_groups[0]['lr']:.2e}")
+
+            # Reset main LR
+            optimizer.param_groups[0]['lr'] = args.lr
+            # Reset backbone LR (if separate param group exists)
+            if len(optimizer.param_groups) > 1:
+                optimizer.param_groups[1]['lr'] = args.lr_backbone
+
+            if rank == 0:
+                print(f"  New LR: {args.lr:.2e} (backbone: {args.lr_backbone:.2e})")
+
+            # Re-initialize scheduler with correct T_max for remaining epochs
+            remaining_epochs = args.epochs - start_epoch
+            if scheduler is not None and args.lr_scheduler == "cosine":
+                scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                    optimizer, T_max=remaining_epochs, eta_min=args.lr_min
+                )
+                if rank == 0:
+                    print(f"[Scheduler] Re-initialized cosine scheduler for {remaining_epochs} remaining epochs")
+
     # Training loop
     if rank == 0:
         print(f"Starting training loop from epoch {start_epoch}...")
@@ -567,6 +631,7 @@ def train(args):
     # For tracking DETR loss components
     import time
 
+    training_status = "completed"
     try:
         for epoch in range(start_epoch, args.epochs):
             epoch_start_time = time.time()
@@ -602,9 +667,13 @@ def train(args):
             optimizer.zero_grad()
             
             for i, batch in enumerate(progress_bar):
-                if batch is None:
-                    # Skip None batches - drop_last=True ensures same batch count across ranks
-                    # DO NOT use barrier here - it causes desync if only some ranks get None
+                batch_is_none = batch is None
+                if dist.is_initialized():
+                    should_skip = torch.tensor([1 if batch_is_none else 0], device=device, dtype=torch.int32)
+                    dist.all_reduce(should_skip, op=dist.ReduceOp.MAX)
+                    if should_skip.item() == 1:
+                        continue
+                elif batch_is_none:
                     continue
 
                 # Move batch to device (optimized)
@@ -726,9 +795,14 @@ def train(args):
                     progress_bar_val = val_dataloader
 
                 with torch.no_grad():
-                    for i_val, batch_val in enumerate(progress_bar_val):
-                        if batch_val is None:
-                            # Skip None batches - DO NOT use barrier here
+                     for i_val, batch_val in enumerate(progress_bar_val):
+                        batch_val_is_none = batch_val is None
+                        if dist.is_initialized():
+                            should_skip = torch.tensor([1 if batch_val_is_none else 0], device=device, dtype=torch.int32)
+                            dist.all_reduce(should_skip, op=dist.ReduceOp.MAX)
+                            if should_skip.item() == 1:
+                                continue
+                        elif batch_val_is_none:
                             continue
 
                         # Move batch to device (optimized)
@@ -837,8 +911,12 @@ def train(args):
             dist.barrier()
 
     except KeyboardInterrupt:
+        training_status = "interrupted"
         if rank == 0:
             print("\nTraining interrupted by user.")
+    except Exception:
+        training_status = "failed"
+        raise
     finally:
         # Synchronize all ranks before final cleanup (with timeout to avoid hang)
         try:
@@ -883,7 +961,12 @@ def train(args):
         cleanup_ddp()
 
         if rank == 0:
-            print("Training completed!")
+            if training_status == "failed":
+                print("Training exited with error.")
+            elif training_status == "interrupted":
+                print("Training interrupted.")
+            else:
+                print("Training completed!")
 
 
 if __name__ == "__main__":
