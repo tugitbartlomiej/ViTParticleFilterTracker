@@ -1,0 +1,51 @@
+# Test Dataset Generator Configuration
+# =====================================
+
+# List of video files to extract frames from
+video_files:
+  - "E:/Cataract/videos/micro/train03.mp4"
+  - "E:/Cataract/videos/micro/train04.mp4"
+  - "E:/Cataract/videos/micro/train05.mp4"
+  - "E:/Cataract/videos/micro/train06.mp4"
+  - "E:/Cataract/videos/micro/train07.mp4"
+  - "E:/Cataract/videos/micro/train08.mp4"
+  - "E:/Cataract/videos/micro/train09.mp4"
+  - "E:/Cataract/videos/micro/train10.mp4"
+  - "E:/Cataract/videos/micro/train11.mp4"
+  - "E:/Cataract/videos/micro/train12.mp4"
+  - "E:/Cataract/videos/micro/train13.mp4"
+  - "E:/Cataract/videos/micro/train14.mp4"
+  - "E:/Cataract/videos/micro/train15.mp4"
+  - "E:/Cataract/videos/micro/train16.mp4"
+  - "E:/Cataract/videos/micro/train17.mp4"
+  - "E:/Cataract/videos/micro/train18.mp4"
+  - "E:/Cataract/videos/micro/train19.mp4"
+  - "E:/Cataract/videos/micro/train20.mp4"
+  - "E:/Cataract/videos/micro/train21.mp4"
+  - "E:/Cataract/videos/micro/train22.mp4"
+  - "E:/Cataract/videos/micro/train23.mp4"
+  - "E:/Cataract/videos/micro/train24.mp4"
+  - "E:/Cataract/videos/micro/train25.mp4"
+  - "E:/Cataract/videos/micro/test01.mp4"
+  - "E:/Cataract/videos/micro/test02.mp4"
+  - "E:/Cataract/videos/micro/test03.mp4"
+  - "E:/Cataract/videos/micro/test04.mp4"
+
+# Frame extraction settings
+total_frames: 1000          # Total number of frames to extract
+random_seed: 42             # For reproducibility
+jpeg_quality: 95            # JPEG compression quality (1-100)
+
+# Output directories
+output_dir: "output/test_frames"
+output_report_dir: "output/reports"
+
+# Training dataset paths (for duplicate detection)
+training_json: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Eden/Datasets/datasets_20250606.tar/datasets_20250606/datasets/DETR_augmented_dataset_20250218/augmented_coco_20250417_030014.json"
+training_images_dir: "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Eden/Datasets/datasets_20250606.tar/datasets_20250606/datasets/DETR_augmented_dataset_20250218/images"
+
+# Duplicate detection settings
+use_phash: true             # Use perceptual hashing for image comparison
+phash_threshold: 10         # Hamming distance threshold (lower = stricter)
+check_nearby_frames: true   # Flag frames that are temporally close to training frames
+frame_proximity_threshold: 5  # Consider frames within N indices as "nearby"
