@@ -76,18 +76,30 @@ BASE_PATH = Path("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker")
 # Dostępne: 70, 100, 120, 140, 160, 170
 YOLO_CHECKPOINTS = {
     70: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch70.pt",
-    100: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch100.pt",
-    120: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch120.pt",
+    # 100: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch100.pt",
+    # 120: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch120.pt",
     170: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch170.pt",
 }
 
-# DETR Checkpoints - ZMIEŃ TUTAJ KTÓRE EPOKI DETR CHCESZ TESTOWAĆ
+# DETR Checkpoints (Original Training) - baseline comparison
 # Dostępne: 40, 60, 80, 100, 120, 140, 160, 170
 DETR_CHECKPOINTS = {
-    100: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_100.pth",
-    140: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_140.pth",
-    160: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_160.pth",
+    # 100: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_100.pth",
+    # 140: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_140.pth",
+    # 160: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_160.pth",
     170: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_170.pth",
+}
+
+# DETR 20k Finetune Checkpoints - trained on 20,000 intelligently selected images
+# Small LR: 5e-05 main, 5e-06 backbone, cosine scheduler
+DETR_20K_CHECKPOINTS = {
+    # 170: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_170.pth",
+    # 175: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_175.pth",
+    180: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_180.pth",
+    # 185: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_185.pth",
+    # 190: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_190.pth",
+    195: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_195.pth",
+    200: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_200.pth",
 }
 
 # =============================================================================
@@ -100,16 +112,16 @@ DETR_CHECKPOINTS = {
 
 # OPCJA 1: Original Training Dataset (same-distribution test)
 # - Ten sam dataset co trening, testuje accuracy na znanej dystrybucji
-DATASET_ROOT = Path("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/TestDatasetGenerator/output")
-ANNOTATION_FILE = DATASET_ROOT / "annotations_reviewed_1040_coco.json"  # Single annotation file
-IMAGES_DIR = DATASET_ROOT / "test_frames"  # Images directory
-ALL_SPLITS = ["original_test"]  # Single split name for reporting
+# DATASET_ROOT = Path("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/TestDatasetGenerator/output")
+# ANNOTATION_FILE = DATASET_ROOT / "annotations_reviewed_1040_coco.json"  # Single annotation file
+# IMAGES_DIR = DATASET_ROOT / "test_frames"  # Images directory
+# ALL_SPLITS = ["original_test"]  # Single split name for reporting
 
 # OPCJA 2: External Roboflow Dataset (cross-dataset test) - zakomentowane
-# DATASET_ROOT = Path("E:/cataract_surgery_Instruments_detection.v1i.coco")
-# ANNOTATION_FILE = None  # Use per-split annotation files
-# IMAGES_DIR = None  # Use split directories
-# ALL_SPLITS = ["train", "valid", "test"]
+DATASET_ROOT = Path("E:/cataract_surgery_Instruments_detection.v1i.coco")
+ANNOTATION_FILE = None  # Use per-split annotation files
+IMAGES_DIR = None  # Use split directories
+ALL_SPLITS = ["train", "valid", "test"]
 
 # =============================================================================
 # >>> KONIEC SEKCJI KONFIGURACJI DATASETU <<<
@@ -156,6 +168,7 @@ MODEL_COLORS = {
 print(f"""
 {'='*80}
 BENCHMARK: YOLO vs DETR (Query 81 Only) - MULTI-EPOCH
+Including: DETR 20k Finetune Models
 {'='*80}
 Device: {DEVICE}
 Dataset: {DATASET_ROOT}
@@ -163,7 +176,8 @@ Splits: {ALL_SPLITS} (combined)
 Output: {BENCHMARK_DIR}
 
 YOLO Checkpoints: {list(YOLO_CHECKPOINTS.keys())}
-DETR Checkpoints: {list(DETR_CHECKPOINTS.keys())}
+DETR Original Checkpoints: {list(DETR_CHECKPOINTS.keys())}
+DETR 20k Finetune Checkpoints: {list(DETR_20K_CHECKPOINTS.keys())}
 
 DETR Query: Q{DETR_QUERY_ID} ONLY
 Standard Threshold: {CONF_THRESHOLD_STANDARD*100:.0f}%
@@ -917,6 +931,47 @@ def main():
         if model != detr_model_for_vis:
             del model
             torch.cuda.empty_cache()
+
+    # =================================================================
+    # BENCHMARK DETR 20k FINETUNE MODELS (Q81 ONLY)
+    # =================================================================
+    print(f"\n{'='*60}")
+    print(f"BENCHMARKING DETR 20k FINETUNE MODELS (Query {DETR_QUERY_ID} ONLY)")
+    print(f"{'='*60}")
+
+    for epoch, checkpoint_path in sorted(DETR_20K_CHECKPOINTS.items()):
+        model_name = f"DETR_20k_Q81_epoch{epoch}"
+
+        if not checkpoint_path.exists():
+            print(f"\n  SKIP: {model_name} (not found)")
+            continue
+
+        print(f"\n  Processing {model_name}...")
+        model = load_detr_model(checkpoint_path)
+
+        results[model_name] = {
+            "type": "DETR_20k_Q81",
+            "epoch": epoch,
+            "splits": {}
+        }
+
+        for split_name, (coco, images_dir) in datasets.items():
+            predictions, fps = run_detr_q81_inference_on_split(
+                model, coco, images_dir, model_name, split_name, CONF_THRESHOLD_STANDARD
+            )
+            metrics = evaluate_predictions(coco, predictions, model_name, split_name)
+
+            results[model_name]["splits"][split_name] = {
+                "metrics": metrics,
+                "fps": fps,
+                "num_predictions": len(predictions)
+            }
+
+            print(f"    {split_name}: mAP@0.5={metrics['mAP@0.5']:.2f}% | "
+                  f"TP={metrics['true_positives']} | FP={metrics['false_positives']} | FN={metrics['false_negatives']}")
+
+        del model
+        torch.cuda.empty_cache()
 
     # =================================================================
     # GENERATE VISUALIZATIONS
