@@ -75,31 +75,43 @@ BASE_PATH = Path("F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker")
 # YOLO Checkpoints - ZMIEŃ TUTAJ KTÓRE EPOKI YOLO CHCESZ TESTOWAĆ
 # Dostępne: 70, 100, 120, 140, 160, 170
 YOLO_CHECKPOINTS = {
-    70: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch70.pt",
-    # 100: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/epoch100.pt",
-    # 120: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch120.pt",
+    40: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch40.pt",
+    60: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch60.pt",
+    80: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch80.pt",
+    100: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch100.pt",
+    120: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch120.pt",
+    140: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch140.pt",
+    160: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch160.pt",
     170: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/epoch170.pt",
+    200: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/last.pt",
+    210: BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/exp/weights/best.pt",
 }
 
 # DETR Checkpoints (Original Training) - baseline comparison
 # Dostępne: 40, 60, 80, 100, 120, 140, 160, 170
 DETR_CHECKPOINTS = {
-    # 100: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_100.pth",
-    # 140: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_140.pth",
-    # 160: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_160.pth",
+    40: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_40.pth",
+    60: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_60.pth",
+    80: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_80.pth",
+    100: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_100.pth",
+    120: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_120.pth",
+    140: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_140.pth",
+    160: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_160.pth",
     170: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Checkpoints/checkpoint_epoch_170.pth",
 }
 
 # DETR 20k Finetune Checkpoints - trained on 20,000 intelligently selected images
 # Small LR: 5e-05 main, 5e-06 backbone, cosine scheduler
 DETR_20K_CHECKPOINTS = {
-    # 170: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_170.pth",
-    # 175: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_175.pth",
+    170: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_170.pth",
+    175: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_175.pth",
     180: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_180.pth",
-    # 185: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_185.pth",
-    # 190: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_190.pth",
+    185: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_185.pth",
+    190: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_190.pth",
     195: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_195.pth",
     200: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_200.pth",
+    205: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_205.pth",
+    210: BASE_PATH / "Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-12-13_20kDataset_small_LR/ckpt_20k_finetune/checkpoint_epoch_210.pth",
 }
 
 # =============================================================================
