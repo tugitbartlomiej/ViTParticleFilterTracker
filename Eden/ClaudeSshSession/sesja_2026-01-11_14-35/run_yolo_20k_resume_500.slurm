@@ -184,12 +184,12 @@ echo "=== TRAINING CONFIGURATION ==="
 echo "  GPUs: 3"
 echo "  Resume from: last.pt"
 echo "  Target epochs: 500"
-echo "  Batch size: 32/GPU (effective: 96)"
+echo "  Batch size: 30/GPU (effective: 90)"
 echo "  LR: 0.001"
 
 cd "$PROJECT_ROOT"
 
-python3 yolo_train_20k_finetune.py     --dataset_yaml_path $DATASET_YAML     --project_dir $PROJECT_ROOT/train_out_500     --checkpoint_dir $PROJECT_ROOT/ckpt_500     --best_model_dir $PROJECT_ROOT/best_500     --model_size m     --epochs 500     --batch_size 32     --imgsz 640     --learning_rate 0.001     --workers 16     --device 0,1,2     --save_period 10     --patience 50     --freeze_backbone 0     --verbose     --resume --resume_path $RESUME_CHECKPOINT
+python3 yolo_train_20k_finetune.py     --dataset_yaml_path $DATASET_YAML     --project_dir $PROJECT_ROOT/train_out_500     --checkpoint_dir $PROJECT_ROOT/ckpt_500     --best_model_dir $PROJECT_ROOT/best_500     --model_size m     --epochs 500     --batch_size 30     --imgsz 640     --learning_rate 0.001     --workers 16     --device 0,1,2     --save_period 10     --patience 50     --freeze_backbone 0     --verbose     --resume --resume_path $RESUME_CHECKPOINT
 
 EXIT_CODE=$?
 
