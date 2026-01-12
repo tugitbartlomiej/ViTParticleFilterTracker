@@ -20,6 +20,9 @@ DEFAULT_CHECKPOINT_DIR = Path(r"F:\Studia\PhD_projekt\VIT\ViTParticleFilterTrack
 DEFAULT_OUTPUT_DIR = Path(r"F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\Eden\Scripts\CheckpointAnalizis\output\yolo")
 
 
+DTYPES_FLOAT = (torch.float16, torch.float32, torch.bfloat16)
+
+
 def load_yolo_checkpoint(path):
     """Load YOLO checkpoint and return its contents."""
     print(f"Loading: {path.name}")
@@ -30,6 +33,50 @@ def load_yolo_checkpoint(path):
     except Exception as e:
         print(f"  Warning: Could not load {path.name}: {e}")
         return None
+
+
+def _get_state_dict_from_ultralytics_model(obj):
+    """Best-effort extraction of a torch state_dict from various Ultralytics objects."""
+    if obj is None:
+        return None
+
+    if hasattr(obj, "state_dict"):
+        try:
+            return obj.state_dict()
+        except Exception:
+            return None
+
+    # Some Ultralytics wrappers keep the actual nn.Module under .model
+    inner = getattr(obj, "model", None)
+    if inner is not None and hasattr(inner, "state_dict"):
+        try:
+            return inner.state_dict()
+        except Exception:
+            return None
+
+    return None
+
+
+def _summarize_weight_norms(state_dict):
+    """Compute simple weight norm stats from a state dict."""
+    norms = []
+    for _, tensor in state_dict.items():
+        if not torch.is_tensor(tensor):
+            continue
+        if tensor.dtype not in DTYPES_FLOAT:
+            continue
+        # float() for stable norm on fp16/bf16
+        norms.append(float(torch.norm(tensor.float()).item()))
+
+    if not norms:
+        return None
+
+    return {
+        "weight_norm_mean": float(np.mean(norms)),
+        "weight_norm_max": float(np.max(norms)),
+        "weight_norm_std": float(np.std(norms)),
+        "num_weight_tensors": int(len(norms)),
+    }
 
 
 def analyze_yolo_model(ckpt):
@@ -47,34 +94,29 @@ def analyze_yolo_model(ckpt):
         return info
 
     # Check for model
-    if 'model' in ckpt:
-        info['has_model'] = True
-        model = ckpt['model']
+    model_obj = ckpt.get('model', None)
+    ema_obj = ckpt.get('ema', None)
 
-        # Get model state dict
-        if hasattr(model, 'state_dict'):
-            state_dict = model.state_dict()
-        elif hasattr(model, 'model') and hasattr(model.model, 'state_dict'):
-            state_dict = model.model.state_dict()
-        else:
-            state_dict = {}
+    info['has_model'] = model_obj is not None
+    info['has_ema'] = ema_obj is not None
 
-        info['num_params'] = sum(p.numel() for p in model.parameters()) if hasattr(model, 'parameters') else 0
+    # Weight statistics: prefer 'model' if present, otherwise fall back to EMA
+    weight_source = None
+    state_dict = None
 
-        # Analyze weight norms
-        weight_norms = []
-        for name, param in model.named_parameters() if hasattr(model, 'named_parameters') else []:
-            if param.dtype in [torch.float32, torch.float16, torch.bfloat16]:
-                weight_norms.append(float(torch.norm(param).item()))
+    if model_obj is not None:
+        state_dict = _get_state_dict_from_ultralytics_model(model_obj)
+        weight_source = "model" if state_dict is not None else None
 
-        if weight_norms:
-            info['weight_norm_mean'] = float(np.mean(weight_norms))
-            info['weight_norm_max'] = float(np.max(weight_norms))
-            info['weight_norm_std'] = float(np.std(weight_norms))
+    if state_dict is None and ema_obj is not None:
+        state_dict = _get_state_dict_from_ultralytics_model(ema_obj)
+        weight_source = "ema" if state_dict is not None else None
 
-    # Check for EMA model
-    if 'ema' in ckpt:
-        info['has_ema'] = True
+    if state_dict is not None:
+        info["weight_source"] = weight_source
+        norms_summary = _summarize_weight_norms(state_dict)
+        if norms_summary:
+            info.update(norms_summary)
 
     # Check for optimizer
     if 'optimizer' in ckpt:
@@ -112,6 +154,15 @@ def create_visualizations(results, output_dir):
 
     plt.style.use('seaborn-v0_8-whitegrid')
 
+    def _normalize(vals):
+        if not vals:
+            return [], None, None
+        vmin = min(vals)
+        vmax = max(vals)
+        if vmax == vmin:
+            return [0.0 for _ in vals], vmin, vmax
+        return [(v - vmin) / (vmax - vmin) for v in vals], vmin, vmax
+
     epochs = [r['epoch'] for r in results if r['epoch'] is not None]
 
     if not epochs:
@@ -125,18 +176,20 @@ def create_visualizations(results, output_dir):
 
     if weight_norms and any(w > 0 for w in weight_norms):
         fig, ax = plt.subplots(figsize=(12, 6))
-        ax.plot(epochs, weight_norms, 'b-o', linewidth=2, markersize=8, label='Mean Weight Norm')
-        ax.set_xlabel('Epoch', fontsize=12)
-        ax.set_ylabel('Mean Weight Norm', fontsize=12)
+        weight_x_norm, _, _ = _normalize(epochs)
+        weight_y_norm, _, _ = _normalize(weight_norms)
+        ax.plot(weight_x_norm, weight_y_norm, 'b-o', linewidth=2, markersize=8, label='Mean Weight Norm')
+        ax.set_xlabel('Normalized Epoch', fontsize=12)
+        ax.set_ylabel('Normalized Mean Weight Norm', fontsize=12)
         ax.set_title('YOLOv8 Weight Norm Evolution During Training', fontsize=14, fontweight='bold')
         ax.legend()
         ax.grid(True, alpha=0.3)
 
         # Add trend line
         if len(epochs) > 1:
-            z = np.polyfit(epochs, weight_norms, 1)
+            z = np.polyfit(weight_x_norm, weight_y_norm, 1)
             p = np.poly1d(z)
-            ax.plot(epochs, p(epochs), 'r--', alpha=0.5, label=f'Trend')
+            ax.plot(weight_x_norm, p(weight_x_norm), 'r--', alpha=0.5, label='Trend')
 
         plt.tight_layout()
         plt.savefig(output_dir / 'yolo_weight_norm.png', dpi=150, bbox_inches='tight')
@@ -151,12 +204,13 @@ def create_visualizations(results, output_dir):
 
     if lrs and any(lr > 0 for lr in lrs):
         fig, ax = plt.subplots(figsize=(12, 6))
-        ax.plot(epochs, lrs, 'g-s', linewidth=2, markersize=8)
-        ax.set_xlabel('Epoch', fontsize=12)
-        ax.set_ylabel('Learning Rate', fontsize=12)
+        lr_x_norm, _, _ = _normalize(epochs)
+        lr_y_norm, _, _ = _normalize(lrs)
+        ax.plot(lr_x_norm, lr_y_norm, 'g-s', linewidth=2, markersize=8)
+        ax.set_xlabel('Normalized Epoch', fontsize=12)
+        ax.set_ylabel('Normalized Learning Rate', fontsize=12)
         ax.set_title('YOLOv8 Learning Rate Schedule', fontsize=14, fontweight='bold')
         ax.grid(True, alpha=0.3)
-        ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
 
         plt.tight_layout()
         plt.savefig(output_dir / 'yolo_learning_rate.png', dpi=150, bbox_inches='tight')
@@ -171,9 +225,11 @@ def create_visualizations(results, output_dir):
 
     if fitness and any(f > 0 for f in fitness):
         fig, ax = plt.subplots(figsize=(12, 6))
-        ax.plot(epochs, fitness, 'm-^', linewidth=2, markersize=8)
-        ax.set_xlabel('Epoch', fontsize=12)
-        ax.set_ylabel('Best Fitness', fontsize=12)
+        fit_x_norm, _, _ = _normalize(epochs)
+        fit_y_norm, _, _ = _normalize(fitness)
+        ax.plot(fit_x_norm, fit_y_norm, 'm-^', linewidth=2, markersize=8)
+        ax.set_xlabel('Normalized Epoch', fontsize=12)
+        ax.set_ylabel('Normalized Best Fitness', fontsize=12)
         ax.set_title('YOLOv8 Best Fitness Over Training', fontsize=14, fontweight='bold')
         ax.grid(True, alpha=0.3)
 
@@ -181,8 +237,8 @@ def create_visualizations(results, output_dir):
         if max(fitness) > 0:
             max_idx = np.argmax(fitness)
             ax.annotate(f'Best: {fitness[max_idx]:.4f}',
-                       xy=(epochs[max_idx], fitness[max_idx]),
-                       xytext=(epochs[max_idx]+5, fitness[max_idx]),
+                       xy=(fit_x_norm[max_idx], fit_y_norm[max_idx]),
+                       xytext=(min(fit_x_norm[max_idx] + 0.05, 0.95), min(fit_y_norm[max_idx] + 0.05, 0.95)),
                        arrowprops=dict(arrowstyle='->', color='green'),
                        fontsize=10, color='green')
 
@@ -200,35 +256,34 @@ def create_visualizations(results, output_dir):
     # Weight norm
     ax = axes[0, 0]
     if weight_norms and any(w > 0 for w in weight_norms):
-        ax.plot(epochs, weight_norms, 'b-o', linewidth=2, markersize=6)
+        ax.plot(weight_x_norm, weight_y_norm, 'b-o', linewidth=2, markersize=6)
         ax.set_title('Weight Norm Evolution', fontweight='bold')
     else:
         ax.text(0.5, 0.5, 'No weight norm data', ha='center', va='center', transform=ax.transAxes)
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Mean Weight Norm')
+    ax.set_xlabel('Normalized Epoch')
+    ax.set_ylabel('Normalized Mean Weight Norm')
     ax.grid(True, alpha=0.3)
 
     # Learning rate
     ax = axes[0, 1]
     if lrs and any(lr > 0 for lr in lrs):
-        ax.plot(epochs, lrs, 'g-s', linewidth=2, markersize=6)
-        ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
+        ax.plot(lr_x_norm, lr_y_norm, 'g-s', linewidth=2, markersize=6)
         ax.set_title('Learning Rate Schedule', fontweight='bold')
     else:
         ax.text(0.5, 0.5, 'No LR data', ha='center', va='center', transform=ax.transAxes)
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Learning Rate')
+    ax.set_xlabel('Normalized Epoch')
+    ax.set_ylabel('Normalized Learning Rate')
     ax.grid(True, alpha=0.3)
 
     # Fitness
     ax = axes[1, 0]
     if fitness and any(f > 0 for f in fitness):
-        ax.plot(epochs, fitness, 'm-^', linewidth=2, markersize=6)
+        ax.plot(fit_x_norm, fit_y_norm, 'm-^', linewidth=2, markersize=6)
         ax.set_title('Best Fitness', fontweight='bold')
     else:
         ax.text(0.5, 0.5, 'No fitness data', ha='center', va='center', transform=ax.transAxes)
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Fitness')
+    ax.set_xlabel('Normalized Epoch')
+    ax.set_ylabel('Normalized Fitness')
     ax.grid(True, alpha=0.3)
 
     # Summary text

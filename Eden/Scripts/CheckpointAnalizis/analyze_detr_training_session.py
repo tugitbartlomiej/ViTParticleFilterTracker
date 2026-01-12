@@ -614,7 +614,37 @@ def create_plots(epoch_rows: List[Dict[str, Any]], ckpt_analysis: Dict[str, Any]
 
     plt.style.use("seaborn-v0_8-whitegrid")
 
+    def _normalize_epochs(vals: List[int]) -> List[float]:
+        if not vals:
+            return []
+        vmin = min(vals)
+        vmax = max(vals)
+        if vmax == vmin:
+            return [0.0 for _ in vals]
+        return [(v - vmin) / (vmax - vmin) for v in vals]
+
+    def _min_max(series_list: List[List[Optional[float]]]) -> Tuple[Optional[float], Optional[float]]:
+        vals = [v for series in series_list for v in series if v is not None]
+        if not vals:
+            return None, None
+        return min(vals), max(vals)
+
+    def _normalize_series(vals: List[Optional[float]], vmin: Optional[float], vmax: Optional[float]) -> List[Optional[float]]:
+        if vmin is None or vmax is None:
+            return [None for _ in vals]
+        if vmax == vmin:
+            return [0.0 if v is not None else None for v in vals]
+        return [(v - vmin) / (vmax - vmin) if v is not None else None for v in vals]
+
+    def _plot_series(ax, xs: List[float], ys: List[Optional[float]], *args, **kwargs) -> None:
+        pairs = [(x, y) for x, y in zip(xs, ys) if y is not None]
+        if not pairs:
+            return
+        x_p, y_p = zip(*pairs)
+        ax.plot(x_p, y_p, *args, **kwargs)
+
     epochs = [r["epoch"] for r in epoch_rows]
+    epochs_norm = _normalize_epochs(epochs)
     created: List[str] = []
 
     def _save(fig, name: str):
@@ -628,63 +658,84 @@ def create_plots(epoch_rows: List[Dict[str, Any]], ckpt_analysis: Dict[str, Any]
 
     # Loss curves
     fig, ax = plt.subplots(figsize=(11, 6))
-    ax.plot(epochs, [r.get("train_loss_log") for r in epoch_rows], "o-", label="Train loss (log)")
-    ax.plot(epochs, [r.get("val_loss_log") for r in epoch_rows], "o-", label="Val loss (log)")
-    ax.plot(epochs, [r.get("tb_train_loss") for r in epoch_rows], "s--", label="Train loss (TB)")
-    ax.plot(epochs, [r.get("tb_val_loss") for r in epoch_rows], "s--", label="Val loss (TB)")
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Loss")
+    train_loss_log = [r.get("train_loss_log") for r in epoch_rows]
+    val_loss_log = [r.get("val_loss_log") for r in epoch_rows]
+    train_loss_tb = [r.get("tb_train_loss") for r in epoch_rows]
+    val_loss_tb = [r.get("tb_val_loss") for r in epoch_rows]
+    y_min, y_max = _min_max([train_loss_log, val_loss_log, train_loss_tb, val_loss_tb])
+    _plot_series(ax, epochs_norm, _normalize_series(train_loss_log, y_min, y_max), "o-", label="Train loss (log)")
+    _plot_series(ax, epochs_norm, _normalize_series(val_loss_log, y_min, y_max), "o-", label="Val loss (log)")
+    _plot_series(ax, epochs_norm, _normalize_series(train_loss_tb, y_min, y_max), "s--", label="Train loss (TB)")
+    _plot_series(ax, epochs_norm, _normalize_series(val_loss_tb, y_min, y_max), "s--", label="Val loss (TB)")
+    ax.set_xlabel("Normalized Epoch")
+    ax.set_ylabel("Normalized Loss")
     ax.set_title("Loss curves")
     ax.legend()
     _save(fig, "loss_curves")
 
     # LR schedule
     fig, ax = plt.subplots(figsize=(11, 5))
-    ax.plot(epochs, [r.get("tb_lr_main") for r in epoch_rows], "o-", label="LR main (TB)")
-    ax.plot(epochs, [r.get("tb_lr_backbone") for r in epoch_rows], "o-", label="LR backbone (TB)")
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Learning rate")
+    lr_main = [r.get("tb_lr_main") for r in epoch_rows]
+    lr_bb = [r.get("tb_lr_backbone") for r in epoch_rows]
+    y_min, y_max = _min_max([lr_main, lr_bb])
+    _plot_series(ax, epochs_norm, _normalize_series(lr_main, y_min, y_max), "o-", label="LR main (TB)")
+    _plot_series(ax, epochs_norm, _normalize_series(lr_bb, y_min, y_max), "o-", label="LR backbone (TB)")
+    ax.set_xlabel("Normalized Epoch")
+    ax.set_ylabel("Normalized Learning rate")
     ax.set_title("Learning rate schedule")
     ax.legend()
     _save(fig, "lr_schedule")
 
     # Gradient norm
     fig, ax = plt.subplots(figsize=(11, 5))
-    ax.plot(epochs, [r.get("grad_norm_log") for r in epoch_rows], "o-", label="Avg grad norm (log)")
-    ax.plot(epochs, [r.get("tb_grad_norm") for r in epoch_rows], "s--", label="Avg grad norm (TB)")
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Gradient norm")
+    grad_log = [r.get("grad_norm_log") for r in epoch_rows]
+    grad_tb = [r.get("tb_grad_norm") for r in epoch_rows]
+    y_min, y_max = _min_max([grad_log, grad_tb])
+    _plot_series(ax, epochs_norm, _normalize_series(grad_log, y_min, y_max), "o-", label="Avg grad norm (log)")
+    _plot_series(ax, epochs_norm, _normalize_series(grad_tb, y_min, y_max), "s--", label="Avg grad norm (TB)")
+    ax.set_xlabel("Normalized Epoch")
+    ax.set_ylabel("Normalized Gradient norm")
     ax.set_title("Gradient norm")
     ax.legend()
     _save(fig, "grad_norm")
 
     # Loss components
     fig, ax = plt.subplots(figsize=(11, 5))
-    ax.plot(epochs, [r.get("tb_ce") for r in epoch_rows], "o-", label="CE (TB)")
-    ax.plot(epochs, [r.get("tb_bbox") for r in epoch_rows], "o-", label="BBox (TB)")
-    ax.plot(epochs, [r.get("tb_giou") for r in epoch_rows], "o-", label="GIoU (TB)")
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Component loss")
+    comp_ce = [r.get("tb_ce") for r in epoch_rows]
+    comp_bbox = [r.get("tb_bbox") for r in epoch_rows]
+    comp_giou = [r.get("tb_giou") for r in epoch_rows]
+    y_min, y_max = _min_max([comp_ce, comp_bbox, comp_giou])
+    _plot_series(ax, epochs_norm, _normalize_series(comp_ce, y_min, y_max), "o-", label="CE (TB)")
+    _plot_series(ax, epochs_norm, _normalize_series(comp_bbox, y_min, y_max), "o-", label="BBox (TB)")
+    _plot_series(ax, epochs_norm, _normalize_series(comp_giou, y_min, y_max), "o-", label="GIoU (TB)")
+    ax.set_xlabel("Normalized Epoch")
+    ax.set_ylabel("Normalized Component loss")
     ax.set_title("Loss components (epoch)")
     ax.legend()
     _save(fig, "loss_components")
 
     # GPU memory
     fig, ax = plt.subplots(figsize=(11, 5))
-    ax.plot(epochs, [r.get("tb_gpu_alloc_gb") for r in epoch_rows], "o-", label="GPU allocated GB (TB)")
-    ax.plot(epochs, [r.get("tb_gpu_res_gb") for r in epoch_rows], "o-", label="GPU reserved GB (TB)")
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("GB")
+    gpu_alloc = [r.get("tb_gpu_alloc_gb") for r in epoch_rows]
+    gpu_res = [r.get("tb_gpu_res_gb") for r in epoch_rows]
+    y_min, y_max = _min_max([gpu_alloc, gpu_res])
+    _plot_series(ax, epochs_norm, _normalize_series(gpu_alloc, y_min, y_max), "o-", label="GPU allocated GB (TB)")
+    _plot_series(ax, epochs_norm, _normalize_series(gpu_res, y_min, y_max), "o-", label="GPU reserved GB (TB)")
+    ax.set_xlabel("Normalized Epoch")
+    ax.set_ylabel("Normalized GB")
     ax.set_title("GPU memory (epoch)")
     ax.legend()
     _save(fig, "gpu_memory")
 
     # Epoch time
     fig, ax = plt.subplots(figsize=(11, 5))
-    ax.plot(epochs, [r.get("train_time_s_log") for r in epoch_rows], "o-", label="Train epoch time (log)")
-    ax.plot(epochs, [r.get("tb_time_s") for r in epoch_rows], "s--", label="Epoch seconds (TB)")
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Seconds")
+    time_log = [r.get("train_time_s_log") for r in epoch_rows]
+    time_tb = [r.get("tb_time_s") for r in epoch_rows]
+    y_min, y_max = _min_max([time_log, time_tb])
+    _plot_series(ax, epochs_norm, _normalize_series(time_log, y_min, y_max), "o-", label="Train epoch time (log)")
+    _plot_series(ax, epochs_norm, _normalize_series(time_tb, y_min, y_max), "s--", label="Epoch seconds (TB)")
+    ax.set_xlabel("Normalized Epoch")
+    ax.set_ylabel("Normalized Seconds")
     ax.set_title("Epoch duration")
     ax.legend()
     _save(fig, "epoch_time")
@@ -703,9 +754,12 @@ def create_plots(epoch_rows: List[Dict[str, Any]], ckpt_analysis: Dict[str, Any]
     ]
     if ckpt_epochs:
         fig, ax = plt.subplots(figsize=(11, 5))
-        ax.plot(ckpt_epochs, ckpt_norms, "o-", label="Mean tensor weight-norm")
-        ax.set_xlabel("Checkpoint epoch")
-        ax.set_ylabel("Mean norm")
+        ckpt_x_norm = _normalize_epochs(ckpt_epochs)
+        y_min, y_max = _min_max([ckpt_norms])
+        ckpt_y_norm = _normalize_series(ckpt_norms, y_min, y_max)
+        _plot_series(ax, ckpt_x_norm, ckpt_y_norm, "o-", label="Mean tensor weight-norm")
+        ax.set_xlabel("Normalized Checkpoint epoch")
+        ax.set_ylabel("Normalized Mean norm")
         ax.set_title("Checkpoint weight norm evolution")
         ax.legend()
         _save(fig, "checkpoint_weight_norm")

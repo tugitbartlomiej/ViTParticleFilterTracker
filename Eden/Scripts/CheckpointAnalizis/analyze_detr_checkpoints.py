@@ -95,6 +95,15 @@ def create_visualizations(results, layer_evolution, output_dir):
     # Set style
     plt.style.use('seaborn-v0_8-whitegrid')
 
+    def _normalize(vals):
+        if not vals:
+            return [], None, None
+        vmin = min(vals)
+        vmax = max(vals)
+        if vmax == vmin:
+            return [0.0 for _ in vals], vmin, vmax
+        return [(v - vmin) / (vmax - vmin) for v in vals], vmin, vmax
+
     epochs = [r['epoch'] for r in results]
     losses = [r['loss'] for r in results if r['loss'] is not None]
     loss_epochs = [r['epoch'] for r in results if r['loss'] is not None]
@@ -103,18 +112,22 @@ def create_visualizations(results, layer_evolution, output_dir):
     # Figure 1: Training Loss Over Epochs
     # ==========================================
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(loss_epochs, losses, 'b-o', linewidth=2, markersize=8, label='Training Loss')
-    ax.set_xlabel('Epoch', fontsize=12)
-    ax.set_ylabel('Loss', fontsize=12)
+    loss_x_norm, _, _ = _normalize(loss_epochs)
+    loss_y_norm, _, _ = _normalize(losses)
+    ax.plot(loss_x_norm, loss_y_norm, 'b-o', linewidth=2, markersize=8, label='Training Loss')
+    ax.set_xlabel('Normalized Epoch', fontsize=12)
+    ax.set_ylabel('Normalized Loss', fontsize=12)
     ax.set_title('DETR Training Loss Progression', fontsize=14, fontweight='bold')
     ax.legend()
     ax.grid(True, alpha=0.3)
 
     # Annotate min loss
     min_loss_idx = np.argmin(losses)
+    min_x = loss_x_norm[min_loss_idx]
+    min_y = loss_y_norm[min_loss_idx]
     ax.annotate(f'Min: {losses[min_loss_idx]:.4f}',
-                xy=(loss_epochs[min_loss_idx], losses[min_loss_idx]),
-                xytext=(loss_epochs[min_loss_idx]+5, losses[min_loss_idx]+0.02),
+                xy=(min_x, min_y),
+                xytext=(min(min_x + 0.05, 0.95), min(min_y + 0.05, 0.95)),
                 arrowprops=dict(arrowstyle='->', color='green'),
                 fontsize=10, color='green')
 
@@ -130,16 +143,18 @@ def create_visualizations(results, layer_evolution, output_dir):
     weight_norms = [r.get('weight_norm_mean', 0) for r in results]
 
     fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(epochs, weight_norms, 'r-s', linewidth=2, markersize=8)
-    ax.set_xlabel('Epoch', fontsize=12)
-    ax.set_ylabel('Mean Weight Norm', fontsize=12)
+    weight_x_norm, _, _ = _normalize(epochs)
+    weight_y_norm, _, _ = _normalize(weight_norms)
+    ax.plot(weight_x_norm, weight_y_norm, 'r-s', linewidth=2, markersize=8)
+    ax.set_xlabel('Normalized Epoch', fontsize=12)
+    ax.set_ylabel('Normalized Mean Weight Norm', fontsize=12)
     ax.set_title('DETR Weight Norm Evolution', fontsize=14, fontweight='bold')
     ax.grid(True, alpha=0.3)
 
     # Add trend line
-    z = np.polyfit(epochs, weight_norms, 1)
+    z = np.polyfit(weight_x_norm, weight_y_norm, 1)
     p = np.poly1d(z)
-    ax.plot(epochs, p(epochs), 'r--', alpha=0.5, label=f'Trend (slope={z[0]:.4f})')
+    ax.plot(weight_x_norm, p(weight_x_norm), 'r--', alpha=0.5, label=f'Trend (slope={z[0]:.4f})')
     ax.legend()
 
     plt.tight_layout()
@@ -175,9 +190,11 @@ def create_visualizations(results, layer_evolution, output_dir):
         color = layer_colors.get(layer_name, 'blue')
         short_name = layer_names_short.get(layer_name, layer_name.split('.')[-1])
 
-        ax.plot(layer_epochs, layer_norms, '-o', color=color, linewidth=2, markersize=8)
-        ax.set_xlabel('Epoch', fontsize=10)
-        ax.set_ylabel('Weight Norm', fontsize=10)
+        layer_x_norm, _, _ = _normalize(layer_epochs)
+        layer_y_norm, _, _ = _normalize(layer_norms)
+        ax.plot(layer_x_norm, layer_y_norm, '-o', color=color, linewidth=2, markersize=8)
+        ax.set_xlabel('Normalized Epoch', fontsize=10)
+        ax.set_ylabel('Normalized Weight Norm', fontsize=10)
         ax.set_title(short_name, fontsize=12, fontweight='bold')
         ax.grid(True, alpha=0.3)
 
@@ -203,19 +220,21 @@ def create_visualizations(results, layer_evolution, output_dir):
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
-    ax1.plot(epochs, adam_m, 'g-o', linewidth=2, markersize=8)
-    ax1.set_xlabel('Epoch', fontsize=12)
-    ax1.set_ylabel('Mean exp_avg Norm (m)', fontsize=12)
+    adam_x_norm, _, _ = _normalize(epochs)
+    adam_m_norm, _, _ = _normalize(adam_m)
+    adam_v_norm, _, _ = _normalize(adam_v)
+
+    ax1.plot(adam_x_norm, adam_m_norm, 'g-o', linewidth=2, markersize=8)
+    ax1.set_xlabel('Normalized Epoch', fontsize=12)
+    ax1.set_ylabel('Normalized exp_avg Norm (m)', fontsize=12)
     ax1.set_title('Adam First Moment (Gradient Moving Average)', fontsize=12, fontweight='bold')
     ax1.grid(True, alpha=0.3)
-    ax1.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
 
-    ax2.plot(epochs, adam_v, 'purple', marker='o', linewidth=2, markersize=8)
-    ax2.set_xlabel('Epoch', fontsize=12)
-    ax2.set_ylabel('Mean exp_avg_sq Norm (v)', fontsize=12)
+    ax2.plot(adam_x_norm, adam_v_norm, 'purple', marker='o', linewidth=2, markersize=8)
+    ax2.set_xlabel('Normalized Epoch', fontsize=12)
+    ax2.set_ylabel('Normalized exp_avg_sq Norm (v)', fontsize=12)
     ax2.set_title('Adam Second Moment (Squared Gradient MA)', fontsize=12, fontweight='bold')
     ax2.grid(True, alpha=0.3)
-    ax2.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
 
     plt.suptitle('DETR Adam Optimizer State Evolution', fontsize=14, fontweight='bold', y=1.02)
     plt.tight_layout()
@@ -231,17 +250,17 @@ def create_visualizations(results, layer_evolution, output_dir):
 
     # Loss
     ax = axes[0, 0]
-    ax.plot(loss_epochs, losses, 'b-o', linewidth=2, markersize=8)
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Loss')
+    ax.plot(loss_x_norm, loss_y_norm, 'b-o', linewidth=2, markersize=8)
+    ax.set_xlabel('Normalized Epoch')
+    ax.set_ylabel('Normalized Loss')
     ax.set_title('Training Loss', fontweight='bold')
     ax.grid(True, alpha=0.3)
 
     # Weight Norm
     ax = axes[0, 1]
-    ax.plot(epochs, weight_norms, 'r-s', linewidth=2, markersize=8)
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Mean Weight Norm')
+    ax.plot(weight_x_norm, weight_y_norm, 'r-s', linewidth=2, markersize=8)
+    ax.set_xlabel('Normalized Epoch')
+    ax.set_ylabel('Normalized Mean Weight Norm')
     ax.set_title('Weight Norm', fontweight='bold')
     ax.grid(True, alpha=0.3)
 
@@ -250,17 +269,28 @@ def create_visualizations(results, layer_evolution, output_dir):
     lrs_main = [r.get('learning_rates', [0])[0] for r in results]
     lrs_backbone = [r.get('learning_rates', [0, 0])[1] if len(r.get('learning_rates', [])) > 1 else 0 for r in results]
 
-    x = np.arange(len(epochs))
-    width = 0.35
-    bars1 = ax.bar(x - width/2, lrs_main, width, label='Main LR', color='#3498db')
-    bars2 = ax.bar(x + width/2, lrs_backbone, width, label='Backbone LR', color='#2ecc71')
-    ax.set_xlabel('Epoch')
-    ax.set_ylabel('Learning Rate')
+    lrs_all = lrs_main + lrs_backbone
+    lrs_norm, _, _ = _normalize(lrs_all)
+    if lrs_norm:
+        lrs_main_norm = lrs_norm[:len(lrs_main)]
+        lrs_backbone_norm = lrs_norm[len(lrs_main):]
+    else:
+        lrs_main_norm = []
+        lrs_backbone_norm = []
+
+    x_norm, _, _ = _normalize(epochs)
+    if len(epochs) > 1:
+        step = 1.0 / (len(epochs) - 1)
+        width = step * 0.4
+    else:
+        width = 0.1
+
+    ax.bar([x - width / 2 for x in x_norm], lrs_main_norm, width, label='Main LR', color='#3498db')
+    ax.bar([x + width / 2 for x in x_norm], lrs_backbone_norm, width, label='Backbone LR', color='#2ecc71')
+    ax.set_xlabel('Normalized Epoch')
+    ax.set_ylabel('Normalized Learning Rate')
     ax.set_title('Learning Rates', fontweight='bold')
-    ax.set_xticks(x)
-    ax.set_xticklabels(epochs)
     ax.legend()
-    ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
     ax.grid(True, alpha=0.3)
 
     # Model Summary (text)
@@ -304,16 +334,30 @@ def create_visualizations(results, layer_evolution, output_dir):
     print(f"\n[OK] All visualizations saved to: {output_dir}")
 
 
-def compare_checkpoints(ckpt_dir, output_dir):
-    """Compare all checkpoints in directory."""
+def compare_checkpoints(ckpt_dir, output_dir, min_epoch=None, max_epoch=None, epochs=None):
+    """Compare checkpoints in directory with optional epoch filtering."""
     ckpt_dir = Path(ckpt_dir)
     output_dir = Path(output_dir)
 
     # Find all checkpoints
-    ckpt_files = sorted(
-        ckpt_dir.glob("checkpoint_epoch_*.pth"),
-        key=lambda x: int(x.stem.split('_')[-1])
-    )
+    all_files = []
+    for p in ckpt_dir.glob("checkpoint_epoch_*.pth"):
+        try:
+            ep = int(p.stem.split('_')[-1])
+        except Exception:
+            continue
+        all_files.append((ep, p))
+
+    if epochs:
+        epoch_set = set(epochs)
+        all_files = [pair for pair in all_files if pair[0] in epoch_set]
+    else:
+        if min_epoch is not None:
+            all_files = [pair for pair in all_files if pair[0] >= min_epoch]
+        if max_epoch is not None:
+            all_files = [pair for pair in all_files if pair[0] <= max_epoch]
+
+    ckpt_files = [p for _, p in sorted(all_files, key=lambda x: x[0])]
 
     if not ckpt_files:
         print("No checkpoints found!")
@@ -339,7 +383,11 @@ def compare_checkpoints(ckpt_dir, output_dir):
 
     for ckpt_path in ckpt_files:
         epoch = int(ckpt_path.stem.split('_')[-1])
-        ckpt = load_checkpoint(ckpt_path)
+        try:
+            ckpt = load_checkpoint(ckpt_path)
+        except Exception as exc:
+            print(f"  Warning: skipping {ckpt_path.name}: {exc}")
+            continue
 
         epoch_result = {
             'epoch': epoch,
@@ -430,10 +478,20 @@ def main():
                        help='Directory containing DETR checkpoints')
     parser.add_argument('--output-dir', type=str, default=str(DEFAULT_OUTPUT_DIR),
                        help='Directory for output files and visualizations')
+    parser.add_argument('--min-epoch', type=int, default=None, help='Minimum epoch to include')
+    parser.add_argument('--max-epoch', type=int, default=None, help='Maximum epoch to include')
+    parser.add_argument('--epochs', type=str, default="", help='Comma-separated epoch list to include')
 
     args = parser.parse_args()
 
-    compare_checkpoints(args.checkpoint_dir, args.output_dir)
+    epochs = None
+    if args.epochs:
+        try:
+            epochs = [int(x.strip()) for x in args.epochs.split(",") if x.strip()]
+        except Exception:
+            epochs = None
+
+    compare_checkpoints(args.checkpoint_dir, args.output_dir, args.min_epoch, args.max_epoch, epochs)
 
 
 if __name__ == "__main__":
