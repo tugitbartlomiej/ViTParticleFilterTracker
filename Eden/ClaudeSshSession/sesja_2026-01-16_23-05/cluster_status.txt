@@ -1,0 +1,50 @@
+# Eden Cluster Status - 2026-01-16 23:05
+
+## Nodes Status (sinfo)
+
+Node       Free CPUs     Free GPUs    Free MEM [GiB]
+===================================================
+dgx-1      65 / 128         0 / 8       1268 / 2016   [RUNNING]
+dgx-2     128 / 128         8 / 8       1008 / 1008   [DOWN - awaria klimatyzacji]
+dgx-3     128 / 128         8 / 8       1008 / 1008   [DOWN - awaria klimatyzacji]
+dgx-4      96 / 128         0 / 8        697 / 1007   [RUNNING]
+hopper     49 / 128         0 / 8        863 / 1007   [RUNNING]
+hopper-2  224 / 224         8 / 8       2015 / 2015   [DOWN - gres/gpu count]
+pascal      0 /  36         0 / 4        440 /  504   [RUNNING]
+sr-1       39 /  48         0 / 0        956 / 1008   [NO GPU]
+sr-2       48 /  48         0 / 0       1008 / 1008   [NO GPU]
+sr-3       40 /  48         0 / 0        960 / 1008   [NO GPU]
+
+## Queue - Short Partition
+
+JOBID              PARTITION  NAME       USER      ST  TIME   NODES NODELIST(REASON)
+1516590_[58-143%8] short      fastfold   mwisniew  PD  0:00   1     (JobArrayTaskLimit)
+1519383            short      save-act   hkowalsk  PD  0:00   1     (Priority)
+1519457            short      ssh-serv   ljaremek  PD  0:00   1     (Priority)
+1519332            short      gpu-serv   mgalkows  PD  0:00   1     (Priority)
+1510090_[2-3,5-79] short      fine_tun   owerner   PD  0:00   1     (ReqNodeNotAvail)
+1510093_[0-59]     short      fine_tun   owerner   PD  0:00   1     (ReqNodeNotAvail)
+1519552            short      yolo_20k   bpiotrow  PD  0:00   1     (Priority)  <-- NASZ JOB
+
+## Queue - Hopper Partition
+
+JOBID              PARTITION  NAME       USER      ST  TIME      NODES NODELIST
+1510080_[6,8-79]   hopper     fine_tun   owerner   PD  0:00      1     (Priority)
+1519524            hopper     kar        ptomasze  R   0:03:39   1     hopper
+1518906            hopper     Badacz-c   vzaigraj  R   1:54:35   1     hopper
+1518904-1518905    hopper     Badacz-c   vzaigraj  R   ~2h       1     hopper
+1518901            hopper     Badacz-c   vzaigraj  R   7:18:54   1     hopper
+1509387            hopper     FloorPLa   pnieciec  R   1d7h      1     hopper
+
+## User bpiotrowski Jobs
+
+JOBID    PARTITION  NAME         USER      ST  TIME   NODES NODELIST(REASON)
+1519552  short      yolo_20k     bpiotrow  PD  0:00   1     (Priority)
+
+## Recent Completed Jobs (sacct)
+
+JobID     JobName                    State      ExitCode  Elapsed     End
+1468105   detr_20k_finetune_dgx1     TIMEOUT    0:0       5-00:00:16  2026-01-03
+1500982   yolo_20k_dgx1              COMPLETED  0:0       04:57:23    2026-01-07
+1509138   detr_20k_4gpu              FAILED     2:0       00:01:04    2026-01-11
+1509621   yolo_20k_ft                FAILED     1:0       00:00:00    2026-01-12
