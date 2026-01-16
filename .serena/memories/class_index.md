@@ -1,9 +1,9 @@
 # Indeks Klas Projektu (Serena MCP)
 
-**Ostatnia aktualizacja:** 2026-01-12 06:00:00
+**Ostatnia aktualizacja:** 2026-01-16 22:05:00
 **Metoda skanowania:** Serena MCP `get_symbols_overview`
 **Liczba klas:** 12
-**Liczba plików:** 80+
+**Liczba plików:** ~80
 
 ---
 
@@ -12,76 +12,85 @@
 ### AdvancedDatasetSelection/
 
 #### main_selection_pipeline.py
-- **`AdvancedDatasetSelectionPipeline`** - główny pipeline selekcji datasetu
-  - `__init__()` - inicjalizacja pipeline
+- **`AdvancedDatasetSelectionPipeline`** - Główny pipeline do selekcji danych
+  - `__init__()` - inicjalizacja
   - `load_datasets()` - ładowanie datasetów
   - `run()` - uruchomienie pipeline
-  - `_generate_output()` - generowanie wyników
+  - `_generate_output()` - generowanie wyniku
   - `_generate_visualizations()` - wizualizacje
-  - `_generate_report()` - raport końcowy
+  - `_generate_report()` - raport
 
-#### feature_extractors/dino_extractor.py
-- **`DINOExtractor`** - ekstrakcja cech DINO
-  - `__init__()` - inicjalizacja modelu DINO
-  - `_initialize_model()` - ładowanie modelu
-  - `extract_cls_features()` - ekstrakcja CLS token
-  - `compute_features_batch()` - batch processing
-  - `compute_similarity_matrix()` - macierz podobieństwa
+#### feature_extractors/
+- **dino_extractor.py**
+  - `DINOExtractor` - Ekstraktor cech DINOv2 ViT-L/16
+    - `extract_cls_features()` - ekstrakcja CLS token
+    - `compute_features_batch()` - batch processing
+    - `compute_similarity_matrix()` - macierz podobieństwa
 
-#### feature_extractors/fourier_analyzer.py
-- **`FourierAnalyzer`** - analiza Fouriera obrazów
-  - `compute_frequency_features()` - cechy częstotliwościowe
-  - `compute_features_batch()` - batch processing
-  - `filter_redundant()` - filtrowanie redundantnych
-  - `analyze_diversity()` - analiza różnorodności
+- **fastsam_extractor.py**
+  - `FastSAMExtractor` - Ekstraktor cech FastSAM (kompleksowość sceny)
+    - `extract_masks()` - ekstrakcja masek
+    - `compute_scene_complexity()` - obliczanie złożoności
+    - `compute_complexity_batch()` - batch processing
 
-#### selection_methods/cluster_selector.py
-- **`ClusterBasedSelector`** - selekcja klastrowa z FAISS
-  - `extract_all_features()` - ekstrakcja cech
-  - `combine_features()` - łączenie cech
-  - `cluster_features()` - klastrowanie FAISS GPU
-  - `select_representatives()` - wybór reprezentantów
-  - `select_optimal_subset()` - optymalny podzbiór
+- **fourier_analyzer.py**
+  - `FourierAnalyzer` - Analiza częstotliwościowa obrazów
+    - `compute_frequency_features()` - cechy FFT
+    - `compute_similarity_matrix()` - macierz podobieństwa
+    - `filter_redundant()` - filtrowanie redundantnych
+    - `analyze_diversity()` - analiza różnorodności
 
-#### selection_methods/detr_el2n_scorer.py
-- **`DETR_EL2N_Scorer`** - scorer EL2N dla DETR
-  - `compute_single_image_difficulty()` - trudność obrazu
-  - `compute_el2n_scores()` - obliczanie EL2N
-  - `get_detection_report()` - raport detekcji
-  - `save_selected_visualizations()` - wizualizacje
+#### selection_methods/
+- **cluster_selector.py**
+  - `ClusterBasedSelector` - Selekcja oparta na klastrowaniu K-means
+    - `extract_all_features()` - ekstrakcja wszystkich cech
+    - `combine_features()` - łączenie cech z wagami PCA
+    - `cluster_features()` - klasteryzacja FAISS GPU
+    - `select_representatives()` - wybór reprezentantów
+    - `select_optimal_subset()` - optymalny podzbiór
+    - `generate_selection_report()` - raport selekcji
 
-#### utils/coco_handler.py
-- **`COCOHandler`** - obsługa formatu COCO
-  - `load_annotations()` - ładowanie adnotacji
-  - `get_image_paths()` - ścieżki obrazów
-  - `filter_by_image_ids()` - filtrowanie
-  - `merge_datasets()` - łączenie datasetów
-  - `save_annotations()` - zapis adnotacji
-
----
-
-### Eden/Scripts/Train20kDataset_YOLO_31.12.25/
-
-#### yolo_train_20k_finetune.py
-- **`YOLOFineTuner`** - trening YOLO (v1 - z bugiem resume)
-  - `train()` - trening z resume=True (BŁĘDNE)
-  - `_save_best_model()` - zapis najlepszego modelu
-
-#### yolo_train_20k_finetune_v2.py (NOWY)
-- **`YOLOFineTunerV2`** - trening YOLO (v2 - poprawiony)
-  - `__init__()` - ładuje pretrained weights (NIE resume)
-  - `train()` - nowy trening bez resume=True
-  - `_save_best_model()` - zapis najlepszego modelu
-  - `_save_emergency_checkpoint()` - checkpoint awaryjny
+- **detr_el2n_scorer.py**
+  - `DETR_EL2N_Scorer` - Scorer EL2N używający DETR Query 81
+    - `compute_single_image_difficulty()` - trudność obrazu
+    - `compute_el2n_scores()` - obliczanie EL2N
+    - `save_selected_visualizations()` - wizualizacje
 
 ---
 
 ### YOLO_DETR_Benchmarks/scripts/
 
-#### benchmark_cataract_complete.py
-- **`DFLoss`** - funkcja straty
-- `benchmark_split()` - benchmark na podziale danych
-- `evaluate()` - ewaluacja modelu
+#### benchmark_yolo_vs_detr_q81_all_epoch.py
+- **Główne funkcje benchmarkowe:**
+  - `load_yolo_model()` - ładowanie YOLO
+  - `load_detr_model()` - ładowanie DETR
+  - `prepare_coco_annotations()` - przygotowanie annotacji (z exclude_images dla data leakage)
+  - `run_inference_on_split()` - inferencja na splicie
+  - `evaluate_predictions()` - ewaluacja predykcji
+  - `generate_report()` - generowanie raportu
+- **Klasy:**
+  - `DFLoss` - niestandardowa funkcja straty
+
+#### DETR_Background_Training/
+- `BackgroundTaskExecutor` - wykonawca zadań w tle
+- `StatusManager` - zarządzanie statusem pipeline
+- `PipelineMonitor` - monitorowanie postępu
+
+---
+
+### BareDetr/
+
+#### data/dataset.py
+- **`CocoDetectionDataset`** - Dataset COCO dla DETR
+  - `__init__()` - inicjalizacja z transformacjami
+  - `__getitem__()` - pobieranie próbki
+
+#### engine.py
+- **`SmoothedValue`** - wygładzanie wartości metrycznych
+- **`MetricLogger`** - logowanie metryk podczas treningu
+- **Funkcje:**
+  - `train_one_epoch()` - trening jednej epoki
+  - `evaluate()` - ewaluacja modelu
 
 ---
 
@@ -89,41 +98,47 @@
 
 | Moduł | Pliki | Klasy |
 |-------|-------|-------|
-| AdvancedDatasetSelection | 29 | 6 |
-| YOLO_DETR_Benchmarks | 48 | 2 |
-| Eden/Scripts | 2 | 2 |
-| **TOTAL** | **79** | **10** |
+| AdvancedDatasetSelection | 30 | 6 |
+| YOLO_DETR_Benchmarks | 49 | 3+ |
+| BareDetr | 6 | 3 |
+| **TOTAL** | **85** | **12+** |
 
 ---
 
 ## Kluczowe klasy według funkcji
 
 ### Feature Extractors
-- `DINOExtractor` - cechy semantyczne DINO (AdvancedDatasetSelection)
-- `FourierAnalyzer` - cechy częstotliwościowe FFT (AdvancedDatasetSelection)
+- `DINOExtractor` - cechy semantyczne DINOv2 (AdvancedDatasetSelection)
+- `FastSAMExtractor` - kompleksowość wizualna (AdvancedDatasetSelection)
+- `FourierAnalyzer` - analiza częstotliwościowa (AdvancedDatasetSelection)
 
 ### Selektory/Pipeline
-- `AdvancedDatasetSelectionPipeline` - główny pipeline (AdvancedDatasetSelection)
-- `ClusterBasedSelector` - selekcja klastrowa FAISS (AdvancedDatasetSelection)
-- `DETR_EL2N_Scorer` - scorer trudności EL2N (AdvancedDatasetSelection)
+- `AdvancedDatasetSelectionPipeline` - główny pipeline selekcji
+- `ClusterBasedSelector` - selekcja K-means z FAISS GPU
+- `DETR_EL2N_Scorer` - scoring trudności EL2N
 
-### Training
-- `YOLOFineTuner` - YOLO training v1 z bugiem (Eden)
-- `YOLOFineTunerV2` - YOLO training v2 poprawiony (Eden) **NOWY**
+### Datasety
+- `CocoDetectionDataset` - dataset COCO dla DETR (BareDetr)
 
-### Utils
-- `COCOHandler` - obsługa formatu COCO (AdvancedDatasetSelection)
+### Benchmarki
+- `DFLoss` - loss dla YOLO
+- Funkcje benchmarkowe w `benchmark_yolo_vs_detr_q81_all_epoch.py`
 
----
-
-## Ostatnie zmiany (2026-01-12)
-
-### Dodano:
-- `YOLOFineTunerV2` - poprawiony skrypt treningu YOLO
-  - Fix: używa `--pretrained_path` zamiast `resume=True`
-  - Pozwala trenować zakończone checkpointy dalej
+### Training Utils
+- `SmoothedValue` - wygładzanie metryk
+- `MetricLogger` - logowanie postępu
 
 ---
 
-*Indeks wygenerowany przez Serena MCP: 2026-01-12 06:00:00*
+## Ostatnie zmiany (2026-01-16)
+
+### Data Leakage Prevention
+Dodano mechanizm wykluczania leaked images w benchmarkach:
+- `LEAKED_IMAGES_FILE` - plik JSON z listą 48 leaked images
+- `prepare_coco_annotations(exclude_images=)` - parametr wykluczania
+- `datasets_full` vs `datasets_clean` - rozdzielenie datasetów
+
+---
+
+*Indeks wygenerowany przez Serena MCP: 2026-01-16 22:05:00*
 *Projekt: ViTParticleFilterTracker*
