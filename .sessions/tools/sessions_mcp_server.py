@@ -215,20 +215,41 @@ def _do_rebuild_index():
         except (OSError, UnicodeDecodeError):
             continue
 
-        # Extract metadata
+        # Extract rich metadata
         title = extract_title(content)
         date = extract_field(content, "Date") or "Unknown"
+        session_type = extract_field(content, "Type") or "Unknown"
+        tags = extract_tags(content)
+        problems = extract_problems_solved(content)
+        lessons = extract_lessons_learned(content)
+
+        # Create enriched content for better RAG
+        # Prepend important sections for better retrieval
+        enriched_header = f"Session: {session_dir.name}\n"
+        enriched_header += f"Date: {date}\n"
+        enriched_header += f"Type: {session_type}\n"
+        if tags:
+            enriched_header += f"Tags: {', '.join(tags)}\n"
+        if problems:
+            enriched_header += f"Problems Solved: {'; '.join(problems[:3])}\n"
+        if lessons:
+            enriched_header += f"Lessons: {'; '.join(lessons[:3])}\n"
+        enriched_header += "\n"
 
         # Chunk the content
         chunks = chunk_text(content, CHUNK_SIZE, CHUNK_OVERLAP)
 
         for i, chunk in enumerate(chunks):
             doc_id = f"{session_dir.name}__chunk_{i}"
-            documents.append(chunk)
+            # Add enriched header to first chunk only
+            doc_content = (enriched_header + chunk) if i == 0 else chunk
+            documents.append(doc_content)
             metadatas.append({
                 "session_id": session_dir.name,
                 "title": title,
                 "date": date,
+                "type": session_type,
+                "tags": ",".join(tags),
                 "chunk_index": i
             })
             ids.append(doc_id)
@@ -276,7 +297,20 @@ def chunk_text(text: str, chunk_size: int = 400, overlap: int = 50) -> list[str]
 
 def extract_title(content: str) -> str:
     """Extract title/objective from session content."""
-    # Try Objective section first
+    # Try TL;DR section first (best for RAG)
+    tldr_match = re.search(
+        r"## TL;DR\s*\n(.+?)(?:\n\n|\n##)",
+        content,
+        re.DOTALL
+    )
+    if tldr_match:
+        tldr = tldr_match.group(1).strip()
+        # Skip HTML comments
+        tldr = re.sub(r"<!--.*?-->", "", tldr, flags=re.DOTALL).strip()
+        if tldr:
+            return tldr[:200]
+
+    # Try Objective section
     obj_match = re.search(
         r"## Objective\s*\n(.+?)(?:\n\n|\n##)",
         content,
@@ -295,27 +329,106 @@ def extract_title(content: str) -> str:
 
 def extract_field(content: str, field: str) -> Optional[str]:
     """Extract a metadata field value."""
+    # Try YAML frontmatter first
+    yaml_match = re.search(rf"^{field.lower()}:\s*(.+?)$", content, re.MULTILINE)
+    if yaml_match:
+        return yaml_match.group(1).strip()
+
+    # Try markdown bold format
     pattern = rf"\*\*{field}:\*\*\s*(.+?)(?:\n|$)"
     match = re.search(pattern, content)
     return match.group(1).strip() if match else None
 
 
+def extract_yaml_frontmatter(content: str) -> dict:
+    """Extract YAML frontmatter if present."""
+    frontmatter_match = re.match(r"^---\s*\n(.+?)\n---", content, re.DOTALL)
+    if not frontmatter_match:
+        return {}
+
+    frontmatter = {}
+    for line in frontmatter_match.group(1).split("\n"):
+        if ":" in line:
+            key, value = line.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+            # Parse lists
+            if value.startswith("[") and value.endswith("]"):
+                value = [v.strip().strip("'\"") for v in value[1:-1].split(",") if v.strip()]
+            frontmatter[key] = value
+
+    return frontmatter
+
+
 def extract_tags(content: str) -> list[str]:
-    """Auto-detect tags from content."""
+    """Extract tags from YAML frontmatter and auto-detect from content."""
     tags = set()
-    keywords = [
+
+    # First, try YAML frontmatter tags
+    frontmatter = extract_yaml_frontmatter(content)
+    if "tags" in frontmatter and isinstance(frontmatter["tags"], list):
+        tags.update(frontmatter["tags"])
+
+    # Extract explicit Keywords section
+    keywords_match = re.search(r"## Keywords\s*\n(.+?)(?:\n\n|\n##|$)", content, re.DOTALL)
+    if keywords_match:
+        keywords_text = keywords_match.group(1)
+        # Extract backtick-wrapped keywords
+        explicit_keywords = re.findall(r"`([^`]+)`", keywords_text)
+        tags.update(kw.lower() for kw in explicit_keywords)
+
+    # Auto-detect common keywords
+    auto_keywords = [
         "detr", "yolo", "training", "benchmark", "ssh", "eden",
         "ieee", "article", "pipeline", "dataset", "analysis",
         "k-means", "clustering", "el2n", "dino", "sam",
-        "cataract", "error", "fix", "bug"
+        "cataract", "error", "fix", "bug", "checkpoint",
+        "slurm", "gpu", "cuda", "memory", "oom"
     ]
 
     content_lower = content.lower()
-    for kw in keywords:
+    for kw in auto_keywords:
         if kw in content_lower:
             tags.add(kw)
 
     return sorted(tags)
+
+
+def extract_problems_solved(content: str) -> list[str]:
+    """Extract problems solved section for better RAG."""
+    problems = []
+
+    # Try "Problems Solved" section
+    section_match = re.search(
+        r"## Problems Solved\s*\n(.+?)(?:\n##|$)",
+        content,
+        re.DOTALL
+    )
+    if section_match:
+        section = section_match.group(1)
+        # Extract numbered or bulleted items
+        items = re.findall(r"(?:^|\n)\d+\.\s*\*\*(.+?)\*\*", section)
+        problems.extend(items)
+
+    return problems
+
+
+def extract_lessons_learned(content: str) -> list[str]:
+    """Extract lessons learned section."""
+    lessons = []
+
+    section_match = re.search(
+        r"## Lessons Learned\s*\n(.+?)(?:\n##|$)",
+        content,
+        re.DOTALL
+    )
+    if section_match:
+        section = section_match.group(1)
+        # Extract list items
+        items = re.findall(r"(?:^|\n)-\s*(.+?)(?:\n|$)", section)
+        lessons.extend(item.strip() for item in items if item.strip())
+
+    return lessons
 
 
 # =============================================================================
