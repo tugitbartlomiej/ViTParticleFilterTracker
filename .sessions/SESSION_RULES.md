@@ -421,7 +421,87 @@ Stare sesje (z podziałem `ssh/`, `benchmark/`, etc.) są migrowane do archive.
 
 ---
 
+## 🔍 RAG Search (Semantic Search)
+
+System semantycznego wyszukiwania sesji przy użyciu embeddingów i bazy wektorowej.
+
+### Funkcje
+
+- **Wyszukiwanie semantyczne** - znajdź sesje po znaczeniu, nie tylko słowach kluczowych
+- **Multilingual** - obsługuje polski i angielski (model bge-m3)
+- **Auto-indeksowanie** - automatycznie wykrywa zmiany i przebudowuje indeks
+- **Integracja z Claude Code** - działa przez MCP (Model Context Protocol)
+
+### Instalacja
+
+```bash
+# 1. Zainstaluj zależności
+pip install -r .sessions/tools/requirements_mcp.txt
+
+# 2. Dodaj serwer MCP do Claude Code
+claude mcp add --transport stdio sessions -- python .sessions/tools/sessions_mcp_server.py
+
+# Lub użyj .mcp.json (już skonfigurowany w projekcie)
+```
+
+### Użycie w Claude Code
+
+Po konfiguracji możesz pisać naturalnym językiem:
+
+```
+> Znajdź sesje gdzie naprawiałem pipeline DETR
+> Kiedy pracowałem nad artykułem IEEE?
+> Pokaż sesje związane z treningiem na Eden
+> Jakie problemy napotkałem z K-Means clustering?
+```
+
+### Dostępne narzędzia MCP
+
+| Narzędzie | Opis |
+|-----------|------|
+| `search_sessions(query, top_k)` | Semantyczne wyszukiwanie sesji |
+| `get_session_content(session_id)` | Pobierz pełną zawartość sesji |
+| `list_sessions(tag, type, limit)` | Lista sesji z filtrowaniem |
+| `get_index_status()` | Status indeksu wektorowego |
+| `rebuild_index()` | Wymuś przebudowę indeksu |
+
+### Wymagania sprzętowe
+
+| Komponent | RAM | VRAM | Dysk |
+|-----------|-----|------|------|
+| bge-m3 (embeddings) | ~2GB | ~2.5GB | ~2.3GB |
+| ChromaDB | ~200MB | 0 | ~50MB |
+| **Razem** | ~2.2GB | ~2.5GB | ~2.4GB |
+
+**Alternatywa CPU-only:** Ustaw `device="cpu"` w kodzie (wolniejsze, ale bez GPU).
+
+### Jak działa indeksowanie?
+
+1. **Lazy loading** - model ładuje się przy pierwszym zapytaniu
+2. **Auto-rebuild** - przy każdym search sprawdza hash plików
+3. **Persistent storage** - indeks zapisany w `~/.cache/vit_sessions_vectordb/`
+4. **Chunking** - sesje dzielone na fragmenty po 400 słów z 50-słowowym overlap
+
+### Pliki
+
+```
+.sessions/
+├── tools/
+│   ├── sessions_mcp_server.py    # Serwer MCP
+│   └── requirements_mcp.txt      # Zależności Python
+.mcp.json                          # Konfiguracja MCP dla projektu
+```
+
+---
+
 ## 📝 Changelog
+
+### Version 2.1 (2026-01-17)
+- **NEW:** RAG Search - semantyczne wyszukiwanie sesji
+- **NEW:** Integracja z Claude Code przez MCP
+- **NEW:** Model bge-m3 (multilingual, polski + angielski)
+- **NEW:** ChromaDB jako baza wektorowa
+- **NEW:** Auto-indeksowanie przy zmianach
 
 ### Version 2.0 (2025-10-31)
 - **BREAKING:** Nowy format nazewnictwa `Session_YYYY-MM-DD_HHMMSS`
@@ -440,4 +520,4 @@ Stare sesje (z podziałem `ssh/`, `benchmark/`, etc.) są migrowane do archive.
 
 **System Status:** Active
 **Maintainer:** Project Team
-**Last Updated:** 2025-10-31
+**Last Updated:** 2026-01-17

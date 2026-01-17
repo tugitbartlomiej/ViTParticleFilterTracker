@@ -26,26 +26,26 @@ class Colors:
 def print_header():
     """Print script header"""
     print(f"{Colors.CYAN}")
-    print("━" * 50)
+    print("=" * 50)
     print("  Session Manager - Save Session (Python)")
-    print("━" * 50)
+    print("=" * 50)
     print(f"{Colors.RESET}")
 
 def print_success(msg: str):
     """Print success message"""
-    print(f"{Colors.GREEN}✓{Colors.RESET} {msg}")
+    print(f"{Colors.GREEN}[OK]{Colors.RESET} {msg}")
 
 def print_error(msg: str):
     """Print error message"""
-    print(f"{Colors.RED}✗{Colors.RESET} {msg}")
+    print(f"{Colors.RED}[ERR]{Colors.RESET} {msg}")
 
 def print_info(msg: str):
     """Print info message"""
-    print(f"{Colors.BLUE}ℹ{Colors.RESET} {msg}")
+    print(f"{Colors.BLUE}[i]{Colors.RESET} {msg}")
 
 def print_warning(msg: str):
     """Print warning message"""
-    print(f"{Colors.YELLOW}⚠{Colors.RESET} {msg}")
+    print(f"{Colors.YELLOW}[!]{Colors.RESET} {msg}")
 
 def get_utc_timestamp() -> str:
     """Get current UTC timestamp in format YYYY-MM-DD_HH-MM-SS"""
@@ -122,80 +122,117 @@ ls -la "{session_path}"
     print_success("Created README.md")
 
 def create_session_summary(session_path: Path, session_type: str, description: str):
-    """Create SESSION_SUMMARY.md for session"""
+    """Create SESSION_SUMMARY.md for session (RAG-optimized template)"""
     session_name = session_path.name
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     date_part = datetime.utcnow().strftime("%Y-%m-%d")
     time_part = datetime.utcnow().strftime("%H:%M:%S")
 
-    summary_content = f"""# Session Summary: {session_name}
+    # RAG-optimized template with YAML frontmatter
+    summary_content = f"""---
+date: {date_part}
+type: {session_type}
+tags: []
+related: []
+status: in-progress
+importance: medium
+---
+# Session: {session_name}
+
+## TL;DR
+<!-- 2-3 zdania podsumowujące CO zrobiłeś i JAKI był wynik -->
+<!-- RAG zwraca ~300 znaków - ta sekcja musi być krótka i treściwa -->
+{description}
 
 ## Metadata
-- **Type:** {session_type}
 - **Date:** {date_part}
 - **Time:** {time_part} UTC
-- **Duration:** (to be filled)
+- **Type:** {session_type}
 - **Status:** In Progress
+- **Duration:** (to be filled)
 
 ## Objective
+<!-- Co chcesz osiągnąć w tej sesji? -->
 {description}
 
 ## Context
-(Provide background information, previous work, why this session was needed)
+<!-- Dlaczego to robisz? Powiązanie z poprzednimi sesjami. -->
+
 
 ## Actions Taken
 
-### Step 1: (Fill in action title)
-**Description:** (Describe what was done)
-
-**Command:**
-```bash
-# Commands used
-```
-
+### 1. (Action title)
+**What:**
+**Why:**
 **Result:**
-(Describe the result)
 
-## Key Findings
-- Finding 1
-- Finding 2
-- Finding 3
+### 2. (Action title)
+**What:**
+**Why:**
+**Result:**
+
+## Problems Solved
+<!-- Lista problemów które rozwiązałeś - kluczowe dla RAG! -->
+1. **(Problem name)** - (Solution)
+2. **(Problem name)** - (Solution)
 
 ## Issues Encountered
+<!-- Problemy na które natrafiłeś i jak je rozwiązałeś -->
 
-### Issue 1: (Issue title)
-**Description:** (Describe the issue)
-**Resolution:** (How it was resolved)
+### Issue: (Issue title)
+- **Symptom:**
+- **Cause:**
+- **Solution:**
 
-## Conclusions
-(Summary of what was learned or achieved)
+## Key Findings
+<!-- Najważniejsze odkrycia/wnioski -->
+-
+-
+-
+
+## Lessons Learned
+<!-- Wiedza do zapamiętania na przyszłość - kluczowe dla RAG! -->
+-
+-
+-
+
+## Decisions Made
+<!-- Decyzje podjęte i DLACZEGO - ważne dla zrozumienia kontekstu -->
+| Decision | Reason | Alternatives Considered |
+|----------|--------|------------------------|
+| | | |
+
+## Results
+
+### Metrics/Outputs
+| Metric | Before | After |
+|--------|--------|-------|
+| | | |
+
+### Files Created/Modified
+- `path/to/file` - description
 
 ## Next Steps
-- [ ] Next step 1
-- [ ] Next step 2
-- [ ] Next step 3
+- [ ]
+- [ ]
+- [ ]
 
-## Files Generated
-- `file1.txt` - Description
-- `file2.json` - Description
+## Related Sessions
+<!-- Linki do powiązanych sesji -->
+- Previous:
+- Related:
 
-## Commands Used
-```bash
-# List commands used in this session
-```
-
-## Related Work
-- Previous session: (link)
-- Related analysis: (link)
+## Keywords
+<!-- Explicit keywords dla lepszego RAG retrieval -->
+`{session_type}` `session`
 
 ---
-
-**Session Created:** {timestamp} UTC
-**Last Updated:** {timestamp} UTC
+**Created:** {timestamp} UTC
+**Updated:** {timestamp} UTC
 """
 
     (session_path / "SESSION_SUMMARY.md").write_text(summary_content, encoding='utf-8')
-    print_success("Created SESSION_SUMMARY.md")
+    print_success("Created SESSION_SUMMARY.md (RAG-optimized)")
 
 def copy_files(session_path: Path, files: Optional[List[str]]):
     """Copy specified files to session folder"""
@@ -294,9 +331,9 @@ SESSION TYPES:
 
     # Summary
     print()
-    print(f"{Colors.GREEN}{'━' * 50}{Colors.RESET}")
+    print(f"{Colors.GREEN}{'=' * 50}{Colors.RESET}")
     print_success("Session created successfully!")
-    print(f"{Colors.GREEN}{'━' * 50}{Colors.RESET}")
+    print(f"{Colors.GREEN}{'=' * 50}{Colors.RESET}")
     print()
     print_info(f"Session Path: {session_path}")
     print_info(f"Session Name: {session_path.name}")

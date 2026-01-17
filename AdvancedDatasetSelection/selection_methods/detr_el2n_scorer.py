@@ -8,6 +8,11 @@ For object detection, difficulty is measured by:
 - High confidence from Q81 = easy sample
 
 Includes visualization of detections for reporting.
+
+Optimized with:
+- Batched inference for GPU efficiency
+- Checkpoint saving for resumable processing
+- DataLoader with parallel workers
 """
 
 import numpy as np
@@ -19,7 +24,9 @@ from PIL import Image, ImageDraw, ImageFont
 from typing import List, Dict, Optional, Tuple
 from pathlib import Path
 import logging
-import cv2
+import json
+import time
+import sys
 from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +34,65 @@ logger = logging.getLogger(__name__)
 
 # Query 81 is the best for tooltip detection (from benchmark analysis)
 DETR_QUERY_ID = 81
+
+# Checkpoint settings
+CHECKPOINT_INTERVAL = 1000  # Save checkpoint every N images
+
+
+class ImageDataset(Dataset):
+    """Dataset for efficient batch loading of images."""
+
+    def __init__(self, image_paths: List[str], processor: DetrImageProcessor):
+        self.image_paths = image_paths
+        self.processor = processor
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        path = self.image_paths[idx]
+        try:
+            image = Image.open(path).convert('RGB')
+            img_width, img_height = image.size
+            inputs = self.processor(images=image, return_tensors="pt")
+            return {
+                'pixel_values': inputs['pixel_values'].squeeze(0),
+                'pixel_mask': inputs['pixel_mask'].squeeze(0),
+                'path': path,
+                'img_size': (img_width, img_height),
+                'valid': True
+            }
+        except Exception as e:
+            # Return placeholder for failed images
+            return {
+                'pixel_values': torch.zeros(3, 800, 800),
+                'pixel_mask': torch.zeros(800, 800),
+                'path': path,
+                'img_size': (0, 0),
+                'valid': False,
+                'error': str(e)
+            }
+
+
+def collate_fn(batch):
+    """Custom collate function to handle variable size images."""
+    valid_items = [item for item in batch if item['valid']]
+    invalid_items = [item for item in batch if not item['valid']]
+
+    if not valid_items:
+        return None
+
+    # Stack tensors
+    pixel_values = torch.stack([item['pixel_values'] for item in valid_items])
+    pixel_mask = torch.stack([item['pixel_mask'] for item in valid_items])
+
+    return {
+        'pixel_values': pixel_values,
+        'pixel_mask': pixel_mask,
+        'paths': [item['path'] for item in valid_items],
+        'img_sizes': [item['img_size'] for item in valid_items],
+        'invalid_items': invalid_items
+    }
 
 
 class DETR_EL2N_Scorer:
@@ -43,7 +109,8 @@ class DETR_EL2N_Scorer:
                  confidence_threshold: float = 0.3,
                  num_labels: int = 1,
                  save_visualizations: bool = True,
-                 vis_output_dir: str = None):
+                 vis_output_dir: str = None,
+                 progress_checkpoint_dir: str = None):
         """
         Initialize DETR EL2N Scorer.
 
@@ -54,6 +121,7 @@ class DETR_EL2N_Scorer:
             num_labels: Number of classes (1 = tooltip only)
             save_visualizations: Whether to save detection visualizations
             vis_output_dir: Directory for visualizations
+            progress_checkpoint_dir: Directory for saving progress checkpoints
         """
         self.checkpoint_path = checkpoint_path
         self.device = device if torch.cuda.is_available() else "cpu"
@@ -61,12 +129,15 @@ class DETR_EL2N_Scorer:
         self.num_labels = num_labels
         self.save_visualizations = save_visualizations
         self.vis_output_dir = Path(vis_output_dir) if vis_output_dir else None
+        self.progress_checkpoint_dir = Path(progress_checkpoint_dir) if progress_checkpoint_dir else Path("./detr_el2n_checkpoints")
 
         self.model = None
         self.processor = None
         self._initialized = False
         self.scores = {}
         self.detection_info = {}  # Store detection info for reporting
+        self._processed_count = 0
+        self._start_time = None
 
     def unload(self):
         """Unload model from GPU memory."""
@@ -84,6 +155,66 @@ class DETR_EL2N_Scorer:
         import gc
         gc.collect()
         logger.info("DETR EL2N model unloaded from memory")
+
+    def _get_checkpoint_path(self) -> Path:
+        """Get the path to the progress checkpoint file."""
+        return self.progress_checkpoint_dir / "detr_el2n_progress.json"
+
+    def _save_checkpoint(self, all_paths: List[str]):
+        """Save current progress to checkpoint file."""
+        self.progress_checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+        checkpoint_data = {
+            'scores': self.scores,
+            'detection_info': self.detection_info,
+            'processed_count': self._processed_count,
+            'total_paths': len(all_paths),
+            'all_paths': all_paths,  # Store original order
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'elapsed_seconds': time.time() - self._start_time if self._start_time else 0
+        }
+
+        checkpoint_path = self._get_checkpoint_path()
+        with open(checkpoint_path, 'w') as f:
+            json.dump(checkpoint_data, f, indent=2)
+
+        logger.info(f"Checkpoint saved: {self._processed_count}/{len(all_paths)} images ({100*self._processed_count/len(all_paths):.1f}%)")
+
+    def _load_checkpoint(self) -> Optional[Dict]:
+        """Load progress from checkpoint file if exists."""
+        checkpoint_path = self._get_checkpoint_path()
+
+        if not checkpoint_path.exists():
+            return None
+
+        try:
+            with open(checkpoint_path, 'r') as f:
+                checkpoint_data = json.load(f)
+
+            logger.info(f"Found checkpoint: {checkpoint_data['processed_count']}/{checkpoint_data['total_paths']} images")
+            logger.info(f"Checkpoint from: {checkpoint_data['timestamp']}")
+
+            return checkpoint_data
+        except Exception as e:
+            logger.warning(f"Failed to load checkpoint: {e}")
+            return None
+
+    def _get_remaining_paths(self, all_paths: List[str], checkpoint: Dict) -> List[str]:
+        """Get list of paths that still need processing."""
+        processed_paths = set(checkpoint['scores'].keys())
+        remaining = [p for p in all_paths if p not in processed_paths]
+        logger.info(f"Resuming: {len(remaining)} images remaining")
+        return remaining
+
+    def clear_checkpoint(self):
+        """Clear the checkpoint file to start fresh."""
+        checkpoint_path = self._get_checkpoint_path()
+        if checkpoint_path.exists():
+            checkpoint_path.unlink()
+            logger.info(f"Checkpoint cleared: {checkpoint_path}")
+        self.scores = {}
+        self.detection_info = {}
+        self._processed_count = 0
 
     def _initialize_model(self):
         """Load DETR model from checkpoint."""
@@ -252,51 +383,203 @@ class DETR_EL2N_Scorer:
         save_path = self.vis_output_dir / f"{img_name}_q81_detection.jpg"
         image.save(save_path)
 
+    def _process_batch_outputs(self, outputs, paths: List[str], img_sizes: List[Tuple[int, int]]) -> List[Dict]:
+        """Process a batch of model outputs and return results for each image."""
+        batch_results = []
+        batch_size = len(paths)
+
+        # Get logits and boxes for the batch
+        logits = outputs.logits  # [batch, 100, num_classes+1]
+        boxes = outputs.pred_boxes  # [batch, 100, 4]
+
+        # Apply softmax
+        probs = F.softmax(logits, dim=-1)
+
+        for i in range(batch_size):
+            img_width, img_height = img_sizes[i]
+
+            # Get ONLY Query 81's prediction (class 0 = tooltip)
+            q81_score = float(probs[i, DETR_QUERY_ID, 0])
+            q81_no_object = float(probs[i, DETR_QUERY_ID, -1])
+
+            # Get Q81 box
+            q81_box_normalized = boxes[i, DETR_QUERY_ID].cpu().numpy()
+            cx, cy, w, h = q81_box_normalized
+
+            # Convert to pixel coordinates (xyxy)
+            x1 = int((cx - w/2) * img_width)
+            y1 = int((cy - h/2) * img_height)
+            x2 = int((cx + w/2) * img_width)
+            y2 = int((cy + h/2) * img_height)
+            q81_box_pixel = [x1, y1, x2, y2]
+
+            # Determine if Q81 detected anything
+            has_detection = q81_score >= self.confidence_threshold
+
+            if has_detection:
+                difficulty = 1.0 - q81_score
+            else:
+                difficulty = 1.0
+
+            # Compute entropy for Q81's prediction
+            q81_probs = probs[i, DETR_QUERY_ID]
+            entropy = -torch.sum(q81_probs * torch.log(q81_probs + 1e-10)).item()
+            max_entropy = np.log(q81_probs.shape[0])
+            normalized_entropy = entropy / max_entropy
+
+            # Combined EL2N score
+            el2n_score = 0.7 * difficulty + 0.3 * normalized_entropy
+
+            result = {
+                'difficulty': float(difficulty),
+                'q81_score': float(q81_score),
+                'q81_no_object': float(q81_no_object),
+                'has_detection': has_detection,
+                'q81_box': q81_box_pixel,
+                'entropy': float(normalized_entropy),
+                'el2n_score': float(el2n_score),
+                'image_size': (img_width, img_height)
+            }
+            batch_results.append(result)
+
+        return batch_results
+
     def compute_el2n_scores(self,
                             image_paths: List[str],
-                            batch_size: int = 8,
+                            batch_size: int = 16,
+                            num_workers: int = 4,
                             show_progress: bool = True,
-                            save_vis_for_selected: bool = False) -> Dict[str, float]:
+                            save_vis_for_selected: bool = False,
+                            resume: bool = True) -> Dict[str, float]:
         """
         Compute EL2N scores for all images using Query 81 only.
 
+        OPTIMIZED VERSION with:
+        - Batched GPU inference
+        - DataLoader with parallel workers
+        - Checkpoint saving every 1000 images
+        - Resume from checkpoint support
+
         Args:
             image_paths: List of image paths
-            batch_size: Batch size (not used, single image processing)
+            batch_size: Batch size for GPU inference (default: 16)
+            num_workers: Number of DataLoader workers (default: 4)
             show_progress: Whether to show progress bar
             save_vis_for_selected: Whether to save visualizations
+            resume: Whether to resume from checkpoint if available
 
         Returns:
             Dictionary mapping image paths to EL2N scores
         """
         self._initialize_model()
+        self._start_time = time.time()
 
-        logger.info(f"Computing DETR Q81 EL2N scores for {len(image_paths)} images...")
+        # Check for existing checkpoint
+        paths_to_process = image_paths
+        if resume:
+            checkpoint = self._load_checkpoint()
+            if checkpoint:
+                # Restore previous progress
+                self.scores = checkpoint['scores']
+                self.detection_info = checkpoint['detection_info']
+                self._processed_count = checkpoint['processed_count']
 
-        self.scores = {}
-        self.detection_info = {}
+                # Get remaining paths
+                paths_to_process = self._get_remaining_paths(image_paths, checkpoint)
 
-        iterator = tqdm(image_paths, desc="Computing DETR Q81 EL2N") if show_progress else image_paths
+                if not paths_to_process:
+                    logger.info("All images already processed! Returning cached results.")
+                    return self.scores
+        else:
+            self.scores = {}
+            self.detection_info = {}
+            self._processed_count = 0
 
-        detected_count = 0
-        no_detection_count = 0
+        total_images = len(image_paths)
+        remaining_images = len(paths_to_process)
 
-        for path in iterator:
-            try:
-                result = self.compute_single_image_difficulty(path, save_vis=save_vis_for_selected)
-                self.scores[path] = result['el2n_score']
-                self.detection_info[path] = result
+        logger.info(f"Computing DETR Q81 EL2N scores: {remaining_images} images to process (batch_size={batch_size})")
+        if self._processed_count > 0:
+            logger.info(f"Resuming from checkpoint: {self._processed_count}/{total_images} already done")
 
-                if result['has_detection']:
-                    detected_count += 1
-                else:
-                    no_detection_count += 1
+        # Create dataset and dataloader
+        # Windows workaround: multiprocessing can cause issues
+        if sys.platform == 'win32' and num_workers > 0:
+            logger.info("Windows detected: using num_workers=0 (multiprocessing issues)")
+            num_workers = 0
 
-            except Exception as e:
-                logger.warning(f"Error processing {path}: {e}")
+        dataset = ImageDataset(paths_to_process, self.processor)
+        dataloader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+            collate_fn=collate_fn,
+            pin_memory=True if self.device == "cuda" else False,
+            prefetch_factor=2 if num_workers > 0 else None
+        )
+
+        detected_count = sum(1 for info in self.detection_info.values() if info.get('has_detection', False))
+        no_detection_count = sum(1 for info in self.detection_info.values() if not info.get('has_detection', True) and 'error' not in info)
+
+        # Process batches
+        pbar = tqdm(dataloader, desc="Computing DETR Q81 EL2N (batched)", disable=not show_progress)
+
+        batch_count = 0
+        for batch in pbar:
+            if batch is None:
+                continue
+
+            # Handle invalid items
+            for invalid_item in batch['invalid_items']:
+                path = invalid_item['path']
                 self.scores[path] = 0.5
-                self.detection_info[path] = {'error': str(e)}
+                self.detection_info[path] = {'error': invalid_item.get('error', 'Unknown error')}
+                self._processed_count += 1
 
+            # Process valid items
+            if batch['pixel_values'].size(0) > 0:
+                # Move to device
+                pixel_values = batch['pixel_values'].to(self.device)
+                pixel_mask = batch['pixel_mask'].to(self.device)
+
+                # Inference
+                with torch.no_grad():
+                    outputs = self.model(pixel_values=pixel_values, pixel_mask=pixel_mask)
+
+                # Process outputs
+                results = self._process_batch_outputs(outputs, batch['paths'], batch['img_sizes'])
+
+                # Store results
+                for path, result in zip(batch['paths'], results):
+                    self.scores[path] = result['el2n_score']
+                    self.detection_info[path] = result
+                    self._processed_count += 1
+
+                    if result['has_detection']:
+                        detected_count += 1
+                    else:
+                        no_detection_count += 1
+
+            batch_count += 1
+
+            # Update progress bar
+            pbar.set_postfix({
+                'processed': f"{self._processed_count}/{total_images}",
+                'det': detected_count,
+                'no_det': no_detection_count
+            })
+
+            # Save checkpoint periodically
+            if batch_count % (CHECKPOINT_INTERVAL // batch_size) == 0:
+                self._save_checkpoint(image_paths)
+
+        # Final checkpoint save
+        self._save_checkpoint(image_paths)
+
+        elapsed = time.time() - self._start_time
+        speed = self._processed_count / elapsed if elapsed > 0 else 0
+        logger.info(f"Completed in {elapsed:.1f}s ({speed:.1f} img/s)")
         logger.info(f"Q81 Detection stats: {detected_count} detected, {no_detection_count} no detection")
 
         return self.scores
