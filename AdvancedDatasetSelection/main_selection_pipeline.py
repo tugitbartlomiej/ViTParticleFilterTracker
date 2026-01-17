@@ -323,12 +323,21 @@ class AdvancedDatasetSelectionPipeline:
         if self.selection_method == 'cluster':
             # New cluster-based approach (ELFS/CCS literature)
             strategy = selection_config.get('strategy', 'centroid')  # 'centroid', 'max_el2n', 'medoid'
+
+            # NEW: PCA and weighting parameters for balanced feature contributions
+            dino_pca_dim = selection_config.get('dino_pca_dim', 32)  # Reduce DINO from 1024 to 32 dims
+            apply_weights = selection_config.get('apply_weights', True)  # Balance feature group contributions
+
+            logger.info(f"Feature balancing: PCA={dino_pca_dim}, weights={apply_weights}")
+
             selected_indices, selected_paths, stats = self.cluster_selector.select_optimal_subset(
                 image_paths=image_paths,
                 target_size=target_size,
                 strategy=strategy,
                 use_cache=use_cache,
-                normalize=True
+                normalize=True,
+                dino_pca_dim=dino_pca_dim,
+                apply_weights=apply_weights
             )
         else:
             # Legacy k-Center Greedy + EL2N ranking

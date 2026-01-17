@@ -19,8 +19,8 @@ models:
     confidence_threshold: 0.5
 datasets:
   existing: ../Eden/Datasets/datasets_20250606.tar/datasets_20250606
-  new_source: E:/cataract_surgery_Instruments_detection.v1i.coco/valid
-  output: ./output/selected_dataset
+  new_source: 
+  output: ./output/selected_dataset_weighted_features
 fourier:
   similarity_threshold: 0.7  # Euclidean-based similarity (lower = stricter filtering)
   frequency_bands:
@@ -55,6 +55,16 @@ selection:
   # - 'max_el2n': Select hardest sample per cluster (best for active learning)
   # - 'medoid': Select sample minimizing distance to all cluster members
   strategy: centroid
+
+  # NEW: Feature balancing parameters (fixes DINO dominance problem)
+  # PCA reduces DINO from 1024 dims to this value (None = keep original)
+  # Recommended: 32-64 to balance with other features
+  dino_pca_dim: 32
+
+  # Apply weights to balance feature group contributions in clustering
+  # If false, features contribute proportionally to their dimensions (DINO dominates!)
+  apply_weights: true
+
   # Legacy k-Center parameters (used when method: kcenter)
   el2n:
     proxy_epochs: 20
@@ -65,11 +75,15 @@ selection:
     target_size: 5000
     oversampling_factor: 2.0
     min_distance: 0.1
+
+# Feature group weights for balanced clustering
+# These determine each feature's contribution to k-means clustering
+# Formula: contribution = weight (after scaling by α = √(weight/n_dims))
 weights:
-  fourier_uniqueness: 0.15
-  dino_diversity: 0.35
-  sam_complexity: 0.2
-  el2n_difficulty: 0.3
+  dino: 0.35      # Semantic features (35%)
+  fourier: 0.15   # Frequency/uniqueness (15%)
+  sam: 0.20       # Visual complexity (20%)
+  el2n: 0.30      # Difficulty score (30%)
 output:
   target_size: 5000
   save_features: true
@@ -78,5 +92,5 @@ output:
 processing:
   num_workers: 4
   batch_size: 32
-  use_cache: true  # Wczyta DINO, EL2N, Fourier, SAM z cache - przeskoczy do clustering
-  cache_dir: ./output/feature_cache
+  use_cache: false  # Wymusi ponowne obliczenie wszystkich cech (PCA + nowe wagi)
+  cache_dir: ./output/feature_cache2_weighted

@@ -283,47 +283,166 @@ class ClusterBasedSelector:
             'valid_paths': self.valid_paths
         }
 
-    def combine_features(self, normalize: bool = True) -> np.ndarray:
+    def combine_features(self,
+                         normalize: bool = True,
+                         dino_pca_dim: Optional[int] = 32,
+                         apply_weights: bool = True) -> np.ndarray:
         """
-        Combine all features into unified feature space.
+        Combine all features into unified feature space with BALANCED weighting.
 
-        Creates a single feature vector per image:
-        [DINO (1024) | Fourier (9) | SAM (1) | EL2N (1)] = 1035 dimensions
+        FIXES the DINO dominance problem (1024 dims vs 9+1+1) by:
+        1. Reducing DINO via PCA (1024 → dino_pca_dim)
+        2. Applying weights so each feature group contributes proportionally
+
+        Mathematical basis:
+        - After StandardScaler, each dim has variance=1
+        - K-means uses Euclidean distance: contribution ∝ n_dims
+        - Scaling by α = √(weight/n_dims) ensures: α² × n_dims = weight
 
         Args:
             normalize: Whether to standardize features (recommended)
+            dino_pca_dim: Target dims for DINO after PCA (None = no PCA, keep 1024)
+            apply_weights: Whether to apply feature group weights (recommended)
 
         Returns:
-            Combined feature matrix (N, 1035)
+            Combined feature matrix with balanced contributions
         """
-        logger.info("Combining all features into unified space")
+        from sklearn.decomposition import PCA
+
+        logger.info("=" * 60)
+        logger.info("Combining features with BALANCED weighting")
+        logger.info("=" * 60)
 
         if self.dino_features is None:
             raise ValueError("Features not extracted. Call extract_all_features first.")
 
         n_samples = len(self.dino_features)
 
-        # Reshape 1-dim features
-        sam_reshaped = self.sam_scores.reshape(-1, 1)
-        el2n_reshaped = self.el2n_scores.reshape(-1, 1)
+        # =========================================
+        # STEP 1: PCA on DINO features (optional)
+        # =========================================
+        if dino_pca_dim is not None and dino_pca_dim < self.dino_features.shape[1]:
+            logger.info(f"\n[Step 1] PCA on DINO: {self.dino_features.shape[1]} → {dino_pca_dim} dims")
 
-        # Concatenate all features
-        combined = np.hstack([
-            self.dino_features,      # (N, 1024)
-            self.fourier_features,   # (N, 9)
-            sam_reshaped,            # (N, 1)
-            el2n_reshaped            # (N, 1)
-        ])
+            # Center before PCA (required for PCA to work correctly)
+            dino_scaler = StandardScaler(with_std=False)  # only center, PCA handles variance
+            dino_centered = dino_scaler.fit_transform(self.dino_features)
 
-        logger.info(f"Combined features shape: {combined.shape}")
+            # Fit PCA
+            self.dino_pca = PCA(n_components=dino_pca_dim, random_state=42)
+            dino_reduced = self.dino_pca.fit_transform(dino_centered)
 
-        if normalize:
-            # StandardScaler: z-score normalization per feature
-            scaler = StandardScaler()
-            combined = scaler.fit_transform(combined)
-            logger.info("Applied z-score normalization")
+            explained_var = self.dino_pca.explained_variance_ratio_.sum()
+            logger.info(f"  Explained variance: {explained_var*100:.1f}%")
+            logger.info(f"  Top 5 components: {self.dino_pca.explained_variance_ratio_[:5].round(3)}")
+
+            dino_processed = dino_reduced
+        else:
+            logger.info(f"\n[Step 1] Keeping original DINO dims: {self.dino_features.shape[1]}")
+            dino_processed = self.dino_features.copy()
+            self.dino_pca = None
+
+        # =========================================
+        # STEP 2: Standardize each feature group SEPARATELY
+        # =========================================
+        logger.info(f"\n[Step 2] Standardizing each feature group separately")
+
+        # StandardScaler for each group (z-score: mean=0, std=1)
+        dino_final = StandardScaler().fit_transform(dino_processed)
+        fourier_final = StandardScaler().fit_transform(self.fourier_features)
+        sam_final = StandardScaler().fit_transform(self.sam_scores.reshape(-1, 1))
+        el2n_final = StandardScaler().fit_transform(self.el2n_scores.reshape(-1, 1))
+
+        # Get dimensions
+        d_dino = dino_final.shape[1]
+        d_fourier = fourier_final.shape[1]
+        d_sam = sam_final.shape[1]
+        d_el2n = el2n_final.shape[1]
+        d_total = d_dino + d_fourier + d_sam + d_el2n
+
+        logger.info(f"  DINO:    {d_dino} dims")
+        logger.info(f"  Fourier: {d_fourier} dims")
+        logger.info(f"  SAM:     {d_sam} dims")
+        logger.info(f"  EL2N:    {d_el2n} dims")
+        logger.info(f"  Total:   {d_total} dims")
+
+        # =========================================
+        # STEP 3: Apply weights (CRITICAL FIX!)
+        # =========================================
+        if apply_weights:
+            logger.info(f"\n[Step 3] Applying feature group weights")
+
+            # Normalize weights to sum to 1
+            w = self.weights.copy()
+            w_sum = sum(w.values())
+            w = {k: v/w_sum for k, v in w.items()}
+
+            # Calculate scaling factors: α = √(weight / n_dims)
+            # This ensures: contribution = α² × n_dims = weight
+            alpha_dino = np.sqrt(w['dino'] / d_dino)
+            alpha_fourier = np.sqrt(w['fourier'] / d_fourier)
+            alpha_sam = np.sqrt(w['sam'] / d_sam)
+            alpha_el2n = np.sqrt(w['el2n'] / d_el2n)
+
+            logger.info(f"\n  Feature weights and scaling factors:")
+            logger.info(f"  {'Feature':<10} {'Weight':>8} {'Dims':>6} {'α':>10} {'α²×dims':>10}")
+            logger.info(f"  {'-'*46}")
+            logger.info(f"  {'DINO':<10} {w['dino']:>8.2f} {d_dino:>6} {alpha_dino:>10.4f} {alpha_dino**2 * d_dino:>10.4f}")
+            logger.info(f"  {'Fourier':<10} {w['fourier']:>8.2f} {d_fourier:>6} {alpha_fourier:>10.4f} {alpha_fourier**2 * d_fourier:>10.4f}")
+            logger.info(f"  {'SAM':<10} {w['sam']:>8.2f} {d_sam:>6} {alpha_sam:>10.4f} {alpha_sam**2 * d_sam:>10.4f}")
+            logger.info(f"  {'EL2N':<10} {w['el2n']:>8.2f} {d_el2n:>6} {alpha_el2n:>10.4f} {alpha_el2n**2 * d_el2n:>10.4f}")
+
+            # Apply scaling
+            dino_final = dino_final * alpha_dino
+            fourier_final = fourier_final * alpha_fourier
+            sam_final = sam_final * alpha_sam
+            el2n_final = el2n_final * alpha_el2n
+
+            # Verify contributions (should match weights)
+            total_contribution = (alpha_dino**2 * d_dino + alpha_fourier**2 * d_fourier +
+                                  alpha_sam**2 * d_sam + alpha_el2n**2 * d_el2n)
+
+            logger.info(f"\n  Verified contribution to k-means clustering:")
+            logger.info(f"  DINO:    {alpha_dino**2 * d_dino / total_contribution * 100:>6.1f}% (target: {w['dino']*100:.1f}%)")
+            logger.info(f"  Fourier: {alpha_fourier**2 * d_fourier / total_contribution * 100:>6.1f}% (target: {w['fourier']*100:.1f}%)")
+            logger.info(f"  SAM:     {alpha_sam**2 * d_sam / total_contribution * 100:>6.1f}% (target: {w['sam']*100:.1f}%)")
+            logger.info(f"  EL2N:    {alpha_el2n**2 * d_el2n / total_contribution * 100:>6.1f}% (target: {w['el2n']*100:.1f}%)")
+
+            # Store scaling info for analysis
+            self.feature_scaling = {
+                'weights': w,
+                'alphas': {'dino': alpha_dino, 'fourier': alpha_fourier, 'sam': alpha_sam, 'el2n': alpha_el2n},
+                'dims': {'dino': d_dino, 'fourier': d_fourier, 'sam': d_sam, 'el2n': d_el2n},
+                'contributions': {
+                    'dino': alpha_dino**2 * d_dino / total_contribution,
+                    'fourier': alpha_fourier**2 * d_fourier / total_contribution,
+                    'sam': alpha_sam**2 * d_sam / total_contribution,
+                    'el2n': alpha_el2n**2 * d_el2n / total_contribution
+                }
+            }
+        else:
+            logger.info(f"\n[Step 3] Skipping weights (apply_weights=False)")
+            logger.info(f"  WARNING: DINO will dominate clustering ({d_dino}/{d_total} = {d_dino/d_total*100:.1f}% of dims)")
+            self.feature_scaling = None
+
+        # =========================================
+        # STEP 4: Concatenate
+        # =========================================
+        logger.info(f"\n[Step 4] Concatenating features")
+        combined = np.hstack([dino_final, fourier_final, sam_final, el2n_final])
+
+        logger.info(f"  Final combined shape: {combined.shape}")
+        logger.info(f"  Feature ranges in combined vector:")
+        logger.info(f"    DINO:    dims [0, {d_dino-1}]")
+        logger.info(f"    Fourier: dims [{d_dino}, {d_dino+d_fourier-1}]")
+        logger.info(f"    SAM:     dim  [{d_dino+d_fourier}]")
+        logger.info(f"    EL2N:    dim  [{d_dino+d_fourier+d_sam}]")
+
+        logger.info("=" * 60)
 
         self.combined_features = combined
+        self.dino_pca_dim = dino_pca_dim if dino_pca_dim else self.dino_features.shape[1]
+
         return combined
 
     def _cluster_with_faiss_gpu(self, features: np.ndarray, n_clusters: int,
@@ -661,7 +780,9 @@ class ClusterBasedSelector:
                               target_size: int,
                               strategy: Literal['centroid', 'max_el2n', 'medoid'] = 'centroid',
                               use_cache: bool = True,
-                              normalize: bool = True) -> Tuple[List[int], List[str], Dict]:
+                              normalize: bool = True,
+                              dino_pca_dim: Optional[int] = 32,
+                              apply_weights: bool = True) -> Tuple[List[int], List[str], Dict]:
         """
         Run complete cluster-based selection pipeline.
 
@@ -671,6 +792,8 @@ class ClusterBasedSelector:
             strategy: Representative selection strategy
             use_cache: Use feature cache
             normalize: Normalize features before clustering
+            dino_pca_dim: Reduce DINO to this many dims via PCA (None=keep 1024, default=32)
+            apply_weights: Apply feature group weights for balanced clustering (default=True)
 
         Returns:
             Tuple of (selected indices, selected paths, statistics)
@@ -684,9 +807,9 @@ class ClusterBasedSelector:
         logger.info("\n[Stage 1] Extracting all features...")
         self.extract_all_features(image_paths, use_cache=use_cache)
 
-        # Stage 2: Combine features
-        logger.info("\n[Stage 2] Combining features into unified space...")
-        self.combine_features(normalize=normalize)
+        # Stage 2: Combine features with PCA + weights
+        logger.info("\n[Stage 2] Combining features (PCA + balanced weights)...")
+        self.combine_features(normalize=normalize, dino_pca_dim=dino_pca_dim, apply_weights=apply_weights)
 
         # Stage 3: Cluster
         logger.info(f"\n[Stage 3] Clustering into {target_size} clusters...")
@@ -708,11 +831,22 @@ class ClusterBasedSelector:
             'n_clusters': target_size,
             'selection_strategy': strategy,
             'feature_dims': {
-                'dino': self.dino_features.shape[1],
+                'dino_original': self.dino_features.shape[1],
+                'dino_after_pca': self.dino_pca_dim,
                 'fourier': self.fourier_features.shape[1],
                 'sam': 1,
                 'el2n': 1,
                 'combined': self.combined_features.shape[1]
+            },
+            'pca_info': {
+                'enabled': self.dino_pca is not None,
+                'target_dim': dino_pca_dim,
+                'explained_variance': float(self.dino_pca.explained_variance_ratio_.sum()) if self.dino_pca else None
+            },
+            'weighting_info': {
+                'enabled': apply_weights,
+                'weights': self.weights,
+                'contributions': self.feature_scaling['contributions'] if self.feature_scaling else None
             },
             'el2n_selected_mean': float(np.mean(self.el2n_scores[selected_indices])),
             'el2n_selected_std': float(np.std(self.el2n_scores[selected_indices])),
@@ -910,7 +1044,9 @@ class ClusterBasedSelector:
 
 
 if __name__ == "__main__":
-    print("Testing ClusterBasedSelector...")
+    print("=" * 70)
+    print("Testing ClusterBasedSelector with PCA + Balanced Weights")
+    print("=" * 70)
 
     # Create with default components (no DETR checkpoint for testing)
     selector = ClusterBasedSelector()
@@ -923,12 +1059,23 @@ if __name__ == "__main__":
     selector.el2n_scores = np.random.rand(n_samples)
     selector.valid_paths = [f"img_{i}.jpg" for i in range(n_samples)]
 
-    # Test pipeline
-    print("\n[Test] Combining features...")
-    combined = selector.combine_features(normalize=True)
-    print(f"  Combined shape: {combined.shape}")
+    # Test 1: OLD behavior (no PCA, no weights) - DINO dominates
+    print("\n" + "=" * 70)
+    print("[Test 1] OLD behavior: no PCA, no weights (DINO dominates)")
+    print("=" * 70)
+    combined_old = selector.combine_features(normalize=True, dino_pca_dim=None, apply_weights=False)
+    print(f"  Combined shape: {combined_old.shape}")
+    print(f"  DINO contribution: {1024/1035*100:.1f}%")
 
-    print("\n[Test] Clustering...")
+    # Test 2: NEW behavior (with PCA + weights) - BALANCED
+    print("\n" + "=" * 70)
+    print("[Test 2] NEW behavior: PCA(32) + weights (BALANCED)")
+    print("=" * 70)
+    combined_new = selector.combine_features(normalize=True, dino_pca_dim=32, apply_weights=True)
+    print(f"  Combined shape: {combined_new.shape}")
+
+    # Test clustering with new features
+    print("\n[Test] Clustering with balanced features...")
     labels = selector.cluster_features(n_clusters=10)
     print(f"  Cluster labels shape: {labels.shape}")
     print(f"  Unique clusters: {len(np.unique(labels))}")
@@ -941,4 +1088,6 @@ if __name__ == "__main__":
     indices, stats = selector.select_representatives(strategy='max_el2n')
     print(f"  Selected: {len(indices)}")
 
-    print("\nClusterBasedSelector test completed!")
+    print("\n" + "=" * 70)
+    print("ClusterBasedSelector test completed!")
+    print("=" * 70)
