@@ -13,7 +13,7 @@ models:
     device: cuda
     cache_dir: ../External/Models  # fallback for torch.hub
   detr:
-    checkpoint: ../Eden/Checkpoints/DETR/checkpoint_epoch_170.pth
+    checkpoint: ../Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-10-31_tooltip_single_class/DETR_Checkpoints/checkpoint_epoch_170.pth
     device: cuda
     num_labels: 1  # 1 class (tooltip) + no-object = 2 outputs
     confidence_threshold: 0.5
@@ -92,5 +92,5 @@ output:
 processing:
   num_workers: 4
   batch_size: 32
-  use_cache: false  # Wymusi ponowne obliczenie wszystkich cech (PCA + nowe wagi)
+  use_cache: true  # Użyj cache (false = ponowne obliczenie)
   cache_dir: ./output/feature_cache2_weighted
