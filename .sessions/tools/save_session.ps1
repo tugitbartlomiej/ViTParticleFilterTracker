@@ -174,76 +174,113 @@ function New-SessionSummary {
     $datePart = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd")
     $timePart = (Get-Date).ToUniversalTime().ToString("HH:mm:ss")
 
+    # RAG-optimized template with YAML frontmatter
     $summary = @"
-# Session Summary: $sessionName
+---
+date: $datePart
+type: $SessionType
+tags: []
+related: []
+status: in-progress
+importance: medium
+---
+# Session: $sessionName
+
+## TL;DR
+<!-- 2-3 zdania podsumowujące CO zrobiłeś i JAKI był wynik -->
+<!-- RAG zwraca ~300 znaków - ta sekcja musi być krótka i treściwa -->
+$Description
 
 ## Metadata
-- **Type:** $SessionType
 - **Date:** $datePart
 - **Time:** $timePart UTC
-- **Duration:** (to be filled)
+- **Type:** $SessionType
 - **Status:** In Progress
+- **Duration:** (to be filled)
 
 ## Objective
+<!-- Co chcesz osiągnąć w tej sesji? -->
 $Description
 
 ## Context
-(Provide background information, previous work, why this session was needed)
+<!-- Dlaczego to robisz? Powiązanie z poprzednimi sesjami. -->
+
 
 ## Actions Taken
 
-### Step 1: (Fill in action title)
-**Description:** (Describe what was done)
-
-**Command:**
-``````bash
-# Commands used
-``````
-
+### 1. (Action title)
+**What:**
+**Why:**
 **Result:**
-(Describe the result)
 
-## Key Findings
-- Finding 1
-- Finding 2
-- Finding 3
+### 2. (Action title)
+**What:**
+**Why:**
+**Result:**
+
+## Problems Solved
+<!-- Lista problemów które rozwiązałeś - kluczowe dla RAG! -->
+1. **(Problem name)** - (Solution)
+2. **(Problem name)** - (Solution)
 
 ## Issues Encountered
+<!-- Problemy na które natrafiłeś i jak je rozwiązałeś -->
 
-### Issue 1: (Issue title)
-**Description:** (Describe the issue)
-**Resolution:** (How it was resolved)
+### Issue: (Issue title)
+- **Symptom:**
+- **Cause:**
+- **Solution:**
 
-## Conclusions
-(Summary of what was learned or achieved)
+## Key Findings
+<!-- Najważniejsze odkrycia/wnioski -->
+-
+-
+-
+
+## Lessons Learned
+<!-- Wiedza do zapamiętania na przyszłość - kluczowe dla RAG! -->
+-
+-
+-
+
+## Decisions Made
+<!-- Decyzje podjęte i DLACZEGO - ważne dla zrozumienia kontekstu -->
+| Decision | Reason | Alternatives Considered |
+|----------|--------|------------------------|
+| | | |
+
+## Results
+
+### Metrics/Outputs
+| Metric | Before | After |
+|--------|--------|-------|
+| | | |
+
+### Files Created/Modified
+- ``path/to/file`` - description
 
 ## Next Steps
-- [ ] Next step 1
-- [ ] Next step 2
-- [ ] Next step 3
+- [ ]
+- [ ]
+- [ ]
 
-## Files Generated
-- ``file1.txt`` - Description
-- ``file2.json`` - Description
+## Related Sessions
+<!-- Linki do powiązanych sesji -->
+- Previous:
+- Related:
 
-## Commands Used
-``````bash
-# List commands used in this session
-``````
-
-## Related Work
-- Previous session: (link)
-- Related analysis: (link)
+## Keywords
+<!-- Explicit keywords dla lepszego RAG retrieval -->
+``$SessionType`` ``session``
 
 ---
-
-**Session Created:** $timestamp UTC
-**Last Updated:** $timestamp UTC
+**Created:** $timestamp UTC
+**Updated:** $timestamp UTC
 "@
 
     $summaryPath = Join-Path $SessionPath "SESSION_SUMMARY.md"
     [System.IO.File]::WriteAllText($summaryPath, $summary, [System.Text.Encoding]::UTF8)
-    Write-Success "Created SESSION_SUMMARY.md"
+    Write-Success "Created SESSION_SUMMARY.md (RAG-optimized)"
 }
 
 function Copy-SessionFiles {

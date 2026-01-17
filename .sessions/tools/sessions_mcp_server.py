@@ -32,9 +32,11 @@ from fastmcp import FastMCP
 from pydantic import BaseModel, Field
 
 # Configuration
-EMBEDDING_MODEL = "BAAI/bge-m3"  # Multilingual, supports Polish & English
 SESSIONS_PATH = Path(__file__).parent.parent  # .sessions/
-CHROMA_PATH = Path.home() / ".cache" / "vit_sessions_vectordb"
+PROJECT_ROOT = SESSIONS_PATH.parent  # ViTParticleFilterTracker/
+MODELS_CACHE = PROJECT_ROOT / "External" / "Models"  # Local models cache
+EMBEDDING_MODEL_PATH = MODELS_CACHE / "BAAI_bge-m3"  # Local path to bge-m3
+CHROMA_PATH = SESSIONS_PATH / "vectordb"  # Keep index in project
 INDEX_STATE_FILE = CHROMA_PATH / "index_state.json"
 
 # Chunk settings
@@ -44,7 +46,7 @@ CHUNK_OVERLAP = 50  # overlapping words
 # FastMCP server
 mcp = FastMCP(
     "Sessions RAG Server",
-    description="Semantic search over ViTParticleFilterTracker project sessions"
+    instructions="Semantic search over ViTParticleFilterTracker project sessions"
 )
 
 # Lazy-loaded globals
@@ -88,14 +90,14 @@ class IndexStatus(BaseModel):
 # =============================================================================
 
 def get_model():
-    """Lazy load the embedding model."""
+    """Lazy load the embedding model from local path."""
     global _model
     if _model is None:
         try:
             from sentence_transformers import SentenceTransformer
-            print(f"Loading embedding model: {EMBEDDING_MODEL}")
-            print("This may take 10-30 seconds on first run...")
-            _model = SentenceTransformer(EMBEDDING_MODEL)
+            print(f"Loading embedding model from: {EMBEDDING_MODEL_PATH}")
+            print("This may take 10-30 seconds...")
+            _model = SentenceTransformer(str(EMBEDDING_MODEL_PATH))
             print("Model loaded successfully!")
         except ImportError:
             raise ImportError(

@@ -13,7 +13,7 @@ models:
     device: cuda
     cache_dir: ../External/Models  # fallback for torch.hub
   detr:
-    checkpoint: ../Eden/Checkpoints/DETR/checkpoint_epoch_170.pth
+    checkpoint: ../Eden/Checkpoints/DETR/DETR_Training_Sessions/2025-10-31_tooltip_single_class/DETR_Checkpoints/checkpoint_epoch_170.pth
     device: cuda
     num_labels: 1  # 1 class (tooltip) + no-object = 2 outputs
     confidence_threshold: 0.5
@@ -79,4 +79,4 @@ processing:
   num_workers: 4
   batch_size: 32
   use_cache: true  # Wczyta DINO, EL2N, Fourier, SAM z cache - przeskoczy do clustering
-  cache_dir: ./output/feature_cache
+  cache_dir: ./output/feature_cache2_weighted
