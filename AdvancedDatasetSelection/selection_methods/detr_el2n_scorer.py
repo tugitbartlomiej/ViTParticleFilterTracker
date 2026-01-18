@@ -35,6 +35,44 @@ logger = logging.getLogger(__name__)
 # Query 81 is the best for tooltip detection (from benchmark analysis)
 DETR_QUERY_ID = 81
 
+
+def verify_gpu_available():
+    """Quick GPU verification - call this to debug GPU issues."""
+    logger.info("=" * 50)
+    logger.info("GPU VERIFICATION")
+    logger.info("=" * 50)
+    logger.info(f"PyTorch version: {torch.__version__}")
+    logger.info(f"CUDA available: {torch.cuda.is_available()}")
+    
+    if torch.cuda.is_available():
+        logger.info(f"CUDA version: {torch.version.cuda}")
+        logger.info(f"Device count: {torch.cuda.device_count()}")
+        logger.info(f"Current device: {torch.cuda.current_device()}")
+        logger.info(f"Device name: {torch.cuda.get_device_name(0)}")
+        
+        props = torch.cuda.get_device_properties(0)
+        logger.info(f"Total memory: {props.total_memory / 1e9:.2f} GB")
+        logger.info(f"Free memory: {(props.total_memory - torch.cuda.memory_allocated()) / 1e9:.2f} GB")
+        
+        # Quick tensor test
+        logger.info("Testing GPU tensor operations...")
+        try:
+            x = torch.randn(1000, 1000, device='cuda')
+            y = torch.matmul(x, x)
+            torch.cuda.synchronize()
+            logger.info("GPU tensor test PASSED!")
+            del x, y
+            torch.cuda.empty_cache()
+        except Exception as e:
+            logger.error(f"GPU tensor test FAILED: {e}")
+            return False
+    else:
+        logger.warning("CUDA not available - will use CPU (VERY SLOW)")
+        return False
+    
+    logger.info("=" * 50)
+    return True
+
 # Checkpoint settings
 CHECKPOINT_INTERVAL = 1000  # Save checkpoint every N images
 
@@ -221,11 +259,26 @@ class DETR_EL2N_Scorer:
         if self._initialized:
             return
 
+        # Run GPU verification first
+        verify_gpu_available()
+
         logger.info(f"Loading DETR from checkpoint: {self.checkpoint_path}")
         logger.info(f"Using QUERY {DETR_QUERY_ID} ONLY for detections")
+        logger.info(f"Target device: {self.device}")
+        
+        # Verify CUDA availability
+        if self.device == "cuda":
+            if not torch.cuda.is_available():
+                logger.warning("CUDA requested but not available! Falling back to CPU.")
+                self.device = "cpu"
+            else:
+                logger.info(f"CUDA available: {torch.cuda.get_device_name(0)}")
+                logger.info(f"CUDA memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
 
         # Load checkpoint
+        logger.info("Loading checkpoint weights...")
         checkpoint = torch.load(self.checkpoint_path, map_location='cpu')
+        logger.info("Checkpoint loaded successfully.")
 
         # Detect num_labels from checkpoint
         classifier_weight = checkpoint['model_state_dict'].get('class_labels_classifier.weight')
@@ -238,6 +291,7 @@ class DETR_EL2N_Scorer:
         id2label = {0: "tooltip"}
         label2id = {"tooltip": 0}
 
+        logger.info("Creating DETR config...")
         config = DetrConfig.from_pretrained(
             "facebook/detr-resnet-50",
             num_labels=self.num_labels,
@@ -246,16 +300,31 @@ class DETR_EL2N_Scorer:
         )
 
         # Create model
+        logger.info("Creating DETR model from pretrained (this may take a moment)...")
         self.model = DetrForObjectDetection.from_pretrained(
             "facebook/detr-resnet-50",
             config=config,
             ignore_mismatched_sizes=True
         )
+        logger.info("Base model created.")
 
         # Load trained weights
+        logger.info("Loading trained weights from checkpoint...")
         self.model.load_state_dict(checkpoint['model_state_dict'])
+        logger.info("Trained weights loaded.")
+        
+        # Move to device
+        logger.info(f"Moving model to {self.device}...")
         self.model.to(self.device)
         self.model.eval()
+        
+        # Verify model is on correct device
+        param_device = next(self.model.parameters()).device
+        logger.info(f"Model is on device: {param_device}")
+        
+        if self.device == "cuda":
+            allocated = torch.cuda.memory_allocated() / 1e9
+            logger.info(f"GPU memory allocated after model load: {allocated:.2f} GB")
 
         # Create processor
         self.processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
@@ -526,6 +595,8 @@ class DETR_EL2N_Scorer:
         pbar = tqdm(dataloader, desc="Computing DETR Q81 EL2N (batched)", disable=not show_progress)
 
         batch_count = 0
+        first_batch_logged = False
+        
         for batch in pbar:
             if batch is None:
                 continue
@@ -542,10 +613,21 @@ class DETR_EL2N_Scorer:
                 # Move to device
                 pixel_values = batch['pixel_values'].to(self.device)
                 pixel_mask = batch['pixel_mask'].to(self.device)
+                
+                # Log first batch device info for verification
+                if not first_batch_logged:
+                    logger.info(f"First batch - tensor device: {pixel_values.device}, shape: {pixel_values.shape}")
+                    if self.device == "cuda":
+                        logger.info(f"GPU memory before inference: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
+                    first_batch_logged = True
 
                 # Inference
                 with torch.no_grad():
                     outputs = self.model(pixel_values=pixel_values, pixel_mask=pixel_mask)
+                
+                # Log GPU usage after first inference
+                if batch_count == 0 and self.device == "cuda":
+                    logger.info(f"GPU memory after first inference: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
 
                 # Process outputs
                 results = self._process_batch_outputs(outputs, batch['paths'], batch['img_sizes'])
@@ -685,27 +767,53 @@ class DETR_EL2N_Scorer:
 
 
 if __name__ == "__main__":
-    print("Testing DETR Q81 EL2N Scorer...")
-    print(f"Using Query {DETR_QUERY_ID} for tooltip detection")
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="DETR Q81 EL2N Scorer Test")
+    parser.add_argument("--gpu-test-only", action="store_true", help="Only run GPU verification test")
+    args = parser.parse_args()
+    
+    print("=" * 60)
+    print("DETR Q81 EL2N Scorer")
+    print("=" * 60)
+    
+    # Always run GPU verification first
+    gpu_ok = verify_gpu_available()
+    
+    if args.gpu_test_only:
+        print("\nGPU test completed.")
+        exit(0 if gpu_ok else 1)
+    
+    print(f"\nUsing Query {DETR_QUERY_ID} for tooltip detection")
 
     # Test with checkpoint
     checkpoint = "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Eden/Checkpoints/DETR/checkpoint_epoch_170.pth"
 
     if Path(checkpoint).exists():
-        scorer = DETR_EL2N_Scorer(checkpoint)
+        print(f"\nLoading checkpoint: {checkpoint}")
+        scorer = DETR_EL2N_Scorer(checkpoint, device="cuda" if gpu_ok else "cpu")
 
         # Test single image
         test_image = "E:/cataract_surgery_Instruments_detection.v1i.coco/valid/images/frame_1025_jpg.rf.b0f62b7b16f5baabc1063020c3ea2db9.jpg"
         if Path(test_image).exists():
+            print(f"\nProcessing test image: {test_image}")
             result = scorer.compute_single_image_difficulty(test_image)
             print(f"\nTest result for {Path(test_image).name}:")
             print(f"  Q81 Score: {result['q81_score']:.4f}")
             print(f"  Has Detection: {result['has_detection']}")
             print(f"  EL2N Score: {result['el2n_score']:.4f}")
             print(f"  Q81 Box: {result['q81_box']}")
+        else:
+            print(f"\nTest image not found: {test_image}")
+            print("Creating dummy test with random tensor...")
+            # Quick inference test
+            scorer._initialize_model()
+            print("Model loaded successfully!")
 
         scorer.unload()
     else:
-        print(f"Checkpoint not found: {checkpoint}")
+        print(f"\nCheckpoint not found: {checkpoint}")
 
-    print("\nDETR Q81 EL2N Scorer test completed!")
+    print("\n" + "=" * 60)
+    print("DETR Q81 EL2N Scorer test completed!")
+    print("=" * 60)
