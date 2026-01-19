@@ -57,7 +57,8 @@ class YOLOFineTunerV2:
         project_dir: str = './yolo_20k_finetune',
         checkpoint_dir: str = './ckpt_yolo_20k',
         best_model_dir: str = './best_yolo_20k',
-        learning_rate: float = 0.001,
+        learning_rate: float = 0.0001,
+        lrf: float = 0.1,  # Final LR = lr0 * lrf
         pretrained_path: str = None,  # CHANGED: pretrained, not resume
         workers: int = 4,
         device: str = None,
@@ -80,6 +81,7 @@ class YOLOFineTunerV2:
         self.checkpoint_dir = Path(checkpoint_dir)
         self.best_model_dir = Path(best_model_dir)
         self.learning_rate = learning_rate
+        self.lrf = lrf
         self.pretrained_path = pretrained_path
         self.workers = workers
         self.save_period = save_period
@@ -141,7 +143,7 @@ class YOLOFineTunerV2:
         print(f"  Epochs: {self.epochs} (NEW epochs, not continuation)")
         print(f"  Batch size: {self.batch_size}")
         print(f"  Image size: {self.imgsz}")
-        print(f"  Learning rate: {self.learning_rate}")
+        print(f"  Learning rate: {self.learning_rate} -> {self.learning_rate * self.lrf} (lrf={self.lrf})")
         print(f"  Save period: {self.save_period}")
         print(f"  Patience: {self.patience}")
         print(f"  Freeze backbone: {self.freeze_backbone} layers")
@@ -184,8 +186,10 @@ class YOLOFineTunerV2:
                 'pretrained': True,  # Use pretrained weights
                 'verbose': self.verbose,
                 'workers': self.workers,
+                'optimizer': 'SGD',  # MUST specify optimizer, otherwise 'auto' ignores lr0!
                 'lr0': self.learning_rate,
-                'lrf': 0.01,  # Final LR = lr0 * lrf
+                'lrf': self.lrf,  # Final LR = lr0 * lrf
+                'momentum': 0.937,
                 'save_period': self.save_period,
                 'patience': self.patience,
                 'exist_ok': True,
@@ -288,8 +292,10 @@ def parse_args():
                         help='Batch size per GPU')
     parser.add_argument('--imgsz', type=int, default=640,
                         help='Input image size')
-    parser.add_argument('--learning_rate', type=float, default=0.001,
-                        help='Initial learning rate (reduced for fine-tuning)')
+    parser.add_argument('--learning_rate', type=float, default=0.0001,
+                        help='Initial learning rate (should match final LR from previous training)')
+    parser.add_argument('--lrf', type=float, default=0.1,
+                        help='Final LR ratio (final_lr = lr0 * lrf)')
     parser.add_argument('--workers', type=int, default=4,
                         help='Number of data loading workers')
     parser.add_argument('--device', type=str, default=None,
@@ -335,6 +341,7 @@ def main():
         checkpoint_dir=args.checkpoint_dir,
         best_model_dir=args.best_model_dir,
         learning_rate=args.learning_rate,
+        lrf=args.lrf,
         pretrained_path=args.pretrained_path,
         workers=args.workers,
         device=args.device,

@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH -A transformers_vsc
-#SBATCH -p short
+#SBATCH -p hopper
 #SBATCH --gres=gpu:4
 #SBATCH --mem=150G
-#SBATCH --time=20:00:00
+#SBATCH --time=4-00:00:00
 #SBATCH --job-name=yolo_20k_ep170_500
 #SBATCH --chdir=/mnt/evafs/faculty/home/bpiotrowski/Yolo/20k_finetune
 #SBATCH --output=logs/yolo_20k_ep170_to_500_%j.log
@@ -45,7 +45,7 @@ echo "=== LOOKING FOR EPOCH 170 CHECKPOINT ==="
 
 # Possible locations for epoch 170 checkpoint
 POSSIBLE_WEIGHTS=(
-    "$PROJECT_ROOT/train_out_5gpu_hopper/exp/weights/epoch170.pt"
+    "$PROJECT_ROOT/epoch170.pt"
     "$PROJECT_ROOT/train_out_5gpu_hopper/exp/weights/last.pt"
     "$PROJECT_ROOT/ckpt_resume_ep170_final/epoch170.pt"
     "$PROJECT_ROOT/train_out_resume_ep170/exp/weights/epoch170.pt"
@@ -218,11 +218,11 @@ cat "$DATASET_YAML"
 # === TRAINING ===
 echo ""
 echo "=== TRAINING CONFIGURATION ==="
-echo "  GPUs: 4 (Hopper A100)"
+echo "  GPUs: 1"
 echo "  Checkpoint: epoch 170"
 echo "  NEW epochs: 330 (to reach total 500)"
 echo "  Total: 170 (pretrained) + 330 (new) = 500 epochs"
-echo "  Batch size: 32/GPU (effective: 128)"
+echo "  Batch size: 32/GPU (effective: 32)"
 echo "  Learning rate: 0.001 (fine-tune LR, 10x smaller than original)"
 echo "  LR decay: 0.001 -> 0.0001 (lrf=0.1)"
 echo "  Optimizer: SGD (explicit, not auto)"
