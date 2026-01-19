@@ -517,9 +517,19 @@ class AdvancedDatasetSelectionPipeline:
 
         # Add feature statistics
         if self.selector.fourier_features is not None:
-            report['feature_statistics']['fourier'] = self.fourier.analyze_diversity(
-                self.selector.fourier_features
-            )
+            # Skip full diversity analysis for large datasets (would need N*N matrix)
+            n_samples = len(self.selector.fourier_features)
+            if n_samples > 10000:
+                logger.info(f"Skipping full Fourier diversity analysis (n={n_samples} too large, would need {n_samples**2 * 4 / 1e9:.1f} GB)")
+                report['feature_statistics']['fourier'] = {
+                    'note': f'Skipped - dataset too large ({n_samples} samples)',
+                    'mean_magnitude': float(np.mean(self.selector.fourier_features)),
+                    'std_magnitude': float(np.std(self.selector.fourier_features))
+                }
+            else:
+                report['feature_statistics']['fourier'] = self.fourier.analyze_diversity(
+                    self.selector.fourier_features
+                )
 
         if self.selector.el2n_scores is not None:
             selected_el2n = self.selector.el2n_scores[self.results.get('selected_indices', [])]

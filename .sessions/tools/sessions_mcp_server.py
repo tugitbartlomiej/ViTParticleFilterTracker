@@ -653,8 +653,41 @@ def get_index_status_resource() -> str:
 
 
 # =============================================================================
+# Pre-warm Model (avoid timeout on first query)
+# =============================================================================
+
+def _warmup():
+    """Pre-load embedding model on server startup to avoid first-query timeout."""
+    import sys
+    print("=" * 50, file=sys.stderr)
+    print("Sessions MCP Server - Warming up...", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
+
+    try:
+        print("Loading embedding model (this takes 10-30 seconds)...", file=sys.stderr)
+        get_model()
+        print("Model loaded successfully!", file=sys.stderr)
+
+        print("Loading ChromaDB collection...", file=sys.stderr)
+        get_collection()
+        print("Collection ready!", file=sys.stderr)
+
+        print("Checking index freshness...", file=sys.stderr)
+        ensure_index_fresh()
+        print("Index ready!", file=sys.stderr)
+
+        print("=" * 50, file=sys.stderr)
+        print("Server ready to handle queries!", file=sys.stderr)
+        print("=" * 50, file=sys.stderr)
+    except Exception as e:
+        print(f"Warmup failed: {e}", file=sys.stderr)
+        # Don't crash - allow lazy loading as fallback
+
+
+# =============================================================================
 # Entry Point
 # =============================================================================
 
 if __name__ == "__main__":
+    _warmup()  # Pre-load everything before accepting queries
     mcp.run()
