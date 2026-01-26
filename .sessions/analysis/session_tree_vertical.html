@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Session Tree</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #eee;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 40, 0.95);
+            padding: 15px 30px;
+            z-index: 100;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 1.4em; font-weight: 500; }
+        .header .stats { font-size: 0.9em; color: #888; }
+
+        .tree-container {
+            padding: 80px 20px 40px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 60px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to top, #667eea, #764ba2, #f093fb);
+            border-radius: 3px;
+        }
+
+        .month-group {
+            margin-bottom: 30px;
+        }
+        .month-label {
+            position: relative;
+            left: -45px;
+            font-size: 0.75em;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .session {
+            position: relative;
+            margin-bottom: 12px;
+            padding: 12px 18px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .session:hover {
+            background: rgba(255,255,255,0.12);
+            transform: translateX(8px);
+        }
+        .session::before {
+            content: '';
+            position: absolute;
+            left: -42px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 3px solid;
+            background: #1a1a2e;
+        }
+
+        .session.Training { border-color: #ff6b6b; }
+        .session.Training::before { border-color: #ff6b6b; }
+        .session.Analysis { border-color: #4ecdc4; }
+        .session.Analysis::before { border-color: #4ecdc4; }
+        .session.Writing { border-color: #ffeaa7; }
+        .session.Writing::before { border-color: #ffeaa7; }
+        .session.Benchmark { border-color: #a29bfe; }
+        .session.Benchmark::before { border-color: #a29bfe; }
+        .session.SSH { border-color: #55efc4; }
+        .session.SSH::before { border-color: #55efc4; }
+        .session.Mixed { border-color: #b2bec3; }
+        .session.Mixed::before { border-color: #b2bec3; }
+
+        .session-title {
+            font-size: 1.1em;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .session-meta {
+            font-size: 0.8em;
+            color: #888;
+        }
+        .session-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            font-weight: 600;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+        .session.Training .session-type { background: rgba(255,107,107,0.3); color: #ff6b6b; }
+        .session.Analysis .session-type { background: rgba(78,205,196,0.3); color: #4ecdc4; }
+        .session.Writing .session-type { background: rgba(255,234,167,0.3); color: #ffeaa7; }
+        .session.Benchmark .session-type { background: rgba(162,155,254,0.3); color: #a29bfe; }
+        .session.SSH .session-type { background: rgba(85,239,196,0.3); color: #55efc4; }
+        .session.Mixed .session-type { background: rgba(178,190,195,0.3); color: #b2bec3; }
+
+        .session-details {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            font-size: 0.85em;
+            color: #ccc;
+            animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .session.expanded .session-details {
+            display: block;
+        }
+        .details-section {
+            margin-bottom: 10px;
+        }
+        .details-section-title {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .details-list {
+            margin: 0;
+            padding-left: 16px;
+        }
+        .details-list li {
+            margin: 3px 0;
+            color: #aaa;
+        }
+        .details-objective {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid #667eea;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border-radius: 0 6px 6px 0;
+        }
+        .details-path {
+            font-family: monospace;
+            font-size: 0.8em;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 10px;
+            border-radius: 4px;
+            color: #888;
+            word-break: break-all;
+        }
+
+        /* Tooltip on hover */
+        .tooltip {
+            position: fixed;
+            background: rgba(30, 30, 50, 0.98);
+            border: 1px solid #667eea;
+            border-radius: 10px;
+            padding: 12px 16px;
+            max-width: 350px;
+            font-size: 0.9em;
+            line-height: 1.5;
+            color: #ddd;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        .tooltip.visible {
+            opacity: 1;
+        }
+        .tooltip-label {
+            font-weight: 600;
+            color: #fff;
+            font-size: 1.1em;
+            margin-bottom: 6px;
+        }
+        .tooltip-semantic {
+            color: #a8e6cf;
+            font-style: italic;
+        }
+
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(20,20,40,0.95);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .scroll-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #666;
+            font-size: 0.8em;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Session Tree</h1>
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="tree-container">
+        <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Training</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4ecdc4"></div>Analysis</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffeaa7"></div>Writing</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a29bfe"></div>Benchmark</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#55efc4"></div>SSH</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#b2bec3"></div>Mixed</div>
+    </div>
+
+    <div class="scroll-hint">scroll to explore</div>
+
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-label" id="tooltip-label"></div>
+        <div class="tooltip-semantic" id="tooltip-semantic"></div>
+    </div>
+
+    <script>
+    const sessions = SESSION_DATA_PLACEHOLDER;
+
+    // Group by month
+    const byMonth = {};
+    sessions.forEach(s => {
+        const month = s.date.substring(0, 7);
+        if (!byMonth[month]) byMonth[month] = [];
+        byMonth[month].push(s);
+    });
+
+    // Sort months (oldest first = bottom)
+    const sortedMonths = Object.keys(byMonth).sort();
+
+    // Build timeline
+    const timeline = document.getElementById('timeline');
+
+    sortedMonths.forEach(month => {
+        const group = document.createElement('div');
+        group.className = 'month-group';
+
+        const label = document.createElement('div');
+        label.className = 'month-label';
+        label.textContent = month;
+        group.appendChild(label);
+
+        // Sort sessions within month (oldest first)
+        byMonth[month].sort((a, b) => a.date.localeCompare(b.date));
+
+        byMonth[month].forEach(s => {
+            const session = document.createElement('div');
+            session.className = `session ${s.type}`;
+            session.dataset.label = s.label;
+            session.dataset.semantic = s.semantic || s.objective || '';
+
+            // Build details HTML
+            let detailsHtml = '';
+
+            // Objective
+            if (s.objective) {
+                detailsHtml += `<div class="details-objective">${s.objective}</div>`;
+            }
+
+            // Actions
+            if (s.actions && s.actions.length > 0) {
+                detailsHtml += `
+                    <div class="details-section">
+                        <div class="details-section-title">Actions</div>
+                        <ul class="details-list">
+                            ${s.actions.map(a => `<li>${a}</li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            // Findings
+            if (s.findings && s.findings.length > 0) {
+                detailsHtml += `
+                    <div class="details-section">
+                        <div class="details-section-title">Key Findings</div>
+                        <ul class="details-list">
+                            ${s.findings.map(f => `<li>${f}</li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            // Files
+            if (s.files && s.files.length > 0) {
+                detailsHtml += `
+                    <div class="details-section">
+                        <div class="details-section-title">Files</div>
+                        <ul class="details-list">
+                            ${s.files.map(f => `<li><code>${f}</code></li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            // Next steps
+            if (s.next_steps && s.next_steps.length > 0) {
+                detailsHtml += `
+                    <div class="details-section">
+                        <div class="details-section-title">Next Steps</div>
+                        <ul class="details-list">
+                            ${s.next_steps.map(n => `<li>${n}</li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            // Path
+            detailsHtml += `<div class="details-path">.sessions/${s.id}/SESSION_SUMMARY.md</div>`;
+
+            session.innerHTML = `
+                <div class="session-title">
+                    ${s.label}
+                    <span class="session-type">${s.type}</span>
+                </div>
+                <div class="session-meta">${s.date.substring(5, 10)} | ${s.name}</div>
+                <div class="session-details">${detailsHtml}</div>
+            `;
+            session.onclick = () => session.classList.toggle('expanded');
+            group.appendChild(session);
+        });
+
+        timeline.appendChild(group);
+    });
+
+    // Stats
+    document.getElementById('stats').textContent = `${sessions.length} sessions | ${sortedMonths[0]} - ${sortedMonths[sortedMonths.length-1]}`;
+
+    // Tooltip handling
+    const tooltip = document.getElementById('tooltip');
+    const tooltipLabel = document.getElementById('tooltip-label');
+    const tooltipSemantic = document.getElementById('tooltip-semantic');
+
+    document.querySelectorAll('.session').forEach(el => {
+        el.addEventListener('mouseenter', (e) => {
+            tooltipLabel.textContent = el.dataset.label;
+            tooltipSemantic.textContent = el.dataset.semantic;
+            tooltip.classList.add('visible');
+        });
+
+        el.addEventListener('mousemove', (e) => {
+            const x = e.clientX + 15;
+            const y = e.clientY + 15;
+            // Keep tooltip in viewport
+            const maxX = window.innerWidth - tooltip.offsetWidth - 20;
+            const maxY = window.innerHeight - tooltip.offsetHeight - 20;
+            tooltip.style.left = Math.min(x, maxX) + 'px';
+            tooltip.style.top = Math.min(y, maxY) + 'px';
+        });
+
+        el.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('visible');
+        });
+    });
+
+    // Scroll to bottom (newest)
+    window.scrollTo(0, document.body.scrollHeight);
+    </script>
+</body>
+</html>

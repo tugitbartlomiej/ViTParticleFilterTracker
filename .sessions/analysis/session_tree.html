@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Session Tree</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #eee;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(20, 20, 40, 0.95);
+            padding: 15px 30px;
+            z-index: 100;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 1.4em; font-weight: 500; }
+        .header .stats { font-size: 0.9em; color: #888; }
+
+        .tree-container {
+            padding: 80px 20px 40px 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 60px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to top, #667eea, #764ba2, #f093fb);
+            border-radius: 3px;
+        }
+
+        .month-group {
+            margin-bottom: 30px;
+        }
+        .month-label {
+            position: relative;
+            left: -45px;
+            font-size: 0.75em;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .session {
+            position: relative;
+            margin-bottom: 12px;
+            padding: 12px 18px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            border-left: 4px solid;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .session:hover {
+            background: rgba(255,255,255,0.12);
+            transform: translateX(8px);
+        }
+        .session::before {
+            content: '';
+            position: absolute;
+            left: -42px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 3px solid;
+            background: #1a1a2e;
+        }
+
+        .session.Training { border-color: #ff6b6b; }
+        .session.Training::before { border-color: #ff6b6b; }
+        .session.Analysis { border-color: #4ecdc4; }
+        .session.Analysis::before { border-color: #4ecdc4; }
+        .session.Writing { border-color: #ffeaa7; }
+        .session.Writing::before { border-color: #ffeaa7; }
+        .session.Benchmark { border-color: #a29bfe; }
+        .session.Benchmark::before { border-color: #a29bfe; }
+        .session.SSH { border-color: #55efc4; }
+        .session.SSH::before { border-color: #55efc4; }
+        .session.Mixed { border-color: #b2bec3; }
+        .session.Mixed::before { border-color: #b2bec3; }
+
+        .session-title {
+            font-size: 1.1em;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        .session-meta {
+            font-size: 0.8em;
+            color: #888;
+        }
+        .session-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7em;
+            font-weight: 600;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+        .session.Training .session-type { background: rgba(255,107,107,0.3); color: #ff6b6b; }
+        .session.Analysis .session-type { background: rgba(78,205,196,0.3); color: #4ecdc4; }
+        .session.Writing .session-type { background: rgba(255,234,167,0.3); color: #ffeaa7; }
+        .session.Benchmark .session-type { background: rgba(162,155,254,0.3); color: #a29bfe; }
+        .session.SSH .session-type { background: rgba(85,239,196,0.3); color: #55efc4; }
+        .session.Mixed .session-type { background: rgba(178,190,195,0.3); color: #b2bec3; }
+
+        .session-details {
+            display: none;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            font-size: 0.85em;
+            color: #ccc;
+            animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .session.expanded .session-details {
+            display: block;
+        }
+        .details-section {
+            margin-bottom: 10px;
+        }
+        .details-section-title {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .details-list {
+            margin: 0;
+            padding-left: 16px;
+        }
+        .details-list li {
+            margin: 3px 0;
+            color: #aaa;
+        }
+        .details-objective {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid #667eea;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border-radius: 0 6px 6px 0;
+        }
+        .details-path {
+            font-family: monospace;
+            font-size: 0.8em;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 10px;
+            border-radius: 4px;
+            color: #888;
+            word-break: break-all;
+        }
+
+        /* Tooltip on hover */
+        .tooltip {
+            position: fixed;
+            background: rgba(30, 30, 50, 0.98);
+            border: 1px solid #667eea;
+            border-radius: 10px;
+            padding: 12px 16px;
+            max-width: 350px;
+            font-size: 0.9em;
+            line-height: 1.5;
+            color: #ddd;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        .tooltip.visible {
+            opacity: 1;
+        }
+        .tooltip-label {
+            font-weight: 600;
+            color: #fff;
+            font-size: 1.1em;
+            margin-bottom: 6px;
+        }
+        .tooltip-semantic {
+            color: #a8e6cf;
+            font-style: italic;
+        }
+
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(20,20,40,0.95);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .scroll-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #666;
+            font-size: 0.8em;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-5px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Session Tree</h1>
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <div class="tree-container">
+        <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Training</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4ecdc4"></div>Analysis</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffeaa7"></div>Writing</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a29bfe"></div>Benchmark</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#55efc4"></div>SSH</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#b2bec3"></div>Mixed</div>
+    </div>
+
+    <div class="scroll-hint">scroll to explore</div>
+
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-label" id="tooltip-label"></div>
+        <div class="tooltip-semantic" id="tooltip-semantic"></div>
+    </div>
+
+    <script>
+    const sessions = [
+  {
+    "id": "Session_2025-11-17_DETR_YOLO_Benchmark_Fix",
+    "name": "Session_2025-11-17_DETR_YOLO_Benchmark_Fix",
+    "label": "YOLO Fix",
+    "date": "2025-01-01T00:00",
+    "type": "Mixed",
+    "objective": "Poprawić ścieżki do checkpointów DETR w skryptach benchmarkowych oraz stworzyć nowy skrypt do kompleksowego porównania YOLO vs DETR na wielu epokach.",
+    "semantic": "Poprawić ścieżki do checkpointów DETR w skryptach benchmarkowych oraz stworzyć nowy skrypt do kompleksowego porównania Y...",
+    "actions": [
+      "Audyt skryptów benchmarkowych Sprawdzono wszystkie skrypty w `YOLO_DETR_Benchmarks/scripts/` - znale"
+    ],
+    "findings": [],
+    "files": [],
+    "next_steps": [
+      "Uruchomić `benchmark_yolo_vs_detr_multi_epoch.py`",
+      "Przeanalizować wyniki porównania",
+      "Określić najlepszy model do produkcji"
+    ]
+  },
+  {
+    "id": "Session_2025-12-09_Advanced_Dataset_Selection_Plan",
+    "name": "Session_2025-12-09_Advanced_Dataset_Selection_Plan",
+    "label": "Dataset Select",
+    "date": "2025-01-01T00:00",
+    "type": "Mixed",
+    "objective": "",
+    "semantic": "Metrics: 2.4%",
+    "actions": [],
+    "findings": [],
+    "files": [],
+    "next_steps": []
+  },
+  {
+    "id": "Session_2025-10-20_221200",
+    "name": "Session_2025-10-20_221200",
+    "label": "SSH Eden",
+    "date": "2025-10-20T22:12",
+    "type": "Mixed",
+    "objective": "",
+    "semantic": "Fixed: ** Training crashed with `Signal 11 (SIGSEGV)` on ",
+    "actions": [],
+    "findings": [],
+    "files": [
+      "/home2/faculty/bpiotrowski/ViT/YOLO_DETR_Benchmarks/scripts/detr_train_optimized.py"
+    ],
+    "next_steps": []
+  },
+  {
+    "id": "Session_2025-10-20_225800",
+    "name": "Session_2025-10-20_225800",
+    "label": "Training",
+    "date": "2025-10-20T22:58",
+    "type": "Mixed",
+    "objective": "",
+    "semantic": "Session_2025-10-20_225800",
+    "actions": [],
+    "findings": [],
+    "files": [],
+    "next_steps": []
+  },
+  {
+    "id": "Session_2025-10-21_005200",
+    "name": "Session_2025-10-21_005200",
+    "label": "Training",
+    "date": "2025-10-21T00:52",
+    "type": "Mixed",
+    "objective": "",
+    "semantic": "Session_2025-10-21_005200",
+    "actions": [],
+    "findings": [],
+    "files": [],
+    "next_steps": []
+  },
+  {
+    "id": "Session_2025-10-22_231000",
+    "name": "Session_2025-10-22_231000",
+    "label": "Training",
+    "date": "2025-10-22T23:10",
+    "type": "Mixed",
+    "objective": "",
+    "semantic": "Session_2025-10-22_231000",
+    "actions": [],
+    "findings": [],
+    "files": [],
+    "next_steps": []
+  },
+  {
+    "id": "Session_2025-10-29_142909",
+    "name": "Session_2025-10-29_142909",
+    "label": "Benchmark",
+    "date": "2025-10-29T14:29",
+    "type": "Mixed",
+    "objective": "DETR epoch 140 vs YOLO - Ultra-optimization experiments and deep analysis",
+    "semantic": "DETR epoch 140 vs YOLO - Ultra-optimization experiments and deep analysis",
+    "actions": [],
+    "findings": [],
+    "files": [
+      "file2.json"
+    ],
+    "next_steps": [
+      "Next step 1",
+      "Next step 2",
+      "Next step 3"
+    ]
+  },
+  {
+    "id": "Session_2025-10-31_163000",
+    "name": "Session_2025-10-31_163000",
+    "label": "Training",
+    "date": "2025-10-31T16:30",
+    "type": "Mixed",
+    "objective": "Zbudować lepszy, rzetelny dataset z filmów zaćmy (Cataract), a następnie wytrenować nowy jedno‑klasowy DETR (klasa: `tooltip` – końcówka narzędzia), z",
+    "semantic": "Metrics: 30%",
+    "actions": [
+      "Dodano builder datasetu `Cataract_DETR_DatasetBuilder/*` (extract, pseudo‑labels, split, train, eval",
+      "Przygotowano config buildera z 1 klasą `tooltip` i negatywami do 30%.",
+      "Napisano nowy skrypt treningowy DETR „single‑class” z ewaluacją COCO per epoka.",
+      "Dodano evaluator offline COCO na test."
+    ],
+    "findings": [],
+    "files": [
+      "configs/train_detr_tooltip.yaml",
+      "configs/builder_config_snapshot.yaml",
+      "configs/offline_eval.yaml"
+    ],
+    "next_steps": [
+      "Uruchomić budowę datasetu na wszystkich filmach",
+      "Wytrenować DETR (50 epok), monitorować mAP na val",
+      "Przeprowadzić finalną ewaluację na teście"
+    ]
+  },
+  {
+    "id": "Session_2025-12-11_062134",
+    "name": "Session_2025-12-11_062134",
+    "label": "DETR EL2N",
+    "date": "2025-12-11T06:21",
+    "type": "Analysis",
+    "objective": "Aktualizacja Advanced Dataset Selection Pipeline:\n1. DETR EL2N Scorer - używać tylko Query 81\n2. Sekwencyjne ładowanie modeli (oszczędność GPU memory)",
+    "semantic": "Fixed: EL2N nie różnicuje próbek poniżej progu",
+    "actions": [
+      "DETR EL2N Scorer - Query 81 Only **Plik:** `AdvancedDatasetSelection/selection_methods/detr_el2n_sco"
+    ],
+    "findings": [],
+    "files": [
+      "AdvancedDatasetSelection/selection_methods/detr_el2n_scorer.py",
+      "AdvancedDatasetSelection/selection_methods/cluster_selector.py",
+      "AdvancedDatasetSelection/feature_extractors/sam_extractor.py",
+      "AdvancedDatasetSelection/feature_extractors/dino_extractor.py",
+      "AdvancedDatasetSelection/main_selection_pipeline.py"
+    ],
+    "next_steps": [
+      "Zaimplementować filtr `q81_max_score: 0.2` dla hard sample s",
+      "Zmienić logikę difficulty aby różnicować próbki poniżej prog",
+      "Przetestować pipeline end-to-end"
+    ]
+  },
+  {
+    "id": "Session_2025-12-11_205038",
+    "name": "Session_2025-12-11_205038",
+    "label": "Dataset Select",
+    "date": "2025-12-11T20:50",
+    "type": "Analysis",
+    "objective": "Naprawienie problemu z pipeline'em Advanced Dataset Selection, który zawieszał się podczas zapisywania wizualizacji DETR Q81.",
+    "semantic": "Wizualizacje DETR Q81 były zapisywane dla wszystkich 20000 w. Proces był czasochłonny i podatny na błędy",
+    "actions": [
+      "Zlokalizowano kod odpowiedzialny za wizualizacje w `main_selection_pipeline.py:355-361`",
+      "Zakomentowano wywołanie `save_selected_visualizations()`",
+      "Zaktualizowano CLAUDE.md z informacją o zmianie",
+      "Utworzono sesję według zasad SESSION_RULES.md"
+    ],
+    "findings": [
+      "Wizualizacje DETR Q81 były zapisywane dla wszystkich 20000 wybranych obrazów",
+      "Proces był czasochłonny i podatny na błędy",
+      "Funkcjonalność nie była potrzebna do dalszej pracy"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/main_selection_pipeline.py",
+      "CLAUDE.md"
+    ],
+    "next_steps": [
+      "Uruchomić pipeline ponownie i zweryfikować poprawne działani",
+      "W przyszłości: dodać flagę konfiguracyjną do włączania/wyłąc"
+    ]
+  },
+  {
+    "id": "Session_2025-12-11_205605",
+    "name": "Session_2025-12-11_205605",
+    "label": "Analysis",
+    "date": "2025-12-11T20:56",
+    "type": "Analysis",
+    "objective": "Naprawienie nazewnictwa plików wizualizacji DETR Q81, aby zachować oryginalne nazwy plików potrzebne do lookup w zbiorze COCO.",
+    "semantic": "- Odkomentowano sekcję `save_selected_visualizations()`",
+    "actions": [
+      "Zidentyfikowano problem w `detr_el2n_scorer.py:394-395`",
+      "Zmieniono logikę zapisywania z `{img_name}_selected.jpg` na `original_filename`",
+      "Odblokowano wizualizacje w `main_selection_pipeline.py`"
+    ],
+    "findings": [
+      "Sufiks `_selected` uniemożliwiał późniejsze odnajdywanie obrazów w COCO",
+      "`Path.name` zachowuje pełną nazwę z rozszerzeniem (np. `frame_00123.jpg`)",
+      "`Path.stem` zwraca tylko nazwę bez rozszerzenia"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/selection_methods/detr_el2n_scorer.py",
+      "AdvancedDatasetSelection/main_selection_pipeline.py"
+    ],
+    "next_steps": [
+      "Uruchomić pipeline i zweryfikować poprawne nazwy plików",
+      "Sprawdzić czy wizualizacje działają bez błędów"
+    ]
+  },
+  {
+    "id": "Session_2025-12-12_002500",
+    "name": "Session_2025-12-12_002500",
+    "label": "Dataset Select",
+    "date": "2025-12-12T00:25",
+    "type": "Mixed",
+    "objective": "1. Naprawić nazewnictwo plików w Advanced Dataset Selection Pipeline\n2. Usunąć niepotrzebne wizualizacje DETR Q81\n3. Dodać FastSAM jako szybszą altern",
+    "semantic": "FastSAM jest ~10x szybszy niż SAM3 video model. FastSAM-x znalazł 13 masek na testowym obrazie (vs 15 dla SA",
+    "actions": [
+      "Fix: Nazewnictwo plików **Plik:** `main_selection_pipeline.py:385-391` ```python # PRZED (błędne): n"
+    ],
+    "findings": [
+      "FastSAM jest ~10x szybszy niż SAM3 video model",
+      "FastSAM-x znalazł 13 masek na testowym obrazie (vs 15 dla SAM3)",
+      "Complexity score: 0.589 (porównywalny z SAM3)"
+    ],
+    "files": [],
+    "next_steps": [
+      "Uruchomić pełny pipeline z 20k target",
+      "Wygenerować nowy dataset z poprawnymi nazwami",
+      "Utworzyć skrypty SLURM do resume treningu DETR od epoch 170"
+    ]
+  },
+  {
+    "id": "Session_2025-12-12_121949",
+    "name": "Session_2025-12-12_121949",
+    "label": "Dataset Select",
+    "date": "2025-12-12T12:19",
+    "type": "Training",
+    "objective": "Przygotować dataset 20k wybranych obrazów do fine-tuningu modelu DETR na klastrze obliczeniowym EDEN. Połączyć adnotacje z dwóch źródeł i uruchomić tr",
+    "semantic": "Dataset 20k ma spójne adnotacje w formacie COCO. Każdy obraz ma dokładnie 1 bounding box",
+    "actions": [
+      "Analiza plików adnotacji - Przeanalizowano strukturę obu plików JSON (format COCO) - Zidentyfikowano"
+    ],
+    "findings": [
+      "Dataset 20k ma spójne adnotacje w formacie COCO",
+      "Każdy obraz ma dokładnie 1 bounding box",
+      "Job w kolejce z priorytetem (wszystkie GPU zajęte)"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/output/selected_dataset/merge_annotations.py",
+      "AdvancedDatasetSelection/output/selected_dataset/fix_duplicate_bboxes.py",
+      "AdvancedDatasetSelection/output/selected_dataset/visualize_annotations.py"
+    ],
+    "next_steps": [
+      "Monitorować status joba: `squeue -u bpiotrowski`",
+      "Po starcie: sprawdzić logi `logs/detr_20k_finetune_1453424.l",
+      "Po zakończeniu: ewaluacja modelu na zbiorze walidacyjnym"
+    ]
+  },
+  {
+    "id": "Session_2025-12-12_125212",
+    "name": "Session_2025-12-12_125212",
+    "label": "Analysis",
+    "date": "2025-12-12T12:52",
+    "type": "Analysis",
+    "objective": "Stworzenie profesjonalnych skryptów wizualizacyjnych do publikacji naukowej, pokazujących działanie feature extractors (DINO, Fourier, FastSAM) oraz c",
+    "semantic": "Wszystkie zależności dostępne lokalnie na Python 3.11. 20,000 obrazów dostępnych w `AdvancedDatasetSelection/output",
+    "actions": [
+      "Stworzono `visualize_dino_features.py` - wizualizacja attention maps DINO",
+      "Stworzono `visualize_fourier_spectrum.py` - analiza FFT i rozkład częstotliwości",
+      "Stworzono `visualize_fastsam_segmentation.py` - automatyczna segmentacja",
+      "Stworzono `visualize_clustering.py` - K-Means + t-SNE clustering",
+      "Utworzono katalogi output dla każdego skryptu"
+    ],
+    "findings": [
+      "Wszystkie zależności dostępne lokalnie na Python 3.11",
+      "20,000 obrazów dostępnych w `AdvancedDatasetSelection/output/selected_dataset/im",
+      "CUDA dostępna lokalnie"
+    ],
+    "files": [],
+    "next_steps": [
+      "Uruchomić skrypty wizualizacyjne na wybranych obrazach",
+      "Monitorować Job 1453424 na EDEN (`squeue -u bpiotrowski`)",
+      "Po zakończeniu treningu - walidacja modelu"
+    ]
+  },
+  {
+    "id": "Session_2025-12-12_144456",
+    "name": "Session_2025-12-12_144456",
+    "label": "Training",
+    "date": "2025-12-12T14:44",
+    "type": "Analysis",
+    "objective": "1. Utworzenie systemu komend Claude Code do zarządzania dokumentacją projektu\n2. Kontynuacja pracy nad skryptami wizualizacyjnymi do paper'a\n3. Naukow",
+    "semantic": "- `/zapisz-sesje` - zapisuje do `.sessions/Session_YYYY-MM-D. `/zapisz-notatke` - zapisuje do `Notatki/YYYY-MM-DD_Tyt...",
+    "actions": [
+      "Utworzono `/zapisz-sesje` → `.claude/commands/zapisz-sesje.md`",
+      "Utworzono `/zapisz-notatke` → `.claude/commands/zapisz-notatke.md`",
+      "Utworzono `/zapisz-plan` → `.claude/commands/zapisz-plan.md`"
+    ],
+    "findings": [
+      "- `/zapisz-sesje` - zapisuje do `.sessions/Session_YYYY-MM-DD_HHMMSS/`",
+      "`/zapisz-notatke` - zapisuje do `Notatki/YYYY-MM-DD_Tytuł.md`",
+      "`/zapisz-plan` - zapisuje do `Plans/nazwa-z-myslnikami.md`",
+      "- RT-DETR przewyższa YOLO: 53.1% AP @ 108 FPS"
+    ],
+    "files": [
+      "zapisz-sesje.md",
+      "zapisz-notatke.md",
+      "zapisz-plan.md",
+      "DETR_Training_Analysis_Notes.md"
+    ],
+    "next_steps": [
+      "Zaktualizować `visualize_clustering.py` o flagi `--images`, ",
+      "Uruchomić skrypty wizualizacyjne i wygenerować figury do pap",
+      "Monitorować EDEN Job 1453424 (trening DETR)"
+    ]
+  },
+  {
+    "id": "Session_2025-12-12_154500",
+    "name": "Session_2025-12-12_154500",
+    "label": "Dataset Select",
+    "date": "2025-12-12T15:45",
+    "type": "Training",
+    "objective": "Uruchomić fine-tuning DETR na 20k wybranych obrazach na klastrze Eden, kontynuując od checkpoint epoch 170.",
+    "semantic": "Pascal często wolny gdy DGX zajęte - warto sprawdzać `experi. P100 (16GB) wymaga batch_size 4 (nie 16 jak A100/H100)",
+    "actions": [
+      "Analiza dostępności GPU - `sfree` - sprawdzenie wolnych zasobów - Pascal (experimental) wolny z 4x P"
+    ],
+    "findings": [
+      "Pascal często wolny gdy DGX zajęte - warto sprawdzać `experimental`",
+      "P100 (16GB) wymaga batch_size 4 (nie 16 jak A100/H100)",
+      "AMP może powodować konflikt z optimizer state z checkpointu",
+      "Checkpoint epoch N oznacza ukończoną epokę N"
+    ],
+    "files": [
+      "Eden/TrainingRules/EDEN_SLURM_GUIDE.md"
+    ],
+    "next_steps": [
+      "Monitorować trening (epoch 170-300)",
+      "Sprawdzić validation loss po kilku epokach",
+      "Zapisać best model do Checkpoints/best_20k_finetune/"
+    ]
+  },
+  {
+    "id": "Session_2025-12-12_161500",
+    "name": "Session_2025-12-12_161500",
+    "label": "Training",
+    "date": "2025-12-12T16:15",
+    "type": "Analysis",
+    "objective": "Rozszerzyć narzędzie analizy Fouriera o naukowe metryki spektralne i stworzyć narzędzia do oceny różnorodności datasetu dla treningu DETR.",
+    "semantic": "| **High/Low Ratio** | **65.5%** | Najlepsza różnorodność |. - LOWEST: 5.1 - 5.4 (miękkie tło, tylko anatomia)",
+    "actions": [
+      "Dodanie nowych metryk spektralnych - **PSD Slope (β)** - nachylenie Power Spectral Density (naturaln"
+    ],
+    "findings": [
+      "| **High/Low Ratio** | **65.5%** | Najlepsza różnorodność |",
+      "- LOWEST: 5.1 - 5.4 (miękkie tło, tylko anatomia)",
+      "HIGHEST: 28.1 - 28.3 (ostre krawędzie, tooltip widoczny)",
+      "Różnica: ~5.5x = świetna różnorodność!"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/paper_visualizations/visualize_fourier_spectrum.py"
+    ],
+    "next_steps": [
+      "Wygenerować wizualizacje dla innych metryk (psd_slope, aniso",
+      "Użyć w publikacji do opisu różnorodności datasetu",
+      "Porównać z poprzednim full datasetu (~90k)"
+    ]
+  },
+  {
+    "id": "Session_2025-12-12_200437",
+    "name": "Session_2025-12-12_200437",
+    "label": "Training",
+    "date": "2025-12-12T20:04",
+    "type": "Training",
+    "objective": "Fix DDP desynchronization crash that occurred at epoch 171→172 transition in DETR training on Eden cluster.",
+    "semantic": "Validation DataLoader without `drop_last=True` causes DDP de. Add `drop_last=True` to both `DistributedSampler` and `...",
+    "actions": [
+      "Identified Missing `drop_last` in Validation ```python # Problem: val_sampler missing drop_last val_"
+    ],
+    "findings": [
+      "Validation DataLoader without `drop_last=True` causes DDP desync when val_datase",
+      "Add `drop_last=True` to both `DistributedSampler` and `DataLoader` for validatio",
+      "Modified `find_latest_checkpoint()` to prioritize `final_checkpoint.pth`"
+    ],
+    "files": [
+      "/mnt/evafs/faculty/home/bpiotrowski/DETR/detr_train_optimized.py"
+    ],
+    "next_steps": [
+      "Monitor epoch 172 completion and validation phase",
+      "Verify validation completes without DDP desync (CRITICAL TES",
+      "Confirm epoch 173 starts successfully"
+    ]
+  },
+  {
+    "id": "Session_2025-12-12_202200",
+    "name": "Session_2025-12-12_202200",
+    "label": "Session",
+    "date": "2025-12-12T20:22",
+    "type": "Mixed",
+    "objective": "1. Naprawienie błędu t-SNE w `visualize_clustering.py`\n2. Znalezienie nowych parametrów Fouriera do rozróżniania tooltip vs background",
+    "semantic": "t-SNE wymaga perplexity < n_samples i optymalnie n_samples >. Bezpieczna formuła: `safe_perplexity = min(perplexity, ...",
+    "actions": [
+      "Diagnoza błędu t-SNE - Odczytano `visualize_clustering.py` linie 190-225 - Zidentyfikowano problem: "
+    ],
+    "findings": [
+      "t-SNE wymaga perplexity < n_samples i optymalnie n_samples > 3*perplexity",
+      "Bezpieczna formuła: `safe_perplexity = min(perplexity, (n_samples-1)//3, n_sampl",
+      "PCA n_components też musi być <= n_samples - 1"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/paper_visualizations/visualize_clustering.py"
+    ],
+    "next_steps": [
+      "Przetestować naprawiony visualize_clustering.py",
+      "Uruchomić find_discriminative_features.py do końca",
+      "Zintegrować najlepsze cechy dyskryminacyjne z głównym pipeli"
+    ]
+  },
+  {
+    "id": "Session_2025-12-12_221148_IEEE_ACCESS_Article_Writing",
+    "name": "IEEE ACCESS Article Writing",
+    "label": "Query 81",
+    "date": "2025-12-12T22:11",
+    "type": "Analysis",
+    "objective": "Analiza i kompleksowe rozszerzenie artykułu naukowego IEEE ACCESS o DETR-based surgical tool detection, wykorzystując wszystkie dane z projektu ViTPar",
+    "semantic": "- 96.3% wszystkich detekcji DETR przez jedną query. Pierwsze udokumentowane zjawisko w chirurgii",
+    "actions": [
+      "Przeczytano obecny artykuł `access.tex`",
+      "Przeanalizowano sesje projektu (`.sessions/`)",
+      "Użyto LlamaIndex MCP do pozyskania referencji naukowych",
+      "Stworzono plan ULTRATHINK (`Plans/ULTRATHINK_IEEE_ACCESS_EXPANSION_PLAN.md`)"
+    ],
+    "findings": [
+      "- 96.3% wszystkich detekcji DETR przez jedną query",
+      "Pierwsze udokumentowane zjawisko w chirurgii",
+      "- Fourier → DINO → K-Center → EL2N",
+      "+8.5pp mAP vs random sampling"
+    ],
+    "files": [
+      "Plans/ULTRATHINK_IEEE_ACCESS_EXPANSION_PLAN.md"
+    ],
+    "next_steps": [
+      "Skompilować artykuł w Overleaf i sprawdzić formatowanie",
+      "Utworzyć figury (szczególnie Fig. 1: 4-Stage Pipeline diagra",
+      "Wygenerować wizualizacje Query 81 attention maps"
+    ]
+  },
+  {
+    "id": "Session_2025-12-13_005956",
+    "name": "Session_2025-12-13_005956",
+    "label": "Training",
+    "date": "2025-12-13T00:59",
+    "type": "Mixed",
+    "objective": "Naprawienie krytycznego buga resetowania learning rate w DETR training pipeline oraz rozwój narzędzi wizualizacyjnych do analizy discriminative featur",
+    "semantic": "- Scheduler tworzony przed załadowaniem optimizer state powo. - Brak weryfikacji `optimizer_state_dict` może prowadzi...",
+    "actions": [
+      "Naprawa LR Reset Bug - Zidentyfikowano problem w `detr_train_optimized.py` i `Eden/Scripts/20kDatase"
+    ],
+    "findings": [
+      "- Scheduler tworzony przed załadowaniem optimizer state powodował reset LR",
+      "- Brak weryfikacji `optimizer_state_dict` może prowadzić do silent failures",
+      "- Tryb --multi znacząco przyspiesza analizę discriminative features"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/paper_visualizations/find_discriminative_features.py",
+      "AdvancedDatasetSelection/paper_visualizations/visualize_clustering.py",
+      "Eden/Scripts/20kDataset_11.12.25/detr_train_optimized.py",
+      "Eden/Scripts/detr_train_optimized.py",
+      "Eden/TrainingRules/EDEN_SLURM_GUIDE.md"
+    ],
+    "next_steps": [
+      "Przetestować wznowienie treningu z checkpointu na Eden (Pasc",
+      "Uruchomić tryb --multi dla pełnego batch discriminative feat",
+      "Zweryfikować czy wszystkie checkpointy zawierają optimizer_s"
+    ]
+  },
+  {
+    "id": "Session_2025-12-13_010500",
+    "name": "Session_2025-12-13_010500",
+    "label": "Training",
+    "date": "2025-12-13T01:05",
+    "type": "Training",
+    "objective": "1. Weryfikacja i naprawa konfiguracji fine-tuningu DETR na klastrze Eden\n2. Rozwoj narzedzi wizualizacji cech dyskryminacyjnych Fouriera do artykulu I",
+    "semantic": "1. Weryfikacja i naprawa konfiguracji fine-tuningu DETR na klastrze Eden 2. Rozwoj narzedzi wizualizacji cech dyskrymina...",
+    "actions": [
+      "DETR Training Fix na Eden - Zidentyfikowano krytyczny bug: `optimizer.load_state_dict()` nadpisuje n"
+    ],
+    "findings": [],
+    "files": [
+      "Eden/Scripts/20kDataset_11.12.25/detr_train_optimized.py",
+      "Eden/TrainingRules/EDEN_SLURM_GUIDE.md",
+      "AdvancedDatasetSelection/paper_visualizations/visualize_discriminative_per_image.py"
+    ],
+    "next_steps": [
+      "Monitorowac trening DETR na Eden (epoch 173 -> 300)",
+      "Po zakonczeniu treningu: walidacja na test set",
+      "Uzyc wygenerowanych wizualizacji w artykule IEEE ACCESS"
+    ]
+  },
+  {
+    "id": "Session_2025-12-13_143500",
+    "name": "Session_2025-12-13_143500",
+    "label": "Query 81",
+    "date": "2025-12-13T14:35",
+    "type": "Mixed",
+    "objective": "1. Rozszerzenie artykulu IEEE ACCESS o sekcje Query Specialization (Query 81)\n2. Usuniecie wzmianek o zewnetrznym datasecie CaDTD\n3. Dodanie opisu wla",
+    "semantic": "Semi-automatic tracking propagation. Continuous annotation mode",
+    "actions": [
+      "Analiza wlasnego narzedzia do adnotacji - Przeanalizowano kod w `Annotators/OpencvTrackerAnnotator/`"
+    ],
+    "findings": [
+      "Semi-automatic tracking propagation",
+      "Continuous annotation mode",
+      "COCO/YOLO format support",
+      "Augmentation pipeline"
+    ],
+    "files": [
+      "F:\\Studia\\Articles\\Moj\\IEEE\\Overleaf\\DETR_IEEE\\access.tex"
+    ],
+    "next_steps": [
+      "Skompilowac artykul w Overleaf (pdflatex && bibtex && pdflat",
+      "Zweryfikowac czy wszystkie referencje sa rozwiazane",
+      "Rozwazyc dodanie kodu annotation tool do supplementary mater"
+    ]
+  },
+  {
+    "id": "Session_2025-12-13_160541",
+    "name": "Session_2025-12-13_160541",
+    "label": "IEEE Pipeline",
+    "date": "2025-12-13T16:05",
+    "type": "Mixed",
+    "objective": "Poprawic narracje artykulu IEEE ACCESS dotyczaca dataset pipeline - uzytkownik wyjasnił, ze pierwszy trening byl na ~90,000 obrazach, a potem intelige",
+    "semantic": "Original Annotated: 4,670 images. Augmented (19x): 85,471 images",
+    "actions": [
+      "Analiza obecnego stanu artykulu - Przeczytano caly access.tex (1032 linie) - Zidentyfikowano wszystk"
+    ],
+    "findings": [
+      "Original Annotated: 4,670 images",
+      "Augmented (19x): 85,471 images",
+      "Augmented Pool: 90,141 images",
+      "Selected Training: 20,900 images (4.3x reduction)"
+    ],
+    "files": [
+      "F:\\Studia\\Articles\\Moj\\IEEE\\Overleaf\\DETR_IEEE\\access.tex"
+    ],
+    "next_steps": [
+      "Skompilowac artykul w Overleaf (pdflatex && bibtex && pdflat",
+      "Zweryfikowac renderowanie nowej tabeli",
+      "Final proofreading przed submission"
+    ]
+  },
+  {
+    "id": "Session_2025-12-13_191844",
+    "name": "Session_2025-12-13_191844",
+    "label": "Training",
+    "date": "2025-12-13T19:18",
+    "type": "Mixed",
+    "objective": "Stworzenie kompletnego pipeline'u do generowania test datasetu z filmów wideo operacji zaćmy, który:\n1. Ekstrahuje losowe klatki z wielu filmów\n2. Wyk",
+    "semantic": "2448 klatek. 1772 detekcji DETR",
+    "actions": [
+      "Utworzenie struktury projektu - Folder: `TestDatasetGenerator/` - Podfoldery: `output/test_frames/`,"
+    ],
+    "findings": [
+      "**2448 klatek** wyekstrahowanych z 27 filmów",
+      "**1772 detekcji DETR** przy threshold 80% (72.4% detection rate)",
+      "**589 obrazów** zaadnotowanych po przeglądzie (1-1040)",
+      "**125 obrazów** ręcznie poprawionych"
+    ],
+    "files": [],
+    "next_steps": [
+      "Kontynuować review od obrazu 1041 (`--start 1041`)",
+      "Eksportować 589 zaadnotowanych obrazów do YOLO",
+      "Uruchomić wykrywanie duplikatów względem treningowego datase"
+    ]
+  },
+  {
+    "id": "Session_2025-12-31_042306",
+    "name": "Session_2025-12-31_042306",
+    "label": "Dataset Select",
+    "date": "2025-12-31T04:23",
+    "type": "Benchmark",
+    "objective": "Uruchomienie benchmarku dla DETR 20k finetune checkpointów (epochs 170-200) przy użyciu `benchmark_yolo_vs_detr_q81_multi_epoch.py` oraz napisanie int",
+    "semantic": "Metrics: 74.75%, 67%, 78.8%",
+    "actions": [
+      "Pierwszy Benchmark (TestDatasetGenerator) - Uruchomiono benchmark na wewnętrznym datasecie TestDatas"
+    ],
+    "findings": [
+      "Adnotacje generowane przez ten sam model który był testowany",
+      "Wyniki na tym datasecie są NIEWAŻNE dla oceny jakości modelu"
+    ],
+    "files": [
+      "BENCHMARK_REPORT.md",
+      "results_summary.json"
+    ],
+    "next_steps": [
+      "Zaktualizować `Notatki/2025-12-31_Benchmark_DETR_20k_Finetun",
+      "Użyć DETR_20k ep180 jako głównego modelu w publikacji",
+      "Dodać sekcję o data leakage jako metodological warning w art"
+    ]
+  },
+  {
+    "id": "Session_2026-01-11_022500",
+    "name": "Session_2026-01-11_022500",
+    "label": "Training",
+    "date": "2026-01-11T02:25",
+    "type": "Training",
+    "objective": "Kontynuacja treningow DETR i YOLO na 20k dataset do epoch 500. Naprawa nieudanego joba DETR i uruchomienie obu treningow na klastrze Eden.",
+    "semantic": "- Skrypt uzywal kompletnie innych argumentow niz `detr_train. Ktos napisal skrypt bez sprawdzenia `--help`",
+    "actions": [
+      "Wczytanie poprzedniej sesji - Wczytano Session_2025-12-31_042306 z wynikami benchmarku - Kluczowe: D"
+    ],
+    "findings": [
+      "- Skrypt uzywal kompletnie innych argumentow niz `detr_train_optimized.py` akcep",
+      "Ktos napisal skrypt bez sprawdzenia `--help`",
+      "- DETR: epoch 295 (working dir), epoch 290 (archiwum)",
+      "YOLO: epoch 200 (nie 300 jak myslano)"
+    ],
+    "files": [],
+    "next_steps": [
+      "Monitorowac start jobow DETR i YOLO",
+      "Sprawdzic TensorBoard logi po starcie treningu",
+      "Po zakonczeniu: benchmark DETR ep500 vs YOLO ep500"
+    ]
+  },
+  {
+    "id": "Session_2026-01-11_153500",
+    "name": "Session_2026-01-11_153500",
+    "label": "YOLO Fix",
+    "date": "2026-01-11T15:35",
+    "type": "SSH",
+    "objective": "Sprawdzenie statusu treningów DETR i YOLO na klastrze Eden oraz naprawa ewentualnych problemów.",
+    "semantic": "DETR training działa poprawnie - epoch 296/500, loss ~0.07-0. YOLO failował z powodu niezgodności batch_size z liczbą...",
+    "actions": [
+      "**Wczytano ostatnią sesję SSH** - Folder: `Eden/ClaudeSshSession/sesja_2026-01-11_14-08/` - Poprzedn",
+      "**Sprawdzono status jobów na Eden** ```bash ssh eden-cluster \"squeue -u bpiotrowski\" ``` - DETR 1509",
+      "**Zbadano przyczynę braku YOLO w kolejce** ```bash ssh eden-cluster \"sacct -j 1509212 --format=JobID",
+      "**Przeczytano logi błędu YOLO** ```bash ssh eden-cluster \"cat ~/Yolo/20k_finetune/logs/yolo_20k_resu",
+      "**Naprawiono skrypt YOLO** - Zmieniono `--batch_size 32` → `--batch_size 30` - Zmieniono echo info z"
+    ],
+    "findings": [
+      "DETR training działa poprawnie - epoch 296/500, loss ~0.07-0.18",
+      "YOLO failował z powodu niezgodności batch_size z liczbą GPU",
+      "Ultralytics wymaga: `batch_size % gpu_count == 0`",
+      "32 % 3 = 2 ≠ 0 (błąd)"
+    ],
+    "files": [],
+    "next_steps": [
+      "Monitorować start YOLO job 1509301",
+      "Sprawdzić czy batch_size=30 działa poprawnie po starcie",
+      "Kontynuować monitoring DETR (ep 296→500)"
+    ]
+  },
+  {
+    "id": "Session_2026-01-12_020132_IEEE_Article_Cleanup",
+    "name": "IEEE Article Cleanup",
+    "label": "IEEE Article",
+    "date": "2026-01-12T02:01",
+    "type": "Analysis",
+    "objective": "1. Ocena Research Questions (RQ1, RQ2) w kontekscie projektu\n2. Zaproponowanie nowych/lepszych RQ\n3. Usuniecie nieudokumentowanych twierdzen z artykul",
+    "semantic": "- RQ1 odwolywal sie do nieistniejacego porownania, RQ2 mowil. - najsilniejszy finding projektu (DETR vs YOLO cross-da...",
+    "actions": [
+      "Analiza projektu przez Serena - Aktywowano projekt ViTParticleFilterTracker - Przeczytano memories: "
+    ],
+    "findings": [
+      "- RQ1 odwolywal sie do nieistniejacego porownania, RQ2 mowil o \"interpretability",
+      "- najsilniejszy finding projektu (DETR vs YOLO cross-dataset) nie byl objety prz",
+      "- nie ma zadnego kodu ani eksperymentu porownujacego random vs intelligent selec",
+      "- 90,141 zamiast faktycznych 91,260"
+    ],
+    "files": [
+      "F:\\Studia\\Articles\\Moj\\IEEE\\Overleaf\\DETR_IEEE\\access.tex"
+    ],
+    "next_steps": [
+      "Sprawdzic kompilacje LaTeX artykulu",
+      "Rozwazyc dodanie faktycznych eksperymentow ablation (jesli c",
+      "Monitorowac DETR job 1509211 i YOLO job 1509486 na Eden"
+    ]
+  },
+  {
+    "id": "Session_2026-01-12_032540_IEEE_Article_Verification",
+    "name": "IEEE Article Verification",
+    "label": "IEEE Article",
+    "date": "2026-01-12T03:25",
+    "type": "Mixed",
+    "objective": "1. Weryfikacja twierdzeń z artykułu IEEE ACCESS względem faktycznych danych z benchmarków\n2. Poprawienie fałszywych twierdzeń o Fourier filtering\n3. U",
+    "semantic": "Metrics: 80.2%, 74.8%, 80.20%",
+    "actions": [
+      "Weryfikacja benchmarków DETR vs YOLO Agent Explore przeszukał `YOLO_DETR_Benchmarks/Benchmarks/` i z"
+    ],
+    "findings": [],
+    "files": [
+      "F:\\Studia\\Articles\\Moj\\IEEE\\Overleaf\\DETR_IEEE\\access.tex"
+    ],
+    "next_steps": [
+      "Przejrzeć pozostałe sekcje artykułu (Results, Discussion)",
+      "Sprawdzić czy figura Fourier (fig_fourier_extremes.png) jest",
+      "Rozważyć dodanie prawdziwych ablation studies"
+    ]
+  },
+  {
+    "id": "Session_2026-01-12_041738_IEEE_Pipeline_Rewrite",
+    "name": "IEEE Pipeline Rewrite",
+    "label": "IEEE Article",
+    "date": "2026-01-12T04:17",
+    "type": "Mixed",
+    "objective": "Zweryfikować czy opis \"4-Stage Intelligent Dataset Selection Pipeline\" w artykule IEEE ACCESS zgadza się z faktyczną implementacją w kodzie i naprawić",
+    "semantic": "- `ClusterBasedSelector` (method: cluster) - DOMYŚLNA, używa. `CombinedSelector` (method: kcenter) - legacy, opisana ...",
+    "actions": [
+      "Analiza kodu pipeline'u - Przeczytano `main_selection_pipeline.py` - główny orchestrator - Przeczyta"
+    ],
+    "findings": [
+      "- `ClusterBasedSelector` (method: cluster) - DOMYŚLNA, używa K-Means",
+      "`CombinedSelector` (method: kcenter) - legacy, opisana w starym artykule",
+      "- CLUSTER: EL2N jest CECHĄ w 1035-dim przestrzeni klastrowania",
+      "KCENTER: EL2N jest RANKINGIEM na końcu pipeline'u"
+    ],
+    "files": [
+      "Notatki/2026-01-12_Pipeline_Dataset_Selection_Dokumentacja.md"
+    ],
+    "next_steps": [
+      "Zdecydować o ostatecznym brzmieniu abstractu (czytelność vs ",
+      "Commit zmian do repo artykułu",
+      "Push do Overleaf"
+    ]
+  },
+  {
+    "id": "Session_2026-01-12_055500_YOLO_Resume_Fix",
+    "name": "YOLO Resume Fix",
+    "label": "YOLO Resume",
+    "date": "2026-01-12T05:55",
+    "type": "Training",
+    "objective": "Naprawić błąd YOLO training na Eden gdzie job 1509301 failed z błędem:\n```\nAssertionError: last.pt training to 200 epochs is finished, nothing to resu",
+    "semantic": "dgx-2, dgx-3 niedostępne z powodu awarii klimatyzacji. hopper obciążony przez ~40 CPU jobów (hbaniecki)",
+    "actions": [
+      "**Analiza błędu z logu** - zidentyfikowano AssertionError w Ultralytics",
+      "**Przeszukano istniejące skrypty** - znaleziono brakujący `yolo_train_20k_finetune_v2.py`",
+      "**Stworzono poprawiony skrypt v2** - nowa logika pretrained weights",
+      "**Upload na Eden** - `scp` do `~/Yolo/20k_finetune/`",
+      "**Próby uruchomienia joba**: - dgx-3: DRAINED (klimatyzacja) - dgx-2: DRAINING (klimatyzacja) - hopp"
+    ],
+    "findings": [
+      "dgx-2, dgx-3 niedostępne z powodu awarii klimatyzacji",
+      "hopper obciążony przez ~40 CPU jobów (hbaniecki)",
+      "Fair-share priorytet bardzo niski (950) bo DETR działa 15h",
+      "Job 1509626 w kolejce - czeka na zasoby"
+    ],
+    "files": [
+      "Eden/Scripts/Train20kDataset_YOLO_31.12.25/yolo_train_20k_finetune_v2.py"
+    ],
+    "next_steps": [
+      "Czekać na zwolnienie zasobów (dgx-2/dgx-3 po naprawie AC)",
+      "Lub anulować DETR aby podnieść priorytet YOLO",
+      "Monitorować status: `squeue -u bpiotrowski`"
+    ]
+  },
+  {
+    "id": "Session_2026-01-12_060200_YOLO_Resume_Fix_Complete",
+    "name": "YOLO Resume Fix Complete",
+    "label": "YOLO Resume",
+    "date": "2026-01-12T06:02",
+    "type": "Training",
+    "objective": "1. Naprawić błąd YOLO training na Eden (AssertionError: nothing to resume)\n2. Uruchomić trening YOLO 300 nowych epok (200→500)\n3. Zaktualizować indeks",
+    "semantic": "1. Naprawić błąd YOLO training na Eden (AssertionError: nothing to resume) 2. Uruchomić trening YOLO 300 nowych epok (20...",
+    "actions": [
+      "Analiza błędu (z logu użytkownika) ``` AssertionError: last.pt training to 200 epochs is finished, n"
+    ],
+    "findings": [],
+    "files": [
+      "Eden/Scripts/Train20kDataset_YOLO_31.12.25/yolo_train_20k_finetune_v2.py"
+    ],
+    "next_steps": [
+      "Czekać na zwolnienie zasobów (dgx-2/dgx-3 po naprawie AC)",
+      "LUB anulować DETR aby podnieść priorytet YOLO",
+      "Monitorować: `ssh eden-cluster \"squeue -u bpiotrowski\"`"
+    ]
+  },
+  {
+    "id": "Session_2026-01-16_220114",
+    "name": "Session_2026-01-16_220114",
+    "label": "Dataset Select",
+    "date": "2026-01-16T22:01",
+    "type": "Benchmark",
+    "objective": "Naprawić testy benchmarkowe YOLO vs DETR aby eliminować problem data leakage, który wystąpił gdy 48 obrazów z Roboflow validation set zostało przypadk",
+    "semantic": "48 obrazów. Metrics: 24%, 24%",
+    "actions": [
+      "Zidentyfikowano problem data leakage poprzez analizę `selection_reasons.json`",
+      "Stworzono plik `leaked_valid_images.json` z listą 48 leaked obrazów",
+      "Zmodyfikowano funkcję `prepare_coco_annotations()` aby akceptowała parametr `exclude_images`",
+      "Stworzono dwa zestawy datasetów w `main()`: - `datasets_full` - dla modeli Original 100k (bez proble",
+      "Zaktualizowano sekcje benchmarków aby używały odpowiednich datasetów"
+    ],
+    "findings": [
+      "**48 obrazów** z Roboflow valid było w 20k training dataset",
+      "Stanowi to **24%** validation set (48/200 obrazów)",
+      "Modele 100k nie mają problemu leakage (te obrazy nie były w ich zbiorze treningo",
+      "Modele 20k finetune wymagają ewaluacji na \"clean\" validation set (152 obrazy zam"
+    ],
+    "files": [
+      "YOLO_DETR_Benchmarks/scripts/leaked_valid_images.json"
+    ],
+    "next_steps": [
+      "Uruchomić ponownie benchmark z poprawionym skryptem",
+      "Porównać wyniki 20k modeli przed i po usunięciu leaked image",
+      "Rozważyć ponowne wytrenowanie modeli 20k bez leaked images"
+    ]
+  },
+  {
+    "id": "Session_2026-01-18_004223_DETR_EL2N_Optimization",
+    "name": "DETR EL2N Optimization",
+    "label": "DETR EL2N",
+    "date": "2026-01-18T00:42",
+    "type": "Mixed",
+    "objective": "Zoptymalizować DETR EL2N scorer, który przetwarzał obrazki pojedynczo (~1.15s/obrazek = 28h na 90k obrazków). Dodać checkpoint saving żeby można było ",
+    "semantic": "Speedup:. Czas przetwarzania:",
+    "actions": [
+      "**Analiza problemu** - Zidentyfikowano single-image processing w `compute_el2n_scores()` - Komentarz",
+      "**Implementacja checkpoint saving** - Dodano `_save_checkpoint()` - zapisuje co 1000 obrazków - Doda",
+      "**Implementacja batched inference** - Utworzono `ImageDataset(Dataset)` - efektywne ładowanie obrazk",
+      "**Windows compatibility** - Dodano workaround dla `num_workers > 0` na Windows - Automatyczne `num_w",
+      "**Git operations** - Commit: `feat(detr): optimize EL2N scorer with batching and checkpoints` - Merg"
+    ],
+    "findings": [
+      "**Speedup:** ~10x (1.15s/img → ~0.1s/img)",
+      "**Czas przetwarzania:** 28h → 2.5h dla 90k obrazków",
+      "**Resume support:** Automatyczne wznowienie po restarcie"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/selection_methods/detr_el2n_scorer.py"
+    ],
+    "next_steps": [
+      "Uruchomić pipeline ponownie z nowym kodem",
+      "Sprawdzić czy checkpoint resume działa poprawnie",
+      "Ewentualnie dostroić batch_size dla optymalnej wydajności GP"
+    ]
+  },
+  {
+    "id": "Session_2026-01-18_012500_PyTorch_GPU_Fix",
+    "name": "PyTorch GPU Fix",
+    "label": "DETR EL2N",
+    "date": "2026-01-18T01:25",
+    "type": "Mixed",
+    "objective": "Naprawić problem z DETR EL2N scorer który nie używał GPU podczas przetwarzania obrazów w pipeline selekcji datasetu.",
+    "semantic": "Problem nie był w kodzie - PyTorch był zainstalowany w wersj. Użytkownik miał dwie instalacje Pythona z różnymi wersj...",
+    "actions": [
+      "**Dodano diagnostykę GPU do `detr_el2n_scorer.py`:** - Funkcja `verify_gpu_available()` - pełna wery",
+      "**Zdiagnozowano problem:** - Test GPU pokazał: `PyTorch version: 2.9.1+cpu` - CUDA available: False ",
+      "**Naprawiono problem:** - Odinstalowano PyTorch CPU: `pip uninstall torch torchvision torchaudio` - ",
+      "**Weryfikacja:** - PyTorch: 2.6.0+cu124 - CUDA available: True - GPU: NVIDIA GeForce RTX 3070 - Mode"
+    ],
+    "findings": [
+      "Problem nie był w kodzie - PyTorch był zainstalowany w wersji CPU-only",
+      "Użytkownik miał dwie instalacje Pythona z różnymi wersjami PyTorch",
+      "Po reinstalacji model poprawnie ładuje się na GPU (0.18 GB memory)"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/selection_methods/detr_el2n_scorer.py"
+    ],
+    "next_steps": [
+      "PyTorch z CUDA zainstalowany",
+      "Model DETR działa na GPU",
+      "Uruchomić pełny pipeline selekcji z GPU acceleration"
+    ]
+  },
+  {
+    "id": "Session_2026-01-18_143500_Scientific_Justification_Dataset_Selection",
+    "name": "Scientific Justification Dataset Selection",
+    "label": "Dataset Select",
+    "date": "2026-01-18T14:35",
+    "type": "Analysis",
+    "objective": "Znaleźć naukowe uzasadnienie dla metodologii selekcji datasetu używanej w projekcie AdvancedDatasetSelection, w tym dla:\n- EL2N scores jako miary trud",
+    "semantic": "Web Search: EL2N Score. Web Search: Coreset Selection",
+    "actions": [
+      "**Web Search: EL2N Score** - Znaleziono \"Deep Learning on a Data Diet\" (Paul et al., NeurIPS 2021) -",
+      "**Web Search: Coreset Selection** - \"Blind Coreset Selection\" (ICLR 2025) - \"InfoMax Coreset Selecti",
+      "**Web Search: Fourier Features** - \"Fourier Features Let Networks Learn High Frequency Functions\" (N",
+      "**Web Search: DINO Features** - DINO (Meta AI, 2021) - DINOv2 (2023), DINOv3 (2025) - Self-supervise",
+      "**Zapisanie do pamięci Sereny** - Utworzono `dataset_selection_scientific_justification.md` - Pełne "
+    ],
+    "findings": [],
+    "files": [
+      "README.md",
+      "SESSION_SUMMARY.md"
+    ],
+    "next_steps": [
+      "Opcjonalnie: Przepuścić pipeline z nowymi wagami (DINO 48%, ",
+      "Użyć przygotowanego cytatu w artykule IEEE",
+      "Rozważyć dodanie dodatkowych referencji do Related Work"
+    ]
+  },
+  {
+    "id": "Session_2026-01-18_145200_YOLO_Resume_500_Scientific_Justification",
+    "name": "YOLO Resume 500 Scientific Justification",
+    "label": "YOLO Resume",
+    "date": "2026-01-18T14:52",
+    "type": "Training",
+    "objective": "1. Znaleźć naukowe uzasadnienie dla metodologii selekcji datasetu (EL2N, DINO, Fourier, coreset selection)\n2. Przygotować skrypt SLURM do wznowienia t",
+    "semantic": "Web Search: EL2N Score. Web Search: Coreset Selection",
+    "actions": [
+      "**Web Search: EL2N Score** - Znaleziono \"Deep Learning on a Data Diet\" (Paul et al., NeurIPS 2021) -",
+      "**Web Search: Coreset Selection** - \"Blind Coreset Selection\" (ICLR 2025) - \"InfoMax Coreset Selecti",
+      "**Web Search: Fourier Features** - \"Fourier Features Let Networks Learn\" (NeurIPS 2020) - Uzasadnien",
+      "**Web Search: DINO Features** - DINO, DINOv2, DINOv3 (Meta AI 2021-2025) - Self-supervised represent",
+      "**Zapisanie do pamięci Sereny** - `dataset_selection_scientific_justification.md` - Pełne referencje"
+    ],
+    "findings": [],
+    "files": [],
+    "next_steps": [
+      "Skopiować skrypt SLURM na Eden",
+      "Uruchomić job: `sbatch run_yolo_20k_resume_ep200_to_500.slur",
+      "Monitorować trening (300 epok, ~12-18h)"
+    ]
+  },
+  {
+    "id": "Session_2026-01-19_042000_YOLO_LR_Fix_Finetune",
+    "name": "YOLO LR Fix Finetune",
+    "label": "YOLO Resume",
+    "date": "2026-01-19T04:20",
+    "type": "Training",
+    "objective": "Naprawić problem z Learning Rate przy fine-tuningu YOLO i uruchomić trening od epoch 170 do 500.",
+    "semantic": "`optimizer=auto` ignoruje `lr0` i `momentum` - MUSI być expl. Oryginalny trening: 0.01→0.0001, Fine-tune: 0.001→0.0001",
+    "actions": [
+      "Analiza problemu LR - Sprawdzono logi poprzednich sesji i checkpointów - Odkryto że epoch 70 miał LR"
+    ],
+    "findings": [
+      "`optimizer=auto` ignoruje `lr0` i `momentum` - MUSI być explicit `optimizer='SGD",
+      "Oryginalny trening: 0.01→0.0001, Fine-tune: 0.001→0.0001",
+      "epoch170.pt znajduje się w `~/Yolo/20k_finetune/` (root, nie w weights/)",
+      "`sfree` pokazuje lepsze info o dostępnych zasobach niż `sinfo`"
+    ],
+    "files": [
+      "Eden/Scripts/Train20kDataset_YOLO_31.12.25/yolo_train_20k_finetune_v2.py"
+    ],
+    "next_steps": [
+      "Monitorować trening (loss, mAP)",
+      "Sprawdzić checkpoint po epoch 10",
+      "Po zakończeniu: walidacja na test set"
+    ]
+  },
+  {
+    "id": "Session_2026-01-20_140500",
+    "name": "Session_2026-01-20_140500",
+    "label": "Training",
+    "date": "2026-01-20T14:05",
+    "type": "Training",
+    "objective": "Ponowne uruchomienie fine-tuningu YOLO od epoch 170 z poprawionym Learning Rate po nieudanym poprzednim treningu.",
+    "semantic": "lr0=0.0001 dziala - model sie uczy, loss spada. DDP na 7x H100 dziala poprawnie",
+    "actions": [
+      "Wczytano poprzednia sesje SSH (`sesja_2026-01-19_yolo_finetune_ep170_500`)",
+      "Przeanalizowano logi - zidentyfikowano problem z LR",
+      "Utworzono nowy skrypt SLURM z poprawkami: - lr0: 0.001 -> **0.0001** (10x mniejszy) - patience: 50 -",
+      "Wgrano skrypt na Eden przez SCP",
+      "Uruchomiono job przez sbatch"
+    ],
+    "findings": [
+      "lr0=0.0001 dziala - model sie uczy, loss spada",
+      "DDP na 7x H100 dziala poprawnie",
+      "Batch 35 (5 per GPU) jest optymalny dla 7 GPU"
+    ],
+    "files": [
+      "SESSION_SUMMARY.md"
+    ],
+    "next_steps": [
+      "Monitorowac trening - czy metryki sie poprawiaja przez wiele",
+      "Sprawdzic mAP50-95 po kilku epokach",
+      "Porownac z baseline (poprzedni best @ epoch 1: mAP50-95=0.96"
+    ]
+  }
+];
+
+    // Group by month
+    const byMonth = {};
+    sessions.forEach(s => {
+        const month = s.date.substring(0, 7);
+        if (!byMonth[month]) byMonth[month] = [];
+        byMonth[month].push(s);
+    });
+
+    // Sort months (oldest first = bottom)
+    const sortedMonths = Object.keys(byMonth).sort();
+
+    // Build timeline
+    const timeline = document.getElementById('timeline');
+
+    sortedMonths.forEach(month => {
+        const group = document.createElement('div');
+        group.className = 'month-group';
+
+        const label = document.createElement('div');
+        label.className = 'month-label';
+        label.textContent = month;
+        group.appendChild(label);
+
+        // Sort sessions within month (oldest first)
+        byMonth[month].sort((a, b) => a.date.localeCompare(b.date));
+
+        byMonth[month].forEach(s => {
+            const session = document.createElement('div');
+            session.className = `session ${s.type}`;
+            session.dataset.label = s.label;
+            session.dataset.semantic = s.semantic || s.objective || '';
+
+            // Build details HTML
+            let detailsHtml = '';
+
+            // Objective
+            if (s.objective) {
+                detailsHtml += `<div class="details-objective">${s.objective}</div>`;
+            }
+
+            // Actions
+            if (s.actions && s.actions.length > 0) {
+                detailsHtml += `
+                    <div class="details-section">
+                        <div class="details-section-title">Actions</div>
+                        <ul class="details-list">
+                            ${s.actions.map(a => `<li>${a}</li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            // Findings
+            if (s.findings && s.findings.length > 0) {
+                detailsHtml += `
+                    <div class="details-section">
+                        <div class="details-section-title">Key Findings</div>
+                        <ul class="details-list">
+                            ${s.findings.map(f => `<li>${f}</li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            // Files
+            if (s.files && s.files.length > 0) {
+                detailsHtml += `
+                    <div class="details-section">
+                        <div class="details-section-title">Files</div>
+                        <ul class="details-list">
+                            ${s.files.map(f => `<li><code>${f}</code></li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            // Next steps
+            if (s.next_steps && s.next_steps.length > 0) {
+                detailsHtml += `
+                    <div class="details-section">
+                        <div class="details-section-title">Next Steps</div>
+                        <ul class="details-list">
+                            ${s.next_steps.map(n => `<li>${n}</li>`).join('')}
+                        </ul>
+                    </div>`;
+            }
+
+            // Path
+            detailsHtml += `<div class="details-path">.sessions/${s.id}/SESSION_SUMMARY.md</div>`;
+
+            session.innerHTML = `
+                <div class="session-title">
+                    ${s.label}
+                    <span class="session-type">${s.type}</span>
+                </div>
+                <div class="session-meta">${s.date.substring(5, 10)} | ${s.name}</div>
+                <div class="session-details">${detailsHtml}</div>
+            `;
+            session.onclick = () => session.classList.toggle('expanded');
+            group.appendChild(session);
+        });
+
+        timeline.appendChild(group);
+    });
+
+    // Stats
+    document.getElementById('stats').textContent = `${sessions.length} sessions | ${sortedMonths[0]} - ${sortedMonths[sortedMonths.length-1]}`;
+
+    // Tooltip handling
+    const tooltip = document.getElementById('tooltip');
+    const tooltipLabel = document.getElementById('tooltip-label');
+    const tooltipSemantic = document.getElementById('tooltip-semantic');
+
+    document.querySelectorAll('.session').forEach(el => {
+        el.addEventListener('mouseenter', (e) => {
+            tooltipLabel.textContent = el.dataset.label;
+            tooltipSemantic.textContent = el.dataset.semantic;
+            tooltip.classList.add('visible');
+        });
+
+        el.addEventListener('mousemove', (e) => {
+            const x = e.clientX + 15;
+            const y = e.clientY + 15;
+            // Keep tooltip in viewport
+            const maxX = window.innerWidth - tooltip.offsetWidth - 20;
+            const maxY = window.innerHeight - tooltip.offsetHeight - 20;
+            tooltip.style.left = Math.min(x, maxX) + 'px';
+            tooltip.style.top = Math.min(y, maxY) + 'px';
+        });
+
+        el.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('visible');
+        });
+    });
+
+    // Scroll to bottom (newest)
+    window.scrollTo(0, document.body.scrollHeight);
+    </script>
+</body>
+</html>

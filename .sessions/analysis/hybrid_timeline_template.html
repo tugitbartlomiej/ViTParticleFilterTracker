@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hybrid Timeline</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            color: #eee;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 26, 0.98);
+            padding: 12px 20px;
+            z-index: 100;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 1.2em; }
+        .header .stats { font-size: 0.85em; color: #888; }
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .container {
+            display: flex;
+            padding-top: 60px;
+        }
+
+        /* Connection lines canvas */
+        .connections-layer {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Timeline */
+        .timeline {
+            flex: 1;
+            padding: 20px 20px 40px 80px;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 44px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to top, #667eea, #764ba2);
+        }
+
+        .month-group { margin-bottom: 25px; }
+        .month-label {
+            position: relative;
+            left: -50px;
+            font-size: 0.7em;
+            color: #667eea;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .session {
+            position: relative;
+            margin-bottom: 10px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            border-left: 3px solid;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .session:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .session.highlighted {
+            background: rgba(102, 126, 234, 0.2);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+        }
+        .session::before {
+            content: '';
+            position: absolute;
+            left: -39px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 3px solid;
+            background: #0f0f1a;
+        }
+
+        .session.Training { border-color: #ff6b6b; }
+        .session.Training::before { border-color: #ff6b6b; }
+        .session.Analysis { border-color: #4ecdc4; }
+        .session.Analysis::before { border-color: #4ecdc4; }
+        .session.Writing { border-color: #ffeaa7; }
+        .session.Writing::before { border-color: #ffeaa7; }
+        .session.Benchmark { border-color: #a29bfe; }
+        .session.Benchmark::before { border-color: #a29bfe; }
+        .session.SSH { border-color: #55efc4; }
+        .session.SSH::before { border-color: #55efc4; }
+        .session.Mixed { border-color: #b2bec3; }
+        .session.Mixed::before { border-color: #b2bec3; }
+
+        .session-title {
+            font-size: 1em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .session-type {
+            font-size: 0.65em;
+            padding: 2px 6px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .session.Training .session-type { background: rgba(255,107,107,0.3); color: #ff6b6b; }
+        .session.Analysis .session-type { background: rgba(78,205,196,0.3); color: #4ecdc4; }
+        .session.Writing .session-type { background: rgba(255,234,167,0.3); color: #ffeaa7; }
+        .session.Benchmark .session-type { background: rgba(162,155,254,0.3); color: #a29bfe; }
+        .session.SSH .session-type { background: rgba(85,239,196,0.3); color: #55efc4; }
+        .session.Mixed .session-type { background: rgba(178,190,195,0.3); color: #b2bec3; }
+
+        .session-meta {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 3px;
+        }
+        .session-topics {
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .topic-tag {
+            font-size: 0.65em;
+            padding: 2px 6px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 6px;
+            color: #a8b4ff;
+        }
+
+        .session-details {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .session.expanded .session-details { display: block; }
+
+        .details-section { margin-bottom: 8px; }
+        .details-title {
+            font-size: 0.7em;
+            color: #667eea;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        .details-list {
+            font-size: 0.8em;
+            color: #aaa;
+            padding-left: 15px;
+            margin: 0;
+        }
+        .details-list li { margin: 2px 0; }
+        .details-objective {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 2px solid #667eea;
+            padding: 6px 10px;
+            font-size: 0.8em;
+            color: #ccc;
+            margin-bottom: 8px;
+        }
+        .details-path {
+            font-family: monospace;
+            font-size: 0.7em;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #666;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: rgba(20, 20, 35, 0.98);
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            padding: 10px 14px;
+            max-width: 300px;
+            font-size: 0.85em;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .tooltip.visible { opacity: 1; }
+        .tooltip-label { font-weight: 600; color: #fff; margin-bottom: 4px; }
+        .tooltip-semantic { color: #a8e6cf; font-style: italic; font-size: 0.9em; }
+
+        /* Side panel for connections */
+        .side-panel {
+            position: fixed;
+            right: 0;
+            top: 60px;
+            width: 280px;
+            height: calc(100vh - 60px);
+            background: rgba(15, 15, 26, 0.95);
+            border-left: 1px solid #333;
+            padding: 15px;
+            overflow-y: auto;
+            z-index: 50;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .side-panel.open { transform: translateX(0); }
+        .side-panel h3 {
+            font-size: 0.9em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .connection-item {
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+        .connection-item:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+        .shared-topics {
+            color: #888;
+            font-size: 0.85em;
+            margin-top: 3px;
+        }
+
+        .toggle-panel {
+            position: fixed;
+            right: 10px;
+            bottom: 20px;
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85em;
+            z-index: 60;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Hybrid Timeline</h1>
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Training</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#4ecdc4"></div>Analysis</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ffeaa7"></div>Writing</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#a29bfe"></div>Benchmark</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#55efc4"></div>SSH</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#b2bec3"></div>Mixed</div>
+        </div>
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <svg class="connections-layer" id="connections"></svg>
+
+    <div class="container">
+        <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="side-panel" id="sidePanel">
+        <h3>Related Sessions</h3>
+        <div id="relatedList"></div>
+    </div>
+
+    <button class="toggle-panel" id="togglePanel">Show Connections</button>
+
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-label" id="tooltipLabel"></div>
+        <div class="tooltip-semantic" id="tooltipSemantic"></div>
+    </div>
+
+    <script>
+    const sessions = SESSION_DATA_PLACEHOLDER;
+    const connections = CONNECTION_DATA_PLACEHOLDER;
+
+    const sessionElements = [];
+
+    // Group by month
+    const byMonth = {};
+    sessions.forEach((s, i) => {
+        s.index = i;
+        const month = s.date.substring(0, 7);
+        if (!byMonth[month]) byMonth[month] = [];
+        byMonth[month].push(s);
+    });
+
+    const sortedMonths = Object.keys(byMonth).sort();
+    const timeline = document.getElementById('timeline');
+
+    sortedMonths.forEach(month => {
+        const group = document.createElement('div');
+        group.className = 'month-group';
+
+        const label = document.createElement('div');
+        label.className = 'month-label';
+        label.textContent = month;
+        group.appendChild(label);
+
+        byMonth[month].sort((a, b) => a.date.localeCompare(b.date));
+
+        byMonth[month].forEach(s => {
+            const el = document.createElement('div');
+            el.className = `session ${s.type}`;
+            el.dataset.index = s.index;
+            el.dataset.label = s.label;
+            el.dataset.semantic = s.semantic || '';
+
+            const topicTags = s.topics.slice(0, 4).map(t => `<span class="topic-tag">${t}</span>`).join('');
+
+            let detailsHtml = '';
+            if (s.objective) detailsHtml += `<div class="details-objective">${s.objective}</div>`;
+            if (s.actions && s.actions.length) {
+                detailsHtml += `<div class="details-section"><div class="details-title">Actions</div><ul class="details-list">${s.actions.map(a => `<li>${a}</li>`).join('')}</ul></div>`;
+            }
+            if (s.findings && s.findings.length) {
+                detailsHtml += `<div class="details-section"><div class="details-title">Findings</div><ul class="details-list">${s.findings.map(f => `<li>${f}</li>`).join('')}</ul></div>`;
+            }
+            if (s.files && s.files.length) {
+                detailsHtml += `<div class="details-section"><div class="details-title">Files</div><ul class="details-list">${s.files.map(f => `<li><code>${f}</code></li>`).join('')}</ul></div>`;
+            }
+            detailsHtml += `<div class="details-path">.sessions/${s.id}/</div>`;
+
+            el.innerHTML = `
+                <div class="session-title">
+                    ${s.label}
+                    <span class="session-type">${s.type}</span>
+                </div>
+                <div class="session-meta">${s.date.substring(5, 10)} | ${s.name}</div>
+                <div class="session-topics">${topicTags}</div>
+                <div class="session-details">${detailsHtml}</div>
+            `;
+
+            el.addEventListener('click', () => {
+                el.classList.toggle('expanded');
+                showRelated(s.index);
+            });
+
+            group.appendChild(el);
+            sessionElements[s.index] = el;
+        });
+
+        timeline.appendChild(group);
+    });
+
+    // Stats
+    document.getElementById('stats').textContent = `${sessions.length} sessions | ${connections.length} connections`;
+
+    // Tooltip
+    const tooltip = document.getElementById('tooltip');
+    const tooltipLabel = document.getElementById('tooltipLabel');
+    const tooltipSemantic = document.getElementById('tooltipSemantic');
+
+    document.querySelectorAll('.session').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            tooltipLabel.textContent = el.dataset.label;
+            tooltipSemantic.textContent = el.dataset.semantic;
+            tooltip.classList.add('visible');
+        });
+        el.addEventListener('mousemove', (e) => {
+            tooltip.style.left = Math.min(e.clientX + 15, window.innerWidth - 320) + 'px';
+            tooltip.style.top = Math.min(e.clientY + 15, window.innerHeight - 100) + 'px';
+        });
+        el.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+    });
+
+    // Side panel
+    const sidePanel = document.getElementById('sidePanel');
+    const relatedList = document.getElementById('relatedList');
+    const toggleBtn = document.getElementById('togglePanel');
+
+    toggleBtn.addEventListener('click', () => {
+        sidePanel.classList.toggle('open');
+        toggleBtn.textContent = sidePanel.classList.contains('open') ? 'Hide Connections' : 'Show Connections';
+    });
+
+    function showRelated(index) {
+        const related = connections.filter(c => c.from === index || c.to === index);
+
+        // Clear highlights
+        document.querySelectorAll('.session.highlighted').forEach(el => el.classList.remove('highlighted'));
+
+        // Highlight related
+        related.forEach(c => {
+            const otherIndex = c.from === index ? c.to : c.from;
+            if (sessionElements[otherIndex]) {
+                sessionElements[otherIndex].classList.add('highlighted');
+            }
+        });
+
+        // Update side panel
+        relatedList.innerHTML = related.map(c => {
+            const otherIndex = c.from === index ? c.to : c.from;
+            const other = sessions[otherIndex];
+            return `
+                <div class="connection-item" data-index="${otherIndex}">
+                    <strong>${other.label}</strong> (${other.date.substring(5, 10)})
+                    <div class="shared-topics">Shared: ${c.topics.join(', ')}</div>
+                </div>
+            `;
+        }).join('') || '<div style="color:#666">No connections found</div>';
+
+        // Click to scroll
+        relatedList.querySelectorAll('.connection-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const idx = parseInt(item.dataset.index);
+                sessionElements[idx]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                sessionElements[idx]?.classList.add('expanded');
+            });
+        });
+
+        if (related.length > 0) {
+            sidePanel.classList.add('open');
+            toggleBtn.textContent = 'Hide Connections';
+        }
+
+        drawConnections(index);
+    }
+
+    // Draw SVG connections
+    const svg = document.getElementById('connections');
+
+    function drawConnections(highlightIndex = null) {
+        svg.innerHTML = '';
+        svg.style.width = document.body.scrollWidth + 'px';
+        svg.style.height = document.body.scrollHeight + 'px';
+
+        connections.forEach(c => {
+            const el1 = sessionElements[c.from];
+            const el2 = sessionElements[c.to];
+            if (!el1 || !el2) return;
+
+            const rect1 = el1.getBoundingClientRect();
+            const rect2 = el2.getBoundingClientRect();
+
+            const x1 = rect1.left + window.scrollX;
+            const y1 = rect1.top + rect1.height / 2 + window.scrollY;
+            const x2 = rect2.left + window.scrollX;
+            const y2 = rect2.top + rect2.height / 2 + window.scrollY;
+
+            const isHighlighted = highlightIndex !== null && (c.from === highlightIndex || c.to === highlightIndex);
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const midX = x1 - 30;
+            path.setAttribute('d', `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', isHighlighted ? '#667eea' : 'rgba(102, 126, 234, 0.15)');
+            path.setAttribute('stroke-width', isHighlighted ? '2' : '1');
+            svg.appendChild(path);
+        });
+    }
+
+    // Initial draw
+    setTimeout(() => drawConnections(), 100);
+    window.addEventListener('resize', () => drawConnections());
+    window.addEventListener('scroll', () => drawConnections());
+
+    // Scroll to newest
+    window.scrollTo(0, document.body.scrollHeight);
+    </script>
+</body>
+</html>

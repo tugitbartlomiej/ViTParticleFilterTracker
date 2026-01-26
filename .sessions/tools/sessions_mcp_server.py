@@ -35,8 +35,13 @@ from pydantic import BaseModel, Field
 SESSIONS_PATH = Path(__file__).parent.parent  # .sessions/
 PROJECT_ROOT = SESSIONS_PATH.parent  # ViTParticleFilterTracker/
 MODELS_CACHE = PROJECT_ROOT / "External" / "Models"  # Local models cache
-EMBEDDING_MODEL_PATH = MODELS_CACHE / "BAAI_bge-m3"  # Local path to bge-m3
-CHROMA_PATH = SESSIONS_PATH / "vectordb"  # Keep index in project
+
+# Embedding model configuration
+# bge-m3: 2.3GB, 1024-dim, multilingual (PL+EN), loads in ~60s
+# Note: MCP has timeout issues, use /szukaj-sesje command instead
+EMBEDDING_MODEL_PATH = MODELS_CACHE / "BAAI_bge-m3"
+
+CHROMA_PATH = SESSIONS_PATH / "vectordb"  # ChromaDB index location
 INDEX_STATE_FILE = CHROMA_PATH / "index_state.json"
 
 # Chunk settings
@@ -90,15 +95,14 @@ class IndexStatus(BaseModel):
 # =============================================================================
 
 def get_model():
-    """Lazy load the embedding model from local path."""
+    """Lazy load the bge-m3 embedding model (multilingual: PL+EN)."""
     global _model
     if _model is None:
         try:
             from sentence_transformers import SentenceTransformer
-            print(f"Loading embedding model from: {EMBEDDING_MODEL_PATH}")
-            print("This may take 10-30 seconds...")
+            print(f"Loading embedding model: {EMBEDDING_MODEL_PATH}")
             _model = SentenceTransformer(str(EMBEDDING_MODEL_PATH))
-            print("Model loaded successfully!")
+            print("Model loaded!")
         except ImportError:
             raise ImportError(
                 "sentence-transformers not installed. "
@@ -689,5 +693,5 @@ def _warmup():
 # =============================================================================
 
 if __name__ == "__main__":
-    _warmup()  # Pre-load everything before accepting queries
+    # _warmup()  # Disabled - causes MCP timeout. Model loads lazily on first query.
     mcp.run()

@@ -1,0 +1,6649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hybrid Timeline</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            color: #eee;
+        }
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 26, 0.98);
+            padding: 12px 20px;
+            z-index: 100;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 1.2em; }
+        .header .stats { font-size: 0.85em; color: #888; }
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .container {
+            display: flex;
+            padding-top: 60px;
+        }
+
+        /* Connection lines canvas */
+        .connections-layer {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Timeline */
+        .timeline {
+            flex: 1;
+            padding: 20px 20px 40px 80px;
+            max-width: 700px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 44px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to top, #667eea, #764ba2);
+        }
+
+        .month-group { margin-bottom: 25px; }
+        .month-label {
+            position: relative;
+            left: -50px;
+            font-size: 0.7em;
+            color: #667eea;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .session {
+            position: relative;
+            margin-bottom: 10px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            border-left: 3px solid;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .session:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+        .session.highlighted {
+            background: rgba(102, 126, 234, 0.2);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+        }
+        .session::before {
+            content: '';
+            position: absolute;
+            left: -39px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 3px solid;
+            background: #0f0f1a;
+        }
+
+        .session.Training { border-color: #ff6b6b; }
+        .session.Training::before { border-color: #ff6b6b; }
+        .session.Analysis { border-color: #4ecdc4; }
+        .session.Analysis::before { border-color: #4ecdc4; }
+        .session.Writing { border-color: #ffeaa7; }
+        .session.Writing::before { border-color: #ffeaa7; }
+        .session.Benchmark { border-color: #a29bfe; }
+        .session.Benchmark::before { border-color: #a29bfe; }
+        .session.SSH { border-color: #55efc4; }
+        .session.SSH::before { border-color: #55efc4; }
+        .session.Mixed { border-color: #b2bec3; }
+        .session.Mixed::before { border-color: #b2bec3; }
+
+        .session-title {
+            font-size: 1em;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .session-type {
+            font-size: 0.65em;
+            padding: 2px 6px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .session.Training .session-type { background: rgba(255,107,107,0.3); color: #ff6b6b; }
+        .session.Analysis .session-type { background: rgba(78,205,196,0.3); color: #4ecdc4; }
+        .session.Writing .session-type { background: rgba(255,234,167,0.3); color: #ffeaa7; }
+        .session.Benchmark .session-type { background: rgba(162,155,254,0.3); color: #a29bfe; }
+        .session.SSH .session-type { background: rgba(85,239,196,0.3); color: #55efc4; }
+        .session.Mixed .session-type { background: rgba(178,190,195,0.3); color: #b2bec3; }
+
+        .session-meta {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 3px;
+        }
+        .session-topics {
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .topic-tag {
+            font-size: 0.65em;
+            padding: 2px 6px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 6px;
+            color: #a8b4ff;
+        }
+
+        .session-details {
+            display: none;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .session.expanded .session-details { display: block; }
+
+        .details-section { margin-bottom: 8px; }
+        .details-title {
+            font-size: 0.7em;
+            color: #667eea;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 3px;
+        }
+        .details-list {
+            font-size: 0.8em;
+            color: #aaa;
+            padding-left: 15px;
+            margin: 0;
+        }
+        .details-list li { margin: 2px 0; }
+        .details-objective {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 2px solid #667eea;
+            padding: 6px 10px;
+            font-size: 0.8em;
+            color: #ccc;
+            margin-bottom: 8px;
+        }
+        .details-path {
+            font-family: monospace;
+            font-size: 0.7em;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #666;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: rgba(20, 20, 35, 0.98);
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            padding: 10px 14px;
+            max-width: 300px;
+            font-size: 0.85em;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        .tooltip.visible { opacity: 1; }
+        .tooltip-label { font-weight: 600; color: #fff; margin-bottom: 4px; }
+        .tooltip-semantic { color: #a8e6cf; font-style: italic; font-size: 0.9em; }
+
+        /* Side panel for connections */
+        .side-panel {
+            position: fixed;
+            right: 0;
+            top: 60px;
+            width: 280px;
+            height: calc(100vh - 60px);
+            background: rgba(15, 15, 26, 0.95);
+            border-left: 1px solid #333;
+            padding: 15px;
+            overflow-y: auto;
+            z-index: 50;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .side-panel.open { transform: translateX(0); }
+        .side-panel h3 {
+            font-size: 0.9em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .connection-item {
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+        .connection-item:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+        .shared-topics {
+            color: #888;
+            font-size: 0.85em;
+            margin-top: 3px;
+        }
+
+        .toggle-panel {
+            position: fixed;
+            right: 10px;
+            bottom: 20px;
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85em;
+            z-index: 60;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Hybrid Timeline</h1>
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Training</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#4ecdc4"></div>Analysis</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#ffeaa7"></div>Writing</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#a29bfe"></div>Benchmark</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#55efc4"></div>SSH</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#b2bec3"></div>Mixed</div>
+        </div>
+        <div class="stats" id="stats"></div>
+    </div>
+
+    <svg class="connections-layer" id="connections"></svg>
+
+    <div class="container">
+        <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="side-panel" id="sidePanel">
+        <h3>Related Sessions</h3>
+        <div id="relatedList"></div>
+    </div>
+
+    <button class="toggle-panel" id="togglePanel">Show Connections</button>
+
+    <div class="tooltip" id="tooltip">
+        <div class="tooltip-label" id="tooltipLabel"></div>
+        <div class="tooltip-semantic" id="tooltipSemantic"></div>
+    </div>
+
+    <script>
+    const sessions = [
+  {
+    "id": "Session_2025-11-17_DETR_YOLO_Benchmark_Fix",
+    "name": "Session_2025-11-17_DETR_YOLO_Benchmark_Fix",
+    "label": "YOLO Fix",
+    "date": "2025-01-01T00:00",
+    "type": "Mixed",
+    "objective": "Poprawić ścieżki do checkpointów DETR w skryptach benchmarkowych oraz stworzyć nowy skrypt do kompleksowego porównania YOLO vs DETR na wielu epokach.",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Poprawić ścieżki do checkpointów DETR w skryptach benchmarkowych oraz stworzyć nowy skrypt do kompleksowego porównania Y",
+    "actions": [
+      "Audyt skryptów benchmarkowych Sprawdzono wszystkie skrypty w `YOLO_DETR_Benchmarks/scripts/` - znale"
+    ],
+    "findings": [],
+    "files": [
+      "benchmark_cataract_complete.py",
+      "benchmark_cataract_with_visualizations.py",
+      "benchmark_roboflow_cataract.py",
+      "benchmark_roboflow_cataract_backup.py",
+      "benchmark_train_val_complete.py"
+    ],
+    "next_steps": [
+      "Uruchomić `benchmark_yolo_vs_detr_multi_epoch.py`",
+      "Przeanalizować wyniki porównania",
+      "Określić najlepszy model do produkcji"
+    ],
+    "index": 0
+  },
+  {
+    "id": "Session_2025-12-09_Advanced_Dataset_Selection_Plan",
+    "name": "Session_2025-12-09_Advanced_Dataset_Selection_Plan",
+    "label": "Dataset Select",
+    "date": "2025-01-01T00:00",
+    "type": "Mixed",
+    "objective": "",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "Fourier",
+      "Pipeline",
+      "SAM"
+    ],
+    "semantic": "Session_2025-12-09_Advanced_Dataset_Selection_Plan",
+    "actions": [],
+    "findings": [],
+    "files": [],
+    "next_steps": [],
+    "index": 1
+  },
+  {
+    "id": "Session_2025-10-20_221200",
+    "name": "Session_2025-10-20_221200",
+    "label": "Session",
+    "date": "2025-10-20T22:12",
+    "type": "Mixed",
+    "objective": "",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "GPU",
+      "SSH"
+    ],
+    "semantic": "Session_2025-10-20_221200",
+    "actions": [],
+    "findings": [],
+    "files": [
+      "/home2/faculty/bpiotrowski/ViT/YOLO_DETR_Benchmarks/scripts/detr_train_optimized.py",
+      "detr_train_optimized.py",
+      "/home2/faculty/bpiotrowski/ViT/YOLO_DETR_Benchmarks/scripts/detr_train_optimized.py"
+    ],
+    "next_steps": [],
+    "index": 2
+  },
+  {
+    "id": "Session_2025-10-20_225800",
+    "name": "Session_2025-10-20_225800",
+    "label": "Session",
+    "date": "2025-10-20T22:58",
+    "type": "Mixed",
+    "objective": "",
+    "topics": [
+      "DETR",
+      "GPU",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Session_2025-10-20_225800",
+    "actions": [],
+    "findings": [],
+    "files": [],
+    "next_steps": [],
+    "index": 3
+  },
+  {
+    "id": "Session_2025-10-21_005200",
+    "name": "Session_2025-10-21_005200",
+    "label": "Session",
+    "date": "2025-10-21T00:52",
+    "type": "Mixed",
+    "objective": "",
+    "topics": [
+      "DETR",
+      "GPU",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Session_2025-10-21_005200",
+    "actions": [],
+    "findings": [],
+    "files": [],
+    "next_steps": [],
+    "index": 4
+  },
+  {
+    "id": "Session_2025-10-22_231000",
+    "name": "Session_2025-10-22_231000",
+    "label": "Session",
+    "date": "2025-10-22T23:10",
+    "type": "Mixed",
+    "objective": "",
+    "topics": [
+      "DETR",
+      "GPU",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Session_2025-10-22_231000",
+    "actions": [],
+    "findings": [],
+    "files": [],
+    "next_steps": [],
+    "index": 5
+  },
+  {
+    "id": "Session_2025-10-29_142909",
+    "name": "Session_2025-10-29_142909",
+    "label": "Session",
+    "date": "2025-10-29T14:29",
+    "type": "Mixed",
+    "objective": "DETR epoch 140 vs YOLO - Ultra-optimization experiments and deep analysis",
+    "topics": [
+      "DETR",
+      "YOLO"
+    ],
+    "semantic": "DETR epoch 140 vs YOLO - Ultra-optimization experiments and deep analysis",
+    "actions": [],
+    "findings": [],
+    "files": [
+      "file2.json"
+    ],
+    "next_steps": [
+      "Next step 1",
+      "Next step 2",
+      "Next step 3"
+    ],
+    "index": 6
+  },
+  {
+    "id": "Session_2025-10-31_163000",
+    "name": "Session_2025-10-31_163000",
+    "label": "Session",
+    "date": "2025-10-31T16:30",
+    "type": "Mixed",
+    "objective": "Zbudować lepszy, rzetelny dataset z filmów zaćmy (Cataract), a następnie wytrenować nowy jedno‑klasowy DETR (klasa: `tooltip` – końcówka narzędzia), z uczciwą walidacją (COCO mAP na val i test), bez p",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "GPU",
+      "Pipeline",
+      "YOLO"
+    ],
+    "semantic": "Zbudować lepszy, rzetelny dataset z filmów zaćmy (Cataract), a następnie wytrenować nowy jedno‑klasowy DETR (klasa: `too",
+    "actions": [
+      "Dodano builder datasetu `Cataract_DETR_DatasetBuilder/*` (extract, pseudo‑labels, split, train, eval",
+      "Przygotowano config buildera z 1 klasą `tooltip` i negatywami do 30%.",
+      "Napisano nowy skrypt treningowy DETR „single‑class” z ewaluacją COCO per epoka.",
+      "Dodano evaluator offline COCO na test."
+    ],
+    "findings": [],
+    "files": [
+      "output_cataract/annotations_{train,val,test}.json",
+      "--train_json <output_cataract>/annotations_train.json",
+      "--val_json <output_cataract>/annotations_val.json",
+      "label_mapping.json",
+      "configs/train_detr_tooltip.yaml"
+    ],
+    "next_steps": [
+      "Uruchomić budowę datasetu na wszystkich filmach",
+      "Wytrenować DETR (50 epok), monitorować mAP na val",
+      "Przeprowadzić finalną ewaluację na teście"
+    ],
+    "index": 7
+  },
+  {
+    "id": "Session_2025-12-11_062134",
+    "name": "Session_2025-12-11_062134",
+    "label": "DETR EL2N",
+    "date": "2025-12-11T06:21",
+    "type": "Analysis",
+    "objective": "Aktualizacja Advanced Dataset Selection Pipeline:\n1. DETR EL2N Scorer - używać tylko Query 81\n2. Sekwencyjne ładowanie modeli (oszczędność GPU memory)\n3. Raporty wyjaśniające dlaczego każdy obraz zost",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "Fourier",
+      "GPU",
+      "Pipeline",
+      "Query81",
+      "SAM",
+      "SSH"
+    ],
+    "semantic": "Aktualizacja Advanced Dataset Selection Pipeline: 1. DETR EL2N Scorer - używać tylko Query 81 2. Sekwencyjne ładowanie m",
+    "actions": [
+      "DETR EL2N Scorer - Query 81 Only **Plik:** `AdvancedDatasetSelection/selection_methods/detr_el2n_sco"
+    ],
+    "findings": [],
+    "files": [
+      "AdvancedDatasetSelection/selection_methods/detr_el2n_scorer.py",
+      "AdvancedDatasetSelection/selection_methods/cluster_selector.py",
+      "AdvancedDatasetSelection/selection_methods/cluster_selector.py",
+      "selection_reasons.json",
+      "AdvancedDatasetSelection/main_selection_pipeline.py"
+    ],
+    "next_steps": [
+      "Zaimplementować filtr `q81_max_score: 0.2` dla hard sample s",
+      "Zmienić logikę difficulty aby różnicować próbki poniżej prog",
+      "Przetestować pipeline end-to-end"
+    ],
+    "index": 8
+  },
+  {
+    "id": "Session_2025-12-11_205038",
+    "name": "Session_2025-12-11_205038",
+    "label": "Dataset Select",
+    "date": "2025-12-11T20:50",
+    "type": "Analysis",
+    "objective": "Naprawienie problemu z pipeline'em Advanced Dataset Selection, który zawieszał się podczas zapisywania wizualizacji DETR Q81.",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "Pipeline"
+    ],
+    "semantic": "Naprawienie problemu z pipeline'em Advanced Dataset Selection, który zawieszał się podczas zapisywania wizualizacji DETR",
+    "actions": [
+      "Zlokalizowano kod odpowiedzialny za wizualizacje w `main_selection_pipeline.py:355-361`",
+      "Zakomentowano wywołanie `save_selected_visualizations()`",
+      "Zaktualizowano CLAUDE.md z informacją o zmianie",
+      "Utworzono sesję według zasad SESSION_RULES.md"
+    ],
+    "findings": [
+      "Wizualizacje DETR Q81 były zapisywane dla wszystkich 20000 wybranych obrazów",
+      "Proces był czasochłonny i podatny na błędy",
+      "Funkcjonalność nie była potrzebna do dalszej pracy"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/main_selection_pipeline.py",
+      "CLAUDE.md",
+      "AdvancedDatasetSelection/selection_methods/detr_el2n_scorer.py"
+    ],
+    "next_steps": [
+      "Uruchomić pipeline ponownie i zweryfikować poprawne działani",
+      "W przyszłości: dodać flagę konfiguracyjną do włączania/wyłąc"
+    ],
+    "index": 9
+  },
+  {
+    "id": "Session_2025-12-11_205605",
+    "name": "Session_2025-12-11_205605",
+    "label": "Session",
+    "date": "2025-12-11T20:56",
+    "type": "Analysis",
+    "objective": "Naprawienie nazewnictwa plików wizualizacji DETR Q81, aby zachować oryginalne nazwy plików potrzebne do lookup w zbiorze COCO.",
+    "topics": [
+      "DETR",
+      "Pipeline"
+    ],
+    "semantic": "Naprawienie nazewnictwa plików wizualizacji DETR Q81, aby zachować oryginalne nazwy plików potrzebne do lookup w zbiorze",
+    "actions": [
+      "Zidentyfikowano problem w `detr_el2n_scorer.py:394-395`",
+      "Zmieniono logikę zapisywania z `{img_name}_selected.jpg` na `original_filename`",
+      "Odblokowano wizualizacje w `main_selection_pipeline.py`"
+    ],
+    "findings": [
+      "Sufiks `_selected` uniemożliwiał późniejsze odnajdywanie obrazów w COCO",
+      "`Path.name` zachowuje pełną nazwę z rozszerzeniem (np. `frame_00123.jpg`)",
+      "`Path.stem` zwraca tylko nazwę bez rozszerzenia"
+    ],
+    "files": [
+      "main_selection_pipeline.py",
+      "AdvancedDatasetSelection/selection_methods/detr_el2n_scorer.py",
+      "AdvancedDatasetSelection/main_selection_pipeline.py"
+    ],
+    "next_steps": [
+      "Uruchomić pipeline i zweryfikować poprawne nazwy plików",
+      "Sprawdzić czy wizualizacje działają bez błędów"
+    ],
+    "index": 10
+  },
+  {
+    "id": "Session_2025-12-12_002500",
+    "name": "Session_2025-12-12_002500",
+    "label": "Dataset Select",
+    "date": "2025-12-12T00:25",
+    "type": "Mixed",
+    "objective": "1. Naprawić nazewnictwo plików w Advanced Dataset Selection Pipeline\n2. Usunąć niepotrzebne wizualizacje DETR Q81\n3. Dodać FastSAM jako szybszą alternatywę dla SAM3",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "Pipeline"
+    ],
+    "semantic": "1. Naprawić nazewnictwo plików w Advanced Dataset Selection Pipeline 2. Usunąć niepotrzebne wizualizacje DETR Q81 3. Dod",
+    "actions": [
+      "Fix: Nazewnictwo plików **Plik:** `main_selection_pipeline.py:385-391` ```python # PRZED (błędne): n"
+    ],
+    "findings": [
+      "FastSAM jest ~10x szybszy niż SAM3 video model",
+      "FastSAM-x znalazł 13 masek na testowym obrazie (vs 15 dla SAM3)",
+      "Complexity score: 0.589 (porównywalny z SAM3)"
+    ],
+    "files": [
+      "feature_extractors/fastsam_extractor.py",
+      "selection_methods/cluster_selector.py",
+      "main_selection_pipeline.py",
+      "config.yaml",
+      "AdvancedDatasetSelection/config.yaml"
+    ],
+    "next_steps": [
+      "Uruchomić pełny pipeline z 20k target",
+      "Wygenerować nowy dataset z poprawnymi nazwami",
+      "Utworzyć skrypty SLURM do resume treningu DETR od epoch 170"
+    ],
+    "index": 11
+  },
+  {
+    "id": "Session_2025-12-12_121949",
+    "name": "Session_2025-12-12_121949",
+    "label": "Dataset Select",
+    "date": "2025-12-12T12:19",
+    "type": "Training",
+    "objective": "Przygotować dataset 20k wybranych obrazów do fine-tuningu modelu DETR na klastrze obliczeniowym EDEN. Połączyć adnotacje z dwóch źródeł i uruchomić trening.",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "GPU",
+      "SSH"
+    ],
+    "semantic": "Przygotować dataset 20k wybranych obrazów do fine-tuningu modelu DETR na klastrze obliczeniowym EDEN. Połączyć adnotacje",
+    "actions": [
+      "Analiza plików adnotacji - Przeanalizowano strukturę obu plików JSON (format COCO) - Zidentyfikowano"
+    ],
+    "findings": [
+      "Dataset 20k ma spójne adnotacje w formacie COCO",
+      "Każdy obraz ma dokładnie 1 bounding box",
+      "Job w kolejce z priorytetem (wszystkie GPU zajęte)"
+    ],
+    "files": [
+      "_annotations.coco.json",
+      "augmented_coco_20250417_030014.json",
+      "merge_annotations.py",
+      "fix_duplicate_bboxes.py",
+      "visualize_annotations.py"
+    ],
+    "next_steps": [
+      "Monitorować status joba: `squeue -u bpiotrowski`",
+      "Po starcie: sprawdzić logi `logs/detr_20k_finetune_1453424.l",
+      "Po zakończeniu: ewaluacja modelu na zbiorze walidacyjnym"
+    ],
+    "index": 12
+  },
+  {
+    "id": "Session_2025-12-12_125212",
+    "name": "Session_2025-12-12_125212",
+    "label": "Session",
+    "date": "2025-12-12T12:52",
+    "type": "Analysis",
+    "objective": "Stworzenie profesjonalnych skryptów wizualizacyjnych do publikacji naukowej, pokazujących działanie feature extractors (DINO, Fourier, FastSAM) oraz clustering.",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Dataset",
+      "Fourier",
+      "Pipeline",
+      "SSH"
+    ],
+    "semantic": "Stworzenie profesjonalnych skryptów wizualizacyjnych do publikacji naukowej, pokazujących działanie feature extractors (",
+    "actions": [
+      "Stworzono `visualize_dino_features.py` - wizualizacja attention maps DINO",
+      "Stworzono `visualize_fourier_spectrum.py` - analiza FFT i rozkład częstotliwości",
+      "Stworzono `visualize_fastsam_segmentation.py` - automatyczna segmentacja",
+      "Stworzono `visualize_clustering.py` - K-Means + t-SNE clustering",
+      "Utworzono katalogi output dla każdego skryptu"
+    ],
+    "findings": [
+      "Wszystkie zależności dostępne lokalnie na Python 3.11",
+      "20,000 obrazów dostępnych w `AdvancedDatasetSelection/output/selected_dataset/im",
+      "CUDA dostępna lokalnie"
+    ],
+    "files": [
+      "visualize_dino_features.py",
+      "visualize_fourier_spectrum.py",
+      "visualize_fastsam_segmentation.py",
+      "visualize_clustering.py",
+      "visualize_dino_features.py"
+    ],
+    "next_steps": [
+      "Uruchomić skrypty wizualizacyjne na wybranych obrazach",
+      "Monitorować Job 1453424 na EDEN (`squeue -u bpiotrowski`)",
+      "Po zakończeniu treningu - walidacja modelu"
+    ],
+    "index": 13
+  },
+  {
+    "id": "Session_2025-12-12_144456",
+    "name": "Session_2025-12-12_144456",
+    "label": "Session",
+    "date": "2025-12-12T14:44",
+    "type": "Analysis",
+    "objective": "1. Utworzenie systemu komend Claude Code do zarządzania dokumentacją projektu\n2. Kontynuacja pracy nad skryptami wizualizacyjnymi do paper'a\n3. Naukowe uzasadnienie pipeline'u selekcji danych dla DETR",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Dataset",
+      "Fourier",
+      "Pipeline",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "1. Utworzenie systemu komend Claude Code do zarządzania dokumentacją projektu 2. Kontynuacja pracy nad skryptami wizuali",
+    "actions": [
+      "Utworzono `/zapisz-sesje` → `.claude/commands/zapisz-sesje.md`",
+      "Utworzono `/zapisz-notatke` → `.claude/commands/zapisz-notatke.md`",
+      "Utworzono `/zapisz-plan` → `.claude/commands/zapisz-plan.md`"
+    ],
+    "findings": [
+      "- `/zapisz-sesje` - zapisuje do `.sessions/Session_YYYY-MM-DD_HHMMSS/`",
+      "`/zapisz-notatke` - zapisuje do `Notatki/YYYY-MM-DD_Tytuł.md`",
+      "`/zapisz-plan` - zapisuje do `Plans/nazwa-z-myslnikami.md`",
+      "- RT-DETR przewyższa YOLO: 53.1% AP @ 108 FPS"
+    ],
+    "files": [
+      ".claude/commands/zapisz-sesje.md",
+      ".claude/commands/zapisz-notatke.md",
+      ".claude/commands/zapisz-plan.md",
+      "visualize_dino_features.py",
+      "visualize_fourier_spectrum.py"
+    ],
+    "next_steps": [
+      "Zaktualizować `visualize_clustering.py` o flagi `--images`, ",
+      "Uruchomić skrypty wizualizacyjne i wygenerować figury do pap",
+      "Monitorować EDEN Job 1453424 (trening DETR)"
+    ],
+    "index": 14
+  },
+  {
+    "id": "Session_2025-12-12_154500",
+    "name": "Session_2025-12-12_154500",
+    "label": "Dataset Select",
+    "date": "2025-12-12T15:45",
+    "type": "Training",
+    "objective": "Uruchomić fine-tuning DETR na 20k wybranych obrazach na klastrze Eden, kontynuując od checkpoint epoch 170.",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "GPU",
+      "Pipeline",
+      "SSH"
+    ],
+    "semantic": "Uruchomić fine-tuning DETR na 20k wybranych obrazach na klastrze Eden, kontynuując od checkpoint epoch 170.",
+    "actions": [
+      "Analiza dostępności GPU - `sfree` - sprawdzenie wolnych zasobów - Pascal (experimental) wolny z 4x P"
+    ],
+    "findings": [
+      "Pascal często wolny gdy DGX zajęte - warto sprawdzać `experimental`",
+      "P100 (16GB) wymaga batch_size 4 (nie 16 jak A100/H100)",
+      "AMP może powodować konflikt z optimizer state z checkpointu",
+      "Checkpoint epoch N oznacza ukończoną epokę N"
+    ],
+    "files": [
+      "merged_20k_annotations.json",
+      "selection_reasons.json",
+      "Eden/TrainingRules/EDEN_SLURM_GUIDE.md",
+      "Eden/TrainingRules/EDEN_SLURM_GUIDE.md",
+      "merged_20k_annotations.json"
+    ],
+    "next_steps": [
+      "Monitorować trening (epoch 170-300)",
+      "Sprawdzić validation loss po kilku epokach",
+      "Zapisać best model do Checkpoints/best_20k_finetune/"
+    ],
+    "index": 15
+  },
+  {
+    "id": "Session_2025-12-12_161500",
+    "name": "Session_2025-12-12_161500",
+    "label": "Visualization",
+    "date": "2025-12-12T16:15",
+    "type": "Analysis",
+    "objective": "Rozszerzyć narzędzie analizy Fouriera o naukowe metryki spektralne i stworzyć narzędzia do oceny różnorodności datasetu dla treningu DETR.",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "Fourier",
+      "SSH"
+    ],
+    "semantic": "Rozszerzyć narzędzie analizy Fouriera o naukowe metryki spektralne i stworzyć narzędzia do oceny różnorodności datasetu ",
+    "actions": [
+      "Dodanie nowych metryk spektralnych - **PSD Slope (β)** - nachylenie Power Spectral Density (naturaln"
+    ],
+    "findings": [
+      "| **High/Low Ratio** | **65.5%** | Najlepsza różnorodność |",
+      "- LOWEST: 5.1 - 5.4 (miękkie tło, tylko anatomia)",
+      "HIGHEST: 28.1 - 28.3 (ostre krawędzie, tooltip widoczny)",
+      "Różnica: ~5.5x = świetna różnorodność!"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/paper_visualizations/visualize_fourier_spectrum.py",
+      "AdvancedDatasetSelection/paper_visualizations/analyze_diversity.py"
+    ],
+    "next_steps": [
+      "Wygenerować wizualizacje dla innych metryk (psd_slope, aniso",
+      "Użyć w publikacji do opisu różnorodności datasetu",
+      "Porównać z poprzednim full datasetu (~90k)"
+    ],
+    "index": 16
+  },
+  {
+    "id": "Session_2025-12-12_200437",
+    "name": "Session_2025-12-12_200437",
+    "label": "Session",
+    "date": "2025-12-12T20:04",
+    "type": "Training",
+    "objective": "Fix DDP desynchronization crash that occurred at epoch 171→172 transition in DETR training on Eden cluster.",
+    "topics": [
+      "DETR",
+      "SSH"
+    ],
+    "semantic": "Fix DDP desynchronization crash that occurred at epoch 171→172 transition in DETR training on Eden cluster.",
+    "actions": [
+      "Identified Missing `drop_last` in Validation ```python # Problem: val_sampler missing drop_last val_"
+    ],
+    "findings": [
+      "Validation DataLoader without `drop_last=True` causes DDP desync when val_datase",
+      "Add `drop_last=True` to both `DistributedSampler` and `DataLoader` for validatio",
+      "Modified `find_latest_checkpoint()` to prioritize `final_checkpoint.pth`"
+    ],
+    "files": [
+      "detr_train_optimized.py",
+      "/mnt/evafs/faculty/home/bpiotrowski/DETR/detr_train_optimized.py",
+      "Eden/Scripts/20kDataset_11.12.25/detr_train_optimized.py",
+      "Notatki/TreningUlepszanieZbioru/2025-12-12_DETR_Training_Checklist_Poprawnego_Uruchomienia.md"
+    ],
+    "next_steps": [
+      "Monitor epoch 172 completion and validation phase",
+      "Verify validation completes without DDP desync (CRITICAL TES",
+      "Confirm epoch 173 starts successfully"
+    ],
+    "index": 17
+  },
+  {
+    "id": "Session_2025-12-12_202200",
+    "name": "Session_2025-12-12_202200",
+    "label": "Visualization",
+    "date": "2025-12-12T20:22",
+    "type": "Mixed",
+    "objective": "1. Naprawienie błędu t-SNE w `visualize_clustering.py`\n2. Znalezienie nowych parametrów Fouriera do rozróżniania tooltip vs background",
+    "topics": [
+      "Pipeline"
+    ],
+    "semantic": "1. Naprawienie błędu t-SNE w `visualize_clustering.py` 2. Znalezienie nowych parametrów Fouriera do rozróżniania tooltip",
+    "actions": [
+      "Diagnoza błędu t-SNE - Odczytano `visualize_clustering.py` linie 190-225 - Zidentyfikowano problem: "
+    ],
+    "findings": [
+      "t-SNE wymaga perplexity < n_samples i optymalnie n_samples > 3*perplexity",
+      "Bezpieczna formuła: `safe_perplexity = min(perplexity, (n_samples-1)//3, n_sampl",
+      "PCA n_components też musi być <= n_samples - 1"
+    ],
+    "files": [
+      "visualize_clustering.py",
+      "visualize_clustering.py",
+      "find_discriminative_features.py",
+      "AdvancedDatasetSelection/paper_visualizations/visualize_clustering.py",
+      "AdvancedDatasetSelection/paper_visualizations/find_discriminative_features.py"
+    ],
+    "next_steps": [
+      "Przetestować naprawiony visualize_clustering.py",
+      "Uruchomić find_discriminative_features.py do końca",
+      "Zintegrować najlepsze cechy dyskryminacyjne z głównym pipeli"
+    ],
+    "index": 18
+  },
+  {
+    "id": "Session_2025-12-12_221148_IEEE_ACCESS_Article_Writing",
+    "name": "IEEE ACCESS Article Writing",
+    "label": "Query 81",
+    "date": "2025-12-12T22:11",
+    "type": "Analysis",
+    "objective": "Analiza i kompleksowe rozszerzenie artykułu naukowego IEEE ACCESS o DETR-based surgical tool detection, wykorzystując wszystkie dane z projektu ViTParticleFilterTracker (benchmarki YOLO vs DETR, Query",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "Fourier",
+      "IEEE",
+      "Pipeline",
+      "Query81",
+      "YOLO"
+    ],
+    "semantic": "Analiza i kompleksowe rozszerzenie artykułu naukowego IEEE ACCESS o DETR-based surgical tool detection, wykorzystując ws",
+    "actions": [
+      "Przeczytano obecny artykuł `access.tex`",
+      "Przeanalizowano sesje projektu (`.sessions/`)",
+      "Użyto LlamaIndex MCP do pozyskania referencji naukowych",
+      "Stworzono plan ULTRATHINK (`Plans/ULTRATHINK_IEEE_ACCESS_EXPANSION_PLAN.md`)"
+    ],
+    "findings": [
+      "- 96.3% wszystkich detekcji DETR przez jedną query",
+      "Pierwsze udokumentowane zjawisko w chirurgii",
+      "- Fourier → DINO → K-Center → EL2N",
+      "+8.5pp mAP vs random sampling"
+    ],
+    "files": [
+      "access.tex",
+      "Plans/ULTRATHINK_IEEE_ACCESS_EXPANSION_PLAN.md",
+      "Plans/ULTRATHINK_IEEE_ACCESS_EXPANSION_PLAN.md",
+      "F:\\Studia\\Articles\\Moj\\IEEE\\Overleaf\\DETR_IEEE\\access.tex",
+      "YOLO_DETR_Benchmarks/Benchmarks/*/summary.json"
+    ],
+    "next_steps": [
+      "Skompilować artykuł w Overleaf i sprawdzić formatowanie",
+      "Utworzyć figury (szczególnie Fig. 1: 4-Stage Pipeline diagra",
+      "Wygenerować wizualizacje Query 81 attention maps"
+    ],
+    "index": 19
+  },
+  {
+    "id": "Session_2025-12-13_005956",
+    "name": "Session_2025-12-13_005956",
+    "label": "Visualization",
+    "date": "2025-12-13T00:59",
+    "type": "Mixed",
+    "objective": "Naprawienie krytycznego buga resetowania learning rate w DETR training pipeline oraz rozwój narzędzi wizualizacyjnych do analizy discriminative features.",
+    "topics": [
+      "DETR",
+      "Fourier",
+      "IEEE",
+      "Pipeline",
+      "SSH"
+    ],
+    "semantic": "Naprawienie krytycznego buga resetowania learning rate w DETR training pipeline oraz rozwój narzędzi wizualizacyjnych do",
+    "actions": [
+      "Naprawa LR Reset Bug - Zidentyfikowano problem w `detr_train_optimized.py` i `Eden/Scripts/20kDatase"
+    ],
+    "findings": [
+      "- Scheduler tworzony przed załadowaniem optimizer state powodował reset LR",
+      "- Brak weryfikacji `optimizer_state_dict` może prowadzić do silent failures",
+      "- Tryb --multi znacząco przyspiesza analizę discriminative features"
+    ],
+    "files": [
+      "detr_train_optimized.py",
+      "Eden/Scripts/20kDataset_11.12.25/detr_train_optimized.py",
+      "visualize_discriminative_per_image.py",
+      "AdvancedDatasetSelection/paper_visualizations/find_discriminative_features.py",
+      "AdvancedDatasetSelection/paper_visualizations/visualize_clustering.py"
+    ],
+    "next_steps": [
+      "Przetestować wznowienie treningu z checkpointu na Eden (Pasc",
+      "Uruchomić tryb --multi dla pełnego batch discriminative feat",
+      "Zweryfikować czy wszystkie checkpointy zawierają optimizer_s"
+    ],
+    "index": 20
+  },
+  {
+    "id": "Session_2025-12-13_010500",
+    "name": "Session_2025-12-13_010500",
+    "label": "Visualization",
+    "date": "2025-12-13T01:05",
+    "type": "Training",
+    "objective": "1. Weryfikacja i naprawa konfiguracji fine-tuningu DETR na klastrze Eden\n2. Rozwoj narzedzi wizualizacji cech dyskryminacyjnych Fouriera do artykulu IEEE ACCESS",
+    "topics": [
+      "DETR",
+      "IEEE",
+      "SSH"
+    ],
+    "semantic": "1. Weryfikacja i naprawa konfiguracji fine-tuningu DETR na klastrze Eden 2. Rozwoj narzedzi wizualizacji cech dyskrymina",
+    "actions": [
+      "DETR Training Fix na Eden - Zidentyfikowano krytyczny bug: `optimizer.load_state_dict()` nadpisuje n"
+    ],
+    "findings": [],
+    "files": [
+      "detr_train_optimized.py",
+      "Eden/Scripts/20kDataset_11.12.25/detr_train_optimized.py",
+      "Eden/TrainingRules/EDEN_SLURM_GUIDE.md",
+      "AdvancedDatasetSelection/paper_visualizations/visualize_discriminative_per_image.py"
+    ],
+    "next_steps": [
+      "Monitorowac trening DETR na Eden (epoch 173 -> 300)",
+      "Po zakonczeniu treningu: walidacja na test set",
+      "Uzyc wygenerowanych wizualizacji w artykule IEEE ACCESS"
+    ],
+    "index": 21
+  },
+  {
+    "id": "Session_2025-12-13_143500",
+    "name": "Session_2025-12-13_143500",
+    "label": "Query 81",
+    "date": "2025-12-13T14:35",
+    "type": "Mixed",
+    "objective": "1. Rozszerzenie artykulu IEEE ACCESS o sekcje Query Specialization (Query 81)\n2. Usuniecie wzmianek o zewnetrznym datasecie CaDTD\n3. Dodanie opisu wlasnego narzedzia do adnotacji jako novel contributi",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "IEEE",
+      "Pipeline",
+      "Query81",
+      "SAM",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "1. Rozszerzenie artykulu IEEE ACCESS o sekcje Query Specialization (Query 81) 2. Usuniecie wzmianek o zewnetrznym datase",
+    "actions": [
+      "Analiza wlasnego narzedzia do adnotacji - Przeanalizowano kod w `Annotators/OpencvTrackerAnnotator/`"
+    ],
+    "findings": [
+      "Semi-automatic tracking propagation",
+      "Continuous annotation mode",
+      "COCO/YOLO format support",
+      "Augmentation pipeline"
+    ],
+    "files": [
+      "F:\\Studia\\Articles\\Moj\\IEEE\\Overleaf\\DETR_IEEE\\access.tex",
+      "Annotators/OpencvTrackerAnnotator/opencv_annotation_tracker_movie.py",
+      "Annotators/Utils/yolo_to_coco_converter.py",
+      "Annotators/DetrAnnotator/coco-augmentation.py"
+    ],
+    "next_steps": [
+      "Skompilowac artykul w Overleaf (pdflatex && bibtex && pdflat",
+      "Zweryfikowac czy wszystkie referencje sa rozwiazane",
+      "Rozwazyc dodanie kodu annotation tool do supplementary mater"
+    ],
+    "index": 22
+  },
+  {
+    "id": "Session_2025-12-13_160541",
+    "name": "Session_2025-12-13_160541",
+    "label": "IEEE Pipeline",
+    "date": "2025-12-13T16:05",
+    "type": "Mixed",
+    "objective": "Poprawic narracje artykulu IEEE ACCESS dotyczaca dataset pipeline - uzytkownik wyjasnił, ze pierwszy trening byl na ~90,000 obrazach, a potem inteligentna redukcja do 20,900. Wymagana aktualizacja wsz",
+    "topics": [
+      "Dataset",
+      "IEEE",
+      "Pipeline"
+    ],
+    "semantic": "Poprawic narracje artykulu IEEE ACCESS dotyczaca dataset pipeline - uzytkownik wyjasnił, ze pierwszy trening byl na ~90,",
+    "actions": [
+      "Analiza obecnego stanu artykulu - Przeczytano caly access.tex (1032 linie) - Zidentyfikowano wszystk"
+    ],
+    "findings": [
+      "Original Annotated: 4,670 images",
+      "Augmented (19x): 85,471 images",
+      "Augmented Pool: 90,141 images",
+      "Selected Training: 20,900 images (4.3x reduction)"
+    ],
+    "files": [
+      "F:\\Studia\\Articles\\Moj\\IEEE\\Overleaf\\DETR_IEEE\\access.tex"
+    ],
+    "next_steps": [
+      "Skompilowac artykul w Overleaf (pdflatex && bibtex && pdflat",
+      "Zweryfikowac renderowanie nowej tabeli",
+      "Final proofreading przed submission"
+    ],
+    "index": 23
+  },
+  {
+    "id": "Session_2025-12-13_191844",
+    "name": "Session_2025-12-13_191844",
+    "label": "Session",
+    "date": "2025-12-13T19:18",
+    "type": "Mixed",
+    "objective": "Stworzenie kompletnego pipeline'u do generowania test datasetu z filmów wideo operacji zaćmy, który:\n1. Ekstrahuje losowe klatki z wielu filmów\n2. Wykrywa duplikaty względem 90k treningowego datasetu\n",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "Pipeline",
+      "YOLO"
+    ],
+    "semantic": "2448 klatek. 1772 detekcji DETR",
+    "actions": [
+      "Utworzenie struktury projektu - Folder: `TestDatasetGenerator/` - Podfoldery: `output/test_frames/`,"
+    ],
+    "findings": [
+      "**2448 klatek** wyekstrahowanych z 27 filmów",
+      "**1772 detekcji DETR** przy threshold 80% (72.4% detection rate)",
+      "**589 obrazów** zaadnotowanych po przeglądzie (1-1040)",
+      "**125 obrazów** ręcznie poprawionych"
+    ],
+    "files": [
+      "extract_random_frames.py",
+      "detect_duplicates.py",
+      "detr_auto_annotate.py",
+      "review_annotations.py",
+      "coco_to_yolo.py"
+    ],
+    "next_steps": [
+      "Kontynuować review od obrazu 1041 (`--start 1041`)",
+      "Eksportować 589 zaadnotowanych obrazów do YOLO",
+      "Uruchomić wykrywanie duplikatów względem treningowego datase"
+    ],
+    "index": 24
+  },
+  {
+    "id": "Session_2025-12-31_042306",
+    "name": "Session_2025-12-31_042306",
+    "label": "Dataset Select",
+    "date": "2025-12-31T04:23",
+    "type": "Benchmark",
+    "objective": "Uruchomienie benchmarku dla DETR 20k finetune checkpointów (epochs 170-200) przy użyciu `benchmark_yolo_vs_detr_q81_multi_epoch.py` oraz napisanie interpretacji wyników dla artykułu IEEE ACCESS.",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "IEEE",
+      "Pipeline",
+      "Query81",
+      "SAM",
+      "YOLO"
+    ],
+    "semantic": "Uruchomienie benchmarku dla DETR 20k finetune checkpointów (epochs 170-200) przy użyciu `benchmark_yolo_vs_detr_q81_mult",
+    "actions": [
+      "Pierwszy Benchmark (TestDatasetGenerator) - Uruchomiono benchmark na wewnętrznym datasecie TestDatas"
+    ],
+    "findings": [
+      "Adnotacje generowane przez ten sam model który był testowany",
+      "Wyniki na tym datasecie są NIEWAŻNE dla oceny jakości modelu"
+    ],
+    "files": [
+      "benchmark_yolo_vs_detr_q81_multi_epoch.py",
+      "BENCHMARK_REPORT.md",
+      "results_summary.json",
+      "Notatki/2025-12-31_Benchmark_DETR_20k_Finetune_Interpretacja_IEEE.md",
+      "Notatki/2025-12-31_Benchmark_DETR_20k_Finetune_Interpretacja_IEEE.md"
+    ],
+    "next_steps": [
+      "Zaktualizować `Notatki/2025-12-31_Benchmark_DETR_20k_Finetun",
+      "Użyć DETR_20k ep180 jako głównego modelu w publikacji",
+      "Dodać sekcję o data leakage jako metodological warning w art"
+    ],
+    "index": 25
+  },
+  {
+    "id": "Session_2026-01-11_022500",
+    "name": "Session_2026-01-11_022500",
+    "label": "Session",
+    "date": "2026-01-11T02:25",
+    "type": "Training",
+    "objective": "Kontynuacja treningow DETR i YOLO na 20k dataset do epoch 500. Naprawa nieudanego joba DETR i uruchomienie obu treningow na klastrze Eden.",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "GPU",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Kontynuacja treningow DETR i YOLO na 20k dataset do epoch 500. Naprawa nieudanego joba DETR i uruchomienie obu treningow",
+    "actions": [
+      "Wczytanie poprzedniej sesji - Wczytano Session_2025-12-31_042306 z wynikami benchmarku - Kluczowe: D"
+    ],
+    "findings": [
+      "- Skrypt uzywal kompletnie innych argumentow niz `detr_train_optimized.py` akcep",
+      "Ktos napisal skrypt bez sprawdzenia `--help`",
+      "- DETR: epoch 295 (working dir), epoch 290 (archiwum)",
+      "YOLO: epoch 200 (nie 300 jak myslano)"
+    ],
+    "files": [
+      "detr_train_optimized.py",
+      "detr_train_optimized.py",
+      "Eden/ClaudeSshSession/sesja_2026-01-11_01-30/SESSION_SUMMARY.md"
+    ],
+    "next_steps": [
+      "Monitorowac start jobow DETR i YOLO",
+      "Sprawdzic TensorBoard logi po starcie treningu",
+      "Po zakonczeniu: benchmark DETR ep500 vs YOLO ep500"
+    ],
+    "index": 26
+  },
+  {
+    "id": "Session_2026-01-11_153500",
+    "name": "Session_2026-01-11_153500",
+    "label": "YOLO Fix",
+    "date": "2026-01-11T15:35",
+    "type": "SSH",
+    "objective": "Sprawdzenie statusu treningów DETR i YOLO na klastrze Eden oraz naprawa ewentualnych problemów.",
+    "topics": [
+      "DETR",
+      "GPU",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Sprawdzenie statusu treningów DETR i YOLO na klastrze Eden oraz naprawa ewentualnych problemów.",
+    "actions": [
+      "**Wczytano ostatnią sesję SSH** - Folder: `Eden/ClaudeSshSession/sesja_2026-01-11_14-08/` - Poprzedn",
+      "**Sprawdzono status jobów na Eden** ```bash ssh eden-cluster \"squeue -u bpiotrowski\" ``` - DETR 1509",
+      "**Zbadano przyczynę braku YOLO w kolejce** ```bash ssh eden-cluster \"sacct -j 1509212 --format=JobID",
+      "**Przeczytano logi błędu YOLO** ```bash ssh eden-cluster \"cat ~/Yolo/20k_finetune/logs/yolo_20k_resu",
+      "**Naprawiono skrypt YOLO** - Zmieniono `--batch_size 32` → `--batch_size 30` - Zmieniono echo info z"
+    ],
+    "findings": [
+      "DETR training działa poprawnie - epoch 296/500, loss ~0.07-0.18",
+      "YOLO failował z powodu niezgodności batch_size z liczbą GPU",
+      "Ultralytics wymaga: `batch_size % gpu_count == 0`",
+      "32 % 3 = 2 ≠ 0 (błąd)"
+    ],
+    "files": [
+      "Eden/ClaudeSshSession/sesja_2026-01-11_14-35/SESSION_SUMMARY.md"
+    ],
+    "next_steps": [
+      "Monitorować start YOLO job 1509301",
+      "Sprawdzić czy batch_size=30 działa poprawnie po starcie",
+      "Kontynuować monitoring DETR (ep 296→500)"
+    ],
+    "index": 27
+  },
+  {
+    "id": "Session_2026-01-12_020132_IEEE_Article_Cleanup",
+    "name": "IEEE Article Cleanup",
+    "label": "IEEE Article",
+    "date": "2026-01-12T02:01",
+    "type": "Analysis",
+    "objective": "1. Ocena Research Questions (RQ1, RQ2) w kontekscie projektu\n2. Zaproponowanie nowych/lepszych RQ\n3. Usuniecie nieudokumentowanych twierdzen z artykulu IEEE ACCESS",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "Fourier",
+      "IEEE",
+      "Pipeline",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "1. Ocena Research Questions (RQ1, RQ2) w kontekscie projektu 2. Zaproponowanie nowych/lepszych RQ 3. Usuniecie nieudokum",
+    "actions": [
+      "Analiza projektu przez Serena - Aktywowano projekt ViTParticleFilterTracker - Przeczytano memories: "
+    ],
+    "findings": [
+      "- RQ1 odwolywal sie do nieistniejacego porownania, RQ2 mowil o \"interpretability",
+      "- najsilniejszy finding projektu (DETR vs YOLO cross-dataset) nie byl objety prz",
+      "- nie ma zadnego kodu ani eksperymentu porownujacego random vs intelligent selec",
+      "- 90,141 zamiast faktycznych 91,260"
+    ],
+    "files": [
+      "F:\\Studia\\Articles\\Moj\\IEEE\\Overleaf\\DETR_IEEE\\access.tex"
+    ],
+    "next_steps": [
+      "Sprawdzic kompilacje LaTeX artykulu",
+      "Rozwazyc dodanie faktycznych eksperymentow ablation (jesli c",
+      "Monitorowac DETR job 1509211 i YOLO job 1509486 na Eden"
+    ],
+    "index": 28
+  },
+  {
+    "id": "Session_2026-01-12_032540_IEEE_Article_Verification",
+    "name": "IEEE Article Verification",
+    "label": "IEEE Article",
+    "date": "2026-01-12T03:25",
+    "type": "Mixed",
+    "objective": "1. Weryfikacja twierdzeń z artykułu IEEE ACCESS względem faktycznych danych z benchmarków\n2. Poprawienie fałszywych twierdzeń o Fourier filtering\n3. Uporządkowanie struktury artykułu (Related Work, Me",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Fourier",
+      "IEEE",
+      "Pipeline",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "1. Weryfikacja twierdzeń z artykułu IEEE ACCESS względem faktycznych danych z benchmarków 2. Poprawienie fałszywych twie",
+    "actions": [
+      "Weryfikacja benchmarków DETR vs YOLO Agent Explore przeszukał `YOLO_DETR_Benchmarks/Benchmarks/` i z"
+    ],
+    "findings": [],
+    "files": [
+      "F:\\Studia\\Articles\\Moj\\IEEE\\Overleaf\\DETR_IEEE\\access.tex",
+      "Eden/ClaudeSshSession/sesja_2026-01-12_01-13/SESSION_SUMMARY.md",
+      "BENCHMARK_Q81_20251231_013537/results_summary.json",
+      "AdvancedDatasetSelection/config.yaml",
+      "AdvancedDatasetSelection/selection_methods/combined_selector.py"
+    ],
+    "next_steps": [
+      "Przejrzeć pozostałe sekcje artykułu (Results, Discussion)",
+      "Sprawdzić czy figura Fourier (fig_fourier_extremes.png) jest",
+      "Rozważyć dodanie prawdziwych ablation studies"
+    ],
+    "index": 29
+  },
+  {
+    "id": "Session_2026-01-12_041738_IEEE_Pipeline_Rewrite",
+    "name": "IEEE Pipeline Rewrite",
+    "label": "IEEE Article",
+    "date": "2026-01-12T04:17",
+    "type": "Mixed",
+    "objective": "Zweryfikować czy opis \"4-Stage Intelligent Dataset Selection Pipeline\" w artykule IEEE ACCESS zgadza się z faktyczną implementacją w kodzie i naprawić wszelkie rozbieżności.",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "Fourier",
+      "GPU",
+      "IEEE",
+      "Pipeline",
+      "SAM"
+    ],
+    "semantic": "Zweryfikować czy opis \"4-Stage Intelligent Dataset Selection Pipeline\" w artykule IEEE ACCESS zgadza się z faktyczną imp",
+    "actions": [
+      "Analiza kodu pipeline'u - Przeczytano `main_selection_pipeline.py` - główny orchestrator - Przeczyta"
+    ],
+    "findings": [
+      "- `ClusterBasedSelector` (method: cluster) - DOMYŚLNA, używa K-Means",
+      "`CombinedSelector` (method: kcenter) - legacy, opisana w starym artykule",
+      "- CLUSTER: EL2N jest CECHĄ w 1035-dim przestrzeni klastrowania",
+      "KCENTER: EL2N jest RANKINGIEM na końcu pipeline'u"
+    ],
+    "files": [
+      "main_selection_pipeline.py",
+      "config.yaml",
+      "cluster_selector.py",
+      "combined_selector.py",
+      "fourier_analyzer.py"
+    ],
+    "next_steps": [
+      "Zdecydować o ostatecznym brzmieniu abstractu (czytelność vs ",
+      "Commit zmian do repo artykułu",
+      "Push do Overleaf"
+    ],
+    "index": 30
+  },
+  {
+    "id": "Session_2026-01-12_055500_YOLO_Resume_Fix",
+    "name": "YOLO Resume Fix",
+    "label": "YOLO Resume",
+    "date": "2026-01-12T05:55",
+    "type": "Training",
+    "objective": "Naprawić błąd YOLO training na Eden gdzie job 1509301 failed z błędem:\n```\nAssertionError: last.pt training to 200 epochs is finished, nothing to resume.\n```",
+    "topics": [
+      "DETR",
+      "GPU",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Naprawić błąd YOLO training na Eden gdzie job 1509301 failed z błędem: ``` AssertionError: last.pt training to 200 epoch",
+    "actions": [
+      "**Analiza błędu z logu** - zidentyfikowano AssertionError w Ultralytics",
+      "**Przeszukano istniejące skrypty** - znaleziono brakujący `yolo_train_20k_finetune_v2.py`",
+      "**Stworzono poprawiony skrypt v2** - nowa logika pretrained weights",
+      "**Upload na Eden** - `scp` do `~/Yolo/20k_finetune/`",
+      "**Próby uruchomienia joba**: - dgx-3: DRAINED (klimatyzacja) - dgx-2: DRAINING (klimatyzacja) - hopp"
+    ],
+    "findings": [
+      "dgx-2, dgx-3 niedostępne z powodu awarii klimatyzacji",
+      "hopper obciążony przez ~40 CPU jobów (hbaniecki)",
+      "Fair-share priorytet bardzo niski (950) bo DETR działa 15h",
+      "Job 1509626 w kolejce - czeka na zasoby"
+    ],
+    "files": [
+      "yolo_train_20k_finetune.py",
+      "yolo_train_20k_finetune_v2.py",
+      "yolo_train_20k_finetune_v2.py",
+      "Eden/Scripts/Train20kDataset_YOLO_31.12.25/yolo_train_20k_finetune_v2.py",
+      "~/Yolo/20k_finetune/yolo_train_20k_finetune_v2.py"
+    ],
+    "next_steps": [
+      "Czekać na zwolnienie zasobów (dgx-2/dgx-3 po naprawie AC)",
+      "Lub anulować DETR aby podnieść priorytet YOLO",
+      "Monitorować status: `squeue -u bpiotrowski`"
+    ],
+    "index": 31
+  },
+  {
+    "id": "Session_2026-01-12_060200_YOLO_Resume_Fix_Complete",
+    "name": "YOLO Resume Fix Complete",
+    "label": "YOLO Resume",
+    "date": "2026-01-12T06:02",
+    "type": "Training",
+    "objective": "1. Naprawić błąd YOLO training na Eden (AssertionError: nothing to resume)\n2. Uruchomić trening YOLO 300 nowych epok (200→500)\n3. Zaktualizować indeks klas projektu",
+    "topics": [
+      "DETR",
+      "GPU",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "1. Naprawić błąd YOLO training na Eden (AssertionError: nothing to resume) 2. Uruchomić trening YOLO 300 nowych epok (20",
+    "actions": [
+      "Analiza błędu (z logu użytkownika) ``` AssertionError: last.pt training to 200 epochs is finished, n"
+    ],
+    "findings": [],
+    "files": [
+      "yolo_train_20k_finetune_v2.py",
+      "Eden/Scripts/Train20kDataset_YOLO_31.12.25/yolo_train_20k_finetune_v2.py",
+      "~/Yolo/20k_finetune/yolo_train_20k_finetune_v2.py"
+    ],
+    "next_steps": [
+      "Czekać na zwolnienie zasobów (dgx-2/dgx-3 po naprawie AC)",
+      "LUB anulować DETR aby podnieść priorytet YOLO",
+      "Monitorować: `ssh eden-cluster \"squeue -u bpiotrowski\"`"
+    ],
+    "index": 32
+  },
+  {
+    "id": "Session_2026-01-16_220114",
+    "name": "Session_2026-01-16_220114",
+    "label": "Dataset Select",
+    "date": "2026-01-16T22:01",
+    "type": "Benchmark",
+    "objective": "Naprawić testy benchmarkowe YOLO vs DETR aby eliminować problem data leakage, który wystąpił gdy 48 obrazów z Roboflow validation set zostało przypadkowo włączonych do 20k datasetu treningowego.",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "YOLO"
+    ],
+    "semantic": "48 obrazów",
+    "actions": [
+      "Zidentyfikowano problem data leakage poprzez analizę `selection_reasons.json`",
+      "Stworzono plik `leaked_valid_images.json` z listą 48 leaked obrazów",
+      "Zmodyfikowano funkcję `prepare_coco_annotations()` aby akceptowała parametr `exclude_images`",
+      "Stworzono dwa zestawy datasetów w `main()`: - `datasets_full` - dla modeli Original 100k (bez proble",
+      "Zaktualizowano sekcje benchmarków aby używały odpowiednich datasetów"
+    ],
+    "findings": [
+      "**48 obrazów** z Roboflow valid było w 20k training dataset",
+      "Stanowi to **24%** validation set (48/200 obrazów)",
+      "Modele 100k nie mają problemu leakage (te obrazy nie były w ich zbiorze treningo",
+      "Modele 20k finetune wymagają ewaluacji na \"clean\" validation set (152 obrazy zam"
+    ],
+    "files": [
+      "AdvancedDatasetSelection/config.yaml",
+      "selection_reasons.json",
+      "selection_reasons.json",
+      "leaked_valid_images.json",
+      "YOLO_DETR_Benchmarks/scripts/leaked_valid_images.json"
+    ],
+    "next_steps": [
+      "Uruchomić ponownie benchmark z poprawionym skryptem",
+      "Porównać wyniki 20k modeli przed i po usunięciu leaked image",
+      "Rozważyć ponowne wytrenowanie modeli 20k bez leaked images"
+    ],
+    "index": 33
+  },
+  {
+    "id": "Session_2026-01-18_004223_DETR_EL2N_Optimization",
+    "name": "DETR EL2N Optimization",
+    "label": "DETR EL2N",
+    "date": "2026-01-18T00:42",
+    "type": "Mixed",
+    "objective": "Zoptymalizować DETR EL2N scorer, który przetwarzał obrazki pojedynczo (~1.15s/obrazek = 28h na 90k obrazków). Dodać checkpoint saving żeby można było wznawiać po przerwaniu.",
+    "topics": [
+      "DETR",
+      "Dataset",
+      "EL2N",
+      "GPU",
+      "Pipeline"
+    ],
+    "semantic": "Speedup:. Czas przetwarzania:",
+    "actions": [
+      "**Analiza problemu** - Zidentyfikowano single-image processing w `compute_el2n_scores()` - Komentarz",
+      "**Implementacja checkpoint saving** - Dodano `_save_checkpoint()` - zapisuje co 1000 obrazków - Doda",
+      "**Implementacja batched inference** - Utworzono `ImageDataset(Dataset)` - efektywne ładowanie obrazk",
+      "**Windows compatibility** - Dodano workaround dla `num_workers > 0` na Windows - Automatyczne `num_w",
+      "**Git operations** - Commit: `feat(detr): optimize EL2N scorer with batching and checkpoints` - Merg"
+    ],
+    "findings": [
+      "**Speedup:** ~10x (1.15s/img → ~0.1s/img)",
+      "**Czas przetwarzania:** 28h → 2.5h dla 90k obrazków",
+      "**Resume support:** Automatyczne wznowienie po restarcie"
+    ],
+    "files": [
+      "./detr_el2n_checkpoints/detr_el2n_progress.json",
+      "config.yaml",
+      "AdvancedDatasetSelection/selection_methods/detr_el2n_scorer.py",
+      "./detr_el2n_checkpoints/detr_el2n_progress.json"
+    ],
+    "next_steps": [
+      "Uruchomić pipeline ponownie z nowym kodem",
+      "Sprawdzić czy checkpoint resume działa poprawnie",
+      "Ewentualnie dostroić batch_size dla optymalnej wydajności GP"
+    ],
+    "index": 34
+  },
+  {
+    "id": "Session_2026-01-18_012500_PyTorch_GPU_Fix",
+    "name": "PyTorch GPU Fix",
+    "label": "DETR EL2N",
+    "date": "2026-01-18T01:25",
+    "type": "Mixed",
+    "objective": "Naprawić problem z DETR EL2N scorer który nie używał GPU podczas przetwarzania obrazów w pipeline selekcji datasetu.",
+    "topics": [
+      "DETR",
+      "EL2N",
+      "GPU",
+      "Pipeline"
+    ],
+    "semantic": "Naprawić problem z DETR EL2N scorer który nie używał GPU podczas przetwarzania obrazów w pipeline selekcji datasetu.",
+    "actions": [
+      "**Dodano diagnostykę GPU do `detr_el2n_scorer.py`:** - Funkcja `verify_gpu_available()` - pełna wery",
+      "**Zdiagnozowano problem:** - Test GPU pokazał: `PyTorch version: 2.9.1+cpu` - CUDA available: False ",
+      "**Naprawiono problem:** - Odinstalowano PyTorch CPU: `pip uninstall torch torchvision torchaudio` - ",
+      "**Weryfikacja:** - PyTorch: 2.6.0+cu124 - CUDA available: True - GPU: NVIDIA GeForce RTX 3070 - Mode"
+    ],
+    "findings": [
+      "Problem nie był w kodzie - PyTorch był zainstalowany w wersji CPU-only",
+      "Użytkownik miał dwie instalacje Pythona z różnymi wersjami PyTorch",
+      "Po reinstalacji model poprawnie ładuje się na GPU (0.18 GB memory)"
+    ],
+    "files": [
+      "main_selection_pipeline.py",
+      "detr_el2n_scorer.py",
+      "AdvancedDatasetSelection/selection_methods/detr_el2n_scorer.py"
+    ],
+    "next_steps": [
+      "PyTorch z CUDA zainstalowany",
+      "Model DETR działa na GPU",
+      "Uruchomić pełny pipeline selekcji z GPU acceleration"
+    ],
+    "index": 35
+  },
+  {
+    "id": "Session_2026-01-18_143500_Scientific_Justification_Dataset_Selection",
+    "name": "Scientific Justification Dataset Selection",
+    "label": "Dataset Select",
+    "date": "2026-01-18T14:35",
+    "type": "Analysis",
+    "objective": "Znaleźć naukowe uzasadnienie dla metodologii selekcji datasetu używanej w projekcie AdvancedDatasetSelection, w tym dla:\n- EL2N scores jako miary trudności próbek\n- DINO embeddings do klastrowania\n- F",
+    "topics": [
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "Fourier",
+      "GPU",
+      "IEEE",
+      "Pipeline",
+      "SAM"
+    ],
+    "semantic": "Znaleźć naukowe uzasadnienie dla metodologii selekcji datasetu używanej w projekcie AdvancedDatasetSelection, w tym dla:",
+    "actions": [
+      "**Web Search: EL2N Score** - Znaleziono \"Deep Learning on a Data Diet\" (Paul et al., NeurIPS 2021) -",
+      "**Web Search: Coreset Selection** - \"Blind Coreset Selection\" (ICLR 2025) - \"InfoMax Coreset Selecti",
+      "**Web Search: Fourier Features** - \"Fourier Features Let Networks Learn High Frequency Functions\" (N",
+      "**Web Search: DINO Features** - DINO (Meta AI, 2021) - DINOv2 (2023), DINOv3 (2025) - Self-supervise",
+      "**Zapisanie do pamięci Sereny** - Utworzono `dataset_selection_scientific_justification.md` - Pełne "
+    ],
+    "findings": [],
+    "files": [
+      "dataset_selection_scientific_justification.md",
+      "README.md",
+      "SESSION_SUMMARY.md",
+      "dataset_selection_scientific_justification.md"
+    ],
+    "next_steps": [
+      "Opcjonalnie: Przepuścić pipeline z nowymi wagami (DINO 48%, ",
+      "Użyć przygotowanego cytatu w artykule IEEE",
+      "Rozważyć dodanie dodatkowych referencji do Related Work"
+    ],
+    "index": 36
+  },
+  {
+    "id": "Session_2026-01-18_145200_YOLO_Resume_500_Scientific_Justification",
+    "name": "YOLO Resume 500 Scientific Justification",
+    "label": "YOLO Resume",
+    "date": "2026-01-18T14:52",
+    "type": "Training",
+    "objective": "1. Znaleźć naukowe uzasadnienie dla metodologii selekcji datasetu (EL2N, DINO, Fourier, coreset selection)\n2. Przygotować skrypt SLURM do wznowienia treningu YOLO od epoch 200 do 500 na klastrze Eden",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "Fourier",
+      "GPU",
+      "IEEE",
+      "SAM",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "1. Znaleźć naukowe uzasadnienie dla metodologii selekcji datasetu (EL2N, DINO, Fourier, coreset selection) 2. Przygotowa",
+    "actions": [
+      "**Web Search: EL2N Score** - Znaleziono \"Deep Learning on a Data Diet\" (Paul et al., NeurIPS 2021) -",
+      "**Web Search: Coreset Selection** - \"Blind Coreset Selection\" (ICLR 2025) - \"InfoMax Coreset Selecti",
+      "**Web Search: Fourier Features** - \"Fourier Features Let Networks Learn\" (NeurIPS 2020) - Uzasadnien",
+      "**Web Search: DINO Features** - DINO, DINOv2, DINOv3 (Meta AI 2021-2025) - Self-supervised represent",
+      "**Zapisanie do pamięci Sereny** - `dataset_selection_scientific_justification.md` - Pełne referencje"
+    ],
+    "findings": [],
+    "files": [
+      "dataset_selection_scientific_justification.md",
+      "dataset_selection_scientific_justification.md"
+    ],
+    "next_steps": [
+      "Skopiować skrypt SLURM na Eden",
+      "Uruchomić job: `sbatch run_yolo_20k_resume_ep200_to_500.slur",
+      "Monitorować trening (300 epok, ~12-18h)"
+    ],
+    "index": 37
+  },
+  {
+    "id": "Session_2026-01-19_042000_YOLO_LR_Fix_Finetune",
+    "name": "YOLO LR Fix Finetune",
+    "label": "YOLO Resume",
+    "date": "2026-01-19T04:20",
+    "type": "Training",
+    "objective": "Naprawić problem z Learning Rate przy fine-tuningu YOLO i uruchomić trening od epoch 170 do 500.",
+    "topics": [
+      "GPU",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Naprawić problem z Learning Rate przy fine-tuningu YOLO i uruchomić trening od epoch 170 do 500.",
+    "actions": [
+      "Analiza problemu LR - Sprawdzono logi poprzednich sesji i checkpointów - Odkryto że epoch 70 miał LR"
+    ],
+    "findings": [
+      "`optimizer=auto` ignoruje `lr0` i `momentum` - MUSI być explicit `optimizer='SGD",
+      "Oryginalny trening: 0.01→0.0001, Fine-tune: 0.001→0.0001",
+      "epoch170.pt znajduje się w `~/Yolo/20k_finetune/` (root, nie w weights/)",
+      "`sfree` pokazuje lepsze info o dostępnych zasobach niż `sinfo`"
+    ],
+    "files": [
+      "Eden/Scripts/Train20kDataset_YOLO_31.12.25/yolo_train_20k_finetune_v2.py",
+      "SESSION_SUMMARY.md",
+      "README.md",
+      "SESSION_SUMMARY.md"
+    ],
+    "next_steps": [
+      "Monitorować trening (loss, mAP)",
+      "Sprawdzić checkpoint po epoch 10",
+      "Po zakończeniu: walidacja na test set"
+    ],
+    "index": 38
+  },
+  {
+    "id": "Session_2026-01-20_140500",
+    "name": "Session_2026-01-20_140500",
+    "label": "Session",
+    "date": "2026-01-20T14:05",
+    "type": "Training",
+    "objective": "Ponowne uruchomienie fine-tuningu YOLO od epoch 170 z poprawionym Learning Rate po nieudanym poprzednim treningu.",
+    "topics": [
+      "GPU",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Ponowne uruchomienie fine-tuningu YOLO od epoch 170 z poprawionym Learning Rate po nieudanym poprzednim treningu.",
+    "actions": [
+      "Wczytano poprzednia sesje SSH (`sesja_2026-01-19_yolo_finetune_ep170_500`)",
+      "Przeanalizowano logi - zidentyfikowano problem z LR",
+      "Utworzono nowy skrypt SLURM z poprawkami: - lr0: 0.001 -> **0.0001** (10x mniejszy) - patience: 50 -",
+      "Wgrano skrypt na Eden przez SCP",
+      "Uruchomiono job przez sbatch"
+    ],
+    "findings": [
+      "lr0=0.0001 dziala - model sie uczy, loss spada",
+      "DDP na 7x H100 dziala poprawnie",
+      "Batch 35 (5 per GPU) jest optymalny dla 7 GPU"
+    ],
+    "files": [
+      "SESSION_SUMMARY.md"
+    ],
+    "next_steps": [
+      "Monitorowac trening - czy metryki sie poprawiaja przez wiele",
+      "Sprawdzic mAP50-95 po kilku epokach",
+      "Porownac z baseline (poprzedni best @ epoch 1: mAP50-95=0.96"
+    ],
+    "index": 39
+  },
+  {
+    "id": "Session_2026-01-26_120245_Sessions_Visualization_RAG",
+    "name": "Sessions Visualization RAG",
+    "label": "Visualization",
+    "date": "2026-01-26T12:02",
+    "type": "Analysis",
+    "objective": "Stworzyć system wizualizacji sesji projektu z mozliwoscia semantycznego wyszukiwania - interaktywne drzewo/graf z tooltipami i mozliwoscia rozmowy z agentem Claude Code o sesjach.",
+    "topics": [
+      "DETR",
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "IEEE",
+      "SSH",
+      "YOLO"
+    ],
+    "semantic": "Stworzyć system wizualizacji sesji projektu z mozliwoscia semantycznego wyszukiwania - interaktywne drzewo/graf z toolti",
+    "actions": [
+      "Analiza struktury sesji - Przeczytano SESSION_RULES.md i strukturę folderów - Zidentyfikowano metada"
+    ],
+    "findings": [
+      "w projekcie (2025-10 do 2026-01)",
+      "Training (10), Analysis (9), Writing (4), Benchmark (2), SSH (1), Mixed (14)",
+      "DETR, YOLO, IEEE Article, Dataset Selection, EL2N, DINO, SSH/Eden",
+      "dla wyszukiwania - brak potrzeby ciężkich modeli embedding"
+    ],
+    "files": [
+      "visualize_sessions_3d.py",
+      "visualize_sessions_tree.py",
+      "generate_tree_data.py",
+      "sessions_rag_agent.py",
+      ".claude/commands/szukaj-sesje.md"
+    ],
+    "next_steps": [
+      "Dodać filtrowanie po typie sesji w drzewie",
+      "Dodać wyszukiwarkę w UI drzewa",
+      "Integracja z wizualizacją 3D (link między widokami)"
+    ],
+    "index": 40
+  },
+  {
+    "id": "Session_2026-01-26_180000_Sessions_RAG_BGE_M3",
+    "name": "Sessions RAG BGE M3",
+    "label": "Visualization",
+    "date": "2026-01-26T18:00",
+    "type": "Mixed",
+    "objective": "Naprawić i udokumentować system semantic search dla sesji projektu używając modelu bge-m3.",
+    "topics": [
+      "DETR",
+      "YOLO"
+    ],
+    "semantic": "Naprawić i udokumentować system semantic search dla sesji projektu używając modelu bge-m3.",
+    "actions": [
+      "Analiza architektury RAG - Wyjaśniono różnicę między TF-IDF (`sessions_rag_agent.py`) a bge-m3 (`ses"
+    ],
+    "findings": [
+      "- za krótki na bge-m3",
+      "Dedykowany skrypt `search_sessions.py` przez Bash",
+      "- \"YOLO 170 epoch\" znajduje sesje o fine-tuningu",
+      "43 sesje, 85 chunków w ChromaDB"
+    ],
+    "files": [
+      "sessions_rag_agent.py",
+      "sessions_mcp_server.py",
+      "search_sessions.py",
+      "search_sessions.py",
+      ".sessions/tools/search_sessions.py"
+    ],
+    "next_steps": [
+      "Rozważyć persistent MCP server (background process)",
+      "Dodać automatyczny prewarm przy starcie Claude Code",
+      "Rozważyć incremental index update po `/zapisz-sesje`"
+    ],
+    "index": 41
+  }
+];
+    const connections = [
+  {
+    "from": 0,
+    "to": 1,
+    "strength": "medium",
+    "topics": [
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 2,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 3,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 4,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 5,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 7,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 8,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 12,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 13,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 16,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 33,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 0,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 2,
+    "strength": "medium",
+    "topics": [
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 7,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 8,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "SAM",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 9,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 11,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 13,
+    "strength": "strong",
+    "topics": [
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 16,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 20,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "Dataset",
+      "SAM",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "Dataset",
+      "SAM",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "DINO",
+      "Pipeline",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "SAM",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "EL2N",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 35,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "EL2N",
+      "DETR"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "SAM",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "SAM"
+    ]
+  },
+  {
+    "from": 1,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 3,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 4,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 5,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 7,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 8,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 12,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 13,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 16,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 2,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 4,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 5,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 6,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 7,
+    "strength": "strong",
+    "topics": [
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 8,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 12,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 38,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 39,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 3,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 5,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 6,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 7,
+    "strength": "strong",
+    "topics": [
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 8,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 12,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 38,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 39,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 4,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 6,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 7,
+    "strength": "strong",
+    "topics": [
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 8,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 12,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 38,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 39,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 5,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 6,
+    "to": 7,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 8,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 9,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 10,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 11,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 12,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 13,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 33,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 35,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "GPU"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 7,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 9,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 10,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 11,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 12,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 13,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 16,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline",
+      "Query81"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 20,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Pipeline",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR",
+      "SAM",
+      "Pipeline",
+      "Query81"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "DETR",
+      "SAM",
+      "Pipeline",
+      "Query81"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "GPU",
+      "DINO",
+      "DETR",
+      "SAM",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Dataset",
+      "GPU",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 35,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "GPU",
+      "DETR",
+      "EL2N"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "GPU",
+      "DINO",
+      "SAM",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "GPU",
+      "DINO",
+      "DETR",
+      "SAM"
+    ]
+  },
+  {
+    "from": 8,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "EL2N",
+      "Dataset",
+      "DINO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 10,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 11,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 12,
+    "strength": "medium",
+    "topics": [
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 13,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 9,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 10,
+    "to": 11,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 10,
+    "to": 13,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 10,
+    "to": 14,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 10,
+    "to": 15,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 12,
+    "strength": "medium",
+    "topics": [
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 13,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 16,
+    "strength": "medium",
+    "topics": [
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 11,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 13,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 16,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 17,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 12,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 14,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 16,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 17,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 20,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Pipeline",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "DINO",
+      "Dataset",
+      "Pipeline",
+      "Fourier"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 13,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DINO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 15,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 16,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 17,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 20,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Pipeline",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "DINO",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 33,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "DINO",
+      "Dataset",
+      "Pipeline",
+      "Fourier"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "Dataset",
+      "DINO",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 14,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DINO",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 16,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 17,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 20,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 35,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "GPU"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 15,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 17,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 19,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 20,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 21,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "Fourier",
+      "DETR"
+    ]
+  },
+  {
+    "from": 16,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 17,
+    "to": 20,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 17,
+    "to": 21,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 17,
+    "to": 22,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 20,
+    "strength": "strong",
+    "topics": [
+      "DETR",
+      "Pipeline",
+      "Fourier",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 21,
+    "strength": "medium",
+    "topics": [
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "IEEE",
+      "YOLO",
+      "DETR",
+      "Pipeline",
+      "Query81"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 23,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "IEEE",
+      "YOLO",
+      "DETR",
+      "Pipeline",
+      "Query81"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "Fourier",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 33,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "EL2N",
+      "DETR"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 35,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "EL2N",
+      "DETR"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 19,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 21,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Pipeline",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 23,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 24,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "IEEE",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "IEEE",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "DETR",
+      "Pipeline",
+      "Fourier",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "Fourier",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "DETR",
+      "Fourier",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 20,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 21,
+    "to": 22,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 21,
+    "to": 25,
+    "strength": "medium",
+    "topics": [
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 21,
+    "to": 26,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "DETR"
+    ]
+  },
+  {
+    "from": 21,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 21,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 21,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 21,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 23,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 24,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "IEEE",
+      "YOLO",
+      "DETR",
+      "SAM",
+      "Pipeline",
+      "Query81"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "IEEE",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "IEEE",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "IEEE",
+      "DETR",
+      "SAM",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 33,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "SAM",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "IEEE",
+      "YOLO",
+      "DETR",
+      "SAM"
+    ]
+  },
+  {
+    "from": 22,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "IEEE",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 23,
+    "to": 24,
+    "strength": "medium",
+    "topics": [
+      "Dataset",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 23,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 23,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 23,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 23,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 25,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 27,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 33,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 24,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 26,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 27,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "IEEE",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "YOLO",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "IEEE",
+      "DETR",
+      "SAM",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 33,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "SAM",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "IEEE",
+      "YOLO",
+      "DETR",
+      "SAM"
+    ]
+  },
+  {
+    "from": 25,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 27,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 33,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "GPU",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 38,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 39,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 26,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 27,
+    "to": 28,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 27,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 27,
+    "to": 30,
+    "strength": "medium",
+    "topics": [
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 27,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 27,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 27,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 27,
+    "to": 38,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 27,
+    "to": 39,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 27,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 29,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 33,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "EL2N",
+      "DETR"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 35,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "EL2N",
+      "DETR"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 28,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "EL2N",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 29,
+    "to": 30,
+    "strength": "strong",
+    "topics": [
+      "Fourier",
+      "IEEE",
+      "DINO",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 29,
+    "to": 31,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 29,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 29,
+    "to": 33,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 29,
+    "to": 34,
+    "strength": "medium",
+    "topics": [
+      "Pipeline",
+      "DETR"
+    ]
+  },
+  {
+    "from": 29,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "DINO",
+      "Pipeline",
+      "Fourier",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 29,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "Fourier",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 29,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 30,
+    "to": 31,
+    "strength": "medium",
+    "topics": [
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 30,
+    "to": 32,
+    "strength": "medium",
+    "topics": [
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 30,
+    "to": 33,
+    "strength": "medium",
+    "topics": [
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 30,
+    "to": 34,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Dataset",
+      "GPU",
+      "DETR",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 30,
+    "to": 35,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "GPU",
+      "DETR",
+      "EL2N"
+    ]
+  },
+  {
+    "from": 30,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "GPU",
+      "IEEE",
+      "DINO",
+      "SAM",
+      "Pipeline"
+    ]
+  },
+  {
+    "from": 30,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "GPU",
+      "IEEE",
+      "DINO",
+      "DETR",
+      "SAM"
+    ]
+  },
+  {
+    "from": 30,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 31,
+    "to": 32,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 31,
+    "to": 33,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 31,
+    "to": 34,
+    "strength": "medium",
+    "topics": [
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 31,
+    "to": 35,
+    "strength": "medium",
+    "topics": [
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 31,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 31,
+    "to": 38,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 31,
+    "to": 39,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 31,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 32,
+    "to": 33,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 32,
+    "to": 34,
+    "strength": "medium",
+    "topics": [
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 32,
+    "to": 35,
+    "strength": "medium",
+    "topics": [
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 32,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 32,
+    "to": 38,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 32,
+    "to": 39,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 32,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 33,
+    "to": 34,
+    "strength": "medium",
+    "topics": [
+      "Dataset",
+      "DETR"
+    ]
+  },
+  {
+    "from": 33,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 33,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 34,
+    "to": 35,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "GPU",
+      "DETR",
+      "EL2N"
+    ]
+  },
+  {
+    "from": 34,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "Pipeline",
+      "EL2N",
+      "GPU"
+    ]
+  },
+  {
+    "from": 34,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "EL2N",
+      "GPU",
+      "DETR"
+    ]
+  },
+  {
+    "from": 34,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "Dataset",
+      "EL2N",
+      "DETR"
+    ]
+  },
+  {
+    "from": 35,
+    "to": 36,
+    "strength": "strong",
+    "topics": [
+      "Pipeline",
+      "GPU",
+      "EL2N"
+    ]
+  },
+  {
+    "from": 35,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "GPU",
+      "DETR",
+      "EL2N"
+    ]
+  },
+  {
+    "from": 35,
+    "to": 40,
+    "strength": "medium",
+    "topics": [
+      "EL2N",
+      "DETR"
+    ]
+  },
+  {
+    "from": 36,
+    "to": 37,
+    "strength": "strong",
+    "topics": [
+      "EL2N",
+      "Fourier",
+      "Dataset",
+      "GPU",
+      "IEEE",
+      "DINO",
+      "SAM"
+    ]
+  },
+  {
+    "from": 36,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "DINO",
+      "Dataset",
+      "EL2N",
+      "IEEE"
+    ]
+  },
+  {
+    "from": 37,
+    "to": 38,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 37,
+    "to": 39,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 37,
+    "to": 40,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "EL2N",
+      "Dataset",
+      "IEEE",
+      "DINO",
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 37,
+    "to": 41,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  },
+  {
+    "from": 38,
+    "to": 39,
+    "strength": "strong",
+    "topics": [
+      "SSH",
+      "YOLO",
+      "GPU"
+    ]
+  },
+  {
+    "from": 38,
+    "to": 40,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "YOLO"
+    ]
+  },
+  {
+    "from": 39,
+    "to": 40,
+    "strength": "medium",
+    "topics": [
+      "SSH",
+      "YOLO"
+    ]
+  },
+  {
+    "from": 40,
+    "to": 41,
+    "strength": "medium",
+    "topics": [
+      "YOLO",
+      "DETR"
+    ]
+  }
+];
+
+    const sessionElements = [];
+
+    // Group by month
+    const byMonth = {};
+    sessions.forEach((s, i) => {
+        s.index = i;
+        const month = s.date.substring(0, 7);
+        if (!byMonth[month]) byMonth[month] = [];
+        byMonth[month].push(s);
+    });
+
+    const sortedMonths = Object.keys(byMonth).sort();
+    const timeline = document.getElementById('timeline');
+
+    sortedMonths.forEach(month => {
+        const group = document.createElement('div');
+        group.className = 'month-group';
+
+        const label = document.createElement('div');
+        label.className = 'month-label';
+        label.textContent = month;
+        group.appendChild(label);
+
+        byMonth[month].sort((a, b) => a.date.localeCompare(b.date));
+
+        byMonth[month].forEach(s => {
+            const el = document.createElement('div');
+            el.className = `session ${s.type}`;
+            el.dataset.index = s.index;
+            el.dataset.label = s.label;
+            el.dataset.semantic = s.semantic || '';
+
+            const topicTags = s.topics.slice(0, 4).map(t => `<span class="topic-tag">${t}</span>`).join('');
+
+            let detailsHtml = '';
+            if (s.objective) detailsHtml += `<div class="details-objective">${s.objective}</div>`;
+            if (s.actions && s.actions.length) {
+                detailsHtml += `<div class="details-section"><div class="details-title">Actions</div><ul class="details-list">${s.actions.map(a => `<li>${a}</li>`).join('')}</ul></div>`;
+            }
+            if (s.findings && s.findings.length) {
+                detailsHtml += `<div class="details-section"><div class="details-title">Findings</div><ul class="details-list">${s.findings.map(f => `<li>${f}</li>`).join('')}</ul></div>`;
+            }
+            if (s.files && s.files.length) {
+                detailsHtml += `<div class="details-section"><div class="details-title">Files</div><ul class="details-list">${s.files.map(f => `<li><code>${f}</code></li>`).join('')}</ul></div>`;
+            }
+            detailsHtml += `<div class="details-path">.sessions/${s.id}/</div>`;
+
+            el.innerHTML = `
+                <div class="session-title">
+                    ${s.label}
+                    <span class="session-type">${s.type}</span>
+                </div>
+                <div class="session-meta">${s.date.substring(5, 10)} | ${s.name}</div>
+                <div class="session-topics">${topicTags}</div>
+                <div class="session-details">${detailsHtml}</div>
+            `;
+
+            el.addEventListener('click', () => {
+                el.classList.toggle('expanded');
+                showRelated(s.index);
+            });
+
+            group.appendChild(el);
+            sessionElements[s.index] = el;
+        });
+
+        timeline.appendChild(group);
+    });
+
+    // Stats
+    document.getElementById('stats').textContent = `${sessions.length} sessions | ${connections.length} connections`;
+
+    // Tooltip
+    const tooltip = document.getElementById('tooltip');
+    const tooltipLabel = document.getElementById('tooltipLabel');
+    const tooltipSemantic = document.getElementById('tooltipSemantic');
+
+    document.querySelectorAll('.session').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            tooltipLabel.textContent = el.dataset.label;
+            tooltipSemantic.textContent = el.dataset.semantic;
+            tooltip.classList.add('visible');
+        });
+        el.addEventListener('mousemove', (e) => {
+            tooltip.style.left = Math.min(e.clientX + 15, window.innerWidth - 320) + 'px';
+            tooltip.style.top = Math.min(e.clientY + 15, window.innerHeight - 100) + 'px';
+        });
+        el.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+    });
+
+    // Side panel
+    const sidePanel = document.getElementById('sidePanel');
+    const relatedList = document.getElementById('relatedList');
+    const toggleBtn = document.getElementById('togglePanel');
+
+    toggleBtn.addEventListener('click', () => {
+        sidePanel.classList.toggle('open');
+        toggleBtn.textContent = sidePanel.classList.contains('open') ? 'Hide Connections' : 'Show Connections';
+    });
+
+    function showRelated(index) {
+        const related = connections.filter(c => c.from === index || c.to === index);
+
+        // Clear highlights
+        document.querySelectorAll('.session.highlighted').forEach(el => el.classList.remove('highlighted'));
+
+        // Highlight related
+        related.forEach(c => {
+            const otherIndex = c.from === index ? c.to : c.from;
+            if (sessionElements[otherIndex]) {
+                sessionElements[otherIndex].classList.add('highlighted');
+            }
+        });
+
+        // Update side panel
+        relatedList.innerHTML = related.map(c => {
+            const otherIndex = c.from === index ? c.to : c.from;
+            const other = sessions[otherIndex];
+            return `
+                <div class="connection-item" data-index="${otherIndex}">
+                    <strong>${other.label}</strong> (${other.date.substring(5, 10)})
+                    <div class="shared-topics">Shared: ${c.topics.join(', ')}</div>
+                </div>
+            `;
+        }).join('') || '<div style="color:#666">No connections found</div>';
+
+        // Click to scroll
+        relatedList.querySelectorAll('.connection-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const idx = parseInt(item.dataset.index);
+                sessionElements[idx]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                sessionElements[idx]?.classList.add('expanded');
+            });
+        });
+
+        if (related.length > 0) {
+            sidePanel.classList.add('open');
+            toggleBtn.textContent = 'Hide Connections';
+        }
+
+        drawConnections(index);
+    }
+
+    // Draw SVG connections
+    const svg = document.getElementById('connections');
+
+    function drawConnections(highlightIndex = null) {
+        svg.innerHTML = '';
+        svg.style.width = document.body.scrollWidth + 'px';
+        svg.style.height = document.body.scrollHeight + 'px';
+
+        connections.forEach(c => {
+            const el1 = sessionElements[c.from];
+            const el2 = sessionElements[c.to];
+            if (!el1 || !el2) return;
+
+            const rect1 = el1.getBoundingClientRect();
+            const rect2 = el2.getBoundingClientRect();
+
+            const x1 = rect1.left + window.scrollX;
+            const y1 = rect1.top + rect1.height / 2 + window.scrollY;
+            const x2 = rect2.left + window.scrollX;
+            const y2 = rect2.top + rect2.height / 2 + window.scrollY;
+
+            const isHighlighted = highlightIndex !== null && (c.from === highlightIndex || c.to === highlightIndex);
+
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const midX = x1 - 30;
+            path.setAttribute('d', `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', isHighlighted ? '#667eea' : 'rgba(102, 126, 234, 0.15)');
+            path.setAttribute('stroke-width', isHighlighted ? '2' : '1');
+            svg.appendChild(path);
+        });
+    }
+
+    // Initial draw
+    setTimeout(() => drawConnections(), 100);
+    window.addEventListener('resize', () => drawConnections());
+    window.addEventListener('scroll', () => drawConnections());
+
+    // Scroll to newest
+    window.scrollTo(0, document.body.scrollHeight);
+    </script>
+</body>
+</html>
