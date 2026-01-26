@@ -196,7 +196,7 @@ def build_graph(sessions: list[dict]) -> tuple[list, list]:
             if i >= j:
                 continue
             shared = set(s1["topics"]) & set(s2["topics"])
-            if len(shared) >= 3:
+            if len(shared) >= 4:
                 edges.append({
                     "from": s1["id"],
                     "to": s2["id"],
@@ -386,28 +386,37 @@ def generate_html(nodes: list, edges: list) -> str:
         physics: {{
             enabled: true,
             barnesHut: {{
-                gravitationalConstant: -3000,
-                centralGravity: 0.3,
-                springLength: 120,
-                springConstant: 0.04,
-                damping: 0.09
+                gravitationalConstant: -2000,
+                centralGravity: 0.5,
+                springLength: 95,
+                springConstant: 0.05,
+                damping: 0.2,
+                avoidOverlap: 0.1
             }},
             stabilization: {{
-                iterations: 150
-            }}
+                enabled: true,
+                iterations: 40,
+                updateInterval: 50,
+                fit: true
+            }},
+            adaptiveTimestep: true,
+            maxVelocity: 50,
+            minVelocity: 1.0
         }},
         nodes: {{
             borderWidth: 2,
-            shadow: true,
+            shadow: false,
             font: {{
                 color: '#ffffff'
             }}
         }},
         edges: {{
             smooth: {{
-                type: 'continuous'
+                enabled: true,
+                type: 'dynamic',
+                roundness: 0.5
             }},
-            shadow: true
+            shadow: false
         }},
         interaction: {{
             hover: true,
@@ -418,6 +427,12 @@ def generate_html(nodes: list, edges: list) -> str:
     }};
 
     const network = new vis.Network(container, data, options);
+
+    // Auto-disable physics after stabilization (performance boost)
+    network.once('stabilizationIterationsDone', function() {{
+        network.setOptions({{ physics: {{ enabled: false }} }});
+        physicsEnabled = false;
+    }});
 
     // Stats
     const sessionCount = nodesData.filter(n => n.group === 'session').length;

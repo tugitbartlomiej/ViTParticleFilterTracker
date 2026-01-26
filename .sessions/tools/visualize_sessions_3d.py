@@ -218,7 +218,7 @@ def compute_3d_positions(sessions: list[Session], embeddings: np.ndarray) -> Non
         positions_2d = pca.fit_transform(embeddings_normalized)
     else:
         print("Using t-SNE")
-        perplexity = min(30, len(sessions) - 1) if len(sessions) > 5 else 2
+        perplexity = min(15, len(sessions) - 1) if len(sessions) > 5 else 2
         tsne = TSNE(n_components=2, perplexity=perplexity, random_state=42)
         positions_2d = tsne.fit_transform(embeddings_normalized)
 
@@ -384,7 +384,7 @@ def create_3d_visualization(sessions: list[Session], output_path: Path) -> None:
     )
 
     # Save as HTML
-    fig.write_html(str(output_path), include_plotlyjs=True, full_html=True)
+    fig.write_html(str(output_path), include_plotlyjs='cdn', full_html=True)
     print(f"\nVisualization saved to: {output_path}")
 
     # Also create a summary JSON

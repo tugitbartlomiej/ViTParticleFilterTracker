@@ -242,7 +242,7 @@ def create_tree_visualization(sessions: list[dict], output_path: Path):
     )
 
     # Save
-    fig.write_html(str(output_path), include_plotlyjs=True, full_html=True)
+    fig.write_html(str(output_path), include_plotlyjs='cdn', full_html=True)
     print(f"Saved to: {output_path}")
 
 
@@ -339,7 +339,7 @@ def create_tree_hierarchical(sessions: list[dict], output_path: Path):
     )
 
     output_sunburst = output_path.with_name("session_tree_sunburst.html")
-    fig.write_html(str(output_sunburst), include_plotlyjs=True, full_html=True)
+    fig.write_html(str(output_sunburst), include_plotlyjs='cdn', full_html=True)
     print(f"Saved sunburst to: {output_sunburst}")
 
 
