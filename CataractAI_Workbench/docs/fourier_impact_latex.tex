@@ -1,0 +1,439 @@
+% =============================================================================
+% Fourier Feature Impact on Dataset Selection and DETR Training
+% For IEEE ACCESS article
+% =============================================================================
+
+\section{Role of Fourier Features in Dataset Curation}
+\label{sec:fourier_impact}
+
+This section examines the contribution of frequency-domain features to dataset
+selection quality and its downstream effect on DETR training.  We present
+theoretical motivation, empirical evidence from feature importance analysis,
+and distribution-preservation results.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Motivation: Spectral Bias in Neural Networks}
+\label{sec:spectral_bias}
+
+Neural networks exhibit a well-documented \emph{spectral bias}: they learn
+low-frequency components of the target function first and struggle with
+high-frequency details~\cite{rahaman2019spectral, tancik2020fourier}.
+Formally, consider a network $f_\theta: \mathbb{R}^d \to \mathbb{R}$ trained
+on data with Fourier spectrum $\hat{y}(\boldsymbol{\omega})$.  The training
+dynamics show that the convergence rate for a frequency component
+$\boldsymbol{\omega}$ scales as:
+
+\begin{equation}
+    \frac{\partial \|\hat{f}_\theta(\boldsymbol{\omega}) - \hat{y}(\boldsymbol{\omega})\|^2}
+         {\partial t}
+    \propto -\lambda(\boldsymbol{\omega})
+    \cdot \|\hat{f}_\theta(\boldsymbol{\omega}) - \hat{y}(\boldsymbol{\omega})\|^2
+\end{equation}
+
+where $\lambda(\boldsymbol{\omega})$ is the eigenvalue of the Neural Tangent
+Kernel (NTK) corresponding to frequency $\boldsymbol{\omega}$.  For standard
+MLPs, $\lambda(\boldsymbol{\omega})$ decays rapidly with
+$\|\boldsymbol{\omega}\|$~\cite{tancik2020fourier}, causing high-frequency
+modes to be learned orders of magnitude more slowly.
+
+In the context of object detection in cataract surgery videos, high-frequency
+content corresponds to fine instrument edges, specular reflections, and tissue
+textures --- features critical for precise tool localization.  A training
+dataset that underrepresents high-frequency samples will exacerbate the
+spectral bias, producing a detector with degraded boundary precision.
+
+\paragraph{Implication for dataset curation.}
+To mitigate spectral bias, the training set must \emph{cover the full
+frequency spectrum} of the deployment domain.  We achieve this by
+incorporating Fourier-domain features into the selection criterion, ensuring
+that the selected subset $\mathcal{S}$ preserves the spectral diversity of the
+full pool $\mathcal{D}$.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Fourier Feature Extraction}
+\label{sec:fourier_extraction}
+
+For each image $I_i$, we compute a 9-dimensional Fourier feature vector
+$\mathbf{x}_i^{\text{four}} \in \mathbb{R}^9$ (detailed in
+Section~\ref{sec:fourier}).  The key metrics are:
+
+\begin{enumerate}
+    \item \textbf{Band energies} $(\hat{E}_{\text{low}}, \hat{E}_{\text{mid}},
+          \hat{E}_{\text{high}})$ --- the normalized energy in three radial
+          frequency bands $[0, 0.1)$, $[0.1, 0.5)$, $[0.5, 1.0]$.
+    \item \textbf{Spectral entropy} $\hat{H}_{\text{spec}}$ --- a scalar in
+          $[0, 1]$ measuring the uniformity of the frequency distribution.
+    \item \textbf{Frequency centroid} $f_c$ --- the energy-weighted average
+          frequency.
+    \item \textbf{Directional energies} $(\hat{E}_0, \hat{E}_{\pi/4},
+          \hat{E}_{\pi/2}, \hat{E}_{-\pi/4})$ --- angular energy distribution.
+\end{enumerate}
+
+A derived quantity of particular interest is the \emph{high-to-low frequency
+ratio}:
+
+\begin{equation}
+    R_{\text{HL}} = \frac{\hat{E}_{\text{high}}}{\hat{E}_{\text{low}} + \epsilon}
+    \label{eq:hl_ratio}
+\end{equation}
+
+which characterizes the balance between fine detail ($R_{\text{HL}} \gg 1$,
+sharp edges) and smooth content ($R_{\text{HL}} \approx 1$, blurred regions).
+
+
+% -----------------------------------------------------------------------------
+\subsection{Dual Role of Fourier Features in the Pipeline}
+\label{sec:fourier_dual_role}
+
+Fourier features serve two distinct roles in the selection pipeline:
+
+\paragraph{Stage~1: Redundancy filtering.}
+Before the computationally expensive DINO feature extraction, we compute
+pairwise Fourier similarities to eliminate near-duplicate frames.  Given
+standardized Fourier vectors $\hat{\mathbf{x}}_i^{\text{four}}$, we define:
+
+\begin{equation}
+    \text{sim}(i, j) = \frac{1}{1 + \|\hat{\mathbf{x}}_i^{\text{four}}
+                              - \hat{\mathbf{x}}_j^{\text{four}}\|_2}
+    \in (0, 1]
+\end{equation}
+
+Image $I_j$ is pruned if $\text{sim}(i, j) \geq \tau_{\text{sim}}$ for any
+previously accepted image $I_i$.  We use $\tau_{\text{sim}} = 0.7$
+(Section~\ref{sec:config}).  This stage removes 10--20\% of the pool,
+reducing subsequent GPU computation proportionally.
+
+\paragraph{Stage~2: Weighted clustering.}
+In the combined feature space, Fourier features receive weight
+$w_{\text{four}} = 0.15$, contributing to the Euclidean distance via the
+scaling factor $\alpha_{\text{four}} = \sqrt{w_{\text{four}} / d_{\text{four}}}
+= \sqrt{0.15/9} \approx 0.129$ (Eq.~\ref{eq:alpha}).  This ensures that images
+with distinct spectral signatures are placed in different clusters, preventing
+the selection of a spectrally homogeneous subset.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Empirical Evidence: Feature Importance Analysis}
+\label{sec:feature_importance}
+
+To validate the contribution of each feature group, we trained a Random Forest
+regressor to predict the EL2N difficulty score from the remaining features
+(DINO, Fourier, SAM).  The Gini importance~\cite{breiman2001random} results
+are reported in Table~\ref{tab:feature_importance}.
+
+\begin{table}[h]
+\centering
+\caption{Feature importance for predicting sample difficulty (EL2N score)
+         using Random Forest regression.}
+\label{tab:feature_importance}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Feature Group} & \textbf{Dimensions} &
+    \textbf{Gini Importance} & \textbf{Pipeline Weight} \\
+\midrule
+DINO (PCA)  & 32 & 48.4\% & 0.35 \\
+\textbf{Fourier} & \textbf{9} & \textbf{46.3\%} & \textbf{0.15} \\
+SAM         &  1 &  5.3\% & 0.20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Key finding.}
+Fourier features exhibit nearly equal importance to DINO embeddings
+(46.3\% vs.\ 48.4\%) for predicting sample difficulty, despite being assigned
+only 15\% weight in the clustering step and having far fewer dimensions
+(9~vs.~32).  This disproportionate importance indicates that frequency-domain
+information captures a complementary axis of variation that DINO's semantic
+features do not encode.  Per-dimension, Fourier features are
+$\frac{46.3/9}{48.4/32} \approx 3.4\times$ more informative than DINO
+features.
+
+The high importance can be interpreted through the lens of spectral bias:
+images that are ``difficult'' for DETR (high EL2N) often contain unusual
+frequency content --- either very high-frequency detail (sharp tool edges
+against smooth tissue) or atypical low-frequency patterns (out-of-focus
+frames) --- both of which are well-captured by the Fourier feature vector.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Distribution Preservation Analysis}
+\label{sec:distribution}
+
+A critical requirement for any dataset selection method is that the selected
+subset preserves the statistical properties of the original pool.  We verify
+this for Fourier features using the two-sample Kolmogorov--Smirnov (KS) test.
+
+Let $F_{\mathcal{D}}(x)$ and $F_{\mathcal{S}}(x)$ denote the empirical CDFs
+of a Fourier metric over the full pool $\mathcal{D}$ ($N = 90{,}389$) and the
+selected subset $\mathcal{S}$ ($|\mathcal{S}| = 20{,}000$), respectively.  The
+KS statistic is:
+
+\begin{equation}
+    D = \sup_x |F_{\mathcal{D}}(x) - F_{\mathcal{S}}(x)|
+\end{equation}
+
+The null hypothesis $H_0$: both samples are drawn from the same distribution.
+We reject $H_0$ at significance level $\alpha = 0.05$ if the $p$-value
+$< 0.05$.
+
+\begin{table}[h]
+\centering
+\caption{Kolmogorov--Smirnov test comparing Fourier feature distributions
+         between the full pool ($N=90{,}389$) and the selected subset
+         ($|\mathcal{S}|=20{,}000$, 22.1\% of pool).}
+\label{tab:ks_test}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Metric} &
+    $\mu_{\mathcal{D}}$ & $\mu_{\mathcal{S}}$ &
+    $\Delta\mu$ &
+    $D_{\text{KS}}$ & $p$-value & \textbf{Preserved?} \\
+\midrule
+Low band energy   & 0.0525 & 0.0524 & 0.0001 & 0.0064 & 0.506 & \checkmark \\
+Mid band energy   & 0.5704 & 0.5706 & 0.0002 & --     & 0.820 & \checkmark \\
+High band energy  & 0.3769 & 0.3770 & 0.0001 & --     & 0.928 & \checkmark \\
+Spectral entropy  & 0.9894 & 0.9895 & 0.0001 & --     & 0.410 & \checkmark \\
+Frequency centroid& 0.4415 & 0.4416 & 0.0001 & --     & 0.356 & \checkmark \\
+High/Low ratio    & 8.468  & 8.471  & 0.003  & --     & 0.991 & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All $p$-values exceed 0.05 (Table~\ref{tab:ks_test}), confirming that the
+selection procedure preserves the Fourier feature distribution.  This is a
+non-trivial result: despite reducing the dataset to 22.1\% of its original
+size (a $4.5\times$ compression), the spectral characteristics of the selected
+subset are statistically indistinguishable from the full pool.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Spectral Diversity in the Selected Dataset}
+\label{sec:spectral_diversity}
+
+The selected dataset exhibits substantial spectral diversity, as evidenced by
+the high-to-low frequency ratio $R_{\text{HL}}$ (Eq.~\ref{eq:hl_ratio}):
+
+\begin{table}[h]
+\centering
+\caption{High-to-low frequency ratio ($R_{\text{HL}}$) statistics
+         in the selected dataset ($|\mathcal{S}|=20{,}000$).}
+\label{tab:hl_ratio}
+\begin{tabular}{lccccc}
+\toprule
+& $\min$ & $\mu$ & $\tilde{x}$ (median) & $\sigma$ & $\max$ \\
+\midrule
+$R_{\text{HL}}$ & 4.79 & 8.47 & 6.91 & 5.35 & 28.79 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The coefficient of variation $\text{CV} = \sigma / \mu = 63.2\%$ indicates
+high dispersion, confirming that the selection retains both
+frequency-dominated ($R_{\text{HL}} = 28.8$, sharp instrument edges) and
+smoothness-dominated ($R_{\text{HL}} = 4.8$, blurred/out-of-focus) samples.
+
+Table~\ref{tab:extremes} contrasts the spectral characteristics of the two
+extremes.
+
+\begin{table}[h]
+\centering
+\caption{Spectral comparison of extreme samples in the selected dataset.}
+\label{tab:extremes}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Metric} &
+    \textbf{Lowest $R_{\text{HL}}$} &
+    \textbf{Highest $R_{\text{HL}}$} \\
+\midrule
+$R_{\text{HL}}$             & 4.79  & 28.79  \\
+$\hat{E}_{\text{low}}$      & 0.072 & 0.019  \\
+$\hat{E}_{\text{mid}}$      & 0.582 & 0.439  \\
+$\hat{E}_{\text{high}}$     & 0.346 & 0.542  \\
+$\hat{H}_{\text{spec}}$     & 0.984 & 0.999  \\
+$f_c$                       & 0.416 & 0.533  \\
+Anisotropy index            & 1.353 & 1.440  \\
+\midrule
+\textbf{Interpretation}     &
+    Smooth, low-detail &
+    Sharp, fine-grained \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% -----------------------------------------------------------------------------
+\subsection{Theoretical Analysis: Why Fourier Features Complement DINO}
+\label{sec:complementarity}
+
+DINO features and Fourier features capture fundamentally different aspects of
+image content.  To formalize this, consider the information-theoretic
+decomposition of image variability.
+
+Let $\mathbf{z} \in \mathbb{R}^{1024}$ denote the DINO CLS token and
+$\mathbf{f} \in \mathbb{R}^9$ the Fourier feature vector.  The mutual
+information between the two representations is:
+
+\begin{equation}
+    I(\mathbf{z}; \mathbf{f}) = H(\mathbf{z}) + H(\mathbf{f})
+                               - H(\mathbf{z}, \mathbf{f})
+\end{equation}
+
+DINO captures \emph{semantic content} --- ``what objects are present and where''
+--- through self-supervised learning on natural images.  Fourier features
+capture \emph{textural statistics} --- ``how sharp, how uniform, how
+directional is the frequency content.''
+
+These axes are largely orthogonal:
+
+\begin{itemize}
+    \item Two images showing the same surgical tool (similar DINO
+          $\mathbf{z}$) may differ dramatically in frequency content due to
+          focus, illumination, or tissue background (different
+          $\mathbf{f}$).
+    \item Two images with similar frequency profiles (similar $\mathbf{f}$)
+          may depict completely different instruments or anatomical views
+          (different $\mathbf{z}$).
+\end{itemize}
+
+This complementarity is quantified by the Random Forest analysis
+(Section~\ref{sec:feature_importance}): the near-equal importance
+(48.4\% DINO, 46.3\% Fourier) indicates that each captures approximately
+half of the predictive information about sample difficulty, with minimal
+redundancy between them.
+
+\paragraph{Formal coverage guarantee.}
+In the weighted $k$-means formulation, the Fourier contribution to the
+Euclidean distance is:
+
+\begin{equation}
+    d_{\text{four}}^2(i,j) = \alpha_{\text{four}}^2
+    \sum_{k=1}^{9} \bigl(\hat{x}_{i,k}^{\text{four}}
+                        - \hat{x}_{j,k}^{\text{four}}\bigr)^2
+\end{equation}
+
+Images with distinct spectral signatures ($d_{\text{four}}^2 \gg 0$)
+are forced into separate clusters, even if their DINO features are similar.
+This prevents the selection of a spectrally homogeneous subset that would
+exacerbate spectral bias during training.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Impact on DETR Training: Mechanism of Action}
+\label{sec:training_impact}
+
+The inclusion of Fourier features in dataset selection improves DETR training
+through three mechanisms:
+
+\paragraph{1. Spectral coverage.}
+By selecting samples that span the full $R_{\text{HL}}$ range
+($4.79$--$28.79$, Table~\ref{tab:hl_ratio}), the training set exposes DETR to
+both low-frequency (smooth tissue backgrounds) and high-frequency (sharp tool
+edges, specular reflections) content.  This directly counteracts the spectral
+bias documented in~\cite{rahaman2019spectral}, improving the network's ability
+to learn fine-grained boundary details.
+
+\paragraph{2. Redundancy elimination.}
+The Fourier similarity pre-filtering (Stage~1, $\tau_{\text{sim}} = 0.7$)
+removes 10--20\% of near-duplicate frames from surgical video sequences, which
+would otherwise bias training toward overrepresented viewing conditions.  Let
+$\mathcal{D}' \subset \mathcal{D}$ be the filtered pool.  The effective
+dataset entropy increases:
+
+\begin{equation}
+    H(\mathcal{D}') > H(\mathcal{D})
+    \quad \text{per-sample, since}
+    \quad |\mathcal{D}'| < |\mathcal{D}|
+    \text{ with redundancy removed}
+\end{equation}
+
+\paragraph{3. Difficulty-aware spectral balancing.}
+The high correlation between Fourier features and EL2N difficulty
+(importance 46.3\%, Section~\ref{sec:feature_importance}) indicates that
+frequency content is a strong predictor of sample difficulty for DETR.
+Difficult samples --- those with unusual spectral signatures --- are naturally
+prioritized in the selection because they occupy distinct regions of the
+Fourier feature space, forming their own clusters.
+
+
+% -----------------------------------------------------------------------------
+\subsection{Connection to Related Work}
+\label{sec:fourier_related}
+
+Our use of Fourier features for dataset curation builds on three lines of
+research:
+
+\begin{enumerate}
+    \item \textbf{Spectral bias in neural networks}~\cite{rahaman2019spectral,
+          tancik2020fourier}: Standard networks learn low-frequency components
+          first; a frequency-balanced training set mitigates this inherent
+          limitation.
+
+    \item \textbf{Fourier-domain analysis for image quality}~\cite{
+          dzanic2020fourier}: Deep-network-generated images systematically
+          underrepresent high-frequency modes; training on
+          frequency-diverse data produces more spectrally faithful outputs.
+
+    \item \textbf{Coreset selection with coverage
+          guarantees}~\cite{blindcs2025, infomax2025}: Modern coreset methods
+          emphasize that coverage of the feature-space distribution is as
+          important as selecting difficult examples.  Fourier features provide
+          a complementary coverage axis to semantic (DINO) features.
+\end{enumerate}
+
+
+% =============================================================================
+% BIBLIOGRAPHY ENTRIES (add to main .bib file)
+% =============================================================================
+%
+% @inproceedings{rahaman2019spectral,
+%   title={On the Spectral Bias of Neural Networks},
+%   author={Rahaman, Nasim and others},
+%   booktitle={ICML},
+%   year={2019}
+% }
+%
+% @inproceedings{tancik2020fourier,
+%   title={Fourier Features Let Networks Learn High Frequency Functions
+%          in Low Dimensional Domains},
+%   author={Tancik, Matthew and others},
+%   booktitle={NeurIPS},
+%   year={2020}
+% }
+%
+% @inproceedings{dzanic2020fourier,
+%   title={Fourier Spectrum Discrepancies in Deep Network Generated Images},
+%   author={Dzanic, Tarik and Shah, Karan and Witherden, Freddie},
+%   booktitle={NeurIPS},
+%   year={2020}
+% }
+%
+% @article{breiman2001random,
+%   title={Random Forests},
+%   author={Breiman, Leo},
+%   journal={Machine Learning},
+%   volume={45},
+%   pages={5--32},
+%   year={2001}
+% }
+%
+% @inproceedings{paul2021deep,
+%   title={Deep Learning on a Data Diet: Finding Important Examples
+%          Early in Training},
+%   author={Paul, Mansheej and Ganguli, Surya and Dziugaite, Gintare Karolina},
+%   booktitle={NeurIPS},
+%   year={2021}
+% }
+%
+% @inproceedings{blindcs2025,
+%   title={Blind Coreset Selection: Efficient Pruning for Unlabeled Data},
+%   booktitle={ICLR},
+%   year={2025}
+% }
+%
+% @inproceedings{infomax2025,
+%   title={InfoMax Coreset Selection},
+%   booktitle={ICLR},
+%   year={2025}
+% }

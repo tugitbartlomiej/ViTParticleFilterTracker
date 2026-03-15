@@ -1,0 +1,798 @@
+% =============================================================================
+% Badania: Obciążenie spektralne, cechy częstotliwościowe i kuracja datasetu
+% dla detekcji narzędzi chirurgicznych oparte na DETR
+% =============================================================================
+% Samodzielna sekcja do artykułu IEEE ACCESS
+% Kompilacja: \usepackage{amsmath,amssymb,booktabs,multirow,graphicx}
+% =============================================================================
+
+\section{Perspektywa częstotliwościowa w kuracji zbiorów danych}
+\label{sec:fourier_research}
+
+Kompozycja danych treningowych w sposób fundamentalny determinuje, czego sieć
+neuronowa jest w stanie się nauczyć.  W niniejszej sekcji przedstawiamy
+teoretyczne i empiryczne uzasadnienie włączenia cech z dziedziny Fouriera do
+pipeline'u selekcji zbiorów danych.  Opieramy się na trzech zbieżnych nurtach
+badawczych: (i)~obciążeniu spektralnym sieci neuronowych, (ii)~ulepszeniach
+częstotliwościowych we współczesnych architekturach DETR oraz
+(iii)~selekcji coresetów zorientowanej na pokrycie.
+
+
+% =============================================================================
+\subsection{Obciążenie spektralne w głębokich sieciach neuronowych}
+\label{sec:spectral_bias_theory}
+
+\subsubsection{Zasada częstotliwościowa}
+
+Rahaman i~wsp.~\cite{rahaman2019spectral} wykazali, ze głębokie sieci z
+aktywacja ReLU wykazują systematyczne \emph{obciążenie spektralne} (ang.\
+\emph{spectral bias}): składowe niskoczęstotliwościowe funkcji docelowej są
+uczone jako pierwsze, podczas gdy składowe wysokoczęstotliwościowe zbiegaja
+o rzędy wielkości wolniej.  Zjawisko to, znane również jako \emph{zasada
+częstotliwościowa} (ang.\ \emph{frequency principle}, F-Principle), zostalo
+sformalizowane za pomoca jądra neuronowego stycznego (Neural Tangent Kernel,
+NTK)~\cite{jacot2018ntk}.
+
+Niech $f_{\boldsymbol{\theta}}: \mathbb{R}^d \to \mathbb{R}$ oznacza sieć
+o~parametrach $\boldsymbol{\theta}$, trenowana na danych
+$\{(\mathbf{x}_i, y_i)\}_{i=1}^N$ metodą gradientu prostego ze współczynnikiem
+uczenia $\eta$.  Jądro NTK definiujemy jako:
+
+\begin{equation}
+    \Theta(\mathbf{x}, \mathbf{x}')
+    = \left\langle
+        \frac{\partial f_{\boldsymbol{\theta}}(\mathbf{x})}
+             {\partial \boldsymbol{\theta}},\;
+        \frac{\partial f_{\boldsymbol{\theta}}(\mathbf{x}')}
+             {\partial \boldsymbol{\theta}}
+      \right\rangle
+\end{equation}
+
+W granicy nieskończonej szerokości jądro $\Theta$ pozostaje stałe podczas
+treningu, a dynamika uczenia staje się liniowa.  Rozklad błędu rezydualnego
+w bazie własnej $\Theta$ daje:
+
+\begin{equation}
+    e_k(t) = e_k(0) \cdot \exp(-\eta \lambda_k t)
+    \label{eq:ntk_convergence}
+\end{equation}
+
+gdzie $\lambda_k$ jest $k$-ta wartością własną, a $e_k(t)$ -- rzutem błędu na
+$k$-ta funkcje własną w kroku treningowym~$t$.  Dla standardowych sieci MLP
+wartości własne zanikają szybko ze wzrostem częstotliwości:
+
+\begin{equation}
+    \lambda_k \propto \|\boldsymbol{\omega}_k\|^{-\beta},
+    \qquad \beta > 0
+    \label{eq:eigenvalue_decay}
+\end{equation}
+
+gdzie $\boldsymbol{\omega}_k$ jest czestotliwoscia powiązaną z~$k$-ta funkcja
+własną.  Zanik ten oznacza, ze składowe błędu na częstotliwości
+$\|\boldsymbol{\omega}\|$ zbiegaja jak
+$\exp(-\eta \|\boldsymbol{\omega}\|^{-\beta} t)$ --- wykładniczo wolniej
+dla wyższych częstotliwości.
+
+\subsubsection{Potwierdzenie empiryczne i strategie mitygacji}
+
+Najnowsze prace zarówno potwierdzily, jak i próbowały złagodzić obciążenie
+spektralne:
+
+\begin{itemize}
+    \item \textbf{Regularyzacja częstotliwościowa}~\cite{freqreg2025}:
+          Analiza empiryczna współczesnych sieci CNN ujawnia, ze regularyzacja
+          L2 tłumi akumulację energii wysokoczęstotliwościowej ponad
+          $3\times$ w porównaniu do modeli bez regularyzacji, działając jako
+          niejawny filtr dolnoprzepustowy na uczone cechy.
+
+    \item \textbf{Wielostopniowe uczenie głębokie}~\cite{mgdl2024}: Adresuje
+          obciążenie spektralne przez kompozycje wielu płytkich sieci
+          neuronowych (SNN), gdzie każdy stopien uchwytuje
+          niskoczęstotliwościowe rezydua poprzedniego stopnia.  Ich złożenia
+          mogą reprezentować funkcje wysokoczęstotliwościowe, które sieci
+          monolityczne nie są w stanie odtworzyć.
+
+    \item \textbf{Mapowanie cech Fouriera}~\cite{tancik2020fourier}:
+          Przepuszczenie wejść przez $\gamma(\mathbf{x}) =
+          [\cos(2\pi\mathbf{B}\mathbf{x}),
+          \sin(2\pi\mathbf{B}\mathbf{x})]$ z losowymi częstotliwościami
+          $\mathbf{B}$ przekształca jądro NTK w jądro stacjonarne z
+          regulowana szerokością pasma, umożliwiając sieciom MLP uczenie
+          funkcji wysokoczęstotliwościowych.
+\end{itemize}
+
+\subsubsection{Implikacje dla danych treningowych}
+
+Obciążenie spektralne ma bezpośrednią konsekwencję dla kompozycji zbioru
+danych.  Szybkość zbieżności na częstotliwości $\boldsymbol{\omega}$ zależy
+nie tylko od wartości własnej NTK $\lambda(\boldsymbol{\omega})$, ale także
+od \emph{energii spektralnej danych treningowych} na tej częstotliwości.
+Rozważmy transformate Fouriera empirycznego rozkładu danych:
+
+\begin{equation}
+    \hat{p}_{\text{data}}(\boldsymbol{\omega})
+    = \frac{1}{N} \sum_{i=1}^{N}
+      \hat{I}_i(\boldsymbol{\omega})
+\end{equation}
+
+Jesli zbior treningowy niedoreprezentuje obrazow o silnej zawartości
+wysokoczęstotliwościowej (tj.\
+$\hat{p}_{\text{data}}(\boldsymbol{\omega}) \approx 0$ dla dużych
+$\|\boldsymbol{\omega}\|$), to nawet z korekcjami NTK sieć otrzymuje
+niewystarczający sygnał gradientu do uczenia się wzorców
+wysokoczęstotliwościowych.  Motywuje to \emph{częstotliwościowo świadomą
+kurację zbiorów danych}: selekcję podzbioru treningowego, który zachowuje
+rozkład spektralny domeny docelowej.
+
+
+% =============================================================================
+\subsection{Dziedzina częstotliwościowa we współczesnych architekturach DETR}
+\label{sec:detr_frequency}
+
+Znaczenie przetwarzania częstotliwościowego dla detekcji obiektów zostalo
+rozpoznane przez falę najnowszych wariantow DETR, które jawnie włączają
+operacje spektralne do swoich architektur.
+Tabela~\ref{tab:freq_detr_variants} podsumowuje te metody.
+
+\begin{table*}[t]
+\centering
+\caption{Najnowsze warianty DETR z modułami wzmocnienia częstotliwościowego
+         (2024--2025).  Wszystkie metody wykazują, ze zachowanie lub wzmocnienie
+         cech wysokoczęstotliwościowych poprawia dokładność detekcji,
+         szczególnie dla małych obiektów.}
+\label{tab:freq_detr_variants}
+\begin{tabular}{llccp{5.5cm}}
+\toprule
+\textbf{Metoda} & \textbf{Publikacja} &
+    \textbf{$\Delta$mAP} & \textbf{Kluczowa metryka} &
+    \textbf{Mechanizm częstotliwościowy} \\
+\midrule
+FDA-DETR~\cite{fda_detr2025}
+    & PMC 2025
+    & +4{,}0\,pp
+    & AP małych obj.
+    & Dekompozycja falkowa 2D (LL/LH/HL/HH) z uczalnymi
+      wagami pasm $(\alpha, \beta, \gamma, \delta)$ \\[4pt]
+DFIR-DETR~\cite{dfir_detr2025}
+    & arXiv 2025
+    & --
+    & 92{,}9\% mAP50
+    & Optymalizacja z ograniczeniami w dziedzinie spektralnej
+      zachowującą składowe granic wysokoczęstotliwościowych \\[4pt]
+Freq-DETR~\cite{freq_detr2025}
+    & Expert Syst.\ 2025
+    & +4{,}9\%
+    & VisDrone mAP
+    & Dwugałęziowe przetwarzanie przestrzenne + częstotliwościowe
+      z modułem FECM \\[4pt]
+FD-RTDETR~\cite{fd_rtdetr2025}
+    & Electronics 2025
+    & +1{,}9\,pp
+    & COCO mAP
+    & Interakcja cech wewnątrz-skalowa oparta na częstotliwości
+      i uwadze (Frequency-Attention) \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsubsection{Dekompozycja falkowa w FDA-DETR}
+
+FDA-DETR~\cite{fda_detr2025} dokonuje dekompozycji map cech za pomoca
+dyskretnej transformaty falkowej 2D:
+
+\begin{equation}
+    \psi_{j,m,n}(x,y) = 2^{j/2}\,\psi(2^j x - m,\; 2^j y - n)
+\end{equation}
+
+co daje cztery pod-pasma na każdej skali: $\mathbf{F}_{\text{LL}}$
+(nisko-nisko, struktura globalna), $\mathbf{F}_{\text{LH}}$ (krawędzie
+poziome), $\mathbf{F}_{\text{HL}}$ (krawędzie pionowe) oraz
+$\mathbf{F}_{\text{HH}}$ (detale diagonalne).  Wzmocniona mapa cech:
+
+\begin{equation}
+    \mathbf{F}_{\text{enh}} = \alpha\,\mathbf{F}_{\text{LL}}
+                            + \beta\,\mathbf{F}_{\text{LH}}
+                            + \gamma\,\mathbf{F}_{\text{HL}}
+                            + \delta\,\mathbf{F}_{\text{HH}}
+\end{equation}
+
+gdzie wagi $\alpha, \beta, \gamma, \delta$ są uczone oddzielnie dla każdej
+skali.  Badania ablacyjne pokazują, ze stopniowe dodawanie składowych
+wysokoczęstotliwościowych poprawia AP małych obiektów z~54{,}8\%
+(tylko LL) do 57{,}5\% (wszystkie pod-pasma), co potwierdza, ze
+\textbf{informacja o granicach w wysokich czestotliwosciach jest krytyczna
+dla detekcji małych narzędzi chirurgicznych}.
+
+\subsubsection{Optymalizacja spektralną w DFIR-DETR}
+
+DFIR-DETR~\cite{dfir_detr2025} formalizuje agregacje cech jako optymalizacje
+z ograniczeniami w dziedzinie spektralnej:
+
+\begin{equation}
+    \min_{\mathbf{F}}
+    \|\mathcal{F}[\mathbf{F}] - \mathcal{F}[\mathbf{F}_{\text{target}}]\|^2
+    + \lambda\,\Omega(\mathbf{F})
+\end{equation}
+
+gdzie $\mathcal{F}[\cdot]$ oznacza 2D FFT, a $\Omega$ jest regularyzatorem
+penalizującym utrate składowych wysokoczęstotliwościowych.  Bezpośrednio
+zachowuje to detale granic, które konwolucje przestrzenne stopniowo wygładzają.
+
+\subsubsection{Znaczenie dla kuracji zbiorów danych}
+
+Te innowacje architektoniczne ujawniają fundamentalną właściwość:
+\textbf{jakość detekcji DETR jest ograniczona przez zawartość
+wysokoczęstotliwościowa dostępną w mapach cech}.  Podczas gdy FDA-DETR
+i~DFIR-DETR adresują to na poziomie architektury, ortogonalnym
+i~komplementarnym podejściem jest zapewnienie, ze \emph{same dane treningowe}
+zawierają wystarczającą różnorodność wysokoczęstotliwościowa.  Spektralnie
+zubożone dane treningowe ograniczają cechy, które jakakolwiek architektura
+może wyekstrahować, niezależnie od jej modułów wzmocnienia
+częstotliwościowego.
+
+
+% =============================================================================
+\subsection{Selekcja coresetów zorientowana na pokrycie}
+\label{sec:coreset_coverage}
+
+Selekcja coresetów polega na znalezieniu małego podzbioru
+$\mathcal{S} \subset \mathcal{D}$, który zachowuje właściwości uczenia
+pełnego zbioru danych.  Najnowsze przeglądy i metody~\cite{coreset_survey2025}
+identyfikują dwa komplementarne kryteria selekcji:
+
+\begin{enumerate}
+    \item \textbf{Selekcja oparta na trudności}: Priorytetyzacja próbek,
+          które są trudne dla modelu (wysoka strata, wysoki wynik
+          EL2N~\cite{paul2021deep}).  Sa one najbardziej informatywne dla
+          uczenia granic decyzyjnych.
+
+    \item \textbf{Selekcja oparta na pokryciu}: Zapewnienie, ze wybrany
+          podzbiór obejmuje pełny rozkład rozmaitości danych.  Metody
+          obejmuja $k$-Center Greedy (minimaksowa lokalizacja
+          usług)~\cite{coreset_survey2025}, Herding (dopasowanie
+          momentów)~\cite{welling2009herding} oraz lokalizację usługowa
+          (submodularne pokrycie)~\cite{facility_location}.
+\end{enumerate}
+
+\subsubsection{Luka pokrycia w selekcji czysto semantycznej}
+
+Większość metod coresetowych działa w pojedynczej przestrzeni embeddingowej
+--- typowo w przedostatniej warstwie wytrenowanego klasyfikatora.  Blind
+Coreset Selection~\cite{blindcs2025} używa embeddingów CLIP;
+ELFS~\cite{elfs2025} używa cech z głębokiego klasteringu.  Te
+\emph{semantyczne} embeddingi chwytają ,,co jest na obrazie'', ale są
+w~znacznej mierze niezmiennicze względem statystyk niskopoziomowych, takich
+jak ostrość, poziom szumu czy zawartość częstotliwościowa.
+
+Rozważmy dwie klatki z operacji zacmy pokazujace ten sam czubek
+fakoemulsyfikatora w podobnych pozycjach.  Embedding DINO lub CLIP odwzorowałby
+je na bliskie punkty ($\|\mathbf{z}_a - \mathbf{z}_b\| \approx 0$), jednak
+jedna może być w ostrej fokusie z wysokim $R_{\text{HL}}$ (stosunek energii
+wysokich do niskich częstotliwości), a druga rozmyta z niskim $R_{\text{HL}}$.
+Selekcja czysto semantyczna może odrzucić rozmyty wariant jako ,,redundantny'',
+mimo ze dostarcza on cennego sygnału treningowego do obsługi ramek
+nieostrych podczas inferencji.
+
+\subsubsection{Cechy Fouriera jako komplementarną os pokrycia}
+
+Dodanie cech Fouriera do kryterium selekcji wprowadza \emph{os pokrycia
+w dziedzinie częstotliwościowej}, ortogonalna do pokrycia semantycznego:
+
+\begin{equation}
+    d^2(i,j) = \underbrace{\alpha_{\text{sem}}^2\,
+                \|\hat{\mathbf{x}}_i^{\text{sem}} - \hat{\mathbf{x}}_j^{\text{sem}}\|^2}
+               _{\text{odległość semantyczna (DINO)}}
+             + \underbrace{\alpha_{\text{four}}^2\,
+                \|\hat{\mathbf{x}}_i^{\text{four}} - \hat{\mathbf{x}}_j^{\text{four}}\|^2}
+               _{\text{odległość spektralną (Fourier)}}
+    \label{eq:combined_distance}
+\end{equation}
+
+Zapewnia to, ze obrazy różniące się zawartością częstotliwościowa, ale nie
+semantyczna, są przypisywane do \emph{różnych} klastrów, zapobiegając
+spektralnej jednorodności wybranego podzbioru.
+
+Framework coresetowy InfoMax~\cite{infomax2025} dostarcza teoretycznego
+wsparcia: optymalny coreset maksymalizuje informację wzajemną między
+podzbiorem a pelnym zbiorem danych.  Ponieważ cechy Fouriera chwytają
+informację ortogonalne do cech semantycznych
+(Sekcja~\ref{sec:feature_importance}), ich włączenie scisle zwiększa
+informację wzajemną selekcji, poprawiając trening.
+
+
+% =============================================================================
+\subsection{Analiza częstotliwościowa danych z wideo chirurgicznego}
+\label{sec:surgical_fourier}
+
+Wideo z operacji zacmy prezentuje unikalne charakterystyki spektralne, które
+motywują częstotliwościowo świadomą kurację zbiorów danych.
+
+\subsubsection{Zrodla zmienności częstotliwościowej}
+
+\begin{enumerate}
+    \item \textbf{Krawedzie narzędzi}: Czubki fakoemulsyfikatora, pincety
+          i~injektory IOL tworzą ostre granice na tle miekkiej tkanki,
+          generując silną zawartość wysokoczęstotliwościowa
+          ($R_{\text{HL}} > 15$).
+
+    \item \textbf{Odbicia spekularne}: Mokra powierzchnia rogówki generuje
+          zlokalizowane szczyty wysokoczęstotliwościowe w widmie Fouriera,
+          z~energia skoncentrowana w wąskich pasmach kierunkowych.
+
+    \item \textbf{Tekstura tkanki}: Tęczówka, torebka soczewki i materiał
+          korowy wykazują charakterystyczne tekstury średnioczęstotliwościowe
+          ($0{,}1 \leq r < 0{,}5$), które różnią się w zależności od fazy
+          operacji.
+
+    \item \textbf{Zmienność ostrości}: Fokus mikroskopu zmienia się w trakcie
+          operacji, tworząc ramki od ostrych
+          ($\hat{H}_{\text{spec}} \approx 0{,}999$, wysoka entropia) do
+          rozmytych ($\hat{H}_{\text{spec}} \approx 0{,}984$, niższa
+          entropia).
+
+    \item \textbf{Redundancja temporalna}: Przy 25--30\,kl./s kolejne klatki
+          są niemal identyczne zarówno w dziedzinie przestrzennej, jak
+          i~częstotliwościowej.  Filtrowanie podobienstwa Fouriera
+          ($\tau_{\text{sim}} = 0{,}7$) efektywnie usuwa te
+          prawie-duplikaty przed kosztowną ekstrakcją cech.
+\end{enumerate}
+
+\subsubsection{Empiryczna różnorodność spektralną}
+
+Analiza wybranego zbioru danych ($|\mathcal{S}| = 20\,000$ obrazow) ujawnia
+znaczącą różnorodność spektralną (Tabela~\ref{tab:spectral_stats}).
+
+\begin{table}[h]
+\centering
+\caption{Statystyki spektralne wybranego podzbioru treningowego.
+         Wysoki współczynnik zmienności (CV) $R_{\text{HL}}$ potwierdza
+         zachowanie zarówno ostrych, jak i rozmytych próbek.}
+\label{tab:spectral_stats}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Metryka} & $\min$ & $\mu$ & $\tilde{x}$ & $\sigma$ & $\max$ \\
+\midrule
+$R_{\text{HL}}$
+    & 4{,}79 & 8{,}47 & 6{,}91 & 5{,}35 & 28{,}79 \\
+$\hat{H}_{\text{spec}}$
+    & 0{,}984 & 0{,}989 & -- & -- & 0{,}999 \\
+$f_c$
+    & 0{,}416 & 0{,}442 & -- & -- & 0{,}533 \\
+\bottomrule
+\multicolumn{6}{l}{\small CV($R_{\text{HL}}$) $= \sigma/\mu = 63{,}2\%$} \\
+\end{tabular}
+\end{table}
+
+$6$-krotny zakres $R_{\text{HL}}$ (od~4{,}79 do~28{,}79) obejmuje zarówno
+próbki \emph{zdominowane przez gładkość} (rozmyte klatki, niska
+szczegółowość), jak i próbki \emph{zdominowane przez częstotliwość} (ostre
+krawędzie narzędzi, odbicia spekularne).
+Tabela~\ref{tab:spectral_extremes} zestawia oba ekstrema.
+
+\begin{table}[h]
+\centering
+\caption{Porównanie sygnatur spektralnych: próbki o najnizszym i najwyzszym
+         $R_{\text{HL}}$ w wybranym zbiorze danych.}
+\label{tab:spectral_extremes}
+\begin{tabular}{lcc}
+\toprule
+& \textbf{Niski $R_{\text{HL}}$} & \textbf{Wysoki $R_{\text{HL}}$} \\
+& (gładki, rozmyty) & (ostry, szczegółowy) \\
+\midrule
+$R_{\text{HL}}$             & 4{,}79  & 28{,}79 \\
+$\hat{E}_{\text{low}}$      & 0{,}072 & 0{,}019 \\
+$\hat{E}_{\text{mid}}$      & 0{,}582 & 0{,}439 \\
+$\hat{E}_{\text{high}}$     & 0{,}346 & 0{,}542 \\
+$\hat{H}_{\text{spec}}$     & 0{,}984 & 0{,}999 \\
+$f_c$                       & 0{,}416 & 0{,}533 \\
+Anizotropia                 & 1{,}353 & 1{,}440 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% =============================================================================
+\subsection{Walidacja empiryczna}
+\label{sec:fourier_validation}
+
+\subsubsection{Analiza ważności cech}
+\label{sec:feature_importance}
+
+W celu kwantyfikacji wkładu każdej grupy cech do jakości selekcji zbioru
+danych wytrenowaliśmy regresor Random Forest~\cite{breiman2001random}
+do przewidywania wyników trudności EL2N z pozostalych cech (DINO, Fourier,
+SAM).  Wyniki ważności Giniego (Tabela~\ref{tab:rf_importance}) ujawniają,
+ze cechy Fouriera są niemal równie informatywne jak embeddingi DINO do
+przewidywania trudności próbek.
+
+\begin{table}[h]
+\centering
+\caption{Waznosc cech Random Forest do przewidywania trudności EL2N.
+         Waznosc per-wymiar obliczono jako
+         $\text{Waznosc}_g / d_g$.}
+\label{tab:rf_importance}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Cecha} & $d_g$ & \textbf{Waznosc} &
+    \textbf{Per-wym.} & \textbf{Waga} \\
+\midrule
+DINO (PCA)       & 32 & 48{,}4\% & 1{,}51\% & 0{,}35 \\
+\textbf{Fourier} &  9 & \textbf{46{,}3\%} & \textbf{5{,}14\%} & 0{,}15 \\
+SAM              &  1 &  5{,}3\% & 5{,}30\% & 0{,}20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Kluczowa obserwacja.}
+Cechy Fouriera wykazują $5{,}14 / 1{,}51 = 3{,}4\times$ wyższą ważność
+per-wymiar niż embeddingi DINO.  Ta nieproporcjonalną informatywność wskazuje,
+ze statystyki dziedziny częstotliwościowej chwytają komplementarną os
+zmienności --- taka, której wysokopoziomowe reprezentacje semantyczne DINO
+nie kodują.  Korelacje te można wytłumaczyć mechanizmem obciążenia
+spektralnego: obrazy, które są ,,trudne'' dla DETR (wysoki EL2N), typowo
+zawierają albo (a)~atypową zawartość wysokoczęstotliwościowa (ostre odbicia,
+nietypowe tekstury), albo (b)~atypowe wzorce niskoczęstotliwościowe (brak
+ostroci, zasłonięte narzędzia) --- oba typy są dobrze chwytane przez
+9-wymiarowy wektor Fouriera.
+
+\subsubsection{Zachowanie rozkładu}
+
+Warunkiem koniecznym prawidłowej selekcji zbioru danych jest zachowanie przez
+wybrany podzbiór $\mathcal{S}$ właściwości statystycznych pełnej puli
+$\mathcal{D}$.  Weryfikujemy to za pomoca dwu-próbkowego testu
+Kolmogorowa--Smirnowa~(KS):
+
+\begin{equation}
+    D_{\text{KS}} = \sup_x \bigl|F_{\mathcal{D}}(x) - F_{\mathcal{S}}(x)\bigr|
+\end{equation}
+
+gdzie $F_{\mathcal{D}}$ i $F_{\mathcal{S}}$ są empirycznymi dystrybuantami
+danej metryki nad pulą ($N = 90\,389$) i podzbiorem
+($|\mathcal{S}| = 20\,000$).
+
+\begin{table}[h]
+\centering
+\caption{Test Kolmogorowa--Smirnowa dla zachowania cech Fouriera.
+         Wszystkie wartości $p > 0{,}05$: wybrany podzbiór jest statystycznie
+         nieodróżnialny od pełnej puli w dziedzinie częstotliwościowej pomimo
+         $4{,}5\times$ redukcji rozmiaru.}
+\label{tab:ks_fourier}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Metryka Fouriera} &
+    $\mu_{\mathcal{D}}$ & $\mu_{\mathcal{S}}$ & wartosc $p$ \\
+\midrule
+$\hat{E}_{\text{low}}$      & 0{,}0525 & 0{,}0524 & 0{,}506 \\
+$\hat{E}_{\text{mid}}$      & 0{,}5704 & 0{,}5706 & 0{,}820 \\
+$\hat{E}_{\text{high}}$     & 0{,}3769 & 0{,}3770 & 0{,}928 \\
+$\hat{H}_{\text{spec}}$     & 0{,}9894 & 0{,}9895 & 0{,}410 \\
+$f_c$                       & 0{,}4415 & 0{,}4416 & 0{,}356 \\
+$R_{\text{HL}}$             & 8{,}468  & 8{,}471  & 0{,}991 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Wszystkie wartości $p$ znaczaco przekraczają poziom istotności
+$\alpha = 0{,}05$, potwierdzając, ze procedura selekcji zachowuje wierność
+spektralną pomimo redukcji zbioru danych do 22{,}1\% jego pierwotnego
+rozmiaru.
+
+
+% =============================================================================
+\subsection{Mechanizm dzialania: jak cechy Fouriera poprawiaja trening DETR}
+\label{sec:mechanism}
+
+Integracja cech Fouriera w kryterium selekcji wpływa na trening DETR
+poprzez trzy komplementarne mechanizmy.
+
+\subsubsection{Pokrycie spektralne}
+
+Wybierając próbki obejmujące pełny zakres $R_{\text{HL}}$ (4{,}79--28{,}79),
+zbior treningowy eksponuje DETR zarówno na niskoczęstotliwościowe tla
+(gładką tkanka), jak i na wysokoczęstotliwościowe obiekty pierwszego planu
+(ostre krawędzie narzędzi).  Zgodnie z Równ.~\ref{eq:ntk_convergence},
+szybkość zbieżności dla wysokoczęstotliwościowych składowych błędu wynosi:
+
+\begin{equation}
+    e_{\text{HF}}(t) \propto \exp\!\bigl(-\eta \lambda_{\text{HF}} t\bigr)
+    \cdot \underbrace{\hat{p}_{\text{data}}(\boldsymbol{\omega}_{\text{HF}})}
+          _{\text{energia spektralną danych}}
+\end{equation}
+
+Spektralnie zróżnicowany zbior treningowy zwiększa
+$\hat{p}_{\text{data}}(\boldsymbol{\omega}_{\text{HF}})$, przyspieszając
+zbieznosc cech wysokoczęstotliwościowych krytycznych dla lokalizacji granic.
+Potwierdzają to badania ablacyjne FDA-DETR~\cite{fda_detr2025}: dodanie
+wysokoczęstotliwościowych składowych falkowych (LH, HL, HH) poprawia AP
+małych obiektów o~+2{,}7\,pp, demonstrując bezpośrednią wartosc informacji
+wysokoczęstotliwościowej dla detekcji.
+
+\subsubsection{Eliminacja redundancji}
+
+Wideo chirurgiczne przy 25--30\,kl./s generuje masywną redundancję temporalna.
+Wstepne filtrowanie podobienstwa Fouriera usuwa 10--20\% prawie-duplikatow
+ramek \emph{przed} kosztowną ekstrakcją cech na GPU (DINO, EL2N):
+
+\begin{equation}
+    \text{sim}(i,j) = \frac{1}{1 + \|\hat{\mathbf{x}}_i^{\text{four}}
+                      - \hat{\mathbf{x}}_j^{\text{four}}\|_2}
+\end{equation}
+
+Służy to podwójnemu celowi: (a)~redukcji kosztu obliczeniowego o~10--20\%,
+oraz (b)~zapobieganiu dominacji klasteringu $k$-średnich przez redundantne
+warunki obrazowania, co zmniejszyłoby efektywną różnorodność wybranego
+podzbioru.
+
+\subsubsection{Spektralne balansowanie uwzgledniajace trudność}
+
+Wysoka korelacja między cechami Fouriera a trudnością EL2N (ważność 46{,}3\%,
+Tabela~\ref{tab:rf_importance}) tworzy naturalną synergie: obrazy
+o~nietypowych sygnaturach spektralnych maja tendencję do bycia trudniejszymi
+dla DETR i na odwrot.  W sformułowaniu ważonego $k$-średnich
+(Równ.~\ref{eq:combined_distance}), te spektralnie nietypowe próbki zajmują
+odrębne regiony przestrzeni cech, tworząc własne klastry.  Ponieważ z każdego
+klastra wybierany jest jeden reprezentant, trudne próbki o rzadkich profilach
+spektralnych są naturalnie priorytetyzowane bez jawnego ważenia opartego na
+trudności.
+
+
+% =============================================================================
+\subsection{Powiazania z pracami pokrewnymi}
+\label{sec:fourier_connections}
+
+Tabela~\ref{tab:related_work} pozycjonuje nasze podejście w szerszym
+krajobrazie metod częstotliwościowych dla kuracji danych treningowych
+i detekcji obiektów.
+
+\begin{table*}[t]
+\centering
+\caption{Nasze podejście w kontekście: metody częstotliwościowe dla kuracji
+         zbiorów danych i detekcji obiektów.}
+\label{tab:related_work}
+\begin{tabular}{p{3.2cm}p{2.5cm}p{3cm}p{5.5cm}}
+\toprule
+\textbf{Kategoria} & \textbf{Praca} & \textbf{Publikacja} &
+    \textbf{Relacja do naszego podejścia} \\
+\midrule
+\multicolumn{4}{l}{\textit{Teoria obciążenia spektralnego}} \\
+\quad Zasada częst.
+    & Rahaman i~wsp.
+    & ICML 2019
+    & Motywuje częstotliwościowo zróżnicowane zbiory treningowe
+      do przeciwdzialania wrodzonemu obciążeniu niskoczest. \\[3pt]
+\quad Cechy Fouriera
+    & Tancik i~wsp.
+    & NeurIPS 2020
+    & Mapuje wejscia na baze Fouriera aby dostroisc szerokość pasma
+      NTK; my stosujemy ta sama zasade do \emph{selekcji danych},
+      a nie architektury \\[3pt]
+\quad Regul.\ częst.
+    & Zheng i~wsp.
+    & arXiv 2025
+    & Wykazuje, ze regularyzacja L2 tłumi WCz o~$3\times$; wzmacnia
+      potrzebę danych bogatych w~WCz \\[3pt]
+\midrule
+\multicolumn{4}{l}{\textit{Detekcja wzmocniona częstotliwościowo}} \\
+\quad FDA-DETR
+    & Li i~wsp.
+    & PMC 2025
+    & Wzmocnienie falkowe daje +4{,}0\,pp AP małych obj.;
+      potwierdza, ze WCz to waskie gardlo \\[3pt]
+\quad DFIR-DETR
+    & Wang i~wsp.
+    & arXiv 2025
+    & Optymalizacja spektralną zachowuje granice; my zachowujemy
+      granice \emph{wybierając próbki zróżnicowane w WCz} \\[3pt]
+\midrule
+\multicolumn{4}{l}{\textit{Selekcja coresetów}} \\
+\quad Blind CS
+    & Anonimowi
+    & ICLR 2025
+    & Pokrycie przestrzeni embeddingowej dla danych bez etykiet; my
+      rozszerzamy pokrycie o embeddingi częstotliwościowe \\[3pt]
+\quad Coreset dla OD
+    & Lee i~wsp.
+    & CVPR 2024W
+    & Pierwsza metodą coresetowa dla detekcji obiektów; używa cech
+      specyficznych dla detekcji, ale bez cech częstotliwościowych \\[3pt]
+\quad EL2N / Data Diet
+    & Paul i~wsp.
+    & NeurIPS 2021
+    & Przycinanie oparte na trudności; my łączymy z~pokryciem
+      częstotliwościowym dla zbalansowanej selekcji \\[3pt]
+\midrule
+\multicolumn{4}{l}{\textit{Obrazowanie medyczne i dane chirurgiczne}} \\
+\quad Cataract-1K
+    & Ghamsarian i~wsp.
+    & Nat.\ Sci.\ Data 2024
+    & Największy zbior danych z operacji zacmy (1000 wideo); my
+      rozszerzamy o częstotliwościowo świadomą selekcję podzbiorów \\[3pt]
+\quad Augm.\ Fouriera
+    & Xu i~wsp.
+    & Pattern Recogn.\ 2023
+    & Modyfikacja widma amplitudowego do generalizacji między-domenowej;
+      potwierdza: faza = semantyka, amplituda = statystyki
+      niskopoziomowe \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\paragraph{Nowość naszego podejścia.}
+Podczas gdy przetwarzanie częstotliwościowe bylo badane zarówno na poziomie
+architektury (FDA-DETR, DFIR-DETR), jak i na poziomie augmentacji
+(augmentacja oparta na Fourierze), zastosowanie cech z dziedziny Fouriera
+do \emph{kuracji zbiorów danych} w detekcji obiektów pozostaje niezbadane.
+Nasza praca wypełnia te lukę poprzez:
+\begin{enumerate}
+    \item Ekstrakcję kompaktowej 9-wymiarowej sygnatury Fouriera na obraz,
+          chwytającej różnorodność spektralną, kierunkowość i entropie;
+    \item Użycie tych cech zarówno do filtrowania redundancji, jak i do
+          częstotliwościowo świadomego klasteringu obok cech semantycznych
+          (DINO) i opartych na trudności (EL2N);
+    \item Empiryczne wykazanie, ze cechy Fouriera maja $3{,}4\times$ wyższą
+          ważność per-wymiar niż DINO do przewidywania trudności próbek,
+          podczas gdy wybrany podzbiór zachowuje rozkład spektralny pełnego
+          zbioru danych (test KS, wszystkie $p > 0{,}35$).
+\end{enumerate}
+
+
+% =============================================================================
+% WPISY BIBLIOGRAFICZNE (dodac do glownego pliku .bib)
+% =============================================================================
+%
+% @inproceedings{rahaman2019spectral,
+%   title     = {On the Spectral Bias of Neural Networks},
+%   author    = {Rahaman, Nasim and Barber, Aristide and Klartag, Boris and
+%                Arjovsky, Martin and Bengio, Yoshua},
+%   booktitle = {ICML},
+%   year      = {2019}
+% }
+%
+% @inproceedings{jacot2018ntk,
+%   title     = {Neural Tangent Kernel: Convergence and Generalization
+%                in Neural Networks},
+%   author    = {Jacot, Arthur and Gabriel, Franck and Hongler, Cl{\'e}ment},
+%   booktitle = {NeurIPS},
+%   year      = {2018}
+% }
+%
+% @inproceedings{tancik2020fourier,
+%   title     = {Fourier Features Let Networks Learn High Frequency Functions
+%                in Low Dimensional Domains},
+%   author    = {Tancik, Matthew and Srinivasan, Pratul P. and Mildenhall, Ben
+%                and Fridovich-Keil, Sara and Raghavan, Nithin and
+%                Singhal, Utkarsh and Ramamoorthi, Ravi and Barron, Jonathan T.
+%                and Ng, Ren},
+%   booktitle = {NeurIPS},
+%   year      = {2020}
+% }
+%
+% @article{freqreg2025,
+%   title   = {Frequency Regularization: Unveiling the Spectral Inductive Bias
+%              of Deep Neural Networks},
+%   author  = {Zheng, Yifei i inni},
+%   journal = {arXiv:2512.22192},
+%   year    = {2025}
+% }
+%
+% @inproceedings{mgdl2024,
+%   title     = {Addressing Spectral Bias of Deep Neural Networks by
+%                Multi-Grade Deep Learning},
+%   booktitle = {NeurIPS},
+%   year      = {2024}
+% }
+%
+% @inproceedings{paul2021deep,
+%   title     = {Deep Learning on a Data Diet: Finding Important Examples
+%                Early in Training},
+%   author    = {Paul, Mansheej and Ganguli, Surya and Dziugaite, Gintare K.},
+%   booktitle = {NeurIPS},
+%   year      = {2021}
+% }
+%
+% @article{breiman2001random,
+%   title   = {Random Forests},
+%   author  = {Breiman, Leo},
+%   journal = {Machine Learning},
+%   volume  = {45},
+%   pages   = {5--32},
+%   year    = {2001}
+% }
+%
+% @inproceedings{blindcs2025,
+%   title     = {Blind Coreset Selection: Efficient Pruning for Unlabeled Data},
+%   booktitle = {ICLR},
+%   year      = {2025}
+% }
+%
+% @inproceedings{elfs2025,
+%   title     = {{ELFS}: Label-Free Coreset Selection with Proxy Training
+%                Dynamics},
+%   booktitle = {ICLR},
+%   year      = {2025}
+% }
+%
+% @inproceedings{infomax2025,
+%   title     = {{InfoMax} Coreset Selection},
+%   booktitle = {ICLR},
+%   year      = {2025}
+% }
+%
+% @article{coreset_survey2025,
+%   title   = {A Coreset Selection of Coreset Selection Literature:
+%              Introduction and Recent Advances},
+%   journal = {arXiv:2505.17799},
+%   year    = {2025}
+% }
+%
+% @article{fda_detr2025,
+%   title   = {{FDA-DETR}: A Frequency-Aware {DETR} with Dynamic Query and
+%              Adaptive Multi-Task Optimization for Oriented Small Object
+%              Detection},
+%   author  = {Li, H. i inni},
+%   journal = {PMC},
+%   year    = {2025}
+% }
+%
+% @article{dfir_detr2025,
+%   title   = {{DFIR-DETR}: Frequency Domain Enhancement and Dynamic Feature
+%              Aggregation for Cross-Scene Small Object Detection},
+%   author  = {Wang, Y. i inni},
+%   journal = {arXiv:2512.07078},
+%   year    = {2025}
+% }
+%
+% @article{freq_detr2025,
+%   title   = {{Freq-DETR}: Frequency-Aware Transformer for Real-Time Small
+%              Object Detection in Unmanned Aerial Vehicle Imagery},
+%   journal = {Expert Systems with Applications},
+%   year    = {2025}
+% }
+%
+% @article{fd_rtdetr2025,
+%   title   = {{FD-RTDETR}: Frequency Enhancement and Dynamic Sequence-Feature
+%              Optimization for Object Detection},
+%   journal = {Electronics},
+%   volume  = {14},
+%   number  = {23},
+%   pages   = {4715},
+%   year    = {2025}
+% }
+%
+% @article{cataract1k2024,
+%   title   = {Cataract-1K Dataset for Deep-Learning-Assisted Analysis of
+%              Cataract Surgery Videos},
+%   author  = {Ghamsarian, Negin i inni},
+%   journal = {Nature Scientific Data},
+%   year    = {2024}
+% }
+%
+% @article{fourier_augmentation2023,
+%   title   = {Fourier-Based Augmentation with Applications to Domain
+%              Generalization},
+%   author  = {Xu, Q. i inni},
+%   journal = {Pattern Recognition},
+%   year    = {2023}
+% }
+%
+% @inproceedings{dzanic2020fourier,
+%   title     = {Fourier Spectrum Discrepancies in Deep Network Generated
+%                Images},
+%   author    = {Dzanic, Tarik and Shah, Karan and Witherden, Freddie},
+%   booktitle = {NeurIPS},
+%   year      = {2020}
+% }
+%
+% @inproceedings{coreset_od2024,
+%   title     = {Coreset Selection for Object Detection},
+%   author    = {Lee, Hojun and Kim, Suyoung and Lee, Junhoo},
+%   booktitle = {CVPR Workshop (DDCV)},
+%   year      = {2024}
+% }
+%
+% @inproceedings{welling2009herding,
+%   title     = {Herding Dynamical Weights to Learn},
+%   author    = {Welling, Max},
+%   booktitle = {ICML},
+%   year      = {2009}
+% }

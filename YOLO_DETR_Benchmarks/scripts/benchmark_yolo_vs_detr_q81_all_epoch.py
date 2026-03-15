@@ -11,7 +11,7 @@ TRAINING STRATEGY:
 
 CHECKPOINTS TESTED:
   YOLO Original (100k): 20, 40, 60, 80, 100, 120, 140, 160, 170, 180, 190
-  YOLO 20k Finetune:    180, 190
+  YOLO 20k Finetune:    170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270
   DETR Original (100k): 20, 40, 60, 80, 100, 120, 140, 160, 170
   DETR 20k Finetune:    170, 180, 190, 200, 210, ..., 320, 330
 
@@ -90,11 +90,22 @@ YOLO_ORIGINAL_CHECKPOINTS = {
 }
 
 # YOLO 20k Finetune (from epoch 170, trained on 20k selected images)
-YOLO_20K_PATH = BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/YoloTreningSesnions/20KTreningFrom170epochStart/exp/weights"
+# Old short finetune (default LR)
+YOLO_20K_PATH_OLD = BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/YoloTreningSesnions/20KTreningFrom170epochStart/exp/weights"
+# New extended finetune (lr=0.0001, 330 epochs from ep170)
+YOLO_20K_PATH = BASE_PATH / "Eden/Checkpoints/YOLO_EDEN_TRAIN/YoloTreningSesnions/20KTreningFrom170epochStart/final_ep170_lr0001_weights"
 YOLO_20K_CHECKPOINTS = {
+    170: YOLO_20K_PATH / "epoch170.pt",
     180: YOLO_20K_PATH / "epoch180.pt",
     190: YOLO_20K_PATH / "epoch190.pt",
-    200: YOLO_20K_PATH / "last.pt",  # last.pt is epoch 200
+    200: YOLO_20K_PATH / "epoch200.pt",
+    210: YOLO_20K_PATH / "epoch210.pt",
+    220: YOLO_20K_PATH / "epoch220.pt",
+    230: YOLO_20K_PATH / "epoch230.pt",
+    240: YOLO_20K_PATH / "epoch240.pt",
+    250: YOLO_20K_PATH / "epoch250.pt",
+    260: YOLO_20K_PATH / "epoch260.pt",
+    270: YOLO_20K_PATH / "epoch270.pt",
 }
 
 # DETR Original Training (~100k dataset, epochs 0-170)

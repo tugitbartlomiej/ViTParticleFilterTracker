@@ -1,0 +1,374 @@
+% =============================================================================
+% Feature-Based Dataset Selection Methods — Mathematical Description
+% For IEEE ACCESS article on cataract surgery tool detection
+% =============================================================================
+
+\section{Multi-Feature Dataset Selection}
+\label{sec:dataset_selection}
+
+We propose a multi-feature dataset curation pipeline that selects an optimal
+training subset from a large pool of augmented images.  The pipeline extracts
+four complementary feature groups — visual semantics (DINO), frequency content
+(Fourier), scene complexity (SAM), and sample difficulty (EL2N) — and combines
+them into a unified representation for diversity-aware selection via weighted
+$k$-means clustering.
+
+% -----------------------------------------------------------------------------
+\subsection{Feature Extraction}
+\label{sec:features}
+
+Let $\mathcal{D} = \{I_1, \dots, I_N\}$ denote the image pool of size $N$.
+For each image $I_i$ we compute four feature vectors described below.
+
+% ---- DINO -------------------------------------------------------------------
+\subsubsection{Visual Semantics via DINO}
+\label{sec:dino}
+
+We use a pre-trained DINOv2 ViT-L/16 encoder to extract the CLS token
+representation:
+
+\begin{equation}
+    \mathbf{z}_i^{\text{dino}} = f_{\text{DINO}}(I_i) \in \mathbb{R}^{1024}
+\end{equation}
+
+To reduce dimensionality while retaining most of the variance, we apply
+Principal Component Analysis (PCA).  Let $\mathbf{Z} \in \mathbb{R}^{N \times 1024}$
+be the matrix of all DINO features.  We center the data:
+
+\begin{equation}
+    \bar{\mathbf{Z}} = \mathbf{Z} - \mathbf{1}\boldsymbol{\mu}^{\top},
+    \qquad \boldsymbol{\mu} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{z}_i^{\text{dino}}
+\end{equation}
+
+and compute the eigendecomposition of the covariance matrix
+$\mathbf{C} = \frac{1}{N}\bar{\mathbf{Z}}^{\top}\bar{\mathbf{Z}}$, retaining
+the top $d_{\text{pca}}$ eigenvectors $\mathbf{W} \in \mathbb{R}^{1024 \times d_{\text{pca}}}$:
+
+\begin{equation}
+    \mathbf{x}_i^{\text{dino}} = \bar{\mathbf{z}}_i \, \mathbf{W}
+    \in \mathbb{R}^{d_{\text{pca}}}
+\end{equation}
+
+The explained variance ratio is:
+
+\begin{equation}
+    \rho_{\text{PCA}} = \frac{\sum_{j=1}^{d_{\text{pca}}} \lambda_j}
+                             {\sum_{j=1}^{1024} \lambda_j}
+\end{equation}
+
+where $\lambda_1 \geq \lambda_2 \geq \dots$ are the eigenvalues.  In practice,
+$d_{\text{pca}} = 32$ preserves $\rho_{\text{PCA}} \approx 0.85$.
+
+% ---- Fourier ----------------------------------------------------------------
+\subsubsection{Spectral Content via Fourier Analysis}
+\label{sec:fourier}
+
+Each image is converted to grayscale $I_i^{g} \in \mathbb{R}^{H \times W}$
+and its 2D Discrete Fourier Transform is computed:
+
+\begin{equation}
+    F(u,v) = \sum_{x=0}^{H-1} \sum_{y=0}^{W-1}
+             I_i^{g}(x,y)\, e^{-j2\pi\!\left(\frac{ux}{H}+\frac{vy}{W}\right)}
+\end{equation}
+
+The centered log-magnitude spectrum is:
+
+\begin{equation}
+    M(u,v) = \log\!\bigl(1 + |F(u,v)|\bigr)
+\end{equation}
+
+We define the normalized radial frequency at position $(u,v)$:
+
+\begin{equation}
+    r(u,v) = \frac{\sqrt{(u - H/2)^2 + (v - W/2)^2}}
+                  {\sqrt{(H/2)^2 + (W/2)^2}}
+    \in [0, 1]
+\end{equation}
+
+\paragraph{Band energies.}
+Three frequency bands partition the spectrum:
+
+\begin{equation}
+    E_b = \sum_{\substack{(u,v):\\ f_b^{\min} \leq r(u,v) < f_b^{\max}}}
+          \!\!M(u,v),
+    \qquad
+    \hat{E}_b = \frac{E_b}{\sum_{b'} E_{b'} + \epsilon}
+\end{equation}
+
+with bands low $[0, 0.1)$, mid $[0.1, 0.5)$, and high $[0.5, 1.0]$.
+
+\paragraph{Spectral entropy.}
+Let $p(u,v) = M(u,v) / (\sum M + \epsilon)$ be the normalized magnitude.  The
+spectral entropy measures frequency spread:
+
+\begin{equation}
+    \hat{H}_{\text{spec}} =
+    \frac{-\sum_{u,v} p(u,v)\,\log_2 p(u,v)}{\log_2(H \cdot W)}
+    \in [0, 1]
+\end{equation}
+
+\paragraph{Frequency centroid.}
+
+\begin{equation}
+    f_c = \frac{\sum_{u,v} r(u,v) \cdot M(u,v)}
+               {\sum_{u,v} M(u,v) + \epsilon}
+\end{equation}
+
+\paragraph{Directional energies.}
+Four angular sectors at $\theta \in \{0, \frac{\pi}{4}, \frac{\pi}{2},
+-\frac{\pi}{4}\}$ (each $\pm 45^{\circ}$) yield normalized energies
+$\hat{E}_{\theta}$.
+
+The complete Fourier feature vector is:
+
+\begin{equation}
+    \mathbf{x}_i^{\text{four}} =
+    \bigl[\hat{E}_{\text{low}},\, \hat{E}_{\text{mid}},\, \hat{E}_{\text{high}},\,
+          \hat{H}_{\text{spec}},\, f_c,\,
+          \hat{E}_{0},\, \hat{E}_{\pi/4},\, \hat{E}_{\pi/2},\, \hat{E}_{-\pi/4}
+    \bigr]
+    \in \mathbb{R}^{9}
+\end{equation}
+
+% ---- SAM --------------------------------------------------------------------
+\subsubsection{Scene Complexity via Segmentation}
+\label{sec:sam}
+
+We apply FastSAM~\cite{zhao2023fastsam} to obtain a set of binary masks
+$\{m_k\}_{k=1}^{K_i}$ per image.  Four statistics are computed from masks
+with area $A_k > A_{\min}$ (we use $A_{\min} = 100$\,px):
+
+\begin{align}
+    \bar{A}_{\text{norm}} &= \frac{\text{mean}(A_k)}{H \times W}
+    & \text{(average segment size)} \\[4pt]
+    \sigma_A &= \frac{\text{std}(A_k)}{H \times W}
+    & \text{(size diversity)} \\[4pt]
+    C &= \frac{\min\!\bigl(\sum_k A_k,\; HW\bigr)}{HW}
+    & \text{(coverage ratio)} \\[4pt]
+    \rho_e &= \frac{|\text{Canny}(\{m_k\})|}{HW}
+    & \text{(edge density)}
+\end{align}
+
+These are combined into a scalar complexity score:
+
+\begin{equation}
+    \mathbf{x}_i^{\text{sam}} = \text{clip}\!\Bigl(
+        0.3 \cdot \frac{K_i}{50}
+      + 0.2 \cdot 10\,\sigma_A
+      + 0.2 \cdot 10\,\rho_e
+      + 0.2 \cdot C
+      + 0.1 \cdot (1 - \bar{S}_i),
+    \;0,\;1\Bigr)
+    \in [0, 1]
+\end{equation}
+
+where $\bar{S}_i$ is the mean stability score from the segmentation model.
+
+% ---- EL2N -------------------------------------------------------------------
+\subsubsection{Sample Difficulty via EL2N}
+\label{sec:el2n}
+
+Inspired by the EL2N score of Paul et~al.~\cite{paul2021deep}, we quantify
+sample difficulty using a pre-trained DETR model's prediction uncertainty.
+
+DETR uses $Q=100$ learnable object queries.  We select query $q^{*} = 81$,
+empirically identified as the most responsive to tool-class objects in the
+cataract domain.  Let $\mathbf{l}_{q^*} \in \mathbb{R}^{N_c+1}$ be the logit
+vector for this query, where $N_c$ is the number of object classes and the
+last entry corresponds to ``no object.''  The tool confidence is:
+
+\begin{equation}
+    p_{q^*} = \text{softmax}(\mathbf{l}_{q^*})_{\text{tool}}
+\end{equation}
+
+\paragraph{Confidence difficulty.}
+
+\begin{equation}
+    d_{\text{conf}} =
+    \begin{cases}
+        1 - p_{q^*} & \text{if } p_{q^*} \geq \tau \\
+        1           & \text{otherwise}
+    \end{cases}
+\end{equation}
+
+where $\tau = 0.5$ is the detection confidence threshold.
+
+\paragraph{Entropy difficulty.}
+The normalized entropy of the query's class distribution:
+
+\begin{equation}
+    \hat{H}(q^*) = \frac{-\sum_{c=0}^{N_c} p_{q^*}(c)\,\log p_{q^*}(c)}
+                        {\log(N_c + 1)}
+    \in [0, 1]
+\end{equation}
+
+\paragraph{Combined EL2N score.}
+
+\begin{equation}
+    \mathbf{x}_i^{\text{el2n}} = 0.7 \cdot d_{\text{conf}}
+                                + 0.3 \cdot \hat{H}(q^*)
+    \in [0, 1]
+\end{equation}
+
+Higher values indicate more difficult (uncertain) samples.
+
+% -----------------------------------------------------------------------------
+\subsection{Weighted Feature Fusion}
+\label{sec:fusion}
+
+Each feature group $g \in \{\text{dino}, \text{four}, \text{sam}, \text{el2n}\}$
+is independently standardized to zero mean and unit variance:
+
+\begin{equation}
+    \hat{\mathbf{x}}_{i,g} =
+    \frac{\mathbf{x}_{i,g} - \boldsymbol{\mu}_g}{\boldsymbol{\sigma}_g + \epsilon}
+\end{equation}
+
+\paragraph{Dimension-aware weight balancing.}
+In Euclidean-based clustering, a feature group with $d_g$ dimensions
+naturally contributes proportionally to $d_g$.  To enforce a target weight
+$w_g$ (with $\sum_g w_g = 1$), we scale each group by:
+
+\begin{equation}
+    \alpha_g = \sqrt{\frac{w_g}{d_g}}
+    \label{eq:alpha}
+\end{equation}
+
+so that the expected contribution to the squared Euclidean distance is:
+
+\begin{equation}
+    \text{Contribution}_g
+    = \frac{\alpha_g^2 \cdot d_g}{\sum_{g'} \alpha_{g'}^2 \cdot d_{g'}}
+    = \frac{w_g}{\sum_{g'} w_{g'}}
+    = w_g
+\end{equation}
+
+Table~\ref{tab:features} lists the feature dimensions, target weights, and
+resulting scaling factors.
+
+\begin{table}[h]
+\centering
+\caption{Feature groups with dimensions and weights}
+\label{tab:features}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Feature} & $d_g$ & $w_g$ & $\alpha_g$ & \textbf{Method} \\
+\midrule
+DINO (PCA)  & 32 & 0.35 & 0.105 & DINOv2 ViT-L/16 CLS \\
+Fourier     &  9 & 0.15 & 0.129 & 2D FFT band energies \\
+SAM         &  1 & 0.20 & 0.447 & FastSAM complexity \\
+EL2N        &  1 & 0.30 & 0.548 & DETR Q81 difficulty \\
+\midrule
+\textbf{Total} & \textbf{43} & \textbf{1.00} & -- & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The combined feature vector is:
+
+\begin{equation}
+    \mathbf{x}_i =
+    \bigl[
+        \alpha_{\text{dino}}\,\hat{\mathbf{x}}_{i}^{\text{dino}},\;
+        \alpha_{\text{four}}\,\hat{\mathbf{x}}_{i}^{\text{four}},\;
+        \alpha_{\text{sam}}\,\hat{\mathbf{x}}_{i}^{\text{sam}},\;
+        \alpha_{\text{el2n}}\,\hat{\mathbf{x}}_{i}^{\text{el2n}}
+    \bigr]
+    \in \mathbb{R}^{43}
+\end{equation}
+
+% -----------------------------------------------------------------------------
+\subsection{Diversity-Aware Selection via $k$-Means}
+\label{sec:selection}
+
+Given a target subset size $T$, we partition $\mathcal{D}$ into $K = T$
+clusters by minimizing the $k$-means objective:
+
+\begin{equation}
+    \min_{\{\mathbf{c}_k\},\, \{z_i\}}
+    \sum_{i=1}^{N} \|\mathbf{x}_i - \mathbf{c}_{z_i}\|_2^2,
+    \qquad z_i \in \{1, \dots, K\}
+\end{equation}
+
+where $\mathbf{c}_k = \frac{1}{|\mathcal{C}_k|}\sum_{i \in \mathcal{C}_k} \mathbf{x}_i$
+is the centroid of cluster $\mathcal{C}_k$.  For $N > 10{,}000$, we use
+FAISS GPU $k$-means~\cite{johnson2019faiss} for efficiency.
+
+\paragraph{Representative selection.}
+From each cluster $\mathcal{C}_k$ we select one representative using one of
+three strategies:
+
+\begin{enumerate}
+    \item \textbf{Centroid} --- the sample closest to the cluster center:
+    \begin{equation}
+        i_k^* = \arg\min_{i \in \mathcal{C}_k} \|\mathbf{x}_i - \mathbf{c}_k\|_2
+    \end{equation}
+
+    \item \textbf{Max-EL2N} --- the hardest sample per cluster:
+    \begin{equation}
+        i_k^* = \arg\max_{i \in \mathcal{C}_k} \mathbf{x}_i^{\text{el2n}}
+    \end{equation}
+
+    \item \textbf{Medoid} --- the sample minimizing average intra-cluster distance:
+    \begin{equation}
+        i_k^* = \arg\min_{i \in \mathcal{C}_k}
+                \sum_{j \in \mathcal{C}_k} \|\mathbf{x}_i - \mathbf{x}_j\|_2
+    \end{equation}
+\end{enumerate}
+
+The final selected subset is $\mathcal{S} = \{I_{i_k^*}\}_{k=1}^{K}$
+with $|\mathcal{S}| = T$.
+
+% -----------------------------------------------------------------------------
+\subsection{Pipeline Summary}
+\label{sec:pipeline_summary}
+
+Algorithm~\ref{alg:pipeline} summarizes the complete selection procedure.
+
+\begin{algorithm}[h]
+\caption{Multi-Feature Dataset Selection}
+\label{alg:pipeline}
+\begin{algorithmic}[1]
+\Require Image pool $\mathcal{D}$, target size $T$, weights $\{w_g\}$,
+         PCA dimension $d_{\text{pca}}$
+\Ensure Selected subset $\mathcal{S} \subset \mathcal{D}$, $|\mathcal{S}| = T$
+
+\State \textbf{Feature Extraction:}
+\For{$I_i \in \mathcal{D}$}
+    \State $\mathbf{z}_i^{\text{dino}} \gets f_{\text{DINO}}(I_i)$
+        \Comment{$\mathbb{R}^{1024}$}
+    \State $\mathbf{x}_i^{\text{four}} \gets f_{\text{Fourier}}(I_i)$
+        \Comment{$\mathbb{R}^{9}$}
+    \State $\mathbf{x}_i^{\text{sam}}  \gets f_{\text{SAM}}(I_i)$
+        \Comment{$\mathbb{R}^{1}$}
+    \State $\mathbf{x}_i^{\text{el2n}} \gets f_{\text{EL2N}}(I_i)$
+        \Comment{$\mathbb{R}^{1}$}
+\EndFor
+
+\State \textbf{Dimensionality Reduction:}
+\State $\mathbf{X}^{\text{dino}} \gets \text{PCA}(\mathbf{Z}^{\text{dino}},\, d_{\text{pca}})$
+    \Comment{$\mathbb{R}^{N \times d_{\text{pca}}}$}
+
+\State \textbf{Normalization \& Weighting:}
+\For{each feature group $g$}
+    \State $\hat{\mathbf{X}}_g \gets (\mathbf{X}_g - \boldsymbol{\mu}_g) / (\boldsymbol{\sigma}_g + \epsilon)$
+        \Comment{z-score}
+    \State $\hat{\mathbf{X}}_g \gets \sqrt{w_g / d_g} \cdot \hat{\mathbf{X}}_g$
+        \Comment{weight balancing}
+\EndFor
+
+\State \textbf{Concatenation:}
+\State $\mathbf{X} \gets [\hat{\mathbf{X}}_{\text{dino}},\, \hat{\mathbf{X}}_{\text{four}},\, \hat{\mathbf{X}}_{\text{sam}},\, \hat{\mathbf{X}}_{\text{el2n}}]$
+    \Comment{$\mathbb{R}^{N \times 43}$}
+
+\State \textbf{Clustering:}
+\State $\{z_i\}_{i=1}^{N} \gets k\text{-means}(\mathbf{X},\, K{=}T)$
+
+\State \textbf{Selection:}
+\For{$k = 1, \dots, K$}
+    \State $i_k^* \gets \arg\min_{i \in \mathcal{C}_k} \|\mathbf{x}_i - \mathbf{c}_k\|_2$
+        \Comment{centroid strategy}
+\EndFor
+\State \Return $\mathcal{S} = \{I_{i_k^*}\}_{k=1}^{K}$
+\end{algorithmic}
+\end{algorithm}

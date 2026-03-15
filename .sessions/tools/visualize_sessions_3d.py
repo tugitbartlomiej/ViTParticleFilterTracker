@@ -217,16 +217,27 @@ def compute_3d_positions(sessions: list[Session], embeddings: np.ndarray) -> Non
         pca = PCA(n_components=2, random_state=42)
         positions_2d = pca.fit_transform(embeddings_normalized)
     else:
-        print("Using t-SNE")
-        perplexity = min(15, len(sessions) - 1) if len(sessions) > 5 else 2
-        tsne = TSNE(n_components=2, perplexity=perplexity, random_state=42)
+        print("Using t-SNE with optimized params")
+        # Higher perplexity = more global structure, better spread
+        perplexity = min(30, max(5, len(sessions) // 2))
+        tsne = TSNE(
+            n_components=2, 
+            perplexity=perplexity,
+            early_exaggeration=12,
+            random_state=42
+        )
         positions_2d = tsne.fit_transform(embeddings_normalized)
 
-    # Normalize to [-1, 1] range
+    # Normalize to [-2, 2] range for better spread
     positions_2d = (positions_2d - positions_2d.min(axis=0)) / (positions_2d.max(axis=0) - positions_2d.min(axis=0) + 1e-8)
-    positions_2d = positions_2d * 2 - 1  # Scale to [-1, 1]
+    positions_2d = positions_2d * 4 - 2  # Scale to [-2, 2]
 
-    # Time as Z axis
+    # Add small jitter to prevent overlapping points
+    np.random.seed(42)
+    jitter = np.random.normal(0, 0.08, positions_2d.shape)
+    positions_2d += jitter
+
+    # Time as Z axis - scale to [0, 3] for more depth
     dates = [s.date.timestamp() for s in sessions]
     min_date, max_date = min(dates), max(dates)
     date_range = max_date - min_date if max_date != min_date else 1
@@ -235,7 +246,7 @@ def compute_3d_positions(sessions: list[Session], embeddings: np.ndarray) -> Non
         session.embedding = embeddings[i]
         session.x = float(positions_2d[i, 0])
         session.y = float(positions_2d[i, 1])
-        session.z = (session.date.timestamp() - min_date) / date_range  # Normalize to [0, 1]
+        session.z = ((session.date.timestamp() - min_date) / date_range) * 3  # Scale to [0, 3]
 
 
 def create_3d_visualization(sessions: list[Session], output_path: Path) -> None:
@@ -279,10 +290,10 @@ def create_3d_visualization(sessions: list[Session], output_path: Path) -> None:
         z=z_vals,
         mode='markers+text',
         marker=dict(
-            size=12,
+            size=14,
             color=colors,
-            opacity=0.8,
-            line=dict(width=1, color='white'),
+            opacity=0.9,
+            line=dict(width=2, color='white'),
             symbol='circle',
         ),
         text=[s.date.strftime('%m/%d') for s in sessions],
@@ -365,9 +376,11 @@ def create_3d_visualization(sessions: list[Session], output_path: Path) -> None:
                 backgroundcolor='rgb(20, 20, 35)',
             ),
             camera=dict(
-                eye=dict(x=1.5, y=1.5, z=1.2),
+                eye=dict(x=1.8, y=1.8, z=1.0),
+                up=dict(x=0, y=0, z=1),
             ),
-            aspectmode='cube',
+            aspectmode='manual',
+            aspectratio=dict(x=1, y=1, z=1.5),
         ),
         paper_bgcolor='rgb(10, 10, 20)',
         plot_bgcolor='rgb(10, 10, 20)',

@@ -359,7 +359,8 @@ class CombinedSelector:
                                fourier_threshold: float = 0.85,
                                oversampling: float = 2.0,
                                keep_hard: bool = True,
-                               use_cache: bool = True) -> Tuple[List[int], List[str], Dict]:
+                               use_cache: bool = True,
+                               progress_callback: Optional[callable] = None) -> Tuple[List[int], List[str], Dict]:
         """
         Run complete selection pipeline.
 
@@ -378,20 +379,30 @@ class CombinedSelector:
         logger.info(f"Starting combined selection: {len(image_paths)} -> {target_size}")
 
         # Extract all features
+        if progress_callback:
+            progress_callback(5, "Extracting features...")
         self.extract_all_features(image_paths, labels, use_cache=use_cache)
 
         # Step 1: Fourier pre-filtering
+        if progress_callback:
+            progress_callback(30, "Fourier pre-filtering...")
         step1_indices, step1_paths = self.step1_fourier_prefilter(threshold=fourier_threshold)
 
         # Step 2: Combine features
+        if progress_callback:
+            progress_callback(50, "Combining features...")
         combined_features = self.step2_combine_features(step1_indices)
 
         # Step 3: k-Center selection
+        if progress_callback:
+            progress_callback(65, "K-Center selection...")
         step3_indices = self.step3_k_center_select(
             combined_features, step1_indices, target_size, oversampling
         )
 
         # Step 4: EL2N ranking
+        if progress_callback:
+            progress_callback(85, "EL2N ranking...")
         final_indices = self.step4_el2n_rank(step3_indices, target_size, keep_hard)
 
         # Get final paths

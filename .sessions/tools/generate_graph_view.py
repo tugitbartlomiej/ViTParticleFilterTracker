@@ -450,13 +450,40 @@ def generate_html(nodes: list, edges: list) -> str:
         }}
     }});
 
-    // Double click to focus
+    // Double click to show only this node and its connections
+    let isFiltered = false;
     network.on('doubleClick', function(params) {{
         if (params.nodes.length > 0) {{
-            network.focus(params.nodes[0], {{
-                scale: 1.5,
-                animation: true
+            const nodeId = params.nodes[0];
+            
+            // Find all connected nodes
+            const connectedEdges = edgesData.filter(e => e.from === nodeId || e.to === nodeId);
+            const connectedNodeIds = new Set([nodeId]);
+            connectedEdges.forEach(e => {{
+                connectedNodeIds.add(e.from);
+                connectedNodeIds.add(e.to);
             }});
+            
+            // Filter to show only connected nodes and edges
+            const filteredNodes = nodesData.filter(n => connectedNodeIds.has(n.id));
+            const filteredEdges = connectedEdges;
+            
+            nodes.clear();
+            edges.clear();
+            nodes.add(filteredNodes);
+            edges.add(filteredEdges);
+            
+            isFiltered = true;
+            network.fit({{ animation: true }});
+            
+            // Update stats
+            document.getElementById('stats').textContent = `Showing: ${{filteredNodes.length}} nodes | ${{filteredEdges.length}} connections (double-click empty space to reset)`;
+        }} else {{
+            // Double click on empty space - reset to show all
+            if (isFiltered) {{
+                showAll();
+                isFiltered = false;
+            }}
         }}
     }});
 
@@ -514,6 +541,11 @@ def generate_html(nodes: list, edges: list) -> str:
         edges.clear();
         nodes.add(nodesData);
         edges.add(edgesData);
+        isFiltered = false;
+        // Reset stats
+        const sessionCount = nodesData.filter(n => n.group === 'session').length;
+        const topicCount = nodesData.filter(n => n.group === 'topic').length;
+        document.getElementById('stats').textContent = `${{sessionCount}} sessions | ${{topicCount}} topics | ${{edgesData.length}} connections`;
     }}
     </script>
 </body>

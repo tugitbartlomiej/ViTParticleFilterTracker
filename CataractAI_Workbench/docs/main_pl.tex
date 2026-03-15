@@ -1,0 +1,80 @@
+% =============================================================================
+% CataractAI: Perspektywa częstotliwościowa w kuracji zbiorów danych
+% Dokumentacja techniczna (Polski)
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% --- Encoding & Language -----------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+
+% --- Mathematics -------------------------------------------------------------
+\usepackage{amsmath,amssymb,amsfonts}
+
+% --- Tables ------------------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+
+% --- Graphics ----------------------------------------------------------------
+\usepackage{graphicx}
+
+% --- Hyperlinks --------------------------------------------------------------
+\usepackage[colorlinks=true,linkcolor=blue!70!black,citecolor=green!50!black,
+            urlcolor=blue!60!black]{hyperref}
+
+% --- Page Layout -------------------------------------------------------------
+\usepackage[margin=2.5cm]{geometry}
+
+% --- Headers -----------------------------------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small CataractAI: Perspektywa częstotliwościowa}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Title -------------------------------------------------------------------
+\title{\textbf{CataractAI: Perspektywa częstotliwościowa\\
+       w kuracji zbiorów danych}\\[0.5em]
+       \large Obciążenie spektralne, cechy częstotliwościowe\\
+       i ich wpływ na trening DETR}
+\author{Bartłomiej Piotrowski\\
+        \small Politechnika Warszawska\\
+        \small Projekt doktorski --- ViTParticleFilterTracker}
+\date{Marzec 2026}
+
+% =============================================================================
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Niniejszy dokument przedstawia teoretyczne i empiryczne uzasadnienie
+włączenia cech z dziedziny Fouriera do pipeline'u selekcji zbiorów danych
+do treningu detektorow narzędzi chirurgicznych opartych na DETR.  Opieramy
+się na trzech zbieżnych nurtach badawczych: (i)~obciążeniu spektralnym sieci
+neuronowych, (ii)~ulepszeniach częstotliwościowych we współczesnych
+architekturach DETR oraz (iii)~selekcji coresetów zorientowanej na pokrycie.
+Walidacja empiryczna wykazuje, ze cechy Fouriera maja $3{,}4\times$ wyższą
+ważność per-wymiar niż embeddingi DINO, a wybrany podzbiór 20\,000 obrazow
+zachowuje rozkład spektralny pełnej puli 90\,389 obrazow (test KS,
+wszystkie $p > 0{,}35$).
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+% Main content
+% =============================================================================
+\input{fourier_research_pl_latex}
+
+% =============================================================================
+% Bibliography
+% =============================================================================
+\newpage
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

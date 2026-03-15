@@ -782,7 +782,8 @@ class ClusterBasedSelector:
                               use_cache: bool = True,
                               normalize: bool = True,
                               dino_pca_dim: Optional[int] = 32,
-                              apply_weights: bool = True) -> Tuple[List[int], List[str], Dict]:
+                              apply_weights: bool = True,
+                              progress_callback: Optional[callable] = None) -> Tuple[List[int], List[str], Dict]:
         """
         Run complete cluster-based selection pipeline.
 
@@ -805,14 +806,20 @@ class ClusterBasedSelector:
 
         # Stage 1: Extract all features
         logger.info("\n[Stage 1] Extracting all features...")
+        if progress_callback:
+            progress_callback(10, "Extracting features...")
         self.extract_all_features(image_paths, use_cache=use_cache)
 
         # Stage 2: Combine features with PCA + weights
         logger.info("\n[Stage 2] Combining features (PCA + balanced weights)...")
+        if progress_callback:
+            progress_callback(50, "Combining features...")
         self.combine_features(normalize=normalize, dino_pca_dim=dino_pca_dim, apply_weights=apply_weights)
 
         # Stage 3: Cluster
         logger.info(f"\n[Stage 3] Clustering into {target_size} clusters...")
+        if progress_callback:
+            progress_callback(70, "Clustering...")
         self.cluster_features(n_clusters=target_size)
 
         # Stage 4: Select representatives

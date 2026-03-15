@@ -1,0 +1,776 @@
+% =============================================================================
+% Research: Spectral Bias, Frequency-Domain Features, and Dataset Curation
+% for DETR-Based Surgical Tool Detection
+% =============================================================================
+% Standalone section for IEEE ACCESS article
+% Compile with: \usepackage{amsmath,amssymb,booktabs,multirow,graphicx}
+% =============================================================================
+
+\section{Frequency-Domain Perspective on Dataset Curation}
+\label{sec:fourier_research}
+
+Training data composition fundamentally shapes what a neural network can
+learn.  In this section, we establish a theoretical and empirical foundation
+for incorporating Fourier-domain features into the dataset selection pipeline.
+We draw on three converging research threads: (i)~the spectral bias of neural
+networks, (ii)~frequency-domain enhancements in modern DETR architectures,
+and (iii)~coverage-oriented coreset selection.
+
+
+% =============================================================================
+\subsection{Spectral Bias in Deep Neural Networks}
+\label{sec:spectral_bias_theory}
+
+\subsubsection{The Frequency Principle}
+
+Rahaman et~al.~\cite{rahaman2019spectral} demonstrated that deep ReLU
+networks exhibit a systematic \emph{spectral bias}: low-frequency components
+of the target function are learned first, while high-frequency components
+converge orders of magnitude more slowly.  This phenomenon, also known as
+the \emph{frequency principle} (F-Principle), has been formalized through
+the lens of the Neural Tangent Kernel (NTK)~\cite{jacot2018ntk}.
+
+Let $f_{\boldsymbol{\theta}}: \mathbb{R}^d \to \mathbb{R}$ be a network with
+parameters $\boldsymbol{\theta}$, trained on data
+$\{(\mathbf{x}_i, y_i)\}_{i=1}^N$ via gradient descent with learning rate
+$\eta$.  The NTK is defined as:
+
+\begin{equation}
+    \Theta(\mathbf{x}, \mathbf{x}')
+    = \left\langle
+        \frac{\partial f_{\boldsymbol{\theta}}(\mathbf{x})}
+             {\partial \boldsymbol{\theta}},\;
+        \frac{\partial f_{\boldsymbol{\theta}}(\mathbf{x}')}
+             {\partial \boldsymbol{\theta}}
+      \right\rangle
+\end{equation}
+
+In the infinite-width limit, $\Theta$ remains constant during training, and the
+training dynamics become linear.  Decomposing the residual error into the
+eigenbasis of $\Theta$:
+
+\begin{equation}
+    e_k(t) = e_k(0) \cdot \exp(-\eta \lambda_k t)
+    \label{eq:ntk_convergence}
+\end{equation}
+
+where $\lambda_k$ is the $k$-th eigenvalue and $e_k(t)$ the projection of the
+error onto the $k$-th eigenfunction at training step~$t$.  For standard MLPs,
+the eigenvalues decay rapidly with frequency:
+
+\begin{equation}
+    \lambda_k \propto \|\boldsymbol{\omega}_k\|^{-\beta},
+    \qquad \beta > 0
+    \label{eq:eigenvalue_decay}
+\end{equation}
+
+where $\boldsymbol{\omega}_k$ is the frequency associated with eigenfunction
+$k$.  This decay means that error components at frequency
+$\|\boldsymbol{\omega}\|$ converge as
+$\exp(-\eta \|\boldsymbol{\omega}\|^{-\beta} t)$ --- exponentially slower for
+higher frequencies.
+
+\subsubsection{Empirical Confirmation and Mitigation Strategies}
+
+Recent work has both confirmed and attempted to address spectral bias:
+
+\begin{itemize}
+    \item \textbf{Frequency Regularization}~\cite{freqreg2025}: Empirical
+          analysis of modern CNNs reveals that L2~regularization suppresses
+          high-frequency energy accumulation by over $3\times$ compared to
+          unregularized baselines, acting as an implicit low-pass filter on
+          the learned features.
+
+    \item \textbf{Multi-Grade Deep Learning}~\cite{mgdl2024}: Addresses
+          spectral bias by composing multiple shallow neural networks (SNNs),
+          where each grade captures low-frequency residuals of the previous
+          grade.  Their compositions can represent high-frequency functions
+          that monolithic networks cannot.
+
+    \item \textbf{Fourier Feature Mapping}~\cite{tancik2020fourier}: Passing
+          inputs through $\gamma(\mathbf{x}) = [\cos(2\pi\mathbf{B}\mathbf{x}),
+          \sin(2\pi\mathbf{B}\mathbf{x})]$ with random frequencies
+          $\mathbf{B}$ transforms the NTK into a stationary kernel with
+          tunable bandwidth, enabling MLPs to learn high-frequency functions.
+\end{itemize}
+
+\subsubsection{Implication for Training Data}
+
+Spectral bias has a direct consequence for dataset composition.
+The convergence rate at frequency $\boldsymbol{\omega}$ depends not only on
+the NTK eigenvalue $\lambda(\boldsymbol{\omega})$ but also on the
+\emph{spectral energy of the training data} at that frequency.  Consider the
+Fourier transform of the empirical data distribution:
+
+\begin{equation}
+    \hat{p}_{\text{data}}(\boldsymbol{\omega})
+    = \frac{1}{N} \sum_{i=1}^{N}
+      \hat{I}_i(\boldsymbol{\omega})
+\end{equation}
+
+If the training set underrepresents images with strong high-frequency content
+(i.e., $\hat{p}_{\text{data}}(\boldsymbol{\omega}) \approx 0$ for large
+$\|\boldsymbol{\omega}\|$), then even with NTK corrections, the network
+receives insufficient gradient signal to learn high-frequency patterns.  This
+motivates \emph{frequency-aware dataset curation}: selecting a training subset
+that preserves the spectral distribution of the deployment domain.
+
+
+% =============================================================================
+\subsection{Frequency Domain in Modern DETR Architectures}
+\label{sec:detr_frequency}
+
+The importance of frequency-domain processing for object detection has been
+recognized by a wave of recent DETR variants that explicitly incorporate
+spectral operations into their architectures.
+Table~\ref{tab:freq_detr_variants} summarizes these methods.
+
+\begin{table*}[t]
+\centering
+\caption{Recent DETR variants with frequency-domain enhancement modules
+         (2024--2025).  All methods demonstrate that preserving or amplifying
+         high-frequency features improves detection accuracy, particularly for
+         small objects.}
+\label{tab:freq_detr_variants}
+\begin{tabular}{llccp{5.5cm}}
+\toprule
+\textbf{Method} & \textbf{Venue} &
+    \textbf{$\Delta$mAP} & \textbf{Key Metric} &
+    \textbf{Frequency Mechanism} \\
+\midrule
+FDA-DETR~\cite{fda_detr2025}
+    & PMC 2025
+    & +4.0\,pp
+    & Small obj.\ AP
+    & 2D wavelet decomposition (LL/LH/HL/HH) with
+      learnable band weights $(\alpha, \beta, \gamma, \delta)$ \\[4pt]
+DFIR-DETR~\cite{dfir_detr2025}
+    & arXiv 2025
+    & --
+    & 92.9\% mAP50
+    & Spectral-domain constrained optimization preserving
+      high-frequency boundary components \\[4pt]
+Freq-DETR~\cite{freq_detr2025}
+    & Expert Syst.\ 2025
+    & +4.9\%
+    & VisDrone mAP
+    & Dual-branch spatial + frequency processing with
+      FECM module \\[4pt]
+FD-RTDETR~\cite{fd_rtdetr2025}
+    & Electronics 2025
+    & +1.9\,pp
+    & COCO mAP
+    & Frequency-Attention Intra-scale Feature Interaction
+      for high/low frequency dual-path enhancement \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsubsection{Wavelet Decomposition in FDA-DETR}
+
+FDA-DETR~\cite{fda_detr2025} decomposes feature maps using the 2D discrete
+wavelet transform:
+
+\begin{equation}
+    \psi_{j,m,n}(x,y) = 2^{j/2}\,\psi(2^j x - m,\; 2^j y - n)
+\end{equation}
+
+producing four sub-bands at each scale: $\mathbf{F}_{\text{LL}}$ (low-low,
+global structure), $\mathbf{F}_{\text{LH}}$ (horizontal edges),
+$\mathbf{F}_{\text{HL}}$ (vertical edges), and $\mathbf{F}_{\text{HH}}$
+(diagonal details).  The enhanced feature map is:
+
+\begin{equation}
+    \mathbf{F}_{\text{enh}} = \alpha\,\mathbf{F}_{\text{LL}}
+                            + \beta\,\mathbf{F}_{\text{LH}}
+                            + \gamma\,\mathbf{F}_{\text{HL}}
+                            + \delta\,\mathbf{F}_{\text{HH}}
+\end{equation}
+
+where the weights $\alpha, \beta, \gamma, \delta$ are learned per-scale.
+Ablation studies show that progressively adding high-frequency components
+improves small object AP from 54.8\% (LL only) to 57.5\% (all sub-bands),
+confirming that \textbf{high-frequency boundary information is critical for
+detecting small surgical instruments}.
+
+\subsubsection{Spectral Optimization in DFIR-DETR}
+
+DFIR-DETR~\cite{dfir_detr2025} formulates feature aggregation as a
+constrained optimization in the spectral domain:
+
+\begin{equation}
+    \min_{\mathbf{F}}
+    \|\mathcal{F}[\mathbf{F}] - \mathcal{F}[\mathbf{F}_{\text{target}}]\|^2
+    + \lambda\,\Omega(\mathbf{F})
+\end{equation}
+
+where $\mathcal{F}[\cdot]$ denotes the 2D FFT and $\Omega$ is a regularizer
+that penalizes loss of high-frequency components.  This directly preserves
+boundary details that spatial convolutions progressively smooth away.
+
+\subsubsection{Relevance to Dataset Curation}
+
+These architectural innovations reveal a fundamental property: \textbf{DETR's
+detection quality is bounded by the high-frequency content available in its
+feature maps}.  While FDA-DETR and DFIR-DETR address this at the architecture
+level, an orthogonal and complementary approach is to ensure that the
+\emph{training data itself} contains sufficient high-frequency diversity.
+A spectrally impoverished training set limits the features that any
+architecture can extract, regardless of its frequency-enhancement modules.
+
+
+% =============================================================================
+\subsection{Coverage-Oriented Coreset Selection}
+\label{sec:coreset_coverage}
+
+Coreset selection aims to find a small subset $\mathcal{S} \subset \mathcal{D}$
+that preserves the learning properties of the full dataset.  Recent surveys
+and methods~\cite{coreset_survey2025} identify two complementary selection
+criteria:
+
+\begin{enumerate}
+    \item \textbf{Difficulty-based selection}: Prioritize samples that are
+          hard for the model (high loss, high EL2N
+          score~\cite{paul2021deep}).  These are the most informative for
+          learning decision boundaries.
+
+    \item \textbf{Coverage-based selection}: Ensure that the selected subset
+          spans the full distribution of the data manifold.  Methods include
+          $k$-Center Greedy (minimax facility
+          location)~\cite{coreset_survey2025}, Herding (moment
+          matching)~\cite{welling2009herding}, and facility location
+          (submodular coverage)~\cite{facility_location}.
+\end{enumerate}
+
+\subsubsection{The Coverage Gap in Semantic-Only Selection}
+
+Most coreset methods operate in a single embedding space --- typically the
+penultimate layer of a pre-trained classifier.  Blind Coreset
+Selection~\cite{blindcs2025} uses CLIP embeddings; ELFS~\cite{elfs2025}
+uses deep clustering features.  These \emph{semantic} embeddings capture
+``what is in the image'' but are largely invariant to low-level statistics
+such as sharpness, noise level, and frequency content.
+
+Consider two cataract surgery frames showing the same phacoemulsification
+tip in similar positions.  A DINO or CLIP embedding would map them to
+nearby points ($\|\mathbf{z}_a - \mathbf{z}_b\| \approx 0$), yet one may
+be in sharp focus with high $R_{\text{HL}}$ (high/low frequency ratio) and
+the other blurred with low $R_{\text{HL}}$.  Semantic-only selection may
+discard the blurred variant as ``redundant,'' even though it provides
+valuable training signal for handling out-of-focus frames during inference.
+
+\subsubsection{Fourier Features as a Complementary Coverage Axis}
+
+Adding Fourier features to the selection criterion introduces a
+\emph{frequency-domain coverage axis} orthogonal to semantic coverage:
+
+\begin{equation}
+    d^2(i,j) = \underbrace{\alpha_{\text{sem}}^2\,
+                \|\hat{\mathbf{x}}_i^{\text{sem}} - \hat{\mathbf{x}}_j^{\text{sem}}\|^2}
+               _{\text{semantic distance (DINO)}}
+             + \underbrace{\alpha_{\text{four}}^2\,
+                \|\hat{\mathbf{x}}_i^{\text{four}} - \hat{\mathbf{x}}_j^{\text{four}}\|^2}
+               _{\text{spectral distance (Fourier)}}
+    \label{eq:combined_distance}
+\end{equation}
+
+This ensures that images differing in frequency content but not in semantic
+content are assigned to \emph{different} clusters, preventing spectral
+homogeneity in the selected subset.
+
+The InfoMax coreset framework~\cite{infomax2025} provides theoretical
+backing: an optimal coreset maximizes the mutual information between the
+subset and the full dataset.  Since Fourier features capture information
+orthogonal to semantic features (Section~\ref{sec:feature_importance}),
+including them strictly increases the mutual information of the selection,
+improving downstream training.
+
+
+% =============================================================================
+\subsection{Fourier-Domain Analysis of Surgical Video Data}
+\label{sec:surgical_fourier}
+
+Cataract surgery videos present unique spectral characteristics that motivate
+frequency-aware dataset curation.
+
+\subsubsection{Sources of Frequency Variation}
+
+\begin{enumerate}
+    \item \textbf{Instrument edges}: Phacoemulsification tips, forceps, and
+          IOL injectors create sharp boundaries against soft tissue,
+          producing strong high-frequency content ($R_{\text{HL}} > 15$).
+
+    \item \textbf{Specular reflections}: The wet corneal surface generates
+          localized high-frequency spikes in the Fourier spectrum, with
+          energy concentrated in narrow directional bands.
+
+    \item \textbf{Tissue texture}: The iris, lens capsule, and cortical
+          material exhibit characteristic mid-frequency textures
+          ($0.1 \leq r < 0.5$) that vary across surgical phases.
+
+    \item \textbf{Focus variation}: Microscope focus changes throughout
+          surgery, creating frames ranging from sharp ($\hat{H}_{\text{spec}}
+          \approx 0.999$, high entropy) to blurred ($\hat{H}_{\text{spec}}
+          \approx 0.984$, lower entropy).
+
+    \item \textbf{Temporal redundancy}: At 25--30\,fps, consecutive frames
+          are nearly identical in both spatial and frequency domains.
+          Fourier similarity filtering ($\tau_{\text{sim}} = 0.7$) efficiently
+          removes these near-duplicates before expensive feature extraction.
+\end{enumerate}
+
+\subsubsection{Empirical Spectral Diversity}
+
+Analysis of our selected dataset ($|\mathcal{S}| = 20{,}000$ images) reveals
+substantial spectral diversity (Table~\ref{tab:spectral_stats}).
+
+\begin{table}[h]
+\centering
+\caption{Spectral statistics of the selected training subset.
+         The high coefficient of variation (CV) in $R_{\text{HL}}$ confirms
+         retention of both sharp and blurred samples.}
+\label{tab:spectral_stats}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Metric} & $\min$ & $\mu$ & $\tilde{x}$ & $\sigma$ & $\max$ \\
+\midrule
+$R_{\text{HL}}$
+    & 4.79 & 8.47 & 6.91 & 5.35 & 28.79 \\
+$\hat{H}_{\text{spec}}$
+    & 0.984 & 0.989 & -- & -- & 0.999 \\
+$f_c$
+    & 0.416 & 0.442 & -- & -- & 0.533 \\
+\bottomrule
+\multicolumn{6}{l}{\small CV($R_{\text{HL}}$) $= \sigma/\mu = 63.2\%$} \\
+\end{tabular}
+\end{table}
+
+The $6\times$ range in $R_{\text{HL}}$ (4.79 to 28.79) spans both
+\emph{smoothness-dominated} samples (blurred frames, low detail) and
+\emph{frequency-dominated} samples (sharp instrument edges, specular
+reflections).  Table~\ref{tab:spectral_extremes} contrasts the two extremes.
+
+\begin{table}[h]
+\centering
+\caption{Spectral signature comparison: lowest vs.\ highest $R_{\text{HL}}$
+         samples in the selected dataset.}
+\label{tab:spectral_extremes}
+\begin{tabular}{lcc}
+\toprule
+& \textbf{Low $R_{\text{HL}}$} & \textbf{High $R_{\text{HL}}$} \\
+& (smooth, blurred) & (sharp, detailed) \\
+\midrule
+$R_{\text{HL}}$             & 4.79  & 28.79 \\
+$\hat{E}_{\text{low}}$      & 0.072 & 0.019 \\
+$\hat{E}_{\text{mid}}$      & 0.582 & 0.439 \\
+$\hat{E}_{\text{high}}$     & 0.346 & 0.542 \\
+$\hat{H}_{\text{spec}}$     & 0.984 & 0.999 \\
+$f_c$                       & 0.416 & 0.533 \\
+Anisotropy                  & 1.353 & 1.440 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% =============================================================================
+\subsection{Empirical Validation}
+\label{sec:fourier_validation}
+
+\subsubsection{Feature Importance Analysis}
+\label{sec:feature_importance}
+
+To quantify the contribution of each feature group to dataset selection
+quality, we trained a Random Forest regressor~\cite{breiman2001random} to
+predict EL2N difficulty scores from the remaining features (DINO, Fourier,
+SAM).  The Gini importance results (Table~\ref{tab:rf_importance}) reveal
+that Fourier features are nearly as informative as DINO embeddings for
+predicting sample difficulty.
+
+\begin{table}[h]
+\centering
+\caption{Random Forest feature importance for predicting EL2N difficulty.
+         Per-dimension importance is computed as
+         $\text{Importance}_g / d_g$.}
+\label{tab:rf_importance}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Feature} & $d_g$ & \textbf{Importance} &
+    \textbf{Per-dim} & \textbf{Weight} \\
+\midrule
+DINO (PCA)       & 32 & 48.4\% & 1.51\% & 0.35 \\
+\textbf{Fourier} &  9 & \textbf{46.3\%} & \textbf{5.14\%} & 0.15 \\
+SAM              &  1 &  5.3\% & 5.30\% & 0.20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Key observation.}
+Fourier features exhibit $5.14 / 1.51 = 3.4\times$ higher per-dimension
+importance than DINO embeddings.  This disproportionate informativeness
+indicates that frequency-domain statistics capture a complementary axis of
+variation --- one that DINO's high-level semantic representations do not
+encode.  The correlation can be explained by the spectral bias mechanism:
+images that are ``difficult'' for DETR (high EL2N) typically contain either
+(a)~atypical high-frequency content (sharp reflections, unusual textures) or
+(b)~atypical low-frequency patterns (out-of-focus, occluded instruments)
+--- both well-captured by the 9-dimensional Fourier vector.
+
+\subsubsection{Distribution Preservation}
+
+A necessary condition for valid dataset selection is that the selected subset
+$\mathcal{S}$ preserves the statistical properties of the full pool
+$\mathcal{D}$.  We verify this using the two-sample
+Kolmogorov--Smirnov~(KS) test:
+
+\begin{equation}
+    D_{\text{KS}} = \sup_x \bigl|F_{\mathcal{D}}(x) - F_{\mathcal{S}}(x)\bigr|
+\end{equation}
+
+where $F_{\mathcal{D}}$ and $F_{\mathcal{S}}$ are the empirical CDFs of a
+given metric over the pool ($N = 90{,}389$) and the subset
+($|\mathcal{S}| = 20{,}000$), respectively.
+
+\begin{table}[h]
+\centering
+\caption{Kolmogorov--Smirnov test for Fourier feature preservation.
+         All $p$-values $> 0.05$: the selected subset is statistically
+         indistinguishable from the full pool in the frequency domain
+         despite a $4.5\times$ size reduction.}
+\label{tab:ks_fourier}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Fourier Metric} &
+    $\mu_{\mathcal{D}}$ & $\mu_{\mathcal{S}}$ & $p$-value \\
+\midrule
+$\hat{E}_{\text{low}}$      & 0.0525 & 0.0524 & 0.506 \\
+$\hat{E}_{\text{mid}}$      & 0.5704 & 0.5706 & 0.820 \\
+$\hat{E}_{\text{high}}$     & 0.3769 & 0.3770 & 0.928 \\
+$\hat{H}_{\text{spec}}$     & 0.9894 & 0.9895 & 0.410 \\
+$f_c$                       & 0.4415 & 0.4416 & 0.356 \\
+$R_{\text{HL}}$             & 8.468  & 8.471  & 0.991 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All $p$-values substantially exceed the $\alpha = 0.05$ significance level,
+confirming that the selection procedure maintains spectral fidelity despite
+reducing the dataset to 22.1\% of its original size.
+
+
+% =============================================================================
+\subsection{Mechanism of Action: How Fourier Features Improve DETR Training}
+\label{sec:mechanism}
+
+Integrating Fourier features into the selection criterion impacts DETR
+training through three complementary mechanisms.
+
+\subsubsection{Spectral Coverage}
+
+By selecting samples spanning the full $R_{\text{HL}}$ range (4.79--28.79),
+the training set exposes DETR to both low-frequency backgrounds (smooth
+tissue) and high-frequency foregrounds (sharp tool edges).  Per
+Eq.~\ref{eq:ntk_convergence}, the convergence rate for high-frequency error
+components is:
+
+\begin{equation}
+    e_{\text{HF}}(t) \propto \exp\!\bigl(-\eta \lambda_{\text{HF}} t\bigr)
+    \cdot \underbrace{\hat{p}_{\text{data}}(\boldsymbol{\omega}_{\text{HF}})}
+          _{\text{data spectral energy}}
+\end{equation}
+
+A spectrally diverse training set increases
+$\hat{p}_{\text{data}}(\boldsymbol{\omega}_{\text{HF}})$, accelerating
+convergence of high-frequency features critical for boundary localization.
+This is corroborated by FDA-DETR's ablation~\cite{fda_detr2025}: adding
+high-frequency wavelet components (LH, HL, HH) improves small object AP by
++2.7\,pp, demonstrating the direct value of high-frequency information for
+detection.
+
+\subsubsection{Redundancy Elimination}
+
+Surgical video at 25--30\,fps generates massive temporal redundancy.
+Fourier similarity pre-filtering removes 10--20\% of near-duplicate frames
+\emph{before} expensive GPU-based feature extraction (DINO, EL2N):
+
+\begin{equation}
+    \text{sim}(i,j) = \frac{1}{1 + \|\hat{\mathbf{x}}_i^{\text{four}}
+                      - \hat{\mathbf{x}}_j^{\text{four}}\|_2}
+\end{equation}
+
+This serves dual purposes: (a)~reducing computational cost by $10$--$20\%$,
+and (b)~preventing the $k$-means clustering from being dominated by
+redundant viewing conditions, which would reduce the effective diversity of
+the selected subset.
+
+\subsubsection{Difficulty-Aware Spectral Balancing}
+
+The high correlation between Fourier features and EL2N difficulty
+(importance 46.3\%, Table~\ref{tab:rf_importance}) creates a natural
+synergy: images with unusual spectral signatures tend to be more difficult
+for DETR, and vice versa.  In the weighted $k$-means formulation
+(Eq.~\ref{eq:combined_distance}), these spectrally unusual samples occupy
+distinct regions of the feature space, forming their own clusters.  Since
+one representative is selected per cluster, difficult samples with rare
+spectral profiles are naturally prioritized without explicit difficulty-based
+weighting.
+
+
+% =============================================================================
+\subsection{Connections to Related Work}
+\label{sec:fourier_connections}
+
+Table~\ref{tab:related_work} positions our approach within the broader
+landscape of frequency-aware methods for training data curation and object
+detection.
+
+\begin{table*}[t]
+\centering
+\caption{Our approach in context: frequency-domain methods for dataset
+         curation and object detection.}
+\label{tab:related_work}
+\begin{tabular}{p{3.2cm}p{2.5cm}p{3cm}p{5.5cm}}
+\toprule
+\textbf{Category} & \textbf{Representative Work} & \textbf{Venue} &
+    \textbf{Relation to Our Approach} \\
+\midrule
+\multicolumn{4}{l}{\textit{Spectral Bias Theory}} \\
+\quad Frequency Principle
+    & Rahaman et~al.
+    & ICML 2019
+    & Motivates frequency-diverse training sets to counteract inherent
+      low-frequency learning bias \\[3pt]
+\quad Fourier Features
+    & Tancik et~al.
+    & NeurIPS 2020
+    & Maps inputs to Fourier basis to tune NTK bandwidth; we apply the
+      same principle to \emph{data selection} rather than architecture \\[3pt]
+\quad Freq.\ Regularization
+    & Zheng et~al.
+    & arXiv 2025
+    & Shows L2 regularization suppresses HF by $3\times$; reinforces
+      need for HF-rich training data \\[3pt]
+\midrule
+\multicolumn{4}{l}{\textit{Frequency-Enhanced Detection}} \\
+\quad FDA-DETR
+    & Li et~al.
+    & PMC 2025
+    & Wavelet enhancement yields +4.0\,pp small obj.\ AP; confirms HF
+      is the bottleneck, addressable via data or architecture \\[3pt]
+\quad DFIR-DETR
+    & Wang et~al.
+    & arXiv 2025
+    & Spectral-domain optimization preserves boundaries; we preserve
+      boundaries by \emph{selecting HF-diverse training samples} \\[3pt]
+\midrule
+\multicolumn{4}{l}{\textit{Coreset Selection}} \\
+\quad Blind CS
+    & Anonymous
+    & ICLR 2025
+    & Embedding-space coverage for unlabeled data; we extend coverage
+      to include frequency-domain embeddings \\[3pt]
+\quad Coreset for OD
+    & Lee et~al.
+    & CVPR 2024W
+    & First coreset method for object detection; uses detection-specific
+      features but not frequency features \\[3pt]
+\quad EL2N / Data Diet
+    & Paul et~al.
+    & NeurIPS 2021
+    & Difficulty-based pruning; we combine with frequency-coverage for
+      a balanced selection \\[3pt]
+\midrule
+\multicolumn{4}{l}{\textit{Medical Imaging \& Surgical Data}} \\
+\quad Cataract-1K
+    & Ghamsarian et~al.
+    & Nat.\ Sci.\ Data 2024
+    & Largest cataract surgery dataset (1000 videos); we extend with
+      frequency-aware subset selection \\[3pt]
+\quad Fourier Augmentation
+    & Xu et~al.
+    & Pattern Recogn.\ 2023
+    & Amplitude-spectrum modification for domain generalization;
+      confirms phase = semantics, amplitude = low-level statistics \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\paragraph{Novelty of our approach.}
+While frequency-domain processing has been explored both at the architecture
+level (FDA-DETR, DFIR-DETR) and at the augmentation level (Fourier-based
+augmentation), applying Fourier-domain features for \emph{dataset curation} in
+object detection remains unexplored.  Our work bridges this gap by:
+\begin{enumerate}
+    \item Extracting a compact 9-dimensional Fourier signature per image that
+          captures spectral diversity, directionality, and entropy;
+    \item Using these features both for redundancy filtering and for
+          frequency-aware clustering alongside semantic (DINO) and
+          difficulty-based (EL2N) features;
+    \item Demonstrating empirically that Fourier features have $3.4\times$
+          higher per-dimension importance than DINO for predicting sample
+          difficulty, while the selected subset preserves the spectral
+          distribution of the full dataset (KS test, all $p > 0.35$).
+\end{enumerate}
+
+
+% =============================================================================
+% BIBLIOGRAPHY ENTRIES
+% =============================================================================
+%
+% @inproceedings{rahaman2019spectral,
+%   title     = {On the Spectral Bias of Neural Networks},
+%   author    = {Rahaman, Nasim and Barber, Aristide and Klartag, Boris and
+%                Arjovsky, Martin and Bengio, Yoshua},
+%   booktitle = {ICML},
+%   year      = {2019}
+% }
+%
+% @inproceedings{jacot2018ntk,
+%   title     = {Neural Tangent Kernel: Convergence and Generalization
+%                in Neural Networks},
+%   author    = {Jacot, Arthur and Gabriel, Franck and Hongler, Cl{\'e}ment},
+%   booktitle = {NeurIPS},
+%   year      = {2018}
+% }
+%
+% @inproceedings{tancik2020fourier,
+%   title     = {Fourier Features Let Networks Learn High Frequency Functions
+%                in Low Dimensional Domains},
+%   author    = {Tancik, Matthew and Srinivasan, Pratul P. and Mildenhall, Ben
+%                and Fridovich-Keil, Sara and Raghavan, Nithin and
+%                Singhal, Utkarsh and Ramamoorthi, Ravi and Barron, Jonathan T.
+%                and Ng, Ren},
+%   booktitle = {NeurIPS},
+%   year      = {2020}
+% }
+%
+% @article{freqreg2025,
+%   title   = {Frequency Regularization: Unveiling the Spectral Inductive Bias
+%              of Deep Neural Networks},
+%   author  = {Zheng, Yifei and others},
+%   journal = {arXiv:2512.22192},
+%   year    = {2025}
+% }
+%
+% @inproceedings{mgdl2024,
+%   title     = {Addressing Spectral Bias of Deep Neural Networks by
+%                Multi-Grade Deep Learning},
+%   author    = {Various},
+%   booktitle = {NeurIPS},
+%   year      = {2024}
+% }
+%
+% @inproceedings{paul2021deep,
+%   title     = {Deep Learning on a Data Diet: Finding Important Examples
+%                Early in Training},
+%   author    = {Paul, Mansheej and Ganguli, Surya and Dziugaite, Gintare K.},
+%   booktitle = {NeurIPS},
+%   year      = {2021}
+% }
+%
+% @article{breiman2001random,
+%   title   = {Random Forests},
+%   author  = {Breiman, Leo},
+%   journal = {Machine Learning},
+%   volume  = {45},
+%   pages   = {5--32},
+%   year    = {2001}
+% }
+%
+% @inproceedings{blindcs2025,
+%   title     = {Blind Coreset Selection: Efficient Pruning for Unlabeled Data},
+%   booktitle = {ICLR},
+%   year      = {2025}
+% }
+%
+% @inproceedings{elfs2025,
+%   title     = {{ELFS}: Label-Free Coreset Selection with Proxy Training
+%                Dynamics},
+%   booktitle = {ICLR},
+%   year      = {2025}
+% }
+%
+% @inproceedings{infomax2025,
+%   title     = {{InfoMax} Coreset Selection},
+%   booktitle = {ICLR},
+%   year      = {2025}
+% }
+%
+% @article{coreset_survey2025,
+%   title   = {A Coreset Selection of Coreset Selection Literature:
+%              Introduction and Recent Advances},
+%   author  = {Various},
+%   journal = {arXiv:2505.17799},
+%   year    = {2025}
+% }
+%
+% @article{fda_detr2025,
+%   title   = {{FDA-DETR}: A Frequency-Aware {DETR} with Dynamic Query and
+%              Adaptive Multi-Task Optimization for Oriented Small Object
+%              Detection},
+%   author  = {Li, H. and others},
+%   journal = {PMC},
+%   year    = {2025}
+% }
+%
+% @article{dfir_detr2025,
+%   title   = {{DFIR-DETR}: Frequency Domain Enhancement and Dynamic Feature
+%              Aggregation for Cross-Scene Small Object Detection},
+%   author  = {Wang, Y. and others},
+%   journal = {arXiv:2512.07078},
+%   year    = {2025}
+% }
+%
+% @article{freq_detr2025,
+%   title   = {{Freq-DETR}: Frequency-Aware Transformer for Real-Time Small
+%              Object Detection in Unmanned Aerial Vehicle Imagery},
+%   journal = {Expert Systems with Applications},
+%   year    = {2025}
+% }
+%
+% @article{fd_rtdetr2025,
+%   title   = {{FD-RTDETR}: Frequency Enhancement and Dynamic Sequence-Feature
+%              Optimization for Object Detection},
+%   journal = {Electronics},
+%   volume  = {14},
+%   number  = {23},
+%   pages   = {4715},
+%   year    = {2025}
+% }
+%
+% @article{cataract1k2024,
+%   title   = {Cataract-1K Dataset for Deep-Learning-Assisted Analysis of
+%              Cataract Surgery Videos},
+%   author  = {Ghamsarian, Negin and others},
+%   journal = {Nature Scientific Data},
+%   year    = {2024}
+% }
+%
+% @article{fourier_augmentation2023,
+%   title   = {Fourier-Based Augmentation with Applications to Domain
+%              Generalization},
+%   author  = {Xu, Q. and others},
+%   journal = {Pattern Recognition},
+%   year    = {2023}
+% }
+%
+% @inproceedings{dzanic2020fourier,
+%   title     = {Fourier Spectrum Discrepancies in Deep Network Generated
+%                Images},
+%   author    = {Dzanic, Tarik and Shah, Karan and Witherden, Freddie},
+%   booktitle = {NeurIPS},
+%   year      = {2020}
+% }
+%
+% @inproceedings{coreset_od2024,
+%   title     = {Coreset Selection for Object Detection},
+%   author    = {Lee, Hojun and Kim, Suyoung and Lee, Junhoo},
+%   booktitle = {CVPR Workshop (DDCV)},
+%   year      = {2024}
+% }
+%
+% @inproceedings{welling2009herding,
+%   title     = {Herding Dynamical Weights to Learn},
+%   author    = {Welling, Max},
+%   booktitle = {ICML},
+%   year      = {2009}
+% }

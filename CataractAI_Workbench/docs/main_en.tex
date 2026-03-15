@@ -1,0 +1,94 @@
+% =============================================================================
+% CataractAI: Multi-Feature Dataset Selection with Frequency-Domain Analysis
+% Comprehensive Technical Documentation (English)
+% =============================================================================
+\documentclass[11pt,a4paper]{article}
+
+% --- Encoding & Language -----------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% --- Mathematics -------------------------------------------------------------
+\usepackage{amsmath,amssymb,amsfonts}
+
+% --- Tables ------------------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+
+% --- Graphics ----------------------------------------------------------------
+\usepackage{graphicx}
+
+% --- Algorithm ---------------------------------------------------------------
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+% --- Hyperlinks --------------------------------------------------------------
+\usepackage[colorlinks=true,linkcolor=blue!70!black,citecolor=green!50!black,
+            urlcolor=blue!60!black]{hyperref}
+
+% --- Page Layout -------------------------------------------------------------
+\usepackage[margin=2.5cm]{geometry}
+
+% --- Headers -----------------------------------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small CataractAI: Multi-Feature Dataset Selection}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Title -------------------------------------------------------------------
+\title{\textbf{CataractAI: Multi-Feature Dataset Selection\\
+       with Frequency-Domain Analysis}\\[0.5em]
+       \large Technical Documentation for DETR-Based\\
+       Surgical Tool Detection}
+\author{Bartlomiej Piotrowski\\
+        \small Warsaw University of Technology\\
+        \small PhD Project --- ViTParticleFilterTracker}
+\date{March 2026}
+
+% =============================================================================
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document provides a comprehensive mathematical description of the
+multi-feature dataset selection pipeline for training DETR-based surgical
+tool detectors.  The pipeline combines four complementary feature groups
+--- visual semantics (DINO), frequency content (Fourier), scene complexity
+(SAM), and sample difficulty (EL2N) --- into a unified 43-dimensional
+representation for diversity-aware selection via weighted $k$-means
+clustering.  We provide theoretical and empirical justification for
+incorporating Fourier-domain features, drawing on spectral bias theory,
+frequency-enhanced DETR architectures, and coverage-oriented coreset
+selection.  Empirical validation demonstrates that Fourier features exhibit
+$3.4\times$ higher per-dimension importance than DINO embeddings, while the
+selected 20,000-image subset preserves the spectral distribution of the
+full 90,389-image pool (KS test, all $p > 0.35$).
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+% PART I: Methods
+% =============================================================================
+\input{feature_methods_latex}
+
+\newpage
+
+% =============================================================================
+% PART II: Frequency-Domain Research
+% =============================================================================
+\input{fourier_research_latex}
+
+% =============================================================================
+% Bibliography
+% =============================================================================
+\newpage
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}
