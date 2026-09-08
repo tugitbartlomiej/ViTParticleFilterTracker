@@ -47,15 +47,15 @@ py -3.11 tools/estimate_time.py --throughput <zmierzone> --gpus 8
 
 ## Część B. Kod do napisania
 
-Kolejność ma znaczenie — `T1`–`T3` są darmowe i rozstrzygają resztę.
+Kolejność ma znaczenie. `T1`–`T3` były darmowe i są już **zamknięte** (2026-09-08).
 
 ### Etap 0 — rozpoznanie (bez GPU)
 
 | # | Zadanie | Wyjście |
 |---|---|---|
 | ~~T1~~ | ~~sprawdzić, czy film = pacjent~~ — **rozstrzygnięte 2026-09-08: jedno nagranie = jeden pacjent, 50 pacjentów, podział 35/8/7 jest podziałem po pacjencie** | nic do napisania |
-| **T2** | `tools/dataset_census.py` — policzyć: klatki źródłowe i augmentowane per split, rozkład liczby augmentacji na klatkę, rekoncyliacja 91 336 vs 91 348, dokładne rozmiary train/val/test | `dataset_census.json` + tabela do artykułu |
-| **T3** | inwentaryzacja Edenu — czy istnieją już gotowe treningi na podziale po filmach (DETR i YOLO), jakie checkpointy, jaki protokół | wpis w `05_OPEN_QUESTIONS.md` |
+| ~~T2~~ | ~~spis danych~~ — **policzone 2026-09-08**: train 71 316 obrazów z 17 832 klatek źródłowych, val 10 780 / 2 695, test 9 240 / 2 310; różnica 91 348 − 91 336 to 12 klatek z trzema wariantami zamiast czterech | wyniki w `05_OPEN` O2/O3 |
+| ~~T3~~ | ~~inwentaryzacja Edenu~~ — **zrobione 2026-09-08** | `07_EDEN_INWENTARZ.md` |
 
 ### Etap 1 — dane i cechy
 

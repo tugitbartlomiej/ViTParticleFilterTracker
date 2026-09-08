@@ -1,7 +1,7 @@
 # 05 — Pytania otwarte i rzeczy do sprawdzenia przed startem
 
-Punkty `O1`–`O3` są **darmowe** (bez GPU) i rozstrzygają kształt reszty planu.
-Robimy je pierwsze.
+Punkty `O1`–`O3` są **zamknięte** (2026-09-08, bez GPU). Otwarte zostają
+`O4`–`O7` — to są decyzje, nie pomiary.
 
 ---
 
@@ -29,35 +29,46 @@ z jednej instytucji** to mała i jednorodna próba. Recenzent 2, zarzut 9,
 wytknął jedną instytucję. Tego nie da się naprawić eksperymentem — tylko
 opisem w sekcji ograniczeń.
 
-**Powiązane, do sprawdzenia na Edenie:** czy istnieją już wytrenowane modele DETR
-i YOLO na tym podziale. Wiem, że jest katalog
-`Yolo\20k_finetune\train_out_scratch_90k_vs\` opisany jako trening video-split
-(job 1729466, wznowiony jako 1733562, sesja 2026-07-12) oraz skrypty
-`Eden/Scripts/Train90kFromScratch_VideoSplit_2026-06-24/`. Jeśli te biegi są
-kompletne, dają **darmowy punkt odniesienia** dla nowego protokołu i nie trzeba
-ich powtarzać.
+**Inwentarz Edenu zrobiony** - pelny wynik w `07_EDEN_INWENTARZ.md`. Skrot:
+są cztery biegi pod tym podziałem (DETR kurowany 20k od zera do ep240, DETR pełny
+trening ep50-90, YOLO pełny trening 190 epok kompletny, wariant jednozapytaniowy
+anulowany na ep6), brakuje YOLO na kurowanym 20k, a ablacja V1-V7 startowała
+z checkpointu ep170 wytrenowanego na losowym podziale klatek.
 
-## O2. Ile jest klatek źródłowych w filmach treningowych? [BLOKUJE BUDŻET B]
+## O2. Klatki źródłowe w treningu — POLICZONE
 
-Cała pula: 22 837 klatek źródłowych, po augmentacji 91 336 (albo 91 348 — patrz
-O3). Filmy treningowe to 35 z 50, więc klatek źródłowych w treningu jest rzędu
-16 tys., ale **dokładna liczba zależy od długości filmów**, nie od ich liczby.
+**Policzone 2026-09-08** z `Eden/EdenBackup/DETR/fullpool_videosplit/annotations_*.json`:
 
-To rozstrzyga, czy baseline `B-RANDSRC` da się zrobić przy budżecie 20 000.
-Jeśli nie — obniżamy budżet poziomu B albo przedefiniowujemy ten baseline.
+| Split | Obrazy | Klatki źródłowe | Wariantów na klatkę |
+|---|---:|---:|---|
+| train (35 pacjentów) | 71 316 | **17 832** | 17 820 × 4, 12 × 3 |
+| val (8 pacjentów) | 10 780 | 2 695 | wszystkie × 4 |
+| test (7 pacjentów) | 9 240 | 2 310 | wszystkie × 4 |
+| **razem** | **91 336** | **22 837** | |
 
-**Do zrobienia:** policzyć z `augmented_coco_*.json` i `video_split.json`.
-Skrypt liczy dwie liczby: klatki źródłowe w treningu, klatki augmentowane
-w treningu.
+**Baseline `B-RANDSRC` jest wykonalny na obu budżetach.** Definicja: losujemy
+N/4 klatek źródłowych i bierzemy wszystkie cztery ich warianty.
 
-## O3. Skąd 91 336, skoro 22 837 × 4 = 91 348?
+- budżet 5 000 → 1 250 klatek źródłowych z 17 832 dostępnych,
+- budżet 20 000 → 5 000 klatek źródłowych z 17 832 dostępnych.
 
-Recenzent 2 znalazł niezgodność dwunastu obrazów. Możliwe wyjaśnienia: część
-klatek nie dostała kompletu trzech augmentacji, część odpadła przy filtrowaniu,
-albo jedna z liczb w artykule jest przepisana z innego etapu.
+Nie trzeba obniżać budżetu poziomu B ani przedefiniowywać baseline'u.
 
-**Do zrobienia:** policzyć rozkład liczby wariantów na klatkę źródłową. To jedno
-zapytanie do pliku anotacji, a odpowiedź musi trafić do artykułu jednym zdaniem.
+## O3. Skąd 91 336, skoro 22 837 × 4 = 91 348? — ROZWIĄZANE
+
+**Różnica to dokładnie 12 obrazów.** Dwanaście klatek źródłowych ma **trzy**
+warianty augmentacji zamiast czterech; pozostałe 22 825 mają po cztery.
+Wszystkie dwanaście leżą w części treningowej.
+
+```
+22 837 x 4 = 91 348
+   minus 12 brakujących wariantów
+         = 91 336
+```
+
+Do artykułu wchodzi jedno zdanie: *„22,837 source frames yield 91,336 augmented
+images; twelve frames produced three variants instead of four."* Recenzent 2,
+zarzut 8, zamknięty.
 
 ## O4. Czy bronimy miary złożoności FastSAM w obecnej postaci?
 

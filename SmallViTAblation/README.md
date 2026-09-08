@@ -33,6 +33,7 @@ konfiguracje stąd.
 | `docs/04_REVIEWER_MAP.md` | mapowanie: zarzut recenzenta → konkretny eksperyment |
 | `docs/05_OPEN_QUESTIONS.md` | co wymaga decyzji albo sprawdzenia w danych |
 | `docs/06_TODO_KOD_I_EDEN.md` | **TODO kodu, uruchamianie na Edenie, szacunek czasu** |
+| `docs/07_EDEN_INWENTARZ.md` | co już policzone na Edenie pod podziałem po pacjencie i co z tego użyć |
 | `configs/protocol.yaml` | jedno źródło prawdy dla hiperparametrów i splitu |
 | `configs/variants.yaml` | maszynowa definicja macierzy |
 | `tools/build_run_manifest.py` | rozwija konfiguracje do listy biegów |
