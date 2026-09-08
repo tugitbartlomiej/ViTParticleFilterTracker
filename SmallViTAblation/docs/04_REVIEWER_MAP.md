@@ -14,7 +14,7 @@ wraca z tym samym zarzutem.
 
 | # | Zarzut | Co go zamyka | Gdzie |
 |---|---|---|---|
-| 1 | losowy podział klatek w danych wideo | podział po filmie/pacjencie, jeden dla wszystkich biegów; weryfikacja, czy film = pacjent | `01_PROTOCOL` P1, `05_OPEN` O1 |
+| 1 | losowy podział klatek w danych wideo | **podział po pacjencie już istnieje** — 50 pacjentów, jedno nagranie na pacjenta, 35/8/7, jeden plik dla wszystkich biegów | `01_PROTOCOL` P1, `05_OPEN` O1 |
 | 2 | jeden seed, brak dowodu powtarzalności | 3 ziarna dla macierzy, 5 dla głównej tabeli, 10 losowań dla baseline'u; średnia ± odchylenie | `01_PROTOCOL` P10 |
 | 3 | wagi i parametry dobrane ręcznie, bez analizy czułości | zestaw `S-*`: perturbacje wag, wymiar PCA, wybór reprezentanta, algorytm pokrycia, współczynniki trudności | `02_MATRIX` §4 |
 | 4 | ablacje trenowane innym protokołem niż pełny pipeline | pełny pipeline jest **wariantem w tej samej macierzy**; stała liczba epok, jedna reguła checkpointu | `01_PROTOCOL` P0, P5, P6 |
@@ -33,7 +33,7 @@ wraca z tym samym zarzutem.
 | # | Zarzut | Co go zamyka | Gdzie |
 |---|---|---|---|
 | 1 | dlaczego akurat te pięć składowych miary złożoności FastSAM | uzasadnienie merytoryczne + `S-*` na tej mierze; jeśli nie da się obronić, uprościć miarę | `02_MATRIX` §4, `05_OPEN` O4 |
-| 2 | test wewnętrzny ma tylko 589 obrazów, brak rozmiaru walidacji, podział po klatkach | podział po filmie daje 7 filmów testowych zamiast losowych klatek; podać wszystkie trzy liczby w tabeli | `01_PROTOCOL` P1, `06_TODO` T2 |
+| 2 | test wewnętrzny ma tylko 589 obrazów, brak rozmiaru walidacji, podział po klatkach | test to **7 pacjentów**, nie losowe klatki; w tabeli podziału podajemy pacjentów i klatki dla wszystkich trzech części | `01_PROTOCOL` P1, `06_TODO` T2 |
 | 3 | YOLOv8 nie reprezentuje rodziny | bieżąca YOLO w rozmiarze zbliżonym parametrami | `02_MATRIX` §6 |
 | 4 | niespójne metryki między tabelami | jeden zestaw metryk wszędzie: mAP@0.5, mAP@[.5:.95], TP/FP/FN, P/R/F1 | `01_PROTOCOL` P8 |
 | 5 | **ablacja niepełna — trzeba wszystkich kombinacji czterech cech** | macierz 15 kombinacji: pojedyncze, pary, trójki, komplet | `02_MATRIX` §2 |

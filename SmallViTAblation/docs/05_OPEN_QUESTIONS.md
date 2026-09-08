@@ -5,20 +5,29 @@ Robimy je pierwsze.
 
 ---
 
-## O1. Czy podział po filmie to podział po pacjencie? [BLOKUJE WSZYSTKO]
+## O1. Podział po filmie = podział po pacjencie — ROZSTRZYGNIĘTE
 
-Mamy gotowy podział po filmach: `Eden/Checkpoints/Ablations/ablation/video_split.json`
-— ziarno 42, **50 filmów**, 35 / 8 / 7.
+**Rozstrzygnięte 2026-09-08 przez autora: jedno nagranie = jeden pacjent.**
 
-Nazwy filmów: `test01`–`test25` i `train01`–`train25`. Recenzent 1 napisał
-„video/procedure or **patient** level". Jeżeli któryś pacjent ma dwa nagrania —
-na przykład operację obu oczu — to podział po filmach **nie jest** podziałem
-po pacjencie i klatki tej samej osoby siedzą po obu stronach.
+Gotowy podział: `Eden/Checkpoints/Ablations/ablation/video_split.json` — ziarno 42,
+**50 filmów, czyli 50 pacjentów**, 35 / 8 / 7. Nazwy `test01`–`test25`
+i `train01`–`train25` to etykiety plików, nie dwa różne zbiory.
 
-**Do zrobienia:** ustalić mapowanie film → pacjent. Jeśli nie ma go w metadanych,
-napisać w artykule wprost, że jeden film odpowiada jednej procedurze, a mapowania
-na pacjenta zbiór nie udostępnia. To jest uczciwa odpowiedź; udawanie, że
-sprawdziliśmy, nie jest.
+Konsekwencje:
+
+- podział po filmie **jest** podziałem po pacjencie, którego zażądał recenzent 1
+  w zarzucie 1 — nie trzeba go przebudowywać,
+- w artykule piszemy wprost: *„patient-level split; one recording corresponds to
+  one patient, 50 patients partitioned 35/8/7"* — jedno zdanie zamyka zarzut,
+- zbiór testowy to **7 pacjentów**, a nie 589 losowych klatek, co odpowiada też
+  na zarzut 2 recenzenta 2 o rozmiarze i konstrukcji testu,
+- w tabeli podziału podajemy **liczbę pacjentów obok liczby klatek** — recenzent
+  patrzy na tę pierwszą.
+
+Zostaje jedno ograniczenie, które trzeba napisać uczciwie: **50 pacjentów
+z jednej instytucji** to mała i jednorodna próba. Recenzent 2, zarzut 9,
+wytknął jedną instytucję. Tego nie da się naprawić eksperymentem — tylko
+opisem w sekcji ograniczeń.
 
 **Powiązane, do sprawdzenia na Edenie:** czy istnieją już wytrenowane modele DETR
 i YOLO na tym podziale. Wiem, że jest katalog

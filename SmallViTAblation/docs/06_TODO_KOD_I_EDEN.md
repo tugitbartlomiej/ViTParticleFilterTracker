@@ -53,7 +53,7 @@ Kolejność ma znaczenie — `T1`–`T3` są darmowe i rozstrzygają resztę.
 
 | # | Zadanie | Wyjście |
 |---|---|---|
-| **T1** | `tools/check_patient_split.py` — sprawdzić, czy film = pacjent; wypisać mapowanie i ostrzec, jeśli któryś pacjent ma dwa nagrania | `patient_split_report.md` |
+| ~~T1~~ | ~~sprawdzić, czy film = pacjent~~ — **rozstrzygnięte 2026-09-08: jedno nagranie = jeden pacjent, 50 pacjentów, podział 35/8/7 jest podziałem po pacjencie** | nic do napisania |
 | **T2** | `tools/dataset_census.py` — policzyć: klatki źródłowe i augmentowane per split, rozkład liczby augmentacji na klatkę, rekoncyliacja 91 336 vs 91 348, dokładne rozmiary train/val/test | `dataset_census.json` + tabela do artykułu |
 | **T3** | inwentaryzacja Edenu — czy istnieją już gotowe treningi na podziale po filmach (DETR i YOLO), jakie checkpointy, jaki protokół | wpis w `05_OPEN_QUESTIONS.md` |
 

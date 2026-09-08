@@ -16,20 +16,22 @@ zarzut 4 recenzenta 1.
 
 ## P1. Podział danych — po pacjencie, nie po klatce
 
-**Istnieje już podział po filmach** i jest zapisany:
+**Istnieje już podział po pacjentach** i jest zapisany:
 `Eden/Checkpoints/Ablations/ablation/video_split.json`
 
-- ziarno 42, **50 filmów**: 35 train / 8 val / 7 test,
+- ziarno 42, **50 nagrań = 50 pacjentów**: 35 train / 8 val / 7 test,
+- **jedno nagranie odpowiada jednemu pacjentowi** (potwierdzone przez autora
+  2026-09-08), więc podział po filmie **jest** podziałem po pacjencie,
 - kopie augmentowane trafiają do tego samego koszyka co ich klatka źródłowa
   (prefiks nazwy pliku `test01_frame_000123.jpg` → stem `test01`),
 - generator: `AdvancedDatasetSelection/ablation/generate_video_split.py`,
 - konsument dla pełnej puli: `Eden/Scripts/Train90kFromScratch_VideoSplit_2026-06-24/prepare_fullpool_videosplit.py`.
 
-**Do sprawdzenia przed startem** (patrz `05_OPEN_QUESTIONS.md`, punkt O1): czy
-jeden film = jeden pacjent. Jeżeli któryś pacjent ma dwa nagrania, podział po
-filmach **nie jest** podziałem po pacjencie i trzeba go przebudować, zanim
-cokolwiek policzymy. Recenzent 1 napisał wprost „video/procedure or patient
-level", więc to musi być rozstrzygnięte i **napisane w artykule jednym zdaniem**.
+Recenzent 1 zarzut 1 żądał „video/procedure or **patient** level". Ten wymóg jest
+spełniony i wchodzi do artykułu jednym zdaniem: *patient-level split, one
+recording per patient, 50 patients partitioned 35/8/7*. W tabeli podziału
+podajemy **liczbę pacjentów obok liczby klatek** — to pierwsza liczba, na którą
+patrzy recenzent.
 
 Ten sam plik splitu obsługuje wszystkie warianty, wszystkie ziarna
 i obie architektury. **Nigdy nie generujemy splitu per wariant.**
