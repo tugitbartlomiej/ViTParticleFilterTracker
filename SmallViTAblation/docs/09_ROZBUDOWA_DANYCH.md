@@ -56,7 +56,12 @@ zgodzić, że narzędzia nie ma — dopiero wtedy klatka wchodzi jako negatyw.
 walidacji ani testu, bo inaczej zmieniasz podstawę porównania ze starymi
 liczbami.
 
-## 3. Gęstsze próbkowanie tych samych nagrań [ŚREDNI ZYSK, WYMAGA ADNOTACJI]
+## 3. Gęstsze próbkowanie tych samych nagrań [ROZWINIĘTE W `10_TSFA_NOWA_PULA.md`]
+
+> **Ten punkt urósł do osobnego dokumentu.** Po sprawdzeniu dysku okazało się,
+> że nagrania mają 943 353 klatki, a zaadnotowano 2,4% z nich, oraz że istnieje
+> gotowe narzędzie do propagacji ramek (TSFA). Szczegóły i zasady:
+> `10_TSFA_NOWA_PULA.md`. Poniżej pierwotny, ostrożniejszy szkic.
 
 Masz **22 837 klatek źródłowych z 50 nagrań**, czyli około 457 klatek na
 operację. Operacja zaćmy trwa kilkanaście minut, więc przy 25 klatkach na
