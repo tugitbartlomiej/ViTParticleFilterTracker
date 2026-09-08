@@ -19,6 +19,7 @@
 
 % --- Graphics ----------------------------------------------------------------
 \usepackage{graphicx}
+\usepackage{xcolor}
 
 % --- Hyperlinks --------------------------------------------------------------
 \usepackage[colorlinks=true,linkcolor=blue!70!black,citecolor=green!50!black,
@@ -52,13 +53,13 @@
 \begin{abstract}
 Niniejszy dokument przedstawia teoretyczne i empiryczne uzasadnienie
 włączenia cech z dziedziny Fouriera do pipeline'u selekcji zbiorów danych
-do treningu detektorow narzędzi chirurgicznych opartych na DETR.  Opieramy
+do treningu detektorów narzędzi chirurgicznych opartych na DETR.  Opieramy
 się na trzech zbieżnych nurtach badawczych: (i)~obciążeniu spektralnym sieci
 neuronowych, (ii)~ulepszeniach częstotliwościowych we współczesnych
 architekturach DETR oraz (iii)~selekcji coresetów zorientowanej na pokrycie.
-Walidacja empiryczna wykazuje, ze cechy Fouriera maja $3{,}4\times$ wyższą
-ważność per-wymiar niż embeddingi DINO, a wybrany podzbiór 20\,000 obrazow
-zachowuje rozkład spektralny pełnej puli 90\,389 obrazow (test KS,
+Walidacja empiryczna wykazuje, że cechy Fouriera mają $3{,}4\times$ wyższą
+ważność per-wymiar niż embeddingi DINO, a wybrany podzbiór 20\,000 obrazów
+zachowuje rozkład spektralny pełnej puli 90\,389 obrazów (test KS,
 wszystkie $p > 0{,}35$).
 \end{abstract}
 
@@ -66,7 +67,12 @@ wszystkie $p > 0{,}35$).
 \newpage
 
 % =============================================================================
-% Main content
+% Step-by-step introduction (simple language)
+% =============================================================================
+\input{fourier_krok_po_kroku}
+
+% =============================================================================
+% Main technical content (formal)
 % =============================================================================
 \input{fourier_research_pl_latex}
 

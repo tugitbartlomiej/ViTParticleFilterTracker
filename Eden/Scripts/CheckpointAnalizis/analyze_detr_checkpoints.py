@@ -246,10 +246,10 @@ def create_visualizations(results, layer_evolution, output_dir):
     # ==========================================
     # Figure 5: Combined Training Summary
     # ==========================================
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
     # Loss
-    ax = axes[0, 0]
+    ax = axes[0]
     ax.plot(loss_x_norm, loss_y_norm, 'b-o', linewidth=2, markersize=8)
     ax.set_xlabel('Normalized Epoch')
     ax.set_ylabel('Normalized Loss')
@@ -257,7 +257,7 @@ def create_visualizations(results, layer_evolution, output_dir):
     ax.grid(True, alpha=0.3)
 
     # Weight Norm
-    ax = axes[0, 1]
+    ax = axes[1]
     ax.plot(weight_x_norm, weight_y_norm, 'r-s', linewidth=2, markersize=8)
     ax.set_xlabel('Normalized Epoch')
     ax.set_ylabel('Normalized Mean Weight Norm')
@@ -265,7 +265,7 @@ def create_visualizations(results, layer_evolution, output_dir):
     ax.grid(True, alpha=0.3)
 
     # Learning Rate (bar chart)
-    ax = axes[1, 0]
+    ax = axes[2]
     lrs_main = [r.get('learning_rates', [0])[0] for r in results]
     lrs_backbone = [r.get('learning_rates', [0, 0])[1] if len(r.get('learning_rates', [])) > 1 else 0 for r in results]
 
@@ -293,38 +293,7 @@ def create_visualizations(results, layer_evolution, output_dir):
     ax.legend()
     ax.grid(True, alpha=0.3)
 
-    # Model Summary (text)
-    ax = axes[1, 1]
-    ax.axis('off')
-
-    summary_text = f"""
-    DETR Training Summary
-    ═══════════════════════════════════
-
-    Checkpoints Analyzed: {len(results)}
-    Epochs: {epochs[0]} → {epochs[-1]}
-
-    Loss:
-      • Start: {losses[0]:.4f}
-      • End: {losses[-1]:.4f}
-      • Min: {min(losses):.4f} (epoch {loss_epochs[np.argmin(losses)]})
-      • Change: {(losses[-1]-losses[0])/losses[0]*100:+.1f}%
-
-    Weight Norm:
-      • Start: {weight_norms[0]:.4f}
-      • End: {weight_norms[-1]:.4f}
-      • Change: {(weight_norms[-1]-weight_norms[0])/weight_norms[0]*100:+.1f}%
-
-    Total Parameters: {results[0].get('total_params', 0):,}
-
-    Status: {'✓ No NaN/Inf detected' if not any(r.get('nan_layers') or r.get('inf_layers') for r in results) else '⚠ Issues detected'}
-    """
-
-    ax.text(0.1, 0.9, summary_text, transform=ax.transAxes, fontsize=11,
-            verticalalignment='top', fontfamily='monospace',
-            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-
-    plt.suptitle('DETR Training Analysis Summary', fontsize=16, fontweight='bold', y=0.98)
+    plt.suptitle('DETR Training Analysis Summary', fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
     plt.savefig(output_dir / 'detr_training_summary.png', dpi=150, bbox_inches='tight')
     plt.savefig(output_dir / 'detr_training_summary.pdf', bbox_inches='tight')

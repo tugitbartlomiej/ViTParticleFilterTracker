@@ -1,0 +1,45 @@
+{
+  "variant": "v4",
+  "label": "QUALITY_ONLY",
+  "model_info": {
+    "epoch": "?",
+    "num_queries": 100,
+    "num_labels": 1,
+    "timm": true,
+    "checkpoint": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\Eden\\Checkpoints\\Ablations\\ablation_best\\v4\\best_model.pth"
+  },
+  "results": {
+    "external_test_smoke": {
+      "n_images": 50,
+      "n_annotations": 50,
+      "mAP_0.5:0.95": 0.0020512781871794483,
+      "mAP_0.5": 0.009706335930396692,
+      "mAP_0.75": 0.0,
+      "AR@100": 0.013999999999999999,
+      "TP": 3,
+      "FP": 84,
+      "FN": 47,
+      "Precision": 0.034482758620689655,
+      "Recall": 0.06,
+      "F1": 0.043795620437956206,
+      "conf_threshold": 0.3,
+      "iou_threshold": 0.5
+    },
+    "samedist_test_smoke": {
+      "n_images": 50,
+      "n_annotations": 50,
+      "mAP_0.5:0.95": 0.9412100559931924,
+      "mAP_0.5": 1.0,
+      "mAP_0.75": 1.0,
+      "AR@100": 0.958,
+      "TP": 50,
+      "FP": 50,
+      "FN": 0,
+      "Precision": 0.5,
+      "Recall": 1.0,
+      "F1": 0.6666666666666666,
+      "conf_threshold": 0.3,
+      "iou_threshold": 0.5
+    }
+  }
+}

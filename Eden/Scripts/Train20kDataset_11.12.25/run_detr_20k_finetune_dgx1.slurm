@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -A transformers_vsc
-#SBATCH -p debug
+#SBATCH -p standard
 #SBATCH --nodelist=hopper
 #SBATCH --gres=gpu:6
 #SBATCH --mem=200G
@@ -113,7 +113,11 @@ sync_checkpoints() {
     fi
     echo "[$(date)] Sync completed"
 }
-trap 'echo "EXIT trap triggered"; sync_checkpoints' EXIT INT TERM
+cleanup() {
+    echo "Cleaning TMPDIR..."
+    rm -rf "$TMPDIR/data" 2>/dev/null || true
+}
+trap 'echo "EXIT trap triggered"; sync_checkpoints; cleanup' EXIT INT TERM
 (
     while true; do
         sleep 600
@@ -171,6 +175,11 @@ wait $SYNC_PID 2>/dev/null || true
 
 echo "Performing final checkpoint sync..."
 sync_checkpoints
+
+# Remove intermediate checkpoints, keep only best_model.pth
+echo "Removing intermediate checkpoints..."
+rm -f "$CHECKPOINT_DIR/checkpoint_epoch_"*.pth
+echo "Retained: $(ls "$BEST_MODEL_DIR/" 2>/dev/null || echo 'no best model dir')"
 
 echo ""
 echo "============================================================"

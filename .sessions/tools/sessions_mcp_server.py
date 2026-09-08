@@ -5,10 +5,14 @@ Sessions RAG MCP Server
 Semantic search over project sessions using embeddings and vector database.
 
 Features:
-- Semantic search with bge-m3 (multilingual, supports Polish & English)
+- Hybrid search: BGE-M3 dense + sparse -> RRF -> bge-reranker-v2-m3 (see hybrid_rag.py)
+- Multilingual (Polish & English), GPU-accelerated when available
 - Auto-rebuild index when sessions change
 - Lazy loading for fast startup
-- ChromaDB for persistent vector storage
+- Qdrant (local/embedded) for persistent vector storage
+
+Note: the legacy ChromaDB helpers (get_model/get_collection/_do_rebuild_index)
+are retained but no longer used; the active path delegates to hybrid_rag.
 
 Usage:
     # Add to Claude Code
@@ -24,6 +28,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
 from typing import Optional
@@ -34,12 +39,18 @@ from pydantic import BaseModel, Field
 # Configuration
 SESSIONS_PATH = Path(__file__).parent.parent  # .sessions/
 PROJECT_ROOT = SESSIONS_PATH.parent  # ViTParticleFilterTracker/
-MODELS_CACHE = PROJECT_ROOT / "External" / "Models"  # Local models cache
+MODELS_CACHE = PROJECT_ROOT / "External" / "Models"  # legacy local models cache (fallback only)
 
 # Embedding model configuration
 # bge-m3: 2.3GB, 1024-dim, multilingual (PL+EN), loads in ~60s
 # Note: MCP has timeout issues, use /szukaj-sesje command instead
-EMBEDDING_MODEL_PATH = MODELS_CACHE / "BAAI_bge-m3"
+#
+# Default: load from the shared HuggingFace cache (HF_HOME, e.g. F:\HuggingFace)
+# by repo id. "BAAI/bge-m3" resolves to <HF_HOME>\hub\models--BAAI--bge-m3 with no
+# re-download. Override with the SESSIONS_EMBED_MODEL env var (repo id or local path).
+EMBEDDING_MODEL = os.environ.get("SESSIONS_EMBED_MODEL", "BAAI/bge-m3")
+# Legacy local copy in External/Models; used only if the HF-cache load fails.
+LEGACY_LOCAL_MODEL_PATH = MODELS_CACHE / "BAAI_bge-m3"
 
 CHROMA_PATH = SESSIONS_PATH / "vectordb"  # ChromaDB index location
 INDEX_STATE_FILE = CHROMA_PATH / "index_state.json"
@@ -95,19 +106,33 @@ class IndexStatus(BaseModel):
 # =============================================================================
 
 def get_model():
-    """Lazy load the bge-m3 embedding model (multilingual: PL+EN)."""
+    """Lazy load the bge-m3 embedding model (multilingual: PL+EN).
+
+    Loads from the shared HuggingFace cache (HF_HOME) by repo id, so the same
+    on-disk model is reused across projects. Falls back to the legacy local copy
+    in External/Models only if the HF-cache load fails.
+    """
     global _model
     if _model is None:
         try:
             from sentence_transformers import SentenceTransformer
-            print(f"Loading embedding model: {EMBEDDING_MODEL_PATH}")
-            _model = SentenceTransformer(str(EMBEDDING_MODEL_PATH))
-            print("Model loaded!")
         except ImportError:
             raise ImportError(
                 "sentence-transformers not installed. "
                 "Run: pip install sentence-transformers"
             )
+
+        hf_home = os.environ.get("HF_HOME", "<HF default>")
+        try:
+            print(f"Loading embedding model '{EMBEDDING_MODEL}' from HF cache (HF_HOME={hf_home})")
+            _model = SentenceTransformer(EMBEDDING_MODEL)
+        except Exception as exc:
+            if LEGACY_LOCAL_MODEL_PATH.exists():
+                print(f"HF-cache load failed ({exc}); using legacy local copy: {LEGACY_LOCAL_MODEL_PATH}")
+                _model = SentenceTransformer(str(LEGACY_LOCAL_MODEL_PATH))
+            else:
+                raise
+        print("Model loaded!")
     return _model
 
 
@@ -165,33 +190,13 @@ def save_index_state(state: dict):
 
 
 def ensure_index_fresh():
-    """Check if index needs rebuild and do it if necessary."""
+    """Ensure the hybrid Qdrant index is fresh (delegates to hybrid_rag)."""
     global _initialized
     if _initialized:
         return
-
-    current_hash = get_sessions_hash()
-    saved_state = get_index_state()
-
-    if saved_state.get("hash") == current_hash:
-        # Index is fresh
-        _initialized = True
-        return
-
-    # Need to rebuild
-    print("Sessions changed, rebuilding index...")
-    _do_rebuild_index()
-
-    # Save new state
-    collection = get_collection()
-    save_index_state({
-        "hash": current_hash,
-        "chunks": collection.count(),
-        "sessions": len(list(SESSIONS_PATH.glob("Session_*")))
-    })
-
+    import hybrid_rag
+    hybrid_rag.ensure_fresh()
     _initialized = True
-    print("Index rebuilt successfully!")
 
 
 def _do_rebuild_index():
@@ -458,52 +463,18 @@ def search_sessions(query: str, top_k: int = 5) -> list[SessionSearchResult]:
     Returns:
         List of matching sessions with relevance scores and snippets
     """
-    ensure_index_fresh()
-
-    model = get_model()
-    collection = get_collection()
-
-    # Embed query
-    query_embedding = model.encode(
-        query,
-        normalize_embeddings=True
-    ).tolist()
-
-    # Search
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=top_k * 2,  # Get more to deduplicate
-        include=["documents", "metadatas", "distances"]
-    )
-
-    if not results["ids"][0]:
-        return []
-
-    # Deduplicate by session_id, keep best score
-    seen_sessions = {}
-    for i, doc_id in enumerate(results["ids"][0]):
-        meta = results["metadatas"][0][i]
-        session_id = meta["session_id"]
-        distance = results["distances"][0][i]
-        score = 1 - distance  # cosine distance to similarity
-
-        if session_id not in seen_sessions or score > seen_sessions[session_id]["score"]:
-            seen_sessions[session_id] = {
-                "session_id": session_id,
-                "title": meta.get("title", "Unknown"),
-                "date": meta.get("date", "Unknown"),
-                "score": round(score, 3),
-                "snippet": results["documents"][0][i][:300] + "..."
-            }
-
-    # Sort by score and limit
-    sorted_results = sorted(
-        seen_sessions.values(),
-        key=lambda x: x["score"],
-        reverse=True
-    )[:top_k]
-
-    return [SessionSearchResult(**r) for r in sorted_results]
+    import hybrid_rag
+    results = hybrid_rag.search(query, top_k=top_k)
+    return [
+        SessionSearchResult(
+            session_id=r["session_id"],
+            title=r["title"],
+            score=r["score"],
+            date=r["date"],
+            snippet=r["snippet"],
+        )
+        for r in results
+    ]
 
 
 @mcp.tool()
@@ -597,15 +568,13 @@ def get_index_status() -> IndexStatus:
     Returns:
         Index statistics including freshness status
     """
-    collection = get_collection()
-    saved_state = get_index_state()
-    current_hash = get_sessions_hash()
-
+    import hybrid_rag
+    st = hybrid_rag.index_status()
     return IndexStatus(
-        total_chunks=collection.count(),
-        total_sessions=saved_state.get("sessions", 0),
-        last_hash=saved_state.get("hash", "none")[:12] + "...",
-        is_fresh=saved_state.get("hash") == current_hash
+        total_chunks=st["chunks"],
+        total_sessions=st["sessions"],
+        last_hash=str(st["hash"])[:12] + "...",
+        is_fresh=st["is_fresh"],
     )
 
 
@@ -620,23 +589,26 @@ def rebuild_index() -> str:
     """
     global _initialized
     _initialized = False
-
-    _do_rebuild_index()
-
-    # Save state
-    collection = get_collection()
-    current_hash = get_sessions_hash()
-    sessions_count = len(list(SESSIONS_PATH.glob("Session_*")))
-
-    save_index_state({
-        "hash": current_hash,
-        "chunks": collection.count(),
-        "sessions": sessions_count
-    })
-
+    import hybrid_rag
+    st = hybrid_rag.build_full()
     _initialized = True
+    return f"Rebuilt index: {st.get('chunks', 0)} chunks from {st.get('docs', 0)} documents"
 
-    return f"Rebuilt index: {collection.count()} chunks from {sessions_count} sessions"
+
+@mcp.tool()
+def update_index() -> str:
+    """Incrementally update the index (only new / changed / removed files).
+
+    Faster than rebuild_index; use after saving new sessions. Adds and links
+    new embeddings to the existing base without rebuilding everything.
+
+    Returns:
+        Status message with add / update / remove counts.
+    """
+    import hybrid_rag
+    st = hybrid_rag.update_incremental()
+    return (f"Updated index: +{st['added']} ~{st['updated']} -{st['removed']} "
+            f"({st['chunks']} chunks, {st['docs']} docs)")
 
 
 # =============================================================================
@@ -668,16 +640,14 @@ def _warmup():
     print("=" * 50, file=sys.stderr)
 
     try:
-        print("Loading embedding model (this takes 10-30 seconds)...", file=sys.stderr)
-        get_model()
-        print("Model loaded successfully!", file=sys.stderr)
-
-        print("Loading ChromaDB collection...", file=sys.stderr)
-        get_collection()
-        print("Collection ready!", file=sys.stderr)
+        import hybrid_rag
+        print("Loading embedder + reranker (GPU if available)...", file=sys.stderr)
+        hybrid_rag.get_embed_model()
+        hybrid_rag.get_reranker()
+        print("Models loaded!", file=sys.stderr)
 
         print("Checking index freshness...", file=sys.stderr)
-        ensure_index_fresh()
+        hybrid_rag.ensure_fresh()
         print("Index ready!", file=sys.stderr)
 
         print("=" * 50, file=sys.stderr)

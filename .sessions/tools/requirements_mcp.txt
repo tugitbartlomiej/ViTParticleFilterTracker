@@ -1,17 +1,31 @@
-# Requirements for Sessions RAG MCP Server
+# Requirements for Hybrid Sessions RAG (BGE-M3 + Qdrant + reranker)
 # Install with: pip install -r requirements_mcp.txt
+#
+# NOTE on torch + GPU:
+#   For RTX 3070 (CUDA) install the CUDA build BEFORE the rest, e.g.:
+#     pip install "torch==2.10.0" --index-url https://download.pytorch.org/whl/cu128
+#   Otherwise a CPU-only torch is pulled in and the GPU is unused.
 
 # MCP Framework
 fastmcp>=0.1.0
 
-# Vector Database
-chromadb>=0.4.0
+# Vector database (local/embedded mode, no Docker)
+qdrant-client>=1.18.0
 
-# Embedding Model
+# Embedder: BGE-M3 dense + sparse in one model
+FlagEmbedding>=1.4.0
+# FlagEmbedding runtime deps (installed with --no-deps to protect torch/transformers):
+#   datasets, peft, accelerate, sentencepiece
+datasets>=3.0.0
+peft>=0.13.0
+accelerate>=1.0.0
+sentencepiece>=0.2.0
+
+# Reranker (cross-encoder) + dense fallback
 sentence-transformers>=2.2.0
 
 # Data validation
 pydantic>=2.0.0
 
-# Optional: For faster embeddings on GPU
-# torch>=2.0.0  # Usually installed with sentence-transformers
+# Legacy (no longer used by the active path; retained for the dead ChromaDB helpers)
+# chromadb>=0.4.0

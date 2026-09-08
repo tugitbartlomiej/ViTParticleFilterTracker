@@ -1,0 +1,45 @@
+{
+  "variant": "v1",
+  "label": "FULL pipeline (baseline, ep270)",
+  "model_info": {
+    "epoch": "270",
+    "num_queries": 100,
+    "num_labels": 1,
+    "timm": true,
+    "checkpoint": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\Eden\\Checkpoints\\DETR\\DETR_Training_Sessions\\2025-12-13_20kDataset_small_LR\\ckpt_20k_finetune\\checkpoint_epoch_270.pth"
+  },
+  "results": {
+    "external_test_smoke": {
+      "n_images": 50,
+      "n_annotations": 50,
+      "mAP_0.5:0.95": 0.21215217559313793,
+      "mAP_0.5": 0.6693278851410613,
+      "mAP_0.75": 0.07993894677612963,
+      "AR@100": 0.522,
+      "TP": 39,
+      "FP": 59,
+      "FN": 11,
+      "Precision": 0.3979591836734694,
+      "Recall": 0.78,
+      "F1": 0.5270270270270271,
+      "conf_threshold": 0.3,
+      "iou_threshold": 0.5
+    },
+    "samedist_test_smoke": {
+      "n_images": 50,
+      "n_annotations": 50,
+      "mAP_0.5:0.95": 0.9976633663366337,
+      "mAP_0.5": 1.0,
+      "mAP_0.75": 1.0,
+      "AR@100": 0.998,
+      "TP": 50,
+      "FP": 15,
+      "FN": 0,
+      "Precision": 0.7692307692307693,
+      "Recall": 1.0,
+      "F1": 0.8695652173913044,
+      "conf_threshold": 0.3,
+      "iou_threshold": 0.5
+    }
+  }
+}

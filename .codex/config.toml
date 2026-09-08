@@ -1,0 +1,34 @@
+[mcp_servers.brave-search]
+command = 'C:\Users\bartl\AppData\Roaming\npm\mcp-server-brave-search.cmd'
+
+[mcp_servers.filesystem]
+command = 'C:\Users\bartl\AppData\Roaming\npm\mcp-server-filesystem.cmd'
+args = ['F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker']
+
+[mcp_servers.git]
+command = 'C:\Python312\python.exe'
+args = [
+    "-m",
+    "mcp_server_git",
+    "--repository",
+    'F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker',
+]
+
+[mcp_servers.github]
+command = 'C:\Users\bartl\AppData\Roaming\npm\mcp-server-github.cmd'
+
+[mcp_servers.memory]
+command = 'F:\Instalki\NodeJS\node.exe'
+args = ['C:\Users\bartl\AppData\Roaming\npm\node_modules\@modelcontextprotocol\server-memory\dist\index.js']
+
+[mcp_servers.serena]
+command = "uv"
+args = [
+    "run",
+    "serena",
+    "start-mcp-server",
+    "--context",
+    "claude-code",
+    "--project",
+    'F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker',
+]

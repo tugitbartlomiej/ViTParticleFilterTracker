@@ -251,10 +251,10 @@ def create_visualizations(results, output_dir):
     # ==========================================
     # Figure 4: Training Summary
     # ==========================================
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 
     # Weight norm
-    ax = axes[0, 0]
+    ax = axes[0]
     if weight_norms and any(w > 0 for w in weight_norms):
         ax.plot(weight_x_norm, weight_y_norm, 'b-o', linewidth=2, markersize=6)
         ax.set_title('Weight Norm Evolution', fontweight='bold')
@@ -265,7 +265,7 @@ def create_visualizations(results, output_dir):
     ax.grid(True, alpha=0.3)
 
     # Learning rate
-    ax = axes[0, 1]
+    ax = axes[1]
     if lrs and any(lr > 0 for lr in lrs):
         ax.plot(lr_x_norm, lr_y_norm, 'g-s', linewidth=2, markersize=6)
         ax.set_title('Learning Rate Schedule', fontweight='bold')
@@ -276,7 +276,7 @@ def create_visualizations(results, output_dir):
     ax.grid(True, alpha=0.3)
 
     # Fitness
-    ax = axes[1, 0]
+    ax = axes[2]
     if fitness and any(f > 0 for f in fitness):
         ax.plot(fit_x_norm, fit_y_norm, 'm-^', linewidth=2, markersize=6)
         ax.set_title('Best Fitness', fontweight='bold')
@@ -286,48 +286,7 @@ def create_visualizations(results, output_dir):
     ax.set_ylabel('Normalized Fitness')
     ax.grid(True, alpha=0.3)
 
-    # Summary text
-    ax = axes[1, 1]
-    ax.axis('off')
-
-    # Get train args from first result with them
-    train_args = {}
-    for r in results:
-        if r.get('train_args'):
-            train_args = r['train_args']
-            break
-
-    num_params = results[0].get('num_params', 0) if results else 0
-
-    summary_text = f"""
-    YOLOv8 Training Summary
-    ═══════════════════════════════════
-
-    Checkpoints Analyzed: {len(results)}
-    Epochs: {min(epochs) if epochs else 'N/A'} → {max(epochs) if epochs else 'N/A'}
-
-    Model:
-      • Parameters: {num_params:,}
-      • Has EMA: {any(r.get('has_ema') for r in results)}
-
-    Training Config:
-      • Batch Size: {train_args.get('batch', 'N/A')}
-      • Image Size: {train_args.get('imgsz', 'N/A')}
-      • Epochs Target: {train_args.get('epochs', 'N/A')}
-
-    Weight Norm:
-      • Start: {f'{weight_norms[0]:.4f}' if weight_norms and weight_norms[0] > 0 else 'N/A'}
-      • End: {f'{weight_norms[-1]:.4f}' if weight_norms and weight_norms[-1] > 0 else 'N/A'}
-      • Change: {f'{((weight_norms[-1]-weight_norms[0])/weight_norms[0]*100):+.1f}%' if weight_norms and weight_norms[0] > 0 else 'N/A'}
-
-    Best Fitness: {f'{max(fitness):.4f}' if fitness and max(fitness) > 0 else 'N/A'}
-    """
-
-    ax.text(0.1, 0.9, summary_text, transform=ax.transAxes, fontsize=10,
-            verticalalignment='top', fontfamily='monospace',
-            bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.5))
-
-    plt.suptitle('YOLOv8 Training Analysis Summary', fontsize=16, fontweight='bold', y=0.98)
+    plt.suptitle('YOLOv8 Training Analysis Summary', fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
     plt.savefig(output_dir / 'yolo_training_summary.png', dpi=150, bbox_inches='tight')
     plt.savefig(output_dir / 'yolo_training_summary.pdf', bbox_inches='tight')

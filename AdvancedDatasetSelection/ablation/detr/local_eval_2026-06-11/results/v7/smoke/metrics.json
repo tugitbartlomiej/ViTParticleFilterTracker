@@ -1,0 +1,45 @@
+{
+  "variant": "v7",
+  "label": "EL2N_ONLY (random+EL2N rerank)",
+  "model_info": {
+    "epoch": "?",
+    "num_queries": 100,
+    "num_labels": 1,
+    "timm": true,
+    "checkpoint": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\Eden\\Checkpoints\\Ablations\\Fresh_from_Eden_2026-06-11_v6_v7_completed_runs\\v7\\best_model.pth"
+  },
+  "results": {
+    "external_test_smoke": {
+      "n_images": 50,
+      "n_annotations": 50,
+      "mAP_0.5:0.95": 0.0027970987266683813,
+      "mAP_0.5": 0.015368770091578141,
+      "mAP_0.75": 4.5111909758994994e-05,
+      "AR@100": 0.162,
+      "TP": 3,
+      "FP": 102,
+      "FN": 47,
+      "Precision": 0.02857142857142857,
+      "Recall": 0.06,
+      "F1": 0.03870967741935484,
+      "conf_threshold": 0.3,
+      "iou_threshold": 0.5
+    },
+    "samedist_test_smoke": {
+      "n_images": 50,
+      "n_annotations": 50,
+      "mAP_0.5:0.95": 0.8967083058309651,
+      "mAP_0.5": 0.9141101308094349,
+      "mAP_0.75": 0.9141101308094349,
+      "AR@100": 0.99,
+      "TP": 50,
+      "FP": 50,
+      "FN": 0,
+      "Precision": 0.5,
+      "Recall": 1.0,
+      "F1": 0.6666666666666666,
+      "conf_threshold": 0.3,
+      "iou_threshold": 0.5
+    }
+  }
+}

@@ -1,45 +1,46 @@
 #!/usr/bin/env python3
 """
-Pre-warm Sessions MCP Index
-============================
-Run this once before using MCP semantic search to avoid timeout.
+Pre-warm Hybrid Sessions Index (BGE-M3 + Qdrant + reranker)
+===========================================================
+Loads models (GPU if available) and rebuilds/refreshes the Qdrant index.
+Run once before heavy use to avoid first-query latency.
 
 Usage:
     .sessions/venv/Scripts/python.exe .sessions/tools/prewarm_index.py
 """
 
-import sys
 import os
+import sys
 
-# Set working directory to project root
-os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Project root + importable tools dir
+TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(TOOLS_DIR))
+os.chdir(PROJECT_ROOT)
+sys.path.insert(0, TOOLS_DIR)
+
+import hybrid_rag  # noqa: E402
 
 print("=" * 60)
-print("PRE-WARMING SESSIONS MCP INDEX")
+print("PRE-WARMING HYBRID SESSIONS INDEX")
 print("=" * 60)
 
-# Import server module
-sys.path.insert(0, '.sessions/tools')
-import sessions_mcp_server as srv
+print("\n[1/3] Loading embedder (BGE-M3, dense+sparse, GPU if available)...")
+hybrid_rag.get_embed_model()
+print("      Embedder loaded!")
 
-print("\n[1/3] Loading embedding model (bge-m3, ~30s)...")
-model = srv.get_model()
-print("      Model loaded!")
+print("\n[2/3] Loading reranker (bge-reranker-v2-m3)...")
+hybrid_rag.get_reranker()
+print("      Reranker loaded!")
 
-print("\n[2/3] Loading ChromaDB collection...")
-collection = srv.get_collection()
-print(f"      Collection ready ({collection.count()} chunks)")
+print("\n[3/3] Checking/rebuilding Qdrant index...")
+hybrid_rag.ensure_fresh()
 
-print("\n[3/3] Checking/rebuilding index...")
-srv.ensure_index_fresh()
-
-# Final status
-state = srv.get_index_state()
+state = hybrid_rag.index_status()
 print("\n" + "=" * 60)
 print("INDEX READY!")
 print("=" * 60)
 print(f"  Sessions: {state.get('sessions', '?')}")
 print(f"  Chunks:   {state.get('chunks', '?')}")
-print(f"  Hash:     {state.get('hash', '?')[:16]}...")
-print("\nMCP semantic search is now ready to use!")
+print(f"  Hash:     {str(state.get('hash', '?'))[:16]}...")
+print(f"  Fresh:    {state.get('is_fresh')}")
 print("=" * 60)
