@@ -34,10 +34,13 @@ konfiguracje stąd.
 | `docs/05_OPEN_QUESTIONS.md` | co wymaga decyzji albo sprawdzenia w danych |
 | `docs/06_TODO_KOD_I_EDEN.md` | **TODO kodu, uruchamianie na Edenie, szacunek czasu** |
 | `docs/07_EDEN_INWENTARZ.md` | co już policzone na Edenie pod podziałem po pacjencie i co z tego użyć |
+| `docs/08_AUDYT_WYCIEKOW.md` | **audyt wycieków** — który trening był czysty, który nie, z liczbami |
+| `docs/09_ROZBUDOWA_DANYCH.md` | jak szybko poprawić zbiór, dokładając zdjęcia (Cataract-1K, negatywy) |
 | `configs/protocol.yaml` | jedno źródło prawdy dla hiperparametrów i splitu |
 | `configs/variants.yaml` | maszynowa definicja macierzy |
 | `tools/build_run_manifest.py` | rozwija konfiguracje do listy biegów |
 | `tools/estimate_time.py` | liczy koszt eksperymentu z listy biegów |
+| `tools/audit_leakage.py` | sprawdza wycieki między splitami: pacjent, klatka źródłowa, plik |
 
 ## Skala w dwóch liczbach
 
