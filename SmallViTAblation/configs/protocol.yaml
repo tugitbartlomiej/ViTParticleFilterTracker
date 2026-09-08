@@ -1,0 +1,88 @@
+# Protokół eksperymentu SmallViTAblation — jedno źródło prawdy.
+# Opis słowny i uzasadnienia: docs/01_PROTOCOL.md
+# Każdy bieg zapisuje hash tego pliku w swoim run_manifest.json.
+
+version: 1
+created: 2026-09-08
+
+split:
+  # Podział po filmie (docelowo po pacjencie — patrz docs/05_OPEN_QUESTIONS.md, O1)
+  file: Eden/Checkpoints/Ablations/ablation/video_split.json
+  seed: 42
+  videos: {train: 35, val: 8, test: 7, total: 50}
+  # Pula selekcji to WYŁĄCZNIE klatki z filmów treningowych.
+  selection_pool: train_only
+
+model:
+  name: rf-detr-small
+  backbone: dinov2-vit
+  params_m: 32.1
+  resolution: 512
+  license: Apache-2.0
+  init: coco_pretrained          # te same wagi startowe dla wszystkich biegów
+  inference: standard_topk       # ZERO Query 81
+
+training:
+  # Wartości oznaczone jako CALIBRATE ustala bieg kalibracyjny (docs/03, §2).
+  epochs: 60                     # CALIBRATE — stała dla wszystkich, bez early stopping
+  early_stopping: false
+  optimizer: adamw               # CALIBRATE
+  lr: 1.0e-4                     # CALIBRATE
+  lr_backbone: 1.0e-5            # CALIBRATE
+  weight_decay: 1.0e-4           # CALIBRATE
+  warmup_epochs: 2               # CALIBRATE
+  batch_size: 16                 # CALIBRATE (pod VRAM)
+  grad_accum: 1
+  precision: bf16
+  train_time_augmentation: none  # pula jest już augmentowana offline
+
+checkpoint_selection:
+  # Raportujemy OBIE kolumny, nigdy nie mieszamy ich w jednej tabeli.
+  report:
+    - last_epoch
+    - best_val
+  best_val_criterion: map_50_95_val
+
+el2n:
+  # EL2N liczony z modelu proxy trenowanego TYLKO na klatkach treningowych,
+  # krótko, zgodnie z oryginalną definicją. Jeden proxy na ziarno.
+  source: proxy_same_architecture
+  proxy_epochs: 10
+  per_seed: true
+
+budgets:
+  tier_a: 5000
+  tier_b: 20000
+  sweep: [2500, 5000, 10000, 20000]
+
+seeds:
+  matrix: [42, 1337, 2024]
+  tier_b: [42, 1337, 2024, 7, 31337]
+  random_baseline_draws: 10
+  sensitivity: [42]
+
+evaluation:
+  # mAP z PEŁNEJ krzywej PR — próg 0.001 tylko do generowania predykcji.
+  map_conf_threshold: 0.001
+  # Próg operacyjny do TP/FP/F1 wybierany na walidacji, nie ustawiany na sztywno.
+  operating_threshold: select_on_val
+  iou_threshold: 0.5
+  metrics: [map_50, map_50_95, map_75, ar_100, tp, fp, fn, precision, recall, f1]
+  sets:
+    same_dist_val: video_split.val
+    same_dist_test: video_split.test
+    external_full: 2333
+    external_clean: 2285          # FULL minus 48 obrazów z wyciekiem
+  zero_look:
+    # Zbiór zewnętrzny liczymy RAZ, po wyborze epoki i progu na walidacji.
+    ledger: SmallViTAblation/external_access_ledger.jsonl
+    allowed_before_selection: false
+
+features:
+  weights_base: {dino: 0.35, el2n: 0.30, sam: 0.20, fourier: 0.15}
+  # Wyłączenie grupy: waga 0, reszta przeskalowana PROPORCJONALNIE do sumy 1.
+  disable_rule: proportional_renormalization
+  dino_pca_dim: 32
+  cluster_algorithm: kmeans
+  cluster_representative: centroid
+  kmeans_iterations: 300

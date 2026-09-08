@@ -1,0 +1,74 @@
+# Macierz wariantów. Opis: docs/02_MATRIX.md
+# Rozwinięcie do listy biegów: tools/build_run_manifest.py
+
+version: 1
+
+feature_groups:
+  D: dino          # semantyka, DINOv3, 32 wymiary po PCA
+  E: el2n          # trudność, 1 wymiar
+  S: sam           # złożoność sceny, FastSAM, 9 wymiarów
+  F: fourier       # jakość / ostrość, 1 wymiar
+
+# 15 niepustych podzbiorów. Wagi wyliczane z weights_base przez proporcjonalne
+# przeskalowanie — NIE wpisujemy ich ręcznie, liczy je build_run_manifest.py.
+matrix:
+  - {id: M-DESF, groups: [D, E, S, F], note: "pełny pipeline (dawne V1)"}
+  - {id: M-DES,  groups: [D, E, S],    note: "bez Fouriera (dawne V2)"}
+  - {id: M-DEF,  groups: [D, E, F],    note: "bez SAM"}
+  - {id: M-DSF,  groups: [D, S, F],    note: "bez EL2N (dawne V3)"}
+  - {id: M-ESF,  groups: [E, S, F],    note: "bez DINO"}
+  - {id: M-DE,   groups: [D, E],       note: "semantyka + trudność"}
+  - {id: M-DS,   groups: [D, S],       note: "semantyka + złożoność"}
+  - {id: M-DF,   groups: [D, F],       note: "semantyka + jakość"}
+  - {id: M-ES,   groups: [E, S],       note: "trudność + złożoność"}
+  - {id: M-EF,   groups: [E, F],       note: "trudność + jakość"}
+  - {id: M-SF,   groups: [S, F],       note: "złożoność + jakość"}
+  - {id: M-D,    groups: [D],          note: "tylko semantyka (bliskie V6)"}
+  - {id: M-E,    groups: [E],          note: "tylko trudność (bliskie V7)"}
+  - {id: M-S,    groups: [S],          note: "tylko złożoność"}
+  - {id: M-F,    groups: [F],          note: "tylko jakość (bliskie V4)"}
+
+baselines:
+  - id: B-RANDAUG
+    kind: random_from_augmented_train
+    draws: 10
+    note: "odniesienie, które pipeline musi bić"
+  - id: B-RANDSRC
+    kind: random_from_source_frames_then_augment
+    draws: 3
+    note: "żądanie recenzenta 2, zarzut 6 — ograniczenie liczbowe: docs/05, O2"
+  - id: B-UNIFORM
+    kind: uniform_per_video
+    draws: 3
+    note: "równa liczba klatek z każdego filmu treningowego"
+  - id: B-FULLPOOL
+    kind: full_train_pool
+    draws: 1
+    note: "sufit przy pełnym budżecie; INNY budżet, raportowany osobno"
+
+sensitivity:
+  reference: M-DESF
+  seeds: [42]
+  studies:
+    - {id: S-W, param: group_weight_delta, values: [-0.10, 0.10], applies_to: [D, E, S, F]}
+    - {id: S-PCA, param: dino_pca_dim, values: [8, 16, 32, 64]}
+    - {id: S-REP, param: cluster_representative, values: [centroid, random_in_cluster, medoid]}
+    - {id: S-ALG, param: cluster_algorithm, values: [kmeans, kcenter_greedy]}
+    - {id: S-DIFF, param: difficulty_coeffs, values: ["0.7/0.3", "0.5/0.5", "0.9/0.1"]}
+
+size_sweep:
+  variants: [M-DESF, B-RANDAUG, B-RANDSRC]
+  budgets: [2500, 5000, 10000, 20000]
+  seeds: [42, 1337, 2024]
+
+tier_b:
+  # Wypełnić po agregacji poziomu A. Dwa miejsca "TBD" to dwie najlepsze
+  # niepełne kombinacje, których poziom A jeszcze nie wskazał.
+  variants: [M-DESF, TBD_1, TBD_2, B-RANDAUG, B-RANDSRC]
+  budget: 20000
+  seeds: [42, 1337, 2024, 7, 31337]
+  architectures:
+    primary: rf-detr-small
+    transfer: [d-fine-s, yolo-current]
+    transfer_seeds: [42]
+    iso_resource: true
