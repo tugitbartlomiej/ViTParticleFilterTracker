@@ -95,7 +95,7 @@ punkt O2) i albo obniżyć budżet poziomu B, albo zdefiniować ten baseline jak
 | Parametr | Wartość | Uwaga |
 |---|---|---|
 | model | RF-DETR-Small | backbone DINOv2 ViT, Apache 2.0 |
-| rozdzielczość | 512×512 | natywna dla wariantu S |
+| rozdzielczość | **512 albo 704 — decyduje kalibracja** | przy 512 aż 56,9% ramek narzędzia spada poniżej progu 32×32, przy 704 tylko 24,6%; patrz `13_STANDARD_DANYCH.md` |
 | epoki | **stała liczba, bez early stopping** | wartość z kalibracji, plan: 60 |
 | optymalizator, LR, warmup, weight decay | jedna wartość dla wszystkich | z kalibracji |
 | batch, gradient accumulation | jedna wartość | efektywny batch stały |
