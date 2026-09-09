@@ -38,6 +38,7 @@ konfiguracje stąd.
 | `docs/09_ROZBUDOWA_DANYCH.md` | jak szybko poprawić zbiór, dokładając zdjęcia (Cataract-1K, negatywy) |
 | `docs/10_TSFA_NOWA_PULA.md` | **budowa puli z surowego wideo przez TSFA** — 943 tys. klatek zamiast augmentacji |
 | `docs/11_ZRODLA_NAGRAN.md` | **skąd wziąć więcej nagrań** — 6 300 publicznych nagrań, licencje, co pobrać najpierw |
+| `docs/12_LINKI_DO_POBRANIA.md` | **gotowa lista linków** do zbiorów, które można samemu oznaczyć |
 | `configs/protocol.yaml` | jedno źródło prawdy dla hiperparametrów i splitu |
 | `configs/variants.yaml` | maszynowa definicja macierzy |
 | `tools/build_run_manifest.py` | rozwija konfiguracje do listy biegów |
