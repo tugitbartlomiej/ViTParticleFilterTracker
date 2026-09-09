@@ -101,6 +101,22 @@ Iso-resource jest tu obowiązkowe, bo zarzut 8 recenzenta 1 dotyczył właśnie
 tego, że DETR chodził na 800×1333, a YOLOv8 na 640×640, więc porównanie mierzyło
 dwie recepty treningowe, a nie dwie architektury.
 
+## 6b. Walidacja sondy: 512 kontra 704
+
+Macierz jedzie na RF-DETR-Small przy 512 pikselach, bo to tanie. Ale przy tej
+rozdzielczości **56,9% ramek narzędzia spada poniżej progu małego obiektu**,
+a przy 704 tylko 24,6% (`13_STANDARD_DANYCH.md`). Trzeba sprawdzić, czy tania
+sonda szereguje warianty tak samo jak model o większym wejściu.
+
+| ID | Konfiguracje | Rozdzielczości | Ziarna | Biegi |
+|---|---|---|---|---|
+| `P-RES` | `M-DESF`, dwie okrojone, `B-RANDAUG`, `B-RANDSRC` | 512 i 704 | 3 | 30 |
+
+Miara: korelacja rang między wynikami przy 512 i 704. Zgodność uzasadnia sondę
+i sama w sobie jest wynikiem do opisania — to empiryczne potwierdzenie
+założenia Selection via Proxy w naszym zadaniu. Niezgodność oznacza, że cała
+macierz musi pójść na 704, za mniej więcej dwukrotność kosztu.
+
 ## 7. Analizy bez GPU
 
 Tanie, a domykają uwagi drobne:
