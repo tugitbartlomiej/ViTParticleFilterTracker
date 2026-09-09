@@ -14,6 +14,12 @@ split:
   selection_pool: train_only
 
 model:
+  # Trzy role, kazda inny model - opis w PLAN.md, sekcja 1.
+  #   smoke:   rf-detr-nano @384  - test hydrauliki lokalnie na RTX 3070, minuty na bieg
+  #   probe:   rf-detr-small @512 - 144 biegi macierzy na Edenie (sonda, ma szeregowac)
+  #   confirm: rf-detr @512 lub 704 - decyduje walidacja sondy P-RES
+  smoke_model: rf-detr-nano
+  smoke_resolution: 384
   name: rf-detr-small
   backbone: dinov2-vit
   params_m: 32.1
