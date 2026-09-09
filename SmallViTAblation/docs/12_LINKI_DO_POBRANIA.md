@@ -90,27 +90,80 @@ w połowie oznacza oznaczanie od nowa.
 
 ---
 
-## F. Przygotowane wyszukiwanie w Undermind (do uruchomienia po restarcie)
+## F. Wyszukiwanie w Undermind — uruchomione
 
-Undermind został 2026-09-09 przeniesiony do konfiguracji globalnej
-(`~/.claude.json`, sekcja `mcpServers`), ale serwery MCP łączą się przy starcie,
-więc w tej sesji jeszcze go nie ma. Po restarcie Claude Code do zrobienia:
+Undermind przeniesiony 2026-09-09 do konfiguracji globalnej (`~/.claude.json`,
+sekcja `mcpServers`). Po restarcie podłączył się bez ponownego logowania.
 
-1. `get_orientation()` — wymagane raz na rozmowę.
-2. `list_workspaces()` — sprawdzić, czy workspace dla ViT już nie istnieje.
-3. Utworzyć workspace: **„ViT: detekcja końcówki narzędzia w chirurgii zaćmy"**.
-4. `inspect_deep_searches()` — obowiązkowe przed deep search, żeby nie palić
-   limitu na duplikat.
-5. Deep search, pytanie domknięte:
+**Workspace:** „ViT: detekcja końcówki narzędzia w chirurgii zaćmy"
+https://app.undermind.ai/projects/40294fa6-c9a3-4469-9a61-d3eddeaee893
 
-> *Publicly downloadable ophthalmic (cataract) surgery video datasets where
-> recordings are organised per patient or per procedure, enabling patient-level
-> train/test splits. Report for each dataset: number of videos, number of
-> distinct patients, video resolution and frame rate, whether raw unannotated
-> videos are distributed, licence, and the exact download URL or DOI.*
+**Deep search** uruchomiony 2026-09-09 12:38. Pytanie obejmuje: publicznie
+pobieralne zbiory nagrań chirurgii okulistycznej zorganizowane **per pacjent
+albo per zabieg**, z liczbą nagrań i pacjentów, informacją czy jeden pacjent
+bywa nagrany więcej niż raz (np. oba oczy — to złamałoby naiwny podział po
+nagraniu), rozdzielczością, liczbą klatek na sekundę, tym czy udostępniane są
+pełne surowe nagrania czy tylko fragmenty, licencją, wymogiem umowy o użyciu
+danych i dokładnym adresem pobrania. W pytaniu zaznaczone, że **adnotacje są
+mniej ważne niż surowe wideo**, bo etykiety robimy propagacją, oraz że
+rozdzielczość waży tu wyjątkowo dużo, bo końcówka narzędzia to mały obiekt.
+Wykluczone jako znane: CATARACTS, CaDIS, Cataract-101, Cataract-21,
+Cataract-1K, Cataract-LMM, SICS-105, LensID, OphNet.
 
-Czego szukamy ponad to, co już mamy w sekcjach A–C: zbiorów, w których
-**jednostką jest pacjent**, a nie klatka — bo tylko takie pozwalają zrobić
-podział po pacjencie bez zgadywania. Warto też sprawdzić, czy istnieją zbiory
-z **więcej niż jednym nagraniem na pacjenta** (np. oba oczy), bo to zmieniałoby
-regułę podziału.
+Wyszukiwanie zakończone po dwóch minutach, 27 trafnych prac.
+
+### F1. Nowe zbiory, których wcześniej nie mieliśmy
+
+| Zbiór | Co to jest | Link |
+|---|---|---|
+| **MIGS multicenter** | pierwszy **wieloośrodkowy** zbiór nagrań chirurgii jaskry, miliony klatek, adnotacje **narzędzi i struktur anatomicznych**, Scientific Data 2026 | dane: https://doi.org/10.5281/zenodo.18231909 · praca: https://doi.org/10.1038/s41597-026-07535-2 |
+| **Sankara-MSICS** | 53 nagrania ręcznego małego cięcia, Sankara Eye Hospital, X 2023 – X 2024; 18 faz i 3 527 klatek z 13 narzędziami na poziomie pikseli; MICCAI 2025 | kod: https://github.com/Sri-Kanchi-Kamakoti-Medical-Trust/ToolSeg · praca: https://arxiv.org/abs/2411.16794 — **dostęp do samych danych przez autorów** |
+| **WetCat** | nagrania **z wet-labu** na sztucznych oczach, wysoka rozdzielczość, adnotacje faz i segmentacja anatomii | https://www.synapse.org/Synapse:syn66401174/files/ · praca: https://doi.org/10.1145/3746027.3758274 |
+| **FOVEA** | 40 pacjentów z Moorfields, chirurgia witreoretinalna, obrazy przed- i śródoperacyjne plus krótkie klipy | https://doi.org/10.1038/s41597-025-04965-2 |
+| **OphNet-3D** | 41 sekwencji RGB-D od 40 chirurgów, 7,1 mln klatek, 10 kategorii narzędzi, pełne pozycje 6-DoF | https://arxiv.org/abs/2505.17677 |
+
+**MIGS jest tu najciekawszy.** To inna operacja niż zaćma, ale ma oznaczone
+narzędzia **i** anatomię oka, jest wieloośrodkowy i leży na Zenodo bez umowy
+o użyciu danych. Jako drugi zbiór do sprawdzenia odporności modelu na zmianę
+dziedziny trudno o lepszy.
+
+**WetCat rozwiązuje problem, o którym nie pomyślałem.** Sztuczne oczy w wet-labie
+nie są danymi pacjenta, więc nie ma ograniczeń prywatnościowych ani zgód —
+a rozdzielczość jest wysoka. Do testowania samego pipeline'u oznaczania to
+materiał bez żadnych formalności.
+
+### F2. Znalezisko metodologiczne, ważniejsze niż zbiory
+
+**[Fox22]** — *The Impact of Dataset Splits on Classification Performance in
+Medical Videos*, Fox i Schoeffmann, ICMR 2022, https://doi.org/10.1145/3512527.3531424
+
+Autorzy powtórzyli badanie na czterech zbiorach obrazów z laparoskopii,
+wyciągniętych automatycznie z nagrań. Pokazali, że klatki są **do siebie tak
+podobne, że wysokie wyniki biorą się z samej konstrukcji zbioru**. Dowód:
+zwykły algorytm SIFT, czyli metoda porównywania obrazów sprzed epoki uczenia
+głębokiego, dostaje na tych danych wysokie oceny. Potem zbudowali podział po
+nagraniach — i **sieć neuronowa na tym podziale wypadła gorzej niż SIFT na
+podziale oryginalnym**.
+
+To jest dokładnie nasza sytuacja i gotowe cytowanie do sekcji o protokole.
+Zarzut 1 recenzenta 1 przestaje być kwestią opinii, a staje się zjawiskiem
+opisanym w literaturze i zmierzonym przez innych.
+
+Drugi przydatny przegląd: **[Kha20]**, *A global review of publicly available
+datasets for ophthalmological imaging*, Lancet Digital Health,
+https://doi.org/10.1016/S2589-7500(20)30240-5 — 94 zbiory otwarte,
+507 724 obrazy i **tylko 125 nagrań wideo** od 122 364 pacjentów. Nagrania
+chirurgiczne są w okulistyce rzadkością, co warto powiedzieć w artykule
+jednym zdaniem.
+
+### F3. Ostrzeżenie z podsumowania wyszukiwania
+
+Agent zaznaczył wprost, że w większości publikacji **nie da się ustalić** ze
+streszczeń: czy jeden pacjent ma więcej niż jedno nagranie, jaka jest natywna
+rozdzielczość i liczba klatek na sekundę, czy udostępniane są pełne nagrania,
+jaki jest rozmiar pobrania i licencja. To trzeba sprawdzić w samych
+repozytoriach, zbiór po zbiorze, przed pobraniem.
+
+Każde wydanie oparte na **wyciągniętych klatkach** trzeba traktować jako
+niebezpieczne do ewaluacji, dopóki nie zachowano przypisania klatki do
+nagrania źródłowego.
