@@ -40,6 +40,7 @@ konfiguracje stąd.
 | `docs/11_ZRODLA_NAGRAN.md` | **skąd wziąć więcej nagrań** — 6 300 publicznych nagrań, licencje, co pobrać najpierw |
 | `docs/12_LINKI_DO_POBRANIA.md` | **gotowa lista linków** do zbiorów, które można samemu oznaczyć |
 | `docs/13_STANDARD_DANYCH.md` | **jak przygotować dane** — rozdzielczość, pole widzenia, format, metadane |
+| `docs/14_SUROWE_FILMY_PLAN_POBRANIA.md` | **surowe filmy** — rozmiary pobrania, budżet dysku, kolejność |
 | `configs/protocol.yaml` | jedno źródło prawdy dla hiperparametrów i splitu |
 | `configs/variants.yaml` | maszynowa definicja macierzy |
 | `tools/build_run_manifest.py` | rozwija konfiguracje do listy biegów |
