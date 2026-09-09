@@ -86,3 +86,31 @@ W materiale uzupełniającym publikuj listę identyfikatorów i kod, nie klatki.
 ma jedną. Zdecyduj na początku, czy oznaczasz oko jako jedną rzecz, czy jako
 źrenicę, tęczówkę i rogówkę osobno — i trzymaj się tego. Zmiana taksonomii
 w połowie oznacza oznaczanie od nowa.
+
+
+---
+
+## F. Przygotowane wyszukiwanie w Undermind (do uruchomienia po restarcie)
+
+Undermind został 2026-09-09 przeniesiony do konfiguracji globalnej
+(`~/.claude.json`, sekcja `mcpServers`), ale serwery MCP łączą się przy starcie,
+więc w tej sesji jeszcze go nie ma. Po restarcie Claude Code do zrobienia:
+
+1. `get_orientation()` — wymagane raz na rozmowę.
+2. `list_workspaces()` — sprawdzić, czy workspace dla ViT już nie istnieje.
+3. Utworzyć workspace: **„ViT: detekcja końcówki narzędzia w chirurgii zaćmy"**.
+4. `inspect_deep_searches()` — obowiązkowe przed deep search, żeby nie palić
+   limitu na duplikat.
+5. Deep search, pytanie domknięte:
+
+> *Publicly downloadable ophthalmic (cataract) surgery video datasets where
+> recordings are organised per patient or per procedure, enabling patient-level
+> train/test splits. Report for each dataset: number of videos, number of
+> distinct patients, video resolution and frame rate, whether raw unannotated
+> videos are distributed, licence, and the exact download URL or DOI.*
+
+Czego szukamy ponad to, co już mamy w sekcjach A–C: zbiorów, w których
+**jednostką jest pacjent**, a nie klatka — bo tylko takie pozwalają zrobić
+podział po pacjencie bez zgadywania. Warto też sprawdzić, czy istnieją zbiory
+z **więcej niż jednym nagraniem na pacjenta** (np. oba oczy), bo to zmieniałoby
+regułę podziału.
