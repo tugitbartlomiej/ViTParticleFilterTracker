@@ -47,6 +47,7 @@ z podziałem na to, co już zamknięte, co wymaga obliczeń i w jakiej kolejnoś
 | `docs/13_STANDARD_DANYCH.md` | **jak przygotować dane** — rozdzielczość, pole widzenia, format, metadane |
 | `docs/14_SUROWE_FILMY_PLAN_POBRANIA.md` | **surowe filmy** — rozmiary pobrania, budżet dysku, kolejność |
 | `docs/15_PIPELINE_PRZETWARZANIA.md` | **potok od filmu do tabeli** — co gdzie leży, na jakim modelu ablacje |
+| `docs/16_SMOKE_TEST_LOKALNY.md` | **smoke test na RTX 3070** — co da się udowodnić lokalnie, a czego nie |
 | `configs/protocol.yaml` | jedno źródło prawdy dla hiperparametrów i splitu |
 | `configs/variants.yaml` | maszynowa definicja macierzy |
 | `tools/build_run_manifest.py` | rozwija konfiguracje do listy biegów |
