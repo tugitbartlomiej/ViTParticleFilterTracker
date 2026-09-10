@@ -19,7 +19,7 @@ echo Wystarczy token typu READ.
 echo Wczesniej wejdz na strone zbioru i zaakceptuj warunki dostepu:
 echo   https://huggingface.co/datasets/mjahmadi/Cataract-LMM
 echo.
-huggingface-cli login
+hf auth login
 if errorlevel 1 goto blad
 
 echo.

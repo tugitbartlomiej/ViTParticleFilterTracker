@@ -14,7 +14,7 @@ call _config.bat
 
 echo.
 echo === Pobieram adnotacje w formacie YOLO ===
-huggingface-cli download %REPO% --repo-type dataset --local-dir "%DEST%" --include "2_Instance_Segmentation/annotations/yolo_txt/*"
+hf download %REPO% --repo-type dataset --local-dir "%DEST%" --include "2_Instance_Segmentation/annotations/yolo_txt/*"
 if errorlevel 1 goto blad
 
 echo.

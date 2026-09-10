@@ -18,7 +18,7 @@ call _config.bat
 
 echo.
 echo === Pobieram dwa najmniejsze klipy (okolo 100 MB) ===
-huggingface-cli download %REPO% --repo-type dataset --local-dir "%DEST%" --include "3_Object_Tracking/annotations/TR_0129_S1_P03.zip" --include "3_Object_Tracking/annotations/TR_0128_S1_P03.zip"
+hf download %REPO% --repo-type dataset --local-dir "%DEST%" --include "3_Object_Tracking/annotations/TR_0129_S1_P03.zip" --include "3_Object_Tracking/annotations/TR_0128_S1_P03.zip"
 if errorlevel 1 goto blad
 
 echo.

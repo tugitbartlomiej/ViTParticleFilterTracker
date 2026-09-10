@@ -14,7 +14,7 @@ set "SEG=%DEST%\2_Instance_Segmentation\annotations\coco_json"
 
 echo.
 echo === Pobieram klatki (okolo 448 MB) ===
-huggingface-cli download %REPO% --repo-type dataset --local-dir "%DEST%" --include "2_Instance_Segmentation/annotations/coco_json/images/images.zip"
+hf download %REPO% --repo-type dataset --local-dir "%DEST%" --include "2_Instance_Segmentation/annotations/coco_json/images/images.zip"
 if errorlevel 1 goto blad
 
 echo.

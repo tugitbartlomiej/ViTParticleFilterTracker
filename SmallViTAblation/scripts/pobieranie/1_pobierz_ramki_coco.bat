@@ -13,7 +13,7 @@ call _config.bat
 
 echo.
 echo === Pobieram plik z ramkami (okolo 10 MB) ===
-huggingface-cli download %REPO% --repo-type dataset --local-dir "%DEST%" --include "2_Instance_Segmentation/annotations/coco_json/_annotations.coco.json"
+hf download %REPO% --repo-type dataset --local-dir "%DEST%" --include "2_Instance_Segmentation/annotations/coco_json/_annotations.coco.json"
 if errorlevel 1 goto blad
 
 echo.
