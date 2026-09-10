@@ -6,37 +6,60 @@ udowodnić lokalnie, a czego nie da się w żadnym razie.**
 
 ---
 
-## 1. Znalezisko, które zmienia punkt wyjścia
+## 1. Dane są lokalnie — sprawdzone
 
-**Obrazów puli nie ma na dysku lokalnym.** W
-`Eden/Datasets/datasets_20250606_test/.../images/` leży **dziewięć plików**
-i plik anotacji na 36,7 MB. Reszta, czyli 91 336 obrazów, siedzi w archiwum
-na Edenie.
+**Obrazy puli leżą na dysku F**, 90 141 plików JPEG, 37,7 GB:
 
-Ale **nagrania są lokalnie** — 49 filmów w `E:\Cataract\videos\micro`. I to
-wystarcza, bo sprawdziłem, że pulę da się odtworzyć.
+```
+Eden/Datasets/datasets_20250606.tar/datasets_20250606/datasets/
+    DETR_augmented_dataset_20250218/images/
+```
 
-### Reguła odwzorowania — zweryfikowana na danych
+Nazwa `datasets_20250606.tar` myli, bo to jest **katalog**, a nie plik — w środku
+leży zarówno samo archiwum (38,3 GB), jak i jego rozpakowana zawartość.
 
-Nazwa pliku `test01_frame_0000868.jpg` odpowiada klatce wideo o numerze **867**,
-czyli numeracja w nazwie jest o jeden wyższa niż indeks klatki w pliku.
+### Ile z tego pokrywa anotacje
 
-Sprawdzone na wszystkich trzech nieaugmentowanych obrazach, jakie są lokalnie:
-
-| Nazwa pliku | Indeks w wideo | Średnia różnica jasności |
+| Część | W anotacjach | Brakuje na dysku |
 |---|---:|---:|
-| `test01_frame_0000868.jpg` | 867 | 0,85 |
-| `test01_frame_0000869.jpg` | 868 | 0,86 |
-| `test01_frame_0000871.jpg` | 870 | 0,86 |
+| trening | 71 316 | 967 (1,4%) |
+| walidacja | 10 780 | 128 (1,2%) |
+| test | 9 240 | 100 (1,1%) |
+| **razem** | **91 336** | **1 195 (1,3%)** |
 
-Różnica poniżej jednego stopnia jasności na skali do 255 to szum ponownego
-zapisu do JPEG. Sąsiednie klatki dawały od 2,5 do 9, więc dopasowanie jest
-jednoznaczne.
+Braki rozkładają się równo po wszystkich trzech częściach, więc to nie jest
+systematyczna dziura, tylko pliki, które kiedyś nie doszły albo zostały usunięte.
+Do smoke testu bez znaczenia; do produkcji trzeba je uzupełnić albo wykreślić
+z anotacji, świadomie i jednym skryptem.
 
-**Wniosek:** klatki źródłowe odtwarzasz lokalnie z nagrań, w minutach.
-Wycinanie idzie 1 740 klatek na sekundę, a klatek źródłowych w treningu jest
-17 832. Kopie augmentowane odtworzą się **nie**, ale do smoke testu i tak ich
-nie chcesz — augmentacja tylko zaszumia obraz tego, co mierzysz.
+### Trzecia liczba w sprawie 91 336
+
+Warto to zapisać, bo dotyczy zarzutu recenzenta 2 o pochodzenie liczby obrazów.
+Krążą **trzy** wartości:
+
+```
+91 348  = 22 837 klatek zrodlowych x 4      (arytmetyka)
+91 336  = liczba w anotacjach i w artykule  (minus 12 klatek z trzema wariantami)
+90 141  = liczba obrazow FAKTYCZNIE na dysku
+```
+
+Ostatnia liczba zgadza się co do sztuki z rozmiarem cache'u cech opisanym
+w starszych notatkach (`dino_features.pkl`, 90 141 wierszy). Czyli pula, na
+której pipeline naprawdę pracował, miała **90 141 obrazów**, nie 91 336.
+Do artykułu idzie liczba rzeczywista, nie deklarowana.
+
+### Odtwarzanie klatek z nagrań — przydaje się gdzie indziej
+
+Przy okazji sprawdziłem, jak nazwy plików odwzorowują się na klatki wideo,
+bo to jest potrzebne do budowy nowej puli z nagrań (`10_TSFA_NOWA_PULA.md`).
+
+Nazwa `test01_frame_0000868.jpg` odpowiada klatce wideo o indeksie **867** —
+numeracja w nazwie jest o jeden wyższa. Sprawdzone na wszystkich trzech
+nieaugmentowanych obrazach z podręcznego katalogu: średnia różnica jasności
+0,85–0,86 na skali do 255, czyli szum ponownego zapisu do JPEG, podczas gdy
+sąsiednie klatki dawały od 2,5 do 9.
+
+Do smoke testu nie jest to potrzebne — obrazy są gotowe.
 
 ## 2. Sprzęt i czego brakuje
 
@@ -93,19 +116,20 @@ testu są poziomy 1 i 2.
 
 ## 4. Jak to zbudować
 
-### Krok 1 — odtworzyć małą pulę z nagrań
+### Krok 1 — wyciąć małą pulę z tego, co jest
 
-Z pliku `augmented_coco_20250417_030014.json` wybierz **wpisy bez przyrostka
-`_aug`** i wytnij te klatki z nagrań, pamiętając o przesunięciu o jeden.
+Nie trzeba niczego odtwarzać. Bierzesz podzbiór plików z katalogu obrazów
+i podzbiór wpisów z `annotations_train.json`.
 
 Do smoke testu nie potrzebujesz wszystkich 35 pacjentów treningowych.
 Weź **dziesięciu**, plus dwóch na walidację i dwóch na test. Podział bierzesz
 z istniejącego `video_split.json`, **nigdy nie losujesz własnego** — inaczej
 testujesz co innego niż protokół.
 
-Rachunek: 17 832 klatki źródłowe na 35 pacjentów to około 509 na pacjenta.
-Dziesięciu pacjentów daje pulę rzędu **pięciu tysięcy klatek**, z której
-wybierasz podzbiory po **pięćset**. Przy 704 pikselach to jakieś 150 MB.
+Rozważ pominięcie kopii augmentowanych. Klatek źródłowych w treningu jest
+17 832, czyli około 509 na pacjenta; dziesięciu pacjentów daje pulę rzędu
+**pięciu tysięcy klatek**, z której wybierasz podzbiory po **pięćset**.
+Bez augmentacji obraz tego, co mierzysz, jest czystszy.
 
 ### Krok 2 — cechy
 
