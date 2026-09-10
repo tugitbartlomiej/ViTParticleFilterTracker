@@ -142,6 +142,30 @@ bez ograniczeń). Razem 23 GB i dwa nowe ośrodki
 Krok 1 jest tani i wykrywa większość błędów. Nic nie jedzie na Eden, dopóki
 nie przejdzie.
 
+## 6b. Podział pracy na pięciu agentów
+
+Instrukcje: `agents/`. Każdy plik jest samodzielny — agent nie zna historii
+projektu i nie musi jej znać.
+
+| Kto | Katalog | Buduje |
+|---|---|---|
+| **Master** | `pipeline/ingest/`, `pipeline/annotate/` | pobieranie nagrań, klatki, normalizacja, propagacja ramek przez TSFA |
+| Agent 1 | `pipeline/features/`, `pipeline/selection/` | cechy obrazów, model wstępny EL2N, wybór podzbiorów, baseline'y |
+| Agent 2 | `pipeline/train/`, `eden/` | trening jednego biegu, kolejka i pracownicy na klastrze |
+| Agent 3 | `pipeline/eval/` | inferencja, metryki, próg operacyjny, tabele, rejestr dostępów |
+| Agent 4 | `pipeline/transfer/` | D-FINE-S i bieżąca YOLO przy iso-resource, analiza NMS |
+| Agent 5 | `analysis/` | pokrycie rozkładu zewnętrznego, skład augmentacji, audyt wycieków, lista kontrolna |
+
+Podział idzie **po kontraktach, nie po plikach**. Agenci nie rozmawiają ze sobą,
+tylko wymieniają się plikami o ustalonym kształcie: `pool_manifest.jsonl`,
+`variants/<run_id>.json`, `queue.jsonl`, `run_manifest.json`, `metrics.json`.
+Kształt każdego z nich jest wypisany w `agents/README.md`, sekcja 4.
+
+Trzy zasady, które trzymają to razem: **`configs/protocol.yaml` jest jedynym
+źródłem prawdy** i nikt nie zaszywa hiperparametrów w kodzie; **nikt nie edytuje
+cudzego katalogu**; każdy kończy zadanie **testem od końca do końca na małym
+modelu**, zanim cokolwiek pojedzie na klaster.
+
 ## 7. Trzy rzeczy, które muszą być od pierwszego dnia
 
 Nie da się ich dorobić po fakcie:

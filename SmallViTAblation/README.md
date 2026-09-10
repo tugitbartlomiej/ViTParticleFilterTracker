@@ -30,6 +30,7 @@ z podziałem na to, co już zamknięte, co wymaga obliczeń i w jakiej kolejnoś
 | Plik | Co zawiera |
 |---|---|
 | **`PLAN.md`** | **dokument wejściowy: zarzut → co go zamyka → stan → gdzie** |
+| **`agents/`** | **instrukcje dla pięciu agentów** — kontrakty, podział pracy, definicja gotowości |
 | `docs/00_RESEARCH.md` | co mówi literatura, jaki model wybieramy i dlaczego, z odnośnikami |
 | `docs/01_PROTOCOL.md` | **specyfikacja protokołu** — to jest dokument nadrzędny |
 | `docs/02_MATRIX.md` | pełna macierz wariantów, baseline'y, ziarna, budżety |
