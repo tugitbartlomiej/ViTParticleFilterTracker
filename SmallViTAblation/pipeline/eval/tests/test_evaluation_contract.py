@@ -202,3 +202,16 @@ def test_cli_validation_to_test_workflow(tmp_path, protocol, gt, predictions):
     assert result["threshold_selected_on"] == "val"
     assert result["results"]["test"]["FN"] == 1
     assert result["results"]["test"]["mAP_0.5"] == pytest.approx(51 / 101)
+
+
+def test_image_subset_rejects_ambiguous_basenames(tmp_path):
+    for folder in ("operation_a", "operation_b"):
+        target = tmp_path / folder / "frame.jpg"
+        target.parent.mkdir()
+        target.write_bytes(b"jpeg")
+    dataset = {
+        "images": [{"id": 1, "file_name": "frame.jpg"}],
+        "annotations": [], "categories": [{"id": 1, "name": "instrument"}],
+    }
+    with pytest.raises(ValueError, match="Niejednoznaczna"):
+        common.evaluated_image_ids_from_dir(dataset, tmp_path)

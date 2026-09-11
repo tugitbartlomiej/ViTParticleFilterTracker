@@ -176,12 +176,29 @@ def filter_gt_to_images(gt: dict, image_ids: set[int]) -> dict:
 
 def evaluated_image_ids_from_dir(gt: dict, images_dir: str | Path) -> set[int]:
     """Identyfikatory obrazów z anotacji, których pliki ISTNIEJĄ w images_dir."""
-    images_dir = Path(images_dir)
-    existing = {p.name.lower() for p in images_dir.rglob("*") if p.suffix.lower() in IMAGE_EXTENSIONS}
+    images_dir = Path(images_dir).resolve()
+    candidates = [path.resolve() for path in images_dir.rglob("*")
+                  if path.suffix.lower() in IMAGE_EXTENSIONS]
+    by_relative = {path.relative_to(images_dir).as_posix().lower(): path
+                   for path in candidates}
+    by_basename: dict[str, list[Path]] = {}
+    for path in candidates:
+        by_basename.setdefault(path.name.lower(), []).append(path)
     ids = set()
     for im in gt["images"]:
-        name = Path(str(im["file_name"])).name.lower()
-        if name in existing:
+        declared = Path(str(im["file_name"]))
+        if declared.is_absolute() and declared.is_file():
+            ids.add(int(im["id"]))
+            continue
+        relative = declared.as_posix().lstrip("./").lower()
+        if relative in by_relative:
+            ids.add(int(im["id"]))
+            continue
+        matches = by_basename.get(declared.name.lower(), [])
+        if len(matches) > 1:
+            raise ValueError(
+                f"Niejednoznaczna nazwa COCO {declared.name!r}; zachowaj ścieżkę względną")
+        if matches:
             ids.add(int(im["id"]))
     return ids
 

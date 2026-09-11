@@ -35,8 +35,8 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import common  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from SmallViTAblation.pipeline.eval import common  # noqa: E402
 
 # Mapowanie protocol.yaml model.name -> klasa biblioteki rfdetr (import leniwy).
 RFDETR_CLASS_BY_NAME = {
@@ -76,14 +76,13 @@ def load_detector(checkpoint: Path, model_name: str, resolution: int | None, dev
     return cls(**kwargs)
 
 
-def run_inference(model, image_paths: list[Path], id_by_name: dict[str, int],
+def run_inference(model, image_items: list[tuple[Path, int]],
                   conf_thr: float) -> list[dict]:
     """Inferencja standardowa: model.predict + zwykłe dekodowanie, WSZYSTKIE
     predykcje powyżej conf_thr (= evaluation.map_conf_threshold)."""
     dt: list[dict] = []
-    for path in image_paths:
+    for path, img_id in image_items:
         det = model.predict(image_path=str(path), threshold=conf_thr, overwrite=False)
-        img_id = id_by_name[path.name.lower()]
         xyxy = getattr(det, "xyxy", [])
         conf = getattr(det, "confidence", [])
         cls_ids = getattr(det, "class_id", [])
@@ -134,32 +133,41 @@ def prepare_predictions(output_dir: Path, protocol: dict, set_name: str,
         model_name = model_name or common.protocol_field(protocol, "model", "name")
         if resolution is None:
             resolution = common.protocol_field(protocol, "model", "resolution", default=None)
-        paths_by_name = {
-            p.name.lower(): p
-            for p in Path(images_dir).rglob("*")
-            if p.suffix.lower() in common.IMAGE_EXTENSIONS
-        }
-        images = sorted(
-            (im for im in gt["images"]
-             if Path(str(im["file_name"])).name.lower() in paths_by_name),
-            key=lambda im: int(im["id"]),
-        )
+        root = Path(images_dir).resolve()
+        candidates = [p.resolve() for p in root.rglob("*")
+                      if p.suffix.lower() in common.IMAGE_EXTENSIONS]
+        by_relative = {p.relative_to(root).as_posix().lower(): p for p in candidates}
+        by_basename = {}
+        for path in candidates:
+            by_basename.setdefault(path.name.lower(), []).append(path)
+
+        def resolve_image(file_name: str) -> Path | None:
+            declared = Path(file_name)
+            if declared.is_absolute() and declared.is_file():
+                return declared.resolve()
+            relative = declared.as_posix().lstrip("./").lower()
+            if relative in by_relative:
+                return by_relative[relative]
+            matches = by_basename.get(declared.name.lower(), [])
+            if len(matches) > 1:
+                raise ValueError(
+                    f"ambiguous COCO basename {declared.name!r}; preserve relative paths")
+            return matches[0] if matches else None
+
+        resolved = [(im, resolve_image(str(im["file_name"]))) for im in gt["images"]]
+        images = sorted(((im, path) for im, path in resolved if path is not None),
+                        key=lambda item: int(item[0]["id"]))
         if max_images is not None:
             images = images[:max_images]
         if not images:
             raise RuntimeError(
                 f"Żaden obraz z anotacji {annotations} nie istnieje w {images_dir}"
             )
-        id_by_name = {}
-        image_paths = []
-        for im in images:
-            name = Path(str(im["file_name"])).name.lower()
-            id_by_name[name] = int(im["id"])
-            image_paths.append(paths_by_name[name])
+        image_items = [(path, int(im["id"])) for im, path in images]
         model = load_detector(checkpoint, model_name, resolution, device)
-        dt = run_inference(model, image_paths, id_by_name, conf_thr)
-        evaluated_ids = {int(im["id"]) for im in images}
-        file_names = [str(im["file_name"]) for im in images]
+        dt = run_inference(model, image_items, conf_thr)
+        evaluated_ids = {int(im["id"]) for im, _ in images}
+        file_names = [str(im["file_name"]) for im, _ in images]
         mode = "inference"
     else:
         if predictions_file is None:

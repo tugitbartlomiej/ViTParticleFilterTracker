@@ -26,8 +26,8 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import common  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from SmallViTAblation.pipeline.eval import common  # noqa: E402
 
 
 def load_sets(output_dir: Path, protocol: dict | None = None) -> dict[str, dict]:

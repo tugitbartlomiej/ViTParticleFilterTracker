@@ -121,8 +121,14 @@ def main(argv=None):
     rows.sort(key=lambda r: r['frame_id'])
     split = assign_splits(rows, args.split_seed, tuple(args.split_fractions), args.split_map)
     # Accepting empties and asking for them are distinct choices, both recorded.
-    pool = [r for r in rows if r['split'] == 'train' and
-            (args.candidate_labels == 'all' or r['label_status'] == 'provided')]
+    # U: every observable training frame may define temporal context and a
+    # frozen representation. A: only frames whose label policy permits query
+    # or training can be selected. This prevents label availability from
+    # destroying the very temporal windows used by diagnostics.
+    observation_pool = [r for r in rows if r['split'] == 'train']
+    eligible_indices = [i for i, r in enumerate(observation_pool)
+                        if args.candidate_labels == 'all' or r['label_status'] == 'provided']
+    pool = [observation_pool[i] for i in eligible_indices]
     if len(pool) < args.budget:
         raise ValueError(f'Budget {args.budget} exceeds eligible training candidates {len(pool)}')
     args.out.mkdir(parents=True, exist_ok=True)
@@ -157,18 +163,24 @@ def main(argv=None):
                 raise FileExistsError(f'Run output already exists: {destination}; choose another --out')
             semantic = profile != 'simple'
             if semantic not in feature_sets:
-                feature_sets[semantic] = build_features(pool, source, args.cache_dir,
+                feature_sets[semantic] = build_features(observation_pool, source, args.cache_dir,
                     semantic=semantic, model=args.encoder, hub_repo=args.hub_repo,
                     weights=args.weights, image_size=args.image_size, device=args.device,
                     amp=not args.no_amp, batch_size=args.batch_size)
-            x, quality, hashes, feature_meta = feature_sets[semantic]
-            errors, dynamic_meta = None, None
+            x_observed, quality_observed, hashes_observed, feature_meta = feature_sets[semantic]
+            errors_observed, dynamic_meta = None, None
             if profile == 'dynamics':
-                errors, dynamic_meta = diagnose(pool, x, seed=args.seed, dim=args.dynamics_dim,
+                errors_observed, dynamic_meta = diagnose(
+                    observation_pool, x_observed, seed=args.seed, dim=args.dynamics_dim,
                     lags=args.lags, folds=args.folds, alpha=args.ridge_alpha,
                     max_gap_frames=(args.max_transition_gap_frames if args.max_transition_gap_frames is not None
                                     else 1.5*import_meta['candidate_stride']),
                     max_fit_windows=args.max_fit_windows)
+            x = x_observed[eligible_indices]
+            quality = quality_observed[eligible_indices]
+            hashes = [hashes_observed[i] for i in eligible_indices]
+            errors = ({key: values[eligible_indices] for key, values in errors_observed.items()}
+                      if errors_observed is not None else None)
             selected, reasons, duplicates, embedding, selection_meta = choose(pool, x, quality, hashes,
                 profile=profile, budget=args.budget, seed=args.seed, allocation=args.allocation,
                 anchor_fraction=args.anchor_fraction, importance_weight=args.importance_weight,
@@ -182,13 +194,20 @@ def main(argv=None):
             metrics['measurement_wall_seconds'] = time.perf_counter()-metric_start
             metrics['dynamics'] = dynamic_meta
             chosen_set = set(selected)
+            selected_ids = {pool[i]['frame_id'] for i in selected}
+            eligible_by_id = {row['frame_id']: i for i, row in enumerate(pool)}
             def scored_rows():
-                for i, row in enumerate(pool):
+                for observed_i, row in enumerate(observation_pool):
+                    eligible_i = eligible_by_id.get(row['frame_id'])
                     yield dict(frame_id=row['frame_id'], group_id=row['group_id'], video_id=row['video_id'],
-                        frame_index=row['frame_index'], selected=i in chosen_set, reason=reasons.get(i),
+                        frame_index=row['frame_index'], eligible_for_selection=eligible_i is not None,
+                        selected=row['frame_id'] in selected_ids,
+                        reason=reasons.get(eligible_i) if eligible_i is not None else None,
                         duplicate_of=duplicates.get(row['frame_id']),
-                        quality=dict(zip(feature_meta['quality_columns'], map(float, quality[i]))),
-                        diagnostics={key: finite(values[i]) for key, values in (errors or {}).items()})
+                        quality=dict(zip(feature_meta['quality_columns'],
+                                         map(float, quality_observed[observed_i]))),
+                        diagnostics={key: finite(values[observed_i])
+                                     for key, values in (errors_observed or {}).items()})
             jsonl(destination/'frame_scores.jsonl', scored_rows())
             jsonl(destination/'selected_manifest.jsonl', [pool[i] for i in selected])
             # Persist the selection before export; unknown labels cannot erase its audit.
@@ -202,6 +221,10 @@ def main(argv=None):
                     r['split'] == 'train' and r['label_status'] == 'unknown' for r in rows)
                     if args.candidate_labels == 'provided' else 0,
                 annotation_policy=args.candidate_labels, labels_used_for_scoring=False,
+                observation_pool_frames=len(observation_pool),
+                acquisition_pool_frames=len(pool),
+                pool_roles={'U': 'all observable train frames',
+                            'A': 'frames eligible under annotation policy'},
                 training_performed=False, detector_evaluation_performed=False)
             write_json(destination/'run_manifest.json', run_manifest)
             if not args.no_export:

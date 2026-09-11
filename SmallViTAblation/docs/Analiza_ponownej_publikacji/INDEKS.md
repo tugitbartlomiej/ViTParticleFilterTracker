@@ -7,6 +7,9 @@ Ten folder został przeniesiony przez autora do `SmallViTAblation/docs/Analiza_p
 3. [25 — Diagnostyka latentu i aktywna kuracja](25_DIAGNOSTYKA_LATENTU_I_AKTYWNA_KURACJA.md): osobny kierunek badawczy — wybór między dodatkowymi danymi, historią i obserwacją; tanie testy falsyfikacyjne oraz plan AL. Nie zwiększa automatycznie zakresu treningów dokumentu 24.
 4. Główny wcześniejszy raport, kanoniczna wersja w Git: [dokument 22](../22_AUDYT_LITERATURY_I_PLAN_PUBLIKACJI.md). Przeniesiona kopia lokalna ma nazwę `UWAGI_DO_PONOWNEJ_PUBLIKACJI.md`; dalsze zmiany wcześniejszego audytu należy utrzymywać w dokumencie 22.
 5. [26 — Swift Sampling: pełna analiza krytyczna](26_SWIFT_SAMPLING_ANALIZA_KRYTYCZNA.md): dostarczony OCR/PDF v1 i kod autorów, różnice implementacyjne, rachunek predyktora i kosztu, konsekwencje dla CATARACT-LMM oraz osobny plan porównania z diagnostyką historii. Ujawnia też różnicę przypisania score do klatki w naszym prototypie. To analiza, bez zmian kodu i bez uruchamiania testów/treningów.
+6. [27 — Protokół szybkich badań](27_PROTOKOL_SZYBKICH_BADAN_ACTIVE_CURATION_GLE.md): hipotezy, małe modele, sparowane seedy, aktywna pętla, metryki oraz granice interpretacji GLE/Mori–Zwanziga.
+7. [28 — Plan implementacji](28_PLAN_IMPLEMENTACJI_ACTIVE_CURATION_GLE.md): kontrakty modułów, profile kosztu, generator manifestu i polecenia lokalne/Eden.
+8. [29 — Uruchomienie lokalne i Eden](29_URUCHOMIENIE_LOKALNE_I_EDEN.md): konkretna kolejność smoke, pilot, aktywnych rund, kolejki SLURM i sparowanego bootstrapu operacji.
 
 To plan badania i ocena literatury. Nie wykonano OCR ani nowych treningów. Zarejestrowano 123 pliki OCR; dla 30 przeczytano abstrakty lub wybrane fragmenty, dla pozostałych wykonano screening tytułów. Rejestr podaje zakres i hashe; różne wersje tego samego artykułu nie są niezależnymi dowodami.
 

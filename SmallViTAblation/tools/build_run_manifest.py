@@ -116,6 +116,10 @@ def expand(protocol: dict, variants: dict, tier: str | None) -> list[dict]:
     if tier in (None, "B"):
         tb = variants["tier_b"]
         for vid in tb["variants"]:
+            if str(vid).startswith("TBD_"):
+                raise ValueError(
+                    "Tier B contains unresolved TBD variants. Create and pass a locked "
+                    "promotion decision before generating confirmation runs.")
             groups = next((v["groups"] for v in variants["matrix"] if v["id"] == vid), [])
             for seed in seeds_b:
                 add(run_id=f"{vid}__s{seed}__b{budget_b}__{tb['architectures']['primary']}",
@@ -149,7 +153,8 @@ def summarize(runs: list[dict]) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--tier", choices=["A", "B"], default=None)
+    ap.add_argument("--tier", choices=["A", "B"], default="A",
+                    help="safe default is A; B is rejected while variants contain TBD")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 

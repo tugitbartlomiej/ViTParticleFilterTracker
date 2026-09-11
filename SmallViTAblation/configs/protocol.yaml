@@ -14,10 +14,8 @@ split:
   selection_pool: train_only
 
 model:
-  # Trzy role, kazda inny model - opis w PLAN.md, sekcja 1.
-  #   smoke:   rf-detr-nano @384  - test hydrauliki lokalnie na RTX 3070, minuty na bieg
-  #   probe:   rf-detr-small @512 - 144 biegi macierzy na Edenie (sonda, ma szeregowac)
-  #   confirm: rf-detr @512 lub 704 - decyduje walidacja sondy P-RES
+  # Domyslna recepta starszej macierzy RF-DETR. Nowe profile w profiles.yaml
+  # jawnie nadpisuja rozdzielczosc dla kazdej architektury.
   smoke_model: rf-detr-nano
   smoke_resolution: 384
   name: rf-detr-small
@@ -55,6 +53,12 @@ el2n:
   source: proxy_same_architecture
   proxy_epochs: 10
   per_seed: true
+  # --- dopisane przez Agent 1 (nowe pola, istniejące niezmienione) ---
+  proxy_subset_size: 2500        # losowy podzbiór train do treningu proxy
+  proxy_batch_size: 8
+  proxy_resolution: 512
+  score: mean_matched_detection_error  # 1-confidence po unikalnym matchu; FP dla negatywów
+  normalize: minmax_0_1          # normalizacja wyniku przed zapisem do cache
 
 budgets:
   tier_a: 5000
@@ -84,6 +88,73 @@ evaluation:
     ledger: SmallViTAblation/external_access_ledger.jsonl
     allowed_before_selection: false
 
+eden:
+  # Parametry operacyjne kolejki i wezla (dopisane przez Agenta 2, nie dotycza
+  # hiperparametrow treningu). Kolejnosc wg EDEN_CONSTRAINTS.md.
+  queue:
+    heartbeat_interval_s: 30
+    stale_timeout_s: 180
+    lock_ttl_s: 30
+    poll_interval_s: 15
+    idle_exit_rounds: 3
+    max_attempts: 3
+  node:
+    partition: hopper
+    account: transformers_vsc
+    nodelist: hopper
+    workers: 8
+    time_limit: 5-00:00:00
+
+# --- DOPISANE przez Agenta 4 (przeniesienie na inne architektury) ---
+# Nowa sekcja; ZADNA istniejaca wartosc powyzej nie zostala zmieniona.
+# Definiuje konkretne wersje modeli transferu oraz ustawienia NMS,
+# ktorych wczesniej w protokole nie bylo (a wymaga ich AGENT_4, zadanie 2).
+transfer:
+  architectures:
+    yolov8n:
+      library: ultralytics
+      model_id: yolov8n.pt
+      reference: "https://docs.ultralytics.com/models/yolov8/"
+      init: coco_pretrained
+      nms_applies: true
+      role: fast_convolutional_probe
+    rtdetrv2-s:
+      library: official-rtdetrv2-pytorch
+      model_id: rtdetrv2_r18vd_120e_coco
+      config: configs/rtdetrv2/rtdetrv2_r18vd_120e_coco.yml
+      reference: "https://github.com/lyuwenyu/RT-DETR"
+      init: coco_pretrained
+      nms_applies: false
+      role: target_transformer_transfer
+    rf-detr-nano:
+      library: rfdetr
+      model_id: rf-detr-nano
+      reference: "https://rfdetr.roboflow.com/reference/nano/"
+      init: coco_pretrained
+      nms_applies: false
+      role: vit_dinov2_control
+    d-fine-s:
+      library: d-fine
+      repo: https://github.com/Peterande/D-FINE
+      model_id: dfine_hgnetv2_s          # D-FINE-S, ~10M parametrow
+      reference: "ICLR 2025 Spotlight"
+      init: coco_pretrained              # te same wagi startowe COCO, nigdy z innego biegu
+      nms_applies: false                 # DETR-podobny, dopasowanie wektorowe (Hungarian), bez NMS
+    yolo-current:
+      library: ultralytics
+      model_id: yolo26s.pt               # YOLO26 (wydanie 2026-01-14) - BIEZACA wersja, NIE YOLOv8
+      release: "2026-01-14"
+      init: coco_pretrained
+      end_to_end: true                   # YOLO26 natywnie bez NMS; progi ponizej dla sciezki ewaluacyjnej/fallback
+  nms:
+    # Progi inferencji YOLO oraz lista do analizy wrazliwosci (nms_sensitivity.py).
+    conf_threshold: 0.001                # = evaluation.map_conf_threshold, surowe predykcje
+    iou_threshold: 0.7                   # typowy prog NMS ultralytics (operacyjny dla inferencji)
+    sweep_iou: [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+  versions:
+    ultralytics: ">=8.4.0"               # pierwsza galez z YOLO26
+    d-fine: "git+https://github.com/Peterande/D-FINE@master"
+
 features:
   weights_base: {dino: 0.35, el2n: 0.30, sam: 0.20, fourier: 0.15}
   # Wyłączenie grupy: waga 0, reszta przeskalowana PROPORCJONALNIE do sumy 1.
@@ -92,3 +163,80 @@ features:
   cluster_algorithm: kmeans
   cluster_representative: centroid
   kmeans_iterations: 300
+  extract_batch_size: 32
+  checkpoint_every_frames: 500
+  dino_model: dinov3_vitl16
+  dino_image_size: 224
+  fastsam_weights: FastSAM-x.pt
+  fastsam_conf: 0.4
+  fastsam_iou: 0.9
+  fastsam_dim: 9
+  fourier_dim: 1
+  fourier_high_band: [0.5, 1.0]
+  fake_dino_dim: 64
+
+# --- Sekcja Agenta 5 (analysis/) — dopisana 2026-09-10, nic powyżej nie zmienione. ---
+# Ścieżki względem korzenia repozytorium (konwencja jak split.file i zero_look.ledger).
+analysis:
+  pool_manifest: SmallViTAblation/pool_manifest.jsonl
+  image_root: SmallViTAblation/data/images
+  variants_dir: SmallViTAblation/variants
+  results_dir: SmallViTAblation/results
+  feature_cache_dir: SmallViTAblation/feature_cache
+  out_dir: SmallViTAblation/analysis/out
+  external:
+    # Zbiór zewnętrzny jeszcze nie istnieje — uzupełnić po zbudowaniu albo podać przez CLI.
+    manifest: null
+    image_root: null
+  coverage:
+    dino_model: dinov2_vits14
+    dino_image_size: 224
+    dino_batch_size: 32
+    fake_grid: 8                # --fake-embeddings: siatka pikseli do cech zastępczych
+    distance: cosine
+    histogram_bins: 20
+    percentiles: [50, 90, 95, 99]
+    min_variants_for_correlation: 8   # poniżej: ostrzeżenie o mocy testu
+  el2n:
+    detr_pattern: "el2n_{seed}.pkl"   # względem feature_cache_dir
+    yolo_scores: AdvancedDatasetSelection/ablation/yolo/yolo_ep170_el2n_scores.json
+    scatter_sample: 2000              # ile punktów (frame_id, x, y) zapisać do rysunku
+  audit:
+    dhash_size: 8                     # dhash 9x8 -> 64 bity
+    hamming_threshold: 5
+    max_images_for_phash: 20000       # limit per split, żeby audyt nie zjadł RAM-u
+  checklist:
+    ledger_max_entries: 200           # "sensowna" górna granica wpisów w rejestrze dostępów
+    # Kontrakt pól metrics.json (agents/README.md 4.5) — sprawdzany przez checklist.py.
+    metrics_top_fields: [run_id, checkpoint_rule, results, operating_threshold, threshold_selected_on]
+    metrics_result_blocks: [val, test, external_full, external_clean]
+    metrics_block_fields: ["mAP_0.5", "mAP_0.5:0.95", "mAP_0.75", "AR@100", TP, FP, FN,
+                           precision, recall, f1, n_images, n_annotations]
+  dataset_table_expected:
+    train: {patients: 35, images: 71316, source_frames: 17832, instances: 71931}
+    val:   {patients: 8,  images: 10780, source_frames: 2695,  instances: 10921}
+    test:  {patients: 7,  images: 9240,  source_frames: 2310,  instances: 9333}
+paths:
+  # --- dopisane przez Agent 1: domyślne lokalizacje plików kontraktowych ---
+  pool_manifest: pool_manifest.jsonl
+  images_root: .
+  feature_cache_dir: feature_cache
+  variants_dir: variants
+  queue_file: queue.jsonl
+
+# --- Sekcja Agenta 3 (pipeline/eval/) — dopisana 2026-09-10, nic powyżej nie zmienione. ---
+# Same NOWE pola operacyjne ewaluacji; hiperparametry protokołu (evaluation.*) bez zmian.
+eval_agent3:
+  operating_point:
+    f1_curve_max_points: 200        # maks. liczba punktów krzywej F1-vs-próg (dane do rysunku)
+    low_confidence_probe_threshold: 0.3   # diagnostyka: jaki ułamek TP leży PONIŻEJ (zarzut recenzenta)
+  aggregate:
+    bootstrap_min_seeds: 5          # bootstrap CI TYLKO gdy >= tyle ziaren w grupie (przy 3: tylko mean/std/raw)
+    bootstrap_iterations: 10000
+    bootstrap_ci_level: 0.95
+    bootstrap_seed: 20260910        # odtwarzalność resamplingu
+    table_metrics: ["mAP_0.5:0.95", f1]   # domyślne metryki w tabeli LaTeX/CSV
+  external_once:
+    max_checkpoints_per_run: 1      # >1 checkpoint na run_id (w wywołaniu LUB w historii ledger) = odmowa
+  evaluation:
+    single_class_remap: true        # GT ma 1 kategorię → remap category_id predykcji na nią (RF-DETR daje 0)

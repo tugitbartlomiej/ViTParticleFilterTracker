@@ -2,7 +2,7 @@
 
 **Gałąź:** `feature/small-vit-ablation-matrix`
 **Start:** 2026-09-08
-**Status:** PLAN — nic jeszcze nie policzone
+**Status:** IMPLEMENTACJA + TESTY LEKKIE — bez treningów produkcyjnych
 
 ## Po co ten folder
 
@@ -13,14 +13,15 @@ bez analizy czułości, ablacje trenowane inaczej niż pełny pipeline, niestand
 inferencja z jednego zapytania DETR i wielokrotne oglądanie zbioru zewnętrznego.
 
 Ten folder zbiera **plan nowego eksperymentu**, który te zarzuty zamyka. Rdzeń
-pomysłu: zejść z drogiego DETR-R50 (setki epok) na **mały detektor ViT**, żeby jeden
-bieg kosztował minuty zamiast godzin — i za te same pieniądze policzyć **pełną
+pomysłu: zejść z drogiego DETR-R50 (setki epok) na **małe detektory**, żeby jeden
+bieg kosztował minuty zamiast godzin. YOLOv8n służy do szerokiego screeningu,
+a małe transformery do potwierdzenia transferu — dzięki temu można policzyć **pełną
 macierz ablacji, wiele ziaren losowych i analizy czułości**, których recenzenci
 zażądali.
 
-Ten folder zawiera **wyłącznie dokumenty i konfiguracje**. Kod treningu i selekcji
-powstaje osobno, w `AdvancedDatasetSelection/` oraz `Eden/Scripts/`, i czyta
-konfiguracje stąd.
+Ten folder zawiera dokumenty, konfiguracje i wykonywalny kod selekcji, aktywnej
+kuracji, diagnostyki latentnej, treningu, ewaluacji i kolejki Eden. Kosztowne
+treningi pozostają do uruchomienia po dostarczeniu obrazów Cataract-LMM.
 
 ## Nawigacja
 
@@ -53,17 +54,22 @@ z podziałem na to, co już zamknięte, co wymaga obliczeń i w jakiej kolejnoś
 | `tools/build_run_manifest.py` | rozwija konfiguracje do listy biegów |
 | `tools/estimate_time.py` | liczy koszt eksperymentu z listy biegów |
 | `tools/audit_leakage.py` | sprawdza wycieki między splitami: pacjent, klatka źródłowa, plik |
+| `configs/profiles.yaml` | ograniczone profile smoke, pilot, confirm i external-once |
+| `pipeline/active_learning/` | kumulatywna selekcja klatek przy stałym budżecie |
+| `pipeline/latent_dynamics/` | cross-fitowane kontrasty Markow/historia i benchmark syntetyczny |
+| `pipeline/transfer/train_transfer.py` | adapter YOLOv8n i oficjalnego RT-DETRv2-S |
+| `eden/` | odporna kolejka wielokartowa z heartbeat i tokenem próby |
 
 ## Skala w dwóch liczbach
 
 ```
-py -3.11 tools/build_run_manifest.py   ->  144 biegi
-py -3.11 tools/estimate_time.py        ->  250-1000 GPU-godzin
-                                           czyli 1,3-5,2 doby na 8 GPU
+py -3.11 tools/build_run_manifest.py              -> bezpiecznie tylko Tier A
+py -3.11 tools/build_active_manifest.py --help    -> macierz smoke/pilot/confirm
 ```
 
-Widełki znikną po biegu kalibracyjnym. Dla porównania: jeden trening DETR
-w starym podejściu szedł ponad trzysta epok na pełnym zbiorze.
+Dokładny koszt zapisuje profil oraz wygenerowany plik blokady eksperymentu.
+Dla porównania jeden trening DETR w starym podejściu szedł ponad trzysta epok
+na pełnym zbiorze.
 
 ## Zasada nadrzędna
 
@@ -71,6 +77,11 @@ w starym podejściu szedł ponad trzysta epok na pełnym zbiorze.
 > danych, budżet obrazów, inicjalizacja, optymalizator, harmonogram, kryterium
 > stopu, reguła wyboru checkpointu, protokół ewaluacji — jest **identyczne dla
 > wszystkich wariantów, łącznie z pełnym pipeline'em**.
+
+Ta równość obowiązuje w obrębie architektury. Profile blokują rozdzielczość
+osobno dla modelu, dlatego wyników YOLO, RT-DETRv2 i RF-DETR nie interpretuje się
+jako porównania szybkości lub jakości architektur. Między modelami sprawdzamy
+wyłącznie, czy kierunek efektu selekcji się przenosi.
 
 Złamanie tej zasady w poprzednim podejściu (pełny pipeline trenowany produkcyjnie,
 warianty w osobnym frameworku) jest powodem, dla którego [Tab. 5] artykułu nie

@@ -32,6 +32,7 @@ Uzycie:
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -183,6 +184,7 @@ def build_train_annotations(variant: dict, data_root: Path, dest: Path) -> tuple
             raise FileNotFoundError(f"annotations_train nie istnieje: {src}")
         coco = json.loads(src.read_text(encoding="utf-8"))
         _rewrite_file_names_absolute(coco, src.parent, data_root)
+        _assert_coco_images_exist(coco, "train annotations")
         info.update(source=str(src), n_images=len(coco.get("images", [])),
                     n_annotations=len(coco.get("annotations", [])))
     else:
@@ -212,32 +214,61 @@ def _rewrite_file_names_absolute(coco: dict, ann_dir: Path, data_root: Path) -> 
             im["file_name"] = str(cand.resolve())
 
 
+def _assert_coco_images_exist(coco: dict, label: str) -> None:
+    missing = [im.get("file_name") for im in coco.get("images", [])
+               if not im.get("file_name") or not Path(im["file_name"]).is_file()]
+    if missing:
+        raise FileNotFoundError(
+            f"{label}: {len(missing)} images are missing, for example {missing[:3]}")
+
+
 def _coco_from_frames(frames: list[dict], data_root: Path) -> dict:
-    categories = [{"id": 1, "name": "instrument_tip", "supercategory": "instrument"}]
+    categories = [{"id": 1, "name": "instrument", "supercategory": "tool"}]
     images, annotations = [], []
     img_id = 1
     ann_id = 1
     for fr in frames:
+        if fr.get("split") != "train":
+            raise ValueError(f"frame {fr.get('frame_id')} is outside split=train")
+        if fr.get("label_status") == "unknown":
+            raise ValueError(
+                f"frame {fr.get('frame_id')} has an unverified label; annotate or verify negative")
+        if not fr.get("path"):
+            raise ValueError(
+                f"frame {fr.get('frame_id')} is archive-backed; materialize it before training")
         img_path = data_root / fr["path"]
+        if not img_path.is_file():
+            raise FileNotFoundError(f"missing training image for {fr.get('frame_id')}: {img_path}")
         images.append({
             "id": img_id,
             "file_name": str(img_path.resolve()),
             "width": fr.get("native_width"),
             "height": fr.get("native_height"),
         })
-        if fr.get("bbox") and fr.get("has_instrument"):
+        source_annotations = fr.get("annotations")
+        if source_annotations is None:
+            source_annotations = ([{"bbox": fr["bbox"], "iscrowd": 0}]
+                                  if fr.get("bbox") and fr.get("has_instrument") else [])
+        for source_ann in source_annotations:
+            bbox = [float(v) for v in source_ann["bbox"]]
+            if len(bbox) != 4 or min(bbox[0], bbox[1]) < 0 or min(bbox[2], bbox[3]) <= 0:
+                raise ValueError(f"invalid bbox for {fr.get('frame_id')}: {bbox}")
+            width, height = float(fr.get("native_width") or 0), float(fr.get("native_height") or 0)
+            if width <= 0 or height <= 0 or bbox[0] + bbox[2] > width + 1e-3 or bbox[1] + bbox[3] > height + 1e-3:
+                raise ValueError(f"bbox outside image for {fr.get('frame_id')}: {bbox}")
             annotations.append({
                 "id": ann_id, "image_id": img_id, "category_id": 1,
-                "bbox": [float(v) for v in fr["bbox"]],
-                "area": float(fr["bbox"][2]) * float(fr["bbox"][3]),
-                "iscrowd": 0,
+                "bbox": bbox,
+                "area": bbox[2] * bbox[3],
+                "iscrowd": int(source_ann.get("iscrowd", 0)),
             })
             ann_id += 1
         img_id += 1
     return {"images": images, "annotations": annotations, "categories": categories}
 
 
-def prepare_dataset_dir(variant: dict, data_root: Path, run_dir: Path) -> tuple[Path, dict]:
+def prepare_dataset_dir(variant: dict, data_root: Path, run_dir: Path,
+                        val_annotations: Path | None = None) -> tuple[Path, dict]:
     """Katalog dataset_dir w ukladzie, jakiego oczekuje rfdetr:
     dataset/train/_annotations.coco.json + dataset/valid/_annotations.coco.json.
     Obrazy NIE sa kopiowane - sciezki absolutne w plikach COCO."""
@@ -245,11 +276,14 @@ def prepare_dataset_dir(variant: dict, data_root: Path, run_dir: Path) -> tuple[
     train_ann, info = build_train_annotations(
         variant, data_root, dataset_dir / "train" / "_annotations.coco.json")
 
-    val_src = data_root / "annotations_val.json"
+    val_src = val_annotations or (data_root / "annotations_val.json")
+    if not val_src.is_absolute():
+        val_src = data_root / val_src
     if not val_src.is_file():
         raise FileNotFoundError(f"Brak {val_src} (walidacja po kazdej epoce jest wymagana)")
     val_coco = json.loads(val_src.read_text(encoding="utf-8"))
     _rewrite_file_names_absolute(val_coco, val_src.parent, data_root)
+    _assert_coco_images_exist(val_coco, "validation annotations")
     val_dst = dataset_dir / "valid" / "_annotations.coco.json"
     val_dst.parent.mkdir(parents=True, exist_ok=True)
     val_dst.write_text(json.dumps(val_coco), encoding="utf-8")
@@ -279,6 +313,15 @@ def build_manifest(args, protocol: dict, protocol_path: Path, variant_path: Path
         "resolution": resolution,
         "seed": seed,
         "model": model_name,
+        "training_recipe": {
+            "epochs": int(protocol["training"]["epochs"]),
+            "batch_size": int(protocol["training"]["batch_size"]),
+            "grad_accum": int(protocol["training"]["grad_accum"]),
+            "precision": str(protocol["training"]["precision"]),
+            "train_time_augmentation": str(
+                protocol["training"].get("train_time_augmentation", "none")),
+            "early_stopping": bool(protocol["training"].get("early_stopping", False)),
+        },
     }
     gpu = gpu_name()
     if gpu:
@@ -297,6 +340,47 @@ def build_manifest(args, protocol: dict, protocol_path: Path, variant_path: Path
 # --------------------------------------------------------------------------- #
 # walidacja mAP@0.5:0.95 (kryterium best.pth)
 # --------------------------------------------------------------------------- #
+def iter_predictions(predictions):
+    """Yield ``(x1, y1, x2, y2, score, class_id)`` across RF-DETR APIs."""
+    import numpy as np
+
+    if isinstance(predictions, (list, tuple)) and len(predictions) == 1 \
+            and hasattr(predictions[0], "xyxy"):
+        predictions = predictions[0]
+    if hasattr(predictions, "xyxy"):
+        boxes = np.asarray(predictions.xyxy, dtype=float).reshape(-1, 4)
+        confidence = getattr(predictions, "confidence", None)
+        class_id = getattr(predictions, "class_id", None)
+        confidence = (np.ones(len(boxes), dtype=float) if confidence is None
+                      else np.asarray(confidence, dtype=float).reshape(-1))
+        class_id = (np.zeros(len(boxes), dtype=int) if class_id is None
+                    else np.asarray(class_id, dtype=int).reshape(-1))
+        if len(confidence) != len(boxes) or len(class_id) != len(boxes):
+            raise ValueError("RF-DETR prediction fields have inconsistent lengths")
+        for box, score, cls in zip(boxes, confidence, class_id):
+            yield (*map(float, box), float(score), int(cls))
+        return
+    for item in predictions:
+        if isinstance(item, dict):
+            box = item.get("xyxy")
+            if box is None:
+                box = item.get("bbox")
+            if box is None:
+                raise ValueError("prediction dictionary has no xyxy/bbox")
+            score = item.get("confidence", item.get("score", 1.0))
+            cls = item.get("class_id", item.get("category_id", 0))
+            values = list(map(float, box))
+            if "bbox" in item and "xyxy" not in item:
+                values = [values[0], values[1], values[0] + values[2], values[1] + values[3]]
+            yield (*values, float(score), int(cls))
+        else:
+            values = list(map(float, item))
+            if len(values) < 4:
+                raise ValueError("prediction row has fewer than four coordinates")
+            yield (*values[:4], values[4] if len(values) > 4 else 1.0,
+                   int(values[5]) if len(values) > 5 else 0)
+
+
 def evaluate_map_50_95(det, val_ann_path: Path, conf_threshold: float) -> float:
     """mAP@0.5:0.95 na zbiorze val. Predykcje z progiem conf_threshold
     (protocol.yaml -> evaluation.map_conf_threshold)."""
@@ -309,9 +393,7 @@ def evaluate_map_50_95(det, val_ann_path: Path, conf_threshold: float) -> float:
     for img_id in coco_gt.getImgIds():
         img_info = coco_gt.loadImgs(img_id)[0]
         preds = det.predict(img_info["file_name"], threshold=conf_threshold)
-        for box in preds:
-            x1, y1, x2, y2, score, cls = (float(box[0]), float(box[1]), float(box[2]),
-                                          float(box[3]), float(box[4]), int(box[5]))
+        for x1, y1, x2, y2, score, cls in iter_predictions(preds):
             results.append({"image_id": img_id, "category_id": cls + 1,
                             "bbox": [x1, y1, x2 - x1, y2 - y1], "score": score})
     if not results:
@@ -343,15 +425,15 @@ def _filter_kwargs(fn, kwargs: dict, run_dir: Path) -> dict:
     if dropped:
         (run_dir / "unsupported_params.json").write_text(
             json.dumps(dropped, indent=2, default=str), encoding="utf-8")
-        print(f"[train] UWAGA: rfdetr nie przyjmuje parametrow: {sorted(dropped)}",
-              file=sys.stderr)
+        raise TypeError(
+            "Installed rfdetr API cannot honor the locked training recipe; "
+            f"unsupported parameters: {sorted(dropped)}")
     return supported
 
 
 def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
                  model_name: str, resolution: int, seed: int) -> dict:
-    """Pelny trening: stala liczba epok, walidacja po kazdej epoce
-    (ewaluacja kazdego checkpointu epokowego), wybor best/last, porzadki."""
+    """Run the locked recipe and collect RF-DETR's validation-selected outputs."""
     import rfdetr  # lazy import - skrypt testowalny bez GPU
 
     tr = protocol["training"]
@@ -362,6 +444,8 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
 
     model_cls = getattr(rfdetr, MODEL_CLASS_MAP[model_name])
     ckpt_dir = run_dir / "checkpoints_raw"
+    if ckpt_dir.exists():
+        shutil.rmtree(ckpt_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
     # Start ZAWSZE z wag COCO (pretrain_weights domyslne = COCO pretrained).
@@ -372,53 +456,76 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
         "dataset_dir": str(dataset_dir),
         "epochs": epochs,
         "batch_size": int(tr["batch_size"]),
-        "gradient_accumulation_steps": int(tr["grad_accum"]),
+        "grad_accum_steps": int(tr["grad_accum"]),
         "lr": float(tr["lr"]),
-        "lr_backbone": float(tr["lr_backbone"]),
+        "lr_encoder": float(tr["lr_backbone"]),
         "weight_decay": float(tr["weight_decay"]),
         "warmup_epochs": int(tr["warmup_epochs"]),
-        "amp": tr.get("precision") == "bf16",
+        "amp": str(tr.get("precision", "")).lower() in {"bf16", "fp16"},
+        "amp_dtype": "bf16" if tr.get("precision") == "bf16" else "fp16",
         "seed": seed,
-        "exp_name": args.run_id,
         "output_dir": str(ckpt_dir),
-        "resume": False,
+        "resume": None,
+        "early_stopping": False,
+        "eval_interval": 1,
+        "best_model_metric": "map",
+        "run_test": False,
+        "aug_config": {},
+        "scale_jitter": False,
+        "multi_scale": False,
     }
     det.train(**_filter_kwargs(det.train, train_kwargs, run_dir))
 
-    # Walidacja mAP@0.5:0.95 - po kazdej epoce (checkpointy epokowe rfdetr).
     criterion = protocol["checkpoint_selection"]["best_val_criterion"]
     assert criterion == "map_50_95_val", f"nieobslugiwane kryterium: {criterion}"
-    conf_threshold = float(protocol["evaluation"]["map_conf_threshold"])
-    val_ann = dataset_dir / "valid" / "_annotations.coco.json"
 
-    epoch_ckpts = sorted(ckpt_dir.rglob("checkpoint*.pth"))
-    if not epoch_ckpts:
-        raise FileNotFoundError(f"rfdetr nie zapisal checkpointow w {ckpt_dir}")
-
-    best_map, best_ckpt, per_epoch = -1.0, None, {}
-    for i, ckpt in enumerate(epoch_ckpts, start=1):
-        m = evaluate_map_50_95(
-            model_cls(**{**ctor_kwargs,
-                         **_filter_kwargs(model_cls.__init__,
-                                          {"pretrain_weights": str(ckpt)}, run_dir)}),
-            val_ann, conf_threshold)
-        per_epoch[i] = m
-        print(f"[train] epoka {i}/{len(epoch_ckpts)}: map_50_95_val={m:.4f}")
-        if m > best_map:
-            best_map, best_ckpt = m, ckpt
-
-    last_ckpt = epoch_ckpts[-1]
+    # Current RF-DETR emits these exact portable weight files. Its callback
+    # selects checkpoint_best_total.pth by validation box mAP@0.5:0.95 and
+    # writes last.pth at fit end. Re-evaluating ad-hoc checkpoint globs here
+    # would mix .ckpt and best/EMA files and can select the wrong epoch.
+    best_ckpt = ckpt_dir / "checkpoint_best_total.pth"
+    last_ckpt = ckpt_dir / "last.pth"
+    missing = [path.name for path in (best_ckpt, last_ckpt) if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(
+            f"RF-DETR did not emit required checkpoint(s) {missing} in {ckpt_dir}")
     shutil.copyfile(last_ckpt, run_dir / "last.pth")
     shutil.copyfile(best_ckpt, run_dir / "best.pth")
+
+    history = _read_validation_history(ckpt_dir)
+    summary = {"criterion": criterion, "source": "RF-DETR BestModelCallback",
+               "per_epoch_map_50_95_val": history}
+    if history:
+        best_epoch = max(history, key=history.get)
+        summary.update(best_epoch=best_epoch,
+                       best_map_50_95_val=history[best_epoch])
     (run_dir / "epoch_val_map.json").write_text(
-        json.dumps({"criterion": criterion, "per_epoch_map_50_95_val": per_epoch,
-                    "best_epoch": max(per_epoch, key=per_epoch.get),
-                    "best_map_50_95_val": best_map}, indent=2), encoding="utf-8")
+        json.dumps(summary, indent=2), encoding="utf-8")
 
     # Wymaganie 7: kasujemy checkpointy posrednie.
     shutil.rmtree(ckpt_dir, ignore_errors=True)
 
-    return {"epochs_completed": len(epoch_ckpts), "best_map_50_95_val": best_map}
+    return {"epochs_completed": epochs,
+            "best_map_50_95_val": summary.get("best_map_50_95_val")}
+
+
+def _read_validation_history(output_dir: Path) -> dict[int, float]:
+    """Read RF-DETR's CSV logger without assuming a version-specific folder."""
+    result: dict[int, float] = {}
+    for path in sorted(output_dir.rglob("metrics.csv")):
+        with path.open("r", encoding="utf-8", newline="") as stream:
+            for row in csv.DictReader(stream):
+                metric_key = next((key for key in row
+                                   if key.startswith("val/")
+                                   and "mAP_50_95" in key
+                                   and row.get(key) not in (None, "")), None)
+                if metric_key is None:
+                    continue
+                epoch_raw = row.get("epoch", "")
+                if epoch_raw in (None, ""):
+                    continue
+                result[int(float(epoch_raw))] = float(row[metric_key])
+    return result
 
 
 # --------------------------------------------------------------------------- #
@@ -434,6 +541,13 @@ def parse_args(argv=None):
     ap.add_argument("--role", choices=["main", "smoke"], default="main",
                     help="main: protocol->model.name; smoke: model.smoke_model "
                          "@ model.smoke_resolution")
+    ap.add_argument("--train-seed", type=int, default=None,
+                    help="paired training seed; independent of selection seed")
+    ap.add_argument("--profile", default=None,
+                    help="execution profile from configs/profiles.yaml")
+    ap.add_argument("--profiles-config", type=Path, default=None)
+    ap.add_argument("--val-annotations", type=Path, default=None,
+                    help="fixed validation COCO; defaults to <data-root>/annotations_val.json")
     ap.add_argument("--dry-run", action="store_true",
                     help="pelna inicjalizacja i walidacja plikow, manifest "
                          "in-memory + zapis, BEZ treningu")
@@ -448,6 +562,27 @@ def main(argv=None) -> int:
     variant_path = args.variant_file.resolve()
     data_root = args.data_root.resolve()
     protocol = yaml.safe_load(protocol_path.read_text(encoding="utf-8"))
+    if args.profile:
+        import copy
+        profile_path = args.profiles_config or (protocol_path.parent / "profiles.yaml")
+        profiles = yaml.safe_load(profile_path.read_text(encoding="utf-8")).get("profiles", {})
+        if args.profile not in profiles:
+            sys.exit(f"unknown experiment profile: {args.profile}")
+        model_for_profile = ("rf-detr-nano" if args.role == "smoke"
+                             else protocol["model"]["name"])
+        allowed = profiles[args.profile].get("models", [])
+        if allowed and model_for_profile not in allowed:
+            sys.exit(f"profile {args.profile} does not allow model {model_for_profile}")
+        protocol = copy.deepcopy(protocol)
+        profile = profiles[args.profile]
+        protocol["training"]["epochs"] = int(profile["epochs"])
+        resolutions = profile.get("resolution_by_model", {})
+        if model_for_profile in resolutions:
+            key = "smoke_resolution" if args.role == "smoke" else "resolution"
+            protocol["model"][key] = int(resolutions[model_for_profile])
+        precisions = profile.get("precision_by_model", {})
+        if model_for_profile in precisions:
+            protocol["training"]["precision"] = str(precisions[model_for_profile])
 
     if not variant_path.is_file():
         sys.exit(f"variant-file nie istnieje: {variant_path}")
@@ -457,7 +592,7 @@ def main(argv=None) -> int:
     variant = json.loads(variant_path.read_text(encoding="utf-8"))
     if "seed" not in variant:
         sys.exit("variant-file bez pola seed")
-    seed = int(variant["seed"])
+    seed = int(args.train_seed if args.train_seed is not None else variant["seed"])
     set_seed(seed)
 
     model_name = (protocol["model"]["smoke_model"] if args.role == "smoke"
@@ -478,15 +613,28 @@ def main(argv=None) -> int:
     # kontrakt 4.2: liczba frame_ids == budget
     budget = variant.get("budget")
     frame_ids = variant.get("frame_ids")
+    if frame_ids is not None and len(frame_ids) != len(set(frame_ids)):
+        sys.exit(f"variant {run_id}: frame_ids contains duplicates")
     if frame_ids is not None and isinstance(budget, int) and len(frame_ids) != budget:
         sys.exit(f"variant {run_id}: len(frame_ids)={len(frame_ids)} != budget={budget}")
 
-    dataset_dir, data_info = prepare_dataset_dir(variant, data_root, run_dir)
+    dataset_dir, data_info = prepare_dataset_dir(
+        variant, data_root, run_dir, args.val_annotations)
     print(f"[train] dataset: {json.dumps(data_info, ensure_ascii=False)}")
 
     epochs_planned = 0 if args.dry_run else int(protocol["training"]["epochs"])
-    extra = {"dry_run": True, "role": args.role, "dataset": data_info} if args.dry_run \
-        else {"role": args.role, "dataset": data_info}
+    experiment = {"strategy": variant.get(
+                      "strategy", variant.get("variant", variant.get("variant_id"))),
+                  "budget": variant.get("budget"),
+                  "selection_seed": variant.get("seed"),
+                  "train_seed": seed, "round": variant.get("round")}
+    extra = {"dry_run": True, "role": args.role, "dataset": data_info,
+             "experiment_profile": args.profile, "experiment": experiment} if args.dry_run \
+        else {"role": args.role, "dataset": data_info,
+              "experiment_profile": args.profile, "experiment": experiment}
+    if args.profile:
+        extra["profiles_config"] = str(Path(profile_path).resolve())
+        extra["profiles_sha256"] = sha256_file(Path(profile_path))
 
     if args.dry_run:
         print("[train] DRY-RUN: walidacja plikow + manifest, bez treningu")
@@ -508,7 +656,7 @@ def main(argv=None) -> int:
 
     # porzadki: poza last.pth/best.pth/run_manifest.json/logami nie zostaje nic
     if not args.dry_run:
-        for junk in ("dataset", "unsupported_params.json"):
+        for junk in ("dataset",):
             p = run_dir / junk
             if p.is_dir():
                 shutil.rmtree(p, ignore_errors=True)

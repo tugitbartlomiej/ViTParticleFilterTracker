@@ -52,9 +52,10 @@ if __name__ == "__main__" and any(
     curate_main()
     raise SystemExit(0)
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "features"))
-from common import (ROOT, gather_rows, load_feature_pkl, load_protocol,
-                    read_manifest, resolve_under_root, train_pool)
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from SmallViTAblation.pipeline.features.common import (  # noqa: E402
+    ROOT, gather_rows, load_feature_pkl, load_protocol, read_manifest,
+    resolve_under_root, train_pool)
 
 GROUP_KEY = {"D": "dino", "E": "el2n", "S": "sam", "F": "fourier"}
 GROUP_ORDER = ("dino", "el2n", "sam", "fourier")  # stala kolejnosc sklejenia

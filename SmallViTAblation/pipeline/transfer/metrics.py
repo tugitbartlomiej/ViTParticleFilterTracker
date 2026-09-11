@@ -19,8 +19,8 @@ if __package__:
     from ..eval import common as eval_common
 else:  # direct CLI scripts import this module as `metrics`
     import sys
-    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from pipeline.eval import common as eval_common
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    from SmallViTAblation.pipeline.eval import common as eval_common
 
 # Metryki wymagane w kazdym bloku wynikowym (README 4.5 / validate_contracts.py)
 METRIC_FIELDS = [

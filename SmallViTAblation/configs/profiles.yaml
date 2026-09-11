@@ -1,0 +1,105 @@
+version: 1
+
+# Profile describes how much evidence a run may produce. It never changes the
+# train/validation/test split or the selector after results have been inspected.
+profiles:
+  smoke:
+    purpose: plumbing_and_overfit
+    models: [yolov8n]
+    budgets: [64, 500]
+    seeds: [42, 1337]
+    seed_pairing: matched
+    strategies: [random, uniform_time, coverage]
+    epochs: 5
+    resolution_by_model: {yolov8n: 384}
+    precision_by_model: {yolov8n: fp16}
+    max_runs: 12
+    evaluate: [val]
+    allow_external: false
+
+  vit_smoke:
+    purpose: transformer_plumbing_only
+    models: [rf-detr-nano, rtdetrv2-s]
+    budgets: [64, 500]
+    seeds: [42]
+    seed_pairing: matched
+    strategies: [uniform_time, coverage]
+    epochs: 3
+    resolution_by_model: {rf-detr-nano: 384, rtdetrv2-s: 640}
+    precision_by_model: {rf-detr-nano: bf16, rtdetrv2-s: fp16}
+    max_runs: 8
+    evaluate: [val]
+    allow_external: false
+
+  pilot:
+    purpose: freeze_selector_and_training_recipe
+    models: [yolov8n]
+    budgets: [500, 1500, 2500]
+    seeds: [42, 1337, 2024]
+    seed_pairing: matched
+    strategies: [random, uniform_time, coverage, coverage_uncertainty,
+                 coverage_residual, coverage_history]
+    epochs: 30
+    resolution_by_model: {yolov8n: 384}
+    precision_by_model: {yolov8n: fp16}
+    max_runs: 54
+    evaluate: [val, test]
+    allow_external: false
+
+  confirm:
+    purpose: paired_confirmation_and_architecture_transfer
+    models: [yolov8n, rtdetrv2-s, rf-detr-nano]
+    budgets: [2500]
+    seeds: [42, 1337, 2024, 7, 31337, 2718]
+    seed_pairing: matched
+    strategies: [random, uniform_time, coverage,
+                 coverage_residual, coverage_history]
+    epochs: 60
+    resolution_by_model: {yolov8n: 512, rtdetrv2-s: 640, rf-detr-nano: 384}
+    precision_by_model: {yolov8n: fp16, rtdetrv2-s: fp16, rf-detr-nano: bf16}
+    max_runs: 90
+    evaluate: [val, test]
+    allow_external: false
+
+  external_once:
+    purpose: final_locked_models_only
+    models: [yolov8n, rtdetrv2-s, rf-detr-nano]
+    budgets: [2500]
+    seeds: [42, 1337, 2024, 7, 31337, 2718]
+    seed_pairing: matched
+    require_explicit_strategies: true
+    epochs: 60
+    resolution_by_model: {yolov8n: 512, rtdetrv2-s: 640, rf-detr-nano: 384}
+    precision_by_model: {yolov8n: fp16, rtdetrv2-s: fp16, rf-detr-nano: bf16}
+    max_runs: 18
+    evaluate: [external_full, external_clean]
+    allow_external: true
+
+active_curation:
+  # All budgets are cumulative and count unique source frames.
+  initial_budget: 500
+  acquisition_batch: 500
+  budgets: [500, 1500, 2500]
+  strategies:
+    - random
+    - uniform_time
+    - coverage
+    - coverage_uncertainty
+    - coverage_residual
+    - coverage_history
+  min_gap_frames: 5
+  score_weights:
+    coverage: 0.60
+    uncertainty: 0.40
+    residual: 0.40
+    history_gain: 0.40
+
+latent_diagnostics:
+  projection_dim: 24
+  lags: 3
+  folds: 3
+  ridge_alpha: 0.01
+  covariance_shrinkage: 0.10
+  max_transition_gap_frames: 8
+  max_fit_windows: 20000
+  residual_modes: 8
