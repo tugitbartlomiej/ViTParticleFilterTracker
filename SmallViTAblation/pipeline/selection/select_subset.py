@@ -29,6 +29,10 @@ cluster_algorithm, cluster_representative, group_weight_delta(+target_group).
 Uzycie:
     py -3.11 pipeline/selection/select_subset.py --queue queue.jsonl
         [--run-id X] [--cache-dir DIR] [--variants-dir DIR]
+
+Kuracja Cataract-LMM (oddzielne profile i pomiary, bez historycznego DESF):
+    python pipeline/selection/select_subset.py --profile balanced --subset tracking
+        --budget 2500 --out curated/tracking
 """
 from __future__ import annotations
 
@@ -38,6 +42,15 @@ import sys
 from pathlib import Path
 
 import numpy as np
+
+# Dispatch before importing the legacy feature-cache contract. The new profiles
+# also work without that optional historical pipeline installed/configured.
+if __name__ == "__main__" and any(
+        arg == "--profile" or arg.startswith("--profile=") for arg in sys.argv[1:]):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    from SmallViTAblation.pipeline.curation.run import main as curate_main
+    curate_main()
+    raise SystemExit(0)
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "features"))
 from common import (ROOT, gather_rows, load_feature_pkl, load_protocol,
@@ -110,36 +123,38 @@ def cluster_kmeans(x: np.ndarray, k: int, seed: int, max_iter: int
     return labels, km.cluster_centers_
 
 
-def cluster_kcenter_greedy(x: np.ndarray, k: int) -> np.ndarray:
+def cluster_kcenter_greedy(x: np.ndarray, k: int, *, return_centers=False) -> np.ndarray:
     """K-center greedy (farthest point). Deterministyczny, bez ziarna.
 
-    Zwraca 'labels', w ktorym kazdy wybrany punkt jest swoim klastrem,
-    a pozostale punkty naleza do najblizszego wybranego.
+    return_centers=True zwraca faktycznie wybrane indeksy. Wariant etykiet
+    zachowano dla konsumentow potrzebujacych partycji Voronoia.
     """
     n = x.shape[0]
+    if not 1 <= k <= n or not np.isfinite(x).all():
+        raise ValueError("k-center wymaga 1 <= k <= N i skonczonych cech")
     mu = x.mean(axis=0)
     first = int(np.argmin(np.linalg.norm(x - mu, axis=1)))
     chosen = [first]
     dist = np.linalg.norm(x - x[first], axis=1)
+    dist[first] = -np.inf
     while len(chosen) < k:
         nxt = int(np.argmax(dist))
         chosen.append(nxt)
         dist = np.minimum(dist, np.linalg.norm(x - x[nxt], axis=1))
-    labels = np.full(n, -1, dtype=np.int64)
-    chosen_arr = np.array(chosen)
-    d_all = np.linalg.norm(x[:, None, :] - x[chosen_arr][None, :, :], axis=2) \
-        if n * k <= 4_000_000 else None
-    if d_all is None:  # duze dane: liczymy chunkami
-        nearest = np.zeros(n, dtype=np.int64)
-        for s in range(0, n, 4096):
-            e = min(s + 4096, n)
-            chunk = np.linalg.norm(
-                x[s:e, None, :] - x[chosen_arr][None, :, :], axis=2)
-            nearest[s:e] = chunk.argmin(axis=1)
-    else:
-        nearest = d_all.argmin(axis=1)
-    for ci, p in enumerate(chosen):
-        labels[nearest == ci] = ci
+        dist[chosen] = -np.inf  # identyczne wektory nadal wybieramy tylko raz
+    chosen_arr = np.array(chosen, dtype=np.int64)
+    if return_centers:
+        return chosen_arr
+    labels = np.zeros(n, dtype=np.int64)
+    # O(chunk*K) pamieci zamiast tensora O(chunk*K*D).
+    centres = x[chosen_arr]
+    norms = np.sum(centres**2, axis=1)
+    chunk_size = max(1, min(4096, 1_000_000 // k))
+    for s in range(0, n, chunk_size):
+        part = x[s:s+chunk_size]
+        squared = np.sum(part**2, axis=1)[:, None] + norms[None, :] - 2*part @ centres.T
+        labels[s:s+len(part)] = squared.argmin(axis=1)
+    labels[chosen_arr] = np.arange(k)  # takze przy dokladnie identycznych centrach
     return labels
 
 
@@ -200,7 +215,7 @@ def select_one(run: dict, pool: list[dict], pool_ids: list[str],
     run_id = run["run_id"]
     seed = int(run["seed"])
     budget = run["budget"]
-    if not isinstance(budget, int):
+    if isinstance(budget, bool) or not isinstance(budget, int) or budget < 1:
         raise ValueError(f"{run_id}: budget musi byc int (dostalem {budget!r})")
     groups = list(run.get("groups") or [])
     if not groups:
@@ -239,13 +254,12 @@ def select_one(run: dict, pool: list[dict], pool_ids: list[str],
             labels, _centers = cluster_kmeans(
                 x, budget, seed, int(cfg["kmeans_iterations"]))
         elif algo == "kcenter_greedy":
-            labels = cluster_kcenter_greedy(x, budget)
+            chosen = cluster_kcenter_greedy(x, budget, return_centers=True).tolist()
         else:
             raise ValueError(f"{run_id}: nieznany cluster_algorithm '{algo}'")
         rule = str(cfg["cluster_representative"])
-        if algo == "kcenter_greedy":
-            rule = "centroid"  # punkty wybrane wprost, klastry tylko pomocniczo
-        chosen = pick_representatives(x, labels, budget, rule, seed)
+        if algo != "kcenter_greedy":
+            chosen = pick_representatives(x, labels, budget, rule, seed)
 
     if len(set(chosen)) != budget:
         raise RuntimeError(f"{run_id}: wybrano {len(set(chosen))} != {budget}")
@@ -261,7 +275,8 @@ def select_one(run: dict, pool: list[dict], pool_ids: list[str],
             "weights": weights,
             "pca_dim": int(cfg["dino_pca_dim"]),
             "algorithm": str(cfg["cluster_algorithm"]),
-            "representative": str(cfg["cluster_representative"]),
+            "representative": ("farthest_point_centers" if cfg["cluster_algorithm"] == "kcenter_greedy"
+                               else str(cfg["cluster_representative"])),
             "groups": groups,
             "n_pool_train": n,
             "override": run.get("override"),

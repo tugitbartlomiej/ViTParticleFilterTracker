@@ -20,6 +20,16 @@ import os
 import sys
 import warnings
 
+# The new image-only curation profiles are shared with SmallViTAblation. Dispatch
+# before loading legacy SAM/DETR dependencies or changing global model caches.
+if __name__ == "__main__" and any(
+        arg == "--profile" or arg.startswith("--profile=") for arg in sys.argv[1:]):
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from SmallViTAblation.pipeline.curation.run import main as curate_main
+    curate_main()
+    raise SystemExit(0)
+
 # Suppress PyTorch weight loading warnings
 warnings.filterwarnings('ignore', message='.*copying from a non-meta parameter.*')
 warnings.filterwarnings('ignore', message='.*were not used when initializing.*')
