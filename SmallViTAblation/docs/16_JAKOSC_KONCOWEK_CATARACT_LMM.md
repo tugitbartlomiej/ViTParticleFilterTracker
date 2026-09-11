@@ -57,3 +57,73 @@ Pudła: #023 (TR_0023 kl.1698), #088 (TR_0069 kl.25), #157 (TR_0131 kl.25),
   raportowania „trafność zbioru" — nie.
 - Nie sprawdzaliśmy 11,5% klatek BEZ podanej końcówki. Tam może być druga,
   większa pula błędów: końcówka widoczna, a nieoznaczona.
+
+---
+
+# Jakość RAMEK narzędzia
+
+Ta sama metoda, dwie osobne próbki po 100 ramek, to samo ziarno 1606.
+Skrypt: `scripts/pobieranie/probka_ramek_do_oceny.py`.
+Werdykty: `_probka_ramek_seg/werdykty.json`, `_probka_ramek_trk/werdykty.json`.
+
+Kategorie: **T** ramka ciasno obejmuje narzędzie, **L** narzędzie jest, ale
+ramka luźna, przesunięta albo ucina jego część, **P** w ramce nie ma narzędzia.
+
+## 2_Instance_Segmentation — 100 ramek, 9 klas narzędzi
+
+| werdykt | ile |
+|---|---:|
+| T ciasna | 91 |
+| L luźna lub przesunięta | 9 |
+| P pudło | 0 |
+
+Ciasne: **91,0%**, Wilson 95%: **83,8–95,2%**. Ani jednego pudła.
+
+Błąd nie rozkłada się równo po klasach. **Lens-Injector: 4 złe na 6**.
+Injektor to przezroczysta plastikowa tuba i na wielu klatkach jego granica jest
+nieczytelna — adnotator zaznaczał obszar, a nie kształt. Forceps 2/28,
+Cap-Cystotome 2/12, Second-Instrument 1/10, reszta klas bez błędu.
+
+## 3_Object_Tracking — 100 ramek cystotomu, 20 klipów po 5 klatek
+
+| werdykt | ile |
+|---|---:|
+| T ciasna | 89 |
+| L luźna lub przesunięta | 8 |
+| P pudło | 3 |
+
+Ciasne: **89,0%**, Wilson 95%: **81,4–93,7%**.
+
+Znowu skupisko w tych samych klipach: TR_0133 daje 4 z 11 błędów, TR_0022 dwa.
+TR_0133 i TR_0024 wypadły źle także przy końcówkach. To potwierdza, że filtr
+jakości na poziomie klipu załatwia obie wady naraz.
+
+## Zestawienie trzech pomiarów
+
+| co | trafnych | przedział 95% |
+|---|---:|---|
+| końcówka (tracking, 196 próbek) | 91,8% | 87,2–94,9% |
+| ramka (segmentacja, 100 próbek) | 91,0% | 83,8–95,2% |
+| ramka (tracking, 100 próbek) | 89,0% | 81,4–93,7% |
+
+Trzy niezależne pomiary dają ten sam rząd wielkości: **około 90% adnotacji jest
+dobrych, około 10% wymaga poprawy albo odrzucenia**. Przedziały się nakładają,
+więc nie ma podstaw, żeby twierdzić, że któreś źródło jest istotnie lepsze.
+
+## Co z tego wynika dla treningu
+
+1. Segmentacja jest czystsza tam, gdzie narzędzie jest metalowe i ostro odcięte
+   od tła. Problem robią narzędzia przezroczyste. Przy jednej klasie
+   `instrument` te 6 ramek injektora to margines, ale w statystykach per klasa
+   byłby to poważny błąd — kolejny argument za jedną klasą.
+2. Pudeł w segmentacji nie ma wcale, w trackingu są trzy na sto. Tracking jest
+   generowany półautomatycznie i to widać.
+3. Odrzucenie kilku najgorszych klipów podniesie jakość obu rodzajów adnotacji
+   naraz, bo błędy siedzą w tych samych nagraniach.
+
+## Ograniczenia
+
+Ocena wzrokowa modelu, nie okulisty. „Ciasna" znaczy „krawędzie ramki leżą przy
+krawędziach narzędzia", bez progu w pikselach ani liczonego [IoU] (aj-oł-ju).
+Żeby dostać liczbę odporną na taką subiektywność, trzeba by przerysować ramki
+ręcznie i policzyć pokrycie — to zadanie na osobną sesję.
