@@ -1,4 +1,8 @@
-# 03 — Koszt i optymalizacja pod ~133 biegi
+# 03 — Historyczny kosztorys; aktualny plan w dokumencie 24
+
+**Aktualizacja 2026-09-11 po decyzji autora:** obowiązujący kierunek optymalizacji opisuje [24 — Szybkie ablacje i optymalizacja Edena](Analiza_ponownej_publikacji/24_SZYBKIE_ABLACJE_I_OPTYMALIZACJA_EDEN.md). Najpierw YOLOv8n i pomiar czasu, potem ograniczony transfer do RT-DETR/ViT. Poniższe zalecenia RF-DETR-Small jako pierwszego modelu, rezerwacji całego węzła, dwóch biegów na GPU i limitu godziny na trening są historyczne, nie stanowią domyślnych ustawień nowego planu. Brak nowych pomiarów czasu na Edenie.
+
+Cache współdzielimy wyłącznie dla identycznych wag/preprocessingu/źródeł; jego niezależność od seeda jest warunkowa. Liczbę plików proxy, faktyczną równoległość i ścieżkę scratch ustalić z nowego manifestu oraz odczytu klastra. Zachowano dawny kosztorys poniżej dla ciągłości dokumentacji.
 
 Status 2026-09-11: historyczny kosztorys v1. Liczby 133/144/170 w notatkach
 dotyczą różnych planów. Aktualną liczbę liczyć z zamrożonego manifestu biegów;

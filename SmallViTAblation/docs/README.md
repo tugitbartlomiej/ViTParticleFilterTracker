@@ -4,6 +4,8 @@ Stan uporządkowany 2026-09-11. **Protokół planowanego eksperymentu, historycz
 
 ## Zacznij tutaj
 
+Najnowsza decyzja autora: **najpierw szybkie testy na małych detektorach, potem transfer**. [24 — Plan treningów i optymalizacja Edena](Analiza_ponownej_publikacji/24_SZYBKIE_ABLACJE_I_OPTYMALIZACJA_EDEN.md), [23 — Połączenie z projektem grantowym](Analiza_ponownej_publikacji/23_POLACZENIE_Z_GRANTEM_DYNAMIKA_LATENTU.md). Analizy przeniesione przez autora: [indeks folderu](Analiza_ponownej_publikacji/INDEKS.md).
+
 0. [22 — Audyt literatury i plan ponownej publikacji](22_AUDYT_LITERATURY_I_PLAN_PUBLIKACJI.md): przegląd lokalnego OCR i Undermind, ocena nowości, bramy poprawności, konkretne ablacje RT-DETR i plan statystyczny. To projekt badania, nie wykonane treningi.
 1. [21 — Stan refaktoru i ograniczenia](21_STAN_REFAKTORU.md): co poprawiono w kodzie, jak uruchomić testy i co pozostaje otwarte.
 2. [01 — Protokół](01_PROTOCOL.md): reguły docelowego badania. YAML jest konfiguracją istniejącej implementacji; nie wszystkie reguły dokumentu są jeszcze wdrożone.
@@ -15,7 +17,7 @@ Stan uporządkowany 2026-09-11. **Protokół planowanego eksperymentu, historycz
 | Pliki | Rola i sposób użycia |
 |---|---|
 | [00](00_RESEARCH.md), [19](19_SELEKCJA_WG_LITERATURY.md), [20](20_DRZEWA_GRADIENTOWE_JAKO_OBSERWATOR.md) | Literatura i hipotezy. Parametry projektowanych selektorów wymagają walidacji; przywołanie pracy nie oznacza wdrożenia jej metody. |
-| [03](03_COMPUTE_AND_OPTIMIZATION.md), [06](06_TODO_KOD_I_EDEN.md) | Plan kosztów i prac. Historyczne widełki czasu i liczby biegów trzeba przeliczyć po zamrożeniu aktualnej konfiguracji. |
+| [03](03_COMPUTE_AND_OPTIMIZATION.md), [06](06_TODO_KOD_I_EDEN.md) | Historyczne plany kosztów i prac. Aktualna kolejność, kalibracja i optymalizacja są w dokumencie 24; stare liczby biegów nie są zleceniem uruchomienia kolejki. |
 | [05](05_OPEN_QUESTIONS.md), [07](07_EDEN_INWENTARZ.md), [08](08_AUDYT_WYCIEKOW.md) | Inwentarze i audyty konkretnych plików; nie dowodzą poprawności wszystkich historycznych checkpointów ani obecnego stanu serwera. |
 | [09](09_ROZBUDOWA_DANYCH.md), [10](10_TSFA_NOWA_PULA.md) | Propozycje rozbudowy danych i propagacji etykiet; osobny eksperyment względem ablacji selekcji. |
 | [11](11_ZRODLA_NAGRAN.md), [12](12_LINKI_DO_POBRANIA.md), [14](14_SUROWE_FILMY_PLAN_POBRANIA.md) | Katalog źródeł i plany pobierania; dostępność, licencje i pojemność dysków wymagają bieżącej kontroli przed wykonaniem. |

@@ -1,6 +1,6 @@
 # 01 — Specyfikacja protokołu (dokument nadrzędny)
 
-Wersja: v2, projekt po audycie (2026-09-11). Każda zmiana wymaga wpisu w historii.
+Wersja: v2.1, projekt po audycie i decyzji o małych modelach (2026-09-11). Każda zmiana wymaga wpisu w historii.
 `configs/protocol.yaml` opisuje obecną implementację i nie jest jeszcze zgodny ze
 wszystkimi regułami v2. Status wdrożenia: [21_STAN_REFAKTORU.md](21_STAN_REFAKTORU.md).
 
@@ -8,7 +8,7 @@ wszystkimi regułami v2. Status wdrożenia: [21_STAN_REFAKTORU.md](21_STAN_REFAK
 
 ## P0. Zasada
 
-Jeden bieg = (wariant selekcji) × (ziarno losowe). **Wszystko inne jest stałe.**
+Jeden bieg określa model/recepta, K, budżet, wariant selekcji i ziarna. **W obrębie kontrastu wariantów wszystkie pozostałe ustawienia są stałe.** Zmiana architektury, K albo budżetu oznacza osobny blok porównań, nie podmianę jednego ramienia.
 Pełny pipeline jest **jednym z wariantów w tej samej macierzy**, nie osobnym
 biegiem produkcyjnym. Pozwala to kontrolować wpływ selekcji, jeśli zgodne są także
 inicjalizacja, dane, ewaluacja i rzeczywisty budżet; samo zapisanie planu nie zamyka uwagi.
@@ -95,16 +95,18 @@ utworzyć mniejszą pulę. 20 000 różnych źródeł jest tu niewykonalne. Wari
 
 ## P5. Trening — identyczny dla wszystkich
 
+Aktualna kolejność: szybki development na YOLOv8n, potem potwierdzenie i transfer według [dokumentu 24](Analiza_ponownej_publikacji/24_SZYBKIE_ABLACJE_I_OPTYMALIZACJA_EDEN.md). Dotychczasowy start od pełnej macierzy RF-DETR-Small zastąpiono poniższą specyfikacją planu; adaptery i YAML wymagają wdrożenia.
+
 | Parametr | Wartość | Uwaga |
 |---|---|---|
-| model | RF-DETR-Small | backbone DINOv2 ViT, Apache 2.0 |
-| rozdzielczość | **512 albo 704 — decyduje kalibracja** | przy 512 aż 56,9% ramek narzędzia spada poniżej progu 32×32, przy 704 tylko 24,6%; patrz `13_STANDARD_DANYCH.md` |
-| epoki | **stała liczba, bez early stopping** | wartość z kalibracji, plan: 60 |
-| optymalizator, LR, warmup, weight decay | jedna wartość dla wszystkich | z kalibracji |
-| batch, gradient accumulation | jedna wartość | efektywny batch stały |
-| augmentacja w treningu | **identyczna po wyborze źródeł** | historyczna pula augmentowana to osobna kontrola |
-| precyzja | AMP bf16 | |
-| inicjalizacja | te same wagi startowe COCO | ziarno może sterować również nową głową; zapisać faktyczne ładowanie wag |
+| model | YOLOv8n w pierwszym etapie | druga rodzina: RT-DETRv2-S; RF-DETR-Nano opcjonalnie dla ViT |
+| rozdzielczość | 640 jako punkt startowy YOLO/RT-DETR, dalej kalibracja | jedna w danym bloku; mierzyć geometrię końcówek po transformacji, nie utożsamiać COCO small z oboma bokami <32 px |
+| budżet | **stałe rzeczywiste optimizer updates w torze jakości**, bez indywidualnego early stopping | limity z kalibracji; równy czas/równe epoki to osobny tor praktycznej efektywności |
+| optymalizator, LR, warmup, weight decay | ta sama recepta między selektorami danego modelu | harmonogram względem aktualizacji; jawna kontrola ustawień automatycznych |
+| batch, gradient accumulation | stały fizyczny i efektywny batch w danym bloku | mierzyć faktyczną akumulację i world size |
+| augmentacja w treningu | **identyczna między selektorami po wyborze źródeł** | między architekturami jawne recepty; pula augmentowana to osobna kontrola |
+| precyzja | wspierany i zweryfikowany AMP frameworka | bf16/fp16 według adaptera i testu, nie założenia o samym GPU |
+| inicjalizacja | te same ogólne wagi COCO dla danej architektury | osobny nowy bieg; nie checkpoint proxy ani historyczny ep170 |
 
 **Brak early stopping to decyzja świadoma.** Wcześniej warianty kończyły trening
 w różnych epokach, bo każdy miał własne kryterium na własnym zbiorze
@@ -115,7 +117,7 @@ mierzyło dwie rzeczy naraz.
 
 Przed testem deklarujemy **obie** reguły, jeśli obie mają wejść do raportu:
 
-- **(a) ostatnia epoka** — reguła bez żadnego wyboru, najbardziej odporna
+- **(a) koniec ustalonego budżetu** — reguła bez żadnego wyboru, najbardziej odporna
   na zarzut,
 - **(b) najlepsza na walidacji same-dist**, gdzie „najlepsza" to jedno,
   zapisane kryterium (mAP@[.5:.95] na `val`), identyczne dla wszystkich.
@@ -199,6 +201,7 @@ to się stało z etykietą wariantu V4.
 
 ## Historia zmian
 
+- **v2.1, 2026-09-11** — na życzenie autora development zaczyna się od małych detektorów. Dokumenty 23–24 dodają integrację z grantem, bramki pilota, kontrolowane kroki optymalizacji i transfer zamrożonych subsetów. Zaktualizowano P0/P5/P6; historyczne macierze pozostają osobnymi planami. YAML i trening nie zostały jeszcze zmigrowane.
 - **v2, 2026-09-11** — rozdzielono plan od wdrożenia, źródła od augmentacji,
   scoring train-only od wycieku, SD seedów od CI pacjentów i nowe oceny od
   historii testu. YAML pozostawiono bez nadpisywania wcześniejszych zmian użytkownika.

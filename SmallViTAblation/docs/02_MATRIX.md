@@ -1,5 +1,7 @@
 # 02 — Macierz eksperymentu
 
+**Kolejność po decyzji autora z 2026-09-11:** najpierw [etapy szybkiego badania z dokumentu 24](Analiza_ponownej_publikacji/24_SZYBKIE_ABLACJE_I_OPTYMALIZACJA_EDEN.md), później pełne ablacje potrzebne do wybranych tez. Opisane niżej 15 kombinacji D/E/S/F pozostaje osobnym eksperymentem historycznej metody; nie należy utożsamiać go z nowym testem dynamiki z grantu ani mnożyć automatycznie przez wszystkie architektury.
+
 Maszynowy odpowiednik: `configs/variants.yaml`. Rozwinięcie do listy biegów:
 `tools/build_run_manifest.py`.
 
