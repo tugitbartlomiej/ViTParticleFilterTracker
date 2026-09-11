@@ -70,6 +70,8 @@ Jeden mały detektor, K=2500, jedno ziarno development, ta sama krótka liczba *
 
 A2–A6 mają te same quota i reguły odstępu. A5 to kontrola mechanizmu score; pełną adaptację oryginalnego Swift Sampling z lokalnymi maksimami dodać w potwierdzeniu, jeśli wniosek dotyczy przewagi nad tą pracą. Nie nazywać wspólnego wrappera wierną reprodukcją Swift.
 
+Po pełnej lekturze Swift: [dokument 26](26_SWIFT_SAMPLING_ANALIZA_KRYTYCZNA.md) rozdziela resztę bezwzględną z PDF od względnej z kodu, politykę początku sekwencji oraz przypisanie score do targetu. Te wybory trzeba zapisać w A5 przed treningami. Jego osobny program 7/21/12 biegów dotyczy porównania mechanizmu Swift i diagnostyki; nie dodaje się automatycznie do poniższych 51 i nie zastępuje kontroli historycznego DESF.
+
 Jeśli kontrola DESF nie jest gotowa, można rozpocząć development A0–A6/A8, ale odnotować **8 zamiast 9** biegów i otwarty warunek odniesienia historycznego. Nie zastępować DESF innym algorytmem pod starą nazwą.
 
 ### Etap B — powtarzalność i dłuższy trening: 18 biegów

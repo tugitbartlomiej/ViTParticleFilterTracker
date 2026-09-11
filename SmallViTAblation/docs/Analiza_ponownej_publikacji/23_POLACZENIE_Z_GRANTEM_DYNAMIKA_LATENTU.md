@@ -4,6 +4,8 @@ Data: 2026-09-11. **Status: propozycja badania po lekturze dokumentów i wybrany
 
 ## 1. Rekomendacja
 
+Uzupełnienie po pełnej lekturze dostarczonego Swift v1: [dokument 26](26_SWIFT_SAMPLING_ANALIZA_KRYTYCZNA.md) wyjaśnia różnicę między wzorem a kodem autorów, ograniczenia interpretacji reszty jako informacji oraz konieczność wyrównania ocenianej klatki w porównaniu z naszym `dynamics`. To doprecyzowanie bliskiego konkurenta, nie potwierdzenie wyników proponowanej metody.
+
 **Tak: projekt grantowy może dostarczyć metody mierzenia redundancji i zmian w czasie. Najpierw użyć jej jako selektora danych przed treningiem zwykłego detektora.** Zamrożone cechy obrazu → tani predyktor następnego stanu → pomiar błędu predykcji → wybór klatek przy zachowaniu pokrycia wyglądu, obiektów i nagrań. Wtedy można sprawdzić, czy sama selekcja poprawia detekcję, bez jednoczesnej zmiany architektury sieci.
 
 Kandydat na tezę: **przy tym samym budżecie unikalnych klatek i treningu uwzględnienie przewidywalności zmian obiektu pomaga wybrać użyteczniejsze dane chirurgiczne niż selekcja wyłącznie według wyglądu lub odstępu czasu; zamrożony selektor przenosi się między detektorami.** To hipoteza. Nie zakładamy ani dużej poprawy, ani przewagi operatora liniowego nad prostą różnicą cech.
