@@ -10,6 +10,10 @@ udowodnić lokalnie, a czego nie da się w żadnym razie.**
 
 **Obrazy puli leżą na dysku F**, 90 141 plików JPEG, 37,7 GB:
 
+Stan tego inwentarza pochodzi z 2026-09-10. Aktualne testy CPU i ich zakres:
+[21_STAN_REFAKTORU.md](21_STAN_REFAKTORU.md). Dostępna pamięć i czasy poniżej
+nie są bieżącym pomiarem ani gwarancją wykonalności konkretnej konfiguracji.
+
 ```
 Eden/Datasets/datasets_20250606.tar/datasets_20250606/datasets/
     DETR_augmented_dataset_20250218/images/
@@ -94,18 +98,16 @@ większość błędów.
 **Poziom 2 — czy pomiar rozróżnia zbiory.** To jest właściwy cel i to się
 pomija najczęściej. Potrzebne są dwie kontrole:
 
-- **Kontrola negatywna — podłoga szumu.** Ten sam wariant, dwa różne ziarna
-  losowe. Różnica między wynikami to szum samego treningu. Każdy prawdziwy
-  efekt musi być od niej większy, inaczej jest nieodróżnialny od przypadku.
-- **Kontrola pozytywna — sufit sygnału.** Zbiór, który **musi** wypaść gorzej.
-  Nie losowy, bo losowy bywa zaskakująco dobry. Coś jawnie złego: wszystkie
-  klatki z jednego pacjenta albo pięć procent najbardziej rozmytych klatek.
-  Jeśli przyrząd nie odróżni dobrego zbioru od takiego, nie odróżni niczego.
+- **Powtórzenie treningu.** Dwa seedy dają wstępną obserwację zmienności,
+  ale pojedyncza różnica nie wyznacza progu istotności ani granicy wykrywalnego efektu.
+- **Kontrola z ograniczoną różnorodnością lub jakością.** Jeden pacjent albo
+  rozmyte klatki mogą ujawnić problem, lecz nie muszą wypaść gorzej w każdym
+  zadaniu. Kontrolę poprawności evaluatora dają syntetyczne GT/predykcje ze
+  znanym wynikiem, a treningu — np. overfit małego, poprawnie opisanego zbioru.
 
-Odległość między tymi dwiema liczbami to **zakres pomiarowy** twojego
-lokalnego stanowiska. Jeśli wyjdzie bliski zeru, lokalnie protokołu sprawdzić
-się nie da i trzeba iść od razu na Eden. To też jest wynik, i to warty
-poznania w jeden dzień zamiast w miesiąc.
+Te kontrole są diagnostyczne. Podobne wyniki mogą oznaczać słaby kontrast
+zbiorów, niedouczenie, dużą wariancję lub brak efektu. Przeniesienie kodu na
+Eden samo nie rozstrzyga między tymi przyczynami.
 
 **Poziom 3 — czy selekcja daje sygnał lokalnie.** Pełny pipeline kontra losowy
 wybór. Ma sens **tylko wtedy**, gdy poziom 2 przeszedł.
@@ -144,8 +146,8 @@ miary trudności.
 
 | ID | Co to jest | Rola |
 |---|---|---|
-| `M-DESF` | pełny pipeline | to, co ma wygrać |
-| `B-RANDAUG` | losowy wybór | zwykłe odniesienie |
+| `M-DESF` | pełny pipeline | metoda, której efekt mierzymy bez założenia zwycięstwa |
+| `B-RANDSRC` | losowy wybór źródeł | główne odniesienie przy tym samym K |
 | **`CTRL-NOISE`** | `M-DESF` z drugim ziarnem | **podłoga szumu** |
 | **`CTRL-BAD`** | wszystko z jednego pacjenta albo najbardziej rozmyte klatki | **kontrola pozytywna** |
 
@@ -159,7 +161,7 @@ Policz różnicę w mAP między parami:
 ```
 szum      = |M-DESF(ziarno A) - M-DESF(ziarno B)|
 sygnal    = |M-DESF - CTRL-BAD|
-selekcja  = |M-DESF - B-RANDAUG|
+selekcja  = M-DESF - B-RANDSRC  # zachować znak różnicy
 ```
 
 Trzy możliwe odpowiedzi:
@@ -199,6 +201,7 @@ stanowisko jest do czegokolwiek poza hydrauliką.
 
 ## 7. Jedna rzecz, którą trzeba zapisać niezależnie od wyniku
 
-**Zmierzony czas jednej epoki.** To jest jedyna liczba z lokalnego testu, która
-przenosi się na Eden: pozwala przeliczyć `tools/estimate_time.py` z widełek na
-konkret. Zapisz ją razem z rozmiarem batcha i rozdzielczością.
+**Zmierzony czas jednej epoki** wraz z modelem, sprzętem, batch size,
+precyzją i rozdzielczością. Czas na RTX 3070 nie przenosi się bezpośrednio na
+H100: prognozę Edenu kalibruje się na docelowym węźle. Smoke test pięciu epok
+można raportować jako taki, ale nie jako wynik w pełni wytrenowanego modelu.

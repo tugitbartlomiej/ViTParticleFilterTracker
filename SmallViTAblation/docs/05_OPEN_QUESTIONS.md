@@ -1,7 +1,8 @@
 # 05 — Pytania otwarte i rzeczy do sprawdzenia przed startem
 
-Punkty `O1`–`O3` są **zamknięte** (2026-09-08, bez GPU). Otwarte zostają
-`O4`–`O7` — to są decyzje, nie pomiary.
+Aktualizacja 2026-09-11: O1 rozstrzyga deklarowaną tożsamość film–pacjent dla
+CATARACTS, O2/O3 zawierają pomiary anotacji. Nie zamykają walidacji historycznych
+checkpointów, dostępności obrazów ani definicji budżetu. Reguły v2: dokument 01.
 
 ---
 
@@ -16,9 +17,10 @@ i `train01`–`train25` to etykiety plików, nie dwa różne zbiory.
 Konsekwencje:
 
 - podział po filmie **jest** podziałem po pacjencie, którego zażądał recenzent 1
-  w zarzucie 1 — nie trzeba go przebudowywać,
+  w zarzucie 1 — można użyć go do nowych biegów po sprawdzeniu inicjalizacji,
 - w artykule piszemy wprost: *„patient-level split; one recording corresponds to
-  one patient, 50 patients partitioned 35/8/7"* — jedno zdanie zamyka zarzut,
+  one patient, 50 patients partitioned 35/8/7"* dla biegów, które rzeczywiście
+  go używały; pozostałe główne porównania wymagają powtórzenia,
 - zbiór testowy to **7 pacjentów**, a nie 589 losowych klatek, co odpowiada też
   na zarzut 2 recenzenta 2 o rozmiarze i konstrukcji testu,
 - w tabeli podziału podajemy **liczbę pacjentów obok liczby klatek** — recenzent
@@ -46,13 +48,15 @@ z checkpointu ep170 wytrenowanego na losowym podziale klatek.
 | test (7 pacjentów) | 9 240 | 2 310 | wszystkie × 4 |
 | **razem** | **91 336** | **22 837** | |
 
-**Baseline `B-RANDSRC` jest wykonalny na obu budżetach.** Definicja: losujemy
-N/4 klatek źródłowych i bierzemy wszystkie cztery ich warianty.
+**Historyczna definicja `B-RANDSRC` liczyła obrazy po augmentacji.** Losowanie
+N/4 źródeł i czterech wariantów daje następujące liczebności:
 
 - budżet 5 000 → 1 250 klatek źródłowych z 17 832 dostępnych,
 - budżet 20 000 → 5 000 klatek źródłowych z 17 832 dostępnych.
 
-Nie trzeba obniżać budżetu poziomu B ani przedefiniowywać baseline'u.
+To nie odpowiada losowaniu 20 000 unikalnych klatek źródłowych, o które pytał
+recenzent. W protokole v2 K oznacza źródła; musi spełniać K≤liczba dostępnych
+źródeł train, a augmentacja jest jednakowa po wyborze dla wszystkich metod.
 
 ## O3. Skąd 91 336, skoro 22 837 × 4 = 91 348? — ROZWIĄZANE
 
@@ -68,7 +72,8 @@ Wszystkie dwanaście leżą w części treningowej.
 
 Do artykułu wchodzi jedno zdanie: *„22,837 source frames yield 91,336 augmented
 images; twelve frames produced three variants instead of four."* Recenzent 2,
-zarzut 8, zamknięty.
+zarzut 8, wyjaśniony na poziomie liczebności anotacji. Nie ustalono z tego
+powodu braku 12 wariantów; nie dopisywać historii uszkodzonych filmów bez logów.
 
 ## O4. Czy bronimy miary złożoności FastSAM w obecnej postaci?
 

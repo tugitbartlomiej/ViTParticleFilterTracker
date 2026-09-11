@@ -58,9 +58,11 @@ Te 2500 klatek model juz zna, wiec dostana systematycznie nizszy blad niz
 reszta. Trudnosc klatki miesza sie z tym, czy trafila do podzbioru proxy.
 
 Skala: przy puli 20 tysiecy to 12 procent klatek z zanizonym wynikiem.
-Do wyboru sa dwie czyste drogi: liczyc EL2N wylacznie na klatkach spoza
-podzbioru proxy, albo trenowac kilka proxy na rozlacznych czesciach i kazda
-klatke oceniac modelem, ktory jej nie widzial (walidacja krzyzowa).
+Nierówną ekspozycję trzeba zmierzyć. Możliwe projekty to wczesny trening
+proxy na całej puli train (zgodny z ideą EL2N) albo jawny scoring cross-fit.
+Nie ma obowiązku oceniania każdej próbki modelem, który jej nie widział.
+Sam train-on-train scoring nie oznacza wycieku. Wszystkie warianty pozostają
+odseparowane od val/test.
 
 ### To, co kod nazywa EL2N, nie jest EL2N
 
@@ -68,7 +70,10 @@ Wzor w kodzie to `1 - pewnosc najlepszej detekcji dopasowanej po IoU`.
 Oryginalny EL2N (Paul i wsp., 2021) to norma L2 roznicy miedzy rozkladem
 prawdopodobienstwa a wektorem jednostkowym klasy prawdziwej, usredniona po
 kilku niezaleznych inicjalizacjach. Tutaj usredniania po inicjalizacjach nie
-ma, a dla jednej klasy wzor redukuje sie do samej pewnosci.
+ma. Dla jednego wyjścia sigmoid dodatniego targetu norma wynosi `1-p`;
+dla dwóch wyjść softmax (obiekt/tło) wynosi `sqrt(2)*(1-p)`. Jednoklasowy
+softmax bez tła jest degeneracją. Problem obejmuje też thresholding,
+dopasowanie po IoU, pomijanie klas i zachowanie przy braku GT.
 
 To moze byc dobra miara trudnosci i moze zostac. Ale **nie wolno jej nazwac
 EL2N w artykule** — recenzent sprawdzi definicje w cytowanej pracy. Albo
@@ -78,9 +83,9 @@ zgodnie z oryginalem.
 ### Klatki bez narzedzia dostaja maksymalna trudnosc
 
 `scores` startuje z jedynek i klatka bez ramki GT zostaje z wartoscia 1.0,
-czyli najwyzsza mozliwa. Selekcja bedzie takie klatki preferowac jako
-"trudne". Przy 14 procentach klatek bez narzedzia (Cataract-LMM segmentacja)
-to przesuwa caly podzbior w strone tla. Jesli taki jest zamiar — trzeba to
+czyli najwyzsza mozliwa. To zaciera różnicę między łatwym tłem i tłem z FP.
+Przy selekcji centroidów zmienia geometrię, ale nie dowodzi automatycznie
+preferowania tła; udział negatywów trzeba zmierzyć. Jesli taki jest zamiar — trzeba to
 zapisac w protokole. Jesli nie — tlo powinno dostawac osobna sciezke, nie
 maksymalny blad.
 

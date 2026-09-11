@@ -4,6 +4,10 @@ Pipeline przetwarzania — od filmu do tabeli
 Data: 2026-09-09. Odpowiedź na trzy pytania: jak przetwarzać najszybciej,
 gdzie to trzymać, i na jakim modelu liczyć ablacje.
 
+Aktualizacja 2026-09-11: to historyczny plan, nie harmonogram wykonany.
+Przepustowość jednego filmu nie przewiduje liniowo kosztu całego korpusu,
+równoległych procesów ani Edenu. Bieżące reguły eksperymentu są w dokumencie 01.
+
 ---
 
 ## 1. Zmierzone, nie zgadnięte
@@ -44,13 +48,14 @@ problem, bo na Eden nie musi jechać cała pula — patrz punkt 5.
 
 | Gdzie | Ile | Co tam leży | Czas życia |
 |---|---|---|---|
-| nowy dysk 6 TB | 6 TB | surowe filmy **przejściowo**, pełna pula klatek, cache cech | pula na stałe, filmy do skasowania |
+| dysk na dane | po sprawdzeniu wolnego miejsca | surowe filmy, pula klatek, cache cech | źródła i manifest pochodzenia zachowane |
 | dom na Edenie | 65 GB | wybrane podzbiory, walidacja, test, wagi startowe | na czas eksperymentu |
 | `/raid` na węźle | 14 TB | rozpakowana pula na czas jednego zadania | kasowane przez `trap cleanup` |
 
 ## 4. Potok pobierania: producent i konsument
 
-Jeden proces pobiera, drugi przerabia i kasuje. Nigdy nie czekają na siebie.
+Pobieranie i przetwarzanie mogą działać równolegle z limitem kolejki i miejsca.
+Zapis klatek nie oznacza zgody na usunięcie źródłowych nagrań.
 
 ```
 [pobieracz]  paczka N+1 sciaga sie
@@ -60,12 +65,12 @@ Jeden proces pobiera, drugi przerabia i kasuje. Nigdy nie czekają na siebie.
      |
      v
 [przetwornik]  paczka N: rozpakuj -> wykryj pole widzenia -> wytnij klatki
-               -> znormalizuj -> zapisz JPEG -> SKASUJ paczke i film
+               -> jawne transformacje -> zapisz klatki + manifest -> zweryfikuj
 ```
 
 Szczytowe zużycie dysku to rozmiar dwóch paczek plus rosnąca pula klatek.
-Przy sześciu terabajtach nie ma o czym mówić, ale nawyk zostaje: **film ginie,
-gdy tylko klatki są zapisane**.
+Zużycie miejsca trzeba zmierzyć. Źródła zachowujemy do odtwarzania anotacji,
+zmian rozdzielczości i audytu; retencja i ewentualne usunięcie są osobną decyzją.
 
 Gęstość wycinania zależy od roli nagrania:
 
@@ -104,11 +109,10 @@ w jednej nocy, a wynik to kilka plików `.pkl` po kilkaset megabajtów.
 lokalna przestaje wystarczać. Wtedy pula jedzie spakowana na `/raid`, cechy
 liczą się na H100, a wraca sam cache.
 
-EL2N jest wyjątkiem, bo wymaga modelu. Model wstępny trenujemy **na losowym
-podzbiorze puli treningowej** przez dziesięć epok, a potem tym modelem
-oceniamy całą pulę — ocenianie to sama inferencja, więc jest tanie. To jest
-zgodne z oryginalną definicją EL2N, która mówi o sygnale **z wczesnego
-treningu**, nie z modelu douczonego do końca.
+Trudność wymaga modelu proxy i jawnego wzoru. Wczesny trening nie wystarcza,
+aby dowolny confidence score nazwać EL2N. Proxy na podzbiorze oraz scoring
+całej puli wymagają kontroli nierównej ekspozycji; projekt referencyjny opisuje
+P3 w dokumencie 01. Cechy i fitting PCA obejmują tylko pulę train.
 
 ## 7. Na jakim modelu liczyć ablacje
 
@@ -142,7 +146,7 @@ czy efekt przenosi się na inne architektury.
 
 | # | Krok | Gdzie | Ile trwa |
 |---|---|---|---|
-| 1 | sformatować dysk 6 TB, przenieść nagrania z tacy | lokalnie | godzina |
+| 1 | sprawdzić pojemność i ustalić foldery danych, zachować istniejące pliki | lokalnie | do pomiaru |
 | 2 | wyciąć wszystkie klatki z twoich 49 nagrań, znormalizować | lokalnie, 8 procesów | **minuty** |
 | 3 | cechy DINO, Fourier, SAM na twojej puli | lokalnie, RTX 3070 | jedna noc |
 | 4 | model wstępny EL2N i ocena puli | Eden, 1 GPU | godziny |

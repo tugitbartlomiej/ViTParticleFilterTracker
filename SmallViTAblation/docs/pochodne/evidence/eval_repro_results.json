@@ -1,0 +1,440 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-09-11T12:01:51.427371+00:00",
+  "repo_root": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation",
+  "python": "3.11.8",
+  "dependencies": {
+    "numpy": "2.2.5",
+    "PyYAML": "6.0.2",
+    "pycocotools": "2.0.8"
+  },
+  "source_sha256_before": {
+    "pipeline\\eval\\common.py": "02211869438615171801933829d68da128402de07095910d4ff3340f110fbb78",
+    "pipeline\\eval\\evaluate.py": "4b385917fc4eb37bc66cb32f3fb7bd0099d1f325a8915a957c16c0cde243cb2a",
+    "pipeline\\transfer\\metrics.py": "21cfc73987193e30e17aa2c46ac5b0d073e3c9586fd139ff9e722952d8d032fa",
+    "pipeline\\train\\train_rfdetr.py": "8b4295c573f53e721652cf55853ea40d6fc83ada76492a34a363863bdbff0ea0"
+  },
+  "source_sha256_after": {
+    "pipeline\\eval\\common.py": "02211869438615171801933829d68da128402de07095910d4ff3340f110fbb78",
+    "pipeline\\eval\\evaluate.py": "4b385917fc4eb37bc66cb32f3fb7bd0099d1f325a8915a957c16c0cde243cb2a",
+    "pipeline\\transfer\\metrics.py": "21cfc73987193e30e17aa2c46ac5b0d073e3c9586fd139ff9e722952d8d032fa",
+    "pipeline\\train\\train_rfdetr.py": "8b4295c573f53e721652cf55853ea40d6fc83ada76492a34a363863bdbff0ea0"
+  },
+  "audited_sources_unchanged_during_run": true,
+  "script_sha256": "b674f73bc9aba212ac8d3dfd0c2d758c9d1353d7a97b28c4b98ec61aff9e3468",
+  "scope": "Five CPU-only reproductions of local evaluation/training source logic.",
+  "limitations": [
+    "No GPU, detector inference, training or real dataset evaluation.",
+    "RF-DETR API claims in the companion report were checked against upstream 1.2.1 only; this script does not test those API claims.",
+    "Eden environment, library versions, historical results and real checkpoint metadata remain unverified."
+  ],
+  "summary": {
+    "cases": 5,
+    "bugs_reproduced": 5,
+    "all_five_bugs_reproduced": true
+  },
+  "cases": [
+    {
+      "source": "pipeline/eval/common.py:245",
+      "fixture": {
+        "gt": {
+          "info": {},
+          "images": [
+            {
+              "id": 1
+            },
+            {
+              "id": 2
+            }
+          ],
+          "categories": [
+            {
+              "id": 1,
+              "name": "instrument_tip"
+            }
+          ],
+          "annotations": [
+            {
+              "id": 1,
+              "image_id": 1,
+              "category_id": 1,
+              "bbox": [
+                0,
+                0,
+                10,
+                10
+              ],
+              "area": 100,
+              "iscrowd": 0
+            },
+            {
+              "id": 2,
+              "image_id": 2,
+              "category_id": 1,
+              "bbox": [
+                0,
+                0,
+                10,
+                10
+              ],
+              "area": 100,
+              "iscrowd": 0
+            }
+          ]
+        },
+        "predictions": [
+          {
+            "image_id": 1,
+            "category_id": 1,
+            "bbox": [
+              0,
+              0,
+              10,
+              10
+            ],
+            "score": 0.9,
+            "segmentation": [
+              [
+                0,
+                0,
+                0,
+                10,
+                10,
+                10,
+                10,
+                0
+              ]
+            ],
+            "area": 100,
+            "id": 1,
+            "iscrowd": 0
+          }
+        ]
+      },
+      "observed": {
+        "mAP_0.5": 0.9999999999999999,
+        "mAP_0.5:0.95": 0.9999999999999998,
+        "mAP_0.75": 0.9999999999999999,
+        "AR@100": 1.0
+      },
+      "expected": {
+        "mAP_0.5": 0.5049504950495048,
+        "mAP_0.5:0.95": 0.5049504950495048,
+        "mAP_0.75": 0.5049504950495048,
+        "AR@100": 0.5
+      },
+      "expected_basis": "Independent COCOeval with explicit imgIds=[1,2]; 101 recall samples.",
+      "bug_reproduced": true,
+      "severity": "P1",
+      "id": "map_missing_images",
+      "execution": "ok",
+      "captured_stdout": "creating index...\nindex created!\ncreating index...\nindex created!\nLoading and preparing results...\nDONE (t=0.00s)\ncreating index...\nindex created!\nRunning per image evaluation...\nEvaluate annotation type *bbox*\nDONE (t=0.00s).\nAccumulating evaluation results...\nDONE (t=0.00s).\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.505\n Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.505\n Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.505\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.505\n Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.500\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.500\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.500\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.500\n Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = -1.000\n Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = -1.000\n",
+      "captured_stderr": ""
+    },
+    {
+      "source": "pipeline/transfer/metrics.py:76",
+      "fixture": {
+        "gt": {
+          "info": {},
+          "images": [
+            {
+              "id": 1
+            }
+          ],
+          "categories": [
+            {
+              "id": 1,
+              "name": "instrument_tip"
+            }
+          ],
+          "annotations": [
+            {
+              "id": 1,
+              "image_id": 1,
+              "category_id": 1,
+              "bbox": [
+                0,
+                0,
+                10,
+                10
+              ],
+              "area": 100,
+              "iscrowd": 0
+            },
+            {
+              "id": 2,
+              "image_id": 1,
+              "category_id": 1,
+              "bbox": [
+                3,
+                0,
+                10,
+                10
+              ],
+              "area": 100,
+              "iscrowd": 0
+            }
+          ]
+        },
+        "predictions": [
+          {
+            "image_id": 1,
+            "category_id": 1,
+            "bbox": [
+              0,
+              0,
+              10,
+              10
+            ],
+            "score": 0.9
+          },
+          {
+            "image_id": 1,
+            "category_id": 1,
+            "bbox": [
+              0,
+              0,
+              10,
+              10
+            ],
+            "score": 0.8
+          }
+        ],
+        "iou_threshold": 0.5
+      },
+      "observed": {
+        "TP": 1,
+        "FP": 1,
+        "FN": 1
+      },
+      "expected": {
+        "TP": 2,
+        "FP": 0,
+        "FN": 0
+      },
+      "reference_eval_matcher": {
+        "TP": 2,
+        "FP": 0,
+        "FN": 0
+      },
+      "expected_basis": "Second detection matches the remaining GT: IoU=70/130 > 0.5.",
+      "bug_reproduced": true,
+      "severity": "P1",
+      "id": "transfer_matcher",
+      "execution": "ok",
+      "captured_stdout": "",
+      "captured_stderr": ""
+    },
+    {
+      "source": [
+        "pipeline/transfer/metrics.py:144",
+        "pipeline/transfer/metrics.py:159",
+        "pipeline/eval/common.py:211"
+      ],
+      "fixture": {
+        "gt": {
+          "info": {},
+          "images": [
+            {
+              "id": 1
+            }
+          ],
+          "categories": [
+            {
+              "id": 1,
+              "name": "instrument_tip"
+            }
+          ],
+          "annotations": [
+            {
+              "id": 1,
+              "image_id": 1,
+              "category_id": 1,
+              "bbox": [
+                0,
+                0,
+                10,
+                10
+              ],
+              "area": 100,
+              "iscrowd": 0
+            }
+          ]
+        },
+        "predictions": [
+          {
+            "image_id": 1,
+            "category_id": 99,
+            "bbox": [
+              0,
+              0,
+              10,
+              10
+            ],
+            "score": 0.9
+          }
+        ]
+      },
+      "observed": {
+        "transfer": {
+          "TP": 1,
+          "FP": 0,
+          "FN": 0
+        },
+        "eval_with_single_class_remap": {
+          "TP": 1,
+          "FP": 0,
+          "FN": 0
+        },
+        "remap_applied": true
+      },
+      "expected": {
+        "transfer": {
+          "TP": 0,
+          "FP": 1,
+          "FN": 1
+        },
+        "eval_with_single_class_remap": {
+          "TP": 0,
+          "FP": 1,
+          "FN": 1
+        }
+      },
+      "expected_basis": "Category 99 has no authorized mapping to GT category 1; localization alone is insufficient for TP.",
+      "reference_without_remap": {
+        "TP": 0,
+        "FP": 1,
+        "FN": 1
+      },
+      "bug_reproduced": true,
+      "severity": "P1",
+      "limitation": "Synthetic invalid class ID; not a claim about actual detector outputs on Eden.",
+      "id": "wrong_category",
+      "execution": "ok",
+      "captured_stdout": "",
+      "captured_stderr": ""
+    },
+    {
+      "source": "pipeline/eval/evaluate.py:276",
+      "fixture": {
+        "gt": {
+          "info": {},
+          "images": [
+            {
+              "id": 1
+            }
+          ],
+          "categories": [
+            {
+              "id": 1,
+              "name": "instrument_tip"
+            }
+          ],
+          "annotations": [
+            {
+              "id": 1,
+              "image_id": 1,
+              "category_id": 1,
+              "bbox": [
+                0,
+                0,
+                10,
+                10
+              ],
+              "area": 100,
+              "iscrowd": 0
+            }
+          ]
+        },
+        "predictions": [
+          {
+            "image_id": 1,
+            "category_id": 1,
+            "bbox": [
+              0,
+              0,
+              10,
+              10
+            ],
+            "score": 0.9
+          },
+          {
+            "image_id": 1,
+            "category_id": 1,
+            "bbox": [
+              30,
+              30,
+              10,
+              10
+            ],
+            "score": 0.8
+          }
+        ],
+        "set_name": "test",
+        "operating_point_exists": false
+      },
+      "observed": {
+        "action": "selected_threshold_on_test",
+        "threshold": 0.9,
+        "threshold_selected_on": "max_f1_on_set:test",
+        "f1": 1.0
+      },
+      "expected": {
+        "action": "reject_missing_validation_threshold",
+        "threshold": null
+      },
+      "expected_basis": "protocol.yaml evaluation.operating_threshold=select_on_val; absence of a validation threshold must not trigger test optimization.",
+      "bug_reproduced": true,
+      "severity": "P1",
+      "limitation": "Exercises actual function with an in-memory absent-path stub; no real test set was accessed.",
+      "id": "fallback_test_threshold",
+      "execution": "ok",
+      "captured_stdout": "",
+      "captured_stderr": "OSTRZEŻENIE [test]: brak operating_point.json — próg operacyjny policzony max-F1 na TYM zbiorze (0.9000, F1=1.0000). W docelowym przebiegu najpierw uruchom operating_point.py (wybór na walidacji).\n"
+    },
+    {
+      "source": [
+        "pipeline/train/train_rfdetr.py:394",
+        "pipeline/train/train_rfdetr.py:410"
+      ],
+      "fixture": {
+        "checkpoint_epoch_metadata": {
+          "checkpoint.pth": 59,
+          "checkpoint0009.pth": 9,
+          "checkpoint0059.pth": 59,
+          "checkpoint_best_ema.pth": 20,
+          "checkpoint_best_regular.pth": 17,
+          "checkpoint_best_total.pth": 20
+        },
+        "epoch_indexing": "zero_based"
+      },
+      "observed": {
+        "sorted_names": [
+          "checkpoint.pth",
+          "checkpoint0009.pth",
+          "checkpoint0059.pth",
+          "checkpoint_best_ema.pth",
+          "checkpoint_best_regular.pth",
+          "checkpoint_best_total.pth"
+        ],
+        "selected_filename": "checkpoint_best_total.pth",
+        "selected_epoch": 20
+      },
+      "expected": {
+        "selected_epoch": 59,
+        "valid_filenames": [
+          "checkpoint.pth",
+          "checkpoint0059.pth"
+        ]
+      },
+      "expected_basis": "last_epoch must refer to the final training epoch, independent of lexical filename order.",
+      "bug_reproduced": true,
+      "severity": "P1",
+      "limitation": "Actual source assignments executed against synthetic filenames and declared epoch metadata; no checkpoint weights or Eden artifacts inspected.",
+      "id": "lexicographic_checkpoint_sort",
+      "execution": "ok",
+      "captured_stdout": "",
+      "captured_stderr": ""
+    }
+  ]
+}

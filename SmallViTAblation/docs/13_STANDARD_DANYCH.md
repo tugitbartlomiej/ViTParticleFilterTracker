@@ -28,15 +28,18 @@ Co się z nią dzieje przy różnych rozmiarach wejścia, przy zachowaniu propor
 | 704 | 0,367 | 34×47 | 1 561 px² | 24,6% |
 | 960 | 0,500 | 47×64 | 2 903 px² | 5,6% |
 
-Próg 32×32 to granica, powyżej której obiekt przestaje być „mały" w konwencji
-COCO. Przy wejściu 512 **ponad połowa końcówek narzędzia spada poniżej tej
-granicy**, przy 704 już tylko czwarta część.
+Ta tabela opisuje pole bbox po hipotetycznym resize z zachowaniem proporcji.
+Nie jest definicją grup COCO AP-small: COCOeval używa `area` w ocenianych
+anotacjach, zwykle w układzie oryginalnego obrazu, z granicą pola 32² px².
+Małość nie wymaga obu boków poniżej 32 px. Po przeskalowaniu predykcji z
+powrotem do układu GT zmiana wejścia sieci nie zmienia kategorii area GT.
 
 To zmienia wybór modelu. Warianty RF-DETR różnią się głównie rozdzielczością,
 a prawie nie liczbą parametrów: Nano 30,5 M przy 384, Small 32,1 M przy 512,
-Medium 33,7 M przy 576, Large 33,9 M przy 704. **„Large" to nie większy model,
-tylko ten sam model na większym wejściu.** Różnica w kosztach idzie z kwadratu
-rozdzielczości: 704 kosztuje około 1,9 razy więcej niż 512.
+Medium 33,7 M przy 576, Large 33,9 M przy 704 (historyczne zestawienie wersji).
+Podobna liczba parametrów nie dowodzi identycznej architektury; przed biegiem
+trzeba przypiąć wersję i sprawdzić konfigurację wariantu. Stosunek pól 704²/512²
+wynosi około 1,89, ale nie jest pomiarem stosunku czasu ani zużycia VRAM.
 
 **Wniosek dla planu:** rozdzielczości nie wybieramy z góry. Bieg kalibracyjny
 (`03_COMPUTE`, punkt 2) porównuje 512 i 704 na jednym wariancie i dopiero wynik
@@ -58,9 +61,10 @@ Dwa dolne wiersze są problemem. Przy wejściu 512 obraz z Cataract-1K trzeba
 **powiększyć**, a powiększenie nie odtwarza szczegółu — to te same piksele
 rozciągnięte. Ramka, która u nas ma 94×128 px, tam ma od początku 25×38 px.
 
-**Reguła:** źródła o rozdzielczości poniżej wejścia modelu wchodzą **tylko do
-treningu i tylko oznaczone**, nigdy do zbiorów oceny. Inaczej porównujemy wyniki
-liczone na obrazach o różnej zawartości informacji.
+Źródła o niższej rozdzielczości mogą być osobnym zbiorem oceny, jeśli należą do
+docelowej domeny i mają właściwe anotacje. Nie usuwamy ich tylko dlatego, że
+test może być trudniejszy. Raportujemy natywną rozdzielczość i wyniki per źródło;
+upscaling nie odtwarza utraconego szczegółu.
 
 ## 3. Proporcje: dopełnienie, nie ściskanie
 
@@ -68,9 +72,10 @@ liczone na obrazach o różnej zawartości informacji.
 Wciśnięcie wszystkiego w kwadrat 512×512 **zniekształca każde źródło inaczej** —
 okrągła źrenica staje się inną elipsą w zależności od pochodzenia.
 
-Robimy **dopełnienie (letterbox)**: skalujemy zachowując proporcję i dokładamy
-paski, żeby dojść do kwadratu. Geometria zostaje zachowana, a kolor pasków
-ustalamy raz i ten sam dla wszystkich źródeł.
+Letterbox jest wariantem preprocessingu do sprawdzenia. Dla każdego detektora
+najpierw odtwarzamy jego oficjalne transformacje; zmiana na letterbox jest
+osobną decyzją wymagającą walidacji. Zapisujemy skalę, padding i crop, a przed
+ewaluacją odwracamy transformację bbox. Unikamy podwójnego resize.
 
 ## 4. Rzecz najważniejsza: pole widzenia mikroskopu
 
@@ -78,19 +83,18 @@ Obraz z mikroskopu operacyjnego to jasne koło na czarnym tle. **Każdy zbiór
 kadruje to koło inaczej** — inna średnica, inne położenie, inna szerokość
 czarnej obwódki.
 
-Jeśli tego nie ujednolicimy, model dostaje darmową ściągę: po samym kształcie
-czarnego brzegu rozpoznaje, z którego zbioru pochodzi klatka. Wtedy uczy się
-„z jakiego to zbioru", a nie „gdzie jest narzędzie" — i **każde twierdzenie
-o przenoszeniu się na obcy zbiór przestaje coś znaczyć**.
-
-Krok obowiązkowy: wykryć koło pola widzenia, przyciąć do jego prostokąta
-opisanego, dopiero potem skalować. To jest ważniejsze niż sama liczba pikseli.
+Obwódka może być sygnałem domeny, ale nie dowodzi, że model wykorzystuje ją
+zamiast narzędzia. Crop pola widzenia jest hipotezą do ablacji, nie obowiązkową
+naprawą. Może usunąć fragment obiektu; trzeba zweryfikować zachowanie bboxów,
+anotacji i przypadków przy brzegu. Regułę crop ustala się na train/val i
+stosuje jednakowo, bez strojenia na wyniku zewnętrznego testu.
 
 ## 5. Co ujednolicamy, a czego nie ruszamy
 
-**Ujednolicamy** (bo inaczej model uczy się źródła zamiast zadania):
-pole widzenia mikroskopu, proporcję obrazu, rozmiar wejścia, format i jakość
-zapisu, układ katalogów, schemat anotacji.
+**Ujednolicamy kontrakt**: układ katalogów, schemat anotacji i jawny opis
+preprocessingu. Rozmiar wejścia wynika z protokołu porównania. Kadrowanie pola
+widzenia, zmiana proporcji i ponowna kompresja wymagają uzasadnienia oraz
+walidacji; zachowujemy obrazy źródłowe i zapis transformacji geometrii.
 
 **Nie ruszamy** (bo to jest właśnie zmienność, na którą model ma być odporny):
 balans bieli, jasność, kontrast, model kamery i mikroskopu, styl operatora,
@@ -102,8 +106,8 @@ klatek na sekundę, źródło, pacjenta, nagranie, numer klatki.
 
 ## 6. Liczba klatek na sekundę
 
-Do treningu na pojedynczych klatkach nie ma znaczenia. Ma znaczenie **dla
-propagacji ramek** z `10_TSFA_NOWA_PULA.md`: ±20 klatek przy 25 klatkach na
+FPS wpływa na redundancję i próbkowanie także dla detektora pojedynczych klatek.
+Jest również ważny **dla propagacji ramek** z `10_TSFA_NOWA_PULA.md`: ±20 klatek przy 25 klatkach na
 sekundę to 0,8 sekundy, a przy 60 klatkach na sekundę tylko 0,33 sekundy.
 
 **Zasięg propagacji definiujemy w sekundach, nie w klatkach.** Inaczej ten sam
@@ -111,9 +115,8 @@ parametr znaczy co innego w każdym zbiorze.
 
 ## 7. Format zapisu
 
-- **JPEG ze stałą jakością** (proponuję 95) dla wszystkich źródeł. Stała, bo
-  inaczej artefakty kompresji różnią się między zbiorami i stają się kolejną
-  ściągą.
+- Zachowujemy pliki źródłowe. Cache może stosować JPEG o jawnej jakości
+  (np. 95), ale ponowny zapis nie wyrównuje historycznych artefaktów kompresji.
 - Jeden układ katalogów: `<zbior>/<pacjent>/<nagranie>/<numer_klatki>.jpg`.
 - Anotacje w formacie COCO, z **dodatkowymi polami** na każdym obrazie:
   `source_dataset`, `patient_id`, `video_id`, `frame_index`, `native_width`,
@@ -127,10 +130,9 @@ ablacje do artykułu.
 
 ## 8. Kolejność kroków
 
-1. wykryć pole widzenia mikroskopu i zapisać prostokąt przycięcia dla każdego
-   nagrania (raz na nagranie, nie na klatkę),
-2. przyciąć do pola widzenia, przeskalować z dopełnieniem do docelowego
-   kwadratu, zapisać jako JPEG ze stałą jakością,
+1. zamrozić grupy train/val/test i audyt anotacji; określić preprocessing modelu,
+2. opcjonalny crop/resize wdrożyć z zapisem transformacji, zachowaniem źródeł
+   i sprawdzeniem boxów; stały crop per film wymaga stabilnego pola widzenia,
 3. zapisać pełne metadane każdej klatki,
 4. dopiero teraz liczyć cechy i uruchamiać selekcję.
 
@@ -142,7 +144,8 @@ oznacza liczenie wszystkiego od nowa.
 
 - **Nie mieszać źródeł w zbiorach oceny.** Każdy zbiór zewnętrzny raportujemy
   osobno. Uśrednienie po zbiorach o różnej rozdzielczości daje liczbę, która
-  nic nie znaczy.
+  może być myląca bez wag i wyników składowych. Agregacja jest możliwa, jeśli
+  cel i wagi domen ustalono wcześniej; raportowanie per źródło pozostaje konieczne.
 - **Nie skalować w górę do rozmiaru wejścia i nie mówić o tym.** Jeśli źródło
   jest niższej rozdzielczości, ma to być widoczne w tabeli.
 - **Nie ustalać rozdzielczości przed kalibracją.** Tabela z punktu 1 pokazuje,

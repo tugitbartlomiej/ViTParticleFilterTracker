@@ -1,0 +1,51 @@
+{
+  "recorded_on": "2026-09-11",
+  "scope": "CPU evaluation contract refactor; no training, checkpoint re-evaluation or OCR",
+  "tests": [
+    {
+      "command": "py -3.11 -m pytest SmallViTAblation/pipeline/eval/tests/test_evaluation_contract.py -q --tb=short",
+      "exit_code": 0,
+      "result": "23 passed in 1.21s"
+    },
+    {
+      "command": "py -3.11 SmallViTAblation/pipeline/train/tests/test_dry_run.py",
+      "exit_code": 0,
+      "result": "2 dry-run variants passed (earlier verification in this task)"
+    },
+    {
+      "command": "py -3.11 SmallViTAblation/eden/tests/test_queue.py",
+      "exit_code": 0,
+      "result": "T2, T3, T4 passed via script entry point (earlier verification in this task)"
+    }
+  ],
+  "final_checks": [
+    {
+      "chunk_id": "133679",
+      "wall_time_seconds": 1.1109592,
+      "exit_code": 0,
+      "original_token_count": 263,
+      "output": "Analiza NMS: 7 progow IoU, conf_operating=0.92\r\n IoU_NMS   boxes   TP   FP   FN    prec     rec      F1\r\n    0.30     100   50    0    0  1.0000  1.0000  1.0000\r\n    0.40     100   50    0    0  1.0000  1.0000  1.0000\r\n    0.50     100   50    0    0  1.0000  1.0000  1.0000\r\n    0.60     107   50    0    0  1.0000  1.0000  1.0000\r\n    0.70     149   50    0    0  1.0000  1.0000  1.0000\r\n    0.80     208   50    0    0  1.0000  1.0000  1.0000\r\n    0.90     265   50    0    0  1.0000  1.0000  1.0000\r\n------------------------------------------------------------\r\nZakres F1 miedzy progami IoU NMS: 0.0000 (min 1.0000, max 1.0000); precision [1.0000, 1.0000], recall [1.0000, 1.0000]. WNIOSEK: przy zadaniu z jedna klasa i zwykle jednym narzedziem w kadrze NMS NIE MA istotnego wplywu (zmiana F1 < 0.02). Pokazujemy liczby, nie pomijamy tematu.\r\nZapisano: C:\\Users\\bartl\\AppData\\Local\\Temp\\rtdetr-nms-refactor-91fd4a4268024fc0b7e6623ba19f6949\\nms.csv , C:\\Users\\bartl\\AppData\\Local\\Temp\\rtdetr-nms-refactor-91fd4a4268024fc0b7e6623ba19f6949\\nms.json\r\n"
+    },
+    {
+      "chunk_id": "1a1876",
+      "wall_time_seconds": 0.39294,
+      "exit_code": 0,
+      "original_token_count": 21,
+      "output": "{\r\n  \"local_links_checked\": 110,\r\n  \"broken\": [],\r\n  \"python_files_parsed\": 6\r\n}\r\n"
+    }
+  ],
+  "limitations": [
+    "Broad pytest collection of eden/tests/test_queue.py reports 3 missing tmp fixture errors; use its script entry point.",
+    "NMS demo checks execution on synthetic data; its significant field is not statistical significance.",
+    "RT-DETR adapter and checkpoint-threshold hash binding remain unimplemented.",
+    "Undefined COCO AP is still represented as zero by the existing result contract."
+  ],
+  "verified_code_sha256": {
+    "SmallViTAblation\\pipeline\\eval\\common.py": "6989899b54ead224994975d8ad816aaa4e901d98d7c9be6709e97e0152230f06",
+    "SmallViTAblation\\pipeline\\eval\\evaluate.py": "44516875b5fce626c3127ce8395aa420e92e77737edbc2965b93be5aebc58f00",
+    "SmallViTAblation\\pipeline\\eval\\operating_point.py": "2acf07d4063a8d8522c5a5041547adecb5a36d98dc7129fb8543bfa8eace18e4",
+    "SmallViTAblation\\pipeline\\transfer\\metrics.py": "b134e696197cb2455feeaa247cb858c91ec2ebe99884bac1a77cb2be9e8655f9",
+    "SmallViTAblation\\pipeline\\eval\\tests\\test_evaluation_contract.py": "370c9a8169bfa27cd61f92030169168e994d34889e8ca96d41a15df2260c4a77",
+    "SmallViTAblation\\pipeline\\train\\tests\\test_dry_run.py": "4f1fd848f33cdabc5b1e3cbbab258a92dba395f8d35d9b4d41395d3df8e6c9c8"
+  }
+}

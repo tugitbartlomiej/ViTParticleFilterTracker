@@ -1,7 +1,8 @@
 # 01 — Specyfikacja protokołu (dokument nadrzędny)
 
-Wersja: v1 (2026-09-08). Każda zmiana tutaj wymaga wpisu w sekcji „Historia zmian"
-na końcu pliku. Maszynowy odpowiednik: `configs/protocol.yaml`.
+Wersja: v2, projekt po audycie (2026-09-11). Każda zmiana wymaga wpisu w historii.
+`configs/protocol.yaml` opisuje obecną implementację i nie jest jeszcze zgodny ze
+wszystkimi regułami v2. Status wdrożenia: [21_STAN_REFAKTORU.md](21_STAN_REFAKTORU.md).
 
 ---
 
@@ -9,8 +10,8 @@ na końcu pliku. Maszynowy odpowiednik: `configs/protocol.yaml`.
 
 Jeden bieg = (wariant selekcji) × (ziarno losowe). **Wszystko inne jest stałe.**
 Pełny pipeline jest **jednym z wariantów w tej samej macierzy**, nie osobnym
-biegiem produkcyjnym. To jest jedyna zmiana, która sama w sobie unieważnia
-zarzut 4 recenzenta 1.
+biegiem produkcyjnym. Pozwala to kontrolować wpływ selekcji, jeśli zgodne są także
+inicjalizacja, dane, ewaluacja i rzeczywisty budżet; samo zapisanie planu nie zamyka uwagi.
 
 ---
 
@@ -27,9 +28,8 @@ zarzut 4 recenzenta 1.
 - generator: `AdvancedDatasetSelection/ablation/generate_video_split.py`,
 - konsument dla pełnej puli: `Eden/Scripts/Train90kFromScratch_VideoSplit_2026-06-24/prepare_fullpool_videosplit.py`.
 
-Recenzent 1 zarzut 1 żądał „video/procedure or **patient** level". Ten wymóg jest
-spełniony i wchodzi do artykułu jednym zdaniem: *patient-level split, one
-recording per patient, 50 patients partitioned 35/8/7*. W tabeli podziału
+Ten manifest może być wspólnym podziałem nowych biegów. Nie dowodzi, że
+historyczne checkpointy korzystały z niego od początku treningu. W tabeli podziału
 podajemy **liczbę pacjentów obok liczby klatek** — to pierwsza liczba, na którą
 patrzy recenzent.
 
@@ -49,46 +49,49 @@ Nowy protokół:
 - klatki z filmów val i test nie wchodzą do żadnego kroku selekcji ani do PCA,
   ani do K-Means.
 
-## P3. Sygnał trudności (EL2N) bez błędnego koła
+## P3. Sygnał trudności — train-only i jawna definicja
 
-Obecny EL2N pochodzi z DETR po 170 epokach trenowanego na pełnej puli — czyli
-model, który widział też klatki testowe, ocenia trudność danych treningowych,
-a potem te dane trenują model, którym się chwalimy. Recenzenci tego nie
-zauważyli wprost, ale zarzut o błędne koło (zarzut 5 recenzenta 1, „DETR-derived
-difficulty → DETR wygrywa") jest tuż obok.
+Stary sygnał z checkpointu ep170 wymaga audytu danych i inicjalizacji tego
+checkpointu. Ocenianie własnych próbek treningowych nie jest samo w sobie
+wyciekiem: tak działa wczesny scoring w oryginalnym EL2N. Trening proxy na
+podzbiorze może natomiast mieszać trudność z nierówną ekspozycją danych.
 
 Nowa reguła:
 
 1. trenujemy **model wstępny (proxy) tylko na klatkach treningowych**, przez
    **10 epok**, z tym samym ziarnem co bieg docelowy,
-2. z niego liczymy EL2N zgodnie z definicją oryginalną (wcześnie w treningu),
+2. zapisujemy definicję błędu: EL2N to estymacja oczekiwanej normy `||p-y||₂`;
+   obecny thresholded `1-confidence` dopasowanej detekcji nie odtwarza ogólnie
+   tej definicji. Dla RT-DETR alternatywą do zbadania jest natywny loss detekcji
+   z surowych wyjść i matchingu treningowego, wyraźnie nazwany innym sygnałem,
 3. proxy jest **tej samej architektury** co model docelowy (RF-DETR-S), więc nie
    ma przeskoku między rodzinami,
 4. wynik zapisujemy jako `el2n_scores_<seed>.pkl` — **EL2N zależy od ziarna**,
-   więc każdy seed ma swój; to zwiększa koszt, ale bez tego cała macierz mierzy
-   jeden przypadkowy przebieg.
+   więc dokumentujemy osobno seedy proxy, selekcji i treningu docelowego.
+   Dziesięć epok jest punktem startowym pilotażu, nie definicją EL2N.
 
 Dodatkowo (tanie, a domyka zarzut o błędne koło): policzyć EL2N także z modelu
 **innej rodziny** i pokazać korelację rang. Plan YOLO-EL2N z 25 kwietnia
 (`AdvancedDatasetSelection/ablation/yolo/PLAN.md`) wchodzi tu jako podpunkt.
 
-## P4. Budżet obrazów
+## P4. Budżet unikalnych źródeł
 
-Każdy wariant dostaje **dokładnie tyle samo obrazów**. Rozmiar budżetu jest
+Każdy porównywany selector dostaje **dokładnie tyle samo unikalnych klatek
+źródłowych z train**. Augmentacja następuje po wyborze, identycznie dla wariantów.
+Walidacja i test zawierają oryginały, w tym negatywy. Rozmiar budżetu jest
 osobnym wymiarem eksperymentu (sweep), nie wolną zmienną wewnątrz porównania.
 
 | Poziom | Budżet | Po co |
 |---|---|---|
 | A (macierz) | **5 000** | pełna macierz + ziarna, tanio |
-| B (potwierdzenie) | **20 000** | zgodność z dotychczasową narracją artykułu |
-| sweep | 2 500 / 5 000 / 10 000 / 20 000 | krzywa „ile danych vs jakość" |
+| B (potwierdzenie) | **K ≤ N_train**, po zamrożeniu manifestu | większy wspólny budżet źródeł |
+| sweep | np. 2 500 / 5 000 / 10 000 / N_train | krzywa jakości i kosztu; punkty muszą być wykonalne |
 
-**Uwaga licząca się dla baseline'u „losowo z klatek źródłowych"**: klatek
-źródłowych jest 22 837 w całej puli, a filmy treningowe to 70% filmów, więc
-w treningu jest ich rzędu 16 tys. Przy budżecie 20 000 tego baseline'u **nie da
-się zrobić bez powtórzeń**. Liczbę trzeba policzyć na danych (`05_OPEN_QUESTIONS`,
-punkt O2) i albo obniżyć budżet poziomu B, albo zdefiniować ten baseline jako
-„wszystkie dostępne klatki źródłowe treningowe + augmentacja do budżetu".
+W lokalnej anotacji train jest **17 832 nazw źródłowych**, nie 70% wszystkich
+klatek wyliczone z udziału filmów. Faktycznie dostępne, poprawne pliki mogą
+utworzyć mniejszą pulę. 20 000 różnych źródeł jest tu niewykonalne. Wariant
+5000 źródeł × 4 kopie realizuje budżet 20 000 obrazów, ale nie żądany baseline
+20 000 źródeł. Historyczną selekcję po augmentacji raportować osobno.
 
 ## P5. Trening — identyczny dla wszystkich
 
@@ -99,9 +102,9 @@ punkt O2) i albo obniżyć budżet poziomu B, albo zdefiniować ten baseline jak
 | epoki | **stała liczba, bez early stopping** | wartość z kalibracji, plan: 60 |
 | optymalizator, LR, warmup, weight decay | jedna wartość dla wszystkich | z kalibracji |
 | batch, gradient accumulation | jedna wartość | efektywny batch stały |
-| augmentacja w treningu | **wyłączona albo identyczna** | pula już jest augmentowana |
+| augmentacja w treningu | **identyczna po wyborze źródeł** | historyczna pula augmentowana to osobna kontrola |
 | precyzja | AMP bf16 | |
-| inicjalizacja | te same wagi startowe COCO | ziarno steruje tylko kolejnością i dropoutem |
+| inicjalizacja | te same wagi startowe COCO | ziarno może sterować również nową głową; zapisać faktyczne ładowanie wag |
 
 **Brak early stopping to decyzja świadoma.** Wcześniej warianty kończyły trening
 w różnych epokach, bo każdy miał własne kryterium na własnym zbiorze
@@ -110,7 +113,7 @@ mierzyło dwie rzeczy naraz.
 
 ## P6. Wybór checkpointu — jedna reguła, dwie kolumny
 
-Zawsze raportujemy **obie**:
+Przed testem deklarujemy **obie** reguły, jeśli obie mają wejść do raportu:
 
 - **(a) ostatnia epoka** — reguła bez żadnego wyboru, najbardziej odporna
   na zarzut,
@@ -118,12 +121,15 @@ Zawsze raportujemy **obie**:
   zapisane kryterium (mAP@[.5:.95] na `val`), identyczne dla wszystkich.
 
 Nigdy nie mieszamy kolumn w jednej tabeli i nigdy nie wybieramy per wariant tego,
-co lepiej wygląda.
+co lepiej wygląda. Predykcje, progi i metryki każdego checkpointu mają osobny
+katalog. Obecny limit jednego checkpointu w ledgerze nie realizuje automatycznie
+planu dwóch reguł — wymaga osobnego ujednolicenia kontraktu przed produkcją.
 
 ## P7. Inferencja — standardowa
 
-Standardowe dekodowanie detektora, top-k po wszystkich zapytaniach. **Zero
-[Query 81] (kju osiemdziesiąt jeden).** Historyczne wyniki z jednym zapytaniem
+Standardowe dekodowanie i postprocessing danej wersji detektora, bez wyboru
+jednego slotu. Hungarian jest przypisaniem targetów w treningu; COCOeval ma
+własne dopasowanie według score/IoU. Historyczne wyniki z jednym zapytaniem
 zostają wyłącznie jako osobna analiza „co się dzieje, gdy jedno zapytanie
 przejmuje klasę" — ciekawa obserwacja, nie metoda.
 
@@ -136,6 +142,9 @@ przejmuje klasę" — ciekawa obserwacja, nie metoda.
 - **Operacyjne TP/FP/FN, precision, recall, F1** przy progu ufności **wybranym
   na zbiorze walidacyjnym**, a nie ustawionym arbitralnie. Do artykułu idzie też
   krzywa F1 w funkcji progu — recenzent 1 poprosił o to wprost (zarzut 6).
+- Wszystkie zadeklarowane obrazy wchodzą do oceny, także bez predykcji i bez
+  GT. AP50/AP75/AR100 są uzupełnieniem głównego AP@[.5:.95]. Próg 0,001 jest
+  praktycznym cutoffem do sprawdzenia na val, a nie matematycznie pełną krzywą.
 - **Kalibracja pod przesunięciem dziedziny**: czy próg wybrany na walidacji
   własnej przenosi się na zbiór zewnętrzny. To jest osobny rysunek.
 
@@ -152,9 +161,11 @@ zewnętrzny liczymy **raz**, na końcu, dla checkpointów już wybranych.
 
 Wprowadzamy `external_access_ledger.jsonl` — plik, do którego dopisuje się
 każdy dostęp do zbioru zewnętrznego: data, kto, który checkpoint, po co.
-Recenzent 1 zarzut 10 dotyczył dokładnie tego, że wcześniej benchmark
+Recenzent z `Reviewer_Comments_to_Authors.pdf`, punkt 10, wskazał, że benchmark
 zewnętrzny był oglądany wielokrotnie w trakcie rozwoju. Ledger pozwala napisać
-w artykule prawdę zamiast deklaracji.
+w artykule prawdę zamiast deklaracji. Nie cofa historycznych analiz ani wpływu
+testu na wybór metody. Obecny benchmark trzeba opisać zgodnie z chronologią;
+potwierdzenie nowej metody powinno korzystać z odłożonych niezależnych operacji.
 
 ## P10. Ziarna i raportowanie
 
@@ -165,10 +176,12 @@ w artykule prawdę zamiast deklaracji.
 | baseline losowy | 10 niezależnych losowań |
 | analizy czułości | 1 |
 
-Raportujemy **średnią ± odchylenie standardowe**. Przy trzech ziarnach nie
-robimy testów istotności udających więcej, niż mamy — podajemy surowe wartości
-per ziarno w załączniku i przedział bootstrapowy tylko tam, gdzie ziaren jest
-pięć albo więcej.
+Liczby powtórzeń w tabeli są propozycją budżetu, nie progiem poprawności
+statystycznej. Raportujemy **średnią ± SD między treningami** i surowe wyniki.
+CI generalizacji szacujemy osobno przez resampling pacjentów/operacji, nie
+niezależnych klatek; przy siedmiu operacjach pokazujemy także każdą z osobna.
+Bootstrap pięciu seedów nie jest bootstrapem pacjentów. Jednoseedowa analiza
+czułości ma status eksploracyjny i wymaga powtórzeń dla głównych wniosków.
 
 Ziarno steruje: inicjalizacją głowy, kolejnością danych, dropoutem, K-Means
 (inicjalizacja centroidów) **oraz** modelem proxy liczącym EL2N. Czyli jedno
@@ -186,4 +199,7 @@ to się stało z etykietą wariantu V4.
 
 ## Historia zmian
 
+- **v2, 2026-09-11** — rozdzielono plan od wdrożenia, źródła od augmentacji,
+  scoring train-only od wycieku, SD seedów od CI pacjentów i nowe oceny od
+  historii testu. YAML pozostawiono bez nadpisywania wcześniejszych zmian użytkownika.
 - **v1, 2026-09-08** — pierwsza wersja, napisana po odrzuceniu artykułu.

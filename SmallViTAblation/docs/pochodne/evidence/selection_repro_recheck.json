@@ -1,0 +1,285 @@
+{
+  "created_utc": "2026-09-11T12:10:27.733081+00:00",
+  "repo": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker",
+  "scope": "selection/features only; no eval/train inspection or execution; no model downloads",
+  "method": "AST-isolated original definitions, numpy/sklearn synthetic data, mocked detector and manifest reads",
+  "tests": [
+    {
+      "id": "production_config_wrong_nesting",
+      "status": "bug_reproduced",
+      "evidence": {
+        "exception": "'dino_model'",
+        "features_keys": [
+          "cluster_algorithm",
+          "cluster_representative",
+          "dino_pca_dim",
+          "disable_rule",
+          "kmeans_iterations",
+          "weights_base"
+        ],
+        "dino_model_under_analysis": "dinov3_vitl16"
+      }
+    },
+    {
+      "id": "production_dino_missing_dimension",
+      "status": "bug_reproduced",
+      "evidence": {
+        "exception": "'DinoExtractor' object has no attribute 'DIM'"
+      }
+    },
+    {
+      "id": "dinov3_routed_to_dinov2",
+      "status": "bug_reproduced",
+      "evidence": {
+        "family": "dinov",
+        "chosen_repo": "facebookresearch/dinov2:main"
+      }
+    },
+    {
+      "id": "group_weighting_and_fake_cache_acceptance",
+      "status": "bug_reproduced",
+      "evidence": {
+        "group_order": [
+          "D",
+          "E",
+          "S",
+          "F"
+        ],
+        "new_percent": [
+          89.2430191040039,
+          2.0489468574523926,
+          8.19578742980957,
+          0.5122367143630981
+        ],
+        "original_group_energy": [
+          0.35,
+          0.30000000000000016,
+          0.2,
+          0.15000000000000002
+        ],
+        "fake_metadata_accepted": true,
+        "note": "Synthetic unit-variance example; not measured production feature contributions."
+      }
+    },
+    {
+      "id": "pca_order_and_unstandardized_components",
+      "status": "bug_reproduced",
+      "evidence": {
+        "components": 4,
+        "new_component_variances": [
+          1.9814205169677734,
+          1.5817642211914062,
+          1.4239007234573364,
+          1.3604252338409424
+        ],
+        "note": "New PCA components are not standardized after reduction."
+      }
+    },
+    {
+      "id": "kcenter_centers_replaced_and_radius_worsened",
+      "status": "bug_reproduced",
+      "evidence": {
+        "points": [
+          0.0,
+          10.0,
+          17.0,
+          27.0,
+          32.0,
+          38.0,
+          39.0,
+          40.0,
+          56.0
+        ],
+        "greedy_centers": [
+          27.0,
+          56.0,
+          0.0
+        ],
+        "returned": [
+          32.0,
+          56.0,
+          0.0
+        ],
+        "greedy_radius": 13,
+        "returned_radius": 15
+      }
+    },
+    {
+      "id": "sam_overlap_and_coordinate_grid",
+      "status": "bug_reproduced",
+      "evidence": {
+        "reported_overlap_coverage": 1.0,
+        "true_union": 0.5,
+        "reported_with_different_original_size": 0.25
+      }
+    },
+    {
+      "id": "uniform_leftover_bias",
+      "status": "bug_reproduced",
+      "evidence": {
+        "capacities": [
+          1,
+          10,
+          10
+        ],
+        "budget": 12,
+        "observed": {
+          "a": 1,
+          "b": 7,
+          "c": 4
+        }
+      }
+    },
+    {
+      "id": "duplicate_cache_ids_last_wins",
+      "status": "bug_reproduced",
+      "evidence": {
+        "rows_returned": [
+          99,
+          99
+        ]
+      }
+    },
+    {
+      "id": "coco_duplicate_paths_and_silent_missing_bbox",
+      "status": "bug_reproduced",
+      "evidence": {
+        "images": 2,
+        "unique_paths": 1,
+        "annotations": 0,
+        "has_instrument": true,
+        "bbox_present": false
+      }
+    },
+    {
+      "id": "coco_train_only_guard",
+      "status": "guard_confirmed",
+      "evidence": {
+        "rejection": "audit: 1 klatek spoza split=train, np. ['b']"
+      }
+    },
+    {
+      "id": "el2n_negatives_false_positives_class_matching",
+      "status": "bug_reproduced",
+      "evidence": {
+        "input_cases": [
+          "negative_empty",
+          "negative_false_positive",
+          "positive_wrong_class"
+        ],
+        "scores": [
+          1.0,
+          1.0,
+          0.10000000149011612
+        ],
+        "minmax_cancels_under_standardization": true,
+        "binary_positive_l2_at_p09": 0.1414213562373095,
+        "limitation": "Tests scoring logic only; does NOT validate RF-DETR package API."
+      }
+    },
+    {
+      "id": "original_cache_replaces_requested_pool",
+      "status": "bug_reproduced",
+      "evidence": {
+        "requested": [
+          "requested/train/image.jpg"
+        ],
+        "used": [
+          "cached/test/image.jpg"
+        ]
+      }
+    }
+  ],
+  "unexpected_failures": 0,
+  "selection_reasons": {
+    "selected_dataset1": {
+      "file": "AdvancedDatasetSelection/output/selected_dataset1/selection_reasons.json",
+      "summary": {
+        "total_images": 90389,
+        "selected_images": 20000,
+        "n_clusters": 20000,
+        "strategy": "centroid",
+        "el2n_mean_all": 0.13608078930237827,
+        "el2n_mean_selected": 0.13393597432552534,
+        "sam_mean_all": 0.41890820966486514,
+        "sam_mean_selected": 0.4163200956792751
+      },
+      "images": 20000,
+      "unique_filenames": 20000,
+      "unique_sources": 15565,
+      "augmented_images": 14259,
+      "multiple_variant_sources": 4006,
+      "singleton_clusters": 2662,
+      "valid_directory_paths": 48,
+      "q81_details_present": 0
+    },
+    "selected_dataset_weighted_features": {
+      "file": "AdvancedDatasetSelection/output/selected_dataset_weighted_features/selection_reasons.json",
+      "summary": {
+        "total_images": 90141,
+        "selected_images": 20000,
+        "n_clusters": 20000,
+        "strategy": "centroid",
+        "el2n_mean_all": 0.13573838349655157,
+        "el2n_mean_selected": 0.13735408810165808,
+        "sam_mean_all": 0.4181143846071184,
+        "sam_mean_selected": 0.4168576897195805
+      },
+      "images": 20000,
+      "unique_filenames": 20000,
+      "unique_sources": 15310,
+      "augmented_images": 15070,
+      "multiple_variant_sources": 4227,
+      "singleton_clusters": 2577,
+      "valid_directory_paths": 0,
+      "q81_details_present": 0
+    }
+  },
+  "production_selected_dataset1": {
+    "file": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\AdvancedDatasetSelection\\output\\selected_dataset1\\merged_20k_annotations_fixed.json",
+    "images": 20000,
+    "annotations": 20000,
+    "unique_sources": 15565,
+    "augmented_images": 14259,
+    "augmented_percent": 71.295,
+    "same_filename_multiset_as_selected_dataset1_reasons": true,
+    "shared_evidence": {
+      "file": "F:\\Studia\\Articles\\Zbiory\\2026-09-11_RT-DETR_selekcja_ewaluacja\\evidence\\production_pool_audit.json",
+      "membership_current_video_split": {
+        "unknown": 48,
+        "train": 15648,
+        "test": 1982,
+        "val": 2322
+      },
+      "leak_filenames_in_merged": 48,
+      "provenance": "User-provided counts, also read from production_pool_audit.json; split/leak-list derivation not independently rerun."
+    }
+  },
+  "python": "3.11.8 (tags/v3.11.8:db85d51, Feb  6 2024, 22:03:32) [MSC v.1937 64 bit (AMD64)]",
+  "packages": {
+    "numpy": "2.2.5",
+    "PyYAML": "6.0.2",
+    "scikit-learn": "1.7.1"
+  },
+  "rfdetr_available_in_this_interpreter": false,
+  "source_sha256": {
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\pipeline\\features\\build_cache.py": "8aea659dc73d78a339514e5ce15a2d88a70c42da043ca87c1c02f943f7fc513d",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\pipeline\\features\\common.py": "acf6b5942cc165eae948bf65e2c36ad1a89d56139b7d9a4daf9c34a6489e947c",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\pipeline\\selection\\select_subset.py": "18deab154767696f7743c72f4ed82b3e09f06eeeb1863b5d678624743dbdfda8",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\AdvancedDatasetSelection\\selection_methods\\cluster_selector.py": "bd4403cc90b535b3bad5f273ac1277eb7324858b49b3414f467c487f3d80ccc6",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\pipeline\\selection\\baselines.py": "31773dde7fcbf3b5f3675eab76a2c0d377f9af8d27dbe39331ea6c68f16159ed",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\configs\\protocol.yaml": "895ebe0e97b34970251ec517a5fbc312db64ca82d67d0f517784854cefeb629e",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\pipeline\\selection\\materialize.py": "d5fae05dbaa4c318a71d37cff1c63b3a70230e79bdcc86bc924ec24a5c954021",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\pipeline\\features\\el2n_from_proxy.py": "1ffc4bb54051fef5c7948c6d50fa8360c14fe5d985c82fb19db289d023661135",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\AdvancedDatasetSelection\\output\\selected_dataset1\\selection_reasons.json": "8feb256c47b01cadfa0aa55ebd6744d17c6c7e5dd0913ef059f428ca3c54fe4e",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\AdvancedDatasetSelection\\output\\selected_dataset_weighted_features\\selection_reasons.json": "527d77ff9ca3783520000bdeae23c238b59ad77ed4c24cb84baa2c09c9bd7842",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\AdvancedDatasetSelection\\output\\selected_dataset1\\merged_20k_annotations_fixed.json": "504f8bf0905665bf01d6a3def32dc9fdba8fab2c76b9ac1c07bb2604fcc6aca6",
+    "F:\\Studia\\Articles\\Zbiory\\2026-09-11_RT-DETR_selekcja_ewaluacja\\evidence\\production_pool_audit.json": "f0847540e564026db735dc4845ba2fd1b1dbbf73637cb7d3c9d2bef6e4818585"
+  },
+  "source_files_changed_during_execution": [],
+  "limitations": [
+    "No real detector inference or training.",
+    "No image pixel duplicate test.",
+    "No independent reconstruction of split membership or historical checkpoint provenance."
+  ]
+}

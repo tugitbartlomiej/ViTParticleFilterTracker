@@ -1,5 +1,10 @@
 # 03 — Koszt i optymalizacja pod ~133 biegi
 
+Status 2026-09-11: historyczny kosztorys v1. Liczby 133/144/170 w notatkach
+dotyczą różnych planów. Aktualną liczbę liczyć z zamrożonego manifestu biegów;
+zmiana jednostki budżetu na źródła wymaga przeliczenia. Parametry klastra są
+historycznym inwentarzem, nie bieżącym odczytem dostępności.
+
 ---
 
 ## 1. Sprzęt
@@ -37,7 +42,8 @@ Dopiero po nim wypełniamy tabelę poniżej i decydujemy o poziomie B.
 Wzór na całość, do wypełnienia po kalibracji:
 
 ```
-czas_calkowity = liczba_biegow × epoki × (obrazy / batch) × s_na_krok / rownolegle_GPU
+GPU_czas = cechy + proxy + strojenie + treningi + ewaluacja
+wall_time ≈ GPU_czas / efektywnie_zajete_GPU + transfery + kolejka
 ```
 
 **Sanity check przed startem produkcji:** jeżeli jeden bieg poziomu A wychodzi
@@ -73,9 +79,11 @@ najczęstsza strata czasu na klastrze.
 
 ### 3.3 Wstępne przeskalowanie obrazów
 
-Skoro wszystkie biegi jadą na 512×512, przeskalować pulę **raz** i zapisać jako
-JPEG w docelowym rozmiarze. Oszczędza dekodowanie i skalowanie w każdej epoce
-każdego biegu. Przy ponad stu biegach to jest różnica rzędu dni.
+Opcjonalny cache obrazów tworzymy osobno dla wybranego preprocessingu i
+rozdzielczości, zachowując oryginały. Nie zakładamy z góry 512×512 ani zysku
+rzędu dni. Trzeba zmierzyć dekodowanie, transfer i resize; gotowy JPEG nadal
+wymaga dekodowania. Każda zmiana geometrii musi mieć zgodne anotacje i inverse
+transform predykcji. Letterbox nie zastępuje automatycznie preprocessingu modelu.
 
 ### 3.4 Upakowanie biegów na węźle
 

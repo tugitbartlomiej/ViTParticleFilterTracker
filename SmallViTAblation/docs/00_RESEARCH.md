@@ -3,6 +3,11 @@
 Data: 2026-09-08. Źródła sprawdzone przez Scite i wyszukiwanie sieciowe
 (Undermind nie był podłączony w tej sesji — MCP niedostępny).
 
+Aktualizacja 2026-09-11: historyczne liczby modeli i wyników poniżej wymagają
+powiązania z wersją i artefaktami. Reguły docelowe są w dokumencie 01 v2,
+a zakres rzeczywiście poprawionego kodu w 21. Nie dowodzimy skuteczności
+selekcji przez samą zgodność pomysłu z publikacją.
+
 ---
 
 ## 1. Czy wolno badać dobór danych na małym modelu?
@@ -37,12 +42,11 @@ Data: 2026-09-08. Źródła sprawdzone przez Scite i wyszukiwanie sieciowe
   → Uzasadnia, dlaczego mieszamy cztery sygnały, ale też każe zmierzyć pokrycie
   wprost, a nie zakładać.
 
-**Ile ziaren losowych.** W pracach z tej rodziny spotykana praktyka to
-**5 niezależnych ziaren dla metod i 20 losowań dla baseline'u losowego** —
-losowy wybór ma największą wariancję, więc potrzebuje więcej prób. Nie jest to
-formalny standard, ale jest to poziom, który recenzent uzna. Nasz plan: 3 ziarna
-dla całej macierzy (ograniczenie czasu), 10 losowań dla baseline'u losowego,
-5 ziaren dla konfiguracji trafiających do głównej tabeli.
+**Ile ziaren losowych.** Nie ma jednej liczby wymaganej przez literaturę ani
+gwarancji akceptacji przez recenzenta. Plan 3/5 seedów i 10 losowań random
+jest budżetem roboczym. Zmienność trzeba oszacować; random nie musi mieć
+największej wariancji. Osobno raportować losowanie źródeł, inicjalizację proxy
+i trening detektora oraz niepewność związaną z pacjentami testowymi.
 
 ---
 
@@ -96,12 +100,14 @@ ta sama rozdzielczość wejścia, ten sam budżet epok, ten sam rozmiar zbioru.
 
 Uczciwa lista, żeby nie wpisać do artykułu tezy, której dane nie unoszą:
 
-1. **„Różnorodność zbioru daje generalizację"** — nasza własna analiza odcisku
-   palca selekcji (sesja 2026-06-28) to obaliła. Warianty V2 i V3 miały odcisk
+1. **„Różnorodność zbioru gwarantuje generalizację"** — sama analiza odcisku
+   palca selekcji nie potwierdza ani ogólnie nie obala tej zależności. V2 i V3 miały odcisk
    praktycznie identyczny z pełnym pipeline'em, a wypadły siedemdziesiąt razy
    gorzej na obcym zbiorze. Zmierzona różnorodność była **wewnętrzna** (rozrzut
    w przestrzeni DINO na własnym rozkładzie), a generalizacja wymaga pokrycia
-   rozkładu **zewnętrznego**. Nowy protokół mierzy to drugie wprost.
+   rozkładu **zewnętrznego**, ale historia treningów jest confoundem.
+   Odległości do embeddingów testu mogą być wyłącznie końcową analizą post hoc;
+   nie mogą sterować selektorem, jeśli test ma pozostać niezależny.
 2. **„Każdy z czterech składników jest konieczny"** — obecna [Tab. 5] tego nie
    dowodzi, bo pełny pipeline miał inny trening niż warianty.
 3. **Inferencja z jednego zapytania jako metoda** — recenzent uznał to za
@@ -124,15 +130,16 @@ kolumna `external` to **standardowa inferencja**, `external_q81` to jedno zapyta
 | V6 tylko różnorodność | 1,80% | 3,67% | 97,94% |
 | V7 tylko trudność | 3,63% | 4,32% | 97,96% |
 
-Dwie obserwacje, które przenoszą się do nowego artykułu niezależnie od nowych
-treningów:
+Dwie obserwacje historyczne, wymagające odtworzenia ewaluacji i jawnego opisu
+różnic treningu przed ponownym użyciem w artykule:
 
 - **Jedno zapytanie zawyża rozpiętość.** Przy standardowej inferencji przewaga
   pełnego pipeline'u to czternaście razy, a nie dziewięćdziesiąt. To jest
   uczciwsza liczba i sama w sobie warta pokazania.
-- **Wysoki wynik na własnym rozkładzie nie mówi nic o obcym.** V6 i V7 mają
+- **Wysoki wynik wewnętrzny nie gwarantuje dobrego wyniku zewnętrznego.** V6 i V7 mają
   po około 98% na własnym teście i poniżej 4% na obcym. To jest najmocniejszy
-  argument metodologiczny, jaki mamy — i on nie zależy od confoundu treningu.
+  obserwacja z tych biegów; jej interpretacja nadal zależy od splitu,
+  inicjalizacji, checkpointu i ewaluatora. Nie jest kontrolowanym testem przyczyny.
 
 ---
 

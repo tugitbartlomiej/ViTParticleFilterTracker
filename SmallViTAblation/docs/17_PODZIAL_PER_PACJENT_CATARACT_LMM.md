@@ -5,8 +5,9 @@ Data: 2026-09-11. Narzedzia: `scripts/pobieranie/audyt_pacjentow.py`,
 
 ## Odpowiedz krotko
 
-**Prawie.** 170 plikow w `3_Object_Tracking` to **167 roznych operacji**, nie 170.
-Podzial per pacjent jest wykonalny, ale nie wolno go robic po nazwie pliku.
+**Nie jest to potwierdzone.** Audyt pogrupował 170 plików `3_Object_Tracking`
+w **167 grup po połączeniu trzech wykrytych par**. To użyteczne grupy do podziału,
+ale nie dowód, że pozostałe grupy odpowiadają różnym operacjom ani pacjentom.
 
 ## Co mowi dokumentacja
 
@@ -60,20 +61,28 @@ pary data-godzina. Pary potwierdzajace:
 
 1. **Grupuj po operacji, nie po nazwie pliku.** Gotowe grupy sa w
    `_audyt_pacjentow.json` pod kluczem `grupy_operacji`. Sledzenie daje
-   **167 jednostek podzialu**, nie 170.
+   **167 konserwatywnych grup podziału**, nie 170 niezależnych pacjentów.
 2. **Nie laczy sie sledzenia z segmentacja w jednym podziale**, dopoki autorzy
    nie udostepnia Global ID dla sledzenia. Segmentacja ma 151 nagran z jawnym
    identyfikatorem, sledzenie 167 bez niego. Nie da sie wykluczyc, ze niektore
-   to te same operacje. Bezpieczna opcja: jeden podzbior do uczenia, drugi
-   **wylacznie** jako zewnetrzny zbior testowy.
+   to te same operacje. **Nie używać jednego do uczenia, a drugiego jako
+   rzekomo niezależnego testu.** Do czasu wyjaśnienia pochodzenia wybieramy jeden
+   podzbiór do danego badania albo traktujemy ocenę między nimi jako eksploracyjną,
+   z jawnym ograniczeniem nieznanego overlapu.
 3. **Napisz do autorow po mapowanie.** Global ID dla `3_Object_Tracking`
    rozwiazalby oba problemy naraz. Przy okazji trzeba wyjasnic licencje,
    podana w trzech sprzecznych wersjach.
 
 ## Ograniczenia
 
-Odczyt stempli jest wzrokowy, bo w srodowisku nie ma OCR. Dziewiec klipow ma
+W tym historycznym audycie odczyt stempli był wzrokowy. Obecnie użytkownik
+udostępnia MinerU do OCR dokumentów; nie oznacza to weryfikacji tożsamości
+pacjentów z napisów wideo. Dziewiec klipow ma
 napis poza kadrem i dla nich zostaja tylko testy 1 i 2 — a te nie wskazaly
 zadnego dopasowania. Prog 0,9 dla odcisku percepcyjnego dobralem po tym, jak
 zobaczylem przerwe miedzy 0,924 a 0,797; przy innym zbiorze trzeba go dobrac
-na nowo.
+na nowo. Różne daty operacji nie wykluczają dwóch zabiegów u tego samego
+pacjenta. Brak wykrytego duplikatu nie jest potwierdzeniem rozłączności.
+
+Aktualizacja 2026-09-11: usunięto nieuprawnione utożsamienie liczby grup
+z liczbą pacjentów i zalecenie używania niezweryfikowanego podzbioru jako testu.

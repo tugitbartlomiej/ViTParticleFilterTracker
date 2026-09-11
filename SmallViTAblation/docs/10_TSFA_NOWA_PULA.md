@@ -128,10 +128,10 @@ i nie wolno tego wrzucić do jednej puli treningowej bez namysłu.
 
 Trzy sensowne użycia, w kolejności wartości:
 
-1. **Test odporności na zmianę dziedziny.** Ten sam pacjent, ta sama sala, inna
-   kamera i inne tło. Model wytrenowany na widoku mikroskopowego powinien
-   wykrywać narzędzia na tacy słabo — i **zmierzenie tego spadku jest wynikiem**,
-   nie porażką.
+1. **Eksploracyjny test zmiany widoku.** Ten sam pacjent, ta sama sala, inna
+   kamera i inne tło. Nie jest to niezależny test nowych pacjentów. Do takiej
+   oceny należałoby odłożyć także operacje oraz sprawdzić zgodność definicji
+   targetu (narzędzie na tacy vs końcówka w polu operacyjnym).
 2. **Rozpoznanie, jakie narzędzia w ogóle są w danej operacji.** Taca pokazuje
    komplet; to jest kontekst, którego widok mikroskopowy nie daje.
 3. **Zapas na później.** Osobne zadanie, osobny artykuł.

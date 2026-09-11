@@ -3,6 +3,12 @@
 Maszynowy odpowiednik: `configs/variants.yaml`. Rozwinięcie do listy biegów:
 `tools/build_run_manifest.py`.
 
+Aktualizacja 2026-09-11: zachowano warianty i historyczny kosztorys v1.
+W protokole v2 budżet oznacza unikalne źródła, a nie obrazy po augmentacji.
+Każde 20k w kosztorysie jest warunkowe: na obecnych 17 832 źródłach train
+jest niewykonalne bez zmiany K. YAML i generator wymagają osobnej migracji;
+nie uruchamiać całej kolejki jako rzekomo zgodnej z v2.
+
 ---
 
 ## 1. Cztery grupy cech
@@ -13,6 +19,11 @@ Maszynowy odpowiednik: `configs/variants.yaml`. Rozwinięcie do listy biegów:
 | `E` | EL2N (trudność) | 0,30 | 1 |
 | `S` | FastSAM (złożoność sceny) | 0,20 | 9 |
 | `F` | Fourier (jakość/ostrość) | 0,15 | 1 |
+
+Wymiary S=9/F=1 opisują nową konfigurację, a artykuł opisuje S=1/F=9.
+To nie jest wierna reprodukcja. Przed macierzą trzeba zamrozić reprezentację
+oraz kolejność PCA/normalizacji. E jest obecnie detekcyjnym score confidence;
+nazwa EL2N wymaga definicji z P3.
 
 **Reguła wyłączenia grupy:** waga → 0, pozostałe **przeskalowane
 proporcjonalnie** do sumy 1. Jedna reguła dla wszystkich piętnastu kombinacji.
@@ -54,18 +65,19 @@ na zarzut o wybiórczość.
 
 | ID | Definicja | Po co |
 |---|---|---|
-| `B-RANDAUG` | losowe N z puli augmentowanej treningowej | odniesienie, którego pipeline musi bić |
-| `B-RANDSRC` | losowe z **klatek źródłowych** treningowych, potem augmentacja do N | **żądanie recenzenta 2, zarzut 6** — odpowiada, czy pipeline bije zwykłe zmniejszenie zbioru |
-| `B-UNIFORM` | równa liczba klatek z każdego filmu treningowego | tani baseline pokrycia; mocniejszy niż losowy |
-| `B-FULLPOOL` | wszystkie klatki treningowe, bez selekcji | sufit przy pełnym budżecie; inny budżet, raportowany osobno |
+| `B-RANDAUG` | losowe N z historycznej augmentowanej puli train | osobna kontrola wpływu augmentacji |
+| `B-RANDSRC` | losowe K unikalnych źródeł train, augmentacja identyczna po wyborze | główny baseline v2; wymaga migracji istniejącego generatora |
+| `B-UNIFORM` | przydział źródeł między filmami z kontrolą pojemności | tani baseline; przewaga nad random do zmierzenia |
+| `B-FULLPOOL` | wszystkie źródła train, bez selekcji | punkt odniesienia przy większym budżecie, nie gwarantowany sufit AP |
 
-`B-RANDAUG` idzie na **10 losowaniach** — to on ma największą wariancję, więc
-bez tego nie da się powiedzieć, czy przewaga pipeline'u jest realna.
+Random wymaga niezależnych losowań i treningów; **10 losowań** to plan roboczy,
+nie ustalony standard ani dowód największej wariancji tej metody.
 `B-RANDSRC` ma ograniczenie liczbowe opisane w `01_PROTOCOL.md`, punkt P4.
 
 ## 4. Analiza czułości (zarzut 3 recenzenta 1)
 
-Wszystko przy budżecie poziomu A, jedno ziarno, wariant odniesienia `M-DESF`.
+Pilotaż przy budżecie A może mieć jedno ziarno. Główne wnioski z czułości
+wymagają powtórzeń. Wybór parametrów tylko na walidacji, odniesienie `M-DESF`.
 
 | ID | Co zmieniamy | Wartości |
 |---|---|---|
@@ -97,7 +109,10 @@ odniesienia:
   aktualna YOLO} → 10 biegów, przy **iso-resource**: ta sama rozdzielczość
   wejścia, ten sam budżet epok, ten sam zbiór.
 
-Iso-resource jest tu obowiązkowe, bo zarzut 8 recenzenta 1 dotyczył właśnie
+Jednakowe epoki i rozdzielczość nie gwarantują iso-resource: modele mają
+inne koszty kroku, pretraining i optymalizację. Raportować GPU-czas, kroki,
+efektywny batch i budżet strojenia; wnioski dotyczą konkretnych recept.
+Zarzut 8 recenzenta z `Reviewer_Comments_to_Authors.pdf` dotyczył właśnie
 tego, że DETR chodził na 800×1333, a YOLOv8 na 640×640, więc porównanie mierzyło
 dwie recepty treningowe, a nie dwie architektury.
 
@@ -123,9 +138,9 @@ Tanie, a domykają uwagi drobne:
 
 - **skład augmentacji w wybranym zbiorze** — czy pipeline preferuje określone
   typy przekształceń (uwaga drobna recenzenta 1); czysta analiza nazw plików,
-- **pokrycie rozkładu zewnętrznego** — osadzenia DINO benchmarku zewnętrznego
-  i odległość wybranego zbioru do nich; to jest właściwa miara różnorodności,
-  której wcześniej brakowało,
+- **odległość do rozkładu zewnętrznego** — ewentualna końcowa analiza post hoc
+  embeddingów; nie używać jej do wyboru danych, wag ani modelu. Nie jest
+  samodzielnym dowodem generalizacji ani uniwersalną miarą różnorodności,
 - **korelacja rang EL2N z DETR vs EL2N z YOLO** — odpowiedź na zarzut o błędne
   koło,
 - **rekoncyliacja liczby 91 336** — recenzent 2 policzył 22 837 × 4 = 91 348

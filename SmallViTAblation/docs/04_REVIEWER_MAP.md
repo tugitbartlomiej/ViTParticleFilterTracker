@@ -1,60 +1,49 @@
-# 04 — Mapa: zarzut recenzenta → eksperyment, który go zamyka
+# 04 — Recenzje: wymagania, dowody i status
 
-Źródła: `F:\Studia\Articles\Moj\IEEE\Overleaf\DETR_IEEE\odpowiedziRecenzentów\`
-— `Reviewer_Comments_to_Authors.pdf` (recenzent 1) i `Comments_to_the_Author.pdf`
-(recenzent 2). **Obaj: Reject.** Recenzent 2 dopisał „do not encourage resubmit",
-więc to jest nowe zgłoszenie w innym miejscu, nie poprawka.
+Aktualizacja: 2026-09-11. Źródła: folder `DETR_IEEE/odpowiedziRecenzentów`.
+Nazwy plików nie potwierdzają oficjalnej numeracji recenzentów. Używamy:
 
-Ta tabela jest listą kontrolną. Jeśli któryś wiersz zostanie pusty, artykuł
-wraca z tym samym zarzutem.
+- **A** — `Comments_to_the_Author.pdf`, 17 numerowanych uwag; rekomendacja Reject (do not encourage resubmit).
+- **B** — `Reviewer_Comments_to_Authors.pdf`, 10 uwag głównych i 3 akapity drobne; rekomendacja Reject.
 
----
+W poprzedniej wersji tego dokumentu „recenzent 1” oznaczał B, a „recenzent 2” A.
+W [pełnej mapie 30 uwag](notatki/MAPA_UWAG_RECENZENTOW.md) lokalne etykiety są odwrotne:
+R1=A, R2=B. Przy cytowaniu identyfikować źródłowy plik i numer uwagi.
 
-## Recenzent 1
+Rekomendacja recenzenta nie zastępuje formalnej decyzji redakcji. Miejsce kolejnego
+zgłoszenia pozostaje decyzją autora.
 
-| # | Zarzut | Co go zamyka | Gdzie |
-|---|---|---|---|
-| 1 | losowy podział klatek w danych wideo | **podział po pacjencie już istnieje** — 50 pacjentów, jedno nagranie na pacjenta, 35/8/7, jeden plik dla wszystkich biegów | `01_PROTOCOL` P1, `05_OPEN` O1 |
-| 2 | jeden seed, brak dowodu powtarzalności | 3 ziarna dla macierzy, 5 dla głównej tabeli, 10 losowań dla baseline'u; średnia ± odchylenie | `01_PROTOCOL` P10 |
-| 3 | wagi i parametry dobrane ręcznie, bez analizy czułości | zestaw `S-*`: perturbacje wag, wymiar PCA, wybór reprezentanta, algorytm pokrycia, współczynniki trudności | `02_MATRIX` §4 |
-| 4 | ablacje trenowane innym protokołem niż pełny pipeline | pełny pipeline jest **wariantem w tej samej macierzy**; stała liczba epok, jedna reguła checkpointu | `01_PROTOCOL` P0, P5, P6 |
-| 5 | inferencja z jednego zapytania DETR, nieuzasadniona | standardowe dekodowanie; jedno zapytanie tylko jako osobna obserwacja historyczna | `01_PROTOCOL` P7 |
-| 6 | jeden arbitralny próg ufności, brak kalibracji | mAP z pełnej krzywej PR; próg operacyjny wybierany na walidacji; krzywa F1 od progu; test przeniesienia progu na obcą dziedzinę | `01_PROTOCOL` P8 |
-| 7 | tylko YOLOv8L, brak nowoczesnego detektora | RF-DETR-Small jako model główny, D-FINE-S i bieżąca YOLO jako przeniesienie | `00_RESEARCH` §2, `02_MATRIX` §6 |
-| 8 | porównanie architektur non-iso-resource | ta sama rozdzielczość, ten sam budżet epok, ten sam zbiór dla wszystkich architektur | `02_MATRIX` §6 |
-| 9 | brak analizy NMS w YOLO | raportować ustawienia NMS i sprawdzić wrażliwość; przy jednej klasie to krótka analiza | `06_TODO` T14 |
-| 10 | zbiór zewnętrzny oglądany zbyt wiele razy | dyscyplina „zero-look": wybór epoki i progu tylko na walidacji, zbiór zewnętrzny liczony raz, `external_access_ledger.jsonl` | `01_PROTOCOL` P9 |
-| drobne | nowość to kombinacja, nie składniki | powiedzieć to wprost w artykule; macierz 15 kombinacji jest właśnie dowodem na wartość kombinacji | — |
-| drobne | uzasadnienie rozmiaru 20 000 | sweep 2 500 / 5 000 / 10 000 / 20 000 | `02_MATRIX` §5 |
-| drobne | 71,3% wybranych to kopie augmentowane | analiza składu augmentacji w wybranym zbiorze, bez GPU | `02_MATRIX` §7 |
+## Główne warunki odpowiedzi
 
-## Recenzent 2
+| Uwagi źródłowe | Wymagany dowód | Stan po refaktorze |
+|---|---|---|
+| A2, A15, B1 | Split po operacjach/pacjentach, pełne liczebności, brak kontaktu testu z treningiem i inicjalizacją | Istnieje manifest 35/8/7 i potwierdzenie autora o pacjentach CATARACTS. Główne porównania muszą rzeczywiście korzystać z tego splitu; nie zmienia on historii checkpointów. |
+| A4, B6 | Jednakowy COCO AP, PR/F1 z progiem walidacyjnym, analiza transferu progu | Poprawiono zakres obrazów, automatyczny tuning tylko na val, remap klas i wspólne metryki transferu. Potrzebna ocena rzeczywistych modeli i analizy kalibracji. |
+| A5, B4 | Pełna macierz cech przy stałych warunkach treningu | Zaplanowana, nie wykonana w tym refaktorze. Historyczny pełny pipeline nie może zastąpić kontrolnego wiersza nowej macierzy. |
+| A6 | Powtarzany random z oryginalnych klatek, ten sam budżet | Budżet źródeł skorygowany w dokumencie 01. K=20k nie mieści się w obecnych 17 832 nazwach źródłowych train. |
+| A7, A10 | Izolacja efektu selekcji także dla YOLOv8 | Brak potwierdzenia wykonanej macierzy. Transfer kilku wariantów na nowy model nie jest pełną ablacja YOLOv8; zmianę zakresu trzeba uzasadnić. |
+| A3, B7 | Współczesny YOLO i co najmniej jeden nowoczesny DETR-style | RT-DETR spełnia kierunek uwagi. Recenzent nie wymagał małego ViT. Istniejący adapter RF-DETR wymaga smoke testu rzeczywistej biblioteki; RT-DETR osobnego adaptera. |
+| B8 | Uczciwe porównanie architektur i kosztów | Jednakowe epoki, rozdzielczość i parametry nie gwarantują iso-resource. Raportować efektywny batch, kroki, pretraining, receptę, GPU-czas i budżet strojenia. |
+| A1, A13–14, B3, B-drobne | Sens składowych FastSAM, wrażliwość parametrów, PCA, alternatywne selektory i budżety | Hipotezy i macierze w dokumentach 02/19; wymagają wyników walidacyjnych. Korelacja score nie zastępuje downstream AP. |
+| A9, B2 | Powtórzenia i niepewność | Oddzielono SD treningów od CI po pacjentach. Nie ustalono z góry wartości p ani nie potwierdzono nowych średnich i SD. |
+| B5, B10 | Standardowy odczyt queries i pełna chronologia dostępu do testu | Q81 jako analiza historyczna, główny wynik ze standardowego postprocessingu. Ledger nie przywraca niezależności już analizowanego benchmarku. |
+| B9 | Ustawienia i wrażliwość NMS | Poprawiono pomocniczy matching i rozdzielenie klas. Surowe predykcje sprzed NMS, pełna analiza walidacyjna i porównanie Soft-NMS pozostają do wykonania. |
+| A8, B-drobne | Pochodzenie puli, zewnętrznego testu i augmentacji | Inwentarze opisują konkretne anotacje. Brakujące 12 wariantów nie dowodzi uszkodzonych filmów; 48 zewnętrznych nazw wymaga audytu historii biegów. |
+| A11–12, A16 | Przykłady wizualne, zgodny schemat pipeline'u, jednoznaczne wiersze tabel | Praca redakcyjna po zamrożeniu metody i wyników. |
+| A17 | Ostrożna interpretacja kliniczna | Względna poprawa AP nie jest dowodem użyteczności klinicznej; dokładność lokalizacji wymaga osobnej oceny. |
 
-| # | Zarzut | Co go zamyka | Gdzie |
-|---|---|---|---|
-| 1 | dlaczego akurat te pięć składowych miary złożoności FastSAM | uzasadnienie merytoryczne + `S-*` na tej mierze; jeśli nie da się obronić, uprościć miarę | `02_MATRIX` §4, `05_OPEN` O4 |
-| 2 | test wewnętrzny ma tylko 589 obrazów, brak rozmiaru walidacji, podział po klatkach | test to **7 pacjentów**, nie losowe klatki; w tabeli podziału podajemy pacjentów i klatki dla wszystkich trzech części | `01_PROTOCOL` P1, `06_TODO` T2 |
-| 3 | YOLOv8 nie reprezentuje rodziny | bieżąca YOLO w rozmiarze zbliżonym parametrami | `02_MATRIX` §6 |
-| 4 | niespójne metryki między tabelami | jeden zestaw metryk wszędzie: mAP@0.5, mAP@[.5:.95], TP/FP/FN, P/R/F1 | `01_PROTOCOL` P8 |
-| 5 | **ablacja niepełna — trzeba wszystkich kombinacji czterech cech** | macierz 15 kombinacji: pojedyncze, pary, trójki, komplet | `02_MATRIX` §2 |
-| 6 | **baseline losowy niewystarczający; potrzebny losowy z klatek źródłowych** | `B-RANDAUG` na 10 losowaniach + `B-RANDSRC` z klatek przed augmentacją | `02_MATRIX` §3 |
-| 7 | ablacja tylko na DETR, a teza dotyczy doboru danych ogólnie | poziom B powtarza najważniejsze konfiguracje na drugiej i trzeciej architekturze | `02_MATRIX` §6 |
-| 8 | pochodzenie liczby 91 336 (22 837 × 4 = 91 348) | rekoncyliacja na danych i jedno zdanie w artykule | `02_MATRIX` §7, `05_OPEN` O3 |
-| 9 | jedna instytucja, jeden seed | ziarna załatwione; jedna instytucja zostaje jako ograniczenie — napisać uczciwie, nie chować | `01_PROTOCOL` P10 |
-| 10 | dlaczego izolacja efektu kuracji tylko na DETR | jak wiersz 7 | `02_MATRIX` §6 |
-| 11–16 | rysunki, mapowanie faz pipeline'u na [Fig. 1] (rysunek pierwszy), wymiar PCA, alternatywy dla K-Means, tabela podziału danych, jasny opis co jest czym w sekcji ablacji | częściowo eksperymenty (`S-PCA`, `S-ALG`), częściowo redakcja | `02_MATRIX` §4, `06_TODO` T15 |
-| 17 | interpretacja kliniczna przy niskim bezwzględnym mAP | oddzielić „lepsza generalizacja względna" od „użyteczne klinicznie"; napisać wprost | — |
+## Czego nie deklarować jako wykonanego
 
----
+Przekazany `RESPONSE_TO_REVIEWERS_DETAILED.md` zawiera nowe średnie, SD, p<0,001,
+analizy wrażliwości i opowieść o 12 uszkodzonych klatkach. Audyt nie potwierdził ich
+artefaktami. Nie kopiować tych zdań do odpowiedzi jako wyników wykonanych badań.
+Każda przyszła deklaracja wymaga logu/manifestu/wyniku i wskazania zmienionego fragmentu artykułu.
 
-## Trzy rzeczy, które recenzenci przeoczyli, a i tak trzeba naprawić
+Szczegółowy status kodu i polecenia weryfikacji: [21_STAN_REFAKTORU.md](21_STAN_REFAKTORU.md).
+Pełne parafrazy wszystkich 30 uwag oraz lista niepotwierdzonych twierdzeń:
+[MAPA_UWAG_RECENZENTOW.md](notatki/MAPA_UWAG_RECENZENTOW.md).
 
-1. **Selekcja jechała po całej puli**, łącznie z klatkami z filmów testowych.
-   To jest wyciek silniejszy niż ten, który recenzent 1 opisał w zarzucie 1.
-2. **EL2N pochodzi z modelu wytrenowanego na całej puli przez 170 epok** — to nie
-   jest EL2N w sensie oryginalnej definicji i domyka błędne koło.
-3. **Wagi po wyłączeniu grupy były dobierane ręcznie**, więc „bez Fouriera"
-   zmieniało też proporcje pozostałych cech. Dwie zmiany naraz w jednym wariancie.
+## Historia zmian
 
-Warto je naprawić i **opisać w artykule jako świadomą przebudowę protokołu**.
-Recenzent, który zobaczy, że autor sam znalazł więcej niż on, ocenia inaczej.
+- 2026-09-11 — ujednolicono identyfikację źródeł, oddzielono plan od dowodu wykonania;
+  usunięto deklaracje, że samo istnienie splitu, tabela planu lub liczba seedów zamyka uwagi.

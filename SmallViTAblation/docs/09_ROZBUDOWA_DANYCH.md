@@ -52,9 +52,11 @@ z wideo i klasyfikacja przez zgodność DINO, YOLO i DETR. Trzy modele muszą si
 zgodzić, że narzędzia nie ma — dopiero wtedy klatka wchodzi jako negatyw.
 
 **Koszt:** pipeline istnieje, trzeba go puścić na 35 nagraniach treningowych.
-**Uwaga:** negatywy dokładamy **tylko do pacjentów treningowych**, nigdy do
-walidacji ani testu, bo inaczej zmieniasz podstawę porównania ze starymi
-liczbami.
+W nowym badaniu również val/test powinny zawierać naturalnie występujące,
+ręcznie zweryfikowane negatywy — inaczej nie mierzymy FP na tle. Zamrażamy
+ich skład przed porównaniami. Nie dokładamy do testu przykładów adaptacyjnie
+po analizie wyników. Nowy test nie jest bezpośrednio porównywalny z historycznym
+zbiorem złożonym głównie z klatek dodatnich.
 
 ## 3. Gęstsze próbkowanie tych samych nagrań [ROZWINIĘTE W `10_TSFA_NOWA_PULA.md`]
 
