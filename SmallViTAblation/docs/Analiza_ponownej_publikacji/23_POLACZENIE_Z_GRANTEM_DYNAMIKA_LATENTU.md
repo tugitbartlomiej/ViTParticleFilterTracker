@@ -161,4 +161,6 @@ Do poprawianej pracy DETR/YOLO dołączyć tę metodę jako jasno oznaczone rozs
 
 ## 9. Zakres tej zmiany
 
+Osobne rozwinięcie na kolejną prośbę autora: [25 — Diagnostyka latentu i aktywna kuracja](25_DIAGNOSTYKA_LATENTU_I_AKTYWNA_KURACJA.md). Rozróżnia wybór etykiet od uzupełnienia stanu i proponuje test, czy diagnoza wskazuje skuteczną interwencję. Nie jest warunkiem rozpoczęcia szybkich ablacji z dokumentu 24.
+
 Powstała dokumentacja integracji oraz projekt eksperymentów. Nie zmieniono kodu grantu, nie wdrożono selektora, nie uruchomiono GPU, OCR ani pobierania nowych PDF-ów. Stan formalizacji, starsze syntezy i zapisane wyniki potraktowano jako źródła o różnej sile dowodowej, a nie polecenia wykonania kolejnych zadań.

@@ -14,6 +14,8 @@ Najnowsza decyzja autora: **najpierw szybkie testy na małych detektorach, potem
 
 ## Mapa dokumentów
 
+Osobny kierunek badawczy: [25 — Diagnostyka latentu, aktywna kuracja i uzupełnianie stanu](Analiza_ponownej_publikacji/25_DIAGNOSTYKA_LATENTU_I_AKTYWNA_KURACJA.md). Zaczyna się od testów na CPU; nie zastępuje ani nie rozszerza automatycznie planu ponownej publikacji i małych detektorów.
+
 | Pliki | Rola i sposób użycia |
 |---|---|
 | [00](00_RESEARCH.md), [19](19_SELEKCJA_WG_LITERATURY.md), [20](20_DRZEWA_GRADIENTOWE_JAKO_OBSERWATOR.md) | Literatura i hipotezy. Parametry projektowanych selektorów wymagają walidacji; przywołanie pracy nie oznacza wdrożenia jej metody. |

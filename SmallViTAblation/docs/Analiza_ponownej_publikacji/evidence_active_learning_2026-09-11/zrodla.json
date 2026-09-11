@@ -1,0 +1,164 @@
+{
+  "date": "2026-09-11",
+  "status": "Research proposal only; no training, implementation, OCR, local PDF downloads or grant changes.",
+  "workspace_id": "40294fa6-c9a3-4469-9a61-d3eddeaee893",
+  "search": {
+    "name": "Diagnostyka niedomkniecia latentu jako sterowanie doborem danych i active learning",
+    "status": "completed",
+    "results_count": 161,
+    "read_count": 15,
+    "read_scope": "Summary and first 15 abstracts/metadata; not 161 full-text reads and not necessarily 161 unique studies.",
+    "url": "https://app.undermind.ai/projects/40294fa6-c9a3-4469-9a61-d3eddeaee893?path=/Diagnostyka%20niedomkniecia%20latentu%20jako%20sterowanie%20doborem%20danych%20i%20active%20learning",
+    "first_15": [
+      "Uy21",
+      "Shi20",
+      "Lin22c",
+      "Gup23c",
+      "Bod18",
+      "Lin19",
+      "Lin19b",
+      "Lin21b",
+      "Rup22",
+      "Bra23",
+      "Pan18b",
+      "Bak22",
+      "Jus26",
+      "Kon14",
+      "Wu23"
+    ]
+  },
+  "full_text_reader": {
+    "tool": "Undermind read_pdfs",
+    "completed": true,
+    "papers": [
+      "Li24c",
+      "Lin22c",
+      "Shi20"
+    ],
+    "scope": "Targeted questions about acquisition, annotation costs, observability, memory and experimental controls. Notes below are short critical summaries; no verbatim full-text excerpts."
+  },
+  "local_sources": "../evidence_grant_2026-09-11/zrodla_lokalne.json; additional targeted read of D59 and E-AQ, plus reviewer map and documents 23-24.",
+  "papers": [
+    {
+      "id": "Abr19",
+      "title": "Active Learning of Dynamics for Data-Driven Control Using Koopman Operators",
+      "year": 2019,
+      "doi": "10.1109/TRO.2019.2923880",
+      "url": "https://arxiv.org/abs/1906.05194",
+      "pdf": "https://arxiv.org/pdf/1906.05194",
+      "scope": "Abstract and bibliographic metadata",
+      "note": "Existing Koopman active learning for robot dynamics and control; no claim of a new generic Koopman-plus-AL idea."
+    },
+    {
+      "id": "Li24c",
+      "title": "EnKode: Active Learning of Unknown Flows With Koopman Operators",
+      "year": 2024,
+      "doi": "10.1109/LRA.2024.3486217",
+      "url": "https://arxiv.org/abs/2410.16605",
+      "pdf": "https://arxiv.org/pdf/2410.16605",
+      "scope": "Undermind full-text reader plus primary arXiv abstract",
+      "note": "Sections III-IV describe point-wise flow acquisition using ensemble disagreement; evaluated against uniform sampling and GP approaches. Does not diagnose missing observation/history or buy semantic bounding-box labels. Sampling policy omits travel cost. Reader output is auxiliary, not reproduction."
+    },
+    {
+      "id": "Lin22c",
+      "title": "Regression-Based Projection for Learning Mori-Zwanzig Operators",
+      "year": 2023,
+      "preprint_year": 2022,
+      "doi": "10.1137/22M1506146",
+      "url": "https://arxiv.org/abs/2205.05135",
+      "pdf": "https://arxiv.org/pdf/2205.05135",
+      "scope": "Undermind full-text reader; primary arXiv and SIAM metadata",
+      "note": "Regression-defined projection and recursive memory learning. Richer current-state regression does not generally remove missing-state effects. Our ridge lag model is only an empirical probe. Do not adopt reader's overgeneralization that every M<D representation is unclosed, or identify MSE improvement with conditional information."
+    },
+    {
+      "id": "Lin21b",
+      "title": "Data-Driven Learning for the Mori-Zwanzig Formalism: A Generalization of the Koopman Learning Framework",
+      "year": 2021,
+      "doi": "10.1137/21M1401759",
+      "url": "https://arxiv.org/abs/2101.05873",
+      "pdf": "https://arxiv.org/pdf/2101.05873",
+      "scope": "Abstract and metadata",
+      "note": "Existing data-driven Markov and memory operators; not evidence for selecting detector annotations."
+    },
+    {
+      "id": "Uy21b",
+      "title": "Active operator inference for learning low-dimensional dynamical-system models from noisy data",
+      "preprint_year": 2021,
+      "doi": "10.1137/21M1439729",
+      "url": "https://arxiv.org/abs/2107.09256",
+      "pdf": "https://arxiv.org/pdf/2107.09256",
+      "scope": "Abstract and metadata",
+      "note": "Trajectory sampling to reduce effects of noise in operator inference; do not transfer reported gains to video."
+    },
+    {
+      "id": "Uy21",
+      "title": "Operator Inference of Non-Markovian Terms for Learning Reduced Models from Partially Observed State Trajectories",
+      "year": 2021,
+      "doi": "10.1007/s10915-021-01580-2",
+      "url": "https://doi.org/10.1007/s10915-021-01580-2",
+      "scope": "Undermind abstract and metadata",
+      "note": "Prior work for history-dependent reduced dynamics; full proof not audited."
+    },
+    {
+      "id": "Gup23c",
+      "title": "Mori-Zwanzig latent space Koopman closure for nonlinear autoencoder",
+      "year": 2025,
+      "preprint_year": 2023,
+      "doi": "10.1098/rspa.2024.0259",
+      "url": "https://repository.kaust.edu.sa/items/99f49779-119b-4219-b2c8-93cc8dfe1773",
+      "pdf": "https://repository.kaust.edu.sa/bitstreams/f8aee2be-1e7c-411e-8f5c-ce30ba60e26b/download",
+      "scope": "Abstract and primary repository journal metadata",
+      "note": "Published journal version verified; Undermind listed older preprint. Existing latent AE closure, not evidence of active surgical annotation."
+    },
+    {
+      "id": "Shi20",
+      "title": "LRTD: long-range temporal dependency based active learning for surgical workflow recognition",
+      "year": 2020,
+      "doi": "10.1007/s11548-020-02198-9",
+      "url": "https://arxiv.org/abs/2004.09845",
+      "pdf": "https://arxiv.org/pdf/2004.09845",
+      "code": "https://github.com/xmichelleshihx/AL-LRTD",
+      "scope": "Undermind full-text reader, primary abstract and author code overview",
+      "note": "Sections 2.3 and 3.1: weak within-clip dependence scores guide queries; last-frame phase label used with preceding context. Distinct from bounding-box detection. Existing temporal AL prevents novelty claim based just on video dependency. Do not adopt reader's equation of predictive loss difference with information gain; finite probes cannot automatically separate noise."
+    },
+    {
+      "id": "Wu23",
+      "title": "Correlation-Aware Active Learning for Surgery Video Segmentation",
+      "year": 2024,
+      "doi": "10.1109/WACV57701.2024.00201",
+      "url": "https://openaccess.thecvf.com/content/WACV2024/html/Wu_Correlation-Aware_Active_Learning_for_Surgery_Video_Segmentation_WACV_2024_paper.html",
+      "pdf": "https://openaccess.thecvf.com/content/WACV2024/papers/Wu_Correlation-Aware_Active_Learning_for_Surgery_Video_Segmentation_WACV_2024_paper.pdf",
+      "scope": "Current primary CVF abstract and selected method excerpt; full-text reading belongs to earlier audit 22",
+      "note": "Clustering and uncertainty for surgery video segmentation. Correct preprint is 2311.08811; unrelated draft identifier 2311.08508 rejected before publication of report."
+    },
+    {
+      "id": "Jus26",
+      "title": "Stream-based active learning for surgical AI",
+      "year": 2026,
+      "doi": "10.1007/s11548-026-03718-9",
+      "url": "https://link.springer.com/article/10.1007/s11548-026-03718-9",
+      "pdf": "https://link.springer.com/content/pdf/10.1007/s11548-026-03718-9.pdf",
+      "scope": "Primary full-text HTML: abstract, introduction, related work and beginning of methods",
+      "note": "Binary annotation questions, VeSSAL, AAE, and retraining between surgeries; not a measured bounding-box labeling protocol."
+    },
+    {
+      "id": "Tan25b",
+      "title": "Representative, Informative, and De-Amplifying: Requirements for Robust Bayesian Active Learning under Model Misspecification",
+      "year": 2026,
+      "preprint_year": 2025,
+      "url": "https://proceedings.mlr.press/v300/tang26d.html",
+      "pdf": "https://raw.githubusercontent.com/mlresearch/v300/main/assets/tang26d/tang26d.pdf",
+      "scope": "Primary proceedings abstract and metadata; no full-text read in this round",
+      "note": "AISTATS 2026 PMLR 300:3016-3024; correct publication year supersedes Undermind preprint entry. Model misspecification motivates controls against pure uncertainty selection."
+    },
+    {
+      "id": "Berrueta2020",
+      "title": "Experimental Applications of the Koopman Operator in Active Learning for Control",
+      "year": 2020,
+      "doi": "10.1007/978-3-030-35713-9_16",
+      "url": "https://link.springer.com/chapter/10.1007/978-3-030-35713-9_16",
+      "scope": "Publisher and author institution metadata, abstract; no full chapter reading",
+      "note": "Book chapter in The Koopman Operator in Systems and Control. Search surfaced author PDF https://tberrueta.github.io/assets/pdfs/BerruetaKoopman2020.pdf but direct web open returned 404. Not added to download queue."
+    }
+  ]
+}
