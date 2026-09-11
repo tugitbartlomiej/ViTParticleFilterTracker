@@ -4,6 +4,7 @@ Stan uporządkowany 2026-09-11. **Protokół planowanego eksperymentu, historycz
 
 ## Zacznij tutaj
 
+0. [22 — Audyt literatury i plan ponownej publikacji](22_AUDYT_LITERATURY_I_PLAN_PUBLIKACJI.md): przegląd lokalnego OCR i Undermind, ocena nowości, bramy poprawności, konkretne ablacje RT-DETR i plan statystyczny. To projekt badania, nie wykonane treningi.
 1. [21 — Stan refaktoru i ograniczenia](21_STAN_REFAKTORU.md): co poprawiono w kodzie, jak uruchomić testy i co pozostaje otwarte.
 2. [01 — Protokół](01_PROTOCOL.md): reguły docelowego badania. YAML jest konfiguracją istniejącej implementacji; nie wszystkie reguły dokumentu są jeszcze wdrożone.
 3. [02 — Macierz](02_MATRIX.md): kombinacje i budżety; liczba biegów jest planem, nie wykonanym wynikiem.
