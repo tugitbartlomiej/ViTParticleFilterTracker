@@ -3,6 +3,7 @@
 Ten folder został przeniesiony przez autora do `SmallViTAblation/docs/Analiza_ponownej_publikacji/`. Kolekcja PDF/OCR i listy pobierania pozostają w `F:/Studia/Articles/Zbiory/2026-09-11_RT-DETR_selekcja_ewaluacja`.
 
 **Aktualny start na Edenie:** [30 — RF-DETR-Nano i smoke](30_START_EDEN_RFDETR_NANO_SMOKE.md).
+**Wdrożenie i wynik rzeczywistego zadania:** [31 — środowisko i smoke RF-DETR](31_EDEN_RFDETR_SMOKE_WDROZENIE.md).
 Decyzja autora z 2026-09-14: najpierw statyczna kuracja na Nano, bez Langevina i Koopmana.
 
 1. [24 — Szybkie ablacje i optymalizacja Edena](24_SZYBKIE_ABLACJE_I_OPTYMALIZACJA_EDEN.md): najpierw YOLOv8n, następnie kontrolowany transfer; modele, budżety, 9/18/24 biegi i pomiar kosztu.
@@ -14,7 +15,8 @@ Decyzja autora z 2026-09-14: najpierw statyczna kuracja na Nano, bez Langevina i
 7. [28 — Plan implementacji](28_PLAN_IMPLEMENTACJI_ACTIVE_CURATION_GLE.md): kontrakty modułów, profile kosztu, generator manifestu i polecenia lokalne/Eden.
 8. [29 — Uruchomienie lokalne i Eden](29_URUCHOMIENIE_LOKALNE_I_EDEN.md): konkretna kolejność smoke, pilot, aktywnych rund, kolejki SLURM i sparowanego bootstrapu operacji.
 
-To plan badania i ocena literatury. Nie wykonano OCR ani nowych treningów. Zarejestrowano 123 pliki OCR; dla 30 przeczytano abstrakty lub wybrane fragmenty, dla pozostałych wykonano screening tytułów. Rejestr podaje zakres i hashe; różne wersje tego samego artykułu nie są niezależnymi dowodami.
+Poniższy opis dotyczy audytów literatury z 11 września; późniejsze treningi smoke opisuje dokument 31.
+W audycie 22 nie wykonano OCR ani nowych treningów. Zarejestrowano 123 pliki OCR; dla 30 przeczytano abstrakty lub wybrane fragmenty, dla pozostałych wykonano screening tytułów. Rejestr podaje zakres i hashe; różne wersje tego samego artykułu nie są niezależnymi dowodami.
 
 Undermind zakończył przegląd z 190 wynikami; pierwsze 50 zapisano z opisem wyszukiwania. Trzy PDF-y odczytano jego narzędziem pełnotekstowym. Surowe odpowiedzi w plikach undermind_*.json są materiałem pomocniczym; wnioski naukowe i ograniczenia zawiera raport.
 

@@ -7,6 +7,10 @@ kolejki. Langevin, Koopman, GLE i active learning są osobnym, późniejszym eta
 
 ## Czy można już nacisnąć „start”?
 
+**Aktualizacja:** poniższa tabela opisuje audyt przed wdrożeniem.
+Stan rzeczywistego uruchomienia z tej samej daty jest w
+[dokumencie 31](31_EDEN_RFDETR_SMOKE_WDROZENIE.md).
+
 Nie w pełni. Kod adapterów i kolejki istnieje, ale stan lokalnego repozytorium
 nie oznacza wdrożenia na Edenie. Audyt SSH był wyłącznie odczytowy: nie
 instalowano pakietów, nie rozpakowywano zbiorów i nie wysyłano zadań SLURM.

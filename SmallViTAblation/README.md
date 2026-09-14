@@ -2,7 +2,7 @@
 
 **Gałąź:** `feature/small-vit-ablation-matrix`
 **Start:** 2026-09-08
-**Status:** IMPLEMENTACJA + TESTY LEKKIE — bez treningów produkcyjnych
+**Status:** RF-DETR-Nano smoke na H100 zakończony poprawnie (1807587); pełny pilot do przygotowania.
 
 ## Po co ten folder
 
@@ -14,8 +14,8 @@ inferencja z jednego zapytania DETR i wielokrotne oglądanie zbioru zewnętrzneg
 
 Ten folder zbiera **plan nowego eksperymentu**, który te zarzuty zamyka. Rdzeń
 pomysłu: zejść z drogiego DETR-R50 (setki epok) na **małe detektory**, żeby jeden
-bieg kosztował minuty zamiast godzin. YOLOv8n służy do szerokiego screeningu,
-a małe transformery do potwierdzenia transferu — dzięki temu można policzyć **pełną
+bieg miał niski koszt. Zgodnie z decyzją autora zaczynamy od RF-DETR-Nano;
+YOLO pozostaje możliwą późniejszą kontrolą transferu. Dzięki temu można policzyć **pełną
 macierz ablacji, wiele ziaren losowych i analizy czułości**, których recenzenci
 zażądali.
 
@@ -26,6 +26,7 @@ treningi pozostają do uruchomienia po dostarczeniu obrazów Cataract-LMM.
 ## Nawigacja
 
 Aktualna kolejność startu na klastrze: [RF-DETR-Nano, smoke i statyczna kuracja](docs/Analiza_ponownej_publikacji/30_START_EDEN_RFDETR_NANO_SMOKE.md).
+Rzeczywiste środowisko, dane i stan zadania: [wdrożenie smoke na Edenie](docs/Analiza_ponownej_publikacji/31_EDEN_RFDETR_SMOKE_WDROZENIE.md).
 Profile `nano_smoke` i `nano_static_pilot` rozpoczynają badanie bez diagnostyki dynamiki latentnej.
 
 **Zacznij od `PLAN.md`** — plan uporządkowany według zarzutów recenzentów,
