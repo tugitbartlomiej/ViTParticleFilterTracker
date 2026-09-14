@@ -1,6 +1,6 @@
 # 02 — Macierz eksperymentu
 
-**Kolejność po decyzji autora z 2026-09-11:** najpierw [etapy szybkiego badania z dokumentu 24](Analiza_ponownej_publikacji/24_SZYBKIE_ABLACJE_I_OPTYMALIZACJA_EDEN.md), później pełne ablacje potrzebne do wybranych tez. Opisane niżej 15 kombinacji D/E/S/F pozostaje osobnym eksperymentem historycznej metody; nie należy utożsamiać go z nowym testem dynamiki z grantu ani mnożyć automatycznie przez wszystkie architektury.
+**Kolejność po decyzji autora z 2026-09-14:** najpierw RF-DETR Nano i statyczna kuracja, później pełne ablacje potrzebne do wybranych tez. Smoke zakończony; obecnie wszystkie treningi wstrzymane. Aktualny [plan i warunki gotowości — dokument 32](Analiza_ponownej_publikacji/32_EDEN_PAUZA_SRODOWISKA_I_PLAN_TRENINGOW.md) zastępuje wcześniejszą kolejność startu od YOLO z dokumentu 24. Opisane niżej 15 kombinacji D/E/S/F pozostaje osobnym eksperymentem historycznej metody; nie należy utożsamiać go z nowym testem dynamiki z grantu ani mnożyć automatycznie przez wszystkie architektury.
 
 Maszynowy odpowiednik: `configs/variants.yaml`. Rozwinięcie do listy biegów:
 `tools/build_run_manifest.py`.

@@ -2,7 +2,7 @@
 
 **Gałąź:** `feature/small-vit-ablation-matrix`
 **Start:** 2026-09-08
-**Status:** RF-DETR-Nano smoke na H100 zakończony poprawnie (1807587); pełny pilot do przygotowania.
+**Status:** RF-DETR-Nano smoke na H100 zakończony poprawnie (1807587). Treningi wstrzymane decyzją autora z 2026-09-14; kolejki smoke i artefakty robocze posprzątane. Pełny eksperyment wymaga przygotowania danych i macierzy.
 
 ## Po co ten folder
 
@@ -24,6 +24,8 @@ kuracji, diagnostyki latentnej, treningu, ewaluacji i kolejki Eden. Kosztowne
 treningi pozostają do uruchomienia po dostarczeniu obrazów Cataract-LMM.
 
 ## Nawigacja
+
+Aktualny stan i dalszy plan: [pauza, środowiska i pełne treningi](docs/Analiza_ponownej_publikacji/32_EDEN_PAUZA_SRODOWISKA_I_PLAN_TRENINGOW.md).
 
 Aktualna kolejność startu na klastrze: [RF-DETR-Nano, smoke i statyczna kuracja](docs/Analiza_ponownej_publikacji/30_START_EDEN_RFDETR_NANO_SMOKE.md).
 Rzeczywiste środowisko, dane i stan zadania: [wdrożenie smoke na Edenie](docs/Analiza_ponownej_publikacji/31_EDEN_RFDETR_SMOKE_WDROZENIE.md).

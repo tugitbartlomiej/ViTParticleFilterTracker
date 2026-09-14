@@ -219,7 +219,10 @@ Lokalne dowody: [raport](evidence_eden_smoke_2026-09-14/smoke_report.json),
 [log metryk](evidence_eden_smoke_2026-09-14/training_metrics.csv),
 [pochodzenie danych](evidence_eden_smoke_2026-09-14/data_manifest.json).
 
-Wagi są na Edenie:
+Wagi były zapisane na Edenie pod ścieżką poniżej. Po zakończeniu kontroli
+2026-09-14 zostały usunięte na polecenie autora wraz z roboczymi danymi i kolejkami.
+Zachowano raporty i logi; aktualny stan opisuje
+[dokument 32](32_EDEN_PAUZA_SRODOWISKA_I_PLAN_TRENINGOW.md).
 
 ```text
 ~/smallvit_runs/2026-09-14_nano_smoke/SmallViTAblation/results/old64_nano_s42_smoke05/old64_nano_s42_smoke05/
