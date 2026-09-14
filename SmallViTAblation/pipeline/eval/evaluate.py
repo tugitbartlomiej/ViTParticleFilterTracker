@@ -86,7 +86,12 @@ def run_inference(model, image_items: list[tuple[Path, int]],
         xyxy = getattr(det, "xyxy", [])
         conf = getattr(det, "confidence", [])
         cls_ids = getattr(det, "class_id", [])
-        for (x1, y1, x2, y2), score, cls_id in zip(xyxy, conf, cls_ids):
+        names = getattr(det, "data", {}).get("class_name")
+        for index, ((x1, y1, x2, y2), score, cls_id) in enumerate(zip(xyxy, conf, cls_ids)):
+            # RF-DETR 1.10 may return its no-object slot above a low threshold.
+            # It labels that slot explicitly; it is not a foreground detection.
+            if names is not None and names[index] == "__background__":
+                continue
             x1, y1, x2, y2 = (float(v) for v in (x1, y1, x2, y2))
             dt.append({
                 "image_id": img_id,

@@ -84,6 +84,19 @@ def test_coco_keeps_images_without_predictions(gt, predictions):
     assert result["AR@100"] == pytest.approx(0.5)
 
 
+def test_rfdetr_explicit_no_object_slot_is_not_a_foreground_detection(tmp_path):
+    detection = SimpleNamespace(
+        xyxy=np.array([[1, 2, 11, 22], [3, 4, 8, 10], [2, 3, 5, 9]]),
+        confidence=np.array([0.9, 0.8, 0.01]), class_id=np.array([0, 1, 7]),
+        data={'class_name': np.array(['tool', '__background__', ''])})
+    model = SimpleNamespace(predict=lambda *args, **kwargs: detection)
+    result = evaluate.run_inference(model, [(tmp_path / 'frame.jpg', 1)], 0.001)
+    assert [r['category_id'] for r in result] == [0, 7]
+    # Unknown outputs still fail validation; do not blindly map/drop every extra class.
+    with pytest.raises(ValueError):
+        common.remap_dt_categories_single_class({'categories': [{'id': 0}]}, result)
+
+
 def test_empty_predictions_with_positive_gt_are_zero(gt):
     assert common.compute_map_metrics(gt, [])["mAP_0.5"] == 0
 

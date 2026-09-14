@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import hashlib
 import json
 import os
@@ -19,19 +20,25 @@ def main():
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--protocol', type=Path, required=True)
     p.add_argument('--variant-file', type=Path, required=True)
+    p.add_argument('--eval-only', action='store_true',
+                   help='Check already trained weights after an evaluation adapter fix; never retrain')
     a = p.parse_args()
     project = Path(__file__).resolve().parents[2]
     run_dir = a.out / a.run_id
-    if run_dir.exists():
+    if run_dir.exists() and not a.eval_only:
         raise FileExistsError(f'Use a new run-id; refusing to mix smoke attempts: {run_dir}')
     start = time.monotonic()
     command = [sys.executable, str(project / 'pipeline/train/train_rfdetr.py'),
                '--run-id', a.run_id, '--data-root', str(a.data_root), '--out', str(a.out),
                '--protocol', str(a.protocol), '--variant-file', str(a.variant_file),
                '--train-seed', '42', '--role', 'smoke', '--profile', 'nano_smoke']
-    subprocess.run(command, check=True)
+    if not a.eval_only:
+        subprocess.run(command, check=True)
     training_seconds = time.monotonic()-start
     manifest = json.loads((run_dir / 'run_manifest.json').read_text())
+    if a.eval_only:
+        training_seconds = (datetime.fromisoformat(manifest['finished_at'])
+                            - datetime.fromisoformat(manifest['started_at'])).total_seconds()
     if manifest['epochs_completed'] != 5 or manifest['model'] != 'rf-detr-nano':
         raise RuntimeError('Wrong smoke recipe or incomplete training')
     checks = {}
@@ -53,6 +60,9 @@ def main():
             raise RuntimeError('Reload evaluation omitted validation images')
         checks[rule] = {'checkpoint_sha256': sha, 'metrics': metrics['results']['val']}
     report = {'status': 'passed', 'scope': 'technical_smoke_only',
+              'evaluation_only_job': a.eval_only,
+              'training_source_commit': manifest.get('git_commit'),
+              'evaluation_source_commit': os.environ.get('SMALLVIT_SOURCE_COMMIT'),
               'slurm_job_id': os.environ.get('SLURM_JOB_ID'),
               'training_seconds': training_seconds, 'total_seconds': time.monotonic()-start,
               'operating_threshold_note': '0.5 fixed for smoke; select on val in real experiments',

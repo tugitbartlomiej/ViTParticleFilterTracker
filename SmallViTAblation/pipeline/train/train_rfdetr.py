@@ -360,7 +360,10 @@ def iter_predictions(predictions):
                     else np.asarray(class_id, dtype=int).reshape(-1))
         if len(confidence) != len(boxes) or len(class_id) != len(boxes):
             raise ValueError("RF-DETR prediction fields have inconsistent lengths")
-        for box, score, cls in zip(boxes, confidence, class_id):
+        names = getattr(predictions, "data", {}).get("class_name")
+        for index, (box, score, cls) in enumerate(zip(boxes, confidence, class_id)):
+            if names is not None and names[index] == "__background__":
+                continue
             yield (*map(float, box), float(score), int(cls))
         return
     for item in predictions:
