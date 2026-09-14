@@ -12,6 +12,7 @@ export RUN_TAG="${RUN_TAG:-old64_$(date -u +%Y%m%dT%H%M%SZ)}"
 export QUEUE_DIR="$PROJECT_DIR/eden/queues/$RUN_TAG"
 export RESULTS_DIR="$PROJECT_DIR/results/$RUN_TAG"
 export PYTHONNOUSERSITE=1
+export PYTHONDONTWRITEBYTECODE=1
 unset PYTHONPATH
 if [[ -f "$PROJECT_DIR/../SOURCE_COMMIT" ]]; then
     export SMALLVIT_SOURCE_COMMIT="$(cat "$PROJECT_DIR/../SOURCE_COMMIT")"

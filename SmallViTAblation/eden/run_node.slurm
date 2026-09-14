@@ -35,9 +35,9 @@ PY="${PY:-python3.11}"
 # --- TMPDIR: wzorzec z EDEN_CONSTRAINTS.md (/tmp za maly; /raid 14TB, /dev/shm 1TB)
 if [[ -n "${SLURM_TMPDIR:-}" ]]; then
     TMPDIR="$SLURM_TMPDIR"
-elif [[ -d "/raid" ]] && [[ "$(df /raid --output=avail 2>/dev/null | tail -1)" -gt 52428800 ]]; then
+elif [[ -d "/raid" && -w "/raid" ]] && [[ "$(df /raid --output=avail 2>/dev/null | tail -1)" -gt 52428800 ]]; then
     TMPDIR="/raid/${USER}_${SLURM_JOB_ID:-$$}_ablation"
-elif [[ "$(df /dev/shm --output=avail 2>/dev/null | tail -1)" -gt 52428800 ]]; then
+elif [[ -w "/dev/shm" ]] && [[ "$(df /dev/shm --output=avail 2>/dev/null | tail -1)" -gt 52428800 ]]; then
     TMPDIR="/dev/shm/${USER}_${SLURM_JOB_ID:-$$}_ablation"
 else
     echo "[run_node] ERROR: neither /raid nor /dev/shm has at least 50 GiB free" >&2
