@@ -4,6 +4,10 @@ Stan sprawdzony 2026-09-14 przez SSH `eden-cluster`. Decyzja autora: zakończyć
 kontrolę, posprzątać smoke i nie uruchamiać kolejnych treningów bez nowego polecenia.
 W tej kontroli nie zgłoszono żadnego nowego zadania SLURM.
 
+**Późniejsze polecenie autora:** rozpocząć treningi. Aktualny start CATARACT-LMM
+opisuje [dokument 33](33_START_TRENINGOW_CATARACT_LMM_NANO.md).
+Ten dokument pozostaje zapisem wcześniejszej kontroli, pauzy i planu.
+
 ## 1. Co jest gotowe
 
 RF-DETR Nano zakończył rzeczywisty smoke na jednym H100 PCIe: zadanie 1807587,

@@ -1,0 +1,261 @@
+version: 2
+created: '2026-09-14'
+split:
+  file: data/tracking_calibration/split_manifest.json
+  seed: 42
+  selection_pool: train_only
+  unit: conservative_operation_group
+  patient_disjointness_verified: false
+  groups:
+    train: 117
+    val: 25
+    test: 25
+  candidate_stride: 5
+  dataset: cataract_lmm_tracking
+model:
+  smoke_model: rf-detr-nano
+  smoke_resolution: 384
+  name: rf-detr-nano
+  backbone: dinov2-vit
+  resolution: 384
+  license: Apache-2.0
+  init: coco_pretrained
+  inference: standard_topk
+training:
+  epochs: 30
+  early_stopping: false
+  optimizer: adamw
+  lr: 0.0001
+  lr_backbone: 1.0e-05
+  weight_decay: 0.0001
+  warmup_epochs: 2
+  batch_size: 16
+  grad_accum: 1
+  precision: bf16
+  train_time_augmentation: none
+checkpoint_selection:
+  report:
+  - last_epoch
+  - best_val
+  best_val_criterion: map_50_95_val
+el2n:
+  source: proxy_same_architecture
+  proxy_epochs: 10
+  per_seed: true
+  proxy_subset_size: 2500
+  proxy_batch_size: 8
+  proxy_resolution: 512
+  score: mean_matched_detection_error
+  normalize: minmax_0_1
+budgets:
+  calibration: 500
+seeds:
+  calibration:
+  - 42
+  - 1337
+  - 2024
+evaluation:
+  map_conf_threshold: 0.001
+  operating_threshold: select_on_val
+  iou_threshold: 0.5
+  metrics:
+  - map_50
+  - map_50_95
+  - map_75
+  - ar_100
+  - tp
+  - fp
+  - fn
+  - precision
+  - recall
+  - f1
+  sets:
+    same_dist_val: provided_bbox_val_grid_stride5
+    same_dist_test: locked_not_evaluated
+  zero_look:
+    ledger: SmallViTAblation/external_access_ledger.jsonl
+    allowed_before_selection: false
+eden:
+  queue:
+    heartbeat_interval_s: 30
+    stale_timeout_s: 180
+    lock_ttl_s: 30
+    poll_interval_s: 15
+    idle_exit_rounds: 3
+    max_attempts: 3
+  node:
+    partition: hopper
+    account: transformers_vsc
+    nodelist: hopper
+    workers: 3
+    time_limit: 1-00:00:00
+transfer:
+  architectures:
+    yolov8n:
+      library: ultralytics
+      model_id: yolov8n.pt
+      reference: https://docs.ultralytics.com/models/yolov8/
+      init: coco_pretrained
+      nms_applies: true
+      role: fast_convolutional_probe
+    rtdetrv2-s:
+      library: official-rtdetrv2-pytorch
+      model_id: rtdetrv2_r18vd_120e_coco
+      config: configs/rtdetrv2/rtdetrv2_r18vd_120e_coco.yml
+      reference: https://github.com/lyuwenyu/RT-DETR
+      init: coco_pretrained
+      nms_applies: false
+      role: target_transformer_transfer
+    rf-detr-nano:
+      library: rfdetr
+      model_id: rf-detr-nano
+      reference: https://rfdetr.roboflow.com/reference/nano/
+      init: coco_pretrained
+      nms_applies: false
+      role: vit_dinov2_control
+    d-fine-s:
+      library: d-fine
+      repo: https://github.com/Peterande/D-FINE
+      model_id: dfine_hgnetv2_s
+      reference: ICLR 2025 Spotlight
+      init: coco_pretrained
+      nms_applies: false
+    yolo-current:
+      library: ultralytics
+      model_id: yolo26s.pt
+      release: '2026-01-14'
+      init: coco_pretrained
+      end_to_end: true
+  nms:
+    conf_threshold: 0.001
+    iou_threshold: 0.7
+    sweep_iou:
+    - 0.3
+    - 0.4
+    - 0.5
+    - 0.6
+    - 0.7
+    - 0.8
+    - 0.9
+  versions:
+    ultralytics: '>=8.4.0'
+    d-fine: git+https://github.com/Peterande/D-FINE@master
+features:
+  weights_base:
+    dino: 0.35
+    el2n: 0.3
+    sam: 0.2
+    fourier: 0.15
+  disable_rule: proportional_renormalization
+  dino_pca_dim: 32
+  cluster_algorithm: kmeans
+  cluster_representative: centroid
+  kmeans_iterations: 300
+  extract_batch_size: 32
+  checkpoint_every_frames: 500
+  dino_model: dinov3_vitl16
+  dino_image_size: 224
+  fastsam_weights: FastSAM-x.pt
+  fastsam_conf: 0.4
+  fastsam_iou: 0.9
+  fastsam_dim: 9
+  fourier_dim: 1
+  fourier_high_band:
+  - 0.5
+  - 1.0
+  fake_dino_dim: 64
+analysis:
+  pool_manifest: SmallViTAblation/pool_manifest.jsonl
+  image_root: SmallViTAblation/data/images
+  variants_dir: SmallViTAblation/variants
+  results_dir: SmallViTAblation/results
+  feature_cache_dir: SmallViTAblation/feature_cache
+  out_dir: SmallViTAblation/analysis/out
+  external:
+    manifest: null
+    image_root: null
+  coverage:
+    dino_model: dinov2_vits14
+    dino_image_size: 224
+    dino_batch_size: 32
+    fake_grid: 8
+    distance: cosine
+    histogram_bins: 20
+    percentiles:
+    - 50
+    - 90
+    - 95
+    - 99
+    min_variants_for_correlation: 8
+  el2n:
+    detr_pattern: el2n_{seed}.pkl
+    yolo_scores: AdvancedDatasetSelection/ablation/yolo/yolo_ep170_el2n_scores.json
+    scatter_sample: 2000
+  audit:
+    dhash_size: 8
+    hamming_threshold: 5
+    max_images_for_phash: 20000
+  checklist:
+    ledger_max_entries: 200
+    metrics_top_fields:
+    - run_id
+    - checkpoint_rule
+    - results
+    - operating_threshold
+    - threshold_selected_on
+    metrics_result_blocks:
+    - val
+    - test
+    - external_full
+    - external_clean
+    metrics_block_fields:
+    - mAP_0.5
+    - mAP_0.5:0.95
+    - mAP_0.75
+    - AR@100
+    - TP
+    - FP
+    - FN
+    - precision
+    - recall
+    - f1
+    - n_images
+    - n_annotations
+  dataset_table_expected:
+    train:
+      patients: 35
+      images: 71316
+      source_frames: 17832
+      instances: 71931
+    val:
+      patients: 8
+      images: 10780
+      source_frames: 2695
+      instances: 10921
+    test:
+      patients: 7
+      images: 9240
+      source_frames: 2310
+      instances: 9333
+paths:
+  pool_manifest: pool_manifest.jsonl
+  images_root: .
+  feature_cache_dir: feature_cache
+  variants_dir: variants
+  queue_file: queue.jsonl
+eval_agent3:
+  operating_point:
+    f1_curve_max_points: 200
+    low_confidence_probe_threshold: 0.3
+  aggregate:
+    bootstrap_min_seeds: 5
+    bootstrap_iterations: 10000
+    bootstrap_ci_level: 0.95
+    bootstrap_seed: 20260910
+    table_metrics:
+    - mAP_0.5:0.95
+    - f1
+  external_once:
+    max_checkpoints_per_run: 1
+  evaluation:
+    single_class_remap: true
