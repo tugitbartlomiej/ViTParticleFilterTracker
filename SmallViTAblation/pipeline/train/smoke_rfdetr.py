@@ -20,6 +20,8 @@ def main():
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--protocol', type=Path, required=True)
     p.add_argument('--variant-file', type=Path, required=True)
+    p.add_argument('--val-annotations', type=Path,
+                   help='Optional fixed small validation set for technical smoke')
     p.add_argument('--eval-only', action='store_true',
                    help='Check already trained weights after an evaluation adapter fix; never retrain')
     a = p.parse_args()
@@ -32,6 +34,10 @@ def main():
                '--run-id', a.run_id, '--data-root', str(a.data_root), '--out', str(a.out),
                '--protocol', str(a.protocol), '--variant-file', str(a.variant_file),
                '--train-seed', '42', '--role', 'smoke', '--profile', 'nano_smoke']
+    val_annotations = a.val_annotations or (a.data_root / 'annotations_val.json')
+    if not val_annotations.is_absolute():
+        val_annotations = a.data_root / val_annotations
+    command += ['--val-annotations', str(val_annotations)]
     if not a.eval_only:
         subprocess.run(command, check=True)
     training_seconds = time.monotonic()-start
@@ -48,7 +54,7 @@ def main():
         subprocess.run([sys.executable, str(project / 'pipeline/eval/evaluate.py'),
             '--protocol', str(a.protocol), '--run-id', a.run_id,
             '--checkpoint-rule', rule, '--set', 'val', '--checkpoint', str(weights),
-            '--annotations', str(a.data_root / 'annotations_val.json'),
+            '--annotations', str(val_annotations),
             '--images-dir', str(a.data_root), '--device', 'cuda',
             '--model-name', 'rf-detr-nano', '--resolution', '384',
             '--output-dir', str(eval_out), '--operating-threshold', '0.5'], check=True)
