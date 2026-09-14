@@ -66,6 +66,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--index-dir', type=Path, required=True)
     ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('--smoke-only', action='store_true',
+                    help='Prepare separate 64/64 technical subset while full val is materialized')
     args = ap.parse_args()
     if args.out.exists():
         raise FileExistsError('Use a new output path; never mix prepared datasets')
@@ -85,10 +87,12 @@ def main():
                     missing.append(dict(frame_id=row['frame_id'], member=row['member'],
                                         archive=archive, split=row['split']))
     eligible = [r for r in rows if r['label_status'] == 'provided' and r['frame_id'] in available]
-    train = temporal_sample([r for r in eligible if r['split'] == 'train'], 500)
+    train = temporal_sample([r for r in eligible if r['split'] == 'train'], 64 if args.smoke_only else 500)
     val = [r for r in eligible if r['split'] == 'val']
     if not val:
         raise ValueError('Validation is empty')
+    if args.smoke_only:
+        val = temporal_sample(val, 64)
     groups_train, groups_val = ({r['group_id'] for r in pool} for pool in (train, val))
     assert not groups_train & groups_val
     args.out.mkdir(parents=True)
@@ -112,7 +116,7 @@ def main():
         for row in exported['train']+exported['val']:
             stream.write(json.dumps(row)+'\n')
     write_json(args.out/'split_manifest.json', json.loads((args.index_dir/'split_manifest.json').read_text()))
-    for seed in [42, 1337, 2024]:
+    for seed in ([] if args.smoke_only else [42, 1337, 2024]):
         write_json(args.out/f'variants/calibration_s{seed}.json', dict(
             run_id=f'tracking_uniform_b500_s{seed}_calibration', strategy='uniform_time',
             seed=seed, budget=500, annotations_train='annotations_train.json',
@@ -130,7 +134,8 @@ def main():
             categories=full['categories']))
     write_json(args.out/'variants/smoke64.json', dict(seed=42, budget=64,
         annotations_train='smoke_annotations_train.json', frame_ids=[r['frame_id'] for r in smoke_train]))
-    summary = dict(scope='tracking_recipe_calibration_only', source_target='cystotome_instrument_box',
+    summary = dict(scope='technical_tracking_smoke_only' if args.smoke_only else 'tracking_recipe_calibration_only',
+        source_target='cystotome_instrument_box',
         split_unit='conservative_operation_groups', patient_disjointness_verified=False,
         candidate_stride=5, annotation_policy='provided_bbox_only',
         empty_labels_not_interpreted_as_negative=True, test_images_exported=0,
