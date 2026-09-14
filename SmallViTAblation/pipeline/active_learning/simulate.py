@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create cumulative active-curation rounds without launching training."""
+"""Create static selections or cumulative active rounds without launching training."""
 from __future__ import annotations
 
 import argparse
@@ -57,10 +57,13 @@ def _load_scores(path: Path | None) -> dict[str, dict[str, float]] | None:
 def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--pool", type=Path, required=True)
-    ap.add_argument("--embeddings", type=Path, required=True)
+    ap.add_argument("--embeddings", type=Path,
+                    help="real feature NPZ; optional only for static random/uniform_time")
     ap.add_argument("--scores", type=Path)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--strategy", choices=STRATEGIES, required=True)
+    ap.add_argument("--static", action="store_true",
+                    help="choose the first budget with the requested selector, without shared L0")
     ap.add_argument("--budgets", type=int, nargs="+", default=[500, 1500, 2500])
     ap.add_argument("--initial-selection", type=Path,
                     help="JSON with selected_frame_ids; shared L0 for every strategy")
@@ -75,22 +78,29 @@ def parser() -> argparse.ArgumentParser:
 
 def main(argv=None) -> int:
     args = parser().parse_args(argv)
+    if args.static and args.strategy not in {"random", "uniform_time", "coverage"}:
+        raise ValueError("static mode supports random, uniform_time and coverage")
+    if args.static and args.initial_selection:
+        raise ValueError("static mode does not accept an active initial selection")
+    if not args.static and args.embeddings is None:
+        raise ValueError("active rounds require --embeddings")
     budgets = sorted(set(args.budgets))
     if not budgets or budgets[0] < 1:
         raise ValueError("budgets must be positive")
     pool_all = _read_jsonl(args.pool)
     rows = [row for row in pool_all if row.get("split", "train") == "train"]
     excluded_non_train = len(pool_all) - len(rows)
-    embeddings = _load_embeddings(args.embeddings, rows)
+    embeddings = _load_embeddings(args.embeddings, rows) if args.embeddings else None
     scores = _load_scores(args.scores)
     selected: list[str] = []
     initial_audit = None
+    initial_strategy = args.strategy if args.static else args.initial_strategy
     if args.initial_selection:
         raw = json.loads(args.initial_selection.read_text(encoding="utf-8"))
         selected = list(map(str, raw.get("selected_frame_ids", raw.get("frame_ids", []))))
     else:
         selected, initial_audit = select_batch(
-            rows, embeddings, batch_size=budgets[0], strategy=args.initial_strategy,
+            rows, embeddings, batch_size=budgets[0], strategy=initial_strategy,
             seed=args.seed, min_gap_frames=args.min_gap_frames)
     if len(selected) != budgets[0]:
         raise ValueError("initial selection must exactly equal the first cumulative budget")
@@ -107,7 +117,7 @@ def main(argv=None) -> int:
         need = budget - len(selected)
         if need < 0:
             raise ValueError("budgets must be cumulative and non-decreasing")
-        audit = None
+        audit = initial_audit if args.static and round_number == 1 else None
         if need:
             batch, audit = select_batch(
                 rows, embeddings, batch_size=need, strategy=args.strategy,
@@ -122,6 +132,7 @@ def main(argv=None) -> int:
             "variant_id": f"active-{args.strategy}-s{args.seed}-b{budget}",
             "run_id": f"active-{args.strategy}-s{args.seed}-b{budget}",
             "strategy": args.strategy,
+            "selection_mode": "static" if args.static else "active",
             "variant": f"active-{args.strategy}",
             "seed": args.seed,
             "budget": budget,
@@ -130,11 +141,11 @@ def main(argv=None) -> int:
             "frame_ids": list(selected),
             "parent_budget": rounds[-1]["budget"] if rounds else None,
             "pool_sha256": _sha256(args.pool),
-            "embeddings_sha256": _sha256(args.embeddings),
+            "embeddings_sha256": _sha256(args.embeddings) if args.embeddings else None,
             "scores_sha256": _sha256(args.scores) if args.scores else None,
             "selection_audit": audit,
             "initial_selection": {
-                "strategy": args.initial_strategy if not args.initial_selection else "provided",
+                "strategy": initial_strategy if not args.initial_selection else "provided",
                 "frame_ids": list(selected[:budgets[0]]),
                 "audit": initial_audit,
             },
@@ -148,7 +159,8 @@ def main(argv=None) -> int:
         "strategy": args.strategy,
         "seed": args.seed,
         "rounds": rounds,
-        "same_initial_selection_required_across_strategies": True,
+        "same_initial_selection_required_across_strategies": not args.static,
+        "selection_mode": "static" if args.static else "active",
         "labels_used_for_ranking": False,
         "pool_frames_total": len(pool_all),
         "train_pool_frames": len(rows),

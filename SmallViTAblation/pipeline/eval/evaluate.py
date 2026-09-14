@@ -68,7 +68,7 @@ def load_detector(checkpoint: Path, model_name: str, resolution: int | None, dev
             f"oczekiwano jednej z: {sorted(RFDETR_CLASS_BY_NAME)}"
         )
     cls = getattr(rfdetr, cls_name)
-    kwargs = {"weights": str(checkpoint)}
+    kwargs = {"pretrain_weights": str(checkpoint)}
     if resolution is not None:
         kwargs["resolution"] = int(resolution)
     if device:
@@ -82,7 +82,7 @@ def run_inference(model, image_items: list[tuple[Path, int]],
     predykcje powyżej conf_thr (= evaluation.map_conf_threshold)."""
     dt: list[dict] = []
     for path, img_id in image_items:
-        det = model.predict(image_path=str(path), threshold=conf_thr, overwrite=False)
+        det = model.predict(str(path), threshold=conf_thr)
         xyxy = getattr(det, "xyxy", [])
         conf = getattr(det, "confidence", [])
         cls_ids = getattr(det, "class_id", [])

@@ -2,6 +2,9 @@
 
 Ten folder został przeniesiony przez autora do `SmallViTAblation/docs/Analiza_ponownej_publikacji/`. Kolekcja PDF/OCR i listy pobierania pozostają w `F:/Studia/Articles/Zbiory/2026-09-11_RT-DETR_selekcja_ewaluacja`.
 
+**Aktualny start na Edenie:** [30 — RF-DETR-Nano i smoke](30_START_EDEN_RFDETR_NANO_SMOKE.md).
+Decyzja autora z 2026-09-14: najpierw statyczna kuracja na Nano, bez Langevina i Koopmana.
+
 1. [24 — Szybkie ablacje i optymalizacja Edena](24_SZYBKIE_ABLACJE_I_OPTYMALIZACJA_EDEN.md): najpierw YOLOv8n, następnie kontrolowany transfer; modele, budżety, 9/18/24 biegi i pomiar kosztu.
 2. [23 — Połączenie z grantem](23_POLACZENIE_Z_GRANTEM_DYNAMIKA_LATENTU.md): dynamika latentu jako selektor, istniejące artefakty grantu, granice teorii i plan falsyfikacji.
 3. [25 — Diagnostyka latentu i aktywna kuracja](25_DIAGNOSTYKA_LATENTU_I_AKTYWNA_KURACJA.md): osobny kierunek badawczy — wybór między dodatkowymi danymi, historią i obserwacją; tanie testy falsyfikacyjne oraz plan AL. Nie zwiększa automatycznie zakresu treningów dokumentu 24.

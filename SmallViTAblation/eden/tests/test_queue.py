@@ -217,6 +217,23 @@ def test_6_queue_manifest_is_immutable(tmp_path: Path) -> None:
         raise AssertionError("changed queue manifest was accepted in an existing qdir")
 
 
+def test_7_worker_respects_slurm_gpu_allocation(tmp_path: Path) -> None:
+    root = tmp_path / "t7"
+    root.mkdir(parents=True)
+    manifest = root / "queue.jsonl"
+    make_queue_file(manifest, 1)
+    qdir = root / "qdir"
+    qmod.init_queue(qdir, manifest)
+    markers = root / "markers"
+    worker = start_worker(qdir, root, "0", markers,
+                          env_extra={"CUDA_VISIBLE_DEVICES": "3"})
+    output, _ = worker.communicate(timeout=20)
+    assert worker.returncode == 0, output
+    assert "gpu=3 " in (markers / "t1").read_text(encoding="utf-8")
+    assert qmod.read_status(qdir)["counts"]["done"] == 1
+    print("T7: PASS")
+
+
 def main() -> int:
     tmp = Path(tempfile.mkdtemp(prefix="qtest_"))
     failures = 0
@@ -225,7 +242,8 @@ def main() -> int:
                    test_3_kill_worker_requeue,
                    test_4_failing_task,
                    test_5_stale_worker_cannot_finalize_new_attempt,
-                   test_6_queue_manifest_is_immutable):
+                   test_6_queue_manifest_is_immutable,
+                   test_7_worker_respects_slurm_gpu_allocation):
             try:
                 fn(tmp)
             except Exception as e:

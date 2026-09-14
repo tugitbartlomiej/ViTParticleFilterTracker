@@ -58,11 +58,13 @@ def _rank01(values: np.ndarray) -> np.ndarray:
     return out
 
 
-def _validate(rows: Sequence[dict], embeddings: np.ndarray,
+def _validate(rows: Sequence[dict], embeddings: np.ndarray | None,
               selected_ids: set[str], strategy: str) -> dict[str, int]:
     if strategy not in STRATEGIES:
         raise ValueError(f"unknown strategy {strategy!r}; expected one of {STRATEGIES}")
-    if len(rows) != len(embeddings):
+    if embeddings is None and strategy not in {"random", "uniform_time"}:
+        raise ValueError(f"strategy {strategy!r} requires real embeddings")
+    if embeddings is not None and len(rows) != len(embeddings):
         raise ValueError("rows and embeddings have different lengths")
     ids = [str(row["frame_id"]) for row in rows]
     if len(ids) != len(set(ids)):
@@ -144,7 +146,7 @@ def _score_vector(rows: Sequence[dict], field: str,
 
 def select_batch(
     rows: Sequence[dict],
-    embeddings: np.ndarray,
+    embeddings: np.ndarray | None,
     *,
     batch_size: int,
     strategy: str,
@@ -169,7 +171,7 @@ def select_batch(
     if min(coverage_weight, auxiliary_weight, group_balance_weight) < 0:
         raise ValueError("score weights cannot be negative")
 
-    z = _unit_rows(embeddings)
+    z = _unit_rows(embeddings) if embeddings is not None else None
     selected = [index[x] for x in selected_set]
     chosen_by_video: dict[str, list[float]] = defaultdict(list)
     group_counts = Counter()
@@ -195,6 +197,8 @@ def select_batch(
         elif strategy == "uniform_time":
             base = _uniform_scores(rows, blocked)
         else:
+            if z is None:  # guarded by _validate
+                raise RuntimeError("coverage selection has no embeddings")
             coverage = _rank01(_coverage_scores(z, list(blocked)))
             base = coverage
             if auxiliary is not None:
@@ -252,6 +256,7 @@ def select_batch(
         "min_gap_frames": float(min_gap_frames),
         "spacing_relaxations": spacing_relaxations,
         "annotation_fields_read": False,
+        "features_used_for_ranking": strategy not in {"random", "uniform_time"},
         "score_field": SCORE_FIELD.get(strategy),
         "trace": trace,
     }

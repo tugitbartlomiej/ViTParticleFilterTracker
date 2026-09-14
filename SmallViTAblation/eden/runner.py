@@ -146,7 +146,16 @@ def run_one(args, qdir: Path, task: dict, fmt: dict) -> bool:
     if not lease_token:
         raise ValueError("claimed task has no lease token")
     env = dict(os.environ)
-    env["CUDA_VISIBLE_DEVICES"] = str(args.worker)
+    allocated_devices = env.get("CUDA_VISIBLE_DEVICES")
+    if allocated_devices is not None:
+        devices = [value.strip() for value in allocated_devices.split(",") if value.strip()]
+        index = int(args.worker)
+        if not 0 <= index < len(devices):
+            raise ValueError(
+                f"worker {args.worker} is outside the allocated CUDA devices: {allocated_devices}")
+        env["CUDA_VISIBLE_DEVICES"] = devices[index]
+    else:
+        env["CUDA_VISIBLE_DEVICES"] = str(args.worker)
     env["PYTHONHASHSEED"] = str(task.get("seed", 0))
 
     cmd = build_command(args, task, fmt)

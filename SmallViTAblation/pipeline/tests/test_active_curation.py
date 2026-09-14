@@ -91,6 +91,28 @@ def test_simulation_writes_cumulative_compatible_variants(tmp_path: Path):
     assert set(small["frame_ids"]).issubset(large["frame_ids"])
 
 
+@pytest.mark.parametrize("strategy", ["random", "uniform_time", "coverage"])
+def test_static_first_budget_uses_requested_selector(tmp_path: Path, strategy: str):
+    rows, features = toy_pool()
+    pool = tmp_path / "pool.jsonl"
+    pool.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    out = tmp_path / "variants"
+    argv = ["--pool", str(pool), "--out", str(out), "--strategy", strategy,
+            "--budgets", "6", "--min-gap-frames", "1", "--static"]
+    if strategy == "coverage":
+        cache = tmp_path / "features.npz"
+        np.savez(cache, frame_ids=np.asarray([row["frame_id"] for row in rows]),
+                 features=features)
+        argv += ["--embeddings", str(cache)]
+    assert simulate_main(argv) == 0
+    variant = json.loads(next(out.glob("active-*.json")).read_text(encoding="utf-8"))
+    assert variant["selection_mode"] == "static"
+    assert variant["selection_audit"]["strategy"] == strategy
+    assert len(variant["frame_ids"]) == 6
+    manifest = json.loads((out / "active_curation_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["same_initial_selection_required_across_strategies"] is False
+
+
 def test_hidden_memory_has_larger_history_gain_than_markov():
     summaries = {}
     for kind in ("markov", "hidden_memory"):

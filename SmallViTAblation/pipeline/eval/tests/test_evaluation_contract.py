@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -40,6 +41,40 @@ def protocol():
 def write_json(path, data):
     path.write_text(json.dumps(data), encoding="utf-8")
     return path
+
+
+def test_rfdetr_inference_loads_requested_checkpoint(monkeypatch, tmp_path):
+    class Nano:
+        def __init__(self, *, pretrain_weights, resolution, device):
+            self.checkpoint = pretrain_weights
+            self.resolution = resolution
+            self.device = device
+
+    monkeypatch.setitem(sys.modules, "rfdetr", SimpleNamespace(RFDETRNano=Nano))
+    checkpoint = tmp_path / "last.pth"
+    model = evaluate.load_detector(checkpoint, "rf-detr-nano", 384, "cuda")
+    assert model.checkpoint == str(checkpoint)
+    assert model.resolution == 384
+    assert model.device == "cuda"
+
+
+def test_rfdetr_predict_accepts_image_input_and_keeps_all_boxes(tmp_path):
+    calls = []
+
+    class Nano:
+        def predict(self, images, *, threshold):
+            calls.append((images, threshold))
+            return SimpleNamespace(
+                xyxy=np.array([[1, 2, 11, 22], [3, 4, 8, 10]]),
+                confidence=np.array([0.9, 0.2]), class_id=np.array([0, 0]))
+
+    image = tmp_path / "frame.jpg"
+    predictions = evaluate.run_inference(Nano(), [(image, 17)], 0.001)
+    assert calls == [(str(image), 0.001)]
+    assert len(predictions) == 2
+    assert predictions[0]["image_id"] == 17
+    assert predictions[0]["bbox"] == [1.0, 2.0, 10.0, 20.0]
+    assert predictions[1]["score"] == pytest.approx(0.2)
 
 
 def test_coco_keeps_images_without_predictions(gt, predictions):

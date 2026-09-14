@@ -25,6 +25,9 @@ treningi pozostają do uruchomienia po dostarczeniu obrazów Cataract-LMM.
 
 ## Nawigacja
 
+Aktualna kolejność startu na klastrze: [RF-DETR-Nano, smoke i statyczna kuracja](docs/Analiza_ponownej_publikacji/30_START_EDEN_RFDETR_NANO_SMOKE.md).
+Profile `nano_smoke` i `nano_static_pilot` rozpoczynają badanie bez diagnostyki dynamiki latentnej.
+
 **Zacznij od `PLAN.md`** — plan uporządkowany według zarzutów recenzentów,
 z podziałem na to, co już zamknięte, co wymaga obliczeń i w jakiej kolejności.
 

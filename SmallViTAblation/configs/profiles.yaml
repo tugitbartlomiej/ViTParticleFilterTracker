@@ -3,6 +3,35 @@ version: 1
 # Profile describes how much evidence a run may produce. It never changes the
 # train/validation/test split or the selector after results have been inspected.
 profiles:
+  # User-selected first stage on Eden: static curation with RF-DETR-Nano.
+  nano_smoke:
+    purpose: nano_plumbing_and_learning_sanity
+    models: [rf-detr-nano]
+    budgets: [64, 500]
+    seeds: [42, 1337]
+    seed_pairing: matched
+    strategies: [random, uniform_time, coverage]
+    epochs: 5
+    resolution_by_model: {rf-detr-nano: 384}
+    precision_by_model: {rf-detr-nano: bf16}
+    max_runs: 12
+    evaluate: [val]
+    allow_external: false
+
+  nano_static_pilot:
+    purpose: static_curation_before_latent_dynamics
+    models: [rf-detr-nano]
+    budgets: [500, 1500, 2500]
+    seeds: [42, 1337, 2024]
+    seed_pairing: matched
+    strategies: [random, uniform_time, coverage]
+    epochs: 30
+    resolution_by_model: {rf-detr-nano: 384}
+    precision_by_model: {rf-detr-nano: bf16}
+    max_runs: 27
+    evaluate: [val]
+    allow_external: false
+
   smoke:
     purpose: plumbing_and_overfit
     models: [yolov8n]
