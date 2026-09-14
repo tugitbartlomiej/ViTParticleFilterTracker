@@ -452,8 +452,17 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
     # Start ZAWSZE z wag COCO (pretrain_weights domyslne = COCO pretrained).
-    ctor_kwargs = _filter_kwargs(model_cls.__init__, {"resolution": resolution}, run_dir)
+    ctor_kwargs = _filter_kwargs(model_cls.__init__, {
+        "resolution": resolution,
+        "amp": str(tr.get("precision", "")).lower() in {"bf16", "fp16"},
+    }, run_dir)
     det = model_cls(**ctor_kwargs)
+    initial_path = Path(det.model_config.pretrain_weights)
+    (run_dir / "initial_weights.json").write_text(json.dumps({
+        "path": str(initial_path),
+        "sha256": sha256_file(initial_path) if initial_path.is_file() else None,
+        "model_config": det.model_config.model_dump(mode="json"),
+    }, indent=2), encoding="utf-8")
 
     train_kwargs = {
         "dataset_dir": str(dataset_dir),
@@ -464,19 +473,23 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
         "lr_encoder": float(tr["lr_backbone"]),
         "weight_decay": float(tr["weight_decay"]),
         "warmup_epochs": int(tr["warmup_epochs"]),
-        "amp": str(tr.get("precision", "")).lower() in {"bf16", "fp16"},
         "amp_dtype": "bf16" if tr.get("precision") == "bf16" else "fp16",
         "seed": seed,
         "output_dir": str(ckpt_dir),
         "resume": None,
         "early_stopping": False,
         "eval_interval": 1,
+        "eval_max_dets": 100,
         "best_model_metric": "map",
         "run_test": False,
         "aug_config": {},
         "scale_jitter": False,
         "multi_scale": False,
     }
+    # RF-DETR 1.10 validates TrainConfig strictly; keep the effective defaults too.
+    effective_config = det.get_train_config(**train_kwargs)
+    (run_dir / "effective_train_config.json").write_text(
+        effective_config.model_dump_json(indent=2), encoding="utf-8")
     det.train(**_filter_kwargs(det.train, train_kwargs, run_dir))
 
     criterion = protocol["checkpoint_selection"]["best_val_criterion"]
