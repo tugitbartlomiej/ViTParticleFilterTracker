@@ -77,6 +77,9 @@ def sha256_file(path: Path) -> str:
 
 
 def git_commit() -> str | None:
+    # Archive deployments carry the exact originating commit in the job environment.
+    if os.environ.get("SMALLVIT_SOURCE_COMMIT"):
+        return os.environ["SMALLVIT_SOURCE_COMMIT"]
     try:
         out = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -501,6 +504,18 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
                        best_map_50_95_val=history[best_epoch])
     (run_dir / "epoch_val_map.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8")
+
+    # Keep metrics/configuration logs before removing intermediate checkpoints.
+    for path in ckpt_dir.rglob("*"):
+        if path.is_file() and path.suffix not in {".pth", ".ckpt", ".pt"}:
+            target = run_dir / "training_logs" / path.relative_to(ckpt_dir)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target)
+    import torch
+    performance = {"peak_cuda_allocated_bytes": torch.cuda.max_memory_allocated(),
+                   "peak_cuda_reserved_bytes": torch.cuda.max_memory_reserved()}
+    (run_dir / "training_performance.json").write_text(
+        json.dumps(performance, indent=2), encoding="utf-8")
 
     # Wymaganie 7: kasujemy checkpointy posrednie.
     shutil.rmtree(ckpt_dir, ignore_errors=True)
