@@ -3,6 +3,7 @@
 Ten folder został przeniesiony przez autora do `SmallViTAblation/docs/Analiza_ponownej_publikacji/`. Kolekcja PDF/OCR i listy pobierania pozostają w `F:/Studia/Articles/Zbiory/2026-09-11_RT-DETR_selekcja_ewaluacja`.
 
 **Aktualnie autor polecił rozpocząć treningi:** [33 — CATARACT-LMM i kalibracja Nano](33_START_TRENINGOW_CATARACT_LMM_NANO.md).
+**Optymalizacja końcowych metryk:** [34 — jedno dopasowanie dla krzywej F1 i pomiary etapów](34_OPTYMALIZACJA_EWALUACJI_NANO.md).
 **Poprzedni audyt i pauza:** [32 — środowiska i plan pełnych treningów](32_EDEN_PAUZA_SRODOWISKA_I_PLAN_TRENINGOW.md).
 **Plan startu na Edenie:** [30 — RF-DETR-Nano i smoke](30_START_EDEN_RFDETR_NANO_SMOKE.md).
 **Wdrożenie i wynik rzeczywistego zadania:** [31 — środowisko i smoke RF-DETR](31_EDEN_RFDETR_SMOKE_WDROZENIE.md).

@@ -318,6 +318,47 @@ def _iou_one_vs_many(box: np.ndarray, boxes: np.ndarray) -> np.ndarray:
     return np.where(union > 0, inter / union, 0.0)
 
 
+def _match_sorted_predictions(entry: dict, preds: list[dict], iou_thr: float) -> np.ndarray:
+    """Mark TP once in stable score order; bound the temporary IoU matrix.
+
+    Greedy assignment of a detection cannot change when lower-score detections
+    are appended. Equal scores keep their input order, as in match_detections.
+    """
+    flags = np.zeros(len(preds), dtype=bool)
+    boxes, cats = entry["boxes"], entry["cats"]
+    if not preds or not boxes.shape[0]:
+        return flags
+    matched = np.zeros(boxes.shape[0], dtype=bool)
+    remaining = boxes.shape[0]
+    # Avoid a predictions x GT matrix for an entire crowded image.
+    chunk_size = max(1, min(256, 65536 // boxes.shape[0]))
+    for start in range(0, len(preds), chunk_size):
+        chunk = preds[start:start + chunk_size]
+        pb = np.asarray([p["bbox"] for p in chunk], dtype=float)
+        pred_cats = np.asarray([int(p["category_id"]) for p in chunk])
+        ix1 = np.maximum(pb[:, None, 0], boxes[None, :, 0])
+        iy1 = np.maximum(pb[:, None, 1], boxes[None, :, 1])
+        ix2 = np.minimum((pb[:, 0] + pb[:, 2])[:, None], boxes[:, 0] + boxes[:, 2])
+        iy2 = np.minimum((pb[:, 1] + pb[:, 3])[:, None], boxes[:, 1] + boxes[:, 3])
+        inter = np.clip(ix2 - ix1, 0, None) * np.clip(iy2 - iy1, 0, None)
+        union = (pb[:, 2] * pb[:, 3])[:, None] + boxes[:, 2] * boxes[:, 3] - inter
+        ious = np.zeros_like(inter)
+        np.divide(inter, union, out=ious, where=union > 0)
+        same_cat = pred_cats[:, None] == cats[None, :]
+        for offset, row in enumerate(ious):
+            candidates = np.where(same_cat[offset] & ~matched, row, -1.0)
+            best = int(np.argmax(candidates))
+            if candidates[best] >= iou_thr:
+                flags[start + offset] = True
+                if not matched[best]:
+                    remaining -= 1
+                matched[best] = True
+                # All later predictions are FP once every GT is claimed.
+                if not remaining and iou_thr >= 0:
+                    return flags
+    return flags
+
+
 def match_detections(gt_index: dict, dt: list[dict], conf_thr: float, iou_thr: float) -> dict:
     """Greedy matching per obraz (predykcje malejąco po score), kategoria musi się zgadzać.
 
@@ -332,25 +373,17 @@ def match_detections(gt_index: dict, dt: list[dict], conf_thr: float, iou_thr: f
     tp_scores: list[float] = []
     n_gt = 0
     for img_id, entry in gt_index.items():
-        boxes, cats = entry["boxes"], entry["cats"]
+        boxes = entry["boxes"]
         n_gt += int(boxes.shape[0])
         preds = per_image.get(img_id, [])
         if not preds:
             continue
         preds = sorted(preds, key=lambda d: -float(d["score"]))
-        matched = np.zeros(boxes.shape[0], dtype=bool)
-        for p in preds:
-            pb = np.asarray(p["bbox"], dtype=float)
-            ious = _iou_one_vs_many(pb, boxes)
-            same_cat = cats == int(p["category_id"])
-            ious = np.where(same_cat & ~matched, ious, -1.0)
-            best = int(np.argmax(ious)) if ious.size else -1
-            if best >= 0 and ious[best] >= iou_thr:
-                tp += 1
-                matched[best] = True
-                tp_scores.append(float(p["score"]))
-            else:
-                fp += 1
+        flags = _match_sorted_predictions(entry, preds, iou_thr)
+        n_tp = int(flags.sum())
+        tp += n_tp
+        fp += len(preds) - n_tp
+        tp_scores.extend(float(p["score"]) for p, hit in zip(preds, flags) if hit)
     fn = n_gt - tp
     return {"tp": tp, "fp": fp, "fn": fn, "tp_scores": tp_scores, "n_gt": n_gt}
 
@@ -383,30 +416,41 @@ def threshold_candidates(scores: np.ndarray, max_points: int, extra: list[float]
 
 
 def f1_curve(gt_index: dict, dt: list[dict], thresholds: np.ndarray, iou_thr: float) -> dict:
-    """Krzywa precision/recall/F1 vs próg ufności (kolumny równoległych list)."""
+    """Exact F1 curve from one greedy assignment, independent of threshold count."""
     scores = np.asarray([float(d["score"]) for d in dt], dtype=float)
     order = np.argsort(-scores, kind="stable")
-    dt_sorted = [dt[i] for i in order]
     scores_sorted = scores[order] if scores.size else scores
-
+    negative_scores_sorted = -scores_sorted
+    per_image: dict[int, list[int]] = {}
+    eligible = np.zeros(len(dt), dtype=bool)
+    hits = np.zeros(len(dt), dtype=bool)
+    for rank, index in enumerate(order):
+        img_id = int(dt[index]["image_id"])
+        # The previous implementation matched each prefix with conf_thr=0.0
+        # and ignored detections outside gt_index. Preserve both behaviours.
+        if img_id in gt_index and scores_sorted[rank] >= 0.0:
+            per_image.setdefault(img_id, []).append(rank)
+            eligible[rank] = True
+    for img_id, ranks in per_image.items():
+        preds = [dt[order[rank]] for rank in ranks]
+        hits[ranks] = _match_sorted_predictions(gt_index[img_id], preds, iou_thr)
+    tp_prefix = np.concatenate(([0], np.cumsum(hits, dtype=np.int64)))
+    total_prefix = np.concatenate(([0], np.cumsum(eligible, dtype=np.int64)))
+    n_gt = sum(int(entry["boxes"].shape[0]) for entry in gt_index.values())
     cols = {"threshold": [], "precision": [], "recall": [], "f1": [], "TP": [], "FP": [], "FN": []}
-    # Dla progów malejących predykcje wchodzą do zbioru raz — greedy matching
-    # jest stabilny (wyższe score'y zawsze przed niższymi), więc wystarczy
-    # przeliczać dopasowanie na rosnącym prefiksie.
-    for thr in sorted(thresholds, reverse=True):
-        k = int(np.searchsorted(-scores_sorted, -thr, side="right")) if scores_sorted.size else 0
-        m = match_detections(gt_index, dt_sorted[:k], 0.0, iou_thr)
-        prf = _prf(m["tp"], m["fp"], m["fn"])
+    for thr in sorted(thresholds):
+        k = int(np.searchsorted(negative_scores_sorted, -thr, side="right")) if scores_sorted.size else 0
+        tp = int(tp_prefix[k])
+        fp = int(total_prefix[k]) - tp
+        fn = n_gt - tp
+        prf = _prf(tp, fp, fn)
         cols["threshold"].append(float(thr))
-        cols["TP"].append(int(m["tp"]))
-        cols["FP"].append(int(m["fp"]))
-        cols["FN"].append(int(m["fn"]))
+        cols["TP"].append(tp)
+        cols["FP"].append(fp)
+        cols["FN"].append(fn)
         cols["precision"].append(prf["precision"])
         cols["recall"].append(prf["recall"])
         cols["f1"].append(prf["f1"])
-    # przywracamy rosnąco po progu
-    for key in cols:
-        cols[key] = cols[key][::-1]
     return cols
 
 

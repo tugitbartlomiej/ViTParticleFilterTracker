@@ -28,7 +28,9 @@ Przykład:
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import sys
+import time
 import warnings
 from datetime import datetime, timezone
 from pathlib import Path
@@ -219,6 +221,30 @@ def prepare_predictions(output_dir: Path, protocol: dict, set_name: str,
 # Blok metryk (README §4.5) liczony Z PLIKU predykcji
 # ---------------------------------------------------------------------------
 
+@contextmanager
+def _metric_phase(output_dir: Path, set_name: str, phase: str, timings: dict):
+    """Expose CPU metric progress even when subprocess stdout is redirected."""
+    progress = output_dir / f"evaluation_progress_{set_name}.json"
+    common.save_json({"status": "running", "phase": phase,
+                      "completed_phase_seconds": dict(timings),
+                      "updated_at": datetime.now(timezone.utc).isoformat()}, progress)
+    print(f"[eval:{set_name}] {phase}: start", flush=True)
+    started = time.perf_counter()
+    try:
+        yield
+    except Exception as exc:
+        common.save_json({"status": "failed", "phase": phase,
+                          "error": str(exc), "completed_phase_seconds": dict(timings),
+                          "updated_at": datetime.now(timezone.utc).isoformat()}, progress)
+        raise
+    else:
+        timings[phase] = time.perf_counter() - started
+        common.save_json({"status": "running", "phase": phase + ":completed",
+                          "completed_phase_seconds": dict(timings),
+                          "updated_at": datetime.now(timezone.utc).isoformat()}, progress)
+        print(f"[eval:{set_name}] {phase}: {timings[phase]:.3f}s", flush=True)
+
+
 def compute_block(output_dir: Path, protocol: dict, set_name: str, *,
                   operating_threshold: float | None = None,
                   threshold_source: str | None = None,
@@ -229,13 +255,16 @@ def compute_block(output_dir: Path, protocol: dict, set_name: str, *,
             f"{sidecar_path} nie istnieje — najpierw uruchom evaluate.py "
             f"(tryb inferencji lub --predictions-file) dla zbioru '{set_name}'."
         )
-    sidecar = common.load_json(sidecar_path)
-    pred_path = Path(sidecar["predictions_file"])
-    gt = common.load_gt_dataset(sidecar["annotations_file"])
-    evaluated_ids = {int(i) for i in sidecar["image_ids"]}
-    gt_trim = common.filter_gt_to_images(gt, evaluated_ids)  # wymaganie twarde 5
-    dt = common.load_predictions(pred_path)
-    dt = [d for d in dt if int(d["image_id"]) in evaluated_ids]
+    started = time.perf_counter()
+    timings = {}
+    with _metric_phase(output_dir, set_name, "load_predictions", timings):
+        sidecar = common.load_json(sidecar_path)
+        pred_path = Path(sidecar["predictions_file"])
+        gt = common.load_gt_dataset(sidecar["annotations_file"])
+        evaluated_ids = {int(i) for i in sidecar["image_ids"]}
+        gt_trim = common.filter_gt_to_images(gt, evaluated_ids)
+        dt = common.load_predictions(pred_path)
+        dt = [d for d in dt if int(d["image_id"]) in evaluated_ids]
 
     single_remap = bool(common.protocol_field(
         protocol, "eval_agent3", "evaluation", "single_class_remap", default=True))
@@ -243,15 +272,19 @@ def compute_block(output_dir: Path, protocol: dict, set_name: str, *,
     if single_remap:
         dt, remapped = common.remap_dt_categories_single_class(gt_trim, dt)
 
-    map_metrics = common.compute_map_metrics(gt_trim, dt)
+    print(f"[eval:{set_name}] images={len(evaluated_ids)}, predictions={len(dt)}", flush=True)
+    with _metric_phase(output_dir, set_name, "coco_map", timings):
+        map_metrics = common.compute_map_metrics(gt_trim, dt)
 
     iou_thr = float(common.protocol_field(protocol, "evaluation", "iou_threshold"))
-    if operating_threshold is None:
-        operating_threshold, threshold_source = resolve_operating_threshold(
-            output_dir, protocol, gt_trim, dt, iou_thr, set_name)
+    with _metric_phase(output_dir, set_name, "operating_threshold", timings):
+        if operating_threshold is None:
+            operating_threshold, threshold_source = resolve_operating_threshold(
+                output_dir, protocol, gt_trim, dt, iou_thr, set_name)
 
     gt_index = common.build_gt_index(gt_trim)
-    counts = common.counting_metrics(gt_index, dt, float(operating_threshold), iou_thr)
+    with _metric_phase(output_dir, set_name, "counting_metrics", timings):
+        counts = common.counting_metrics(gt_index, dt, float(operating_threshold), iou_thr)
 
     block = {
         "mAP_0.5": map_metrics["mAP_0.5"],
@@ -282,8 +315,14 @@ def compute_block(output_dir: Path, protocol: dict, set_name: str, *,
         "annotations_file": sidecar["annotations_file"],
         "gt_trimmed_to_evaluated_images": True,
         "computed_at": datetime.now(timezone.utc).isoformat(),
+        "metric_phase_seconds": dict(timings),
     }
     common.save_json(meta, output_dir / f"metrics_{set_name}.json")
+    common.save_json({"status": "completed", "phase": "metrics_written",
+                      "completed_phase_seconds": dict(timings),
+                      "total_metric_seconds": time.perf_counter() - started,
+                      "updated_at": datetime.now(timezone.utc).isoformat()},
+                     output_dir / f"evaluation_progress_{set_name}.json")
     return meta
 
 
