@@ -14,6 +14,7 @@ from pathlib import Path
 import sys
 import tarfile
 import time
+import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from SmallViTAblation.pipeline.curation.data import ImageSource, write_json
@@ -70,7 +71,20 @@ def main():
         raise FileExistsError('Use a new output path; never mix prepared datasets')
     started = time.monotonic()
     rows = [json.loads(line) for line in (args.index_dir/'pool_manifest.jsonl').read_text().splitlines()]
-    eligible = [r for r in rows if r['label_status'] == 'provided']
+    by_archive = defaultdict(list)
+    for row in rows:
+        by_archive[row['archive']].append(row)
+    available, missing = set(), []
+    for archive, records in by_archive.items():
+        with zipfile.ZipFile(archive) as zipped:
+            members = set(zipped.namelist())
+            for row in records:
+                if row['member'] in members:
+                    available.add(row['frame_id'])
+                else:
+                    missing.append(dict(frame_id=row['frame_id'], member=row['member'],
+                                        archive=archive, split=row['split']))
+    eligible = [r for r in rows if r['label_status'] == 'provided' and r['frame_id'] in available]
     train = temporal_sample([r for r in eligible if r['split'] == 'train'], 500)
     val = [r for r in eligible if r['split'] == 'val']
     if not val:
@@ -78,6 +92,8 @@ def main():
     groups_train, groups_val = ({r['group_id'] for r in pool} for pool in (train, val))
     assert not groups_train & groups_val
     args.out.mkdir(parents=True)
+    write_json(args.out/'missing_images_audit.json', dict(count=len(missing),
+        excluded_before_selection=True, missing=missing))
     source = ImageSource()
     pixel_splits = {}
     exported = {}
@@ -119,6 +135,7 @@ def main():
         candidate_stride=5, annotation_policy='provided_bbox_only',
         empty_labels_not_interpreted_as_negative=True, test_images_exported=0,
         candidate_counts=dict(Counter(r['split'] for r in rows)),
+        missing_image_counts=dict(Counter(r['split'] for r in missing)),
         eligible_counts=dict(Counter(r['split'] for r in eligible)),
         train_images=len(train), val_images=len(val), train_groups=len(groups_train),
         val_groups=len(groups_val), preparation_seconds=time.monotonic()-started,
