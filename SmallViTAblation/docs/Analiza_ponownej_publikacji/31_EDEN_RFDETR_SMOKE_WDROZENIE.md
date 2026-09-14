@@ -12,6 +12,12 @@ pełna pula źródłowa i smoke CATARACT-LMM są następnymi krokami.
 
 ## Środowisko
 
+**Późniejsza aktualizacja z 2026-09-14:** na polecenie autora usunięto
+`tsjepa_py311` po uniezależnieniu Nano. Biblioteki GPU przeniesiono do venv,
+a interpreter pochodzi teraz z `~/venvs/rfdetr_python311`.
+[Aktualny stan i zakres kontroli](32_EDEN_PAUZA_SRODOWISKA_I_PLAN_TRENINGOW.md).
+Opis poniżej dokumentuje konfigurację w chwili zakończonego smoke.
+
 Odczyt przez `ssh eden-cluster` potwierdził istniejące środowisko
 `~/.conda/envs/tsjepa_py311`: Python 3.11.15, torch 2.9.1+cu128,
 torchvision 0.24.1, Lightning 2.5.6, transformers 4.57.6.

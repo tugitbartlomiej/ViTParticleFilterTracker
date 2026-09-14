@@ -28,8 +28,9 @@ oraz metadane pakietów w poniższych interpreterach. To inwentarz znalezionych
 | Środowisko | Python | PyTorch | RF-DETR | Ocena do tego projektu |
 |---|---|---|---|---|
 | systemowe `base` | 3.12.4 | brak | brak | nieprzygotowane do treningu |
-| `tsjepa_py311` | 3.11.15 | 2.9.1+cu128 | brak | zachować do wcześniejszych badań; nie używać bezpośrednio do Nano |
-| `rfdetr_nano_clean_1_10_1` | 3.11.15 | 2.9.1+cu128 | 1.10.1 | wybrane; przeszło trening na H100 i ponowny `pip check` |
+| `tsjepa_py311` | — | — | — | usunięte na późniejsze polecenie autora z 2026-09-14 |
+| `rfdetr_python311` | 3.11.15 | brak | brak | nowy, minimalny interpreter bazowy dla venv Nano |
+| `rfdetr_nano_clean_1_10_1` | 3.11.15 | 2.9.1+cu128 | 1.10.1 | wybrane; historyczny smoke H100, po migracji kontrola importów i `pip check` |
 
 Interpreter do przyszłego treningu:
 
@@ -38,15 +39,36 @@ Interpreter do przyszłego treningu:
 ```
 
 W tym środowisku są torchvision 0.24.1, Lightning 2.6.6, transformers 5.17.0,
-NumPy 2.3.5 i pycocotools 2.0.11. `tsjepa_py311` ma Lightning 2.5.6,
-transformers 4.57.6 i NumPy 2.0.2. W żadnym z trzech nie znaleziono pakietu
-ultralytics. Nie znaleziono osobnego zarejestrowanego `yolo_py310`.
+NumPy 2.3.5 i pycocotools 2.0.11. Usunięte `tsjepa_py311` miało Lightning 2.5.6,
+transformers 4.57.6 i NumPy 2.0.2. W pierwotnie sprawdzonych trzech środowiskach
+nie znaleziono pakietu ultralytics ani osobnego zarejestrowanego `yolo_py310`.
 
-Środowisko Nano ma własne zależności RF-DETR, lecz współdzieli przez symlinki
-pakiety GPU z `tsjepa_py311`, aby oszczędzić limit liczby plików. Nie usuwać
-ani nie aktualizować źródłowego prefixu bez odtworzenia tych zależności.
-Pełny inwentarz: [environments_final.json](evidence_eden_smoke_2026-09-14/environments_final.json).
-Lista symlinków: [gpu_links.json](evidence_eden_smoke_2026-09-14/gpu_links.json).
+Środowisko Nano początkowo współdzieliło pakiety GPU i interpreter z
+`tsjepa_py311`. Na późniejsze polecenie autora usunięto tę zależność:
+24 wpisy pakietów GPU/metadanych przeniesiono fizycznie do venv Nano,
+a identyczny Python 3.11.15 z 32 pakietami bazowymi został odtworzony pod
+`~/venvs/rfdetr_python311`. Interpreter venv wskazuje teraz ten nowy prefix.
+`GPU_LINKS.json` w działającym venv jest pusty; nie ma już dowiązań GPU do JEPA.
+Nie usuwać nowego `rfdetr_python311`, bo dostarcza interpreter i bibliotekę
+standardową dla Nano. Ścieżka uruchamiania Nano pozostaje taka sama.
+
+Przed usunięciem JEPA ukryto jego katalog i sprawdzono import RF-DETR/trenera,
+PyTorch, torchvision, pycocotools, SSL i SQLite, odczyt wersji cuDNN oraz NMS
+na CPU. Nie było odwołań do starego prefixu w `sys.path`, `sys.base_prefix`
+ani załadowanych bibliotekach procesu. `pip check` przeszedł, a `pip freeze`
+przed i po migracji był identyczny. Nie wykonywano treningu ani ponownego
+smoke GPU po migracji; kolejny dopuszczony trening powinien wykonać preflight
+CUDA na przydzielonym węźle. Usunięto cały stary katalog wraz z wpisem rejestru
+Conda; dane, checkpointy wcześniejszych projektów i kod poza nim pozostawiono.
+
+Dowody migracji i usunięcia:
+[stan końcowy](evidence_remove_tsjepa_2026-09-14/final_state.json),
+[przeniesione zależności](evidence_remove_tsjepa_2026-09-14/migration.json),
+[dokładne pakiety Pythona](evidence_remove_tsjepa_2026-09-14/python_runtime_explicit.txt),
+[pakiety Nano](evidence_remove_tsjepa_2026-09-14/rfdetr_freeze.txt).
+Pierwotny inwentarz i symlinki pozostają dowodem historycznym:
+[environments_final.json](evidence_eden_smoke_2026-09-14/environments_final.json),
+[gpu_links.json](evidence_eden_smoke_2026-09-14/gpu_links.json).
 
 ## 3. Pauza i sprzątanie
 
