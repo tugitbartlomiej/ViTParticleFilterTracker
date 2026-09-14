@@ -9,6 +9,7 @@
 #SBATCH --cpus-per-task=24
 #SBATCH --mem=128G
 #SBATCH --time=1-00:00:00
+#SBATCH --no-requeue
 #SBATCH --job-name=nano_calibration
 #SBATCH --output=slurm_logs/%x_%j.out
 #SBATCH --error=slurm_logs/%x_%j.err

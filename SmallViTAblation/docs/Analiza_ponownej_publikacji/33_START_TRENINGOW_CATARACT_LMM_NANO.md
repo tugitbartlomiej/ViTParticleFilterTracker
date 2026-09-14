@@ -6,21 +6,30 @@ uruchamiania eksperymentów Koopmana/Langevina.
 
 ## Kolejność rzeczywistych zadań
 
-1. Smoke na docelowych adnotacjach: zadanie SLURM **1807599**, jedna H100,
+1. Smoke na docelowych adnotacjach: zadanie SLURM **1807599**, COMPLETED,
+   exit 0, czas 00:02:57; raport `passed`. Jedna H100,
    8 CPU, 32 GiB, 5 epok, 64 train / 64 val, seed 42. Pełny trening,
    eksport last/best i niezależna ewaluacja obu. Techniczny smoke używa
    istniejącego profilu `nano_smoke`; rzeczywisty podział danych opisuje
    osobny manifest, nie historyczne liczby filmów w domyślnym protokole.
-2. Po sukcesie smoke: **trzy treningi kalibracyjne**, po 30 epok na tych
+2. Po sukcesie smoke zgłoszono zadanie **1807600**, RUNNING na Hopperze:
+   **trzy treningi kalibracyjne**, po 30 epok na tych
    samych 500 klatkach i seedach 42, 1337, 2024. Jedno zadanie SLURM rezerwuje
    3 H100, 24 CPU, 128 GiB, jeden węzeł Hopper, limit 24 godziny.
    Podział i recepturę opisuje `configs/protocol_tracking_calibration.yaml`.
+   Preflight potwierdził trzy H100 PCIe i CUDA 12.8; wszystkie trzy procesy
+   zakończyły pierwszą epokę (31 kroków) i rozpoczęły drugą. Kolejka miała
+   running=3, pending=0, failed=0. Hash wag pretrained był identyczny w trzech
+   biegach. Model może nadal trenować w chwili odczytu dokumentu;
+   nie ma jeszcze końcowego wyniku kalibracji.
 3. Po kontroli zbieżności, czasu i walidacji zamrażamy recepturę kampanii
    porównawczej. Kalibracja nie jest pełnym badaniem skuteczności kuracji.
 
 Nie zgłaszamy automatycznego łańcucha `afterany`. Pomyślna kontrola smoke jest
 warunkiem zgłoszenia kalibracji. Stara macierz D/E/S/F nie jest uruchamiana
 przez ten skrypt. Zakończenie kalibracji opróżnia jej trzyzadaniową kolejkę.
+Automatyczne ponowne zgłoszenie przez SLURM jest wyłączone (`Requeue=0`);
+ta zmiana została zastosowana także do działającego zadania bez jego przerwania.
 
 ## Dane i zakres wniosków
 
@@ -38,6 +47,9 @@ przez ten skrypt. Zakończenie kalibracji opróżnia jej trzyzadaniową kolejkę
   Braki wykluczamy przed selekcją i zachowujemy ich rejestr. Nie dopasowujemy
   podziału do wyników modelu. Pełne liczby dostępnych oznaczonych kandydatów
   podaje manifest przygotowanego pakietu.
+  Dostępnych oznaczonych kandydatów jest 57 073 train i 12 043 val;
+  nie wszystkie brakujące obrazy miały podaną ramkę, stąd różnica względem
+  prostego odejmowania wszystkich 738 braków od liczby oznaczonych klatek.
 - Puste komórki bbox nie są uznawane za potwierdzone negatywy. Ocena tej
   wersji jest warunkowa dla klatek z podaną ramką cystotomu; nie mierzy jeszcze
   fałszywych alarmów na wszystkich klatkach bez narzędzia. Do publikacyjnej
@@ -52,6 +64,9 @@ podzbiorów ani test przewagi nad random.
 Kalibracja używa wszystkich dostępnych oznaczonych kandydatów val z siatki
 stride 5. Nie wybieramy na val klatek według jakości obrazu, cech czy błędu
 detektora. Smoke używa osobnego stałego panelu 64/64.
+Pakiet kalibracji zawiera 500 train i 12 043 val. Kontrola dry-run potwierdziła
+dostępność wszystkich eksportowanych obrazów. Przygotowanie obrazów i
+manifestów trwało 358.64 s, poza późniejszym pakowaniem TAR i hashowaniem.
 
 ## Receptura i wykonanie
 
@@ -66,6 +81,9 @@ eksperymenty, bez DDP i bez przekazywania wag między seedami. Dane rozpakowywan
 są raz dla całego zadania do dostępnego katalogu lokalnego, z kontrolą miejsca
 i sprzątaniem przy zakończeniu. Na login node przygotowujemy wyłącznie metadane
 i pakiety obrazów; trening i inferencja CUDA odbywają się w zadaniu SLURM.
+RF-DETR domyślnie pomija liczenie `val/loss` w tej recepturze; do kalibracji
+zbieżności zachowujemy loss treningowy i AP walidacyjne po epokach. Nie
+deklarujemy istnienia krzywej loss walidacyjnego.
 
 Kod uruchamiania:
 
@@ -105,6 +123,9 @@ W każdym biegu zachowujemy last.pth, best.pth, logi epok, konfigurację,
 manifest, koszt pamięci, predykcje i raport osobnej walidacji. Wagi last/best
 służą do inferencji; nie obiecujemy wznowienia przerwanego treningu ze stanem
 optymalizatora. Błędy nie są podstawą bezwarunkowego uruchomienia całej kampanii.
+Po zakończeniu smoke usunięto jego last/best i kopie obrazów; zachowano raporty,
+logi i hashe w `audit_smoke/reports.tar.gz`. Nie usunięto danych ani wag
+działającej kalibracji.
 
 ## Co jest kolejnym etapem
 
@@ -121,3 +142,9 @@ Dowody przygotowania danych:
 [indeks](evidence_tracking_training_2026-09-14/index_summary.json),
 [stały podział](evidence_tracking_training_2026-09-14/split_manifest.json),
 [brakujące obrazy](evidence_tracking_training_2026-09-14/missing_images_audit.json).
+Dowody uruchomienia:
+[raport smoke](evidence_tracking_training_2026-09-14/smoke_report.json),
+[pakiet kalibracji](evidence_tracking_training_2026-09-14/data_manifest.json),
+[SHA256 pakietu](evidence_tracking_training_2026-09-14/data_archive_sha256.json).
+[Stan startu i pierwsze logi epok](evidence_tracking_training_2026-09-14/training_start_snapshot.json),
+[sprzątanie smoke](evidence_tracking_training_2026-09-14/smoke_cleanup.json).

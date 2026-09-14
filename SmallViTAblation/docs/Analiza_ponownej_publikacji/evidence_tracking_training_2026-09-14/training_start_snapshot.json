@@ -1,0 +1,280 @@
+{
+  "checked_utc": "2026-09-14T18:49:01.550209+00:00",
+  "job_id": 1807600,
+  "job_state": "RUNNING",
+  "resources": {
+    "nodes": 1,
+    "gpus": 3,
+    "cpus": 24,
+    "memory": "128G",
+    "partition": "hopper"
+  },
+  "requeue": "0",
+  "queue_directory": "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-14_tracking_nano/SmallViTAblation/eden/queues/tracking_calibration_20260914T184647Z",
+  "queue_status": {
+    "counts": {
+      "pending": 0,
+      "running": 3,
+      "done": 0,
+      "failed": 0
+    },
+    "detail": {
+      "pending": [],
+      "running": [
+        {
+          "run_id": "tracking_uniform_b500_s1337_calibration",
+          "worker": "2",
+          "heartbeat_age_s": 11.5
+        },
+        {
+          "run_id": "tracking_uniform_b500_s2024_calibration",
+          "worker": "0",
+          "heartbeat_age_s": 11.5
+        },
+        {
+          "run_id": "tracking_uniform_b500_s42_calibration",
+          "worker": "1",
+          "heartbeat_age_s": 11.5
+        }
+      ],
+      "done": [],
+      "failed": []
+    }
+  },
+  "source_commit": "ef2d5348ad363bd3922dc0e0f4ab85dce78c4a7e",
+  "runs": {
+    "tracking_uniform_b500_s1337_calibration": {
+      "initial_weights_present": true,
+      "effective_config_present": true,
+      "csv_progress": [
+        {
+          "epoch": "0",
+          "step": "31",
+          "train/loss": ""
+        },
+        {
+          "epoch": "0",
+          "step": "31",
+          "train/loss": "6.558565616607666"
+        },
+        {
+          "epoch": "1",
+          "step": "49",
+          "train/loss": ""
+        }
+      ],
+      "initial_weights": {
+        "path": "/mnt/evafs/faculty/home/bpiotrowski/.roboflow/models/rf-detr-nano.pth",
+        "sha256": "d8d6b9ee57d4d0ed2b1f305163624712a0532cb7bce0c747317984fc5457440d",
+        "model_config": {
+          "encoder": "dinov2_windowed_small",
+          "out_feature_indexes": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "dec_layers": 2,
+          "two_stage": true,
+          "projector_scale": [
+            "P4"
+          ],
+          "hidden_dim": 256,
+          "patch_size": 16,
+          "num_windows": 2,
+          "sa_nheads": 8,
+          "ca_nheads": 16,
+          "dec_n_points": 2,
+          "num_queries": 300,
+          "num_select": 300,
+          "postprocess_trace_alpha": 0.2,
+          "bbox_reparam": true,
+          "lite_refpoint_refine": true,
+          "layer_norm": true,
+          "amp": true,
+          "num_channels": 3,
+          "num_classes": 90,
+          "pretrain_weights": "/mnt/evafs/faculty/home/bpiotrowski/.roboflow/models/rf-detr-nano.pth",
+          "device": "cuda",
+          "resolution": 384,
+          "group_detr": 13,
+          "gradient_checkpointing": false,
+          "compile": false,
+          "fused_optimizer": true,
+          "positional_encoding_size": 24,
+          "ia_bce_loss": true,
+          "segmentation_head": false,
+          "use_grouppose_keypoints": false,
+          "keypoint_cross_attn": true,
+          "inter_instance_kp_attn": false,
+          "grouppose_keypoint_dim_downscale": 1,
+          "dual_projector": false,
+          "dual_projector_kp_only": false,
+          "num_keypoints_per_class": [],
+          "num_decoder_registers": 0,
+          "mask_downsample_ratio": 4,
+          "backbone_lora": false,
+          "freeze_encoder": false,
+          "license": "Apache-2.0",
+          "model_name": null
+        }
+      }
+    },
+    "tracking_uniform_b500_s2024_calibration": {
+      "initial_weights_present": true,
+      "effective_config_present": true,
+      "csv_progress": [
+        {
+          "epoch": "0",
+          "step": "31",
+          "train/loss": ""
+        },
+        {
+          "epoch": "0",
+          "step": "31",
+          "train/loss": "6.529624938964844"
+        },
+        {
+          "epoch": "1",
+          "step": "49",
+          "train/loss": ""
+        }
+      ],
+      "initial_weights": {
+        "path": "/mnt/evafs/faculty/home/bpiotrowski/.roboflow/models/rf-detr-nano.pth",
+        "sha256": "d8d6b9ee57d4d0ed2b1f305163624712a0532cb7bce0c747317984fc5457440d",
+        "model_config": {
+          "encoder": "dinov2_windowed_small",
+          "out_feature_indexes": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "dec_layers": 2,
+          "two_stage": true,
+          "projector_scale": [
+            "P4"
+          ],
+          "hidden_dim": 256,
+          "patch_size": 16,
+          "num_windows": 2,
+          "sa_nheads": 8,
+          "ca_nheads": 16,
+          "dec_n_points": 2,
+          "num_queries": 300,
+          "num_select": 300,
+          "postprocess_trace_alpha": 0.2,
+          "bbox_reparam": true,
+          "lite_refpoint_refine": true,
+          "layer_norm": true,
+          "amp": true,
+          "num_channels": 3,
+          "num_classes": 90,
+          "pretrain_weights": "/mnt/evafs/faculty/home/bpiotrowski/.roboflow/models/rf-detr-nano.pth",
+          "device": "cuda",
+          "resolution": 384,
+          "group_detr": 13,
+          "gradient_checkpointing": false,
+          "compile": false,
+          "fused_optimizer": true,
+          "positional_encoding_size": 24,
+          "ia_bce_loss": true,
+          "segmentation_head": false,
+          "use_grouppose_keypoints": false,
+          "keypoint_cross_attn": true,
+          "inter_instance_kp_attn": false,
+          "grouppose_keypoint_dim_downscale": 1,
+          "dual_projector": false,
+          "dual_projector_kp_only": false,
+          "num_keypoints_per_class": [],
+          "num_decoder_registers": 0,
+          "mask_downsample_ratio": 4,
+          "backbone_lora": false,
+          "freeze_encoder": false,
+          "license": "Apache-2.0",
+          "model_name": null
+        }
+      }
+    },
+    "tracking_uniform_b500_s42_calibration": {
+      "initial_weights_present": true,
+      "effective_config_present": true,
+      "csv_progress": [
+        {
+          "epoch": "0",
+          "step": "31",
+          "train/loss": ""
+        },
+        {
+          "epoch": "0",
+          "step": "31",
+          "train/loss": "6.516593933105469"
+        },
+        {
+          "epoch": "1",
+          "step": "49",
+          "train/loss": ""
+        }
+      ],
+      "initial_weights": {
+        "path": "/mnt/evafs/faculty/home/bpiotrowski/.roboflow/models/rf-detr-nano.pth",
+        "sha256": "d8d6b9ee57d4d0ed2b1f305163624712a0532cb7bce0c747317984fc5457440d",
+        "model_config": {
+          "encoder": "dinov2_windowed_small",
+          "out_feature_indexes": [
+            3,
+            6,
+            9,
+            12
+          ],
+          "dec_layers": 2,
+          "two_stage": true,
+          "projector_scale": [
+            "P4"
+          ],
+          "hidden_dim": 256,
+          "patch_size": 16,
+          "num_windows": 2,
+          "sa_nheads": 8,
+          "ca_nheads": 16,
+          "dec_n_points": 2,
+          "num_queries": 300,
+          "num_select": 300,
+          "postprocess_trace_alpha": 0.2,
+          "bbox_reparam": true,
+          "lite_refpoint_refine": true,
+          "layer_norm": true,
+          "amp": true,
+          "num_channels": 3,
+          "num_classes": 90,
+          "pretrain_weights": "/mnt/evafs/faculty/home/bpiotrowski/.roboflow/models/rf-detr-nano.pth",
+          "device": "cuda",
+          "resolution": 384,
+          "group_detr": 13,
+          "gradient_checkpointing": false,
+          "compile": false,
+          "fused_optimizer": true,
+          "positional_encoding_size": 24,
+          "ia_bce_loss": true,
+          "segmentation_head": false,
+          "use_grouppose_keypoints": false,
+          "keypoint_cross_attn": true,
+          "inter_instance_kp_attn": false,
+          "grouppose_keypoint_dim_downscale": 1,
+          "dual_projector": false,
+          "dual_projector_kp_only": false,
+          "num_keypoints_per_class": [],
+          "num_decoder_registers": 0,
+          "mask_downsample_ratio": 4,
+          "backbone_lora": false,
+          "freeze_encoder": false,
+          "license": "Apache-2.0",
+          "model_name": null
+        }
+      }
+    }
+  },
+  "smoke_job_id": 1807599,
+  "smoke_status": "COMPLETED 0:0"
+}
