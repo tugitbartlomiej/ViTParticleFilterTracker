@@ -498,24 +498,32 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
     criterion = protocol["checkpoint_selection"]["best_val_criterion"]
     assert criterion == "map_50_95_val", f"nieobslugiwane kryterium: {criterion}"
 
-    # Best is selected by validation. RF-DETR 1.10.1 only writes last.ckpt
-    # (and last_ema.pth); export the live final model synced by det.train(),
-    # never substitute best or EMA weights for the last-epoch column.
+    # RF-DETR leaves the in-memory model in EMA state at on_train_end.
+    # The regular final weights must come from Lightning's last.ckpt instead.
     best_ckpt = ckpt_dir / "checkpoint_best_total.pth"
     last_ckpt = ckpt_dir / "last.pth"
     if not last_ckpt.is_file():
         import torch
-        final_model = det.model.model
-        if hasattr(final_model, "_orig_mod"):
-            final_model = final_model._orig_mod
+        lightning_path = ckpt_dir / "last.ckpt"
+        # Locally generated checkpoint; includes Lightning metadata/optimizer state.
+        payload = torch.load(lightning_path, map_location="cpu", weights_only=False)
+        if int(payload["epoch"]) != epochs - 1:
+            raise RuntimeError("last.ckpt is not from the planned final epoch")
+        state = {key.removeprefix("model.").removeprefix("_orig_mod."): value
+                 for key, value in payload["state_dict"].items() if key.startswith("model.")}
+        if not state:
+            raise RuntimeError("last.ckpt contains no model weights")
         torch.save({
-            "model": {k: v.detach().cpu() for k, v in final_model.state_dict().items()},
+            "model": state,
             "args": vars(det.model.args),
             "model_config": det.model_config.model_dump(mode="json"),
             "model_name": type(det).__name__, "epoch": epochs - 1,
+            "global_step": payload["global_step"],
+            "source_checkpoint_sha256": sha256_file(lightning_path),
             "class_names": det.model.class_names,
             "checkpoint_role": "last_epoch_regular_weights_only",
         }, last_ckpt)
+        del payload, state
     missing = [path.name for path in (best_ckpt, last_ckpt) if not path.is_file()]
     if missing:
         raise FileNotFoundError(
