@@ -495,12 +495,24 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
     criterion = protocol["checkpoint_selection"]["best_val_criterion"]
     assert criterion == "map_50_95_val", f"nieobslugiwane kryterium: {criterion}"
 
-    # Current RF-DETR emits these exact portable weight files. Its callback
-    # selects checkpoint_best_total.pth by validation box mAP@0.5:0.95 and
-    # writes last.pth at fit end. Re-evaluating ad-hoc checkpoint globs here
-    # would mix .ckpt and best/EMA files and can select the wrong epoch.
+    # Best is selected by validation. RF-DETR 1.10.1 only writes last.ckpt
+    # (and last_ema.pth); export the live final model synced by det.train(),
+    # never substitute best or EMA weights for the last-epoch column.
     best_ckpt = ckpt_dir / "checkpoint_best_total.pth"
     last_ckpt = ckpt_dir / "last.pth"
+    if not last_ckpt.is_file():
+        import torch
+        final_model = det.model.model
+        if hasattr(final_model, "_orig_mod"):
+            final_model = final_model._orig_mod
+        torch.save({
+            "model": {k: v.detach().cpu() for k, v in final_model.state_dict().items()},
+            "args": vars(det.model.args),
+            "model_config": det.model_config.model_dump(mode="json"),
+            "model_name": type(det).__name__, "epoch": epochs - 1,
+            "class_names": det.model.class_names,
+            "checkpoint_role": "last_epoch_regular_weights_only",
+        }, last_ckpt)
     missing = [path.name for path in (best_ckpt, last_ckpt) if not path.is_file()]
     if missing:
         raise FileNotFoundError(
