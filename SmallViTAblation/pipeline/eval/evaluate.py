@@ -513,8 +513,10 @@ def main(argv: list[str] | None = None) -> int:
         try:
             path = assemble(output_dir, protocol, args.run_id, args.checkpoint_rule,
                             args.metrics_name,
-                            operating_threshold=args.operating_threshold,
-                            threshold_selected_on=None if args.operating_threshold is None else "cli",
+                            # compute_block may have selected the operating point on val.
+                            # Pass that resolved provenance instead of the raw CLI option.
+                            operating_threshold=meta["operating_threshold"],
+                            threshold_selected_on=meta["threshold_selected_on"],
                             pool_manifest=args.pool_manifest)
             print(f"Złożono {path}")
         except ValueError as exc:
