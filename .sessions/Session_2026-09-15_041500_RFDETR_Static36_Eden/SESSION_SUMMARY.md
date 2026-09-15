@@ -14,7 +14,12 @@ Zadania SLURM:
 
 - `1807632`: przygotowanie pełnej puli treningowej, cech DINOv2, czterech
   selektorów i pakietu danych; jedna H100;
-- `1807633`: 36 treningów RF-DETR Nano, zależność `afterok:1807632`, osiem H100.
+- `1807633`: anulowane przed startem pierwotne zadanie na osiem H100;
+- zadanie zastępcze: 36 treningów RF-DETR Nano, zależność `afterok:1807632`,
+  maksymalnie cztery H100 i cztery równoległe workery.
+
+Obowiązują limity użytkownika: najwyżej cztery GPU jednocześnie oraz najwyżej
+sześć zadań w łańcuchu zależności.
 
 DINOv2 jest przypięty do commita
 `7764ea0f912e53c92e82eb78a2a1631e92725fc8`. Przy ostatniej kontroli zadanie

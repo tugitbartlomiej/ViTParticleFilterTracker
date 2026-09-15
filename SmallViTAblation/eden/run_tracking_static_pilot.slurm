@@ -1,15 +1,15 @@
 #!/bin/bash
 # 36 RF-DETR Nano runs: 4 selectors x 3 budgets x 3 training seeds.
+# User resource ceiling: at most four GPUs concurrently.
 # Required: PROJECT_DIR, PREPARED_DIR, QUEUE_DIR, RESULTS_DIR, PY, PROTOCOL.
 #SBATCH -A transformers_vsc
 #SBATCH -p hopper
 #SBATCH --nodelist=hopper
-#SBATCH --exclusive
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --gres=gpu:8
-#SBATCH --cpus-per-task=64
-#SBATCH --mem=768G
+#SBATCH --gres=gpu:4
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=384G
 #SBATCH --time=1-00:00:00
 #SBATCH --no-requeue
 #SBATCH --job-name=nano_static36
@@ -19,7 +19,7 @@
 set -euo pipefail
 : "${PROJECT_DIR:?}" "${PREPARED_DIR:?}" "${QUEUE_DIR:?}" "${RESULTS_DIR:?}"
 : "${PY:?}" "${PROTOCOL:?}"
-export DATA_ARCHIVE="${PREPARED_DIR}.tar" N_WORKERS=8
+export DATA_ARCHIVE="${PREPARED_DIR}.tar" N_WORKERS=4
 SOURCE_COMMIT_FILE="$PROJECT_DIR/../STATIC36_SOURCE_COMMIT"
 test -s "$SOURCE_COMMIT_FILE"
 export SMALLVIT_SOURCE_COMMIT="$(cat "$SOURCE_COMMIT_FILE")"

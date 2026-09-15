@@ -45,9 +45,10 @@ obu checkpointów. Duże pliki predykcji są kompresowane deterministycznie po
 obliczeniu metryk; raport przechowuje SHA256 wersji jawnej i archiwum.
 
 Przygotowanie używa jednej H100, 16 CPU i 128 GiB RAM. Trening zależy przez
-`afterok` od poprawnego przygotowania i zajmuje jeden węzeł Hopper: osiem H100,
-64 CPU i 768 GiB RAM. Osiem workerów wykonuje po jednym eksperymencie na GPU,
+`afterok` od poprawnego przygotowania i używa maksymalnie czterech H100,
+32 CPU i 384 GiB RAM. Cztery workery wykonują po jednym eksperymencie na GPU,
 bez DDP. Oba zadania mają `--no-requeue`; błąd przygotowania blokuje trening.
+Przyszłe łańcuchy nie mogą przekraczać sześciu zależnych zadań.
 
 ## Implementacja
 
@@ -64,8 +65,10 @@ bez DDP. Oba zadania mają `--no-requeue`; błąd przygotowania blokuje trening.
 
 Kod kampanii wdrożono z commita `4ec9c8b`. Zadanie przygotowawcze `1807632`
 rozpoczęło pracę na Hopperze i poprawnie wczytało przypięty model DINOv2;
-pierwsze partie cech zostały zapisane w cache. Zadanie `1807633` zawiera pełną
-macierz i oczekuje na warunek `afterok:1807632`. Oba mają `Requeue=0`.
+pierwsze partie cech zostały zapisane w cache. Pierwotne oczekujące zadanie
+ośmiokartowe `1807633` anulowano przed startem po wprowadzeniu limitu czterech
+GPU. Jego następca zawiera tę samą macierz i warunek `afterok:1807632`.
+Oba aktywne etapy mają `Requeue=0`.
 
 Artefakty, kolejka i wyniki są zapisywane w:
 
