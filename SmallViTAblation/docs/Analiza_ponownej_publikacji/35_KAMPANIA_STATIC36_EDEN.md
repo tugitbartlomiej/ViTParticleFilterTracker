@@ -67,7 +67,8 @@ Kod kampanii wdrożono z commita `4ec9c8b`. Zadanie przygotowawcze `1807632`
 rozpoczęło pracę na Hopperze i poprawnie wczytało przypięty model DINOv2;
 pierwsze partie cech zostały zapisane w cache. Pierwotne oczekujące zadanie
 ośmiokartowe `1807633` anulowano przed startem po wprowadzeniu limitu czterech
-GPU. Jego następca zawiera tę samą macierz i warunek `afterok:1807632`.
+GPU. Zadanie zastępcze `1807634` zawiera tę samą macierz, rezerwuje cztery H100
+i ma warunek `afterok:1807632`.
 Oba aktywne etapy mają `Requeue=0`.
 
 Artefakty, kolejka i wyniki są zapisywane w:
