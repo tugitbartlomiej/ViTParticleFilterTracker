@@ -59,3 +59,16 @@ bez DDP. Oba zadania mają `--no-requeue`; błąd przygotowania blokuje trening.
 - `eden/submit_tracking_static_pilot.sh` zgłasza kontrolowany łańcuch `afterok`;
 - `pipeline/train/run_with_validation.py` archiwizuje predykcje bez utraty ich
   hashy i oddziela seed selekcji od seedu treningu.
+
+## Zgłoszenie
+
+Kod kampanii wdrożono z commita `4ec9c8b`. Zadanie przygotowawcze `1807632`
+rozpoczęło pracę na Hopperze i poprawnie wczytało przypięty model DINOv2;
+pierwsze partie cech zostały zapisane w cache. Zadanie `1807633` zawiera pełną
+macierz i oczekuje na warunek `afterok:1807632`. Oba mają `Requeue=0`.
+
+Artefakty, kolejka i wyniki są zapisywane w:
+
+```text
+~/smallvit_runs/2026-09-15_tracking_static36/
+```
