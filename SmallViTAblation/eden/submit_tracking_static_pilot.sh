@@ -11,7 +11,11 @@ CACHE_ROOT="$ROOT/cache/dinov2"
 QUEUE_DIR="$ROOT/queue/static36"
 RESULTS_DIR="$ROOT/results"
 DINO_HUB_REPO="facebookresearch/dinov2:7764ea0f912e53c92e82eb78a2a1631e92725fc8"
+SOURCE_COMMIT_FILE="$PROJECT_DIR/../STATIC36_SOURCE_COMMIT"
+test -s "$SOURCE_COMMIT_FILE"
+SMALLVIT_SOURCE_COMMIT="$(cat "$SOURCE_COMMIT_FILE")"
 export ROOT PROJECT_DIR INDEX_DIR PY PROTOCOL PREPARED_DIR CACHE_ROOT QUEUE_DIR RESULTS_DIR DINO_HUB_REPO
+export SMALLVIT_SOURCE_COMMIT
 mkdir -p "$ROOT/data" "$ROOT/cache" "$ROOT/queue" "$ROOT/results" "$PROJECT_DIR/slurm_logs"
 test ! -e "$PREPARED_DIR" -a ! -e "${PREPARED_DIR}.tar" -a ! -e "$QUEUE_DIR"
 prep_job=$(sbatch --parsable --export=ALL "$PROJECT_DIR/eden/prepare_tracking_static_pilot.slurm")

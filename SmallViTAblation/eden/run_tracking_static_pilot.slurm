@@ -20,6 +20,9 @@ set -euo pipefail
 : "${PROJECT_DIR:?}" "${PREPARED_DIR:?}" "${QUEUE_DIR:?}" "${RESULTS_DIR:?}"
 : "${PY:?}" "${PROTOCOL:?}"
 export DATA_ARCHIVE="${PREPARED_DIR}.tar" N_WORKERS=8
+SOURCE_COMMIT_FILE="$PROJECT_DIR/../STATIC36_SOURCE_COMMIT"
+test -s "$SOURCE_COMMIT_FILE"
+export SMALLVIT_SOURCE_COMMIT="$(cat "$SOURCE_COMMIT_FILE")"
 export PYTHONNOUSERSITE=1 PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=8 MKL_NUM_THREADS=8
 unset PYTHONPATH
 cd "$PROJECT_DIR"
@@ -56,7 +59,7 @@ print({'tasks': len(tasks), 'queue_file': str(queue_file)}, flush=True)
 PY
 "$PY" eden/queue.py init "$QUEUE_DIR" --queue-file "${QUEUE_DIR}.jsonl"
 "$PY" -B -m pip freeze > "${QUEUE_DIR}.environment.txt"
-sha256sum "$DATA_ARCHIVE" "$PROTOCOL" > "${QUEUE_DIR}.inputs.sha256"
+sha256sum "$DATA_ARCHIVE" "$PROTOCOL" "$SOURCE_COMMIT_FILE" > "${QUEUE_DIR}.inputs.sha256"
 bash eden/run_node.slurm
 "$PY" eden/queue.py status "$QUEUE_DIR" --json | "$PY" -c '
 import json, sys
