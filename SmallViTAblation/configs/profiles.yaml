@@ -24,11 +24,11 @@ profiles:
     budgets: [500, 1500, 2500]
     seeds: [42, 1337, 2024]
     seed_pairing: matched
-    strategies: [random, uniform_time, coverage]
+    strategies: [random, uniform_time, dino_coverage, dino_temporal_hybrid]
     epochs: 30
     resolution_by_model: {rf-detr-nano: 384}
     precision_by_model: {rf-detr-nano: bf16}
-    max_runs: 27
+    max_runs: 36
     evaluate: [val]
     allow_external: false
 

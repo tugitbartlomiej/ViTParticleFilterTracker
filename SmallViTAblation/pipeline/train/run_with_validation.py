@@ -3,12 +3,31 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
+
+
+def archive_predictions(path: Path) -> dict:
+    """Keep auditable predictions without exhausting the shared home quota."""
+    archive = path.with_suffix(path.suffix + '.gz')
+    with path.open('rb') as source, archive.open('wb') as raw:
+        with gzip.GzipFile(filename='', mode='wb', fileobj=raw, mtime=0) as target:
+            shutil.copyfileobj(source, target, length=1024 * 1024)
+    with path.open('rb') as stream:
+        source_sha = hashlib.file_digest(stream, 'sha256').hexdigest()
+    with archive.open('rb') as stream:
+        archive_sha = hashlib.file_digest(stream, 'sha256').hexdigest()
+    source_bytes = path.stat().st_size
+    path.unlink()
+    return dict(format='gzip', path=str(archive), sha256=archive_sha,
+                uncompressed_sha256=source_sha, uncompressed_bytes=source_bytes,
+                bytes=archive.stat().st_size)
 
 
 def main():
@@ -18,12 +37,14 @@ def main():
     ap.add_argument('--train-seed', type=int, required=True)
     ap.add_argument('--profile', required=True)
     ap.add_argument('--expected-epochs', type=int, required=True)
+    ap.add_argument('--compress-predictions', action='store_true')
     args = ap.parse_args()
     project = Path(__file__).resolve().parents[2]
     run = Path(args.out)/args.run_id
     if run.exists():
         raise FileExistsError(f'Refusing implicit resume or mixed attempts: {run}')
     start = time.monotonic()
+    variant = json.loads(Path(args.variant_file).read_text())
     subprocess.run([sys.executable, str(project/'pipeline/train/train_rfdetr.py'),
         '--run-id', args.run_id, '--data-root', args.data_root, '--out', args.out,
         '--protocol', args.protocol, '--variant-file', args.variant_file,
@@ -47,9 +68,14 @@ def main():
             raise RuntimeError('Independent evaluation omitted validation images')
         with weights.open('rb') as stream:
             sha = hashlib.file_digest(stream, 'sha256').hexdigest()
-        validation[rule] = dict(checkpoint_sha256=sha, metrics=metrics)
+        prediction_archive = None
+        if args.compress_predictions:
+            prediction_archive = archive_predictions(output/'predictions_val.json')
+        validation[rule] = dict(checkpoint_sha256=sha, metrics=metrics,
+                                predictions_archive=prediction_archive)
     (run/'validation_report.json').write_text(json.dumps(dict(status='passed',
-        scope='training_recipe_calibration', training_seed=args.train_seed,
+        scope=variant.get('scope', 'unspecified'), training_seed=args.train_seed,
+        selection_seed=variant.get('selection_seed', variant.get('seed')),
         total_seconds=time.monotonic()-start, evaluation_set='val',
         test_evaluated=False, checkpoints=validation), indent=2))
 
