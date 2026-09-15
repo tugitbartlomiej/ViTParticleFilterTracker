@@ -26,7 +26,7 @@ cleanup() { rm -rf -- "$STAGE"; }
 trap cleanup EXIT
 mkdir -p "$STAGE"
 tar -xf "$DATA_ARCHIVE" -C "$STAGE"
-DATA_ROOT="$STAGE/ablation_data"
+DATA_ROOT="$STAGE"
 test -f "$DATA_ROOT/annotations_val.json"
 
 pids=()
