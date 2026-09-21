@@ -82,6 +82,25 @@ Przy trzech ziarnach etap 1 jest PILOTEM: rozstrzyga, czy warto iść do etapu 2
 3. **Etap 3:** czułość zwycięskiego ramienia: waga domieszki 0,25 / 0,5 / 0,75, historia 2 / 4 / 8 kroków,
    latent DINOv2 kontra latent detektora (`detector_latent.py`), strata odporna na skoki.
 
+## 5a. Stan po przygotowaniu (2026-09-21, zadanie 1809161, 12 minut na A100)
+
+Pierwsze dwa zgłoszenia przygotowania (1809149, 1809155) padły po 5 sekundach: `koopman_langevin/select.py` przesłaniał
+moduł `select` biblioteki standardowej, gdy `pool_confidence.py` szedł jako skrypt. Zadania zależne anulowały się same,
+żaden trening nie ruszył. Poprawka: flaga `-P` interpretera. Trzecie zgłoszenie przeszło; pięciu robotników
+(1809162 do 1809166; dgx-2, dgx-4, hopper) bierze biegi ze wspólnej kolejki 27 zadań.
+
+Pula train do doboru ma 10 637 klatek. Część wspólna dobranych 1000 klatek z ramieniem K1:
+
+| B0 | B1 | B2 | B3 | B4 | K2 | K3 | K4 |
+|---|---|---|---|---|---|---|---|
+| 0,11 | 0,11 | 0,10 | 0,46 | 0,33 | 0,83 | 0,26 | 0,17 |
+
+Równanie z historią przewiduje 18,4 procent kroku latentu na puli, bez historii 4,6 procent. Mimo tej różnicy K1 i K2
+wybierają w 83 procentach TE SAME klatki: oba modele uznają za trudne te same miejsca filmu. **Kontrast K1 - K2 ma więc
+z góry małą moc** i prawie na pewno wyjdzie nierozstrzygający; zapisane przed wynikiem. Rozstrzygające pozostają
+K1 - B3, K1 - B4 i K1 - K3. Żeby zbadać historię uczciwie, etap 3 potrzebuje oceny, która RÓŻNI oba modele
+(na przykład zysk z historii na klatkę zamiast samej reszty).
+
 ## 6. Kontrargumenty
 
 - Trzy ziarna nie wystarczą do twierdzeń; rozrzut między ziarnami w kampanii statycznej to około 0,002 AP.
