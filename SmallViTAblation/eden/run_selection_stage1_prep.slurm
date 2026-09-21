@@ -34,7 +34,9 @@ tar -xf "$DATA_ARCHIVE" -C "$PRE/data"
 test -s "$PRE/data/variants/$L0_VARIANT"
 cp "$PRE/data/variants/$L0_VARIANT" "$MATRIX/L0_$L0_VARIANT"
 if [[ ! -s "$MATRIX/uncertainty_L0.json" ]]; then
-    TMPDIR="$PRE" "$PY" -B "$PROJECT_DIR/pipeline/koopman_langevin/pool_confidence.py" \
+    # -P keeps the script directory off sys.path: koopman_langevin/select.py would otherwise shadow
+    # the standard library module `select` and break `import socket` inside rfdetr.
+    TMPDIR="$PRE" "$PY" -B -P "$PROJECT_DIR/pipeline/koopman_langevin/pool_confidence.py" \
         --data-root "$PRE/data" --checkpoint "$L0_CHECKPOINT" --out "$MATRIX/uncertainty_L0.json"
 fi
 
