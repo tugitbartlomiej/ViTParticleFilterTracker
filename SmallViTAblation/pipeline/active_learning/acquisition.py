@@ -20,12 +20,17 @@ STRATEGIES = (
     "coverage_uncertainty",
     "coverage_residual",
     "coverage_history",
+    "coverage_reducible",
 )
 
 SCORE_FIELD = {
     "coverage_uncertainty": "uncertainty",
     "coverage_residual": "residual_mahalanobis",
     "coverage_history": "history_gain",
+    # Error of a model that only knows the selected neighbourhoods minus the error of the
+    # pool-wide cross-fitted model: the surprise cancels, the learnable gap remains.
+    # Produced per round by pipeline.koopman_langevin.latent_langevin.LatentLangevin.scores.
+    "coverage_reducible": "reducible_gain",
 }
 
 

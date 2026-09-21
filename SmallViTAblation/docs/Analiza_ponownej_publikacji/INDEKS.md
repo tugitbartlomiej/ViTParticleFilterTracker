@@ -2,6 +2,8 @@
 
 Ten folder został przeniesiony przez autora do `SmallViTAblation/docs/Analiza_ponownej_publikacji/`. Kolekcja PDF/OCR i listy pobierania pozostają w `F:/Studia/Articles/Zbiory/2026-09-11_RT-DETR_selekcja_ewaluacja`.
 
+**Nowy plan eksperymentu, 2026-09-21:** [37 — Diagnostyka latentu w widzeniu: Koopman, Langevin i dobór klatek](37_PLAN_EKSPERYMENTU_DIAGNOSTYKA_LATENTU_W_WIDZENIU.md). Hipotezy, poprawki protokołu, analiza obiektu w wideo, kontrolowane przekształcenia obrazów, metryki i reguły wnioskowania. Rozdziela diagnostykę od selekcji oraz koryguje interpretacje historycznego dokumentu 36. [Weryfikacja Paper Search i źródeł pierwotnych](evidence_latent_cv_2026-09-21/README.md). Status: plan, bez nowych treningów.
+
 **Aktualnie autor polecił rozpocząć treningi:** [33 — CATARACT-LMM i kalibracja Nano](33_START_TRENINGOW_CATARACT_LMM_NANO.md).
 **Optymalizacja końcowych metryk:** [34 — jedno dopasowanie dla krzywej F1 i pomiary etapów](34_OPTYMALIZACJA_EWALUACJI_NANO.md).
 **Poprzedni audyt i pauza:** [32 — środowiska i plan pełnych treningów](32_EDEN_PAUZA_SRODOWISKA_I_PLAN_TRENINGOW.md).
@@ -17,6 +19,8 @@ Decyzja autora z 2026-09-14: najpierw statyczna kuracja na Nano, bez Langevina i
 6. [27 — Protokół szybkich badań](27_PROTOKOL_SZYBKICH_BADAN_ACTIVE_CURATION_GLE.md): hipotezy, małe modele, sparowane seedy, aktywna pętla, metryki oraz granice interpretacji GLE/Mori–Zwanziga.
 7. [28 — Plan implementacji](28_PLAN_IMPLEMENTACJI_ACTIVE_CURATION_GLE.md): kontrakty modułów, profile kosztu, generator manifestu i polecenia lokalne/Eden.
 8. [29 — Uruchomienie lokalne i Eden](29_URUCHOMIENIE_LOKALNE_I_EDEN.md): konkretna kolejność smoke, pilot, aktywnych rund, kolejki SLURM i sparowanego bootstrapu operacji.
+9. [36 - Koopman i rozszerzone równanie Langevina](36_KOOPMAN_LANGEVIN_TOZSAMOSC_NARZEDZIA_I_DOBOR_KLATEK.md): kod `pipeline/koopman_langevin/`, pomiary lokalne (DMD nie bije różnicy klatek; ruch narzędzia przewidywalny w 22 do 29 procent; zaskoczenie to szybki ruch i wejście narzędzia), test mechanizmu, cztery gotowe warianty wyboru klatek i eksperyment rozstrzygający wstrzymany brakiem miejsca na Edenie.
+10. [38 - Krystalizacja przestrzeni stanów w latencie detektora](38_KRYSTALIZACJA_PRZESTRZENI_STANOW_W_LATENCIE_DETEKTORA.md): przegląd literatury (Undermind, Scite), sprostowanie o detektorze jednoklatkowym, pomiar na dwóch zegarach (klatki i epoki), kryteria zapisane przed wynikiem, zadania klastra `run_detector_latent.slurm` i `run_epoch_series.slurm`.
 
 Poniższy opis dotyczy audytów literatury z 11 września; późniejsze treningi smoke opisuje dokument 31.
 W audycie 22 nie wykonano OCR ani nowych treningów. Zarejestrowano 123 pliki OCR; dla 30 przeczytano abstrakty lub wybrane fragmenty, dla pozostałych wykonano screening tytułów. Rejestr podaje zakres i hashe; różne wersje tego samego artykułu nie są niezależnymi dowodami.

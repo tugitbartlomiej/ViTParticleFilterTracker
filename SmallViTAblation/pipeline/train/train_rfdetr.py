@@ -489,6 +489,11 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
         "scale_jitter": False,
         "multi_scale": False,
     }
+    keep_every = int(getattr(args, "keep_epoch_checkpoints", 0) or 0)
+    if keep_every:
+        if keep_every < 2:
+            raise ValueError("--keep-epoch-checkpoints needs N >= 2 (RF-DETR skips the periodic callback at 1)")
+        train_kwargs["checkpoint_interval"] = keep_every
     # RF-DETR 1.10 validates TrainConfig strictly; keep the effective defaults too.
     effective_config = det.get_train_config(**train_kwargs)
     (run_dir / "effective_train_config.json").write_text(
@@ -553,6 +558,29 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
     (run_dir / "training_performance.json").write_text(
         json.dumps(performance, indent=2), encoding="utf-8")
 
+    if keep_every:
+        # Opt-in exception to requirement 7: periodic Lightning checkpoints are reduced to
+        # weights only (no optimiser state) and kept for diagnostics along the training clock.
+        kept_dir = run_dir / "epoch_checkpoints"
+        kept_dir.mkdir(exist_ok=True)
+        kept = []
+        for path in sorted(ckpt_dir.glob("checkpoint_*.ckpt")):
+            payload = torch.load(path, map_location="cpu", weights_only=False)
+            state = {key.removeprefix("model.").removeprefix("_orig_mod."): value
+                     for key, value in payload["state_dict"].items() if key.startswith("model.")}
+            if not state:
+                raise RuntimeError(f"{path.name} contains no model weights")
+            target = kept_dir / f"epoch_{int(payload['epoch']):03d}.pth"
+            torch.save({"model": state, "args": vars(det.model.args),
+                        "model_config": det.model_config.model_dump(mode="json"),
+                        "model_name": type(det).__name__, "epoch": int(payload["epoch"]),
+                        "global_step": payload["global_step"], "class_names": det.model.class_names,
+                        "checkpoint_role": "periodic_regular_weights_only"}, target)
+            kept.append({"epoch": int(payload["epoch"]), "file": target.name, "sha256": sha256_file(target)})
+            del payload, state
+        (kept_dir / "MANIFEST.json").write_text(json.dumps(
+            {"every_n_epochs": keep_every, "checkpoints": kept}, indent=2), encoding="utf-8")
+
     # Wymaganie 7: kasujemy checkpointy posrednie.
     shutil.rmtree(ckpt_dir, ignore_errors=True)
 
@@ -599,6 +627,10 @@ def parse_args(argv=None):
     ap.add_argument("--profiles-config", type=Path, default=None)
     ap.add_argument("--val-annotations", type=Path, default=None,
                     help="fixed validation COCO; defaults to <data-root>/annotations_val.json")
+    ap.add_argument("--keep-epoch-checkpoints", type=int, default=0, metavar="N",
+                    help="keep weights-only checkpoints every N epochs (N >= 2) in "
+                         "<run>/epoch_checkpoints for latent diagnostics along the training "
+                         "clock; 0 keeps the campaign behaviour (last.pth and best.pth only)")
     ap.add_argument("--dry-run", action="store_true",
                     help="pelna inicjalizacja i walidacja plikow, manifest "
                          "in-memory + zapis, BEZ treningu")

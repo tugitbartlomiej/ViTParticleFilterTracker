@@ -38,6 +38,7 @@ def main():
     ap.add_argument('--profile', required=True)
     ap.add_argument('--expected-epochs', type=int, required=True)
     ap.add_argument('--compress-predictions', action='store_true')
+    ap.add_argument('--keep-epoch-checkpoints', type=int, default=0)
     args = ap.parse_args()
     project = Path(__file__).resolve().parents[2]
     run = Path(args.out)/args.run_id
@@ -48,7 +49,8 @@ def main():
     subprocess.run([sys.executable, str(project/'pipeline/train/train_rfdetr.py'),
         '--run-id', args.run_id, '--data-root', args.data_root, '--out', args.out,
         '--protocol', args.protocol, '--variant-file', args.variant_file,
-        '--train-seed', str(args.train_seed), '--role', 'smoke', '--profile', args.profile], check=True)
+        '--train-seed', str(args.train_seed), '--role', 'smoke', '--profile', args.profile,
+        '--keep-epoch-checkpoints', str(args.keep_epoch_checkpoints)], check=True)
     manifest = json.loads((run/'run_manifest.json').read_text())
     if manifest['epochs_completed'] != args.expected_epochs or manifest['model'] != 'rf-detr-nano':
         raise RuntimeError('Incomplete training or incorrect model')
