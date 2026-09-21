@@ -188,6 +188,37 @@ uczone obserwable na oknie opóźnień; macierz K blokowo-łańcuchowa; nieznane
 Mori-Zwanziga dopiero na resztach po filtrze. **Próg do pobicia:** filtr z tej sekcji (korelacja 0,67, R2 0,44 na
 ramkach; 0,31 i 0,04 na latencie). Autoenkoder ma sens tylko wtedy, gdy z LATENTU wyciągnie więcej niż filtr z ramek.
 
+## 4e. Stosunek do planu 37 (po przeczytaniu całości, 2026-09-21)
+
+Plan 37 jest ostrzejszy od pomiarów z tego dokumentu i przy badaniu potwierdzającym wiąże. Pomiary stąd mają
+status PILOTA EKSPLORACYJNEGO. Zarzuty planu, które trafiają w kod użyty tutaj:
+
+- **A1, trafne.** `LatentLangevin` standaryzuje latent i skalę przyrostów na CAŁEJ puli przed podziałem na grupy
+  (`latent_langevin.py`, linie 81 i 87). To łagodny przeciek; liczby „Langevin 21 do 31 procent" wymagają powtórzenia
+  po przeniesieniu skalowania do foldów. PCA w `epoch_dynamics.pca` też jest liczone na wszystkich klatkach.
+- **A3, trafne.** `reducible_gain` dzieli przez błąd bieżącego celu, więc jest wynikiem retrospektywnym, nie prognozą.
+- **Sekcja 7.1, trafne.** „Zysk pamięci +4 punkty" z sekcji 4a to różnica między historią 3 i 8 kroków. Model krótki
+  już używa prędkości i przyspieszenia, więc NIE jest kontrolą „bez historii". Właściwy kontrast to M4 kontra M2 z planu.
+- **Sekcja 8.1, trafne.** `detector_latent.py` bierze zapytanie dekodera o najwyższym wyniku; numer zapytania nie jest
+  trwałą tożsamością. Dlatego wnioski opierać na `box_pool`, a `query` traktować jako wrażliwe na przeskoki.
+- **Sekcja 5.1, trafne wstecz.** Pomiary torów z dokumentu 36 czytały wszystkie 167 grup, w tym testowe (same tory GT).
+  Paczka z tego dokumentu testowych klipów nie zawiera.
+- **Sekcja 9.** Test 12 biegów (zadanie 1809135) NIE jest etapem D planu: nie ma ramion S3 (niepewność detektora)
+  ani S4 (model bez historii), a wynik jest retrospektywny. Może pokazać kierunek (kupować czy odrzucać zaskoczenia),
+  nie może przypisać zysku historii ani równaniu Langevina.
+
+Czego plan 37 nie ma, a ten pilot wnosi jako wejście do niego:
+
+1. Latent całej sceny (R1 planu) nie niesie stanu narzędzia wcale (R2 około 0 przed i po uczeniu), a latent obszaru
+   narzędzia niesie go dopiero po uczeniu detektora. Warto od razu liczyć R2/R3 na latencie DETEKTORA, nie tylko DINO.
+2. Oś epok (zegar treningu) i przesunięcie cząstek między wagami.
+3. Prędkość jako stan ukryty z filtru odpornego na skoki; innowacje mają kurtozę 25 do 132, więc testy reszt z A5
+   muszą zakładać grube ogony, a modele M0 do M5 stratę odporną, inaczej pojedyncze skoki zdominują skill.
+4. Warstwa oceny według prędkości narzędzia: 14 procent chybień w najszybszych 5 procentach klatek wobec 3 procent
+   w wolnych. Średnie AP tego nie pokaże; dopisać tę warstwę do miar etapu D.
+5. Wstępny sygnał dla H2: sama innowacja wskazuje chybienia z AUC 0,60 do 0,68, pewność detektora 0,81 do 0,83.
+   Kontrast C3 kontra C1 będzie trudny do wygrania.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
