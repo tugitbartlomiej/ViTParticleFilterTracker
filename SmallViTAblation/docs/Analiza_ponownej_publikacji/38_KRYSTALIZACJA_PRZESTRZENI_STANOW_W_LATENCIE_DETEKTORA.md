@@ -1,5 +1,7 @@
 # 38. Krystalizacja przestrzeni stanów narzędzia w latencie detektora: Koopman i Langevin na dwóch zegarach
 
+**Aktualizacja zakresu:** [plan 39](39_PLAN_SELEKCJI_KLATEK_RFDETR_I_ROZWOJU_JEPA.md) określa aktualny eksperyment selekcji już oznaczonych klatek do standardowego RF-DETR oraz kryteria jego oceny. Poniższe wyniki pozostają eksploracyjne z ograniczeniami sekcji 4e; dawne progi selekcji i szerokie twierdzenia o nowości nie zastępują nowego protokołu. Zapis o działających zadaniach jest historycznym statusem autora dokumentu, nie potwierdzeniem bieżącego stanu klastra.
+
 Data: 2026-09-21. Status: **literatura przejrzana, kod gotowy, pierwszy pomiar (oś budżetu) wykonany, seria po epokach biegnie na Edenie (zadanie 1809133).**
 Rozwija dokument [36](36_KOOPMAN_LANGEVIN_TOZSAMOSC_NARZEDZIA_I_DOBOR_KLATEK.md). Równolegle powstał plan
 [37](37_PLAN_EKSPERYMENTU_DIAGNOSTYKA_LATENTU_W_WIDZENIU.md) (inna sesja, ten sam dzień); ten dokument realizuje pomiarowo jego
@@ -218,6 +220,27 @@ Czego plan 37 nie ma, a ten pilot wnosi jako wejście do niego:
    w wolnych. Średnie AP tego nie pokaże; dopisać tę warstwę do miar etapu D.
 5. Wstępny sygnał dla H2: sama innowacja wskazuje chybienia z AUC 0,60 do 0,68, pewność detektora 0,81 do 0,83.
    Kontrast C3 kontra C1 będzie trudny do wygrania.
+
+## 4f. Oś epok: jeden trening z wagami co 3 epoki (zadanie Eden 1809133, 2026-09-21)
+
+`uniform_time`, 1500 klatek, ziarno 42, 30 epok; latent `box_pool` na tych samych 4800 klatkach.
+Plik: `REPORT_epoch_axis.json`.
+
+| Epoka | IoU | położenie | oś | wolne mody Koopmana / PCA | Langevin | przesunięcie cząstek od poprzedniego punktu (CKA) | AP walidacji |
+|---|---|---|---|---|---|---|---|
+| COCO | 0,088 | -0,10 | -0,03 | -0,32 / -0,03 | 29,6 | | |
+| 2 | 0,832 | 0,87 | 0,65 | 0,83 / 0,10 | 22,4 | 1,29 (0,09) | 0,665 |
+| 5 | 0,841 | 0,85 | 0,67 | 0,81 / 0,20 | 21,9 | 0,13 (0,94) | 0,687 |
+| 14 | 0,834 | 0,78 | 0,64 | 0,77 / 0,20 | 22,2 | 0,12 (0,93) | |
+| 29 | 0,836 | 0,86 | 0,73 | 0,84 / 0,24 | 22,2 | 0,09 (0,95) | 0,656 |
+
+Odczyt: (1) cała przebudowa latentu dzieje się w pierwszych trzech epokach; od epoki 2 odczyt położenia, osi,
+przewaga modów Koopmana nad PCA i przewidywalność kroku stoją w miejscu. Punkty co 10 do 20 epok niczego by nie
+pokazały; żeby zobaczyć samo układanie się stanu, trzeba zapisywać wagi wewnątrz epok 0 do 3 (co kilkadziesiąt kroków).
+(2) AP walidacji rośnie do epoki 5 (0,687), a potem spada do 0,656 w epoce 29: przy 1500 klatkach 30 epok to
+przeuczenie. Cząstki dalej dryfują (około 0,1 na 3 epoki) bez żadnej poprawy odczytu stanu, więc ten dryf nie jest
+nauką o narzędziu. (3) Dla miary „szybkość uczenia" z dokumentu 39 liczą się więc epoki 0 do 5; późniejsze różnice
+między ramionami mierzą głównie odporność na przeuczenie. Ocena `best_val` i `last_epoch` muszą być raportowane obie.
 
 ## 5. Kontrargumenty
 
