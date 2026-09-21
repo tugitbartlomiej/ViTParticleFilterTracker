@@ -194,6 +194,49 @@ Wniosek: poprawianie równania Langevina albo głębszy autoenkoder Koopmana NIE
 jakość sygnału, tylko to, że wskazane klatki nie mają usuwalnego błędu. Dynamika pomaga tam, gdzie opisuje STANY do
 pokrycia (K4), a nie ZASKOCZENIA do kupienia (K1).
 
+## 5d. Co w ramieniu Koopmana naprawdę działa i jaką przewagę daje (analiza bez treningu, 2026-09-21)
+
+Kod: `pipeline/koopman_langevin/koopman_cover_analysis.py`; wynik `REPORT_koopman_cover.json`, `MISSES_PER_VIDEO_best_val.json`.
+Odtworzony wybór K4 pokrywa się z wyborem z Edenu w 100 procentach, więc analiza dotyczy tego samego obiektu.
+
+**Czym są współrzędne Koopmana latentu całej klatki.**
+
+| Współrzędne (16) | wariancja MIĘDZY filmami | wyjaśnione stanem narzędzia (położenie, rozmiar) | wyjaśnione czasem w filmie | korelacja klatka do klatki |
+|---|---|---|---|---|
+| wolne mody Koopmana | **0,72** | -0,01 | 0,00 | 0,94 |
+| 16 głównych kierunków PCA | 0,65 | 0,01 | 0,00 | 0,95 |
+| 16 losowych rzutów | 0,58 | 0,00 | 0,00 | 0,83 |
+
+To NIE jest stan narzędzia. Wolne mody latentu DINOv2 całej klatki to odcisk palca OPERACJI: oko, oświetlenie, ustawienie
+mikroskopu; w obrębie jednego filmu prawie stoją. Stan narzędzia siedzi w latencie DETEKTORA z obszaru narzędzia
+(dokument 38), nie tutaj. K4 rozkłada więc klatki po rodzajach scen, nie po stanach narzędzia.
+
+**Przewaga w uczeniu, zmierzona na gotowych 27 biegach.**
+
+| Porównanie | AP najlepszej epoki | odpowiednik w losowych etykietach (nachylenie 0,0107 na 1000) | chybienia, sparowany bootstrap po 25 operacjach walidacji |
+|---|---|---|---|
+| K4 - B3 pokrycie wyglądu | +0,0072 +- 0,0009 | około +670 | **-1,42 punktu, przedział [-2,73; -0,26]** |
+| K4 - B1 losowanie | +0,0072 +- 0,0009 | około +670 | -0,72 punktu, przedział [-1,90; +0,06] |
+| K4 - B2 równo w czasie | +0,0023 +- 0,0028 | około +210 | -0,69 punktu, przedział [-1,75; +0,06] |
+
+Szybkość: K4 przekracza AP 0,675 w epoce 3 we wszystkich trzech ziarnach (pozostałe w epoce 3 do 5, klatki po kolei nigdy);
+w epoce 3 ma 0,683 wobec 0,676 (B2), 0,674 (B1), 0,668 (B3). Średnie AP z epok 0 do 9: K4 0,6527, B2 0,6502, B1 0,6479, B3 0,6471.
+
+**Czego NIE udało się wykazać.**
+
+1. Że działa akurat składnik Koopmana. Opisy wyboru (równość po filmach, pokrycie położenia i rozmiaru narzędzia, czasu,
+   promień pokrycia w przestrzeni wyglądu) są dla K4 praktycznie takie same jak dla losowania i równego wyboru w czasie;
+   żaden nie wyróżnia K4. Pokrycie położenia narzędzia K4 ma wręcz najniższe (0,785), a najwyższe ma B4 (0,831), który nie wygrał.
+2. Kontrole wymiaru wybierają INNE klatki niż K4 (część wspólna: 24-wymiarowy rzut 0,24, PCA16 0,21, losowe rzuty 0,13,
+   przy około 0,10 dla czystego przypadku), więc nie wiadomo, czy uczyłyby tak samo dobrze. To wymaga treningów.
+3. **Niezmierzony szum samego WYBORU.** Odchylenia w tabelach to ziarna TRENINGU przy jednym wyborze klatek. Dwa różne losowe
+   wybory też różnią się o kilka tysięcznych (B1 i B2 o 0,0044, K3 i B3 o 0,0021). Przewaga K4 może w części być szczęśliwym
+   losem jednego wyboru. Bez kilku ziaren wyboru nie da się tego rozdzielić.
+
+Wniosek: przewaga K4 jest realna względem pokrycia wyglądu (przedział po operacjach poniżej zera), nierozstrzygnięta względem
+równego wyboru w czasie, a jej przyczyna jest nieustalona. Etap 2 musi mieć kilka ziaren WYBORU dla każdego ramienia,
+kontrole PCA16, losowe rzuty i rzut 24-wymiarowy, oraz wariant na latencie narzędzia z detektora.
+
 ## 6. Kontrargumenty
 
 - Trzy ziarna nie wystarczą do twierdzeń; rozrzut między ziarnami w kampanii statycznej to około 0,002 AP.

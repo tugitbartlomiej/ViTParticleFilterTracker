@@ -44,11 +44,12 @@ def main(argv=None) -> int:
     truth = {}
     for a in coco['annotations']:
         truth.setdefault(int(a['image_id']), a['bbox'])                 # one instrument per frame
-    speed = {}
+    speed, name_of = {}, {}
     for image in coco['images']:
         name = Path(image['file_name']).name
         if name in speed_by_name and int(image['id']) in truth:
             speed[int(image['id'])] = speed_by_name[name]
+            name_of[int(image['id'])] = Path(name).stem
     cuts = [quantile(speed.values(), q) for q in (.5, .8, .95)]
     strata = {'slow_half': lambda s: s <= cuts[0], 'q50_80': lambda s: cuts[0] < s <= cuts[1],
               'q80_95': lambda s: cuts[1] < s <= cuts[2], 'fastest_5': lambda s: s > cuts[2],
@@ -68,8 +69,16 @@ def main(argv=None) -> int:
         for name, inside in strata.items():
             ids = [k for k, s in speed.items() if inside(s)]
             row[name] = dict(miss_rate=sum(missed[k] for k in ids) / len(ids), frames=len(ids))
+        # per video, all speeds together: the unit for a paired bootstrap over operations
+        per_video = {}
+        for k in speed:
+            video = name_of[k].rsplit('_', 1)[0]
+            hit = per_video.setdefault(video, [0, 0])
+            hit[0] += int(missed[k])
+            hit[1] += 1
+        row['per_video'] = {v: dict(misses=a, frames=b) for v, (a, b) in per_video.items()}
         report['runs'][run.name] = row
-        print(run.name, {k: round(v['miss_rate'], 4) for k, v in row.items()}, flush=True)
+        print(run.name, {k: round(v['miss_rate'], 4) for k, v in row.items() if k != 'per_video'}, flush=True)
     args.out.write_text(json.dumps(report, indent=2), encoding='utf-8')
     return 0
 
