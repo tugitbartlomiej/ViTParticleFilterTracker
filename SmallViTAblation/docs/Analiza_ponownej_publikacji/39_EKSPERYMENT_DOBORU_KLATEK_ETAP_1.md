@@ -1,6 +1,6 @@
 # 39. Kontrolowany eksperyment doboru klatek: czy sygnał Koopmana i Langevina pomaga uczyć detektor
 
-Data: 2026-09-21. Status: **etap 1 policzony dla 8 z 9 ramion (24 z 27 biegów); K4 jeszcze biegnie. Wynik: brak przewagi sygnału Langevina; jedyny wyraźny efekt to strata przy klatkach po kolei.**
+Data: 2026-09-21. Status: **etap 1 zakończony (27 z 27 biegów, 0 błędów). Reszta Langevina (K1) nie pomaga; pokrycie przestrzeni wolnych modów Koopmana (K4) wyszło najlepiej i przekroczyło próg względem pokrycia wyglądu. Brama do etapu 2 spełniona przez K4, do zatwierdzenia przez autora.**
 Powiązania: plan [37](37_PLAN_EKSPERYMENTU_DIAGNOSTYKA_LATENTU_W_WIDZENIU.md) (ten dokument realizuje jego etap D
 w wersji pilotażowej i rozszerza o ramiona B0, K3, K4), pilot [38](38_KRYSTALIZACJA_PRZESTRZENI_STANOW_W_LATENCIE_DETEKTORA.md),
 uwagi recenzentów [04_REVIEWER_MAP](../04_REVIEWER_MAP.md).
@@ -117,7 +117,7 @@ na 11 940 klatkach walidacji z prędkością z torów GT (progi 4,6 / 9,3 / 19,7
 | K1_langevin | 0,6844 +- 0,0020 | 0,6468 +- 0,0042 | 0,6240 | 8, 8, 9 | 31,99 | 6,46 |
 | K2_no_history | 0,6859 +- 0,0038 | 0,6479 +- 0,0103 | 0,6243 | 7, 8, 9 | 31,21 | 6,23 |
 | K3_placebo | 0,6838 +- 0,0005 | 0,6472 +- 0,0048 | 0,6251 | 8, 8, 8 | 32,16 | **5,64** |
-| K4_koopman_cover | w toku | | | | | |
+| K4_koopman_cover | **0,6885** +- 0,0019 | 0,6510 | | 4, 6, 5 | **31,26** | **5,29** |
 
 Kontrasty względem progów zapisanych w sekcji 4 (AP z najlepszej epoki):
 
@@ -151,6 +151,48 @@ Co z tego wynika dla dalszej pracy: sygnał Koopmana i Langevina ma na dziś war
 położenie w wolnych modach, prędkość z filtru, grube ogony wymuszenia), nie selekcyjną. Miejsca, gdzie selekcja
 może jeszcze coś dać, to bardzo małe budżety (100 do 500 etykiet) i pula z wieloma narzędziami; oba wymagają
 osobnego zatwierdzenia i nie wynikają z tego etapu.
+
+## 5c. Uzupełnienie po zakończeniu K4 i diagnoza, dlaczego K1 nie pomógł (2026-09-21 wieczór)
+
+**K4.** Kontrast K4 - B3 = **+0,0068 AP** (próg +0,004): jedyny kontrast etapu 1 nad progiem. K4 ma też najmniej chybień
+w wolnej połowie klatek (5,29 procent wobec 6,2 do 7,0) i w najszybszych 20 procentach (15,61), a najlepszą epokę osiąga
+najwcześniej (4 do 6). Względem równego wyboru w czasie (B2, 0,6866 +- 0,0042) przewaga +0,0019 mieści się w szumie trzech
+ziaren. Zastrzeżenia: jedno ziarno wyboru, trzy ziarna treningu, najlepsze z dziewięciu ramion (klątwa zwycięzcy), brak
+kontroli wymiaru: K4 pokrywa przestrzeń 16 współrzędnych, więc zysk może pochodzić z samego NISKIEGO WYMIARU pokrycia,
+a nie z tego, że to współrzędne Koopmana. Rozstrzyga to dopiero pokrycie w 16 głównych kierunkach PCA i w 16 losowych
+rzutach tego samego latentu.
+
+**Dlaczego K1 nie pomógł: trzy pomiary na tym, co ramiona faktycznie wybrały** (`curated/selection_matrix_stage1/`,
+prędkość z torów GT puli train; progi 10,2 i 24,6 px na 3 klatki):
+
+| Ramię | udział klatek z najszybszej piątej części | mediana prędkości | klatki wejścia i wyjścia narzędzia | klatki, gdzie L0 jest niepewny | filmy |
+|---|---|---|---|---|---|
+| B1_random | 0,19 | 4,8 | 0,04 | 0,21 | 118 |
+| B2_uniform_time | 0,24 | 5,3 | 0,20 | 0,25 | 118 |
+| B3_coverage | 0,34 | 6,4 | 0,19 | 0,39 | 117 |
+| B4_uncertainty | 0,36 | 7,0 | 0,21 | 0,69 | 118 |
+| K1_langevin | **0,40** | **8,0** | 0,09 | 0,32 | 118 |
+| K2_no_history | 0,41 | 8,2 | 0,09 | 0,32 | 118 |
+| K3_placebo | 0,25 | 5,5 | 0,05 | 0,27 | 117 |
+| K4_koopman_cover | 0,25 | 5,3 | 0,09 | 0,24 | 116 |
+| B0_consecutive | 0,22 | 5,3 | 0,04 | 0,17 | **58** |
+
+1. **Sygnał zadziałał zgodnie z projektem.** K1 kupił dwa razy więcej klatek szybkiego ruchu niż losowanie (0,40 wobec 0,19).
+   Równanie nie jest więc „za słabe"; wybrało to, w co celowało.
+2. **Ale te klatki nie leczą błędu, w który celowały.** Dwa razy więcej przykładów szybkiego ruchu w treningu nie zmieniło
+   chybień w szybkim ruchu na walidacji (około 32 procent w każdym ramieniu). To samo z niepewnością: B4 kupił 69 procent
+   klatek, na których detektor L0 był niepewny, i nie zyskał nic. Błąd detektora w tych miejscach NIE jest błędem z braku
+   przykładów. W języku twierdzenia o rozkładzie błędu: duża reszta to tutaj część nieusuwalna etykietami, nie usuwalna.
+   Opóźnienia adnotacji w szybkim ruchu nie ma (przesunięcie predykcji wzdłuż ruchu: mediana -0,8 px); przy chybieniu
+   detektor jest pewny siebie (wynik 0,80 wobec 0,89 przy trafieniu), więc trafia w coś innego niż oznaczone narzędzie.
+3. **Liczy się liczba etykiet i rozrzut po operacjach, nie to, które klatki.** Krzywa z kampanii statycznej: 500 klatek 0,646,
+   1500 klatek 0,682, 2500 klatek 0,693. Dołożenie tysiąca DOWOLNYCH rozrzuconych klatek daje +0,036, a wybór między nimi
+   najwyżej +0,007. Ramię B0 pokryło 58 filmów zamiast 118 i straciło 0,017. Usuwalna część błędu leży w różnicach między
+   operacjami i jest rozłożona równo, nie siedzi w zdarzeniach dynamicznych.
+
+Wniosek: poprawianie równania Langevina albo głębszy autoenkoder Koopmana NIE zmieni wyniku K1, bo wąskim gardłem nie jest
+jakość sygnału, tylko to, że wskazane klatki nie mają usuwalnego błędu. Dynamika pomaga tam, gdzie opisuje STANY do
+pokrycia (K4), a nie ZASKOCZENIA do kupienia (K1).
 
 ## 6. Kontrargumenty
 
