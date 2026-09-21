@@ -116,6 +116,27 @@ Odczyt względem kryteriów z sekcji 4:
 
 Oś budżetu: między 500 a 2500 klatek prawie nic się nie zmienia (IoU 0,833 -> 0,847), zgodnie z kampanią statyczną.
 
+## 4b. Gdzie dobór klatek ma co poprawiać: jakość detektora według prędkości narzędzia
+
+Te same klatki walidacyjne (3458, 12 klipów), podział według prędkości środka ramki GT na krok 3 klatek.
+Udział chybień = ramka o IoU poniżej 0,5.
+
+| Wagi | wolne 50 procent | 50 do 80 | 80 do 95 | najszybsze 5 procent (powyżej 14 px na krok) |
+|---|---|---|---|---|
+| 500 klatek | 3,5 procent | 3,7 | 5,0 | 13,9 |
+| 1500 klatek | 4,5 | 4,1 | 6,0 | 13,3 |
+| 2500 klatek | 2,9 | 3,5 | 5,2 | 14,5 |
+
+Detektor chybia w szybkim ruchu cztery do pięciu razy częściej niż w wolnym, a pięć razy więcej zwykłych,
+równo rozłożonych klatek tego NIE naprawia. Średnie mAP tego nie widzi, bo szybkie klatki to 5 procent zbioru.
+Zastrzeżenie: część najszybszych klatek to skoki adnotacji i powrót narzędzia w kadr, więc nie całe 14 procent
+jest do odzyskania. Wniosek dla doboru: miarą sukcesu ma być udział chybień w najszybszych 5 i 20 procentach
+klatek, obok mAP. Wariant `langevin_surprise` kupuje właśnie takie klatki (28 razy częściej niż losowanie,
+dokument 36), warianty `veto` je odrzucają, więc test 12 biegów (zadanie Eden 1809135, `eden/run_langevin_selection.slurm`)
+rozstrzyga kierunek. Kryterium dopisane przed wynikiem: `langevin_surprise` obniża udział chybień w najszybszych
+5 procentach o co najmniej 3 punkty procentowe względem `uniform_time` na wszystkich trzech ziarnach, bez spadku mAP
+poniżej 0,6832 minus 0,004.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
