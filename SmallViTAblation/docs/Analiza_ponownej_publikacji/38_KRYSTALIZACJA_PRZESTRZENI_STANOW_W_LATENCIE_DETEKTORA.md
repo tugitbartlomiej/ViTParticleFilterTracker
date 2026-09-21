@@ -137,6 +137,57 @@ rozstrzyga kierunek. Kryterium dopisane przed wynikiem: `langevin_surprise` obni
 5 procentach o co najmniej 3 punkty procentowe względem `uniform_time` na wszystkich trzech ziarnach, bez spadku mAP
 poniżej 0,6832 minus 0,004.
 
+## 4c. Prędkość jako stan ukryty: okno czasu i filtr Langevina (2026-09-21)
+
+Kod: `latent_velocity.py`, `kalman_state.py`. Wyniki: `REPORT_velocity.json`, `REPORT_kalman_*.json`.
+Miarą informacji jest korelacja z nachyleniem prawdziwego toru (okno +-2 kroki, 1 procent skoków odcięty).
+
+**Okno czasu.** Nachylenie odczytu położenia z latentu `box_pool` po +-1, 2, 4, 8 krokach: korelacja 0,33 / 0,46 /
+0,57 / 0,62 (wagi 2500); z samych ramek detektora 0,55 / 0,68 / 0,79 / 0,87; na wagach COCO około 0,03. Prędkość
+JEST w ciągu latentów, ale dopiero na dłuższej podstawie czasu; różnica dwóch klatek tonie w szumie odczytu.
+
+**Filtr.** Model na oś obrazu: `p' = p + v`, `v' = f_v v + a`, `a' = f_a a + w`, `y = p + n`, czyli rozszerzone równanie
+Langevina z szumem pomiaru; przyspieszenie to kolorowe wymuszenie (ręka chirurga, której nie widać). Cztery liczby
+dopasowane największą wiarygodnością na INNYCH operacjach. Pierwsza, gaussowska wersja zawiodła (korelacja 0,10 do
+0,31, gorzej niż zwykła różnica): innowacje mają nadwyżkową kurtozę 18 do 65, więc dopasowanie uciekło w „brak
+bezwładności, szum 18 px". Wersja odporna (strata Hubera, obcięcie innowacji na 2,5 odchylenia, Masreliez):
+
+| Wagi | Źródło położenia | różnica +-2 (R2) | filtr przyczynowy (R2) | wygładzacz (R2) | szum odczytu |
+|---|---|---|---|---|---|
+| COCO | oba | 0,00 | 0,00 | 0,01 | 38 do 77 px |
+| 500 | latent `box_pool` | 0,37 (-2,89) | 0,17 (+0,01) | 0,42 (-0,61) | 12,0 px |
+| 500 | ramka detektora | 0,54 (-2,07) | 0,49 (+0,22) | 0,64 (-0,63) | 2,1 px |
+| 2500 | latent `box_pool` | 0,46 (-1,88) | 0,31 (+0,04) | 0,48 (-0,52) | 11,4 px |
+| 2500 | ramka detektora | 0,68 (-0,53) | 0,67 (+0,44) | 0,76 (+0,22) | 3,2 px |
+
+Odczyt: (1) filtr zamienia zaszumione położenie w użyteczną prędkość (R2 dodatnie tam, gdzie różnica ma ujemne);
+(2) jakość tej prędkości rośnie z uczeniem detektora (0,49 -> 0,67), więc nadaje się na miarę krystalizacji stanu;
+(3) latent przegrywa z własną ramką detektora, bo liniowy odczyt położenia z latentu ma błąd 11 px, a ramka 3 px;
+na tym etapie latent NIE wnosi o ruchu nic ponad ramkę; (4) innowacje nie są białe (korelacja 0,17 do 0,20) i mają
+bardzo grube ogony (kurtoza 25 i 132): wymuszenie przychodzi rzadkimi skokami, jak zakłada HAVOK (Brunton i in. 2017);
+(5) rozmiar innowacji wskazuje chybienia detektora z AUC 0,60 do 0,68, a pewność samego detektora z AUC 0,81 do 0,83,
+więc jako samodzielny wykrywacz błędów innowacja PRZEGRYWA z pewnością detektora.
+
+## 4d. Autoenkoder Koopmana: co literatura pozwala obiecać (przegląd 2026-09-21, Undermind plus Scite)
+
+- Lusch, Kutz, Brunton 2018 (10.1038/s41467-018-07210-0): bez ograniczeń sieć „did not converge to a unique and
+  interpretable solution". Dowolne odwracalne T daje równoważny model, więc osie „położenie, prędkość, przyspieszenie"
+  same się nie wyłonią; trzeba je wpisać w obserwable (stan jawnie w słowniku). Brunton i in. 2016
+  (10.1371/journal.pone.0150171): dokładne domknięcie ze stanem w słowniku istnieje tylko przy jednym punkcie stałym.
+- Proctor, Brunton, Kutz 2018 (10.1137/16M1062296): wymuszenie zewnętrzne „psuje" mody autonomicznego Koopmana;
+  przy nieznanym wejściu zostaje operator stochastyczny, czyli przewidywana jest wartość oczekiwana. Wanner i Mezić 2022
+  (10.1137/21m1414425): zwykły DMD jest obciążony przy zaszumionych obserwablach, a to nasz przypadek.
+- Becker i in. 2019, Recurrent Kalman Networks (arXiv 1905.07357): „impossible to obtain velocities from a single
+  image"; prędkość trafia do pamięciowej części latentu uzupełnianej filtrem. To samo robi tutaj `kalman_state.py`.
+- HAVOK, Brunton i in. 2017 (10.1038/s41467-017-00030-8) i Hirsh i in. 2021 (10.1098/rspa.2021.0097): model liniowy
+  w opóźnieniach plus rzadkie wymuszenie; współrzędne opóźnień to kolejne pochodne toru, czyli szukany stan.
+- Nie znaleziono pracy, która robi to na latencie zamrożonego detektora narzędzi chirurgicznych.
+
+Konstrukcja do zbudowania: pierwsze współrzędne to zamrożona liniowa głowica położenia, rozmiaru i osi; reszta to
+uczone obserwable na oknie opóźnień; macierz K blokowo-łańcuchowa; nieznane wejście szacowane z innowacji; pamięć
+Mori-Zwanziga dopiero na resztach po filtrze. **Próg do pobicia:** filtr z tej sekcji (korelacja 0,67, R2 0,44 na
+ramkach; 0,31 i 0,04 na latencie). Autoenkoder ma sens tylko wtedy, gdy z LATENTU wyciągnie więcej niż filtr z ramek.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest

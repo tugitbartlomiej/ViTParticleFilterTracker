@@ -1,0 +1,62 @@
+{
+  "latent": "SmallViTAblation\\results\\koopman_langevin_epochs\\latents_budget\\LATENT_ut_b0500_best.npz",
+  "reference_window": 2,
+  "sources": {
+    "latent box_pool": {
+      "velocity": {
+        "finite_difference_slope": {
+          "correlation": 0.37446980842479105,
+          "r2": -2.8895234576150575
+        },
+        "kalman_filtered_causal": {
+          "correlation": 0.1738188731385008,
+          "r2": 0.00951155831243855
+        },
+        "kalman_smoothed": {
+          "correlation": 0.41892415281741213,
+          "r2": -0.6050560483632552
+        }
+      },
+      "innovations": {
+        "lag1": 0.17604577222263068,
+        "excess_kurtosis": 25.181887253720088
+      },
+      "parameters": {
+        "f_v": 0.025212264938627705,
+        "f_a": 0.00044893095769899313,
+        "forcing_std": 9.01786384316426,
+        "observation_noise_std_px": 11.982903156089716
+      },
+      "auc_innovation_flags_miss": 0.67450293514535
+    },
+    "detector box": {
+      "velocity": {
+        "finite_difference_slope": {
+          "correlation": 0.5357390703494349,
+          "r2": -2.0695831313334607
+        },
+        "kalman_filtered_causal": {
+          "correlation": 0.4935589005630573,
+          "r2": 0.2248925646955382
+        },
+        "kalman_smoothed": {
+          "correlation": 0.6356935073529151,
+          "r2": -0.6293305994849214
+        }
+      },
+      "innovations": {
+        "lag1": 0.22687374127432536,
+        "excess_kurtosis": 68.27082877869863
+      },
+      "parameters": {
+        "f_v": 0.19170886935504808,
+        "f_a": 0.16023200107071373,
+        "forcing_std": 9.088489505739691,
+        "observation_noise_std_px": 2.1131586648191716
+      },
+      "auc_innovation_flags_miss": 0.6779595211290258
+    }
+  },
+  "miss_rate": 0.037462750106428265,
+  "auc_confidence_flags_miss": 0.8133167142455068
+}
