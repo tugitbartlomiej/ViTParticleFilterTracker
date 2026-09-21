@@ -1,0 +1,100 @@
+{
+  "budget": 1500,
+  "l0": 500,
+  "added": 1000,
+  "seed": 42,
+  "arms": {
+    "B0_consecutive": {
+      "file": "matrix_B0_consecutive_b1500_sel42.json",
+      "overlap_with_K1": 0.111,
+      "sha256": "fd855560d745b00d6cab15c27bc485776cbcfce9f1ff23473dc9f8137df0ef79"
+    },
+    "B1_random": {
+      "file": "matrix_B1_random_b1500_sel42.json",
+      "overlap_with_K1": 0.106,
+      "sha256": "1e6878886100f481abd1b55bcac95445e60fbda17c61350f49230720e6327902"
+    },
+    "B2_uniform_time": {
+      "file": "matrix_B2_uniform_time_b1500_sel42.json",
+      "overlap_with_K1": 0.095,
+      "sha256": "8782c1a4c72001ba8aca329e482120ce9872df313b2092a46f85aac4e0e5ad76"
+    },
+    "B3_coverage": {
+      "file": "matrix_B3_coverage_b1500_sel42.json",
+      "overlap_with_K1": 0.46,
+      "sha256": "2de9aba2a8a988763639c757cb8bf2ae9fe9253448084278e376712d4e04995d"
+    },
+    "K1_langevin": {
+      "file": "matrix_K1_langevin_b1500_sel42.json",
+      "overlap_with_K1": 1.0,
+      "sha256": "b0fd647848ee9eec18c55a22717765b32cf1237324a9d385f9ee7d3830adc0f3"
+    },
+    "K2_no_history": {
+      "file": "matrix_K2_no_history_b1500_sel42.json",
+      "overlap_with_K1": 0.835,
+      "sha256": "5f2b071cdc7168c8d4290b642207867c6c202c419cba40a1700963e754717ad7"
+    },
+    "K3_placebo": {
+      "file": "matrix_K3_placebo_b1500_sel42.json",
+      "overlap_with_K1": 0.256,
+      "sha256": "f05e818719e739a8f724f505c5c0bf582a6681200cb5a7e41ee2a3981739dbca"
+    },
+    "K4_koopman_cover": {
+      "file": "matrix_K4_koopman_cover_b1500_sel42.json",
+      "overlap_with_K1": 0.168,
+      "sha256": "9d72d9a73b29c1e326f9eb8bfae58312bbbddbfbf9ff48a089a276b49e48d636"
+    },
+    "B4_uncertainty": {
+      "file": "matrix_B4_uncertainty_b1500_sel42.json",
+      "overlap_with_K1": 0.328,
+      "sha256": "10516b3f24660b96c75cbdd3f6ad6eeaf1603bef8b7c774adacd47b19b883aac"
+    }
+  },
+  "pool_sha256": "10d84e513054b6287b3eb2a4864839fc5457942c9f636716b17aa9e2d709d91e",
+  "l0_sha256": "94d0234f57c6205ade54e6376d983af5e19fc80754093172ea294bcbbe7fa4cc",
+  "labels_used_for_ranking": false,
+  "langevin": {
+    "with_history": {
+      "windows": 54576,
+      "frames": 57073,
+      "dim": 24,
+      "skill_vs_no_movement": 18.385688769278396,
+      "ridge_alpha_per_fold": [
+        1.0,
+        0.1,
+        1.0
+      ],
+      "cross_fitted_by_group": true,
+      "labels_used": false
+    },
+    "no_history": {
+      "windows": 54576,
+      "frames": 57073,
+      "dim": 24,
+      "skill_vs_no_movement": 4.568449425324561,
+      "ridge_alpha_per_fold": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "cross_fitted_by_group": true,
+      "labels_used": false
+    }
+  },
+  "config": {
+    "pool": "/dev/shm/bpiotrowski_1809161_kl_stage1_pre/data/pool_manifest.jsonl",
+    "cache": "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-15_tracking_static36/cache/dinov2/d25c861cd1539f8e365cfcc48aec35266cc08b695826efc8cb69c275faa53e5d",
+    "initial_selection": "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-21_koopman_langevin/matrix_stage1/L0_tracking_uniform_time_b500_s42.json",
+    "uncertainty": "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-21_koopman_langevin/matrix_stage1/uncertainty_L0.json",
+    "budget": 1500,
+    "out": "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-21_koopman_langevin/matrix_stage1/variants",
+    "seed": 42,
+    "min_gap_frames": 5,
+    "max_gap_frames": 7.5,
+    "dim": 24,
+    "lags": 8,
+    "koopman_modes": 8,
+    "coverage_weight": 0.5,
+    "auxiliary_weight": 0.5
+  }
+}

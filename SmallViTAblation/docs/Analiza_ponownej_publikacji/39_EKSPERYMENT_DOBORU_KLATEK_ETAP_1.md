@@ -1,6 +1,6 @@
 # 39. Kontrolowany eksperyment doboru klatek: czy sygnał Koopmana i Langevina pomaga uczyć detektor
 
-Data: 2026-09-21. Status: **plan zatwierdzony przez autora 2026-09-21; etap 1 zgłoszony na Eden; wyników brak.**
+Data: 2026-09-21. Status: **etap 1 policzony dla 8 z 9 ramion (24 z 27 biegów); K4 jeszcze biegnie. Wynik: brak przewagi sygnału Langevina; jedyny wyraźny efekt to strata przy klatkach po kolei.**
 Powiązania: plan [37](37_PLAN_EKSPERYMENTU_DIAGNOSTYKA_LATENTU_W_WIDZENIU.md) (ten dokument realizuje jego etap D
 w wersji pilotażowej i rozszerza o ramiona B0, K3, K4), pilot [38](38_KRYSTALIZACJA_PRZESTRZENI_STANOW_W_LATENCIE_DETEKTORA.md),
 uwagi recenzentów [04_REVIEWER_MAP](../04_REVIEWER_MAP.md).
@@ -100,6 +100,57 @@ wybierają w 83 procentach TE SAME klatki: oba modele uznają za trudne te same 
 z góry małą moc** i prawie na pewno wyjdzie nierozstrzygający; zapisane przed wynikiem. Rozstrzygające pozostają
 K1 - B3, K1 - B4 i K1 - K3. Żeby zbadać historię uczciwie, etap 3 potrzebuje oceny, która RÓŻNI oba modele
 (na przykład zysk z historii na klatkę zamiast samej reszty).
+
+## 5b. Wynik etapu 1 (stan 2026-09-21 19:45, 24 z 27 biegów po 4 h 48 min; K4 w toku)
+
+Walidacja, 3 ziarna treningu na ramię, średnia +- odchylenie między ziarnami. Dowody:
+`evidence_selection_stage1_2026-09-21/`. Druga miara: `pipeline/koopman_langevin/misses_by_speed.py`
+na 11 940 klatkach walidacji z prędkością z torów GT (progi 4,6 / 9,3 / 19,7 px na 3 klatki).
+
+| Ramię | AP najlepsza epoka | AP ostatnia epoka | średnie AP epok 0-5 | najlepsza epoka | chybienia, najszybsze 5 procent | chybienia, wolna połowa |
+|---|---|---|---|---|---|---|
+| B0_consecutive | 0,6672 +- 0,0030 | 0,6500 +- 0,0031 | 0,6120 | 16, 16, 15 | 35,96 procent | 6,94 |
+| B1_random | 0,6822 +- 0,0011 | 0,6536 +- 0,0107 | 0,6251 | 6, 8, 8 | 33,00 | 6,18 |
+| B2_uniform_time | **0,6866** +- 0,0042 | 0,6484 +- 0,0020 | 0,6261 | 7, 7, 7 | 31,77 | 6,17 |
+| B3_coverage | 0,6817 +- 0,0013 | 0,6439 +- 0,0023 | 0,6246 | 6, 6, 7 | 32,21 | 7,03 |
+| B4_uncertainty | 0,6826 +- 0,0005 | 0,6438 +- 0,0028 | 0,6270 | 8, 6, 9 | 32,33 | 6,36 |
+| K1_langevin | 0,6844 +- 0,0020 | 0,6468 +- 0,0042 | 0,6240 | 8, 8, 9 | 31,99 | 6,46 |
+| K2_no_history | 0,6859 +- 0,0038 | 0,6479 +- 0,0103 | 0,6243 | 7, 8, 9 | 31,21 | 6,23 |
+| K3_placebo | 0,6838 +- 0,0005 | 0,6472 +- 0,0048 | 0,6251 | 8, 8, 8 | 32,16 | **5,64** |
+| K4_koopman_cover | w toku | | | | | |
+
+Kontrasty względem progów zapisanych w sekcji 4 (AP z najlepszej epoki):
+
+| Kontrast | Różnica | Próg | Werdykt |
+|---|---|---|---|
+| K1 - B3 | +0,0027 | +0,004 | poniżej progu |
+| K1 - B4 | +0,0018 | +0,004 | poniżej progu |
+| K1 - K2 | -0,0015 | +0,004 | brak (zapowiedziana mała moc, 83 procent wspólnych klatek) |
+| K1 - K3 (placebo) | +0,0006 | +0,004 | brak: przetasowany sygnał działa tak samo jak prawdziwy |
+| chybienia w najszybszych 5 procentach, K1 - B3 | -0,2 punktu | -3 punkty | brak |
+| każde - B0 | +0,015 do +0,019 AP; -3 do -5 punktów chybień w szybkim ruchu | | wyraźny efekt |
+
+Odczyt:
+
+1. **Teza „sygnał Langevina poprawia dobór klatek" nie znalazła potwierdzenia przy budżecie 1500 z puli 10 637.**
+   Żaden kontrast K1 nie przekroczył progu, a placebo dorównuje prawdziwemu sygnałowi, więc drobna przewaga nad B3
+   pochodzi z samego rozluźnienia pokrycia, nie z dynamiki. Brama do etapu 2 (którykolwiek kontrast K nad progiem
+   punktowo) NIE jest spełniona; rozstrzygnie ostatecznie K4.
+2. **Wszystkie rozsądne sposoby doboru mieszczą się w 0,005 AP**, przy rozrzucie między ziarnami 0,001 do 0,004.
+   Najprostszy równy wybór w czasie jest najlepszy lub równy najlepszym. Zgodne z kampanią statyczną i z Mittal 2025.
+3. **Jedyny wyraźny efekt: klatki po kolei są gorsze.** Tracą 0,015 do 0,019 AP, gubią narzędzie w szybkim ruchu
+   o 3 do 5 punktów częściej i uczą się dwa razy wolniej (najlepsza epoka 16 zamiast 7, niższe AP w epokach 0-5).
+   To odpowiada recenzentowi na pytanie, czy dobór w ogóle ma znaczenie: ma, ale wystarcza rozrzucenie klatek.
+4. Wynik z ostatniej epoki jest niższy o około 0,035 AP niż z najlepszej i ma większy rozrzut: 30 epok to przeuczenie
+   (dokument 38, sekcja 4f). Różnice między ramionami w ostatniej epoce są w całości w szumie.
+5. Szybki ruch pozostaje problemem każdego ramienia: około 32 procent chybień w najszybszych 5 procentach klatek
+   wobec 6 procent w wolnej połowie. Żaden dobór tego nie ruszył, więc to raczej granica modelu jednoklatkowego
+   (rozmycie, wejście narzędzia, błędy adnotacji) niż brak danych.
+
+Co z tego wynika dla dalszej pracy: sygnał Koopmana i Langevina ma na dziś wartość DIAGNOSTYCZNĄ (dokument 38:
+położenie w wolnych modach, prędkość z filtru, grube ogony wymuszenia), nie selekcyjną. Miejsca, gdzie selekcja
+może jeszcze coś dać, to bardzo małe budżety (100 do 500 etykiet) i pula z wieloma narzędziami; oba wymagają
+osobnego zatwierdzenia i nie wynikają z tego etapu.
 
 ## 6. Kontrargumenty
 
