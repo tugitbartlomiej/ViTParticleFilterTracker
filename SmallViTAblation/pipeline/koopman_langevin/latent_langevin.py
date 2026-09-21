@@ -41,9 +41,17 @@ import numpy as np
 from ..latent_dynamics.gle import _folds, _project, _ridge_fit_predict, _windows
 
 
-def _design(z: np.ndarray, windows: np.ndarray, rff_w: np.ndarray, rff_b: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Features known at frame t for the step to t+1. windows[:, -1] is the target frame."""
+def _design(z: np.ndarray, windows: np.ndarray, rff_w: np.ndarray, rff_b: np.ndarray,
+            history: bool = True) -> tuple[np.ndarray, np.ndarray]:
+    """Features known at frame t for the step to t+1. windows[:, -1] is the target frame.
+
+    history=False is the ablation arm: the current latent only, with the SAME number of random
+    nonlinear features, so that a gain of the full model cannot be credited to flexibility.
+    Velocity and acceleration already are history and are left out of that arm.
+    """
     cur = z[windows[:, -2]]
+    if not history:
+        return np.column_stack([cur, np.cos(cur @ rff_w[:cur.shape[1]] + rff_b)]), z[windows[:, -1]] - cur
     prev = z[windows[:, -3]]
     v = cur - prev
     a = v - (prev - z[windows[:, -4]]) if windows.shape[1] >= 4 else np.zeros_like(v)
@@ -71,7 +79,7 @@ class LatentLangevin:
 
     def __init__(self, rows: Sequence[dict], features: np.ndarray, *, seed: int = 42, dim: int = 24,
                  lags: int = 4, folds: int = 3, alpha: float | None = None, max_gap_frames: float = 8,
-                 max_fit_windows: int = 40000, neighbourhood_frames: float = 10):
+                 max_fit_windows: int = 40000, neighbourhood_frames: float = 10, history: bool = True):
         if any(r.get('split', 'train') != 'train' for r in rows):
             raise ValueError('latent dynamics may only consume the training pool')
         if lags < 3:
@@ -83,7 +91,7 @@ class LatentLangevin:
         rng = np.random.default_rng(seed)
         d = self.z.shape[1]
         self.x, y = _design(self.z, self.windows, rng.normal(size=(2 * d, 2 * d)) / np.sqrt(2 * d),
-                            rng.uniform(0, 2 * np.pi, size=2 * d))
+                            rng.uniform(0, 2 * np.pi, size=2 * d), history=history)
         self.scale = np.maximum(y.std(0), 1e-8)
         self.y = y / self.scale
         self.target = self.windows[:, -1]
