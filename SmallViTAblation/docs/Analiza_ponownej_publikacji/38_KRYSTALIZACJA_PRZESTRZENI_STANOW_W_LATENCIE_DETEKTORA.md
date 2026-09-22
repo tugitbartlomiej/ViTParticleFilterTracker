@@ -666,6 +666,45 @@ narzędzia. Kod na etap 2 należy budować z części rzeczywistej dodatniej plu
 rzeczywistej trzymać osobno jako współrzędne położenia. Dowód: `ktore_mody_nioso.py` oraz
 `rysunki_k5/REPORT_ksztalt_z_niezmiennikow.json`.
 
+## 4p. Trzy drogi do wektora tożsamości zmierzone jednym metrem (2026-09-22)
+
+Na życzenie autora wszystkie trzy sposoby liczone razem, każdy dostaje osiem liczb, wszędzie brana tylko CZĘŚĆ
+RZECZYWISTA współrzędnych i tylko mody o dodatniej części rzeczywistej (wartość po kroku wraca z tym samym znakiem).
+Miara: odczyt wydłużenia i wielkości prawdziwej ramki (stan narzędzia, im więcej tym lepiej), odczyt położenia
+w kadrze i udział zmienności między filmami (zanieczyszczenia, im mniej tym lepiej). Uczenie i ocena na różnych
+filmach, etykiety wyłącznie do oceny. Kontrolą jest osiem zwykłych składowych głównych tego samego opisu.
+
+Pula ucząca, 9 441 klatek, 118 filmów:
+
+| Metoda | Wydłużenie | Wielkość | Położenie (zanieczyszczenie) | Między filmami | Łącznie |
+|---|---|---|---|---|---|
+| A: przesunięcie narzędzia (tokeny, operator translacyjny) | 87,2 procent | 51,3 | **4,1** | 69 | 100,0 |
+| B: widmo czasu na wycinku (klatka po klatce) | 85,7 | 39,9 | 40,5 | 65 | 52,6 |
+| C: deep Koopman | 9,8 | 38,7 | 12,4 | 64 | 4,2 |
+| D: wszystkie trzy razem (24 liczby) | 89,3 | 62,1 | 46,5 | 67 | 71,2 |
+| kontrola: osiem składowych głównych | 88,0 | 51,8 | 7,7 | **54** | **104,9** |
+
+Zestaw gęsty (16 klipów) daje inne uszeregowanie: tam B wygrywa (wydłużenie 89,5 przy położeniu 3,4), a A ma
+73,0. Przy szesnastu filmach podział na uczenie i ocenę jest jednak zbyt słaby, żeby z tego wnioskować; liczy się
+wynik na puli.
+
+Odczyt:
+
+1. **Żadna z trzech dróg nie bije zwykłej analizy głównych składowych** tego samego opisu wycinka. Osiem
+   składowych daje 88,0 procent wydłużenia przy najmniejszym odcisku nagrania (54 procent). To jest wynik
+   negatywny dla całej rodziny i trzeba go zapisać.
+2. **Wśród dróg Koopmana najlepsza jest A, czyli przesunięcie narzędzia**: prawie nie niesie położenia
+   (4,1 procent), bo z konstrukcji paruje ten sam kawałek narzędzia w dwóch miejscach kadru.
+3. **B, czyli widmo klatka po klatce, przecieka położeniem** (40,5 procent): krok czasu miesza tożsamość
+   narzędzia z jego wędrówką po obrazie, dokładnie jak w sekcji 4m.
+4. **Deep Koopman jest najsłabszy** (9,8 procent) i nadal ma mody o module powyżej jedynki, czyli wielkości
+   rosnące z klatki na klatkę. Nie nadaje się tu do niczego bez dłuższych odcinków i wymuszenia.
+5. Sklejenie wszystkich trzech (D) poprawia tylko wydłużenie, a zanieczyszczenie położeniem rośnie do 46,5.
+
+Wniosek dla etapu 2: kod tożsamości budować metodą A (przesunięcie), z kontrolą ze składowych głównych jako
+ramieniem odniesienia. Bez tej kontroli każdy zysk z Koopmana byłby nie do obrony. Dowód:
+`evidence_koopman_langevin_2026-09-21/REPORT_porownanie_tozsamosci_pula.json` oraz `_gesty.json`.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
