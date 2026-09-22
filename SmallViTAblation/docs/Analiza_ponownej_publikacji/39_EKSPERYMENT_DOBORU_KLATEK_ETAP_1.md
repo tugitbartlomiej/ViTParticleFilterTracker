@@ -359,6 +359,15 @@ Sprawdzenie siatki i dopasowania tokenów (`sledzenie_czastek.py`, rysunki 05 i 
   szukany w kolejnych klatkach przez największe podobieństwo kosinusowe profilu, trafia w prawdziwą ramkę
   w 79 procentach na ośmiu klipach (97 procent na klipie z rysunku 05), przy 3 procentach dla losu. To odpowiednik
   śledzenia punktów na filmach DAVIS i pokazuje, że opis tokenu niesie tożsamość miejsca na narzędziu.
+- **Odniesienie do eksperymentów z niedźwiedziem w projekcie grantowym.** Tam istnieją oba opisy. W linii DAVIS
+  (`Research/DiagnosticTool/test/latki_lagrange.py`) cząstki zasiane na niedźwiedziu są niesione przepływem
+  optycznym i po 80 klatkach 76,3 procent wciąż leży na zwierzęciu (94,4 procent przy trackerze CoTracker3),
+  przy 7,0 procent dla kontroli z tła. Zysk dla dynamiki był jednak znikomy (R2 z 0,0762 na 0,0783), a na drugim
+  filmie (Wilford) przepływ optyczny przegrał z cząstką nieruchomą (ICC 0,722 wobec 0,947) i został zastąpiony
+  śledzeniem W PRZESTRZENI CECH: 40,8 procent cząstek zostaje na zwierzęciu przez cały odcinek, wobec 27,6 procent
+  dla przepływu optycznego (teza D104). Test z rysunku 05 jest odpowiednikiem tego zwycięskiego wariantu: token
+  szukany po podobieństwie cech trzyma się narzędzia w 79 procentach przy 3 procentach dla losu.
+
 - **Sama cząstka się jednak nie porusza.** W konwencji projektu grantowego (opis Eulera, T15a) cząstka to stałe
   miejsce siatki, przez które narzędzie przepływa (rysunek 06). Ruch wchodzi do analizy przez parowanie tokenów,
   a nie przez wędrującą cząstkę.
