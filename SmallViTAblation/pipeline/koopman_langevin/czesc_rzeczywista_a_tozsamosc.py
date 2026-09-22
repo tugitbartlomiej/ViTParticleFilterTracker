@@ -162,6 +162,8 @@ def main(argv=None) -> int:
         'trwale Re + obrotowe |c|': [(trw, 'Re'), (obr, '|c|')],
         'trwale Re + przemienne Re^2': [(trw, 'Re'), (prz, 'Re^2')],
         'trwale Re + obrotowe |c| + przemienne Re^2': [(trw, 'Re'), (obr, '|c|'), (prz, 'Re^2')],
+        'SAME CZESCI RZECZYWISTE (trzy rodziny)': [(trw, 'Re'), (obr, 'Re'), (prz, 'Re')],
+        'same czesci urojone (tylko obrotowe)': [(obr, 'Im')],
         'trwale Re + obrotowe Re i Im': [(trw, 'Re'), (obr, 'Re i Im')],
         'trwale Re + obrotowe Re i Im + przemienne Re^2': [(trw, 'Re'), (obr, 'Re i Im'), (prz, 'Re^2')],
         'wszystko liniowo (jak dotad)': [(trw, 'Re'), (obr, 'Re i Im'), (prz, 'Re')],

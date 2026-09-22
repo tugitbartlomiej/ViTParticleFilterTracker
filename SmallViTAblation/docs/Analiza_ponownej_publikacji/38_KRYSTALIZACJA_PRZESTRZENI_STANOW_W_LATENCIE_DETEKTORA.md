@@ -595,6 +595,8 @@ Zestawy przy RÓWNEJ liczbie kolumn (żeby przewaga nie brała się z liczby cec
 |---|---|---|---|
 | same trwałe Re | 5 | 0,825 | 69,1 procent |
 | trwałe Re + obrotowe moduł | 10 | 0,879 | 68,3 |
+| **same części rzeczywiste, trzy rodziny** | 15 | **0,887** | **78,3** |
+| same części urojone (tylko obrotowe) | 5 | 0,650 | -17,2 |
 | trwałe Re + obrotowe Re i Im | 15 | 0,886 | 73,7 |
 | trwałe Re + obrotowe moduł + przemienne kwadrat | 15 | 0,882 | 66,7 |
 | trwałe Re + obrotowe Re i Im + przemienne kwadrat | 20 | 0,893 | 73,1 |
@@ -617,8 +619,18 @@ Odczyt:
    do oczekiwania. To kolejny argument, że te pary nie są prawdziwym obrotem: kąt jest znikomy (okres około 256
    przesunięć, sekcja 4k), więc parowanie jest raczej numeryczne niż fizyczne.
 
-Wniosek praktyczny dla kodu tożsamości: zostawić postać liniową ze wszystkimi trzema rodzinami (20 liczb), a nie
-przechodzić na moduły. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_czesc_rzeczywista.json`.
+6. **Same części rzeczywiste trzech rodzin (15 liczb) prawie dorównują pełnemu zestawowi (20 liczb):** 0,887 wobec
+   0,902 przy odróżnieniu i 78,3 wobec 79,3 procent przy wydłużeniu. Część urojona dokłada więc niewiele i tylko
+   jako dodatek; sama w sobie jest słaba (0,650 i odczyt wydłużenia poniżej zera). Na jedną liczbę kodu części
+   rzeczywiste są wyraźnie wydajniejsze, więc hipoteza autora broni się w wersji praktycznej.
+
+Uwaga o słowie „tożsamość" w tej sekcji: mierzone jest odróżnienie tokenu leżącego na narzędziu od tokenu tła oraz
+odczyt kształtu ramki. W tym podzbiorze jest jedna klasa narzędzia, więc tożsamości w sensie „które to narzędzie"
+nie da się tu zmierzyć wcale.
+
+Wniosek praktyczny dla kodu tożsamości: zostawić postać liniową ze wszystkimi trzema rodzinami (20 liczb), a jeśli
+zależy na krótkim kodzie, wziąć same części rzeczywiste (15 liczb) kosztem 0,015 na odróżnieniu; nie przechodzić
+na moduły. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_czesc_rzeczywista.json`.
 
 ## 5. Kontrargumenty
 
