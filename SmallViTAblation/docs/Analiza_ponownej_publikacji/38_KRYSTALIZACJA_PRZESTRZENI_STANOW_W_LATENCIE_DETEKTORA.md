@@ -521,8 +521,24 @@ klatkami jest tu większy i sam bezwład nie wystarcza. Pierwsze dwa kierunki na
 (44 procent), czego wersja translacyjna z definicji nie robi. To znaczy, że opis wycinka klatka po klatce miesza
 tożsamość narzędzia z jego ruchem po kadrze, a operator translacyjny je rozdziela.
 
-Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_niezmiennik_czasowy_gesty.json` oraz
-`REPORT_niezmiennik_czasowy_pula.json`.
+Wybór siatki wycinka sprawdzony, nie przyjęty (pula, te same 1 809 par; pytanie autora, czemu 3 na 3, skoro
+w ramce mieści się około 25 tokenów):
+
+| Siatka | Najtrwalszy mod | Podłoga (czas potasowany) | Wydłużenie | Położenie w kadrze | Kosinusy z translacyjnymi (pierwsze dwa) |
+|---|---|---|---|---|---|
+| 2 na 2 | 0,961 | 0,817 | 85,9 procent | 37,3 | 0,90 i 0,87 |
+| 3 na 3 | 0,964 | 0,841 | 85,7 | 44,0 | 0,92 i 0,84 |
+| 4 na 4 | 0,965 | 0,845 | 86,1 | 43,0 | 0,91 i 0,84 |
+| 5 na 5 | 0,965 | 0,840 | 85,6 | 29,4 | 0,89 i 0,77 |
+
+Gęstsza siatka nic nie dokłada: od 2 na 2 do 5 na 5 najtrwalszy mod zmienia się o 0,004, a wydłużenie o pół punktu.
+Powód jest prosty: ramka narzędzia mieści średnio około 25 tokenów, więc przy 5 na 5 na komórkę przypada jeden
+token i opis zaczyna kopiować szum pojedynczego kwadratu (udział wariancji w 48 wymiarach spada z 91 do 75 procent,
+a zgodność z modami translacyjnymi maleje). Przy 3 na 3 na komórkę przypada blisko trzy tokeny, co uśrednia szum,
+nie gubiąc układu narzędzia wzdłuż ramki. Do etapu 2 zostaje 3 na 3, z 4 na 4 jako kontrolą.
+
+Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_niezmiennik_czasowy_gesty.json`,
+`REPORT_niezmiennik_czasowy_pula.json` oraz warianty `_c2`, `_c4`, `_c5`.
 
 ## 5. Kontrargumenty
 
