@@ -348,6 +348,24 @@ skrajne klatki), nie k-centrum w sensie odległości. Wynik K4 (0,6885) stoi, bo
 kodem, ale jego nazwa „pokrycie" jest na wyrost; kontrola K4 z k-centrum euklidesowym wchodzi do etapu 2. B3 tej wady
 nie ma (cechy DINOv2 w pamięci podręcznej są jednostkowe). K5 używa własnego k-centrum euklidesowego (`kcentre`).
 
+Co naprawdę niosą te osiem liczb (`co_niesie_kod.py`, etykiety użyte WYŁĄCZNIE do oceny, predykcja grzbietowa
+z podziałem po filmach, więc model nie może wygrać rozpoznaniem filmu; 9 142 klatki, 117 filmów):
+
+| Wielkość przewidywana z kodu | Wyjaśniona zmienność z kodu | To samo z geometrii ramki |
+|---|---|---|
+| proporcja ramki prawdziwej (im bardziej wydłużona, tym bardziej narzędzie leży w płaszczyźnie kadru) | 85,8 procent | 3,0 |
+| pole ramki prawdziwej (jak blisko/duże jest narzędzie) | 29,0 | 0,0 |
+| zwrot: końcówka względem środka ramki, poziomo | 0,1 | 2,5 |
+| zwrot: końcówka względem środka ramki, pionowo | 0,3 | 0,9 |
+| położenie narzędzia w kadrze, poziomo | 10,0 | 100 |
+| położenie narzędzia w kadrze, pionowo | 18,5 | 100 |
+
+Udział zmienności kodu MIĘDZY filmami: 58 procent. Kod niesie więc przede wszystkim wygląd geometryczny narzędzia
+(wydłużenie, czyli nachylenie względem płaszczyzny obrazu, oraz skalę) plus tożsamość operacji; nie niesie zwrotu
+(gdzie jest końcówka) ani, w znacznym stopniu, położenia. Wcześniejsze sformułowanie „otwarte czy zamknięte" jest
+nieuprawnione: w tym podzbiorze jest tylko jedna klasa narzędzia (cystotome, 22 680 klatek) i nie ma etykiety stanu
+narzędzia, więc takiej hipotezy nie da się tu sprawdzić.
+
 Czego to nie dowodzi: ani jednego treningu nie było. Lepsze pokrycie kodu tożsamości nie musi przekładać się na AP;
 etap 1 pokazał, że pokrycie wyglądu (B3) nie pobiło równomiernego czasu. Wartość K5 to czysty test hipotezy „stany
 tożsamości narzędzia widziane przez samą sieć są właściwą jednostką doboru", którego etap 1 nie zawierał.
