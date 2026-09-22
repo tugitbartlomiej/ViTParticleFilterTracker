@@ -279,6 +279,43 @@ z wymiarem; model nieliniowy trzyma 21 procent niezależnie od wymiaru, a tor fi
 Autoenkoder Koopmana (podniesienie uczone) miałby do domknięcia lukę 4 do 5 punktów przy małym wymiarze i całą
 przy dużym; sufit jest fizyczny (ręka chirurga), nie słownikowy. Sam autoenkoder nie został jeszcze uczony.
 
+## 4h. Człony z teorii sterowania: co literatura pozwala dopisać do równania (przegląd 2026-09-22, Undermind plus Scite)
+
+Pytanie autora: wymuszenie to ruch kamery (tak w testach DiagnosticTool, gdzie kamera OU jest sterowana i znana co
+do liczby); w chirurgii kamera mikroskopu stoi, a wejściem jest ręka chirurga, nieobserwowane sterowanie. Co jeszcze
+z teorii sterowania pasuje do równania i do doboru danych?
+
+| Wątek | Prace (zweryfikowane w Scite, bez not redakcyjnych) | Wniosek |
+|---|---|---|
+| Koopman z wejściem | Proctor, Brunton, Kutz 2018 (10.1137/16M1062296); Korda, Mezić 2018 (10.1016/j.automatica.2018.03.046); Iacob, Tóth, Schoukens 2022 (arXiv 2207.12132); Bruder i in. 2021 (10.1109/LRA.2021.3068117); Shang i in. 2026 (arXiv 2602.14537) | Dokładne podniesienie daje stałe `A`, ale macierz wejścia `B(z, u)` zależną od stanu: właściwy człon jest BILINIOWY `sum_i u_i N_i z`, nie `W u`. Przy nieobserwowanym `u` identyfikowalny jest tylko iloczyn `B u`, więc bez pomiaru `u` człon wymuszenia zlewa się z resztą. |
+| Wymuszenie nieznane | HAVOK, Brunton i in. 2017 (10.1038/s41467-017-00030-8); Dylewsky i in. 2022 (10.1103/physreve.105.015312); Yu, Chakravorty 2015 (10.1016/j.automatica.2015.10.013); Abooshahab i in. 2022 (10.1016/j.automatica.2021.110017) | Dwie drogi: wymuszenie jako reszta modelu opóźnieniowego (HAVOK) albo nieznane wejście jako proces AR w stanie rozszerzonym `[z; u]` z warunkiem rangi `CB`. |
+| Obserwowalność | Yeung, Liu, Hodas 2018 (10.23919/ACC.2018.8431738); Mesbahi i in. 2020 (10.1016/j.automatica.2020.109353); Park, Hwang 2024 (10.1109/CDC56724.2024.10886269) | Gramian obserwowalności Koopmana `W_o = sum_k (A^k)^T C^T C A^k` mówi, które kierunki stanu podniesionego widzi wyjście; u nas wyjściem `y = C z` jest głowa detektora. Kierunki o małej wartości własnej `W_o` to te, które latent zmienia, a detekcja nie widzi. Symetrie dynamiki dają kierunki nieobserwowalne. |
+| Projekt eksperymentu | Abraham, Murphey 2019 (10.1109/TRO.2019.2923880); Ott, Kochenderfer, Boyd 2024 (arXiv 2409.13088); Wu 2026 (arXiv 2605.09545, 2605.17966); Shang, Cortés, Zheng 2024 (10.1109/LCSYS.2024.3522594) | Informacja Fishera o operatorze, T- i D-optymalność, certyfikaty jakości danych (pokrycie stanu, niedegeneracja cech, widmo regresji), trwałe pobudzenie dla układu podniesionego. Nikt tego nie zrobił dla wideo ani reprezentacji sieci. Ostrzeżenie Wu: wynik zadania końcowego nie jest monotoniczny w żadnym certyfikacie; You i in. 2026 (arXiv 2607.10362): błąd jednokrokowy operatora nie mierzy użyteczności modelu latentnego. |
+| Rzadkie szarpnięcia ręki | Gollee i in. 2017 (10.1113/JP274288); Susilaradeya i in. 2019 (10.7554/eLife.40145); Navas, Stark 1968; Chen, Zhou, Gao 2023 (10.1016/j.dsp.2023.104003) | Ręka steruje PRZERYWANIE: otwarta pętla plus korekty wyzwalane progiem błędu, z refrakcją 200 do 500 ms, submovements 2 do 3 na sekundę. To tłumaczy kurtozę innowacji 25 do 132 z sekcji 4c. Estymator: odporny filtr wielomodelowy ze Studentem-t (IMM), HAVOK. Zastrzeżenie: chirurg reaguje na to, co widzi, więc identyfikacja w pętli jest obciążona (Ljung, Forssell 1999, 10.1109/9.802946). |
+| Dane jako sterowanie | Lessard, Zhang, Zhu 2018 (arXiv 1810.06175); E, Han, Li 2018 (10.1007/s40687-018-0172-y) | „Dobierz przykłady, żeby stan uczącego przeszedł z A do B najmniejszym kosztem" istnieje dosłownie (sequential machine teaching, zasada Pontriagina), ale rozwiązane tylko dla uczącego gradientowego z kwadratową stratą i znanym celem. Dla detektora cel jest nieznany, więc kryterium degeneruje do przyrostu informacji. |
+
+Człony do dopisania (postać, identyfikacja, kontrola):
+
+1. **Człon biliniowy** `sum_i u_{t,i} N_i z_t` zamiast `W u_t`; `u_t` musi być choć częściowo zmierzone, naturalne pełnomocnictwo to
+   przemieszczenie końcówki narzędzia z samego detektora. Kontrola: permutacja `u_t` w czasie musi wyzerować `N_i`.
+2. **Człon skokowy** `sum_k a_k 1[t = tau_k]` z wyzwalaniem progowym i refrakcją; identyfikacja przez odporny IMM,
+   histogram odstępów między zdarzeniami. Kontrola: surogat gaussowski o tej samej wariancji nie odtworzy kurtozy.
+   To jest obrazowy odpowiednik członu zdarzeń `Z` z równania grantowego (dokument `tft_langevin_czlon_zdarzen`).
+3. **Stan rozszerzony** `[z; u]`, `u_{t+1} = Phi u_t + w_t`; warunek rangi `CB`, `B` z członu 1, inaczej błędne koło.
+4. **Sprzężenie zwrotne** `u_t = -K (z_t - z_ref) + w_t`; identyfikacja metodą pośrednią z instrumentem zewnętrznym
+   (faza operacji). Kontrola: korelacja krzyżowa reszt z ich przeszłością znika po dodaniu członu.
+
+Nowe kryterium doboru klatek z teorii sterowania: **D-optymalne (dźwignia)**. Dla regresji operatora kowariancja
+estymaty jest proporcjonalna do `(Psi_S Psi_S^T + lambda I)^-1`, więc klatka o największej dźwigni
+
+    s_t = psi_t^T (Psi_S Psi_S^T + lambda I)^-1 psi_t
+
+najbardziej zmniejsza niepewność operatora; zachłannie `argmax s_t` to maksymalizacja `log det`. Wybiera klatki
+z RZADKO odwiedzanych rejonów przestrzeni trajektorii, nie klatki z dużą resztą. Test bez treningu (zapisany przed
+wynikiem): przy równym budżecie ślad kowariancji operatora ma spadać monotonicznie dla doboru D-optymalnego, a nie
+dla resztowego; błąd jednokrokowy poza grupami nie może rosnąć. Kod: `pipeline/koopman_langevin/leverage_selection.py`.
+Czy pomaga DETEKTOROWI, rozstrzygnie dopiero ramię treningowe etapu 2.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
