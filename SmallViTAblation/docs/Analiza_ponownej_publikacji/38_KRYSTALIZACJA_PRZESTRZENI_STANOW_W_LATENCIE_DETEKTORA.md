@@ -382,6 +382,36 @@ Odczyt:
 5. Rejestry (T6a): brak miejsc siatki z anomalnym promieniem (promień stały), więc test rejestrów wymaga normy
    pre-LN wprost, której ten rejestrator nie zapisuje; do zrobienia.
 
+## 4j. Z latentu do klatek: dekodowanie niezmienników i wyszukiwanie „dobrze domkniętych" klatek (2026-09-22)
+
+Pomysł autora: znaleźć klatki, które poprawnie zakodowały niezmienniki Koopmana, zdekodować z latentu cechy obrazu
+potrzebne do domknięcia tożsamości narzędzia i szukać podobnych klatek w zbiorze uczącym. Kod:
+`pipeline/koopman_langevin/invariant_decode.py`; wynik `REPORT_decode_b2500.json`, rysunki `dekodowanie_b2500_*.png`.
+
+**Kod tożsamości i domknięcie.** Na cząstkach-patchach detektora (2500 klatek) osiem wolnych modów operatora
+translacyjnego to kod tożsamości. Każda klatka dostaje średni kod swoich patchy narzędzia (z własnej ramki, bez etykiet),
+prototyp = średni kod klatek pewnych z klipów treningowych, domknięcie = odległość kodu klatki od prototypu.
+Zmierzone na walidacji (etykiety tylko do oceny): domknięcie wskazuje chybienia detektora z AUC 0,625, pewność
+detektora 0,810; na małym detektorze (500 klatek) domknięcie wskazuje błąd USUWALNY z AUC 0,533 (los), pewność 0,899.
+Osiem najlepiej domkniętych klatek walidacji ma IoU 0,87 do 0,93, osiem najgorzej 0,72 do 0,92: domknięcie porządkuje
+klatki według KLIPU i sceny (ostre narzędzie na niebieskiej tęczówce kontra rozmyte przy brzegu), nie według tego,
+czego sieci brakuje.
+
+**Dekodowanie do pikseli.** Liniowy dekoder z pełnego profilu tokenu (384 liczby) do jego 16 x 16 x 3 pikseli, dopasowany
+na klipach treningowych, oceniony na walidacyjnych: R2 0,54 na wszystkich patchach, ale UJEMNE na patchach narzędzia
+(-0,69): liniowo odtwarza się tło (tęczówka, kolor), narzędzia nie. Ten sam dekoder na tokenie rzutowanym na osiem
+wolnych modów daje R2 0,09, na osiem szybkich 0,09, na osiem głównych kierunków PCA 0,26. Rysunek
+`dekodowanie_b2500_klatka.png` (oryginał, pełny latent, wolne, szybkie, PCA): z niezmienników nie da się liniowo
+odczytać wyglądu, zostaje jednolita plama z ledwie widoczną tęczówką. Kod tożsamości nie jest więc cechą obrazu,
+którą dałoby się „odszumić" i wyszukać po wyglądzie; to kod semantyczny, do którego z pikseli prowadzi tylko cała sieć.
+
+Wniosek: „proces odwrotny do enkodera" w wersji liniowej nie działa dla narzędzia; wersja nieliniowa to osobny
+trenowany dekoder (jak `DEKODER` w DiagnosticTool dla V-JEPA), który pokaże, co sieć wierzy, ale nie da kryterium
+wyboru klatek innego niż podobieństwo w samym latencie. Żywotna postać pomysłu: wyszukiwać klatki podobne w KODZIE
+TOŻSAMOŚCI (nie w pikselach) i pokrywać ten kod w puli, czyli ramię „pokrycie kodu tożsamości narzędzia" liczone
+na tokenach narzędzia z aktualnego detektora, a nie na odcisku sceny jak K4. To wymaga tokenów detektora L0 na
+puli 10 637 klatek (zadanie Eden) i ramienia treningowego etapu 2 (zatwierdzenie autora).
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest

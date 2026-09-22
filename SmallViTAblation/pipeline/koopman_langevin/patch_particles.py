@@ -48,7 +48,9 @@ def find_windowed_backbone(net):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--package', type=Path, required=True)
+    ap.add_argument('--package', type=Path, help='dir with frames/<clip>/<n>.jpg and tracks.json (dense clips)')
+    ap.add_argument('--frame-list', type=Path, help='JSONL with frame_id and path (relative to --data-root): sparse pool frames')
+    ap.add_argument('--data-root', type=Path)
     ap.add_argument('--checkpoint', help='weights file; omit for the COCO weights the training started from')
     ap.add_argument('--tag', required=True)
     ap.add_argument('--out', type=Path, required=True)
@@ -84,9 +86,14 @@ def main(argv=None) -> int:
     net.register_forward_hook(lambda m, i, o: captured.__setitem__('out', o))
     net.class_embed.register_forward_pre_hook(lambda m, i: captured.__setitem__('hs', i[0]))
 
-    tracks = json.loads((args.package / 'tracks.json').read_text(encoding='utf-8'))
-    frames = [(clip, n, args.package / 'frames' / clip / f'{n:08d}.jpg') for clip, t in tracks.items() for n in t['frame']]
-    stride = int(next(iter(tracks.values()))['stride'])
+    if args.package:
+        tracks = json.loads((args.package / 'tracks.json').read_text(encoding='utf-8'))
+        frames = [(clip, n, args.package / 'frames' / clip / f'{n:08d}.jpg') for clip, t in tracks.items() for n in t['frame']]
+        stride = int(next(iter(tracks.values()))['stride'])
+    else:
+        rows = [json.loads(l) for l in args.frame_list.open(encoding='utf-8') if l.strip()]
+        frames = [(r['frame_id'].split('/')[-2], int(r['frame_id'].split('/')[-1]), args.data_root / r['path']) for r in rows]
+        stride = 0                                                # sparse pool: no constant step
 
     def encode(files):
         images = [Image.open(f).convert('RGB') for f in files]
