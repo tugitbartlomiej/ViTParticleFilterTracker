@@ -570,6 +570,56 @@ Wniosek: do etapu 2 zostaje operator liniowy (translacyjny plus czasowy). Deep K
 liczone na dłuższych odcinkach albo z wymuszeniem (ruch kamery jako wejście), bo tam liniowy model faktycznie
 ma czego nie umieć. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_deep_koopman_gesty.json`.
 
+## 4m. Czy tożsamość siedzi w części rzeczywistej modów (hipoteza autora, sprawdzona 2026-09-22)
+
+Pytanie autora: „tożsamość powinna być zakodowana w części rzeczywistej modów Koopmana". Sprawdzone wprost
+(`czesc_rzeczywista_a_tozsamosc.py`): dla każdej rodziny modów operatora translacyjnego liczone są osobno część
+rzeczywista, część urojona, moduł pary i kwadrat. Miary: odróżnienie tokenu narzędzia od tokenu tła (uczenie i ocena
+na różnych filmach, prawdziwe ramki tylko do oceny), przeżycie przesunięcia i odczyt wydłużenia ramki.
+Po pięć modów z rodziny, 34 165 par, nagranie L0 na 16 gęstych klipach.
+
+| Rodzina | Postać | Odróżnienie (AUC) | Przeżycie | Wydłużenie |
+|---|---|---|---|---|
+| trwałe (Re większe od zera) | Re | **0,825** | 0,65 | 69,1 procent |
+| trwałe | Re do kwadratu | 0,502 | 0,47 | 44,9 |
+| przemienne (Re mniejsze od zera) | Re | 0,686 | -0,09 | -16,3 |
+| przemienne | Re do kwadratu | **0,723** | 0,03 | -38,2 |
+| obrotowe (Im różne od zera) | Re | 0,809 | 0,20 | -15,7 |
+| obrotowe | Im | **0,650** | 0,20 | -17,2 |
+| obrotowe | moduł pary | **0,844** | 0,14 | -24,0 |
+| obrotowe | Re i Im razem | 0,794 | 0,20 | -14,0 |
+
+Zestawy przy RÓWNEJ liczbie kolumn (żeby przewaga nie brała się z liczby cech):
+
+| Zestaw | Kolumn | Odróżnienie | Wydłużenie |
+|---|---|---|---|
+| same trwałe Re | 5 | 0,825 | 69,1 procent |
+| trwałe Re + obrotowe moduł | 10 | 0,879 | 68,3 |
+| trwałe Re + obrotowe Re i Im | 15 | 0,886 | 73,7 |
+| trwałe Re + obrotowe moduł + przemienne kwadrat | 15 | 0,882 | 66,7 |
+| trwałe Re + obrotowe Re i Im + przemienne kwadrat | 20 | 0,893 | 73,1 |
+| wszystko liniowo, jak dotąd | 20 | **0,902** | **79,3** |
+
+Odczyt:
+
+1. **Hipoteza autora potwierdzona w kierunku, ale nie jako reguła wyłączna.** W rodzinie obrotowej część rzeczywista
+   niesie wyraźnie więcej tożsamości niż urojona (0,809 wobec 0,650). Sama część urojona nie jest jednak szumem:
+   dołożona do części rzeczywistej podnosi odczyt wydłużenia z 68,3 na 73,7 procent.
+2. **Najwięcej tożsamości w tej rodzinie niesie moduł pary** (0,844), czyli długość wektora złożonego z obu części.
+   To zgadza się z rachunkiem: dla pary obrotowej niezmiennikiem przesunięcia jest dopiero długość, nie współrzędna.
+3. **Ale przewidywanie z dokumentu 42, że postaci kwadratowe pobiją liniowe, jest OBALONE przy równej liczbie kolumn**
+   (0,893 wobec 0,902; wydłużenie 73,1 wobec 79,3). Powód: ścisła niezmienniczość nie jest tym, czego potrzebuje
+   odczyt. Faza, czyli część urojona, niesie informację związaną z pozą, a moduł ją wyrzuca. Dla doboru klatek liczy
+   się użyteczność cechy, nie jej formalna niezmienniczość.
+4. **Wyjątkiem jest rodzina przemienna**, gdzie kwadrat faktycznie bije wartość surową (0,723 wobec 0,686), zgodnie
+   z rachunkiem: wartość zmienia znak po kroku, więc niezmiennikiem jest kwadrat.
+5. **Moduł pary obrotowej przeżywa przesunięcie GORZEJ niż jej część rzeczywista** (0,14 wobec 0,20), co jest odwrotne
+   do oczekiwania. To kolejny argument, że te pary nie są prawdziwym obrotem: kąt jest znikomy (okres około 256
+   przesunięć, sekcja 4k), więc parowanie jest raczej numeryczne niż fizyczne.
+
+Wniosek praktyczny dla kodu tożsamości: zostawić postać liniową ze wszystkimi trzema rodzinami (20 liczb), a nie
+przechodzić na moduły. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_czesc_rzeczywista.json`.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest

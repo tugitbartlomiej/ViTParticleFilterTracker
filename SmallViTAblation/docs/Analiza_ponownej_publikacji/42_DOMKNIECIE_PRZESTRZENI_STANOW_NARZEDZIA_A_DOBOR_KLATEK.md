@@ -260,8 +260,12 @@ Każde z poniższych jest bez etykiet ręcznych i bez treningu detektora. Kolejn
 1. **Moment pierwszy odzyskuje zwrot narzędzia.** Po dołożeniu `kod₁` z sekcji 4 odczyt zwrotu końcówki wzrośnie
    z zera do co najmniej kilkunastu procent, a odczyt wydłużenia nie spadnie. Obalenie: zwrot dalej na poziomie zera,
    co znaczyłoby, że latent naprawdę go nie niesie.
-2. **Niezmienniki kwadratowe biją liniowe.** Użycie kwadratu wartości dla rodziny przemiennej i sumy kwadratów pary
-   dla obrotowej podniesie odróżnienie narzędzia od tła ponad 0,893. Obalenie: bez zmiany albo gorzej.
+2. ~~**Niezmienniki kwadratowe biją liniowe.**~~ **SPRAWDZONE I OBALONE tego samego dnia** (dokument 38, sekcja 4m):
+   przy równej liczbie kolumn postać kwadratowa daje 0,893 wobec 0,902 dla liniowej, a odczyt wydłużenia spada z 79,3
+   do 73,1 procent. Utrzymuje się tylko cząstkowo: w rodzinie przemiennej kwadrat bije wartość surową (0,723 wobec
+   0,686), a w rodzinie obrotowej moduł pary jest najlepszą pojedynczą postacią (0,844 wobec 0,809 dla samej części
+   rzeczywistej). Poprawka do rozumowania z sekcji 2: odczyt nie potrzebuje ścisłej niezmienniczości, tylko cechy
+   użytecznej, a moduł wyrzuca fazę niosącą pozę.
 3. **Miękka maska usuwa fałszywą zmienność.** Ważenie tokenów podobieństwem do wzorca zmniejszy udział zmienności
    między filmami poniżej 58 procent. Obalenie: udział nie drgnie, co znaczyłoby, że to nie tło, tylko kamera.
 4. **Deficyt pamięci policzony na współrzędnych niezmienniczych jest większy niż na surowym latencie.** Bo z tych
