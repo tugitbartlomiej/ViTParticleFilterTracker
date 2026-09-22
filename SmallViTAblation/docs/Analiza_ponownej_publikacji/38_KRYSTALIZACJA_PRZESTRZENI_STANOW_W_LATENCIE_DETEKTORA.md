@@ -705,6 +705,54 @@ Wniosek dla etapu 2: kod tożsamości budować metodą A (przesunięcie), z kont
 ramieniem odniesienia. Bez tej kontroli każdy zysk z Koopmana byłby nie do obrony. Dowód:
 `evidence_koopman_langevin_2026-09-21/REPORT_porownanie_tozsamosci_pula.json` oraz `_gesty.json`.
 
+## 4n. Czy mod o części rzeczywistej najbliższej jedynki niesie tożsamość (sprawdzone mod po modzie, 2026-09-22)
+
+Hipoteza autora: mody, których część rzeczywista wartości własnej leży najbliżej jedynki, powinny nieść tożsamość
+narzędzia; osobno sprawdzić mody o dodatniej i ujemnej części rzeczywistej. Sekcja 4m testowała RODZINY, a tu każdy
+z 32 modów wchodzi OSOBNO, jako jedna kolumna cech (`mod_po_modzie.py`). Nagranie L0, 34 165 par, prawdziwe ramki
+tylko do oceny, uczenie i ocena na różnych filmach.
+
+| Mod | Re wartości własnej | Odróżnienie narzędzia od tła (AUC) | Przeżycie przesunięcia | Odczyt wydłużenia |
+|---|---|---|---|---|
+| 0 (największa Re) | 0,786 | 0,616 | **0,77** | **58,6 procent** |
+| 4 | 0,523 | 0,739 | 0,51 | -23,3 |
+| 14 | 0,155 | 0,629 | 0,17 | -42,1 |
+| 28 (najlepszy) | 0,022 | **0,772** | 0,02 | -11,7 |
+| 31 | 0,001 | 0,756 | 0,00 | -21,0 |
+| 15 (najbardziej ujemny) | -0,148 | 0,525 | -0,15 | -20,6 |
+
+Korelacje rangowe po wszystkich 32 modach:
+
+| Para wielkości | Korelacja rangowa |
+|---|---|
+| część rzeczywista a odróżnienie narzędzia | **-0,04** |
+| moduł wartości własnej a odróżnienie | -0,23 |
+| tylko mody dodatnie: Re a odróżnienie | -0,12 |
+| tylko mody ujemne: siła zmiany znaku a odróżnienie | -0,62 |
+| część rzeczywista a odczyt wydłużenia | -0,31 |
+
+Średnie odróżnienie: mody o dodatniej części rzeczywistej 0,569 (24 mody), o ujemnej 0,566 (8 modów).
+
+Odczyt:
+
+1. **Hipoteza jako reguła szeregowania jest OBALONA.** Korelacja części rzeczywistej z odróżnieniem narzędzia od tła
+   wynosi -0,04, czyli zero. Najlepszy pojedynczy mod (0,772) ma część rzeczywistą 0,022, czyli praktycznie zero,
+   a mod o największej części rzeczywistej (0,786) daje tylko 0,616.
+2. **Ale hipoteza trafia w co innego niż tożsamość.** Mod o największej części rzeczywistej jest najlepszy
+   w dwóch pozostałych miarach: przeżywa przesunięcie najlepiej (0,77) i jako jedyny pojedynczy mod czyta kształt
+   narzędzia dodatnio (58,6 procent, reszta poniżej zera). Część rzeczywista blisko jedynki wybiera więc mody
+   trwałe i niosące KSZTAŁT, a nie mody odróżniające metal od tkanki.
+3. **Podział na dodatnie i ujemne nic nie daje** (0,569 wobec 0,566), a wewnątrz modów ujemnych zależność jest
+   odwrotna do oczekiwanej: im silniejsza zmiana znaku, tym MNIEJ tożsamości (korelacja -0,62).
+4. **Wyjaśnienie rozbieżności z sekcją 4m:** tam rodziny brane były po pięć modów o największym module i wychodziły
+   dobrze jako ZESTAW. Tu widać, dlaczego: siła zestawu bierze się z różnorodności modów, nie z ich trwałości.
+   Moduł wartości własnej mierzy, czy wielkość przeżywa ruch, a nie czy odróżnia narzędzie od tła; to są dwie różne
+   własności i nasz pomiar rozdziela je pierwszy raz.
+
+Wniosek praktyczny: do kodu tożsamości nie wybierać modów po części rzeczywistej. Wybierać dwiema listami, bo cele
+są dwa: trwałość i kształt biorą mody o dużej części rzeczywistej, a odróżnienie narzędzia od tła bierze mody
+o dużym odróżnieniu, niezależnie od wartości własnej. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_mod_po_modzie.json`.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
