@@ -540,6 +540,36 @@ nie gubiąc układu narzędzia wzdłuż ramki. Do etapu 2 zostaje 3 na 3, z 4 na
 Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_niezmiennik_czasowy_gesty.json`,
 `REPORT_niezmiennik_czasowy_pula.json` oraz warianty `_c2`, `_c4`, `_c5`.
 
+## 4n. Deep Koopman na opisie ramki: nic nie dokłada, ale znajduje te same kierunki (2026-09-22)
+
+`deep_koopman_ramki.py`: enkoder (sieć gęsta) podnosi opis wycinka do 8, 16 albo 32 liczb, w których krok klatki
+ma być zwykłym mnożeniem przez jedną macierz; dekoder wraca do opisu, więc podniesienie nie może zgubić treści.
+Podział po filmach, wczesne zatrzymanie na osobnych filmach, trzy ziarna. Zestaw gęsty, 4 570 par, 16 klipów.
+
+| Model | Umiejętność nad „nic się nie zmienia" | Podłoga: uczenie na potasowanym czasie | Wydłużenie ramki | Kosinusy z modami liniowymi |
+|---|---|---|---|---|
+| liniowy operator (odniesienie) | -0,7 procent | | 88,1 procent | |
+| deep, podniesienie 8 | -58,2 | -57,8 | -27,8 | 0,95 i 0,86 |
+| deep, podniesienie 16 | -61,4 | -56,7 | 37,9 | 0,97 i 0,95 |
+| deep, podniesienie 32 | -45,5 | -54,1 | 68,1 | 0,98 i 0,94 |
+
+Odczyt:
+
+1. **Żaden model nie bije przewidywania „nic się nie zmienia"** na nowych filmach. Liniowy wychodzi na zero
+   (-0,7 procent), deep jest wyraźnie gorszy. Przy odstępie 3 klatek wycinek zmienia się tak mało, że kopiowanie
+   poprzedniej klatki jest mocnym punktem odniesienia; to ta sama pułapka bezwładu, którą projekt grantowy opisał
+   na latencie DINOv2 (przyrost nad trwałością równy zeru).
+2. **Deep nie odróżnia się od własnej podłogi**: model uczony na parach BEZ kolejnosci czasu wypada tak samo
+   (-54 do -58 procent). Nieliniowe podniesienie nie znajduje więc dynamiki, której liniowy operator by nie widział.
+3. **Za to znajduje te same kierunki co operator liniowy** (kosinusy 0,98 i 0,94 przy podniesieniu 32). To odpowiada
+   na pytanie autora: obie drogi trafiają w ten sam podprzestrzeń latentu, deep niczego nowego tam nie dokłada.
+4. Odczyt wydłużenia narzędzia jest przy deep GORSZY (68 wobec 88 procent) i mocno zależy od rozmiaru podniesienia,
+   co przy 16 klipach i trzech ziarnach wygląda na przeuczenie, nie na własność danych.
+
+Wniosek: do etapu 2 zostaje operator liniowy (translacyjny plus czasowy). Deep Koopman wraca dopiero, gdy pary będą
+liczone na dłuższych odcinkach albo z wymuszeniem (ruch kamery jako wejście), bo tam liniowy model faktycznie
+ma czego nie umieć. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_deep_koopman_gesty.json`.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
