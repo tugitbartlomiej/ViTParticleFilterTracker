@@ -348,6 +348,24 @@ skrajne klatki), nie k-centrum w sensie odległości. Wynik K4 (0,6885) stoi, bo
 kodem, ale jego nazwa „pokrycie" jest na wyrost; kontrola K4 z k-centrum euklidesowym wchodzi do etapu 2. B3 tej wady
 nie ma (cechy DINOv2 w pamięci podręcznej są jednostkowe). K5 używa własnego k-centrum euklidesowego (`kcentre`).
 
+Sprawdzenie siatki i dopasowania tokenów (`sledzenie_czastek.py`, rysunki 05 i 06 w katalogu
+`results/koopman_langevin_epochs/rysunki_k5`; prawdziwe ramki użyte WYŁĄCZNIE do oceny):
+
+- **Przypisanie tokenu do miejsca obrazu jest poprawne.** Dziesięć tokenów najpodobniejszych do wzorca narzędzia
+  leży w prawdziwej ramce w 35 procentach przypadków, przy 2 procentach dla losu (tyle wynosi udział pola ramki
+  w kadrze) i 7 procentach przy siatce transponowanej. Transpozycja psuje wynik pięciokrotnie, więc kolejność
+  wiersz-kolumna w `patch_particles.py` jest zgodna z obrazem.
+- **Dopasowanie tokenów między klatkami po samych liczbach trzyma się narzędzia.** Token wybrany na narzędziu,
+  szukany w kolejnych klatkach przez największe podobieństwo kosinusowe profilu, trafia w prawdziwą ramkę
+  w 79 procentach na ośmiu klipach (97 procent na klipie z rysunku 05), przy 3 procentach dla losu. To odpowiednik
+  śledzenia punktów na filmach DAVIS i pokazuje, że opis tokenu niesie tożsamość miejsca na narzędziu.
+- **Sama cząstka się jednak nie porusza.** W konwencji projektu grantowego (opis Eulera, T15a) cząstka to stałe
+  miejsce siatki, przez które narzędzie przepływa (rysunek 06). Ruch wchodzi do analizy przez parowanie tokenów,
+  a nie przez wędrującą cząstkę.
+- **Ograniczenie maski.** `maska_pred` to wnętrze ramki detektora, nie sylwetka narzędzia, więc przy cienkim
+  narzędziu część tych tokenów opisuje tło wewnątrz ramki. Dotyczy to też par translacyjnych, z których liczony
+  jest kod tożsamości.
+
 Co naprawdę niosą te osiem liczb (`co_niesie_kod.py`, etykiety użyte WYŁĄCZNIE do oceny, predykcja grzbietowa
 z podziałem po filmach, więc model nie może wygrać rozpoznaniem filmu; 9 142 klatki, 117 filmów):
 
