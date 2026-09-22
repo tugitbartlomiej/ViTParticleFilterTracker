@@ -468,6 +468,43 @@ w czasie, więc nie jest pamięcią kwadratu, tylko sąsiedztwem toru narzędzia
 Zgadza się to z ustaleniem U14 projektu grantowego, gdzie jądro pamięci na cząstkach Eulera miało głębokość jednego
 kroku i tłumaczyło 5 do 6 procent przyrostu. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_slad_po_przejsciu.json`.
 
+## 4m. Niezmienniki wycinka narzędzia klatka po klatce (pomysł autora, 2026-09-22)
+
+Autor: zamiast parować pojedyncze tokeny przy przesunięciu, opisać CAŁY wycinek w ramce narzędzia i pytać,
+co w nim nie zmienia się z klatki na klatkę. `niezmiennik_czasowy.py` przepisuje tokeny leżące w prawdziwej
+ramce na stałą siatkę 3 na 3 we współrzędnych względnych ramki (opis nie zależy więc od wielkości ani
+położenia ramki), redukuje to do 48 wymiarów (90,3 procent wariancji) i dopasowuje operator
+`x(t+1) = x(t) K` bez symetryzacji, osobno w każdym filmie.
+
+Zestaw gęsty: 16 klipów, 4 698 klatek z zaznaczonym narzędziem, 4 570 par klatka do następnej (odstęp
+do 4 klatek przy próbkowaniu co 3).
+
+| Wielkość | Osiem najtrwalszych modów (moduł wartości własnej) |
+|---|---|
+| operator czasowy | 0,989 0,986 0,972 0,967 0,949 0,935 0,926 0,909 |
+| podłoga: czas potasowany w obrębie filmu | 0,966 0,951 0,890 0,839 0,812 0,754 0,688 0,675 |
+| podłoga: pary łączące różne filmy | 0,104 0,104 0,101 0,101 0,097 0,097 0,096 0,096 |
+
+Co niosą te niezmienniki (etykiety wyłącznie do oceny, uczenie i ocena na różnych filmach): wydłużenie
+prawdziwej ramki 88,1 procent, wielkość ramki 17,8, położenie narzędzia w kadrze minus 0,8. Udział
+zmienności między filmami: 74 procent.
+
+Kosinusy główne z modami operatora TRANSLACYJNEGO (na ile obie drogi znajdują te same kierunki latentu):
+0,95, 0,90, 0,87, 0,83, potem 0,54, 0,46, 0,37, 0,10.
+
+Odczyt:
+
+1. **Obie drogi znajdują prawie te same cztery pierwsze kierunki** (kosinusy od 0,83 do 0,95), a rozchodzą
+   się dopiero na dalszych. Niezmiennik tożsamości narzędzia nie jest więc artefaktem sposobu parowania.
+2. **Podłoga z potasowanym czasem jest wysoka** (0,966 wobec 0,989): duża część trwałości bierze się z tego,
+   że wycinek w ogóle wolno się zmienia, a nie z samej dynamiki. Nadwyżka jest realna, ale mała; to ta sama
+   pułapka, którą projekt grantowy opisał jako bezwład reprezentacji.
+3. **Droga czasowa czyta wydłużenie narzędzia lepiej** niż translacyjna (88 wobec 71 procent) i, tak jak ona,
+   nie niesie położenia w kadrze.
+4. **Trzy czwarte zmienności leży między filmami**, więc opis wycinka jest nadal mocno tożsamością operacji.
+
+Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_niezmiennik_czasowy_gesty.json`.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
