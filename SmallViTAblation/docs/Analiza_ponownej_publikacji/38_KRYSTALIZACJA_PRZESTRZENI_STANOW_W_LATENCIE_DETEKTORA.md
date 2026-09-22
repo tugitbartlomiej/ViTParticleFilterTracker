@@ -766,6 +766,26 @@ Odczyt:
    Moduł wartości własnej mierzy, czy wielkość przeżywa ruch, a nie czy odróżnia narzędzie od tła; to są dwie różne
    własności i nasz pomiar rozdziela je pierwszy raz.
 
+Powtórzenie na drugim checkpoincie (uwaga autora: powyższe liczone jest na sieci po 500 klatkach, czyli słabo
+wytrenowanej). Ten sam pomiar na wagach po 2500 klatkach, czyli po pięciokrotnie większej liczbie etykiet:
+
+| Wielkość | L0, 500 klatek | b2500, 2500 klatek |
+|---|---|---|
+| mod o największej części rzeczywistej: Re | 0,786 | 0,796 |
+| jego przeżycie przesunięcia | 0,77 | 0,78 |
+| jego odczyt wydłużenia | 58,6 procent | 58,4 |
+| liczba modów czytających kształt powyżej zera | 1 (ten sam) | 1 (ten sam) |
+| korelacja części rzeczywistej z odróżnieniem | -0,04 | -0,02 |
+| najlepszy pojedynczy mod: Re i AUC | 0,022 i 0,772 | 0,512 i 0,667 |
+
+Odczyt powtórzenia: wniosek główny NIE zależy od checkpointu. Mod o części rzeczywistej najbliższej jedynki jest
+w obu przypadkach jedynym, który czyta kształt, i w obu najlepiej przeżywa przesunięcie, a związek części
+rzeczywistej z odróżnianiem narzędzia od tła w obu wypada zerowy. Zmienia się jedno: w słabo wytrenowanej sieci
+najlepszym pojedynczym modem był mod o wartości własnej praktycznie zerowej (0,772 przy Re równym 0,022), a po
+douczeniu taki mod znika i najlepszy ma już umiarkowaną wartość własną (0,667 przy Re równym 0,512). Ten pierwszy
+wynik należy więc traktować jako własność sieci po 500 klatkach, a nie jako fakt o reprezentacji.
+Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_mod_po_modzie_b2500.json`.
+
 Wniosek praktyczny: do kodu tożsamości nie wybierać modów po części rzeczywistej. Wybierać dwiema listami, bo cele
 są dwa: trwałość i kształt biorą mody o dużej części rzeczywistej, a odróżnienie narzędzia od tła bierze mody
 o dużym odróżnieniu, niezależnie od wartości własnej. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_mod_po_modzie.json`.
