@@ -129,10 +129,20 @@ def main(argv=None) -> int:
     print(f"C: deep, |lambda| {np.round(np.abs(deep['lam'][:args.modes]), 3).tolist()}, umiejetnosc {deep['skill']:.1f}%", flush=True)
 
     dobre = rows[np.isfinite(kod_a[rows]).all(1) & np.isfinite(kod_b[rows]).all(1) & np.isfinite(kod_c[rows]).all(1)]
+
+    def reszta(y: np.ndarray, x: np.ndarray) -> np.ndarray:
+        """Czesc y, ktorej nie da sie odtworzyc z x (odjecie jednej metody od drugiej)."""
+        xx = np.hstack([(x - x.mean(0)) / np.maximum(x.std(0), 1e-9), np.ones((len(x), 1))])
+        beta = np.linalg.solve(xx.T @ xx + 1e-3 * np.eye(xx.shape[1]), xx.T @ y)
+        return y - xx @ beta
+
     warianty = {'A przesuniecie narzedzia': kod_a[dobre], 'B widmo czasu na wycinku': kod_b[dobre],
                 'C deep Koopman': kod_c[dobre],
                 'D wszystkie trzy razem': np.hstack([kod_a[dobre], kod_b[dobre], kod_c[dobre]]),
-                'kontrola: PCA opisu': z[dobre][:, :args.modes]}
+                'B minus A (co zostaje po tozsamosci)': reszta(kod_b[dobre], kod_a[dobre]),
+                'A minus B (tozsamosc bez czasu)': reszta(kod_a[dobre], kod_b[dobre]),
+                'kontrola: PCA opisu': z[dobre][:, :args.modes],
+                'kontrola: PCA minus A': reszta(z[dobre][:, :args.modes], kod_a[dobre])}
     print(f'\nklatek w porownaniu: {len(dobre)}, filmow {len(set(video[dobre].tolist()))}')
     print(f'{"metoda":28s} {"wym":>4s} {"wydluzenie":>11s} {"wielkosc":>9s} {"polozenie":>10s} {"miedzy filmami":>15s} {"lacznie":>8s}')
     raport = {}

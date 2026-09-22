@@ -701,6 +701,23 @@ Odczyt:
    rosnące z klatki na klatkę. Nie nadaje się tu do niczego bez dłuższych odcinków i wymuszenia.
 5. Sklejenie wszystkich trzech (D) poprawia tylko wydłużenie, a zanieczyszczenie położeniem rośnie do 46,5.
 
+**Rozkład przez odejmowanie (pomysł autora).** Jeżeli B przecieka położeniem, a A nie, to różnica powinna być
+czystym kodem położenia. Sprawdzone: odejmujemy od każdej współrzędnej B tę jej część, którą da się odtworzyć z A.
+
+| Wariant | Wydłużenie | Wielkość | Położenie | Między filmami |
+|---|---|---|---|---|
+| B minus A (co zostaje po odjęciu tożsamości) | -2,7 procent | 1,4 | **28,5** | 56 |
+| A minus B (tożsamość po odjęciu widma czasu) | -0,6 | 12,9 | -1,3 | 40 |
+| kontrola: składowe główne minus A | -4,9 | 5,1 | 8,7 | 45 |
+
+Działa dokładnie tak, jak autor przewidywał. Reszta B po odjęciu A niesie POŁOŻENIE narzędzia (28,5 procent)
+i nie niesie już jego stanu (poniżej 3 procent). Odwrotnie: po odjęciu B z A nie zostaje nic, więc cała tożsamość
+z A siedzi już w B. To samo dotyczy składowych głównych: po odjęciu A zostaje z nich niecałe 9 procent położenia.
+
+Stąd czysty rozkład latentu narzędzia na dwie części: TOŻSAMOŚĆ to kod z przesunięcia (A), a POŁOŻENIE to
+reszta widma czasu po odjęciu A. Obie są liczone bez etykiet, więc obie nadają się do doboru klatek: pierwsza
+do pokrycia stanów narzędzia, druga do pokrycia jego ruchu po kadrze.
+
 Wniosek dla etapu 2: kod tożsamości budować metodą A (przesunięcie), z kontrolą ze składowych głównych jako
 ramieniem odniesienia. Bez tej kontroli każdy zysk z Koopmana byłby nie do obrony. Dowód:
 `evidence_koopman_langevin_2026-09-21/REPORT_porownanie_tozsamosci_pula.json` oraz `_gesty.json`.
