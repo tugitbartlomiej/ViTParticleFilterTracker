@@ -242,6 +242,43 @@ przeuczenie. Cząstki dalej dryfują (około 0,1 na 3 epoki) bez żadnej poprawy
 nauką o narzędziu. (3) Dla miary „szybkość uczenia" z dokumentu 39 liczą się więc epoki 0 do 5; późniejsze różnice
 między ramionami mierzą głównie odporność na przeuczenie. Ocena `best_val` i `last_epoch` muszą być raportowane obie.
 
+## 4g. Widmo Koopmana latentu detektora: niezmienniki, podział statyczne/dynamiczne, ile da się zlinearyzować (2026-09-22)
+
+Kod: `pipeline/koopman_langevin/koopman_spectrum_axis.py`; wynik `REPORT_spectrum_axis.json`. Latent `box_pool` po PCA do 24
+wymiarów, podniesiony jednym opóźnieniem, operator liniowy dopasowany na klipach treningowych, oceniany na testowych.
+Klasy wartości własnych: niezmiennik (|lambda| > 0,97, kąt < 5 stopni), wolne rzeczywiste, obracające (kąt >= 5 stopni), szybkie.
+
+| Wagi | niezmienniki | wolne | obracające | szybkie | niezmienniki: wariancja między filmami | niezmienniki: R2 ze stanu narzędzia | niezmienniki: defekt poza próbą |
+|---|---|---|---|---|---|---|---|
+| COCO | 2 | 3 | 31 | 12 | 0,81 | -0,08 | 0,19 |
+| epoka 2 (b1500) | 4 | 7 | 29 | 8 | 0,81 | 0,59 | 0,05 |
+| 500 klatek | 4 | 6 | 26 | 12 | 0,78 | 0,58 | 0,05 |
+| 2500 klatek | 5 | 6 | 26 | 11 | 0,74 | 0,29 | 0,09 |
+| epoka 29 (b1500) | 3 | 7 | 28 | 10 | 0,77 | 0,29 | 0,04 |
+
+Odczyt: (1) niezmienniki to tożsamość OPERACJI (74 do 81 procent wariancji między filmami) i po uczeniu także stan
+narzędzia (R2 0,58 tuż po starcie uczenia, 0,29 przy dłuższym treningu). (2) **Defekt niezmienników poza próbą spada
+z 0,19 przed uczeniem do 0,05 po uczeniu**: to, co sieć uznaje za stałe, staje się naprawdę stałe z klatki na klatkę.
+To jest mierzalna „krystalizacja" bez etykiet i kandydat na miarę do śledzenia co epokę. (3) Mody obracające mają okres
+około 7 klatek i zerowy związek ze stanem narzędzia: to drganie, nie dynamika narzędzia. Podział statyczne/dynamiczne
+jest więc: niezmienniki = tożsamość plus stan, reszta = szum o krótkim okresie. (4) Uwaga: 24 wymiary i 4800 klatek
+dają 48 wartości własnych z próby o ograniczonej długości; liczby modów są przybliżone (dokument 38, kontrargument o EDMD).
+
+**Ile części nieliniowej da się zamienić w liniową** (umiejętność jednokrokowa poza próbą, latent 2500 klatek):
+
+| wymiar | liniowy, 1 opóźnienie | liniowy, 8 opóźnień (najlepsza regularyzacja) | nieliniowy z historią (RFF + 8 kroków) |
+|---|---|---|---|
+| 8 | 7,7 | 17,0 | 21,4 |
+| 16 | 2,0 | 5,2 | 21,0 |
+| 24 | -1,1 | -2,5 | 20,9 |
+| 32 | -10,4 | -10,3 | 21,0 |
+| 64 | -17,3 | -19,1 | 20,4 |
+
+Liniowy operator we współrzędnych samego latentu działa tylko przy 8 wymiarach i 8 opóźnieniach (17 procent) i psuje się
+z wymiarem; model nieliniowy trzyma 21 procent niezależnie od wymiaru, a tor fizyczny narzędzia ma 22 do 29 procent.
+Autoenkoder Koopmana (podniesienie uczone) miałby do domknięcia lukę 4 do 5 punktów przy małym wymiarze i całą
+przy dużym; sufit jest fizyczny (ręka chirurga), nie słownikowy. Sam autoenkoder nie został jeszcze uczony.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
