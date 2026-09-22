@@ -446,6 +446,28 @@ Odczyt:
 Konsekwencja dla ramienia K5: kod tożsamości należy przeliczyć na wszystkich trzech rodzinach (18 liczb zamiast 8)
 przed treningiem etapu 2. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_widmo_tozsamosci.json`.
 
+## 4l. Czy kwadrat siatki pamięta narzędzie, które przez niego przeszło (2026-09-22)
+
+Pytanie autora, z eksperymentów z niedźwiedziem: cząstka w opisie Eulera stoi w miejscu, ale czy po przejściu
+obiektu zostaje w niej ślad? `slad_po_przejsciu.py` mierzy to bez uczenia: podobieństwo tokenu do wzorca narzędzia
+w kwadratach, gdzie narzędzia TERAZ nie ma, wobec kwadratów, których narzędzie nie dotknęło przez osiem pomiarów.
+Kontrolą jest ten sam rachunek w przyszłość: kwadraty, w których narzędzie DOPIERO BĘDZIE. Zbiory rozłączne
+(„było i nie wróci" wobec „będzie, a nie było"). Etykiety wyłącznie do oceny.
+
+| Odstęp | Ślad po przejściu (AUC) | Zapowiedź przed przyjściem (AUC) |
+|---|---|---|
+| 3 klatki | 0,899 | 0,902 |
+| 6 klatek | 0,885 | 0,893 |
+| 9 klatek | 0,874 | 0,881 |
+| 15 klatek | 0,858 | 0,868 |
+| 24 klatki | 0,851 | 0,867 |
+
+Odczyt: kwadrat, przez który narzędzie przeszło, wygląda potem „narzędziowo" bardzo wyraźnie (0,899 po trzech
+klatkach), ale **dokładnie tyle samo wygląda tak, ZANIM narzędzie tam dotrze** (0,902). Efekt jest symetryczny
+w czasie, więc nie jest pamięcią kwadratu, tylko sąsiedztwem toru narzędzia: pole widzenia tokenu sięga poza ramkę.
+Zgadza się to z ustaleniem U14 projektu grantowego, gdzie jądro pamięci na cząstkach Eulera miało głębokość jednego
+kroku i tłumaczyło 5 do 6 procent przyrostu. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_slad_po_przejsciu.json`.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
