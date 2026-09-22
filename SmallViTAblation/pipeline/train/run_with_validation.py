@@ -39,6 +39,7 @@ def main():
     ap.add_argument('--expected-epochs', type=int, required=True)
     ap.add_argument('--compress-predictions', action='store_true')
     ap.add_argument('--keep-epoch-checkpoints', type=int, default=0)
+    ap.add_argument('--val-loss', action='store_true')
     args = ap.parse_args()
     project = Path(__file__).resolve().parents[2]
     run = Path(args.out)/args.run_id
@@ -50,7 +51,8 @@ def main():
         '--run-id', args.run_id, '--data-root', args.data_root, '--out', args.out,
         '--protocol', args.protocol, '--variant-file', args.variant_file,
         '--train-seed', str(args.train_seed), '--role', 'smoke', '--profile', args.profile,
-        '--keep-epoch-checkpoints', str(args.keep_epoch_checkpoints)], check=True)
+        '--keep-epoch-checkpoints', str(args.keep_epoch_checkpoints)]
+        + (['--val-loss'] if args.val_loss else []), check=True)
     manifest = json.loads((run/'run_manifest.json').read_text())
     if manifest['epochs_completed'] != args.expected_epochs or manifest['model'] != 'rf-detr-nano':
         raise RuntimeError('Incomplete training or incorrect model')

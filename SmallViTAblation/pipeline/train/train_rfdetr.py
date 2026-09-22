@@ -489,6 +489,10 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
         "scale_jitter": False,
         "multi_scale": False,
     }
+    if getattr(args, "val_loss", False):
+        # RF-DETR 1.10 liczy strate walidacyjna tylko, gdy ktos jej pilnuje ("auto" -> pomijana).
+        # Wlaczenie jej nie dotyka optymalizacji: to dodatkowy przebieg po zbiorze walidacyjnym.
+        train_kwargs["compute_val_loss"] = True
     keep_every = int(getattr(args, "keep_epoch_checkpoints", 0) or 0)
     if keep_every:
         if keep_every < 2:
@@ -631,6 +635,9 @@ def parse_args(argv=None):
                     help="keep weights-only checkpoints every N epochs (N >= 2) in "
                          "<run>/epoch_checkpoints for latent diagnostics along the training "
                          "clock; 0 keeps the campaign behaviour (last.pth and best.pth only)")
+    ap.add_argument("--val-loss", action="store_true",
+                    help="log the validation loss and its parts every epoch (RF-DETR compute_val_loss); "
+                         "evaluation only, the training recipe is untouched")
     ap.add_argument("--dry-run", action="store_true",
                     help="pelna inicjalizacja i walidacja plikow, manifest "
                          "in-memory + zapis, BEZ treningu")
