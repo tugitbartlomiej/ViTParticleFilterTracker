@@ -414,6 +414,38 @@ puli 10 637 klatek (zadanie Eden) i ramienia treningowego etapu 2 (zatwierdzenie
 
 Ciąg dalszy (2026-09-22, dokument 39, sekcja 5f): kod tożsamości policzono dla całej puli 10 637 klatek pod detektorem L0 (zadania Eden 1809407 i 1809408) i zbudowano cztery ramiona doboru K5 (k-centrum w kodzie, plus klatki bez kodu, najbliżej i najdalej prototypu). Żadne ramię etapu 1 nie różni się od losu w tej przestrzeni; K5 zmniejsza największą lukę pokrycia o połowę. Trening tych ramion czeka na zatwierdzenie.
 
+## 4k. Widmo operatora translacyjnego bez symetryzacji: część rzeczywista dodatnia, ujemna i urojona (2026-09-22)
+
+Uwaga autora: kod tożsamości liczony był operatorem PO symetryzacji (`generalised_koopman`), więc jego wartości
+własne są z definicji rzeczywiste i cała część obrotowa przepadała. `widmo_tozsamosci.py` liczy ten sam operator
+(token narzędzia w jednym położeniu przechodzi w ten sam token po przesunięciu narzędzia) BEZ symetryzacji i dzieli
+mody na trzy rodziny. Nagranie L0 na 16 gęstych klipach, 34 165 par, etykiety WYŁĄCZNIE do oceny, podział po filmach.
+
+| Rodzina modów | Ile | Odróżnienie narzędzia od tła (AUC) | Przeżycie przesunięcia | Wydłużenie ramki | Wielkość ramki |
+|---|---|---|---|---|---|
+| trwałe: Re większe od zera, bez obrotu | 16 | 0,834 | 0,61 | 71,3 procent | -1,0 |
+| przemienne: Re mniejsze od zera (wartość zmienia znak po przesunięciu) | 6 | 0,743 | -0,08 | -17,5 | -24,3 |
+| obrotowe: Im różne od zera (para wartości obraca się o stały kąt) | 10 | 0,593 | 0,35 | -39,8 | -0,3 |
+| trwałe + obrotowe | 12 | 0,853 | | 71,8 | 18,9 |
+| trwałe + przemienne | 12 | 0,888 | | 79,0 | -12,8 |
+| wszystkie trzy rodziny | 18 | **0,893** | | **79,6** | **30,1** |
+
+Odczyt:
+
+1. **Osobno liczą się tylko mody trwałe**, ale RAZEM pozostałe dwie rodziny dokładają wyraźnie: odróżnienie
+   narzędzia od tła rośnie z 0,834 do 0,893, wydłużenie ramki z 71 do 80 procent, a wielkość ramki z zera
+   do 30 procent. Symetryzacja kasowała więc informację, nie tylko szum.
+2. **Mody przemienne (ujemna część rzeczywista) same nie przeżywają przesunięcia** (zgodność -0,08), a mimo to
+   dokładają najwięcej do odróżnienia narzędzia. Zmiana znaku po przesunięciu to sygnał o strukturze narzędzia
+   wzdłuż jego osi, a nie wielkość stała.
+3. **Kąt obrotu modów zespolonych jest znikomy** (okres około 256 przesunięć), więc "obrót" jest tu prawie
+   zdegenerowaną parą modów rzeczywistych; ich wartość leży w tym, że są parą, nie w samym obracaniu.
+4. **Zwrotu narzędzia (gdzie jest końcówka) nie niesie żadna rodzina** (poniżej 2 procent wszędzie). Ograniczenie
+   nie leży więc w symetryzacji, tylko w tym, że uśredniamy tokeny po całym wnętrzu ramki.
+
+Konsekwencja dla ramienia K5: kod tożsamości należy przeliczyć na wszystkich trzech rodzinach (18 liczb zamiast 8)
+przed treningiem etapu 2. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_widmo_tozsamosci.json`.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
