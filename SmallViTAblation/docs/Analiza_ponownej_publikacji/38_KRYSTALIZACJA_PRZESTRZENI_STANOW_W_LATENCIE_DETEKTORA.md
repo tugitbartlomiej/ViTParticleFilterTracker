@@ -790,6 +790,38 @@ Wniosek praktyczny: do kodu tożsamości nie wybierać modów po części rzeczy
 są dwa: trwałość i kształt biorą mody o dużej części rzeczywistej, a odróżnienie narzędzia od tła bierze mody
 o dużym odróżnieniu, niezależnie od wartości własnej. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_mod_po_modzie.json`.
 
+## 4r. Statyka siedzi w modach Koopmana, składowe główne ją mieszają (teza autora, potwierdzona 2026-09-22)
+
+Zarzut autora do sekcji 4p: składowe główne to tylko „gdzie dane najbardziej się różnią" i nie wiadomo, co niosą,
+a mody Koopmana są uszeregowane po TRWAŁOŚCI, więc to, co przez cały film stoi (narzędzie jako przedmiot, oko,
+światło, kadr), musi siedzieć w najtrwalszych. Sprawdzone bez etykiet: każda współrzędna rozkłada się na średnią
+w danym filmie (statyka) i odchylenie od niej wewnątrz filmu (dynamika).
+
+Pula ucząca, 10 109 klatek, 118 filmów; statyka to 31 procent zmienności całego opisu wycinka.
+
+| Zestaw ośmiu kierunków | Udział statyki w tych kierunkach | Trwałość dynamiki | Zatrzymana statyka | Zatrzymana dynamika |
+|---|---|---|---|---|
+| mody Koopmana (największa część rzeczywista) | **64 procent** | 0,77 | **33** | 9 |
+| składowe główne (najsilniejsze) | 52 | 0,70 | 28 | 12 |
+| kierunki losowe | 30 | 0,53 | 16 | 17 |
+
+Zależność jest monotoniczna po części rzeczywistej: mod o Re równym 0,964 ma 73 procent statyki, ósmy o Re
+równym 0,857 już 47. Na zestawie gęstym (16 klipów) ta sama zależność jest ostrzejsza: 90 procent statyki
+w pierwszym modzie wobec 60 procent średnio w składowych głównych.
+
+**Teza autora potwierdzona.** Szeregowanie po części rzeczywistej wartości własnej porządkuje kierunki według
+tego, ile w nich statyki filmu, czego szeregowanie po sile wariancji nie robi. Składowe główne zatrzymują więcej
+dynamiki (12 wobec 9 procent), czyli mieszają jedno z drugim.
+
+Zastrzeżenie, na które autor zwrócił uwagę: **to jest model wstępnie wytrenowany** (L0, 500 klatek). Porównanie
+z checkpointem po 2 500 klatkach na zestawie gęstym daje prawie ten sam obraz (statyka w pierwszym modzie
+87 wobec 90 procent, trwałość 0,93 wobec 0,91), więc trening tej własności na razie nie zmienia. Zmienia za to,
+jak wiele z tej statyki to narzędzie, a nie oko, i tego ten pomiar nie rozdziela: „między filmami" obejmuje
+zarówno narzędzie jako przedmiot, jak i oko, światło i kadr.
+
+Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_statyka_w_koopmanie_pula.json`,
+`_gesty_b0500.json`, `_gesty_b2500.json`.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
