@@ -632,6 +632,40 @@ Wniosek praktyczny dla kodu tożsamości: zostawić postać liniową ze wszystki
 zależy na krótkim kodzie, wziąć same części rzeczywiste (15 liczb) kosztem 0,015 na odróżnieniu; nie przechodzić
 na moduły. Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_czesc_rzeczywista.json`.
 
+## 4o. Które mody niosą tożsamość narzędzia i czy z nich odtworzymy kształt (2026-09-22)
+
+Dwa pytania autora: czy z samych niezmienników da się odtworzyć kształt narzędzia, i czy tożsamość niosą te mody,
+których część rzeczywista leży najbliżej jedynki. Zestaw gęsty, 4 636 klatek z ramką, operator czasowy na opisie
+wycinka 3 na 3, uczenie i ocena na różnych filmach.
+
+**Kształt: nie.** Odtwarzanie liniowe wycinka obrazu (32 na 24 piksele w szarości) z szesnastu liczb kodu daje
+R2 minus 0,17, czyli gorzej niż podanie jednej uśrednionej klatki ze zbioru uczącego. Pełny opis (48 współrzędnych)
+też nie odtwarza (minus 0,29). Na rysunku widać ukośną smugę, ale to przeciętne narzędzie, nie to z danej klatki.
+Te same szesnaście liczb odtwarza tylko 12 procent OPISU tokenów, podczas gdy szesnaście zwykłych składowych
+głównych odtwarza 63 procent. Kod jest więc wąskim wycinkiem informacji, i to z założenia.
+Rysunek: `results/koopman_langevin_epochs/rysunki_k5/REPORT_ksztalt_z_niezmiennikow.png` (poza gitem).
+
+**Który mod niesie tożsamość.** Odczyt wydłużenia ramki (jak narzędzie leży) z pojedynczych modów:
+
+| Grupa modów | Ile modów | Wydłużenie | Wielkość | Położenie w kadrze |
+|---|---|---|---|---|
+| część rzeczywista bliżej 1 niż o 0,15 | 2 | 42,6 procent | 0,6 | -9,6 |
+| część rzeczywista dodatnia, dalej od 1 | 37 | **69,5** | 12,6 | 29,1 |
+| część rzeczywista ujemna | 9 | 37,8 | 12,9 | **42,2** |
+| mody z częścią urojoną (obrotowe) | 42 | **74,7** | **33,7** | 34,6 |
+| osiem pierwszych (dotychczasowy kod) | 8 | 50,0 | 15,7 | -16,0 |
+
+Najlepszy POJEDYNCZY mod to rzeczywiście ten o części rzeczywistej 0,956 (44,6 procent sam jeden); żaden inny
+osobno nie bije średniej. Ale hipoteza „tożsamość siedzi w modach najbliższych jedynki" jest tylko w połowie
+trafna: dwa najwolniejsze mody dają 42,6 procent, a trzydzieści siedem wolniejszych, ale wciąż dodatnich, daje
+69,5. Mody o ujemnej części rzeczywistej (wartość zmienia znak po klatce) niosą przede wszystkim POŁOŻENIE
+narzędzia (42,2 procent), a nie jego tożsamość. Najbogatszą grupą są mody obrotowe.
+
+Wniosek dla ramienia K5: obcięcie kodu do ośmiu najwolniejszych modów wyrzuca połowę informacji o stanie
+narzędzia. Kod na etap 2 należy budować z części rzeczywistej dodatniej plus obrotowej, a mody o ujemnej części
+rzeczywistej trzymać osobno jako współrzędne położenia. Dowód: `ktore_mody_nioso.py` oraz
+`rysunki_k5/REPORT_ksztalt_z_niezmiennikow.json`.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
