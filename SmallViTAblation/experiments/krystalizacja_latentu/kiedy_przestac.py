@@ -55,7 +55,8 @@ def trwalosc_krzywa(katalog: Path, blok: str, dim: int, modes: int, max_gap: int
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--biegi', type=Path, required=True, help='katalog z podkatalogami biegow (TELEMETRIA.json)')
-    ap.add_argument('--latenty', type=Path, required=True, help='katalog z podkatalogami latentow biegow')
+    ap.add_argument('--latenty', type=Path, help='katalog z podkatalogami latentow biegow')
+    ap.add_argument('--trwalosc', type=Path, help='gotowy JSON z krzywymi trwalosci (policzony na klastrze)')
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--blok', default='box_pool')
     ap.add_argument('--dim', type=int, default=32)
@@ -63,6 +64,7 @@ def main(argv=None) -> int:
     ap.add_argument('--max-gap', type=int, default=6)
     args = ap.parse_args(argv)
 
+    gotowa = json.loads(args.trwalosc.read_text(encoding='utf-8')) if args.trwalosc else None
     raport, wiersze = {}, []
     for bieg in sorted(p for p in args.biegi.iterdir() if p.is_dir()):
         tele = bieg / 'TELEMETRIA.json'
@@ -73,7 +75,10 @@ def main(argv=None) -> int:
         mp = np.array([x[1] for x in t.get('val/mAP_50_95', [])])
         vl = np.array([x[1] for x in t.get('val/loss', [])])
         tl = np.array([x[1] for x in t.get('train/loss', [])])
-        epoki, tr = trwalosc_krzywa(args.latenty / bieg.name, args.blok, args.dim, args.modes, args.max_gap)
+        if gotowa is not None and bieg.name in gotowa:
+            epoki, tr = gotowa[bieg.name]['epoki'], gotowa[bieg.name][args.blok]
+        else:
+            epoki, tr = trwalosc_krzywa(args.latenty / bieg.name, args.blok, args.dim, args.modes, args.max_gap)
         w = {'epok': int(len(mp)), 'szczyt_mAP': int(np.argmax(mp)) if len(mp) else None,
              'mAP_max': float(mp.max()) if len(mp) else None,
              'mAP_koniec': float(mp[-1]) if len(mp) else None,

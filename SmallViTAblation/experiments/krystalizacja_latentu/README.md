@@ -46,9 +46,21 @@ Zaleznosci miedzy skryptami rozwiazuje `PYTHONPATH=experiments/krystalizacja_lat
    co oznacza pominiecie, gdy zadne narzedzie jej nie pilnuje. Dopisany przelacznik `--val-loss`
    w `pipeline/train/train_rfdetr.py` wlacza ja bez zmiany przepisu optymalizacji.
 
+10. Trzy biegi z pelna telemetria (ziarna 42, 1337, 2024) potwierdzaja to niezaleznie.
+    Strata na walidacji ma dolek w epoce 6, 6 i 7, a jakosc szczyt w epoce 6, 8 i 7.
+    Strata na klatkach uczacych spada do konca z 6,2 do 1,07, a walidacyjna zawraca w epoce
+    szostej i rosnie z 3,22 do 3,65. Uczenie do konca kosztuje srednio 0,030 mAP.
+11. Sygnal bez etykiet (szczyt trwalosci, bloki `query` i `features`) wskazuje epoke 5, 5 i 7.
+    Pojscie za nim kosztuje srednio 0,004 mAP zamiast 0,030, czyli okolo osiem razy mniej
+    niz trening do konca. Blok `global_pool` jest zawodny, potrafi wskazac epoke 3.
+    Zastrzezenie: wagi zapisywano co dwie epoki, wiec rozdzielczosc sygnalu to dwie epoki.
+
 ## Dane
 
-- `dane/TELEMETRIA_stage1.json` - zrzut wszystkich skalarow TensorBoard z 28 biegow na Edenie.
+- `dane/TELEMETRIA_stage1.json` - zrzut wszystkich skalarow TensorBoard z 28 biegow kampanii.
+- `dane/biegi/<bieg>/TELEMETRIA.json` - to samo dla trzech biegow z zapisana strata walidacyjna.
+- `dane/TRWALOSC_telemetria.json` - krzywe trwalosci modow dla tych biegow, policzone na klastrze
+  (latenty zostaja na Edenie, bo waza okolo gigabajta).
 - `wyniki/REPORT_*.json` - wyniki poszczegolnych skryptow.
 
 ## Biegi na Edenie
