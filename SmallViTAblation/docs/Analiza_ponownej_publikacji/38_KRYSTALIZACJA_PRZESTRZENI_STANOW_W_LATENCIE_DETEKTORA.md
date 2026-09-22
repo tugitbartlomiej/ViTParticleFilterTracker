@@ -503,7 +503,26 @@ Odczyt:
    nie niesie położenia w kadrze.
 4. **Trzy czwarte zmienności leży między filmami**, więc opis wycinka jest nadal mocno tożsamością operacji.
 
-Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_niezmiennik_czasowy_gesty.json`.
+Ta sama analiza na CAŁEJ puli uczącej (10 637 klatek z zaznaczonym narzędziem, 118 filmów, para tylko gdy dwie
+kolejne klatki dzieli najwyżej 6 klatek, stąd 1 809 par; pula jest próbkowana średnio co 20 klatek):
+
+| Wielkość | Osiem najtrwalszych modów |
+|---|---|
+| operator czasowy | 0,964 0,964 0,937 0,923 0,911 0,894 0,863 0,857 |
+| podłoga: czas potasowany | 0,841 0,792 0,779 0,750 0,675 0,675 0,629 0,583 |
+| podłoga: pary między filmami | 0,069 0,069 0,069 0,069 0,066 0,066 0,065 0,065 |
+
+Niosą: wydłużenie ramki 85,7 procent, wielkość 41,4, położenie w kadrze 44,0. Zmienność między filmami 64 procent.
+Kosinusy główne z modami translacyjnymi: 0,92, 0,84, 0,67, 0,61, potem poniżej 0,55.
+
+Na puli nadwyżka nad potasowanym czasem jest większa niż na zestawie gęstym (0,964 wobec 0,841), bo odstęp między
+klatkami jest tu większy i sam bezwład nie wystarcza. Pierwsze dwa kierunki nadal pokrywają się z translacyjnymi
+(0,92 i 0,84), dalsze już nie. Za to niezmienniki czasowe na puli niosą też położenie narzędzia w kadrze
+(44 procent), czego wersja translacyjna z definicji nie robi. To znaczy, że opis wycinka klatka po klatce miesza
+tożsamość narzędzia z jego ruchem po kadrze, a operator translacyjny je rozdziela.
+
+Dowód: `evidence_koopman_langevin_2026-09-21/REPORT_niezmiennik_czasowy_gesty.json` oraz
+`REPORT_niezmiennik_czasowy_pula.json`.
 
 ## 5. Kontrargumenty
 
