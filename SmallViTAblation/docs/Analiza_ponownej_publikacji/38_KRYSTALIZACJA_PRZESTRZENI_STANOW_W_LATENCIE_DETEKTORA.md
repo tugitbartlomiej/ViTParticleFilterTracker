@@ -316,6 +316,26 @@ wynikiem): przy równym budżecie ślad kowariancji operatora ma spadać monoton
 dla resztowego; błąd jednokrokowy poza grupami nie może rosnąć. Kod: `pipeline/koopman_langevin/leverage_selection.py`.
 Czy pomaga DETEKTOROWI, rozstrzygnie dopiero ramię treningowe etapu 2.
 
+**Wynik pilota D-optymalnego (2026-09-22, bez treningu; `REPORT_leverage.json`).** Pula 10 637 klatek, z podniesionym
+stanem 6874; 39 ze 117 grup operacji odłożonych dla każdego ramienia; L0 = 335 klatek z podniesionym stanem; dobrane 1000.
+
+| Ramię | log det | ślad kowariancji operatora (mniej = pewniej) | umiejętność jednokrokowa operatora na odłożonych grupach |
+|---|---|---|---|
+| równo w czasie | 300,4 | 0,210 | 7,3 |
+| losowanie | 300,4 | 0,209 | 7,4 |
+| reszta Langevina (górne) | 314,8 | 0,126 | 4,8 |
+| D-optymalne (dźwignia) | 320,7 | **0,116** | **4,0** |
+
+Przewidywanie sprawdziło się w połowie: dobór D-optymalny obniża niepewność operatora najbardziej i monotonicznie
+(0,42 -> 0,27 -> 0,18 -> 0,12 przy 100, 250, 500, 1000 klatkach). Ale dobór resztowy obniża ją prawie tak samo, bo klatki
+o dużej reszcie są zarazem klatkami o dużej dźwigni (część wspólna obu wyborów 53 procent, z równym w czasie 16 procent).
+I co ważniejsze: operator dopasowany na klatkach D-optymalnych przewiduje przejścia na NOWYCH operacjach GORZEJ
+(4,0 wobec 7,3 dla równego wyboru), bo pewność co do operatora kupiono na przypadkach skrajnych, które nie opisują
+typowego kroku. To jest dokładnie ostrzeżenie Wu 2026 i You 2026: certyfikat informacji nie jest monotoniczny
+w użyteczności. Kryterium D-optymalne zlewa się więc z kryterium zaskoczenia, które w etapie 1 nie pomogło (K1, K3),
+i NIE zasługuje na ramię treningowe w tej postaci. Wersja do rozważenia: dźwignia liczona w rozkładzie typowym
+(A-optymalność ważona gęstością), czyli pokrycie, do którego stage 1 już doszedł od strony Koopmana (K4).
+
 ## 4i. Cząstki jako tokeny-patche (konwencja DiagnosticTool projektu grantowego), 2026-09-22
 
 Na życzenie autora cząstka to jeden PATCH obrazu, nie cała klatka: `patch_particles.py` (rejestrator według

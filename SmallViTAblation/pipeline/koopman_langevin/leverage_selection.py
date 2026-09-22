@@ -115,11 +115,17 @@ def main(argv=None) -> int:
     frame = np.array([float(r['frame_index']) for r in observed])
     group = np.array([r['group_id'] for r in observed])
 
+    # a fixed third of the operation groups is held out from EVERY arm: the operator fitted on a
+    # selection is scored on transitions of groups no arm could touch
+    names = sorted(set(group.tolist()))
+    held = set(np.random.default_rng(args.seed).permutation(names)[:len(names) // 3].tolist())
+    holdout = np.array([i for i in range(n_obs) if group[i] in held and np.isfinite(psi_full[i]).all() and np.isfinite(step_full[i]).all()], dtype=int)
     pool_rows = np.array([position[r['frame_id']] for r in pool])
-    usable = pool_rows[np.isfinite(psi_full[pool_rows]).all(1)]
+    usable = pool_rows[np.isfinite(psi_full[pool_rows]).all(1) & ~np.isin(group[pool_rows], list(held))]
     raw = json.loads(args.initial_selection.read_text(encoding='utf-8'))
     l0 = np.array([position[f] for f in raw.get('selected_frame_ids', raw.get('frame_ids'))])
-    l0_usable = l0[np.isfinite(psi_full[l0]).all(1)]
+    l0_usable = l0[np.isfinite(psi_full[l0]).all(1) & ~np.isin(group[l0], list(held))]
+    print(f'grupy odlozone: {len(held)} z {len(names)}, przejsc odlozonych {len(holdout)}', flush=True)
     print(f'pula {len(pool)} klatek, z podniesionym stanem {len(usable)}; L0 {len(l0)}, z podniesionym stanem {len(l0_usable)}', flush=True)
 
     pool_by_row = {position[r['frame_id']]: r for r in pool}
@@ -148,8 +154,7 @@ def main(argv=None) -> int:
         report['arms'][name] = {}
         for b in args.budgets:
             sel = np.concatenate([l0_usable, np.array(order[:b], dtype=int)])
-            touched = set(group[sel].tolist())
-            holdout = np.array([i for i in usable if group[i] not in touched and np.isfinite(step_full[i]).all()])
+            sel = sel[np.isfinite(step_full[sel]).all(1)]
             r = operator_report(psi_full, step_full, sel, holdout, args.lam)
             r['holdout_transitions'] = int(len(holdout))
             report['arms'][name][b] = r
