@@ -237,6 +237,50 @@ Wniosek: przewaga K4 jest realna względem pokrycia wyglądu (przedział po oper
 równego wyboru w czasie, a jej przyczyna jest nieustalona. Etap 2 musi mieć kilka ziaren WYBORU dla każdego ramienia,
 kontrole PCA16, losowe rzuty i rzut 24-wymiarowy, oraz wariant na latencie narzędzia z detektora.
 
+## 5e. Czy Koopman na latencie SAMEJ SIECI wskazuje, czego jej brakuje (pilot bez treningu, 2026-09-22)
+
+Pytanie autora: nie „które klatki pokryć", tylko „czego sieci brakuje do wytrenowania" — sygnał z dynamiki latentu
+sieci w trakcie uczenia, który wskazuje klatki, po których cała sieć lepiej rozumie narzędzie.
+Kod: `pipeline/koopman_langevin/koopman_defect_pilot.py`; wynik `REPORT_defect_pilot.json`.
+
+Definicja mierzalna: brak, który da się usunąć treningiem = klatka, na której detektor z 500 etykiet chybia (IoU < 0,5),
+a detektor z 2500 etykiet trafia. Na 3499 klatkach walidacji z torami: detektor L0 chybia 4,4 procent, duży 4,1 procent;
+**tylko 23 procent chybień L0 znika po pięciokrotnie większej liczbie etykiet.** To sufit każdego doboru: 77 procent
+błędów małej sieci nie jest brakiem danych.
+
+Sygnały bez etykiet, liczone na checkpoincie L0, i ich zdolność wskazania USUWALNEGO błędu (AUC, 0,5 = los):
+
+| Sygnał | chybienie L0 | usuwalne wśród chybionych | usuwalne wśród wszystkich | usuwalne w górnych 10 procentach |
+|---|---|---|---|---|
+| 1 - pewność detektora | 0,796 | 0,758 | **0,928** | 6,9 procent |
+| reszta Langevina latentu | 0,772 | 0,591 | 0,798 | |
+| reszta minus ruch własnej ramki („defekt") | 0,731 | 0,456 | 0,689 | |
+| reszta Koopmana w wolnych modach | 0,768 | 0,672 | 0,839 | 5,2 |
+| dryf cząstki między checkpointami (zegar treningu) | 0,774 | 0,710 | 0,864 | 5,7 |
+| pewność + dryf (suma rang) | | | 0,935 | 7,1 |
+| pewność + dryf + Koopman | | | 0,931 | 7,3 |
+
+Ten sam dryf mierzony WEWNĄTRZ jednego biegu (epoki 23 do 29, trening b1500): AUC usuwalnego błędu 0,873, pewność 0,901,
+suma rang 0,920. Dryf wczesny (epoki 2 do 5) 0,807.
+
+Odczyt:
+
+1. **Dynamika latentu sieci niesie informację o brakach** (AUC 0,84 do 0,87 wobec 0,5 dla losu), ale własna pewność
+   detektora niesie jej więcej (0,93). Odjęcie ruchu ramki od reszty latentu POGARSZA sygnał: to, co pomaga, to właśnie
+   część zgodna z ruchem narzędzia, nie „defekt reprezentacji" poza nim.
+2. Jedyny sygnał z dynamiki, który coś DOKŁADA do pewności, to zegar treningu: klatki, których cząstka wciąż dryfuje
+   między checkpointami (korelacja z pewnością tylko 0,28; suma rang 0,935 wobec 0,928; w górnych 10 procentach o 0,4 punktu
+   więcej usuwalnych). Zysk jest mały i przy 35 usuwalnych klatkach mieści się w szumie.
+3. Nawet najlepszy sygnał w górnych 10 procentach klatek trafia w usuwalny błąd tylko w 7 procentach. Dobór celujący
+   w „braki sieci" kupuje więc głównie klatki, których błędu etykiety nie usuną (Hu i in. 2021, dokładnie ten mechanizm).
+   To tłumaczy etap 1: B4 (pewność) i K1 (reszta) nie pomogły.
+
+Wniosek dla konstrukcji: „Koopman wskazuje, czego sieci brakuje" da się zbudować jako sumę rang pewności, dryfu
+między checkpointami i reszty w wolnych modach, liczoną na latencie DETEKTORA co rundę; ale sufit 23 procent i precyzja
+7 procent mówią, że to poprawi detektor co najwyżej o ułamek tego, co daje dorzucenie rozrzuconych etykiet. Większy zapas
+leży w samej sieci (32 procent chybień w szybkim ruchu niezależnie od doboru), więc kolejnym krokiem z sensem jest
+Koopman jako CEL uczenia (spójność latentu sąsiednich klatek pod jednym operatorem liniowym), nie jako selektor.
+
 ## 6. Kontrargumenty
 
 - Trzy ziarna nie wystarczą do twierdzeń; rozrzut między ziarnami w kampanii statycznej to około 0,002 AP.
