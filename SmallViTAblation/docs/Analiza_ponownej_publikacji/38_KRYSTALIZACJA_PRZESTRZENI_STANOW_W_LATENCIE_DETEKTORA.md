@@ -316,6 +316,52 @@ wynikiem): przy równym budżecie ślad kowariancji operatora ma spadać monoton
 dla resztowego; błąd jednokrokowy poza grupami nie może rosnąć. Kod: `pipeline/koopman_langevin/leverage_selection.py`.
 Czy pomaga DETEKTOROWI, rozstrzygnie dopiero ramię treningowe etapu 2.
 
+## 4i. Cząstki jako tokeny-patche (konwencja DiagnosticTool projektu grantowego), 2026-09-22
+
+Na życzenie autora cząstka to jeden PATCH obrazu, nie cała klatka: `patch_particles.py` (rejestrator według
+`Research/DiagnosticTool/test/02_rejestrator.md`) i `patch_analysis.py` (testy 03 i D65 z DiagnosticTool). Rusztowanie
+odczytane z wag końcowej normy backbone DINOv2 w RF-DETR (jądro = `beta`, długości = `|gamma|`, K = 384), stan cząstki
+= profil `(z - beta)/|gamma|`, siatka 24 x 24 = 576 cząstek na klatkę, 4800 klatek, baza PCA r = 32 dopasowana raz
+na 512 klatkach rozłożonych po całym nagraniu (udział wariancji 66 do 69 procent). Reżim: inferencja, model
+diagnostyczny, skala czasu nadkrok, wejście w rozkładzie uczącym. Zadania Eden 1809374 (zapis, 10 minut, 5 wersji
+wag po około 700 MB) i 1809381 (analiza). Wynik: `REPORT_patch_particles.json`.
+
+**Strażnicy.** Kierunek martwy: udział 7e-9 (T3c zdany; w teorii 9e-6 przy podłodze 4e-2). Promień profilu: 1,000
+dla każdej cząstki, czyli człon `eps` normy jest tu pomijalny i stopień swobody „głośności" (T24c) numerycznie NIE
+istnieje. **Determinizm (T35) NIE zdany**: 50 klatek zakodowanych drugi raz różni się o 0,11 do 0,22 w współrzędnych
+zredukowanych, czyli 7 do 14 procent odchylenia współrzędnej. Przyczyna do ustalenia (autocast i jądra SDPA zależne od
+składu partii w `predict`); każde porównanie klatka-klatka ma przez to podłogę szumu rzędu 0,1 odchylenia.
+
+| Wagi | baseny: IoU z maską narzędzia (podłoga q95 0,414; klipów nad podłogą z 6) | lambda transl. (max / ósma; podłoga) | cos podprzestrzeni transl. vs czasowa | tożsamość narzędzia AUC: wolne 8 / szybkie 8 / PCA 8 / pełne 32 |
+|---|---|---|---|---|
+| COCO | 0,482 (3) | 1,01 / 0,27 (0,01) | 0,51 | 0,776 / 0,808 / 0,867 / 0,894 |
+| 500 klatek | 0,522 (5) | 0,80 / 0,41 (0,04) | 0,55 | 0,848 / 0,667 / 0,889 / 0,911 |
+| epoka 5 (b1500) | 0,563 (5) | 0,83 / 0,43 (0,04) | 0,55 | 0,851 / 0,806 / 0,905 / 0,921 |
+| 2500 klatek | 0,537 (5) | 0,81 / 0,42 (0,04) | 0,56 | 0,899 / 0,789 / 0,913 / 0,924 |
+| epoka 29 (b1500) | 0,555 (5) | 0,78 / 0,40 (0,04) | 0,48 | 0,869 / 0,767 / 0,902 / 0,918 |
+
+Odczyt:
+
+1. **Test basenów (03) zdany po uczeniu, niepewny przed.** Skupienia cząstek jednego klipu (k = 96, sam kierunek profilu)
+   pokrywają maskę narzędzia z IoU 0,52 do 0,56 wobec podłogi gładkich podziałów losowych 0,41; przed uczeniem 0,48
+   i tylko 3 klipy z 6 nad podłogą. Narzędzie jest cienkie (3,6 procent klatki), stąd IoU dużo niższe niż 0,81 dla
+   niedźwiedzia z DAVIS w DiagnosticTool (U2). Geometria zanurzenia koduje narzędzie, a uczenie ją wyostrza.
+2. **Operator translacyjny (D65) na tokenach narzędzia.** Pary = ten sam obszar narzędzia w dwóch miejscach kadru,
+   wskazany WŁASNĄ ramką detektora (bez etykiet). Uwaga: dla COCO ramka pokrywa 35 procent klatki (detektor nie zna
+   narzędzia), więc pary są parami przypadkowych tokenów i wiersz COCO nie jest porównywalny; po uczeniu ramka to 3,6
+   procent klatki. Po uczeniu najwolniejszy mod ma lambda 0,8 przy podłodze z zerwanych par 0,04: niezmienniki
+   przesunięcia istnieją i są odróżnialne od losu.
+3. **Tożsamość narzędzia w niezmiennikach przesunięcia: pojawia się z uczeniem.** Osiem wolnych modów translacyjnych
+   odróżnia patch narzędzia od tła z AUC 0,78 przed uczeniem i 0,90 po 2500 klatkach, gdy osiem modów szybkich spada
+   z 0,81 do 0,79. To jest efekt D65 („wolne mody niosą tożsamość"), ale tu dopiero WYUCZONY, i słabszy niż osiem
+   głównych kierunków PCA (0,913) oraz pełne 32 wymiary (0,924). Niezmienniki Koopmana są więc dobrym opisem tego,
+   co sieć zrobiła z tożsamością narzędzia, a nie lepszym kodem niż wariancja.
+4. Podprzestrzenie wolne operatora translacyjnego i czasowego mają średni cosinus około 0,5: „to samo w innym
+   miejscu" i „to samo w następnej klatce" to różne kierunki latentu, zgodnie z opisem Eulera (T15a): w zegarze
+   filmu przez cząstkę przepływa scena, nie narzędzie.
+5. Rejestry (T6a): brak miejsc siatki z anomalnym promieniem (promień stały), więc test rejestrów wymaga normy
+   pre-LN wprost, której ten rejestrator nie zapisuje; do zrobienia.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest
