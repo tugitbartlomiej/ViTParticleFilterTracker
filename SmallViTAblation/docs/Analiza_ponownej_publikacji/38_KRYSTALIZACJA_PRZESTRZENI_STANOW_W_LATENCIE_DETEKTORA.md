@@ -412,6 +412,8 @@ TOŻSAMOŚCI (nie w pikselach) i pokrywać ten kod w puli, czyli ramię „pokry
 na tokenach narzędzia z aktualnego detektora, a nie na odcisku sceny jak K4. To wymaga tokenów detektora L0 na
 puli 10 637 klatek (zadanie Eden) i ramienia treningowego etapu 2 (zatwierdzenie autora).
 
+Ciąg dalszy (2026-09-22, dokument 39, sekcja 5f): kod tożsamości policzono dla całej puli 10 637 klatek pod detektorem L0 (zadania Eden 1809407 i 1809408) i zbudowano cztery ramiona doboru K5 (k-centrum w kodzie, plus klatki bez kodu, najbliżej i najdalej prototypu). Żadne ramię etapu 1 nie różni się od losu w tej przestrzeni; K5 zmniejsza największą lukę pokrycia o połowę. Trening tych ramion czeka na zatwierdzenie.
+
 ## 5. Kontrargumenty
 
 - Reprezentacja fizyki w sieciach jest rozproszona (Joseph i in.); pojedynczy mod równy jednej wielkości jest

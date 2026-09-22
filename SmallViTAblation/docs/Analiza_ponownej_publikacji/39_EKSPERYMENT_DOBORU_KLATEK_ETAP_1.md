@@ -281,6 +281,83 @@ między checkpointami i reszty w wolnych modach, liczoną na latencie DETEKTORA 
 leży w samej sieci (32 procent chybień w szybkim ruchu niezależnie od doboru), więc kolejnym krokiem z sensem jest
 Koopman jako CEL uczenia (spójność latentu sąsiednich klatek pod jednym operatorem liniowym), nie jako selektor.
 
+## 5f. Ramię K5: pokrycie kodu tożsamości narzędzia (zbudowane i zmierzone bez treningu, 2026-09-22)
+
+Skąd: sekcja 4j dokumentu 38 pokazała, że kod tożsamości (średnie współrzędne tokenów narzędzia w wolnych funkcjach
+własnych operatora TRANSLACYJNEGO Koopmana, liczonego na tokenach samego detektora) jest semantyczny: nie da się go
+zdekodować do pikseli, a wyszukiwanie klatek po „domknięciu" (odległości kodu od prototypu) szereguje po klipie.
+Jedyna forma, w której pomysł „znajdź klatki, które dobrze kodują niezmienniki, i szukaj podobnych" daje ramię
+doboru, to POKRYCIE stanów tożsamości w puli. Tu zbudowane i zmierzone; żaden trening nie został uruchomiony.
+
+Wejście (zadania Eden 1809407 i 1809408: 3 min na H100 plus 13 s CPU). Rejestrator cząstek
+(`patch_particles.py --frame-list`) na detektorze L0 (`ut_b0500_best.pth`) przeszedł wszystkie 10 637 klatek puli
+treningowej (`tracking_static36`); `identity_code_pool.py` dopasował operator translacyjny na 612 682 parach tokenów
+narzędzia i policzył kod (8 modów, |λ| od 0,64 do 0,32) oraz domknięcie każdej klatki. Kod ma 9 685 klatek; 952 klatki
+są bez kodu, bo L0 nie ma tam pewnej ramki (score nie wyżej niż 0,5 albo mniej niż 4 tokeny w ramce). Plik:
+`SmallViTAblation/results/koopman_langevin_epochs/KOD_TOZSAMOSCI_pool_b0500.npz` (439 KB, poza gitem). Strażnik
+determinizmu rejestratora nadal nie przechodzi (0,131 jednostki współrzędnej): kod niesie szum numeryczny tego rzędu,
+co przy odległościach pokrycia rzędu 1 nie przeszkadza, ale porównania klatka po klatce wyklucza.
+
+Cztery ramiona (`pipeline/koopman_langevin/identity_cover_arm.py`; ten sam L0, budżet 1500, odstęp 5 klatek,
+bez etykiet; pliki `curated/selection_matrix_stage1/matrix_K5*_b1500_sel42.json`, opis w `K5_MANIFEST.json`):
+
+| Ramię | Reguła |
+|---|---|
+| K5_identity_cover | k-centrum euklidesowe w ustandaryzowanym kodzie (zawsze klatka najdalsza od już oznaczonych): rzadkie stany tożsamości najpierw |
+| K5b_identity_cover_plus_unseen | jak K5, ale 20 procent dokupionego budżetu (200 klatek) równomiernie w czasie z klatek BEZ kodu |
+| K5c_closure_near | dosłowny pomysł autora: klatki o kodzie NAJBLIŻSZYM prototypu (tożsamość zakodowana „poprawnie"); kwota na film proporcjonalna do jego udziału w puli, żeby nie wziąć jednego klipu |
+| K5d_closure_far | lustro K5c: klatki o kodzie NAJDALSZYM od prototypu |
+
+Pomiar, który sprawdza samo pokrycie (nie trening): odległość losowej klatki puli (2000 klatek) od najbliższej klatki
+oznaczonej (L0 plus dokupione) w przestrzeni kodu, ta sama miara dla ramion etapu 1:
+
+| Zbiór oznaczony | mediana | p90 | max | filmy | klatek bez kodu | mediana domknięcia dokupionych |
+|---|---|---|---|---|---|---|
+| tylko L0 (500) | 1,055 | 1,580 | 2,914 | | | |
+| K5_identity_cover | 0,919 | 1,178 | 1,335 | 112 | 0 | 2,117 |
+| K5b_identity_cover_plus_unseen | 0,943 | 1,220 | 1,408 | 114 | 200 | 2,145 |
+| K5c_closure_near | 0,913 | 1,478 | 2,914 | 118 | 0 | 1,144 |
+| K5d_closure_far | 0,938 | 1,307 | 2,206 | 118 | 0 | 2,301 |
+| K4_koopman_cover | 0,859 | 1,313 | 2,443 | 116 | 100 | 1,666 |
+| B3_coverage | 0,874 | 1,315 | 2,346 | 117 | 180 | 1,680 |
+| B2_uniform_time | 0,868 | 1,285 | 2,483 | 118 | 117 | 1,681 |
+| B1_random | 0,844 | 1,303 | 2,658 | 118 | 97 | 1,645 |
+| K1_langevin | 0,865 | 1,324 | 2,485 | 118 | 142 | 1,641 |
+| B4_uncertainty | 0,921 | 1,339 | 2,585 | 118 | 364 | 1,821 |
+
+Mediana domknięcia w całej puli: 1,660. Wspólne klatki K5 z każdym ramieniem etapu 1: od 9 do 13 procent.
+
+Odczyt:
+
+1. **Żadne ramię etapu 1 nie różni się od losu w przestrzeni kodu tożsamości** (mediana 0,84 do 0,87, max 2,3 do 2,7).
+   Etap 1 nie testował więc pokrycia stanów tożsamości narzędzia widzianych przez samą sieć; K5 jest nową osią, nie
+   wariantem B3 ani K4.
+2. **K5 zmniejsza największą lukę pokrycia o połowę** (max 2,9 dla samego L0 do 1,3) i najmocniej ściąga p90; medianę
+   ma nieco gorszą od losu (0,92 wobec 0,84), bo k-centrum wydaje etykiety na rzadkie stany. Kupuje klatki o dużym
+   domknięciu (mediana 2,12 wobec 1,66 w puli): nietypowe stany tożsamości, nie stany „dobrze zakodowane".
+3. **K5c, czyli dosłownie „klatki, które kodują poprawnie", pokrywa typowe stany jak los, a rzadkich nie dotyka wcale**
+   (max 2,914, tyle co sam L0). Jeśli w treningu wygra K5c, sieć uczy się z klatek, które już rozumie (przeciw
+   hipotezie o brakach); jeśli K5, uczy się z rzadkich stanów tożsamości. To jest rozstrzygający kontrast tej rodziny.
+4. B4 (niepewność) kupiło 364 klatki bez kodu (36 procent dokupionych) i ma najgorsze pokrycie: niepewność kupuje
+   „nie widzę narzędzia", a nie „widzę je w nowym stanie".
+
+Uwaga o metryce K4 z etapu 1 (znaleziona przy budowie K5): `select_batch(strategy='coverage')` liczy k-centrum
+KOSINUSOWE i zakłada wektory jednostkowe; `selection_matrix.py` podał mu współrzędne Koopmana ustandaryzowane, ale
+nie znormalizowane. K4 było więc regułą „kierunek najbardziej przeciwny do już wybranych" (z normą wzmacniającą
+skrajne klatki), nie k-centrum w sensie odległości. Wynik K4 (0,6885) stoi, bo ramię jest deterministyczne i opisane
+kodem, ale jego nazwa „pokrycie" jest na wyrost; kontrola K4 z k-centrum euklidesowym wchodzi do etapu 2. B3 tej wady
+nie ma (cechy DINOv2 w pamięci podręcznej są jednostkowe). K5 używa własnego k-centrum euklidesowego (`kcentre`).
+
+Czego to nie dowodzi: ani jednego treningu nie było. Lepsze pokrycie kodu tożsamości nie musi przekładać się na AP;
+etap 1 pokazał, że pokrycie wyglądu (B3) nie pobiło równomiernego czasu. Wartość K5 to czysty test hipotezy „stany
+tożsamości narzędzia widziane przez samą sieć są właściwą jednostką doboru", którego etap 1 nie zawierał.
+
+Propozycja do etapu 2 (wymaga zatwierdzenia autora; nic nie zostało zgłoszone na Eden): K5, K5c i K5b jako trzy
+ramiona przy tym samym L0 i budżecie 1500, po 3 ziarna treningu, 12 epok (najlepsza epoka w etapie 1 wypadała
+około 7, a 30 epok przeuczało); kontrast główny K5 minus B2 (równomiernie w czasie), pomocniczy K5 minus K5c;
+próg jak w etapie 1 (0,004 AP najlepszej epoki, chybienia z bootstrapem po operacjach). Koszt: 9 biegów po około
+25 min na A100, w pięciu równoległych procesach około godziny.
+
 ## 6. Kontrargumenty
 
 - Trzy ziarna nie wystarczą do twierdzeń; rozrzut między ziarnami w kampanii statycznej to około 0,002 AP.
@@ -289,6 +366,8 @@ Koopman jako CEL uczenia (spójność latentu sąsiednich klatek pod jednym oper
 - Część najszybszych klatek to błędy adnotacji; K1 może kupować szum etykiet (Hu i in. 2021).
 - B0 jest słabym punktem odniesienia; wygrana tylko z nim niczego nie dowodzi.
 - Pewność L0 pochodzi z jednego ziarna detektora; B4 może być przez to zaniżone.
+- K4 z etapu 1 użyło k-centrum kosinusowego na nieznormalizowanych współrzędnych (sekcja 5f): jego wynik jest wynikiem
+  reguły deterministycznej, nie „pokrycia" w sensie odległości; kontrola euklidesowa dopiero w etapie 2.
 
 ## 7. Data gaps
 
