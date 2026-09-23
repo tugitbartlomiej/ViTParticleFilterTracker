@@ -1,0 +1,105 @@
+{
+  "status": "passed",
+  "checked_at_utc": "2026-09-23T10:19:00.246862+00:00",
+  "seed": 20260923,
+  "python": "3.11.8 (tags/v3.11.8:db85d51, Feb  6 2024, 22:03:32) [MSC v.1937 64 bit (AMD64)]",
+  "numpy": "2.2.5",
+  "sympy": "1.13.1",
+  "checks_count": 12,
+  "checks": [
+    {
+      "name": "dwie_reszty",
+      "method": "SymPy",
+      "scope": "Dokładna tożsamość przed i po poprawce N.",
+      "status": "passed"
+    },
+    {
+      "name": "R1_R2",
+      "method": "SymPy",
+      "scope": "Dokładne średnie dla symetrycznego szumu ±sigma; dowód ogólny w dokumencie.",
+      "status": "passed"
+    },
+    {
+      "name": "R4_wybor_po_reszcie",
+      "method": "SymPy",
+      "scope": "Wybór po wyniku odwraca znak pozornej korzyści.",
+      "status": "passed",
+      "unconditional_gain": -1,
+      "gain_selected_by_noise": 1
+    },
+    {
+      "name": "K1_skalarny",
+      "method": "SymPy",
+      "scope": "Postać Josepha i redukcja wariancji dla p,r>0.",
+      "status": "passed"
+    },
+    {
+      "name": "calkowita_wariancja",
+      "method": "SymPy",
+      "scope": "Dokładna tożsamość dla mieszaniny dwóch modeli.",
+      "status": "passed"
+    },
+    {
+      "name": "R3_znormalizowana_reszta",
+      "method": "SymPy",
+      "scope": "Dokładna średnia formy kwadratowej w 2D, z korelacją: ślad iloczynu kowariancji i precyzji plus błąd średniej.",
+      "status": "passed"
+    },
+    {
+      "name": "K1_macierzowy",
+      "method": "NumPy",
+      "scope": "300 układów SPD; postać Josepha, PSD redukcji, projekcja zadaniowa.",
+      "status": "passed",
+      "cases": 300,
+      "maximum_identity_error": 1.0658141036401503e-14,
+      "minimum_reduction_eigenvalue": -4.614623000748647e-15
+    },
+    {
+      "name": "tlo_bez_zadania",
+      "method": "NumPy",
+      "scope": "Pomiar tła redukuje ogólną wariancję, nie wariancję zadania.",
+      "status": "passed",
+      "full_trace_reduction": 99.00990099009901,
+      "task_reduction": 0.0
+    },
+    {
+      "name": "wspolny_blad_czastek",
+      "method": "NumPy",
+      "scope": "Pomijanie korelacji zaniża wariancję czterokrotnie.",
+      "status": "passed",
+      "correct_variance": 1.0,
+      "incorrectly_independent_variance": 0.25
+    },
+    {
+      "name": "obciazenie_w_K3",
+      "method": "NumPy",
+      "scope": "Drugi moment to wariancja plus kwadrat średniej, nie sama wariancja.",
+      "status": "passed",
+      "second_moment": 101.0,
+      "variance": 1.0,
+      "squared_bias": 100.0
+    },
+    {
+      "name": "K2_istniejacy_kod",
+      "method": "Wywołanie lokalnego kalman_state.kalman",
+      "scope": "Zmiana treści pomiarów zmienia innowacje, lecz nie nominalną wariancję przy ustalonych parametrach.",
+      "status": "passed",
+      "observations_per_sequence": 20,
+      "sequences": 3
+    },
+    {
+      "name": "K3_czastki_gradient_poprawa",
+      "method": "NumPy",
+      "scope": "100 liniowych odczytów: elipsoida błędu → cząstki → gradient → przedział rzeczywistej poprawy; brak twierdzenia o kalibracji na obrazach.",
+      "status": "passed",
+      "cases": 100,
+      "maximum_error_to_bound_ratio": 0.32436930036348205
+    }
+  ],
+  "files": {
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\analysis\\formalizacja_doboru_klatek\\sprawdz_reszte_kalmana.py": "fafe95e36c8e9fb1e0b90af2750bde8f1651b36375ec6c9f78d867decb5acbb7",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\docs\\Analiza_ponownej_publikacji\\45_RESZTA_LANGEVINA_KALMAN_I_DOBOR_KLATEK.md": "1ed4d3f7d7fcf798b29a13f186c029291f07c6c8ab277a68e968f8846bae9aa4",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\pipeline\\koopman_langevin\\kalman_state.py": "34e962cbcb32e02215d25aa1d37314207ddb8104c2ced5b59558eed4be9af929"
+  },
+  "scope": "Algebra i kontrolowane układy; bez treningu, filmów i nowej formalizacji Lean."
+}

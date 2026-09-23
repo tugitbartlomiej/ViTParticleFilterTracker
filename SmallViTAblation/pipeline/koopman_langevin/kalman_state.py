@@ -10,20 +10,21 @@ axis the state is x = [p, v, a] and
     a' = f_a * a + w          w ~ N(0, q)     acceleration = coloured forcing (Ornstein-Uhlenbeck)
     y  = p + n                n ~ N(0, r)     y = position read out of the latent, with its error
 
-which is an extended Langevin equation with observation noise, and its optimal estimator is the
-Kalman filter. The four numbers (f_v, f_a, q, r) are fitted by maximum likelihood of the
-innovations on OTHER operation groups than the ones scored. No network is trained here: this
-is the reference any Koopman autoencoder on the same latent has to beat.
+For the stated linear Gaussian model the Kalman filter is the optimal state estimator.
+The implementation below instead clips innovations and fits (f_v, f_a, q, r) with a Huber
+pseudo-likelihood on OTHER operation groups than the ones scored. Its covariance follows the
+nominal Gaussian recursion; it is not a calibrated posterior covariance of the clipped estimator.
+No detector is trained here. This is a diagnostic baseline for state read-out.
 
 Observation sources compared on the same frames:
   latent box_pool   cross-fitted linear read-out of position from the detector latent
   detector box      centre of the predicted box (no latent; control)
 
-Scored against the ground-truth track (labels are used for scoring only):
+Scored against the ground-truth track (the latent position read-out also uses training-fold labels):
   velocity          correlation of the filtered (causal) and smoothed velocity with the local
                     slope of the true track, next to the plain finite-difference slope
-  innovations       lag-1 correlation (white = model is complete) and excess kurtosis
-                    (heavy tails = forcing comes in rare bursts, as HAVOK assumes)
+  innovations       lag-1 correlation and excess kurtosis; zero linear correlation does not
+                    prove completeness, and heavy tails do not identify the physical cause
   miss detection    does the size of the normalised innovation flag frames where the detector
                     box misses the instrument (IoU < 0.5), against the detector's own confidence
 
@@ -58,7 +59,11 @@ def matrices(theta: np.ndarray):
 
 
 def kalman(y: np.ndarray, theta: np.ndarray, smooth: bool = False):
-    """y: [sequences, time]; every sequence shares the model, so the covariances are computed once."""
+    """y: [sequences, time]; shared nominal covariances do not depend on observed values.
+
+    Clipping changes the mean update without recalibrating these covariances. The first
+    measurement initializes position, so its innovation is not an independent forecast test.
+    """
     a, q, r = matrices(theta)
     h = np.array([1.0, 0.0, 0.0])
     n, t_len = y.shape
@@ -76,7 +81,7 @@ def kalman(y: np.ndarray, theta: np.ndarray, smooth: bool = False):
         gain = p @ h / s
         innovation[:, t] = y[:, t] - x[:, 0]
         variance[t] = s
-        # Robust update (Masreliez): a burst moves the state by at most CLIP standard deviations.
+        # Clipped innovation; the state increment is gain times the limited innovation.
         # The first Gaussian fit collapsed to "no inertia, 18 px noise" because the innovations
         # have an excess kurtosis of 18 to 65: forcing and detector misses come in rare jumps.
         limited = np.clip(innovation[:, t], -CLIP * np.sqrt(s), CLIP * np.sqrt(s))

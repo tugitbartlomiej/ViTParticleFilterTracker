@@ -26,3 +26,13 @@ Nie modyfikowano wspólnego pliku importów `SpmProofs.lean` ani konfiguracji te
 Skrypt używa zainstalowanego Lean 4.28.0 i istniejących zależności Mathlib. Parametry `-MathRoot` i `-LeanExe` pozwalają zmienić ich ścieżki. Powstaje `LEAN_WERYFIKACJA.json` z hashem źródła, listą twierdzeń i wypisanymi aksjomatami. Dodatkowy lokalny plik `.log` powtarza wyjście kompilatora. Brak audytu któregokolwiek twierdzenia, placeholder lub błąd kompilacji oznacza nieudaną weryfikację.
 
 Lean sprawdza warunkowy przedział poprawy, jego konsekwencje dla wyboru klatek oraz przenoszenie błędów osobnych cząstek na opis klatki i gradient. Ograniczenie reszty Taylora i wrażliwość mapy gradientu są jawnymi hipotezami. Nie sprawdzono w Lean całego dokumentu ani empirycznych założeń RF-DETR.
+
+## Rozszerzenie o resztę Langevina i niepewność Kalmana
+
+[Dokument 45](../../docs/Analiza_ponownej_publikacji/45_RESZTA_LANGEVINA_KALMAN_I_DOBOR_KLATEK.md) wyprowadza rozkład reszty, warunek skutecznej poprawki, redukcję kowariancji stanu i warunkowe przejście od niepewności cząstek do przedziału poprawy straty. Zawiera audyt istniejącego filtra i odróżnia jego nominalną kowariancję od niepewności rzeczywistego błędu.
+
+```powershell
+& 'F:\Python\python.exe' 'F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\analysis\formalizacja_doboru_klatek\sprawdz_reszte_kalmana.py'
+```
+
+Powstaje `RESZTA_KALMAN_WERYFIKACJA.json` z hashami dokumentu, skryptu i odczytanego kodu Kalmana. Weryfikacja używa SymPy, NumPy i zależności istniejącego modułu Kalmana, w tym SciPy. Nie używa danych, GPU ani Edenu. Nowe wyniki z dokumentu 45 nie są jeszcze sprawdzone w Lean.
