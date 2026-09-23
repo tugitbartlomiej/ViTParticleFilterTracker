@@ -1,5 +1,7 @@
 # 43. Kryterium domknięcia tożsamości obiektu w latencie: Koopman, Mori-Zwanzig, Langevin
 
+> **Korekta matematyczna, 2026-09-23:** [dokument 44](44_FORMALIZACJA_DOBORU_KLATEK_KOOPMAN_LANGEVIN.md) wycofuje poniższą równoważność „zerowe jądro pamięci wtedy i tylko wtedy, gdy opis jest domknięty” oraz wnioski o kompletności tożsamości i nieusuwalności błędu na jej podstawie. Kontrprzykład i poprawne warunki są w jego sekcji 6; lokalny `MoriZwanzig.lean` również zawiera kontrprzykład. Związek fluktuacji i dyssypacji nie jest uniwersalnym rozstrzygnięciem „braku danych” przeciw „brakowi zmiennej”. Pomiary poniżej pozostają historycznymi wynikami; ich silniejsze interpretacje w sekcjach 0, 1, 4 i 5 nie są obowiązującymi twierdzeniami projektu.
+
 Data: 2026-09-23. Status: **synteza literatury (jedenaście prac przeczytanych w pełnym tekście) i formalny pipeline.
 Bez nowych treningów.** Odpowiada na pytanie autora: „przeczytaj te prace i wyciągnij z nich jeden wniosek, co by
 wskazywało, że tożsamość w latencie się domyka dla danego obiektu, i jak to mierzyć Koopmanem i Langevinem, tak

@@ -1,0 +1,167 @@
+{
+  "created_utc": "2026-09-23T09:38:46.084806+00:00",
+  "status": "passed",
+  "sympy_version": "1.13.1",
+  "numpy_version": "2.2.5",
+  "script_sha256": "3c43d6b933c7b82651d7251f285059cafdc1b7c650353ea10f165273c02183e0",
+  "document_sha256": "47fa5df9ba715261fa69c89ccd2d9dbfeb0eea26ef0054dde95789764ad4daa7",
+  "checks": [
+    {
+      "name": "T1_iterowanie_residuum",
+      "method": "SymPy",
+      "status": "passed",
+      "scope": "Tożsamości do h=5; dowód indukcyjny w dokumencie."
+    },
+    {
+      "name": "T1_faza_i_modul",
+      "method": "SymPy",
+      "status": "passed",
+      "scope": "Dowolna faza miesza Re/Im; sprzężona para ma identyczne Re.",
+      "negative_lambda_square_scale": "1/4",
+      "rotating_lambda_modulus_scale": "1/2"
+    },
+    {
+      "name": "T1_operator_stochastyczny",
+      "method": "SymPy",
+      "status": "passed",
+      "scope": "Symetryczny przyrost ±1: średnia stała, drugi moment rośnie o 1."
+    },
+    {
+      "name": "MZ_tozsamosc_operatorowa",
+      "method": "SymPy",
+      "status": "passed",
+      "scope": "Nieprzemienne operatory 2×2, n=0..4; ogólny dowód przez rozwinięcie w dokumencie."
+    },
+    {
+      "name": "T3_eliminacja_symboliczna",
+      "method": "SymPy",
+      "status": "passed",
+      "scope": "Bloki skalarne, t=0..4; indukcja ogólna w dokumencie."
+    },
+    {
+      "name": "T3_bloki_nieprzemienne",
+      "method": "dokładne macierze wymierne",
+      "status": "passed",
+      "scope": "Bloki 2×2, sześć kroków."
+    },
+    {
+      "name": "T3_kontrprzyklad_domkniecia",
+      "method": "dokładny kontrprzykład",
+      "status": "passed",
+      "scope": "C=0,B=1: jądra identycznie zero, przyszłość zależy od h0.",
+      "same_observed_state": 0,
+      "different_next_states": [
+        0,
+        1
+      ]
+    },
+    {
+      "name": "lokalny_D59_poprawna_kowariancja",
+      "method": "dokładny kontrprzykład",
+      "status": "passed",
+      "scope": "r=1/4; dodatni wielomian widmowy uzasadnia kowariancję stacjonarną.",
+      "kernel": "0",
+      "residual_covariance_lag1": "0",
+      "residual_covariance_lag2": "1/256",
+      "spectral_lower_bound": "3/8"
+    },
+    {
+      "name": "T4_Schur",
+      "method": "SymPy",
+      "status": "passed",
+      "scope": "Tożsamość racjonalna przy SS≠0 i HH−SH²/SS≠0; nieujemność wymaga dodatniej wariancji."
+    },
+    {
+      "name": "T2_T4_warunkowe_srednie",
+      "method": "dokładne osiem zdarzeń",
+      "status": "passed",
+      "scope": "Ta sama tożsamość dla informacji reprezentacji i rozszerzenia o historię.",
+      "risk_coarse": 2,
+      "risk_fine": 1,
+      "information_gap": 1
+    },
+    {
+      "name": "T7_rozklad_gradientu",
+      "method": "SymPy",
+      "status": "passed",
+      "scope": "Dokładna tożsamość macierzowa 2×2; normowe ograniczenie wyprowadzone w tekście."
+    },
+    {
+      "name": "T9_to_samo_widmo_inny_efekt",
+      "method": "SymPy",
+      "status": "passed",
+      "scope": "Równe opisy dynamiczne; dla 0<eta<2 dobry krok poprawia, zły pogarsza.",
+      "good_gain": "-eta**2/2 + eta",
+      "bad_gain": "-eta**2/2 - eta"
+    },
+    {
+      "name": "T10_krok_PL",
+      "method": "SymPy",
+      "status": "passed",
+      "scope": "Algebra współczynnika przy kroku granicznym; nierówność wymaga 0≤alpha<1 i L>0."
+    },
+    {
+      "name": "T6_przedzial_poprawy",
+      "method": "NumPy, seed 20260923",
+      "status": "passed",
+      "scope": "2400 kierunków na 300 dodatnio określonych celach kwadratowych; nie dowód ogólny.",
+      "minimum_margin": 0.0035867949683742253
+    },
+    {
+      "name": "T6_wybor_i_strata_do_optimum",
+      "method": "NumPy, seed 20260923",
+      "status": "passed",
+      "scope": "300 rodzin po 8 kierunków; kontrola nierówności (24).",
+      "maximum_regret_minus_bound": -0.03633479109154299
+    },
+    {
+      "name": "T7_ograniczenie_normowe",
+      "method": "NumPy, seed 20260923",
+      "status": "passed",
+      "scope": "300 odczytów liniowych z błędem cech.",
+      "minimum_slack": 3.4039040787021313
+    },
+    {
+      "name": "T10_kontrakcja_PL",
+      "method": "NumPy, seed 20260923",
+      "status": "passed",
+      "scope": "300 funkcji kwadratowych z kontrolowanym błędem względnym kierunku.",
+      "minimum_slack": 0.09714689486678418
+    },
+    {
+      "name": "T6_niepusty_warunek_przewagi",
+      "method": "jawny przypadek liczbowy",
+      "status": "passed",
+      "scope": "Dwa kierunki ±1; ghat=1, eps=delta=.01, L=1, eta=.25.",
+      "selected_lower": 0.213096875,
+      "baseline_upper": -0.213096875
+    },
+    {
+      "name": "T8_wagi_pokrycia",
+      "method": "dokładny kontrprzykład",
+      "status": "passed",
+      "scope": "Zerowa odległość do reprezentantów; równe wagi reprezentantów tracą proporcje puli.",
+      "full_mean": "4/5",
+      "weighted_mean": "4/5",
+      "unweighted_mean": 0.0
+    },
+    {
+      "name": "T7a_pelny_lancuch",
+      "method": "NumPy, seed 44",
+      "status": "passed",
+      "scope": "100 układów blokowych, przewidywanie z pamięcią, rekonstrukcja cech, liniowy odczyt, krok SGD i osobny cel kwadratowy.",
+      "minimum_slacks": {
+        "memory_prediction": 0.022608627948140027,
+        "feature_reconstruction": 0.05807271750729853,
+        "gradient_approximation": 0.04423232036475342,
+        "gain_interval": 0.004629772366011087
+      }
+    }
+  ],
+  "limitations": [
+    "Nie jest to nowy dowód Lean ani maszynowa formalizacja całego dokumentu.",
+    "Przykłady numeryczne nie dowodzą nierówności uniwersalnych.",
+    "Nie sprawdzono założeń gwarancji na danych i trajektorii RF-DETR.",
+    "Nie uruchomiono treningów, ekstrakcji tokenów ani zadań Eden."
+  ]
+}

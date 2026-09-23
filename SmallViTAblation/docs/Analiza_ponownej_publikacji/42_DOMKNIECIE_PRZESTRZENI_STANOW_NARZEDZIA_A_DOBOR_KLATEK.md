@@ -1,5 +1,7 @@
 # 42. Domknięcie przestrzeni stanów narzędzia a dobór klatek: analiza teoretyczna
 
+> **Korekta matematyczna, 2026-09-23:** obowiązują warunki i dowody z [dokumentu 44](44_FORMALIZACJA_DOBORU_KLATEK_KOOPMAN_LANGEVIN.md). Trwałe mody nie dowodzą tożsamości, moduł/kwadrat nie są zawsze niezmiennikami, a norma pamięci i białość reszt nie określają deficytu wiedzy detektora. Związek diagnostyki z korzyścią z klatek wymaga osobnego warunku dotyczącego zadania i aktualizacji wag. Poniższy tekst pozostaje zapisem wcześniejszej analizy i hipotez.
+
 Data: 2026-09-22. Status: **analiza teoretyczna, bez nowych pomiarów i bez treningu.** Odpowiada na pytanie autora:
 „jeżeli w latencie udało się odseparować wektory odpowiedzialne za położenie, tożsamość, przesunięcie i tło, to czy da
 się z tego zbudować pipeline doboru klatek; czy da się zmierzyć, ile brakuje do domknięcia modelu narzędzia i jego
