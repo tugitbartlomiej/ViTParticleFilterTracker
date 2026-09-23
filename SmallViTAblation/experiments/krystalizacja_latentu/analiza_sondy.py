@@ -121,6 +121,13 @@ def main(argv=None) -> int:
         wynik['klatki_najbardziej_ku_niezmienniczosci'] = [[nazwy.get(wszystkie[j], wszystkie[j]), float(beta[j])] for j in o[:15]]
         wynik['klatki_najbardziej_od_niezmienniczosci'] = [[nazwy.get(wszystkie[j], wszystkie[j]), float(beta[j])] for j in o[::-1][:15]]
         wynik['klatek_uczacych_w_paczkach'] = len(wszystkie)
+        rng = np.random.default_rng(0)
+        def dopasuj(yy):
+            return np.linalg.solve(Xc.T @ Xc + 1.0 * np.eye(X.shape[1]), Xc.T @ (yy - yy.mean()))
+        zero = [np.abs(dopasuj(rng.permutation(y))).max() for _ in range(200)]
+        wynik['przypisanie_max_beta'] = float(np.abs(beta).max())
+        wynik['przypisanie_podloga_95'] = float(np.quantile(zero, .95))
+        wynik['przypisanie_ponad_szum'] = bool(np.abs(beta).max() > np.quantile(zero, .95))
 
     fig, ax = plt.subplots(3, 1, figsize=(11, 11), sharex=True)
     for ln, st in (('zapytanie', '-'), ('tokeny_ramki', '--')):
@@ -142,9 +149,9 @@ def main(argv=None) -> int:
         if mp:
             wynik['mAP_walidacja'] = mp
             bx = ax[2].twinx()
-            ep = np.array([e for e, _ in mp]); vv = np.array([v for _, v in mp])
-            krok_epoki = [kroki[epoki == e][-1] if (epoki == e).any() else np.nan for e in ep]
-            bx.plot(krok_epoki, vv, 'ko-', ms=3, label='mAP walidacja'); bx.set_ylabel('mAP')
+            kr = np.array([e for e, _ in mp]); vv = np.array([v for _, v in mp])   # krok TensorBoard = krok uczenia
+            bx.plot(kr, vv, 'ko-', ms=3, label='mAP walidacja'); bx.set_ylabel('mAP walidacja (czarne)')
+            wynik['krok_najlepszego_mAP'] = int(kr[vv.argmax()]); wynik['najlepsze_mAP'] = float(vv.max())
     fig.suptitle('Tozsamosc narzedzia w latencie, krok po kroku uczenia (sonda: 32 klatki walidacyjne)')
     fig.tight_layout()
     args.out.parent.mkdir(parents=True, exist_ok=True)
