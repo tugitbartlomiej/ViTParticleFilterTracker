@@ -35,7 +35,9 @@ from pathlib import Path
 import numpy as np
 
 WARIANTY = ['orig', 'rot_-45', 'rot_-30', 'rot_-15', 'rot_+15', 'rot_+30', 'rot_+45',
-            'dl_0.7', 'dl_1.4', 'tlo_a', 'tlo_b']
+            'dl_0.7', 'dl_1.4', 'tlo_a', 'tlo_b', 'tlo_swoje', 'tlo_film']
+# kontrole wklejania: tlo_swoje = ta sama klatka z zamazanym wlasnym narzedziem, na ktora wklejamy
+# wycinek z powrotem (szew jest, kontekst ten sam); tlo_film = klatka z tego samego filmu, odlegla w czasie
 
 
 def crop_descriptor(prof, box, grid, cells=3):
@@ -93,7 +95,7 @@ def przeksztalc(img, box, wariant, dawcy, rng):
         out = img.transform(img.size, Image.AFFINE, (1, 0, 0, 0, 1 / sk, cy - cy / sk), resample=Image.BILINEAR)
         return out, [x, cy - h * sk / 2, w, h * sk]
     if wariant.startswith('tlo_'):
-        dawca = dawcy[0 if wariant == 'tlo_a' else 1]
+        dawca = dawcy[{'tlo_a': 0, 'tlo_b': 1, 'tlo_swoje': 2, 'tlo_film': 3}[wariant]]
         m = 0.12
         x0, y0 = int(max(0, x - m * w)), int(max(0, y - m * h))
         x1, y1 = int(min(img.width, x + w + m * w)), int(min(img.height, y + h + m * h))
@@ -118,6 +120,7 @@ def main(argv=None) -> int:
     ap.add_argument('--batch', type=int, default=32)
     ap.add_argument('--resolution', type=int, default=384)
     ap.add_argument('--seed', type=int, default=0)
+    ap.add_argument('--lekko', action='store_true', help='float16, bez tokenow ramki (duzo detektorow)')
     ap.add_argument('--out', type=Path, required=True)
     args = ap.parse_args(argv)
 
@@ -144,7 +147,11 @@ def main(argv=None) -> int:
     for im in klatki:                                        # dwie klatki z INNYCH filmow jako tlo
         inne = [f for f in filmy if f != im['video_id']]
         wyb = rng.choice(len(inne), 2, replace=False)
-        dawcy.append([po_filmie[inne[j]][int(rng.integers(len(po_filmie[inne[j]])))] for j in wyb])
+        wlasny = sorted(po_filmie[im['video_id']], key=lambda r: r['frame_id'])
+        nr_ = int(im['frame_id'].split('/')[-1])
+        daleko = [r for r in wlasny if abs(int(r['frame_id'].split('/')[-1]) - nr_) >= 250] or wlasny
+        dawcy.append([po_filmie[inne[j]][int(rng.integers(len(po_filmie[inne[j]])))] for j in wyb]
+                     + [im, daleko[int(rng.integers(len(daleko)))]])
     print(f'[obrot] klatek {len(klatki)} z {len(filmy)} filmow, wariantow {len(WARIANTY)}', flush=True)
 
     obrazy, ramki_gt = [], []
@@ -231,11 +238,14 @@ def main(argv=None) -> int:
         for hh in hs_:
             hh.remove()
         n, v = len(obrazy), len(WARIANTY)
-        zapis = dict(zapytanie=np.concatenate(zap).reshape(n, v, -1).astype(np.float32),
-                     tokeny_ramki=np.concatenate(tok).reshape(n, v, -1).astype(np.float32),
+        typ = np.float16 if args.lekko else np.float32
+        zapis = dict(zapytanie=np.concatenate(zap).reshape(n, v, -1).astype(typ),
+                     tokeny_ramki=np.concatenate(tok).reshape(n, v, -1).astype(typ),
                      ramka=np.concatenate(rp).reshape(n, v, 4).astype(np.float32),
                      pewnosc=np.concatenate(pw).reshape(n, v).astype(np.float32),
                      ramka_gt=ramki_gt)
+        if args.lekko:
+            zapis.pop('tokeny_ramki')
         if opis:
             zapis['opis_koopmana'] = np.concatenate(opis).reshape(n, v, -1).astype(np.float32)
         np.savez_compressed(args.out / f'OBROT_{nazwa}.npz', **zapis)
