@@ -27,10 +27,20 @@ from pathlib import Path
 import numpy as np
 
 TU = Path(__file__).resolve().parent
-sys.path.insert(0, str(TU))
-sys.path.insert(0, str(TU.parents[1] / 'pipeline' / 'train'))
+# Katalogu TU nie wolno dopisywac do sys.path: lezy tam select.py, ktory zaslania modul standardowy
+# `select`, przez co subprocess, a za nim wtyczka JPEG biblioteki PIL, przestaja sie importowac.
+sys.path.append(str(TU.parents[1] / 'pipeline' / 'train'))
 
-from tozsamosc_obrot import przeksztalc  # noqa: E402
+
+def _modul(nazwa: str, plik: Path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(nazwa, plik)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+przeksztalc = _modul('tozsamosc_obrot', TU / 'tozsamosc_obrot.py').przeksztalc
 
 WARIANTY = ['orig', 'rot_-30', 'rot_+30', 'dl_1.4', 'tlo_a', 'nast']
 
@@ -88,7 +98,6 @@ def zrob_callback(obrazy, ramki_gt, ids, out: Path, co_ile: int):
 
     mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
     std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
-    surowe = torch.stack([torch.from_numpy(np.asarray(o, dtype=np.uint8)).permute(2, 0, 1) for o in obrazy])
     rozmiary = np.array([[o.width, o.height] for o in obrazy], np.float32)
 
     class Sonda(Callback):
@@ -121,8 +130,9 @@ def zrob_callback(obrazy, ramki_gt, ids, out: Path, co_ile: int):
                 if mc is not None and getattr(mc, 'resolution', None):
                     res = int(mc.resolution)
             self.res = res or 384
-            x = surowe.float() / 255.
-            x = F.interpolate(x, size=(self.res, self.res), mode='bilinear', align_corners=False)
+            from PIL import Image as _I             # klatki maja rozne rozmiary (720x480, 720x576)
+            x = torch.stack([torch.from_numpy(np.asarray(o.resize((self.res, self.res), _I.BILINEAR), dtype=np.uint8))
+                             .permute(2, 0, 1) for o in obrazy]).float() / 255.
             self.wejscie = ((x - mean) / std)
             print(f'[sonda] klatek sondy {len(ids)}, obrazow {len(obrazy)}, rozdzielczosc {self.res}', flush=True)
             self._pomiar(trainer, pl_module, None, None)          # stan przed pierwszym krokiem
