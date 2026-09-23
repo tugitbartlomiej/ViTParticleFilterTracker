@@ -36,3 +36,14 @@ Lean sprawdza warunkowy przedział poprawy, jego konsekwencje dla wyboru klatek 
 ```
 
 Powstaje `RESZTA_KALMAN_WERYFIKACJA.json` z hashami dokumentu, skryptu i odczytanego kodu Kalmana. Weryfikacja używa SymPy, NumPy i zależności istniejącego modułu Kalmana, w tym SciPy. Nie używa danych, GPU ani Edenu. Nowe wyniki z dokumentu 45 nie są jeszcze sprawdzone w Lean.
+
+## PDF z wyprowadzeniami i dowodami
+
+`zbuduj_pdf_langevin.py` składa cały dokument 45 oraz dodatek odtwarzający dowody T5, T6 i T7 z dokumentu 44. Wymaga Pandoc i XeLaTeX w `PATH` oraz fontów Cambria, Cambria Math, Segoe UI i Consolas. PDF zawiera spis treści, zakładki i jawny zakres dotychczasowej kontroli w Lean.
+
+```powershell
+& 'F:\Python\python.exe' 'F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\analysis\formalizacja_doboru_klatek\zbuduj_pdf_langevin.py'
+```
+
+Wynik: `F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\output\pdf\45_Reszta_Langevina_Kalman_dowody.pdf`.
+Obok powstaje manifest z hashami źródeł i PDF. Pliki składu i podglądy kontroli pozostają w `SmallViTAblation/tmp/pdfs/langevin_kalman/`. Źródłowe dokumenty Markdown nie są zmieniane przez eksport. PDF jest lokalnym artefaktem, pomijanym przez istniejące reguły Git.
