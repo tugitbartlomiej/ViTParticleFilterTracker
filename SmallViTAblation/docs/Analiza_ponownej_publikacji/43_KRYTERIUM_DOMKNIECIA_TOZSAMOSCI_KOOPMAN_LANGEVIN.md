@@ -46,6 +46,12 @@ to samo w postaci jawnego wzoru (równ. 3.8): jądra pamięci
 **znikają tożsamościowo wtedy i tylko wtedy, gdy `Qᵀ A Q⊥ = 0`, czyli gdy rozpiętość `Q` jest podprzestrzenią
 niezmienniczą operatora `A`.**
 
+> **Poprawka (dokument 44, wniosek 4).** „Wtedy i tylko wtedy" jest za mocne. Jądra znikają dokładnie wtedy,
+> gdy `B D^{l−1} C = 0` dla każdego `l` (`B = Qᵀ A Q⊥`, `C = Q⊥ᵀ A Q`, `D = Q⊥ᵀ A Q⊥`). Warunek `B = 0` jest
+> dostateczny, ale nie konieczny: przy `C = 0` (reszta autonomiczna, pcha tożsamość, sama nie reaguje) pamięci nie
+> ma, a wyciek jest niezerowy. Prawdziwe zostaje: mały wyciek daje małą pamięć, duża pamięć wymusza wyciek.
+> Sprawdzone numerycznie w `experiments/krystalizacja_latentu/wzor_domkniecia.py`.
+
 To jest równoważność, której brakowało w [42]: domknięcie Markowa (znikające jądro pamięci, sekcja 3c tamtego
 dokumentu) i domknięcie geometryczne (niezmienniczość podprzestrzeni) to **jeden warunek**. Można go mierzyć dwiema
 niezależnymi drogami i sprawdzać, czy się zgadzają.

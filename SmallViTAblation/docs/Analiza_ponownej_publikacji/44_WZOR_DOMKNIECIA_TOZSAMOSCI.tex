@@ -1,0 +1,510 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\emergencystretch=3em
+
+\newtheorem{twierdzenie}{Twierdzenie}
+\newtheorem{wniosek}{Wniosek}
+\theoremstyle{definition}
+\newtheorem{definicja}{Definicja}
+\newtheorem{zalozenie}{Założenie}
+\theoremstyle{remark}
+\newtheorem{uwaga}{Uwaga}
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Qp}{Q_{\perp}}
+\newcommand{\T}{^{\top}}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+\newcommand{\smax}{\sigma_{\max}}
+\newcommand{\smin}{\sigma_{\min}}
+
+\title{Wzór domknięcia tożsamości narzędzia w latencie detektora\\[4pt]
+\large Pamięć jako pętla przez resztę latentu: wyprowadzenie, sprawdzenie i dane}
+\author{Dokument 44, SmallViTAblation, RF-DETR Nano na Cataract-LMM}
+\date{23 września 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Wyprowadzam jeden wzór, który opisuje to, co w dokumentach 42 i 43 było analizowane słowami: czy
+tożsamość narzędzia jest w latencie detektora zmienną samodzielną, czy potrzebuje pamięci o przeszłości.
+Przy liniowym modelu kroku czasu w wybielonym opisie klatki równanie dla współrzędnych tożsamości jest
+dyskretnym uogólnionym równaniem Langevina, a jego jądro pamięci ma jawną postać
+$\Omega_l = B D^{\,l-1} C$: tożsamość przecieka do reszty latentu ($C$), krąży tam ($D$) i wraca ($B$).
+Z tego wynikają trzy rzeczy, które da się policzyć bez etykiet: pamięć jest ograniczona iloczynem
+dwóch kątów wycieku, pierwsze jądro to różnica między dwoma krokami a kwadratem jednego kroku, a szum
+musi spełniać związek fluktuacji i dyssypacji. Wyprowadzenie poprawia jedno zdanie dokumentu 43:
+brak pamięci nie oznacza niezmienniczości podprzestrzeni. Wszystkie tożsamości sprawdziłem numerycznie
+na układzie syntetycznym (błąd zero co do precyzji maszyny). Na puli 9683 klatek pamięć tożsamości
+liczona z korelacji nie wychodzi ponad podłogę szumu, ale dwa sposoby liczenia jądra się nie zgadzają,
+co wskazuje na brakującą zmienną, a nie na brak danych. Dziewięć biegów na 250 klatkach pokazuje, że dobór po kwadratach
+remisuje z losowym i nie zbliża się do 1500 klatek; siatka miała przy tym w praktyce dwie osie zamiast trzech.
+\end{abstract}
+
+\section{Wzór w jednym miejscu}
+
+Niech $y_n\in\R^p$ będą współrzędnymi tożsamości klatki $n$, a $w_n$ resztą opisu klatki (scena, poza,
+wszystko inne). Macierz kroku czasu $A$ rozkłada się na cztery bloki, opisane w sekcji~\ref{sec:oznaczenia}.
+Wtedy
+\begin{equation}\label{eq:glowny}
+\boxed{\;
+y_{n+1} \;=\; \underbrace{M\,y_n}_{\text{krok bez pamięci}}
+\;+\; \sum_{l=1}^{n} \underbrace{B\,D^{\,l-1}\,C}_{\Omega_l\ \text{(pamięć)}}\; y_{n-l}
+\;+\; W_{n+1}\;}
+\end{equation}
+oraz
+\begin{equation}\label{eq:nierownosc}
+\boxed{\;
+\sum_{l\ge 1}\norm{\Omega_l} \;\le\; \frac{\norm{A}^2}{1-\norm{D}}\;\sin\theta_{\max}\;\sin\varphi_{\max}\;}
+\end{equation}
+gdzie $\theta_{\max}$ to największy kąt między przestrzenią tożsamości a jej obrazem po kroku czasu
+(wyciek do tożsamości z zewnątrz, blok $B$), a $\varphi_{\max}$ to największy kąt między przestrzenią
+tożsamości a tym, w co przechodzi stan tożsamości (wyciek z tożsamości na zewnątrz, blok $C$).
+
+\medskip\noindent
+Słowami: \emph{pamięć tożsamości to pętla. Tożsamość przecieka do reszty latentu, krąży tam tak długo,
+jak reszta pamięta, i wraca. Pamięć nie może być większa niż iloczyn wycieku na zewnątrz i wycieku
+z powrotem, podzielony przez to, jak wolno reszta zapomina.} Tożsamość jest domknięta, gdy ta pętla jest
+przerwana. Z danych pierwszy wyraz pętli liczy się wprost z korelacji na dwóch odstępach czasu:
+\begin{equation}\label{eq:omega1}
+\Omega_1 \;=\; C_y(2\Delta) \;-\; C_y(\Delta)^2 ,
+\end{equation}
+czyli: \emph{czy dwa kroki to to samo, co jeden krok podniesiony do kwadratu}.
+
+\section{Co analizujemy, zwykłymi słowami}
+
+Detektor RF-DETR Nano ogląda klatkę operacji zaćmy i przewiduje ramkę narzędzia. Z tokenów wewnątrz
+przewidzianej ramki robimy opis klatki: 48 liczb, wybielonych, czyli przeskalowanych tak, żeby każdy
+kierunek miał tę samą siłę i żaden nie był skorelowany z innym. Klatki z tego samego filmu, odległe
+o 5 klatek nagrania, tworzą pary „przed i po”. Z tych par liczymy macierz kroku czasu: jak opis klatki
+zmienia się po jednym kroku.
+
+Niektóre kierunki opisu po kroku wracają prawie takie same; to są mody wolne. Część z nich jest stała
+przez cały film (oko, światło, kadr) i to jest scena. Część zmienia się w obrębie filmu, bo narzędzia się
+wymienia, i to jest kandydat na tożsamość narzędzia. Pytanie brzmi: czy tożsamość jest w latencie zmienną,
+która sama wystarcza do przewidzenia swojej przyszłości, czy do tego potrzebuje historii. Jeśli potrzebuje
+historii, to znaczy, że informacja o tożsamości wyciekła do innych kierunków i wraca z opóźnieniem.
+Wtedy tożsamość nie jest domknięta. Drugie pytanie: ile klatek oznaczonych trzeba, żeby detektor nauczył
+się domkniętej tożsamości, i czy da się je wybrać lepiej niż co $n$-tą klatkę.
+
+\section{Oznaczenia i założenia}\label{sec:oznaczenia}
+
+\begin{zalozenie}[wybielenie i stacjonarność]\label{zal:biel}
+Opis klatki $\varphi_n\in\R^d$ ma średnią zero i kowariancję jednostkową, $\E[\varphi_n\varphi_n\T]=I$,
+dla każdego $n$ w obrębie filmu. U nas $d=48$, krok $\Delta = 5$ klatek nagrania.
+\end{zalozenie}
+
+\begin{zalozenie}[liniowy model kroku]\label{zal:lin}
+$\varphi_{n+1} = A\varphi_n + \varepsilon_{n+1}$, gdzie $\varepsilon_{n+1}$ ma średnią zero, kowariancję
+$\Sigma$ i jest nieskorelowane z $\varphi_0,\dots,\varphi_n$. Z założenia~\ref{zal:biel} wynika
+$\Sigma = I - AA\T$ oraz $\E[\varphi_{n+k}\varphi_n\T] = A^k$.
+\end{zalozenie}
+
+W wybielonych współrzędnych $A = \E[\varphi_{n+1}\varphi_n\T]$ jest dokładnie macierzą EDMD, którą liczy
+\texttt{krystalizacja.py}. Obserwabla to funkcja liniowa $g_a(x) = a\T\varphi(x)$. Operator Koopmana,
+czyli „przesuń obserwablę o krok i uśrednij”, działa na jej współczynnikach przez transpozycję:
+$(\mathcal K g_a)(x) = \E[g_a(\varphi_{n+1})\mid\varphi_n=\varphi(x)] = (A\T a)\T\varphi(x)$.
+Ponieważ opis jest wybielony, iloczyn skalarny współczynników jest iloczynem skalarnym funkcji na danych,
+więc kąty między podprzestrzeniami współczynników są kątami między przestrzeniami funkcji.
+
+\begin{definicja}[przestrzeń tożsamości i bloki]
+Niech kolumny $Q\in\R^{d\times p}$ tworzą bazę ortonormalną przestrzeni tożsamości $V$,
+a kolumny $\Qp$ bazę jej dopełnienia. Współrzędne tożsamości i reszty to
+$y_n = Q\T\varphi_n$, $w_n = \Qp\T\varphi_n$. Bloki macierzy kroku:
+\[
+M = Q\T A Q,\qquad B = Q\T A\Qp,\qquad C = \Qp\T A Q,\qquad D = \Qp\T A\Qp .
+\]
+\end{definicja}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+blok & skąd dokąd & znaczenie tutaj\\
+\midrule
+$M$ & tożsamość $\to$ tożsamość & jak tożsamość sama się niesie przez krok (tłumienie i obrót)\\
+$C$ & tożsamość $\to$ reszta & ile tożsamości przecieka do sceny i pozy\\
+$D$ & reszta $\to$ reszta & jak długo reszta pamięta to, co dostała\\
+$B$ & reszta $\to$ tożsamość & ile reszty wraca do tożsamości, czyli jak scena i poza ją pchają\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Wyprowadzenie równania dla tożsamości}
+
+\begin{twierdzenie}[dyskretne uogólnione równanie Langevina]\label{tw:gle}
+Przy założeniach~\ref{zal:biel} i~\ref{zal:lin} dla każdego $n\ge 0$
+\[
+y_{n+1} = M y_n + \sum_{l=1}^{n} B D^{\,l-1} C\, y_{n-l} + W_{n+1},
+\qquad
+W_{n+1} = B D^{n} w_0 + \sum_{j=1}^{n} B D^{\,n-j}\Qp\T\varepsilon_j + Q\T\varepsilon_{n+1},
+\]
+a szum $W_{n+1}$ jest nieskorelowany z warunkiem początkowym tożsamości: $\E[W_{n+1}y_0\T]=0$.
+\end{twierdzenie}
+
+\begin{proof}
+Wstawiamy $\varphi = Q y + \Qp w$ do modelu i mnożymy z lewej przez $Q\T$ oraz $\Qp\T$:
+\[
+y_{n+1} = M y_n + B w_n + Q\T\varepsilon_{n+1},\qquad
+w_{n+1} = C y_n + D w_n + \Qp\T\varepsilon_{n+1}.
+\]
+Drugie równanie rozwijamy wstecz aż do chwili zero:
+\[
+w_n = D^n w_0 + \sum_{j=1}^{n} D^{\,n-j}\bigl(C y_{j-1} + \Qp\T\varepsilon_j\bigr).
+\]
+Wstawiamy do pierwszego. Wyraz $\sum_{j=1}^{n} B D^{\,n-j} C y_{j-1}$ po podstawieniu $l = n-j+1$
+daje $\sum_{l=1}^{n} B D^{\,l-1} C y_{n-l}$, a reszta to $W_{n+1}$. Nieskorelowanie: $\varepsilon_j$
+dla $j\ge 1$ jest nieskorelowane z $y_0$ z założenia~\ref{zal:lin}, a
+$\E[w_0 y_0\T] = \Qp\T\E[\varphi_0\varphi_0\T]Q = \Qp\T Q = 0$ z założenia~\ref{zal:biel}.
+\end{proof}
+
+To jest wzór~\eqref{eq:glowny}. Człon $M y_n$ to dryf: wartości własne $M$ blisko jedności to tożsamość,
+która trwa, a ich kąt w płaszczyźnie zespolonej to powolny obrót. Człon z sumą to pamięć. $W_{n+1}$ to
+szum, który w języku Moriego i Zwanziga nazywa się dynamiką ortogonalną: część ruchu tożsamości,
+której nie da się przewidzieć z jej własnej historii.
+
+\begin{wniosek}[pamięć jako odpowiedź pętli]\label{wn:transmitancja}
+Funkcja tworząca jąder pamięci jest transmitancją pętli przez resztę:
+\[
+\widehat\Omega(z) \;=\; \sum_{l\ge 1}\Omega_l\, z^{-l} \;=\; B\,(zI-D)^{-1}\,C .
+\]
+Jądra $\Omega_l$ są więc dokładnie odpowiedzią impulsową układu, który przyjmuje tożsamość przez $C$,
+przetwarza ją macierzą $D$ i oddaje przez $B$.
+\end{wniosek}
+
+\section{Ten sam wzór z danych, bez modelu reszty}
+
+Bloków $B$, $C$, $D$ nie widać bezpośrednio, bo reszta latentu jest ogromna. Da się je jednak ominąć.
+
+\begin{twierdzenie}[jądra z korelacji]\label{tw:korelacje}
+Niech $C_y(k\Delta) = \E[y_{n+k}y_n\T]$. Przy założeniach~\ref{zal:biel} i~\ref{zal:lin}
+$C_y(k\Delta) = Q\T A^k Q$, $C_y(0) = I$, a rekurencja Lina i współautorów (Lin21b, równanie 52)
+\[
+\Omega_k = \Bigl(C_y\bigl((k+1)\Delta\bigr) - \sum_{l=0}^{k-1}\Omega_l\, C_y\bigl((k-l)\Delta\bigr)\Bigr)C_y(0)^{-1},
+\qquad \Omega_0 = M,
+\]
+daje dokładnie $\Omega_k = B D^{\,k-1} C$ dla $k\ge 1$.
+\end{twierdzenie}
+
+\begin{proof}
+Bierzemy równanie z twierdzenia~\ref{tw:gle} dla $n=k$, mnożymy z prawej przez $y_0\T$ i uśredniamy.
+Szum znika, bo $\E[W_{k+1}y_0\T]=0$, więc
+$C_y((k+1)\Delta) = \sum_{l=0}^{k}\Omega_l C_y((k-l)\Delta)$. Przy odwracalnym $C_y(0)$ ta równość
+wyznacza $\Omega_k$ jednoznacznie, kolejno dla $k = 0,1,2,\dots$, i jest to dokładnie rekurencja z tezy.
+\end{proof}
+
+\begin{wniosek}[pierwszy wyraz pamięci]
+W wybielonych współrzędnych tożsamości
+$\Omega_1 = C_y(2\Delta) - C_y(\Delta)^2 = Q\T A (I - QQ\T) A Q = BC$.
+Proces tożsamości nie ma pamięci wtedy i tylko wtedy, gdy korelacje tworzą półgrupę:
+$C_y(k\Delta) = C_y(\Delta)^k$ dla każdego $k$.
+\end{wniosek}
+
+To jest wzór~\eqref{eq:omega1}. Liczy się go z par klatek odległych o $\Delta$ i $2\Delta$ tego samego
+filmu, bez żadnych etykiet i bez znajomości reszty latentu. Rekurencja z twierdzenia~\ref{tw:korelacje}
+jest poprawna dla każdego procesu stacjonarnego w sensie rzutu Moriego; założenie liniowe jest potrzebne
+tylko po to, żeby utożsamić jej wynik z pętlą $BD^{l-1}C$.
+
+\section{Szum i pamięć są związane}
+
+\begin{twierdzenie}[związek fluktuacji i dyssypacji]\label{tw:fdt}
+Przy założeniach~\ref{zal:biel} i~\ref{zal:lin} dla $k\ge 1$
+\[
+\E\bigl[W_{k+1}W_1\T\bigr] \;=\; -\,\Omega_k\, C_y(\Delta)\T,
+\qquad\text{czyli}\qquad
+\Omega_k = -\,\E\bigl[W_{k+1}W_1\T\bigr]\,C_y(-\Delta)^{-1}.
+\]
+\end{twierdzenie}
+
+\begin{proof}
+Z postaci szumu w twierdzeniu~\ref{tw:gle}: $W_1 = Bw_0 + Q\T\varepsilon_1$, a w $W_{k+1}$ z $W_1$
+korelują się tylko wyrazy z $w_0$ i z $\varepsilon_1$:
+\[
+\E[W_{k+1}W_1\T] = B D^{k} B\T + B D^{\,k-1}\Qp\T\Sigma Q .
+\]
+Z $\Sigma = I - AA\T$ i $\Qp\T Q = 0$ mamy $\Qp\T\Sigma Q = -\Qp\T A A\T Q$. Rozkładając
+$\Qp\T A = C Q\T + D\Qp\T$ oraz $A\T Q = Q M\T + \Qp B\T$ dostajemy
+$\Qp\T AA\T Q = C M\T + D B\T$. Stąd
+$\E[W_{k+1}W_1\T] = BD^kB\T - BD^{k-1}CM\T - BD^kB\T = -\Omega_k M\T$, a $M = C_y(\Delta)$.
+\end{proof}
+
+Postać po prawej to dyskretny drugi związek fluktuacji i dyssypacji z Lin21b (równanie 89) w naszych
+indeksach ($W(k)$ u nich to $W_{k+1}$ tutaj). Wyprowadzenie pokazuje, skąd bierze się jego ważność:
+ze stacjonarności, $\Sigma = I - AA\T$. Jeśli jądro policzone rekurencją i jądro policzone z autokorelacji
+szumu się nie zgadzają, to albo proces nie jest stacjonarny, albo model liniowy w tym opisie nie
+wystarcza, czyli w opisie brakuje zmiennej.
+
+\section{Geometria: wyciek i kąty}
+
+Niech $V = \operatorname{span} Q$. Obraz Koopmana tej przestrzeni to $\mathcal K V = \operatorname{span} A\T Q$,
+a obraz stanu to $AV = \operatorname{span} AQ$. Kąty główne $\theta_i$ między $V$ a $\mathcal K V$ mierzą,
+ile obserwabli tożsamości po kroku wypada poza tożsamość (Con26, lemat 3.2: sinus kąta to dokładnie norma
+tej części). Kąty $\varphi_i$ między $V$ a $AV$ mierzą, ile stanu tożsamości przechodzi w resztę.
+
+\begin{twierdzenie}[wyciek to blok]\label{tw:katy}
+Jeśli $A\T Q$ i $AQ$ mają pełny rząd kolumnowy, to
+\begin{gather*}
+\smin(Q\T A)\,\sin\theta_{\max} \le \norm{B} \le \smax(Q\T A)\,\sin\theta_{\max},\\
+\smin(AQ)\,\sin\varphi_{\max} \le \norm{C} \le \smax(AQ)\,\sin\varphi_{\max},
+\end{gather*}
+gdzie $\norm{\cdot}$ to norma spektralna.
+\end{twierdzenie}
+
+\begin{proof}
+Niech $A\T Q = U R$ z $U$ o kolumnach ortonormalnych i $R$ odwracalnym; wartości szczególne $R$ są
+wartościami szczególnymi $Q\T A$. Dla podprzestrzeni tego samego wymiaru
+$\sin\theta_{\max} = \norm{\Qp\T U}$. Ponieważ $B\T = \Qp\T A\T Q = \Qp\T U R$, dostajemy
+$\norm{B}\le \sin\theta_{\max}\norm{R}$ oraz $\Qp\T U = B\T R^{-1}$, więc
+$\sin\theta_{\max}\le\norm{B}/\smin(R)$. Dla $C = \Qp\T A Q$ to samo z rozkładem $AQ = U'R'$.
+\end{proof}
+
+\begin{wniosek}[nierówność pamięci]
+Jeśli $\norm{D}<1$, to $\norm{\Omega_l}\le\norm{B}\,\norm{D}^{\,l-1}\norm{C}$, a po zsumowaniu szeregu
+geometrycznego i twierdzeniu~\ref{tw:katy} dostajemy wzór~\eqref{eq:nierownosc}.
+\end{wniosek}
+
+\begin{wniosek}[poprawka do dokumentu 43]\label{wn:poprawka}
+Pamięć znika tożsamościowo, $\Omega_l = 0$ dla wszystkich $l$, wtedy i tylko wtedy, gdy
+$B D^{\,l-1} C = 0$ dla wszystkich $l$, czyli gdy $B$ zeruje się na całej przestrzeni Kryłowa
+$\operatorname{span}\{C, DC, D^2C,\dots\}$. Warunek $B=0$ (przestrzeń tożsamości niezmiennicza względem
+Koopmana, zerowy wyciek $\theta$) jest dostateczny, ale \emph{nie} konieczny. Drugi dostateczny to $C=0$.
+\end{wniosek}
+
+Dokument 43 w sekcji 1 zapisał, że jądra znikają „wtedy i tylko wtedy”, gdy $Q\T A\Qp = 0$, i wyciągnął
+z tego, że wyciek i pamięć muszą spadać razem. Prawdziwa jest tylko połowa: \textbf{mały wyciek w dowolną
+stronę daje małą pamięć}, a \textbf{duża pamięć wymusza wyciek w obie strony}. Odwrotnie nie. Przykład:
+reszta latentu jest autonomiczna ($C=0$, tożsamość jej nie pobudza), ale pcha tożsamość ($B\ne 0$).
+Wtedy $A^k$ jest blokowo górnotrójkątne, $C_y(k\Delta) = M^k$, pamięci nie ma i tożsamość jest procesem
+Markowa, a mimo to $\sin\theta_{\max}>0$. Fizycznie to jest scena, która przesuwa współrzędne tożsamości,
+sama nie reagując na narzędzie. W równaniu~\eqref{eq:glowny} widać ją tylko jako większy, biały szum.
+Dlatego \textbf{potrzebne są obie miary}: pamięć $\Omega$ mówi, czy tożsamość ma historię, a wyciek
+$\theta$ mówi, czy coś z zewnątrz ją pcha. Domknięcie Koopmana ($B=0$) jest mocniejsze niż domknięcie Markowa
+($\Omega\equiv 0$).
+
+\section{Obrót: dlaczego nie wolno brać samej części rzeczywistej}
+
+\begin{wniosek}[wyciek przez obrót]\label{wn:obrot}
+Niech $\psi = \psi_R + i\psi_I$ będzie funkcją własną Koopmana z wartością $\lambda = |\lambda|e^{i\omega}$,
+a $\psi_R$ i $\psi_I$ są prostopadłe i mają tę samą normę (obrót kołowy). Dla $V = \operatorname{span}\{\psi_R\}$
+\[
+\sin\theta_{\max}(V,\mathcal K V) = |\sin\omega| .
+\]
+\end{wniosek}
+
+\begin{proof}
+$\mathcal K\psi_R = \operatorname{Re}(\lambda\psi) = |\lambda|(\cos\omega\,\psi_R - \sin\omega\,\psi_I)$;
+kąt między tym wektorem a $\psi_R$ ma cosinus $|\cos\omega|$.
+\end{proof}
+
+Mod zespolony to para współrzędnych, które kręcą się wokół zera o kąt $\omega$ na każdy krok, jak wskazówka
+zegara. Część rzeczywista to rzut tej wskazówki na jedną oś. Po kroku część wskazówki przechodzi na drugą oś,
+której w $V$ nie ma, i to jest wyciek. Wniosek praktyczny: z pary sprzężonej zawsze bierzemy
+$\psi_R$ i $\psi_I$ razem. W skryptach \texttt{zajetosc\_tozsamosci.py}, \texttt{nasycenie\_tozsamosci.py}
+i \texttt{buduj\_ramiona\_250.py} tak nie jest: osie tożsamości to mody 5, 6 i 7, a 6 i 7 to para sprzężona
+o identycznej części rzeczywistej (korelacja osi równa 1). Kratka $16^3$ była więc w praktyce kratką
+$16^2$; stąd 252 zajęte komórki z 256 możliwych, a nie z 4096. Sam obrót tej pary jest wolny
+($\omega = 0{,}018$ radiana na krok), więc wyciek przez obrót jest mały; stracona jest trzecia oś.
+
+\section{Nasycenie względem liczby klatek}
+
+\subsection*{Stabilność podprzestrzeni}
+Dla baz ortonormalnych $X$, $Y$ dwóch oszacowań przestrzeni tożsamości (Kap25, równanie 2.14)
+\[
+\widehat D(X,Y) = \sqrt{1 - \frac{\norm{X\T Y}_F^2}{\max(p,q)}}
+\;=\; \sqrt{1 - \frac{1}{p}\sum_{i=1}^{p}\cos^2\theta_i}\quad\text{dla } p=q .
+\]
+Średnia korelacja kanoniczna 0,86 między checkpointami (dokument 43, sekcja 6) odpowiada
+$\widehat D\approx\sqrt{1-0{,}86^2}\approx 0{,}51$, czyli podprzestrzeń między checkpointami obraca się
+o mniej więcej 30 stopni. To nie jest nasycenie.
+
+\subsection*{Szum czy obrót}
+Jeśli prawdziwa przestrzeń tożsamości jest ustalona, a różnica między oszacowaniami bierze się tylko
+z losowania par, to $\widehat D$ maleje jak $N_{\mathrm{ef}}^{-1/2}$. Sąsiednie klatki tego samego filmu nie
+są niezależne; dla drugich momentów procesu o korelacji $\rho$ między sąsiadami przybliżenie Bartletta daje
+\[
+N_{\mathrm{ef}} \approx N\,\frac{1-\rho^2}{1+\rho^2},
+\]
+co przy $\rho = 0{,}9$ oznacza, że dziesięć sąsiednich par waży tyle, co jedna niezależna. Przewidywanie
+do sprawdzenia: na wykresie $\log\widehat D$ względem $\log N_{\mathrm{ef}}$ nachylenie $-1/2$ znaczy
+„brakuje tylko danych”, a wypłaszczenie powyżej tej prostej znaczy „przestrzeń naprawdę się obraca”.
+
+\subsection*{Kiedy dobór po kwadratach ma prawo działać}
+
+\begin{twierdzenie}[pokrycie]\label{tw:pokrycie}
+Niech $c(x)\in\R^p$ będą współrzędnymi tożsamości klatki $x$, pula podzielona na komórki $\Gamma_j$ o udziałach
+$\pi_j$ i średnicach $\operatorname{diam}_j$, a $S$ trafia w komórki $J(S)$ o łącznej masie
+$m(S) = \sum_{j\in J(S)}\pi_j$. Jeśli strata detektora wytrenowanego na $S$ jest w każdej komórce
+$L$-lipschitzowska w $c$ i ograniczona przez $\ell_{\max}$, to
+\[
+\frac{1}{|P|}\sum_{x\in P}\ell_S(x) \;\le\; \max_{s\in S}\ell_S(s) \;+\; L\sum_{j\in J(S)}\pi_j\operatorname{diam}_j
+\;+\; \ell_{\max}\bigl(1-m(S)\bigr).
+\]
+\end{twierdzenie}
+
+\begin{proof}
+Klatka z komórki trafionej leży w odległości co najwyżej $\operatorname{diam}_j$ od klatki wybranej z tej samej
+komórki, więc jej strata jest co najwyżej o $L\operatorname{diam}_j$ większa. Klatka z komórki nietrafionej
+ma stratę co najwyżej $\ell_{\max}$. Uśredniamy po puli.
+\end{proof}
+
+Masa $m(S)$ to dokładnie wielkość „masa” z \texttt{nasycenie\_tozsamosci.py}. Przy 250 klatkach wynosi 1,00
+dla doboru po kwadratach, 0,71 dla losowego i 0,69 dla równomiernego w czasie. Twierdzenie mówi, że przewaga
+kwadratów jest wtedy co najwyżej $0{,}29\,\ell_{\max}$, i to tylko pod warunkiem, że strata zależy głównie
+od współrzędnych tożsamości. Wynik z Edenu (sekcja~\ref{sec:dane}) pokazuje, że tego warunku nie ma:
+strata zależy od czegoś, czego te dwie osie nie widzą.
+
+\subsection*{Program doboru}
+Cały analizowany problem daje się zapisać jako
+\[
+S^\star = \arg\min_{S\subset P}|S|\quad\text{przy}\quad
+\sum_{l\ge1}\norm{\Omega_l(S)}\le\varepsilon_\Omega,\quad
+\sin\theta_{\max}(S)\le\varepsilon_\theta,\quad
+\widehat D\bigl(V_S, V_{S\cup\Delta S}\bigr)\le\varepsilon_D,
+\]
+gdzie wszystkie trzy wielkości liczy się w latencie detektora wytrenowanego na $S$, na puli bez etykiet.
+Dobór po kwadratach zastępuje te trzy warunki jednym zastępczym, $m(S)$ w osiach modelu wstępnego.
+Twierdzenie~\ref{tw:pokrycie} mówi, kiedy takie zastępstwo jest uprawnione.
+
+\section{Sprawdzenie i dane}\label{sec:dane}
+
+\subsection*{Układ syntetyczny}
+Skrypt \texttt{experiments/krystalizacja\_latentu/wzor\_domkniecia.py}, część A: losowe $A$ o normie mniejszej
+niż 1 w $d=10$, przestrzeń tożsamości wymiaru $p=3$, korelacje dokładne i 400 tysięcy trajektorii Monte Carlo.
+
+\begin{center}\small
+\begin{tabular}{@{}p{5.4cm}p{6.2cm}p{3.6cm}@{}}
+\toprule
+co sprawdzone & wynik & werdykt\\
+\midrule
+rekurencja Lin21b a $BD^{l-1}C$, $l\le 6$ & największy błąd $0{,}0$ & zgodne dokładnie\\
+związek fluktuacji i dyssypacji, $k=1,2,3$, dokładnie & błąd $0{,}0$ & zgodne dokładnie\\
+to samo z Monte Carlo & błąd 0,002 do 0,003 przy błędzie standardowym 0,0015 & zgodne w granicy szumu\\
+granice $\norm{B}$ & $0{,}468 \le 0{,}640 \le 0{,}736$ & spełnione\\
+granice $\norm{C}$ & $0{,}548 \le 0{,}669 \le 0{,}689$ & spełnione\\
+nierówność pamięci & $0{,}479 \le 3{,}741$ & spełniona, luźna\\
+kontrprzykład $C=0$ & pamięć $0$, $\sin\theta_{\max}=0{,}319$ & poprawka potwierdzona\\
+obrót, $\omega = 0{,}02;\,0{,}2;\,0{,}6$ & $\sin\theta = 0{,}020;\,0{,}199;\,0{,}565$ & równe $|\sin\omega|$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Pula klatek}
+Ta sama pula co w dokumencie 43 (\texttt{CZASTKI\_pool\_b0500}): 9683 klatek ze 118 filmów, 1689 par na odstępie
+5 klatek, 1649 na odstępie 10, 1588 na odstępie 15, 315 trójek do testu fluktuacji i dyssypacji. Dziesięć modów
+wolnych, pięć sceny i pięć tożsamości. Przestrzeń tożsamości ma wymiar 5 (mod 5, para 6 i 7 jako część
+rzeczywista i urojona, mody 8 i 9). Pamięć to $\norm{\Omega_1}_F/\norm{\Omega_0}_F$. Podłoga szumu to
+95. centyl tej samej miary na procesie \emph{bez pamięci}, $y_{n+1} = \Omega_0 y_n + \text{szum}$, symulowanym
+na dokładnie tej samej siatce klatek (200 powtórzeń). Przedział to bootstrap po filmach (200 losowań).
+
+\begin{center}\small
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+przestrzeń & wymiar & $\sin\theta_{\max}$, $d=48$ & $\sin\theta_{\max}$, $d=96$ & pamięć z korelacji & pamięć z szumu\\
+\midrule
+tożsamość & 5 & 0,000 & 0,153 & 0,108 \,/\, 0,142 & 0,080 \,/\, 0,049\\
+scena & 5 & 0,000 & 0,096 & 0,111 \,/\, 0,150 & 0,041 \,/\, 0,035\\
+osie K6 (same $\psi_R$) & 2 & 0,009 & 0,117 & 0,055 \,/\, 0,129 & 0,073 \,/\, 0,038\\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent Pierwsza liczba w dwóch ostatnich kolumnach to wynik, druga to podłoga szumu. „Pamięć z korelacji”
+to $\norm{\Omega_1}_F/\norm{\Omega_0}_F$ z rekurencji (twierdzenie~\ref{tw:korelacje}), „pamięć z szumu” to
+ta sama wielkość z autokorelacji reszt (twierdzenie~\ref{tw:fdt}).
+
+Co z tego wynika. Wyciek w słowniku 48 jest zerem z konstrukcji, bo przestrzeń tożsamości jest złożona
+z funkcji własnych operatora policzonego w tym samym słowniku; prawdziwy test to słownik większy.
+W słowniku 96 tożsamość przecieka mocniej niż scena (0,153 wobec 0,096): w najgorzej domkniętym
+kierunku około 15 procent obrazu po kroku leży poza tożsamością. Pamięć z korelacji, 0,108, leży poniżej swojej podłogi szumu 0,142, więc z 1689 par
+nie da się jej odróżnić od zera. Pamięć z szumu, 0,080, leży ponad swoją podłogą 0,049, a oba jądra różnią się
+między sobą o 0,134, czyli bardziej, niż same wynoszą. Według twierdzenia~\ref{tw:fdt} taka niezgodność znaczy,
+że model liniowy i stacjonarny nie pasuje. Najprostsze wyjaśnienie: około połowy zmienności osi tożsamości
+leży \emph{między} filmami, a stałe przesunięcie filmu działa jak ukryta zmienna o wartości własnej 1, której
+w opisie nie ma. Następny pomiar: te same trzy miary po odjęciu średniej filmu. Wyciek w słowniku 96 nie ma
+jeszcze własnej podłogi szumu; to druga luka.
+
+\subsection*{Dziewięć biegów na 250 klatkach}
+RF-DETR Nano, sufit 60 epok, wczesne zatrzymanie po 15 epokach bez poprawy, trzy ziarna na ramię, mAP
+$0{,}5{:}0{,}95$ na walidacji (25 filmów) z własnej ewaluacji najlepszego checkpointu. Zbiór testowy nie był
+dotknięty. Odniesienie: B2, 1500 klatek równomiernie w czasie, 0,6866.
+
+\begin{center}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+ramię (250 klatek) & mAP najlepszy & mAP ostatni & najlepsza epoka & epok\\
+\midrule
+K6 po kwadratach & $0{,}6296 \pm 0{,}0011$ & $0{,}6138 \pm 0{,}0065$ & 22, 17, 13 & 38, 30, 29\\
+B1m losowo & $0{,}6319 \pm 0{,}0023$ & $0{,}6030 \pm 0{,}0042$ & 8, 11, 6 & 24, 27, 22\\
+B2m równomiernie w czasie & $0{,}6143 \pm 0{,}0096$ & $0{,}5895 \pm 0{,}0041$ & 6, 7, 8 & 22, 23, 24\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Werdykt przy progu 0,006. K6 wobec losowego: $-0{,}0023$, remis. K6 wobec równomiernego: $+0{,}0152$,
+wygrana, ale obciążona: przy dwóch klatkach na film \texttt{linspace} bierze pierwszą i ostatnią klatkę filmu
+w puli, i tak jest ze 155 z 250 klatek ramienia B2m. K6 wobec 1500 klatek: $-0{,}057$. Po stronie K6 zostaje
+najmniejszy rozrzut między ziarnami, najmniejszy spadek od najlepszej do ostatniej epoki i najpóźniejsze
+maksimum, czyli wolniejsze przeuczanie.
+
+\section{Wnioski}
+
+\begin{enumerate}
+\item Pamięć tożsamości ma jawny wzór: $\Omega_l = BD^{l-1}C$, pętla wyciek, krążenie, powrót
+(twierdzenia~\ref{tw:gle} i~\ref{tw:korelacje}, sprawdzone numerycznie co do zera).
+\item Pamięć jest ograniczona iloczynem dwóch kątów wycieku, wzór~\eqref{eq:nierownosc}. Brak pamięci
+nie oznacza braku wycieku; dokument 43 trzeba w tym miejscu poprawić (wniosek~\ref{wn:poprawka}).
+\item Pierwszy wyraz pamięci liczy się z dwóch korelacji, $\Omega_1 = C_y(2\Delta)-C_y(\Delta)^2$, a związek
+fluktuacji i dyssypacji (twierdzenie~\ref{tw:fdt}) wynika wprost ze stacjonarności i daje test modelu.
+\item Na puli pamięć tożsamości z korelacji nie wychodzi ponad szum, ale jądro z szumu wychodzi i oba
+jądra się nie zgadzają; to wskazuje na brakującą zmienną (najpewniej stałe przesunięcie filmu), nie na brak danych.
+Wyciek w słowniku 96 jest większy dla tożsamości niż dla sceny.
+\item Dobór po kwadratach przy 250 klatkach remisuje z losowym; siatka miała w praktyce dwie osie
+(wniosek~\ref{wn:obrot}). Uczciwy test wymaga osi z pary sprzężonej jako $\psi_R$ i $\psi_I$
+i ramienia równomiernego bez klatek brzegowych.
+\end{enumerate}
+
+\section{Ograniczenia}
+
+\begin{itemize}
+\item Wzór~\eqref{eq:glowny} z blokami jest dokładny dla modelu liniowego w słowniku; latent detektora
+jest nieliniowy. Rekurencja z twierdzenia~\ref{tw:korelacje} jest poprawna dla rzutu Moriego zawsze,
+utożsamienie z pętlą $BD^{l-1}C$ tylko w modelu liniowym.
+\item Wybielenie liczone jest na wszystkich klatkach, a korelacje na parach; kowariancja na początkach
+par nie jest dokładnie jednostkowa. Skrypt liczy kąty w metryce Grama par, żeby to skompensować.
+\item Nierówność~\eqref{eq:nierownosc} jest luźna (w syntetyce 0,48 wobec 3,74). Służy do kierunku
+wnioskowania, nie do szacowania wielkości.
+\item Twierdzenie~\ref{tw:pokrycie} zakłada, że strata zależy od współrzędnych tożsamości w sposób
+lipschitzowski. Wynik z Edenu mówi, że dla dwóch osi modelu wstępnego to założenie nie działa.
+\item Wszystkie werdykty są na walidacji. Zbiór testowy nie był uruchamiany.
+\end{itemize}
+
+\section*{Źródła}
+\small
+\begin{description}
+\item[Lin21b] Lin, Tian, Anghel, Livescu, \emph{Data-Driven Learning for the Mori-Zwanzig Formalism:
+A Generalization of the Koopman Learning Framework}, SIAM J. Appl. Dyn. Syst. 2021.
+\url{https://doi.org/10.1137/21m1401759}
+\item[Uy21] Uy, Peherstorfer, \emph{Operator Inference of Non-Markovian Terms for Learning Reduced Models
+from Partially Observed State Trajectories}, J. Sci. Comput. 2021. \url{https://doi.org/10.1007/s10915-021-01580-2}
+\item[Con26] Conradie i in., \emph{Trustworthy Koopman Operator Learning: Invariance Diagnostics and Error
+Bounds}, 2026. \url{https://doi.org/10.48550/arXiv.2603.15091}
+\item[Kap25] Kapadia, Benner, Feng, \emph{Subspace-Distance-Enabled Active Learning for Efficient Data-Driven
+Model Reduction of Parametric Dynamical Systems}, 2025. \url{https://doi.org/10.48550/arXiv.2505.00460}
+\item[Ber23] Berman, Naiman, Azencot, \emph{Multifactor Sequential Disentanglement via Structured Koopman
+Autoencoders}, ICLR 2023. \url{https://doi.org/10.48550/arXiv.2303.17264}
+\item[Dok.~42, 43] katalog \path{docs/Analiza_ponownej_publikacji}, pliki
+\path{42_DOMKNIECIE_PRZESTRZENI_STANOW_NARZEDZIA_A_DOBOR_KLATEK.md} oraz
+\path{43_KRYTERIUM_DOMKNIECIA_TOZSAMOSCI_KOOPMAN_LANGEVIN.md}.
+\end{description}
+
+\end{document}

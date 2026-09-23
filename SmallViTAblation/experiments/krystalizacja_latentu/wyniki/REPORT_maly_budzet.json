@@ -1,0 +1,110 @@
+{
+  "opis": "RF-DETR Nano, 250 klatek, sufit 60 epok, patience 15, walidacja 25 filmow; odniesienie B2 1500 klatek = 0.6866",
+  "ramiona": {
+    "maly_B1m_random_b250": {
+      "biegi": [
+        {
+          "bieg": "maly_B1m_random_b250_s1337",
+          "best_val": 0.6299084789562024,
+          "last_epoch": 0.6022042201322093,
+          "epok": 24,
+          "najlepsza_epoka": 8,
+          "epoka_min_straty": 11
+        },
+        {
+          "bieg": "maly_B1m_random_b250_s2024",
+          "best_val": 0.6314487214949596,
+          "last_epoch": 0.5992370636178926,
+          "epok": 27,
+          "najlepsza_epoka": 11,
+          "epoka_min_straty": 11
+        },
+        {
+          "bieg": "maly_B1m_random_b250_s42",
+          "best_val": 0.6344397001779093,
+          "last_epoch": 0.6075815056884243,
+          "epok": 22,
+          "najlepsza_epoka": 6,
+          "epoka_min_straty": 10
+        }
+      ],
+      "srednia_best": 0.6319323002096904,
+      "sd_best": 0.0023039916926971137,
+      "srednia_last": 0.6030075964795087,
+      "sd_last": 0.004229833156717265
+    },
+    "maly_B2m_uniform_time_b250": {
+      "biegi": [
+        {
+          "bieg": "maly_B2m_uniform_time_b250_s1337",
+          "best_val": 0.6238258516599494,
+          "last_epoch": 0.5869781479810781,
+          "epok": 22,
+          "najlepsza_epoka": 6,
+          "epoka_min_straty": 10
+        },
+        {
+          "bieg": "maly_B2m_uniform_time_b250_s2024",
+          "best_val": 0.6046259959334945,
+          "last_epoch": 0.587422556672647,
+          "epok": 23,
+          "najlepsza_epoka": 7,
+          "epoka_min_straty": 11
+        },
+        {
+          "bieg": "maly_B2m_uniform_time_b250_s42",
+          "best_val": 0.6145907813084347,
+          "last_epoch": 0.5942363243369637,
+          "epok": 24,
+          "najlepsza_epoka": 8,
+          "epoka_min_straty": 8
+        }
+      ],
+      "srednia_best": 0.6143475429672929,
+      "sd_best": 0.00960223873100027,
+      "srednia_last": 0.5895456763302296,
+      "sd_last": 0.00406829310812221
+    },
+    "maly_K6_identity_cells_b250": {
+      "biegi": [
+        {
+          "bieg": "maly_K6_identity_cells_b250_s1337",
+          "best_val": 0.6288747549185734,
+          "last_epoch": 0.6135211380313225,
+          "epok": 38,
+          "najlepsza_epoka": 22,
+          "epoka_min_straty": 12
+        },
+        {
+          "bieg": "maly_K6_identity_cells_b250_s2024",
+          "best_val": 0.6308610173083359,
+          "last_epoch": 0.6074644487686104,
+          "epok": 30,
+          "najlepsza_epoka": 17,
+          "epoka_min_straty": 14
+        },
+        {
+          "bieg": "maly_K6_identity_cells_b250_s42",
+          "best_val": 0.6290209801292935,
+          "last_epoch": 0.6204562945736433,
+          "epok": 29,
+          "najlepsza_epoka": 13,
+          "epoka_min_straty": 13
+        }
+      ],
+      "srednia_best": 0.6295855841187342,
+      "sd_best": 0.0011069746243322683,
+      "srednia_last": 0.6138139604578586,
+      "sd_last": 0.006500870948230668
+    }
+  },
+  "roznice": {
+    "K6_minus_B1m": -0.002346716090956158,
+    "K6_minus_B2m": 0.01523804115144134,
+    "K6_minus_B2_1500": -0.05701441588126577
+  },
+  "uwagi": [
+    "B2m: 155 z 250 klatek to pierwsza albo ostatnia klatka filmu w puli (linspace przy 2 klatkach na film)",
+    "K6: osie 6 i 7 to para sprzezona, te same czesci rzeczywiste; siatka 16x16x16 byla w praktyce 16x16 (252 z 256 komorek zajetych)"
+  ]
+}

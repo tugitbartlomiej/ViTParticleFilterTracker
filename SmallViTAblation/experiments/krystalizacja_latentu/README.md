@@ -17,6 +17,11 @@ czastek (pula uczaca i klipy sondujace) z tego samego checkpointu.
 | `pokrycie_a_bledy.py` | czy film walidacyjny gorzej pokryty przez wybrane klatki uczace ma wiecej pudel |
 | `co_przewiduje_wynik.py` | czy po samym zestawie wybranych klatek widac, ktore ramie wyjdzie lepiej |
 | `telemetria_treningu.py` | kiedy siec jest wytrenowana: szczyt jakosci i granica tolerancji we wszystkich biegach |
+| `kiedy_przestac.py` | czy szczyt trwalosci modow wskazuje epoke konca treningu bez etykiet |
+| `zajetosc_tozsamosci.py` | puste kwadraty przestrzeni tozsamosci wzgledem zbioru oznaczonego |
+| `nasycenie_tozsamosci.py` | ile klatek trzeba, zeby obstawic kwadraty tozsamosci, cztery sposoby wyboru |
+| `buduj_ramiona_250.py` | trzy zestawy po 250 klatek (po kwadratach, rownomiernie, losowo) do biegow na Edenie |
+| `wzor_domkniecia.py` | sprawdzenie wzoru z dokumentu 44: algebra na ukladzie syntetycznym, wyciek i pamiec na puli |
 
 Zaleznosci miedzy skryptami rozwiazuje `PYTHONPATH=experiments/krystalizacja_latentu`.
 
@@ -55,10 +60,32 @@ Zaleznosci miedzy skryptami rozwiazuje `PYTHONPATH=experiments/krystalizacja_lat
     niz trening do konca. Blok `global_pool` jest zawodny, potrafi wskazac epoke 3.
     Zastrzezenie: wagi zapisywano co dwie epoki, wiec rozdzielczosc sygnalu to dwie epoki.
 
+## Wyniki (2026-09-23)
+
+12. Dziewiec biegow na 250 klatkach (sufit 60 epok, patience 15, `wyniki/REPORT_maly_budzet.json`).
+    mAP 0,5:0,95 na walidacji: po kwadratach 0,6296 +- 0,0011, losowo 0,6319 +- 0,0023,
+    rownomiernie w czasie 0,6143 +- 0,0096; odniesienie 1500 klatek 0,6866. Kwadraty remisuja
+    z losowym (-0,0023) i sa o 0,057 ponizej 1500 klatek. Wygrana nad rownomiernym (+0,015) jest
+    obciazona: przy dwoch klatkach na film `linspace` bierze pierwsza i ostatnia klatke filmu,
+    tak jest ze 155 z 250 klatek. Kwadraty maja najmniejszy rozrzut miedzy ziarnami, najmniejszy
+    spadek do ostatniej epoki i najpozniejszy szczyt (epoki 13 do 22 wobec 6 do 11).
+13. Blad w osiach kwadratow: osie to mody 5, 6 i 7, a 6 i 7 to para sprzezona o tej samej czesci
+    rzeczywistej (korelacja 1). Kratka 16^3 byla w praktyce 16^2 (252 zajete komorki z 256).
+    Poprawka na przyszlosc: z pary sprzezonej brac czesc rzeczywista i urojona jednego modu.
+14. Wzor domkniecia (dokument 44, `wyniki/REPORT_wzor_domkniecia.json`). Na ukladzie syntetycznym
+    jadro pamieci z rekurencji Lin21b rowna sie B D^(l-1) C co do zera, zwiazek fluktuacji
+    i dyssypacji zgadza sie dokladnie, a przyklad C = 0 pokazuje pamiec zero przy niezerowym
+    wycieku (poprawka do dokumentu 43). Na puli: wyciek tozsamosci w slowniku 96 wynosi 0,153
+    (scena 0,096); pamiec z korelacji 0,108 lezy ponizej podlogi szumu 0,142, ale pamiec z szumu
+    0,080 lezy ponad swoja podloga 0,049 i oba jadra sie nie zgadzaja. Najprostsze wyjasnienie:
+    stale przesuniecie filmu (okolo polowy zmiennosci osi tozsamosci jest miedzy filmami).
+
 ## Dane
 
 - `dane/TELEMETRIA_stage1.json` - zrzut wszystkich skalarow TensorBoard z 28 biegow kampanii.
 - `dane/biegi/<bieg>/TELEMETRIA.json` - to samo dla trzech biegow z zapisana strata walidacyjna.
+- `dane/biegi/maly_budzet/<bieg>/` - telemetria, raport walidacji, mAP po epokach i manifest
+  dziewieciu biegow na 250 klatkach.
 - `dane/TRWALOSC_telemetria.json` - krzywe trwalosci modow dla tych biegow, policzone na klastrze
   (latenty zostaja na Edenie, bo waza okolo gigabajta).
 - `wyniki/REPORT_*.json` - wyniki poszczegolnych skryptow.
