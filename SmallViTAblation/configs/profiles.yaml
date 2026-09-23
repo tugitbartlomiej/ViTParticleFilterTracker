@@ -32,6 +32,20 @@ profiles:
     evaluate: [val]
     allow_external: false
 
+  nano_maly_budzet:
+    purpose: koopman_identity_coverage_small_budget
+    models: [rf-detr-nano]
+    budgets: [250, 1500]
+    seeds: [42, 1337, 2024]
+    seed_pairing: matched
+    strategies: [random, uniform_time, identity_cells]
+    epochs: 60
+    resolution_by_model: {rf-detr-nano: 384}
+    precision_by_model: {rf-detr-nano: bf16}
+    max_runs: 18
+    evaluate: [val]
+    allow_external: false
+
   smoke:
     purpose: plumbing_and_overfit
     models: [yolov8n]

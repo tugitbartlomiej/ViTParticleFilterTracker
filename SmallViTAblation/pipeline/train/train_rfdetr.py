@@ -444,7 +444,11 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
 
     tr = protocol["training"]
     epochs = int(tr["epochs"])
-    assert tr.get("early_stopping") is False, "protokol wymaga early_stopping: false"
+    wczesny_stop = bool(tr.get("early_stopping", False))
+    if wczesny_stop and not getattr(args, "early_stop", False):
+        raise AssertionError("protokol wlacza early_stopping, ale brak flagi --early-stop")
+    if not wczesny_stop:
+        assert tr.get("early_stopping") is False, "protokol wymaga early_stopping: false"
     aug = tr.get("train_time_augmentation", "none")
     assert aug == "none", f"protokol wymaga train_time_augmentation=none, jest {aug}"
 
@@ -480,7 +484,7 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
         "seed": seed,
         "output_dir": str(ckpt_dir),
         "resume": None,
-        "early_stopping": False,
+        "early_stopping": wczesny_stop,
         "eval_interval": 1,
         "eval_max_dets": 100,
         "best_model_metric": "map",
@@ -493,6 +497,12 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
         # RF-DETR 1.10 liczy strate walidacyjna tylko, gdy ktos jej pilnuje ("auto" -> pomijana).
         # Wlaczenie jej nie dotyka optymalizacji: to dodatkowy przebieg po zbiorze walidacyjnym.
         train_kwargs["compute_val_loss"] = True
+    if wczesny_stop:
+        # Zatrzymanie po `patience` epokach bez poprawy o `min_delta`. Nie zmienia sciezki
+        # uczenia, tylko ja urywa; ocena i tak idzie z najlepszego checkpointu.
+        train_kwargs["early_stopping_patience"] = int(tr.get("early_stopping_patience", 15))
+        train_kwargs["early_stopping_min_delta"] = float(tr.get("early_stopping_min_delta", 1e-3))
+        train_kwargs["early_stopping_use_ema"] = bool(tr.get("early_stopping_use_ema", False))
     keep_every = int(getattr(args, "keep_epoch_checkpoints", 0) or 0)
     if keep_every:
         if keep_every < 2:
@@ -516,7 +526,7 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
         lightning_path = ckpt_dir / "last.ckpt"
         # Locally generated checkpoint; includes Lightning metadata/optimizer state.
         payload = torch.load(lightning_path, map_location="cpu", weights_only=False)
-        if int(payload["epoch"]) != epochs - 1:
+        if int(payload["epoch"]) != epochs - 1 and not wczesny_stop:
             raise RuntimeError("last.ckpt is not from the planned final epoch")
         state = {key.removeprefix("model.").removeprefix("_orig_mod."): value
                  for key, value in payload["state_dict"].items() if key.startswith("model.")}
@@ -526,7 +536,7 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
             "model": state,
             "args": vars(det.model.args),
             "model_config": det.model_config.model_dump(mode="json"),
-            "model_name": type(det).__name__, "epoch": epochs - 1,
+            "model_name": type(det).__name__, "epoch": int(payload["epoch"]),
             "global_step": payload["global_step"],
             "source_checkpoint_sha256": sha256_file(lightning_path),
             "class_names": det.model.class_names,
@@ -589,6 +599,7 @@ def run_training(args, protocol: dict, run_dir: Path, dataset_dir: Path,
     shutil.rmtree(ckpt_dir, ignore_errors=True)
 
     return {"epochs_completed": epochs,
+            "epochs_actual": (int(max(history)) + 1) if history else epochs,
             "best_map_50_95_val": summary.get("best_map_50_95_val")}
 
 
@@ -635,6 +646,9 @@ def parse_args(argv=None):
                     help="keep weights-only checkpoints every N epochs (N >= 2) in "
                          "<run>/epoch_checkpoints for latent diagnostics along the training "
                          "clock; 0 keeps the campaign behaviour (last.pth and best.pth only)")
+    ap.add_argument("--early-stop", action="store_true",
+                    help="pozwol protokolowi wlaczyc wczesne zatrzymanie (training.early_stopping: true) "
+                         "wraz z patience i min_delta; bez tej flagi taki protokol jest odrzucany")
     ap.add_argument("--val-loss", action="store_true",
                     help="log the validation loss and its parts every epoch (RF-DETR compute_val_loss); "
                          "evaluation only, the training recipe is untouched")
@@ -733,6 +747,7 @@ def main(argv=None) -> int:
                               model_name, resolution, seed)
         epochs_planned = result["epochs_completed"]
         extra["best_map_50_95_val"] = result["best_map_50_95_val"]
+        extra["epochs_actual"] = result.get("epochs_actual")
 
     manifest = build_manifest(args, protocol, protocol_path, variant_path, variant,
                               started_at, now_iso(), epochs_planned, resolution,

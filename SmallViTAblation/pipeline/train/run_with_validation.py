@@ -40,6 +40,7 @@ def main():
     ap.add_argument('--compress-predictions', action='store_true')
     ap.add_argument('--keep-epoch-checkpoints', type=int, default=0)
     ap.add_argument('--val-loss', action='store_true')
+    ap.add_argument('--early-stop', action='store_true')
     args = ap.parse_args()
     project = Path(__file__).resolve().parents[2]
     run = Path(args.out)/args.run_id
@@ -52,9 +53,10 @@ def main():
         '--protocol', args.protocol, '--variant-file', args.variant_file,
         '--train-seed', str(args.train_seed), '--role', 'smoke', '--profile', args.profile,
         '--keep-epoch-checkpoints', str(args.keep_epoch_checkpoints)]
-        + (['--val-loss'] if args.val_loss else []), check=True)
+        + (['--val-loss'] if args.val_loss else [])
+        + (['--early-stop'] if args.early_stop else []), check=True)
     manifest = json.loads((run/'run_manifest.json').read_text())
-    if manifest['epochs_completed'] != args.expected_epochs or manifest['model'] != 'rf-detr-nano':
+    if (args.expected_epochs > 0 and manifest['epochs_completed'] != args.expected_epochs)             or manifest['model'] != 'rf-detr-nano':
         raise RuntimeError('Incomplete training or incorrect model')
     validation = {}
     for filename, rule in [('last.pth', 'last_epoch'), ('best.pth', 'best_val')]:
