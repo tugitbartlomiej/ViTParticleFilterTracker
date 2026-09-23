@@ -1,7 +1,7 @@
 # 44. Dobór klatek przez przewidywaną poprawę detektora: sformułowanie i dowody
 
 Data: 2026-09-23. Autor opracowania: Codex, na polecenie autora projektu.
-Status: wyprowadzenia matematyczne z jawnymi założeniami; kontrola algebraiczna SymPy i kontrprzykłady w plikach towarzyszących. Bez nowych treningów. Nie jest to dowód przewagi obecnej implementacji RF-DETR ani nowy dowód sprawdzony w Lean.
+Status: wyprowadzenia matematyczne z jawnymi założeniami; kontrola algebraiczna SymPy oraz częściowa formalizacja sprawdzona w Lean. Bez nowych treningów. Nie jest to dowód przewagi obecnej implementacji RF-DETR. Dokładny zakres weryfikacji Lean jest w sekcji 14.
 
 **Główny wynik:** można zagwarantować poprawę po wybranej partii klatek, jeżeli przewidywana poprawa straty przewyższa ograniczenie błędu tego przewidywania. Można również zagwarantować przewagę nad inną partią, porównując dolne ograniczenie poprawy pierwszej z górnym ograniczeniem poprawy drugiej. Koopman i Langevin mogą dostarczać przybliżeń potrzebnych do takiego obliczenia. Samo widmo, pokrycie modów ani małe jądro pamięci nie wystarczają do gwarancji.
 
@@ -117,6 +117,39 @@ Dla pełnego stanu Markowa \(H_t\) operator populacyjny to
 Gdy dysponujemy jedynie niepełnym \(z_t\), regresja przyszłości na \(z_t\) nadal istnieje, ale kolejne regresje nie muszą tworzyć półgrupy. Przy nieregularnych odstępach klatek stosujemy stałe \(\Delta\), model zależny od \(\Delta\) albo jawny generator czasu. Nie interpretujemy jednego operatora z pomieszanych odstępów jako jednego fizycznego kroku.
 
 Ruch kamery można warunkować wejściem \(u_t\), np. \(\widehat\psi_{t+1}=K\psi_t+B u_t+\sum_j u_{t,j}K_j\psi_t\). Należy również uwzględnić pominięty ruch narzędzia i jakość estymacji kamery. Odjęcie oszacowanego ruchu nie dowodzi usunięcia całego wpływu kamery. Dopasowanie z danych obserwacyjnych nie dowodzi reakcji na dowolną interwencję.
+
+### 4.1a. Jawny opis przez cząstki
+
+W tym projekcie podstawowym zapisem klatki jest pole cząstek
+
+\[
+\mathcal Z_{v,t}=(z_{v,t,p})_{p\in\mathcal P},\qquad z_{v,t,p}\in\mathbb R^d,
+\]
+
+gdzie \(\mathcal P\) jest zbiorem miejsc siatki, a każda cząstka zachowuje własny wektor cech. Wymiar kanałów można zmniejszyć wspólnym, zamrożonym przekształceniem bez usuwania indeksu \(p\). Redukcja kanałów i uśrednienie cząstek to różne operacje. W eksperymencie `dobor_klatek_stan_sieci` funkcja wczytująca wręcz odrzuca zapis z wcześniejszym uśrednianiem przestrzennym.
+
+Wariant rejestratora `patch_particles.py` dodatkowo zapisuje profil względem końcowej normalizacji warstwy, według teorii DiagnosticTool. Pilot `dobor_klatek_stan_sieci` używa ostatnich surowych tokenów ViT. To dwie konwencje cech cząstki; ich współrzędnych i błędów nie wolno mieszać bez przeliczenia.
+
+Ogólny model liniowy z pamięcią dla całego pola może mieć postać
+
+\[
+z_{t+1,p}=\sum_q A_{pq}z_{t,q}
++\sum_{\ell=1}^{L_m}\sum_q M_{\ell,pq}z_{t-\ell,q}
++B_pu_t+\xi_{t,p}.
+\]
+
+Zapis dopuszcza wpływ innych cząstek. Nie zakłada ich niezależności ani fizycznego oddziaływania punktów metalu. W nieliniowym opisie analogicznie modelujemy obserwable \(\psi_p\), a błąd skończonego przybliżenia wchodzi do ograniczeń z sekcji 8.5. Konkretne uproszczenie tego równania w kodzie jest osobnym wyborem modelu.
+
+Możemy zachować całe pole albo zbudować wybrany opis klatki z wagami \(w_p\), np. \(a=\sum_p w_p z_p\). Dla tych samych wag i przy \(\|z_p-\widetilde z_p\|\le e_p\):
+
+\[
+\left\|\sum_p w_p z_p-\sum_p w_p\widetilde z_p\right\|
+\le\sum_p|w_p|e_p.
+\]
+
+To wynika z liniowości sumy i nierówności trójkąta. Dostarcza błędu opisu klatki do dalszego oszacowania gradientu. Nie dowodzi, że średnia zachowuje informację o położeniu. Dla detekcji można zachować wszystkie tokeny albo dołączyć informację przestrzenną. Jeżeli zmieniają się także wagi lub maska, potrzebny jest dodatkowy składnik błędu wynikający z ich zmiany.
+
+Indeks \(p\) oznacza tutaj stałe miejsce obrazu. Aby analizować cząstkę podążającą za narzędziem, trzeba osobno określić trajektorię \(p_t\), sposób odczytu cech między komórkami i błąd śledzenia. Same równania Koopmana nie ustanawiają tej korespondencji. Pozostaje więc dokładnie pomysł opisu latentu przez cząstki, ale bez nieudowodnionego utożsamiania cząstki siatki z punktem obiektu.
 
 ### 4.2. Twierdzenie T1: dokładne znaczenie trwałości
 
@@ -636,11 +669,37 @@ Skrypt: `F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\ana
 
 Raport: `F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\analysis\formalizacja_doboru_klatek\WERYFIKACJA.json`.
 
-Sprawdzane są tożsamości symboliczne, dokładne kontrprzykłady oraz przykłady numeryczne spełniające założenia nierówności. Dowody uniwersalnych twierdzeń stanowią wyprowadzenia w tym dokumencie. Testowanie skończonej liczby przykładów nie zastępuje tych dowodów. Nie zastosowano nowej formalizacji Lean; nie zweryfikowano empirycznie założeń T6–T11 dla całego RF-DETR.
+Sprawdzane są tożsamości symboliczne, dokładne kontrprzykłady oraz przykłady numeryczne spełniające założenia nierówności. Testowanie skończonej liczby przykładów nie zastępuje dowodów. Nie zweryfikowano empirycznie założeń T6–T11 dla całego RF-DETR.
+
+### 14.1. Dodatkowa kontrola w Lean
+
+Źródło dowodów: `F:\Studia\MCHTR\Grant\Projekt\Research\Math\lean4_spm\SpmProofs\ViTFrameSelection.lean`.
+
+Powtórzenie kontroli: `F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\analysis\formalizacja_doboru_klatek\sprawdz_lean.ps1`.
+
+Raport z hashem źródła i audytem aksjomatów: `F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\analysis\formalizacja_doboru_klatek\LEAN_WERYFIKACJA.json`.
+
+W Lean 4.28.0 z lokalnym Mathlib sprawdzono następujące twierdzenia:
+
+| Nazwa w Lean | Zakres |
+|---|---|
+| `alignment_error` | Błąd iloczynu gradientu i kierunku, przy ograniczonych błędach obu wektorów |
+| `direction_norm`, `direction_norm_sq` | Kontrola normy rzeczywistego kierunku i jej kwadratu |
+| `gain_error` | Przedział poprawy z T6, **przy założonym ograniczeniu reszty Taylora**; parametr `curvature` odpowiada \(L\eta^2/2\) |
+| `certified_improvement` | Dodatnie dolne ograniczenie poprawy implikuje mniejszą stratę |
+| `certified_comparison` | Rozdzielenie dolnej granicy wyboru i górnej granicy odniesienia implikuje przewagę wyboru |
+| `selection_regret` | Strata względem dowolnego kandydata o nie większej przewidzianej korzyści jest ograniczona przez podwojony błąd |
+| `particle_error` | Ograniczenie błędu ważonego opisu klatki na podstawie błędów osobnych cząstek, przy tych samych wagach |
+| `particle_gradient_error` | Przeniesienie tego ograniczenia przez mapę gradientu o **założonej, znanej wrażliwości** |
+
+Plik nie zawiera `sorry` ani `admit`. Wszystkie zależności aksjomatyczne wypisane przez Lean ograniczają się do standardowych `propext`, `Classical.choice`, `Quot.sound`. Nie dodano aksjomatu o korzyści z klatek ani o poprawności Koopmana.
+
+Nie przeniesiono jeszcze do Lean dowodu analitycznego T5 z gładkości, jawnej stałej T7 dla liniowego odczytu, całego równania MZ, zbieżności T10 ani generalizacji T11. `gain_error` przyjmuje ograniczenie reszty jako hipotezę, a `particle_gradient_error` przyjmuje ograniczenie wrażliwości mapy. Nie wolno przedstawiać tej częściowej formalizacji jako maszynowego dowodu całego dokumentu.
 
 Oddzielone poziomy wniosku:
 
 - **Udowodnione w podanym modelu matematycznym:** T1–T11 i ich wskazane wnioski, przy jawnych założeniach.
 - **Sprawdzone obliczeniowo:** pozycje raportu `WERYFIKACJA.json`, z podanym zakresem.
+- **Sprawdzone formalnie w Lean:** twierdzenia z sekcji 14.1, z hipotezami widocznymi w ich sygnaturach.
 - **Zmierzone wcześniej:** wyniki z sekcji 12, zgodnie z lokalnymi raportami.
 - **Nadal hipoteza badawcza:** że Koopman–Langevin przewiduje korzyść z klatek dostatecznie tanio i dokładnie, by poprawić AP RF-DETR i czas całej procedury względem mocnych bazowych metod.

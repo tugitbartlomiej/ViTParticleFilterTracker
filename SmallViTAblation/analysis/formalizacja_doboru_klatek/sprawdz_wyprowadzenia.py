@@ -324,7 +324,7 @@ def main() -> None:
         document_sha256=hashlib.sha256(document.read_bytes()).hexdigest(),
         checks=CHECKS,
         limitations=[
-            "Nie jest to nowy dowód Lean ani maszynowa formalizacja całego dokumentu.",
+            "Ten raport dotyczy SymPy i NumPy; częściową formalizację Lean dokumentuje osobny raport LEAN_WERYFIKACJA.json.",
             "Przykłady numeryczne nie dowodzą nierówności uniwersalnych.",
             "Nie sprawdzono założeń gwarancji na danych i trajektorii RF-DETR.",
             "Nie uruchomiono treningów, ekstrakcji tokenów ani zadań Eden.",
