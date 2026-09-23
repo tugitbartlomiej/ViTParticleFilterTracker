@@ -1,6 +1,28 @@
 # Eksperyment 4. Klatki, w których zwykle stałe kierunki Koopmana mocno się zmieniają
 
-Status: wybór klatek wykonany lokalnie 2026-09-23 (`wybor.py --max-gap 30`). Trening na Edenie czeka na zgodę.
+Status: zakończony 2026-09-23. **Wynik negatywny: wybrane klatki dają gorszy detektor niż losowe z tej samej puli.**
+
+## Wynik treningu (Eden, węzeł hopper, H100, 2026-09-23)
+
+Sześć biegów, `eden/run_maly_budzet.slurm`, protokół `protocol_maly_budzet.yaml` (wczesne zatrzymanie),
+mAP 0,5:0,95 na walidacji (25 operacji), wagi najlepszej epoki oceniane niezależnie:
+
+| Ramię | s42 | s1337 | s2024 | średnia ± odch. | ostatnia epoka | epoka szczytu |
+|---|---|---|---|---|---|---|
+| kierunki stałe Koopmana | 0,6708 | 0,6704 | 0,6675 | **0,6696 ± 0,0015** | 0,6245 | 5, 8, 7 |
+| losowe z tej samej puli | 0,6810 | 0,6822 | 0,6829 | **0,6820 ± 0,0008** | 0,6600 | 8, 6, 7 |
+
+- Wybór Koopmanem przegrywa o 0,012 na każdym z trzech ziaren; różnica jest ok. 10 razy większa niż rozrzut ziaren.
+- Po szczycie przeucza się szybciej: w ostatniej epoce 0,625 wobec 0,660.
+- Ma wyższą czułość (0,87–0,89 wobec 0,80–0,86), ale niższą precyzję (0,92–0,93 wobec 0,94–0,95):
+  więcej trafionych narzędzi, ale też więcej fałszywych ramek.
+- Losowe z puli (0,682) wypadają tak samo jak dawne losowe z całego zbioru (static36 random_b1500, 0,682).
+
+Wniosek: zestaw złożony z klatek trudnych (18 procent chybień wstępnego detektora wobec 11 procent w losowym)
+uczy gorzej niż zestaw typowy. Jest spójny z pozostałymi próbami doboru (K6 po kwadratach przy 250 klatkach,
+kampania doboru cech z GLISTER): na tym zbiorze żadna metoda wybierania trudnych albo „brakujących” klatek nie
+pokonała losowania. Metryki sześciu biegów: `wyniki/biegi/`. Wagi zostały na Edenie w
+`results_maly_budzet/ks_*`.
 
 ## Pomysł (użytkownik, 2026-09-23)
 
