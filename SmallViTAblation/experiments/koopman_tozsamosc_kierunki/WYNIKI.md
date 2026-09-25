@@ -225,3 +225,61 @@ Wnioski:
 4. Aby pokaz miał sens, najpierw trzeba podnieść rozdzielczość pętli generatora: start z inwersji kotwicy
    (z dopasowane do obecnego kodu), więcej kroków, dopiero potem przesunięcie o przyrost; wariant ze wzmocnionym
    przyrostem (np. ×10) albo z dłuższym horyzontem musi być jawnie oznaczony jako niebędący prognozą Koopmana.
+
+### 6b. Naprawiona pętla: inwersja kotwicy, potem ramiona od z* (`pokaz_fastgan_inwersja.py`, `wyniki/fastgan_K73_krok0245_inwersja/`)
+
+Krajobraz straty inwersji jest chaotyczny: ten sam start z lr 0,05 kończy na 0,67 albo 2,4 zależnie od celu
+różniącego się o 0,06 rozrzutu, a lr 0,01 przez 300 kroków grzęźnie przy 1,8. Zadziałało dopiero: faza zgrubna
+6 startów × 100 kroków (lr 0,05), doszlif 2 najlepszych × 200 kroków (lr 0,01), zwycięzca po pełnej stracie. Potem
+4 ramiona od tego samego z* i z tym samym szumem warstw (Adam, lr 0,01, 100 kroków): cel Koopmana, obecny, losowy
+przyrost tej samej długości, oraz jawnie oznaczony `target_x10_NIE_PROGNOZA` (przyrost ×10). Przegląd obrazów:
+`PRZEGLAD.png` w katalogu wyników.
+
+| kotwica | inwersja: błąd / IoU / L1 | cel Koopmana: błąd, cos zmiany, L1 RGB do „obecny” | ×10 (nie prognoza): błąd, cos, L1 RGB |
+|---|---|---|---|
+| TR_0006 (fit) | 0,21 / 0,67 / 0,31 | 0,213, cos 0,31, 0,052 | 0,277, cos 0,92, 0,078 |
+| TR_0082 (fit) | 0,27 / 0,46 / 0,19 | 0,268, ramię nie ruszyło się z z* (L1 RGB 0) | 0,313, cos 0,84, 0,018 |
+| TR_0134 (holdout) | 0,09 / 0,40 / 0,23 | 0,099, cos 0,10, 0,008 | 0,160, cos 0,94, 0,021 |
+
+„cos zmiany” = cosinus między osiągniętą zmianą kodu (względem ramienia „obecny”) a zamierzonym przyrostem.
+
+Wnioski: (a) inwersja działa: błąd kodu 0,09–0,27 rozrzutu (bramka kodu ≤ 0,25 zaliczona w 2 z 3), obrazy mają
+narzędzie w miejscu i orientacji kotwicy; pełne bramki nadal nie przechodzą przez IoU maski (0,40–0,67) i L1 do
+prawdziwego zdjęcia. (b) Dla przyrostu Koopmana ×1 ramiona albo nie ruszają się z z* (TR_0082), albo ruch jest
+szumem optymalizacji (cos 0,10–0,31; losowy przyrost daje cos 0,72 na TR_0134): przyrost 0,06 rozrzutu leży
+poniżej rozdzielczości pętli Adama nawet po inwersji. (c) Pętla umie iść w kierunku Koopmana, gdy ma po co: przy
+×10 cos 0,84–0,94 i 79–111 procent zamierzonej długości; obrazy różnią się od „obecny” o L1 RGB 0,02–0,08,
+głównie w okolicy narzędzia.
+
+### 6c. Krok lokalny Gaussa–Newtona od z* (`pokaz_fastgan_gn.py`, `wyniki/fastgan_K73_krok0245_gn/`)
+
+Zamiast Adama: w z* liczona jest pochodna kodu po wejściu generatora (macierz 5 × 256, autograd), a krok to
+rozwiązanie Levenberga–Marquardta najmniejszej normy `dz = J^T (J J^T + λI)^{-1} r` z podwajaniem tłumienia, gdy
+reszta nie maleje; 12 iteracji, każde ramię od tego samego z* i szumu warstw. Wynik jest deterministyczny i lokalny,
+więc różnice między ramionami pochodzą wyłącznie z różnic celów.
+
+| kotwica | reszta do „obecny” z* → po kroku | cel Koopmana: reszta, cos zmiany, udział długości, L1 RGB | ×10 (nie prognoza): cos, udział, L1 RGB |
+|---|---|---|---|
+| TR_0006 (fit) | 0,207 → 0,204 | 0,211, cos 0,84, 59 %, 0,0018 | cos 0,85, 48 %, 0,0075 |
+| TR_0082 (fit) | 0,273 → 0,127 | 0,157, cos 0,86, 169 %, 0,0092 | cos 0,97, 83 %, 0,0090 |
+| TR_0134 (holdout) | 0,093 → 0,075 | 0,076, cos 0,97, 87 %, 0,0013 | cos 0,93, 80 %, 0,0078 |
+
+Wnioski końcowe pokazu:
+
+1. **Mechanika działa.** Po inwersji i kroku lokalnym generator realizuje zmianę latentu w kierunku przewidzianym
+   przez Koopmana z cos 0,84–0,97 i 59–87 procent zamierzonej długości (jeden przypadek przestrzelenia, gdy ramię
+   „obecny” samo się przesunęło). Losowy przyrost tej samej długości jest realizowany równie dobrze (cos 0,37–0,89):
+   generator umie iść w każdym z 5 kierunków kodu, więc test nie wyróżnia kierunku Koopmana, tylko potwierdza, że
+   pętla go nie gubi.
+2. **Obraz „przewidzianego latentu” jest nieodróżnialny od obrazu obecnego.** Różnica L1 RGB 0,001–0,009 (0,1–0,9
+   procent zakresu jasności) leży poniżej kwantyzacji PNG. Nawet ×10 daje 0,008–0,009. To nie wada generatora, tylko
+   fizyka: ogólny dryf tożsamości na 100 aktualizacji to 6 procent rozrzutu między obrazami, a do końca uczenia
+   13 procent (sekcja 5c). Obraz, który „odpowiada latentowi po kolejnych krokach uczenia”, wygląda jak obraz
+   obecny. Różnica wzmocniona ×30 (`PRZEGLAD.png` w katalogu `_gn`) skupia się na narzędziu i jego krawędziach,
+   zwłaszcza dla TR_0082: przewidziany dryf tożsamości zmienia wygląd narzędzia, nie tła; przy ×10 zmiany rozlewają
+   się także na tło.
+3. Bramki pełne (kod ≤ 0,25, IoU ≥ 0,5, L1 ≤ 0,25) nie przechodzą w żadnym ramieniu; ogranicza je zgodność maski
+   i kolorów z prawdziwym zdjęciem, nie kod.
+4. Co dalej ma sens: nie powtarzanie pokazu od kroku 800 (dryf ≈ 0, sekcja 5e), lecz użycie tej samej pętli
+   (inwersja + krok Gaussa–Newtona) do kierunków o dużej amplitudzie, np. różnic między obrazami albo między
+   klasami wariantów sond, jeśli celem jest generowanie obrazów o zadanym latencie.
