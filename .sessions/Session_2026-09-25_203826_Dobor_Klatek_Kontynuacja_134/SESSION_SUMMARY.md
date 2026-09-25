@@ -48,14 +48,31 @@ latentu są praktycznie identyczne, więc wyszukiwarka dostała „podobieństwo
 - Trzy ziarna rozdzielają różnice rzędu 0,002-0,003 globalnie i 0,01 na małych podzbiorach.
 - Jedna epoka i 8,9 procent zbioru; większe porcje i więcej epok nietestowane.
 
+- Kampania 5 epok (7f, zadanie 1814835, 4 ramiona x 3 ziarna, polecenie „więcej epok”, dodatkowe ramię „trudne”):
+  globalnie dobrane −0,0005 mAP@0,5 względem braku dodania, losowe +0,001, trudne +0,0016, wszystko w szumie.
+  Okolica kotwic: więcej epok podnosi AP top-134 z 0,53 do 0,59–0,60 we wszystkich ramionach; dobrane wobec
+  losowych +0,006, −0,005, −0,013, trudne −0,018 w każdym ziarnie (pomagają za to daleko od kotwic, +0,009).
+  Kryterium ustalone przed wynikiem niespełnione. Wagi epok, predykcje i zapisy latentu sond pobrane (poza gitem).
+- Literatura (Undermind, Scite, `NOWOSC_I_PUBLIKACJA.md`): generate-then-retrieve istnieje od 2015/2018 (ASAL,
+  WACV 2020), wyszukiwanie cechami DINO od DCD (WACV 2024); nowy jest tylko cel z prognozy Koopmana. Porażka
+  ASAL na CelebA-Eyeglasses ma ten sam mechanizm co u nas (cała scena zamiast małego szczegółu).
+- Teoria (`TEORIA_LANGEVIN.md`): model Langevina z liniowym dryfem i twierdzenie o stabilności wyboru top-k
+  (Cauchy-Schwarz); przy małym przesunięciu prognozy wybór klatek jest ten sam co dla kotwicy (54/60 wspólnych).
+- Polecenie „Koopman ma dobrze przewidywać latent, dostosuj moje równanie Langevina”: nowy eksperyment
+  `experiments/langevin_latent_detektora` (dryf Koopmana, pamięć, wymuszenie, szum kolorowy; sterowanie w etapie 2).
+  Od kroku 245 rollout 100 aktualizacji 0,151 wobec 0,171 dla L4 (pamięć 8 przyrostów), ale 1 krok gorszy o
+  2,2 procent, a od kroku 485 gorszy od L4; bramka niespełniona. Ruch niesie pamięć; po kroku 485 zostaje szum.
+
 ## Eden (do sprzątnięcia za zgodą)
 
 - `~/smallvit_runs/2026-09-25_kontynuacja_dobor150/results/seed{42,43,44}_{ramię}/trening/FINAL.pth` (9 x 120 MB).
 - `~/smallvit_runs/2026-09-25_kontynuacja_dobor/` - katalog przerwanego pilotu (4 komplety wag).
 - Zadanie 1810406 (`koopman_fastgan_v1`, held) należy do równoległej sesji; nie ruszane.
 - Węzły czyste: scratch `/dev/shm/kont245b-*` usuwany przez trap, logi potwierdzają zakończenie wszystkich ramion.
+- `~/smallvit_runs/2026-09-25_kontynuacja_5epok/` (kampania 5 epok, około 9 GB): wagi pobrane lokalnie; do sprzątnięcia za zgodą.
 
 ## Commity (repo ViTParticleFilterTracker)
 
 `654ae12` (K=160 + pokaz), `9f17339` (inwersja + Gauss-Newton), `6360929` (17 klatek + projekt kontynuacji),
-`8474b31` (kampania 134 klatek, sekcja 7c, ta notatka), następny: efekt lokalny, sekcja 7d.
+`8474b31` (kampania 134 klatek, sekcja 7c, ta notatka), `84747b2` (7d), `9f45551` (7e), następny: 7f,
+teoria, nowość, równanie Langevina.

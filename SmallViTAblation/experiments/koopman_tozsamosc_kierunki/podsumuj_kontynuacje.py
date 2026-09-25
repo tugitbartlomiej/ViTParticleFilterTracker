@@ -6,7 +6,8 @@ liczy per ramie srednia, rozrzut (SD, n-1) i zakres po ziarnach oraz roznice spa
 ramienia bez_dodania. Zapisuje wyniki/dobor_klatek/PODSUMOWANIE_KONTYNUACJA.json i rysunek KONTYNUACJA.png.
 
 Kampanie: trening = pilot z 17 dodanymi klatkami (top-6 na kotwice, 100 aktualizacji; przerwany na zyczenie
-uzytkownika po 4 ramionach), trening150 = 134 dodane klatki (top-50 na kotwice, 103 aktualizacje, 3 ziarna).
+uzytkownika po 4 ramionach), trening150 = 134 dodane klatki (top-50 na kotwice, 103 aktualizacje, 3 ziarna),
+trening5ep = te same selekcje plus ramie trudne, 5 epok (515 aktualizacji), 3 ziarna.
 
     py -3.11 podsumuj_kontynuacje.py
 """
@@ -20,8 +21,9 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 BAZA = HERE / 'wyniki' / 'dobor_klatek'
 KAMPANIE = {'trening': 'pilot 17 klatek (top-6 na kotwice, 100 aktualizacji)',
-            'trening150': '134 klatki (top-50 na kotwice, 103 aktualizacje)'}
-RAMIONA = ['bez_dodania', 'koopman_fastgan', 'losowe']
+            'trening150': '134 klatki (top-50 na kotwice, 103 aktualizacje)',
+            'trening5ep': '5 epok, 134 klatki + ramie trudne (515 aktualizacji)'}
+RAMIONA = ['bez_dodania', 'koopman_fastgan', 'losowe', 'trudne']
 METRYKI = {'mAP50': 'val/mAP_50', 'mAP50_95': 'val/mAP_50_95', 'F1': 'val/F1', 'mAR': 'val/mAR',
            'precision': 'val/precision', 'recall': 'val/recall'}
 
@@ -84,7 +86,7 @@ def rysuj(wszystko: dict, sciezka: Path) -> None:
                 if ys:
                     ax.hlines(np.mean(ys), a - .25, a + .25, color='k', lw=2)
             ax.set_xticks(range(len(RAMIONA)))
-            ax.set_xticklabels(['bez dodania', 'dobrane\n(Koopman+FastGAN)', 'losowe'])
+            ax.set_xticklabels(['bez dodania', 'dobrane\n(Koopman+FastGAN)', 'losowe', 'trudne'], fontsize=8)
             ax.set_title(f'{KAMPANIE[k].split(" (")[0]}: {tyt}', fontsize=10)
             ax.grid(alpha=.3)
             if j == 0:

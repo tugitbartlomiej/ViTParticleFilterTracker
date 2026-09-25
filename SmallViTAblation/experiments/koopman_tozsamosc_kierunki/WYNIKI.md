@@ -5,6 +5,8 @@ Pokaz FastGAN na przewidzianym latencie (sekcja 6) wykonany: pętla działa mech
 obecnego latentu. Dobór klatek i kontynuacja treningu (sekcja 7) zakończone: 134 dobrane klatki dają tyle samo,
 co 134 losowe (+0,001 mAP@0,5, w rozrzucie ziaren); efekt lokalny na klatkach val podobnych do kotwic (7d) też
 zerowy (dobrane −0,003, losowe +0,005, SD 0,007–0,009), a okolica kotwic jest dla detektora trudna (AP 0,55).
+Kampania 5 epok (7f): dobrane −0,0005 mAP@0,5 względem braku dodania, losowe +0,001, trudne +0,0016, wszystko w
+szumie; kryterium „lepsze od losowych w okolicy kotwic” niespełnione dla dobranych i dla trudnych.
 
 ## 1. Co jest „elementem identyfikującym narzędzie” i jak się zachowuje w trakcie uczenia
 
@@ -459,3 +461,48 @@ medianie puli 0,48), najwyżej 2 na film, 83 filmy (dobrane: 84). Wspólne z dob
 24 losowych (`TRUDNE_PODGLAD.png`): narzędzie wchodzące przy krawędzi kadru, malutki czubek, detektor zaznacza
 inne narzędzie (pęsetę, rozwieracz) zamiast oznaczonego cystotomu; część to przypadki graniczne oznaczeń
 (bardzo małe ramki), więc ramię może też nieść szum etykiet.
+
+### 7f. Kampania 5 epok (zadanie 1814835, `eden/kontynuacja5ep.slurm`, `efekt_lokalny_5ep.py`, `wyniki/dobor_klatek/trening5ep/`)
+
+Polecenie użytkownika po 7d: „Trzeba więcej epok do treningu detektora!”. Plan i kryterium zapisane przed wynikiem
+w `PLAN.md`. Start `model_0000245.pth`, świeży optymalizator, 5 epok × 103 = 515 aktualizacji (koniec około kroku
+760 biegu 1810662), 4 ramiona × 3 ziarna, wszystkie 12 biegów naraz na short i hopper (około 50 min). Wagi z końca
+każdej epoki pobrane (60 × 120 MB, poza gitem, sumy w `wyniki/SHA256.json`), predykcje lokalne: epoka 5 na całym
+val, epoki 1–4 na 10 procentach val najbliższych kotwicom (`efekt_lokalny/PRED_*.npz`, `EFEKT_5EP.json`,
+`EFEKT_5EP.png`). Zapisy latentu sond z każdej epoki (`latent/`, 139 MB, poza gitem) zostały pobrane dla etapu 2
+równania Langevina (`../langevin_latent_detektora/PLAN.md`).
+
+Cały val (Eden, mAP@0,5 po 5 epokach):
+
+| ramię | 42 | 43 | 44 | średnia | Δ vs bez_dodania (sparowane) | Δ mAP@0,5:0,95 |
+|---|---|---|---|---|---|---|
+| bez_dodania | 0,8989 | 0,8958 | 0,8944 | 0,8964 | – | – |
+| koopman_fastgan | 0,8995 | 0,8954 | 0,8927 | 0,8959 | −0,0005 (+0,0006, −0,0004, −0,0017) | −0,0005 |
+| losowe | 0,9002 | 0,8977 | 0,8944 | 0,8974 | +0,0010 (+0,0013, +0,0019, 0,0000) | −0,0014 |
+| trudne | 0,8981 | 0,8982 | 0,8977 | 0,8980 | +0,0016 (−0,0009, +0,0025, +0,0033) | −0,0068 |
+
+Okolica kotwic (AP@0,5 lokalnie, 134 klatki val najbliższe kotwicom; start z kroku 245: 0,526):
+
+| ramię | po epokach 1–5 (średnia 3 ziaren) | Δ top-134 vs bez_dodania | Δ top-134 vs losowe | Δ dolna połowa val vs bez_dodania |
+|---|---|---|---|---|
+| bez_dodania | 0,546 0,565 0,586 0,588 0,590 | – | −0,009 | – |
+| koopman_fastgan | 0,539 0,569 0,579 0,585 0,595 | +0,005 (+0,016, +0,012, −0,013) | −0,004 (+0,006, −0,005, −0,013) | +0,001 |
+| losowe | 0,549 0,562 0,578 0,590 0,600 | +0,009 (+0,011, +0,017, +0,001) | – | +0,003 |
+| trudne | 0,544 0,553 0,561 0,564 0,582 | −0,009 (−0,006, −0,002, −0,018) | −0,018 (−0,016, −0,019, −0,019) | +0,009 (+0,004, +0,009, +0,013) |
+
+Kryterium ustalone przed wynikiem (X − losowe > 0 na top-134 we wszystkich ziarnach oraz X − bez_dodania ≥ −0,002
+na całym val): **niespełnione dla koopman_fastgan** (top-134 vs losowe +0,006, −0,005, −0,013) **i dla trudnych**
+(−0,016, −0,019, −0,019).
+
+Wnioski:
+1. Więcej epok pomaga w okolicy kotwic wszystkim ramionom jednakowo: AP top-134 rośnie z 0,53 do 0,59–0,60. To
+   efekt samego uczenia, nie dodanych klatek. Globalnie krzywe dochodzą do 0,896–0,898, jak w oryginalnym biegu.
+2. Klatki dobrane przez Koopmana i FastGAN nie odróżniają się od losowych ani globalnie, ani lokalnie.
+3. Losowe klatki dają jedyny zgodny we wszystkich ziarnach, choć mały, zysk lokalny (+0,009 top-134, w granicach
+   SD 0,008 na ziarno); globalnie +0,001, w szumie.
+4. Trudne klatki działają w przeciwną stronę niż zakładała hipoteza: pomagają daleko od kotwic (dolna połowa val
+   +0,009 we wszystkich ziarnach, cały val +0,0016), a szkodzą przy kotwicach (−0,018 wobec losowych w każdym
+   ziarnie) i pogarszają dokładność położenia ramki (mAP@0,5:0,95 −0,007, F1 −0,005). Zgodne z 7e: trudne klatki
+   to inne filmy i przypadki graniczne oznaczeń, nie to, co trudne w filmach val przy kotwicach.
+5. Wyjaśnienie teoretyczne (brak wpływu prognozy na wybór, twierdzenie o stabilności wyboru) w `TEORIA_LANGEVIN.md`;
+   ocena nowości i publikowalności w `NOWOSC_I_PUBLIKACJA.md`.

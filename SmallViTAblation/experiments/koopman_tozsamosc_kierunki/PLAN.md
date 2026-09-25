@@ -60,7 +60,10 @@ do kotwic dobrane klatki nie pomagają (−0,003 AP@0,5, losowe +0,005, oba w sz
 na top-134, 0,38 wokół TR_0134). Predykcje wszystkich zestawów wag na całym val zapisane (`efekt_lokalny/PREDYKCJE_*.npz`).
 
 
-## Plan kampanii 5 epok (2026-09-25, noc) — CZEKA NA ZATWIERDZENIE, zadania niezgłoszone
+## Plan kampanii 5 epok (2026-09-25, noc) — ZATWIERDZONY („tak, puść wszystkie 12 biegów”), zgłoszony jako 1814835
+
+Zgłoszono `sbatch --array=0-11 kontynuacja5ep.slurm` (zadanie 1814835, 4 ramiona × 3 ziarna, wszystkie 12 naraz na
+short i hopper, start około 23:00). Wyniki w sekcji 7f `WYNIKI.md`.
 
 Polecenie użytkownika: „Trzeba więcej epok do treningu detektora!” (po 7d). Pliki gotowe i sprawdzone na Edenie
 w `~/smallvit_runs/2026-09-25_kontynuacja_5epok/` (`kontynuacja5ep.slurm`, configi, 4 selekcje, sumy zgodne).
