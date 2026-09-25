@@ -1,7 +1,9 @@
 # Czy Koopman przewiduje elementy latentu identyfikujące narzędzie? Wyniki (2026-09-25)
 
 Stan: część 1 (73 checkpointy, kroki 5..365) i część 2 (160 checkpointów, kroki 5..800, sekcja 5) zakończone.
-Pokaz FastGAN na przewidzianym latencie (sekcja 6) wykonany, wynik negatywny po stronie generatora.
+Pokaz FastGAN na przewidzianym latencie (sekcja 6) wykonany: pętla działa mechanicznie, obrazy nie różnią się od
+obecnego latentu. Dobór klatek i kontynuacja treningu (sekcja 7) zakończone: 134 dobrane klatki dają tyle samo,
+co 134 losowe (+0,001 mAP@0,5, w rozrzucie ziaren).
 
 ## 1. Co jest „elementem identyfikującym narzędzie” i jak się zachowuje w trakcie uczenia
 
@@ -325,4 +327,58 @@ filmów**, żaden z filmów kotwic.
 - Oczekiwanie a priori: 17 klatek to 1,1 procent zbioru; efekt, jeśli jest, będzie rzędu szumu między ziarnami.
   Dlatego trzy ziarna i dwa ramiona kontrolne.
 
-Wyniki: (w toku; dopisane po zakończeniu zadania 1814538).
+Wyniki pilotu (zadanie 1814538, przerwane na polecenie użytkownika po czterech ramionach, żeby zwolnić GPU dla
+kampanii z większą liczbą klatek; raporty w `wyniki/dobor_klatek/trening/raporty/`):
+
+| ramię | ziarno 42 | ziarno 43 |
+|---|---|---|
+| bez_dodania (1500) | 0,8667 | 0,8688 |
+| koopman_fastgan (1517) | 0,8667 | (przerwane) |
+| losowe (1517) | 0,8663 | (przerwane) |
+
+W ziarnie 42 wszystkie trzy ramiona mieszczą się w 0,0004 mAP@0,5, a sama zmiana ziarna w ramieniu bez dodania
+przesuwa wynik o 0,002. Siedemnaście klatek to za mało, żeby cokolwiek zobaczyć; stąd kampania 7c.
+
+### 7c. Kampania 134 klatek: top-50 na kotwicę (`eden/kontynuacja150.slurm`, zadanie 1814611, `wyniki/dobor_klatek/trening150/`)
+
+Dobór: dla każdej z trzech kotwic 50 najbliższych klatek z wyszukiwarki (`retrieval50_kotwica_XX_target.json`,
+ten sam indeks, wykluczenia i ranking co w 7a; cos DINOv2 od 0,66 do 0,81). Suma trzech list po usunięciu
+powtórzeń (4, 7 i 8 klatek wspólnych między parami kotwic): **134 unikalne klatki z 84 filmów**, 8,9 procent
+zbioru 1500. Kontrola losowa: 134 losowe nieużyte klatki train (ziarno 43, 74 filmy). Epoka = 103 aktualizacje
+(`epoch_size` 1648, bo sampler wymaga rozmiaru epoki ≥ liczby klatek i podzielnego przez 16); to samo 103 dla
+wszystkich ramion, także bez dodania. Reszta receptury jak w 7b. Ziarno 42 liczone na hopper, ziarna 43 i 44 na
+dgx-1 (partycja short; przeniesione na życzenie użytkownika, bo hopper miał jedną wolną kartę). Każde ramię
+13–14 minut; skrypt sprząta `/dev/shm` przez trap, po zadaniu nic nie zostało na węzłach. Raporty:
+`trening150/raporty/seed{S}_{ramię}/{REPORT,INPUTS}.json`, logi SLURM w `trening150/logi/`, podsumowanie
+`podsumuj_kontynuacje.py` → `PODSUMOWANIE_KONTYNUACJA.json`, rysunek `KONTYNUACJA.png`.
+
+mAP@0,5 na całym val (12 043 klatki) po jednej epoce od kroku 245:
+
+| ramię | ziarno 42 | ziarno 43 | ziarno 44 | średnia ± SD | mAP@0,5:0,95 (śr.) | F1 (śr.) |
+|---|---|---|---|---|---|---|
+| bez_dodania (1500) | 0,8678 | 0,8688 | 0,8694 | 0,8686 ± 0,0008 | 0,6175 | 0,8681 |
+| koopman_fastgan (1634) | 0,8696 | 0,8695 | 0,8691 | 0,8694 ± 0,0002 | 0,6178 | 0,8697 |
+| losowe (1634) | 0,8684 | 0,8698 | 0,8706 | 0,8696 ± 0,0011 | 0,6178 | 0,8689 |
+
+Różnice sparowane (to samo ziarno) względem braku dodania, mAP@0,5: dobrane +0,0018, +0,0007, −0,0003
+(średnio **+0,0007**); losowe +0,0006, +0,0010, +0,0012 (średnio **+0,0009**). mAP@0,5:0,95: obie +0,0003.
+F1: dobrane +0,0016, losowe +0,0008. Dla skali: odniesienie z biegu 1810662 to 0,860 na końcu epoki 3 (krok 299)
+i 0,877 na końcu epoki 4 (krok 399); jedna epoka od kroku 245 daje tu 0,869 w każdym ramieniu, czyli zwykły
+postęp krzywej uczenia, a nie efekt doboru.
+
+Werdykt:
+
+1. Dołożenie 134 klatek **nie pogarsza** detekcji i podnosi mAP@0,5 o około 0,001, tyle samo dla klatek dobranych
+   i dla losowych. Ta poprawa mieści się w rozrzucie ziaren (SD 0,0008–0,0011 przy trzech ziarnach), więc nie
+   jest rozstrzygnięta; różnica dobrane − losowe (−0,0002 mAP@0,5, +0,0008 F1) tym bardziej nie.
+2. Dobór przez Koopman → FastGAN → wyszukiwarkę **nie jest lepszy od losowego** w tej próbie. Nie jest to
+   zaskoczenie po 7a: obrazy przewidzianego i obecnego latentu różnią się o 0,1 procent jasności, więc zapytania
+   do wyszukiwarki niosły wyłącznie „podobieństwo do trzech kotwic”, a nie kierunek zmiany. Test sprawdza zatem,
+   czy klatki podobne do trzech kotwic uczą lepiej niż losowe; przy 134 klatkach i jednej epoce nie uczą.
+3. Czego ten test nie rozstrzyga: efektu lokalnego (czy detektor poprawił się na klatkach val podobnych do kotwic;
+   miara globalna po 12 043 klatkach go nie widzi), efektu wielu epok ani większych porcji. Żeby rozdzielić
+   różnice rzędu 0,001 przy SD 0,001, trzeba by około dziesięciu ziaren na ramię albo miary lokalnej.
+
+Możliwy następny krok (nieuruchomiony): policzyć mAP tych samych dziewięciu zestawów wag (`FINAL.pth` zostały na
+Edenie, `results/seed{S}_{ramię}/trening/FINAL.pth`, po 120 MB) na podzbiorze val z klatek najbliższych kotwicom
+(ta sama wyszukiwarka, indeks val). To jedyny sposób, żeby zobaczyć efekt celowanego doboru, jeśli jest.

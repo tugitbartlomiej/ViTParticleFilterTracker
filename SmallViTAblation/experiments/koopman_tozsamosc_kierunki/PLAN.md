@@ -43,3 +43,13 @@ Obie części zakończone, wyniki i wnioski w `WYNIKI.md` (sekcje 1–5). Dodatk
 skalara tożsamości od S do końca historii), `pokaz_fastgan.py` (przewidziany latent jako cel dla FastGAN, sekcja 6,
 wynik negatywny po stronie generatora). Poza gitem: `wyniki/tokeny_pelne` (9,5 GB), `*.npz`, obrazy; sumy w
 `wyniki/SHA256.json`.
+
+## Stan (2026-09-25, noc)
+
+Sekcja 7 `WYNIKI.md` zakończona: wyszukiwarka DINOv2 równoległej sesji (tylko odczyt) dobrała klatki do obrazów FastGAN
+przewidzianego latentu (top-6 → 17 klatek, pilot 1814538 przerwany; top-50 → 134 klatki, zadanie 1814611, 3 ziarna ×
+3 ramiona), kontynuacja jednej epoki od `model_0000245.pth` przez `eden/kontynuacja.py` + `kontynuacja150.slurm`
+(`trening.py` równoległej sesji bez zmian). Wynik: dobrane klatki = losowe = +0,001 mAP@0,5 względem braku dodania,
+w rozrzucie ziaren. Podsumowanie `podsumuj_kontynuacje.py` → `wyniki/dobor_klatek/PODSUMOWANIE_KONTYNUACJA.json`,
+`KONTYNUACJA.png`. Na Edenie zostały wagi końcowe (`~/smallvit_runs/2026-09-25_kontynuacja_dobor150/results/*/trening/FINAL.pth`,
+9 × 120 MB) i katalog przerwanego pilotu `2026-09-25_kontynuacja_dobor`; do sprzątnięcia za zgodą.
