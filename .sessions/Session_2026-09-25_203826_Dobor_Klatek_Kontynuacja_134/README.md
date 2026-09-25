@@ -6,4 +6,5 @@ Pytanie użytkownika: czy klatki dobrane do obrazów FastGAN przewidzianego late
 detekcję narzędzia po dołożeniu ich do zbioru 1500 klatek i jednej epoce treningu.
 
 Odpowiedź: nie pogarszają i nie poprawiają ponad losowe. 134 dobrane klatki dają +0,0007 mAP@0,5, 134 losowe +0,0009,
-oba w rozrzucie ziaren (SD około 0,001). Szczegóły: [SESSION_SUMMARY.md](SESSION_SUMMARY.md).
+oba w rozrzucie ziaren (SD około 0,001). Lokalnie, na klatkach val podobnych do kotwic, też nic: dobrane −0,003,
+losowe +0,005, w szumie; okolica kotwic jest trudna (AP 0,55). Szczegóły: [SESSION_SUMMARY.md](SESSION_SUMMARY.md).

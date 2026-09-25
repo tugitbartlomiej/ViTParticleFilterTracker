@@ -3,7 +3,8 @@
 Stan: część 1 (73 checkpointy, kroki 5..365) i część 2 (160 checkpointów, kroki 5..800, sekcja 5) zakończone.
 Pokaz FastGAN na przewidzianym latencie (sekcja 6) wykonany: pętla działa mechanicznie, obrazy nie różnią się od
 obecnego latentu. Dobór klatek i kontynuacja treningu (sekcja 7) zakończone: 134 dobrane klatki dają tyle samo,
-co 134 losowe (+0,001 mAP@0,5, w rozrzucie ziaren).
+co 134 losowe (+0,001 mAP@0,5, w rozrzucie ziaren); efekt lokalny na klatkach val podobnych do kotwic (7d) też
+zerowy (dobrane −0,003, losowe +0,005, SD 0,007–0,009), a okolica kotwic jest dla detektora trudna (AP 0,55).
 
 ## 1. Co jest „elementem identyfikującym narzędzie” i jak się zachowuje w trakcie uczenia
 
@@ -379,6 +380,58 @@ Werdykt:
    miara globalna po 12 043 klatkach go nie widzi), efektu wielu epok ani większych porcji. Żeby rozdzielić
    różnice rzędu 0,001 przy SD 0,001, trzeba by około dziesięciu ziaren na ramię albo miary lokalnej.
 
-Możliwy następny krok (nieuruchomiony): policzyć mAP tych samych dziewięciu zestawów wag (`FINAL.pth` zostały na
-Edenie, `results/seed{S}_{ramię}/trening/FINAL.pth`, po 120 MB) na podzbiorze val z klatek najbliższych kotwicom
-(ta sama wyszukiwarka, indeks val). To jedyny sposób, żeby zobaczyć efekt celowanego doboru, jeśli jest.
+### 7d. Efekt lokalny: klatki val podobne do kotwic (`efekt_lokalny.py`, `wyniki/dobor_klatek/efekt_lokalny/`)
+
+Pytanie: może dobrane klatki pomagają tam, gdzie były celowane, a miara globalna po 12 043 klatkach tego nie widzi.
+Procedura (lokalnie, RTX 3070, wagi `FINAL.pth` dziewięciu ramion pobrane z Edena do `trening150/wagi/`, poza gitem):
+
+1. Podobieństwo: ten sam DINOv2 ViT-S/14, wycinek i preprocessing co w indeksie train (`wyszukiwanie.py` równoległej
+   sesji, tylko odczyt), cechy wycinków wszystkich 12 043 adnotacji val, cosinus do zapytań `target.png` trzech
+   kotwic; klatka dostaje maksimum po kotwicach (`PODOBIENSTWO_VAL.npz`). Mediana 0,58; 271 klatek ma cos ≥ 0,7;
+   próg top-134 to 0,717. Zapytania `target` i `current` tej samej kotwicy mają cos 0,99–1,00, więc ranking val,
+   jak w 7a, odzwierciedla obecny latent kotwicy.
+2. Predykcje: każdy z dziesięciu zestawów wag (9 ramion + start `model_0000245.pth`) na wszystkich klatkach val,
+   próg pewności 0,05, `PREDYKCJE_{nazwa}.npz`. AP COCO (101 punktów, IoU 0,5 i 0,5:0,95) liczone lokalnie
+   z tych samych predykcji dla dowolnego podzbioru; F1 przy pewności 0,5. Kontrola implementacji: na całym val
+   lokalne AP@0,5 0,8659 wobec 0,8686 z Edena (różnica 0,003 z odcięcia predykcji poniżej 0,05 i szczegółów
+   COCO), identyczna procedura dla wszystkich ramion, więc różnice sparowane są wiarygodne.
+3. Podzbiory według podobieństwa: top-134 (tyle, ile dołożono do treningu), cos ≥ 0,7 (271), 10 procent
+   najbliższych (1 204), top-50 na kotwicę, dolna połowa (6 022, kontrola), decyle.
+
+Najpierw fakt o samych klatkach: **okolica kotwic jest trudna**. AP@0,5 ramienia bez dodania: wszystkie 0,866,
+10 procent najbliższych 0,828, cos ≥ 0,7 0,688, top-134 0,545; top-50 kotwicy TR_0134 (`kotwica_48`) tylko 0,383
+(TR_0006 0,841, TR_0082 0,803). Profil po decylach podobieństwa: 0,83 w najbliższym decylu, 0,90–0,93 w środkowych,
+0,65 w najdalszym (klatki niepodobne do żadnej kotwicy). Start (krok 245) na top-134 miał 0,526, więc epoka
+podnosi ten podzbiór o 0,02 w każdym ramieniu.
+
+Δ AP@0,5 względem braku dodania, średnia po trzech ziarnach ± SD różnic (`EFEKT_LOKALNY.json`, `EFEKT_LOKALNY.png`):
+
+| podzbiór val (n) | dobrane − bez dodania | losowe − bez dodania |
+|---|---|---|
+| wszystkie (12 043) | +0,0003 ± 0,0003 | +0,0006 ± 0,0006 |
+| dolna połowa (6 022) | +0,0002 ± 0,0006 | −0,0004 ± 0,0011 |
+| 10 procent najbliższych (1 204) | −0,0020 ± 0,0039 | +0,0027 ± 0,0043 |
+| cos ≥ 0,7 (271) | −0,0033 ± 0,0067 | +0,0035 ± 0,0061 |
+| top-134 | −0,0028 ± 0,0085 | +0,0054 ± 0,0070 |
+| suma top-50 kotwic (138) | −0,0067 ± 0,0113 | +0,0035 ± 0,0064 |
+| kotwica TR_0006 top-50 | −0,0094 ± 0,0132 | +0,0009 ± 0,0011 |
+| kotwica TR_0082 top-50 | −0,0117 ± 0,0063 | −0,0067 ± 0,0049 |
+| kotwica TR_0134 top-50 | +0,0043 ± 0,0245 | +0,0139 ± 0,0168 |
+
+Decyle: dobrane −0,002 ± 0,004 w najbliższym decylu i 0 do +0,002 w pozostałych; losowe +0,003 ± 0,004 w najbliższym
+i 0 do +0,003 w pozostałych. mAP@0,5:0,95 i F1 nie zmieniają obrazu (top-134: dobrane −0,001 / −0,001, losowe
++0,004 / +0,002).
+
+Werdykt lokalny:
+
+1. **Nie ma efektu lokalnego.** Na klatkach val najbardziej podobnych do kotwic dobrane klatki dają −0,003 AP@0,5,
+   losowe +0,005; oba mieszczą się w rozrzucie ziaren (SD 0,007–0,009 na 134 klatkach), a znak dobranych jest w
+   trzech z czterech podzbiorów ujemny. Dodanie klatek podobnych do kotwic nie poprawiło detekcji w ich okolicy
+   bardziej niż dodanie losowych.
+2. Trudność okolicy kotwic (AP 0,38–0,55 dla TR_0134 i top-134) to jedyna rzecz, którą ten pomiar pokazał z zapasem:
+   FastGAN i wyszukiwarka wskazały region, w którym detektor jest słaby, ale 134 klatki train z tego regionu przez
+   jedną epokę go nie naprawiły. Żeby rozstrzygnąć efekt rzędu 0,003 na 134 klatkach, trzeba by kilkunastu ziaren
+   albo kilkuset klatek val w tym regionie, których nie ma (271 z cos ≥ 0,7).
+3. Razem z 7c: ani globalnie, ani lokalnie dobór Koopman → FastGAN → wyszukiwarka nie różni się od losowego doboru
+   w tej próbie. Przyczyna po stronie wejścia pozostaje ta z 7a: obrazy przewidzianego latentu nie różnią się od
+   obrazów obecnego, więc dobór nie niósł kierunku Koopmana.

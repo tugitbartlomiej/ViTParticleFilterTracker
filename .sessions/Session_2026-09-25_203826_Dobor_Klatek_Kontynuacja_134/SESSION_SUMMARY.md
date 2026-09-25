@@ -40,9 +40,12 @@ latentu są praktycznie identyczne, więc wyszukiwarka dostała „podobieństwo
 
 ## Granice
 
-- Miara globalna; efekt lokalny (klatki val podobne do kotwic) niezmierzony. Możliwy następny krok: policzyć
-  mAP zachowanych wag `FINAL.pth` na podzbiorze val najbliższym kotwicom. Nieuruchomiony.
-- Trzy ziarna rozdzielają różnice rzędu 0,002-0,003, nie 0,001.
+- Efekt lokalny (polecenie „policz efekt lokalny na klatkach val podobnych”, sekcja 7d, `efekt_lokalny.py`):
+  wagi `FINAL.pth` pobrane z Edena (1,1 GB, poza gitem), DINOv2 równoległej sesji policzył podobieństwo 12 043
+  klatek val do kotwic, RF-DETR lokalnie przewidział ramki dla 10 zestawów wag, AP COCO na podzbiorach.
+  Wynik: na klatkach najbardziej podobnych do kotwic dobrane klatki −0,003 AP@0,5, losowe +0,005, oba w szumie
+  (SD 0,007-0,009 na 134 klatkach). Okolica kotwic jest trudna: AP 0,55 na top-134, 0,38 wokół TR_0134.
+- Trzy ziarna rozdzielają różnice rzędu 0,002-0,003 globalnie i 0,01 na małych podzbiorach.
 - Jedna epoka i 8,9 procent zbioru; większe porcje i więcej epok nietestowane.
 
 ## Eden (do sprzątnięcia za zgodą)
@@ -55,4 +58,4 @@ latentu są praktycznie identyczne, więc wyszukiwarka dostała „podobieństwo
 ## Commity (repo ViTParticleFilterTracker)
 
 `654ae12` (K=160 + pokaz), `9f17339` (inwersja + Gauss-Newton), `6360929` (17 klatek + projekt kontynuacji),
-następny: kampania 134 klatek, sekcja 7c, ta notatka.
+`8474b31` (kampania 134 klatek, sekcja 7c, ta notatka), następny: efekt lokalny, sekcja 7d.

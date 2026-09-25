@@ -53,3 +53,9 @@ przewidzianego latentu (top-6 → 17 klatek, pilot 1814538 przerwany; top-50 →
 w rozrzucie ziaren. Podsumowanie `podsumuj_kontynuacje.py` → `wyniki/dobor_klatek/PODSUMOWANIE_KONTYNUACJA.json`,
 `KONTYNUACJA.png`. Na Edenie zostały wagi końcowe (`~/smallvit_runs/2026-09-25_kontynuacja_dobor150/results/*/trening/FINAL.pth`,
 9 × 120 MB) i katalog przerwanego pilotu `2026-09-25_kontynuacja_dobor`; do sprzątnięcia za zgodą.
+
+Dopisek (2026-09-25, noc): efekt lokalny (`efekt_lokalny.py`, sekcja 7d) policzony lokalnie na RTX 3070 z wag `FINAL.pth`
+pobranych do `wyniki/dobor_klatek/trening150/wagi/` (1,1 GB, poza gitem, sumy w `SHA256.json`): na klatkach val podobnych
+do kotwic dobrane klatki nie pomagają (−0,003 AP@0,5, losowe +0,005, oba w szumie); okolica kotwic jest trudna (AP 0,55
+na top-134, 0,38 wokół TR_0134). Predykcje wszystkich zestawów wag na całym val zapisane (`efekt_lokalny/PREDYKCJE_*.npz`).
+
