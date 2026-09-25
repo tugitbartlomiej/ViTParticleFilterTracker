@@ -59,3 +59,22 @@ pobranych do `wyniki/dobor_klatek/trening150/wagi/` (1,1 GB, poza gitem, sumy w 
 do kotwic dobrane klatki nie pomagają (−0,003 AP@0,5, losowe +0,005, oba w szumie); okolica kotwic jest trudna (AP 0,55
 na top-134, 0,38 wokół TR_0134). Predykcje wszystkich zestawów wag na całym val zapisane (`efekt_lokalny/PREDYKCJE_*.npz`).
 
+
+## Plan kampanii 5 epok (2026-09-25, noc) — CZEKA NA ZATWIERDZENIE, zadania niezgłoszone
+
+Polecenie użytkownika: „Trzeba więcej epok do treningu detektora!” (po 7d). Pliki gotowe i sprawdzone na Edenie
+w `~/smallvit_runs/2026-09-25_kontynuacja_5epok/` (`kontynuacja5ep.slurm`, configi, 4 selekcje, sumy zgodne).
+
+- Start: `model_0000245.pth`, świeży optymalizator, receptura bez zmian; 5 epok × 103 = 515 aktualizacji (koniec
+  ≈ krok 760 oryginalnego biegu, gdzie jego krzywa dochodzi do 0,896–0,898). Walidacja całego val po każdej epoce,
+  wagi i latent na koniec każdej epoki.
+- Ramiona (te same selekcje co 7c): bez_dodania (1500), koopman_fastgan (+134 dobrane), losowe (+134 losowe),
+  opcjonalnie trudne (+134 najgorsze dla detektora, 7e). Ziarna 42, 43, 44. Razem 9 albo 12 biegów, jeden na zadanie.
+- Koszt: około 45 min na bieg (epoka 2,6 min treningu + 5 min walidacji); 9–12 h GPU, przy 10 wolnych kartach
+  około 1 h zegarowo; na dysku Edena około 9 GB (wolne 57 GB).
+- Miary: mAP@0,5 całego val (Eden) i AP@0,5 na 134 klatkach val najbliższych kotwicom (lokalnie, `efekt_lokalny.py`
+  na wagach z każdej epoki, podzbiór 10 procent najbliższych dla krzywej).
+- Kryterium, ustalone przed wynikiem: ramię X jest lepsze od losowego, gdy X − losowe > 0 we wszystkich trzech
+  ziarnach na top-134 val i gdy na całym val X − bez_dodania ≥ −0,002. Przy SD ziaren 0,008 na top-134 trzy ziarna
+  rozróżnią dopiero różnice rzędu 0,015.
+- Zgłoszenie po zgodzie: `sbatch --array=0-11 kontynuacja5ep.slurm` (z trudnymi) albo `--array=0-8` (bez).

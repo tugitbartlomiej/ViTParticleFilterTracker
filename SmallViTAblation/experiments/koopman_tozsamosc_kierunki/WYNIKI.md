@@ -435,3 +435,27 @@ Werdykt lokalny:
 3. Razem z 7c: ani globalnie, ani lokalnie dobór Koopman → FastGAN → wyszukiwarka nie różni się od losowego doboru
    w tej próbie. Przyczyna po stronie wejścia pozostaje ta z 7a: obrazy przewidzianego latentu nie różnią się od
    obrazów obecnego, więc dobór nie niósł kierunku Koopmana.
+
+### 7e. Czy dodane klatki były trudne? (`trudnosc_dodanych.py`, `dobor_trudnych.py`, `podglad_trudnych.py`)
+
+Hipoteza użytkownika po 7d: skoro detektor jest słaby w okolicy kotwic, generator wskazał przypadki, które przy
+dłuższym treningu wzmocnią detektor. Sprawdzenie na samych klatkach treningowych (`efekt_lokalny/TRUDNOSC_DODANYCH.json`):
+
+| wagi | 134 dobrane (AP@0,5) | 134 losowe | 134 z widzianych 1500 |
+|---|---|---|---|
+| start, krok 245 | 0,857 | 0,878 | 0,868 |
+| bez_dodania po epoce (klatek nie widział), 3 ziarna | 0,889–0,907 | 0,901–0,905 | 0,900–0,906 |
+| koopman_fastgan po epoce (widział je raz) | 0,907–0,912 | 0,899–0,901 | 0,905–0,910 |
+
+Dobrane klatki treningowe **nie były trudne**: przed treningiem tylko o 0,02 gorsze od losowych, a po epoce bez
+oglądania ich detektor i tak ma na nich 0,90. Trudna jest okolica kotwic **w walidacji**, i to w kilku filmach:
+134 najbliższe klatki val pochodzą z 10 filmów, 101 z czterech (TR_0100, TR_0002, TR_0060, TR_0056); film TR_0060
+ma AP@0,5 0,31 w całości, TR_0147 0,49, TR_0002 0,73, reszta 0,74–1,00. Klatki treningowe podobne wyglądem do
+kotwic nie przenoszą tego, co w tych filmach val jest trudne.
+
+Kontrola „trudne przypadki” bez generatora (`trening5ep/selekcja_trudne.json`): 134 nieużyte klatki train,
+na których detektor z kroku 245 najmniej trafia (trudność = 1 − max pewność × IoU; wybrane 0,945–1,000 przy
+medianie puli 0,48), najwyżej 2 na film, 83 filmy (dobrane: 84). Wspólne z dobranymi 0, z losowymi 1. Podgląd
+24 losowych (`TRUDNE_PODGLAD.png`): narzędzie wchodzące przy krawędzi kadru, malutki czubek, detektor zaznacza
+inne narzędzie (pęsetę, rozwieracz) zamiast oznaczonego cystotomu; część to przypadki graniczne oznaczeń
+(bardzo małe ramki), więc ramię może też nieść szum etykiet.
