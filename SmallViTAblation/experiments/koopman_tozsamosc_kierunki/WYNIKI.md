@@ -283,3 +283,46 @@ Wnioski końcowe pokazu:
 4. Co dalej ma sens: nie powtarzanie pokazu od kroku 800 (dryf ≈ 0, sekcja 5e), lecz użycie tej samej pętli
    (inwersja + krok Gaussa–Newtona) do kierunków o dużej amplitudzie, np. różnic między obrazami albo między
    klasami wariantów sond, jeśli celem jest generowanie obrazów o zadanym latencie.
+
+## 7. Dobór nowych klatek do obrazów przewidzianego latentu i kontynuacja treningu (2026-09-25, wieczór)
+
+Zlecenie: znaleźć klatki, które nie weszły do treningu detektora, dopasowane do obrazów FastGAN przewidzianego
+latentu; dołożyć je do zbioru 1500 klatek pretrainingu; trenować kolejną epokę; sprawdzić, czy detekcja się poprawia.
+
+Uwaga o kotwicach pokazu: TR_0082 (klatka 1656) i TR_0134 (klatka 341) **były** w 1500 klatkach treningowych biegu
+1810662 (`datasets/pretrain/train/_annotations.coco.json`); tylko TR_0006 (klatka 746) nie była. „Holdout” w
+sekcjach 1–6 oznaczał wyłącznie wyłączenie z dopasowania operatora Koopmana.
+
+### 7a. Wyszukiwanie (`wyniki/dobor_klatek/`)
+
+Wyszukiwarka równoległej sesji (`koopman_fastgan_petla/wyszukiwanie.py`: DINOv2 ViT-S/14, średnia tokenów, FAISS,
+indeks `local_1810448/run/index` nad 10 637 klatkami train z wycinkiem kwadratowym wokół ramki). Zapytania: obrazy
+`target.png` (i kontrolnie `current.png`) z `fastgan_K73_krok0245_gn/kotwica_XX`. Wykluczone: 1500 klatek
+pretrainingu i 3 kotwice; kwalifikujących się klatek 9 136. Ranking „najlepsza z każdego filmu, potem druga”.
+Wyniki: `retrieval_kotwica_XX_{target,current}.json`, przegląd `KANDYDACI.png`, wybór `kandydaci_top6.json`.
+
+| kotwica | top-3 (film/klatka, cos DINOv2) |
+|---|---|
+| TR_0006 | TR_0076/1816 0,752; TR_0036/611 0,747; TR_0055/5481 0,747 |
+| TR_0082 | TR_0038/1591 0,746; TR_0018/9001 0,745; TR_0081/651 0,729 |
+| TR_0134 | TR_0062/391 0,812; TR_0096/5506 0,807; TR_0148/356 0,803 |
+
+Rankingi dla `target.png` i `current.png` są niemal identyczne (obrazy różnią się o 0,1 procent jasności), więc
+dobór odzwierciedla obraz obecnego latentu kotwicy, nie przyrost Koopmana. Wszystkie wyniki przekraczają bramkę
+kampanii równoległej sesji (cos ≥ 0,7). Do treningu wzięto top-6 z każdej kotwicy: **17 unikalnych klatek z 14
+filmów**, żaden z filmów kotwic.
+
+### 7b. Kontynuacja treningu na Edenie (`eden/kontynuacja.py`, `eden/kontynuacja.slurm`, zadanie 1814538)
+
+- Start: wagi `model_0000245.pth` biegu 1810662 (ten sam checkpoint, na którym liczono prognozę Koopmana i
+  pokaz), świeży optymalizator (checkpoint ma tylko wagi); receptura i kod `trening.py` równoległej sesji bez zmian
+  (batch 4 × 4 akumulacje, LR 1,67e-5 stały, deterministyka, sonda co epokę).
+- Jedna epoka = 100 aktualizacji = 1600 prezentacji (wszystkie klatki raz plus dopełnienie losowe).
+- Ramiona: `bez_dodania` (1500), `koopman_fastgan` (1500 + 17 znalezionych), `losowe` (1500 + 17 losowych
+  nieużytych klatek train, ziarno 42). Ziarna treningu 42, 43, 44 (tablica SLURM, hopper H100).
+- Miara: walidacja na całym zbiorze val (12 043 klatki) po epoce: mAP@0,5, mAP@0,5:0,95, F1. Odniesienie z biegu
+  1810662: koniec epoki 3 (krok 299) mAP@0,5 0,860, epoki 4 (krok 399) 0,877.
+- Oczekiwanie a priori: 17 klatek to 1,1 procent zbioru; efekt, jeśli jest, będzie rzędu szumu między ziarnami.
+  Dlatego trzy ziarna i dwa ramiona kontrolne.
+
+Wyniki: (w toku; dopisane po zakończeniu zadania 1814538).
