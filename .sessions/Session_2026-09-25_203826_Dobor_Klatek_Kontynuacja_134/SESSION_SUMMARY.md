@@ -63,6 +63,15 @@ latentu są praktycznie identyczne, więc wyszukiwarka dostała „podobieństwo
   Od kroku 245 rollout 100 aktualizacji 0,151 wobec 0,171 dla L4 (pamięć 8 przyrostów), ale 1 krok gorszy o
   2,2 procent, a od kroku 485 gorszy od L4; bramka niespełniona. Ruch niesie pamięć; po kroku 485 zostaje szum.
 
+- Pętla uczenia 8 obrotów (2026-09-26/27, `experiments/petla_uczenia_koopman_fastgan`, polecenie „wykonuj i potem
+  analizuj”, cel: jak najszybciej uczyć sieć): obrót = 165 aktualizacji; pętle koopman (prognoza latentu Koopmanem
+  z pamięcią → FastGAN → DINOv2 → +134 klatki), losowe, bez; ziarno 42. Po 8 obrotach mAP@0,5: bez 0,9072, koopman
+  0,9055, losowe 0,9045; przy kotwicach bez 0,627, koopman 0,593, losowe 0,563. Kryterium formalnie spełnione
+  (koopman − losowe +0,030 lokalnie, −0,0017 globalnie wobec bez), ale dodawanie klatek nie przyspiesza uczenia:
+  najlepsza pętla bez dodawania. Prognoza Koopmana trafna w obrocie 1 (0,127 wobec 0,111), potem dryf gaśnie.
+  Diagnoza użytkownika: pętla szuka klatek, do których uczenie i tak dojdzie. Propozycja pętli przyspieszonej
+  (cel 5 obrotów naprzód, kotwice niedouczone, najlepiej od kroku 0) czeka na zgodę.
+
 ## Eden (do sprzątnięcia za zgodą)
 
 - `~/smallvit_runs/2026-09-25_kontynuacja_dobor150/results/seed{42,43,44}_{ramię}/trening/FINAL.pth` (9 x 120 MB).
@@ -70,6 +79,7 @@ latentu są praktycznie identyczne, więc wyszukiwarka dostała „podobieństwo
 - Zadanie 1810406 (`koopman_fastgan_v1`, held) należy do równoległej sesji; nie ruszane.
 - Węzły czyste: scratch `/dev/shm/kont245b-*` usuwany przez trap, logi potwierdzają zakończenie wszystkich ramion.
 - `~/smallvit_runs/2026-09-25_kontynuacja_5epok/` (kampania 5 epok, około 9 GB): wagi pobrane lokalnie; do sprzątnięcia za zgodą.
+- `~/smallvit_runs/2026-09-26_petla_uczenia/` (pętla 8 obrotów, około 6 GB): wagi i latent pobrane lokalnie; do sprzątnięcia za zgodą.
 
 ## Commity (repo ViTParticleFilterTracker)
 

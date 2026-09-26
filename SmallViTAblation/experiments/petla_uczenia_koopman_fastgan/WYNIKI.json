@@ -1,0 +1,26 @@
+{
+  "rodzina": "petla_uczenia_koopman_fastgan",
+  "klasa": "badawcza",
+  "pytanie": "Czy petla prognoza latentu (Koopman z pamiecia) -> FastGAN -> wyszukanie klatek -> uczenie przyspiesza uczenie detektora wobec petli losowej i bez dodawania?",
+  "outputs": "wyniki",
+  "registry_scope": "ViTParticleFilterTracker",
+  "state": "pilot_zakonczony",
+  "report": "WYNIKI.md",
+  "ziarno": 42,
+  "obrotow": 8,
+  "mAP50_obrot8": {
+    "koopman": 0.905500054359436,
+    "losowe": 0.9044705033302307,
+    "bez": 0.9072378873825073
+  },
+  "top134_obrot8": {
+    "koopman": 0.5929224509302289,
+    "losowe": 0.5630843422404856,
+    "bez": 0.627422779585525
+  },
+  "kryterium_jedno_ziarno": {
+    "top134_koopman_minus_losowe": 0.029838108689743237,
+    "mAP50_koopman_minus_bez": -0.001737833023071289,
+    "spelnione_jedno_ziarno": true
+  }
+}
