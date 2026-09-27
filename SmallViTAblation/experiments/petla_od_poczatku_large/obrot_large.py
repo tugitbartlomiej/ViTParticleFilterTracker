@@ -117,7 +117,29 @@ def rollout(op, hist, H):
     return suma
 
 
+MIN_WOLNE_GB = 8.0    # obrót zapisuje ~1,8 GB na ziarno (3 pętle × wagi 0,5 GB + latent); poniżej progu stop
+
+
+def kwota_edenu():
+    """Wolne GB w kwocie projektu 1299 na /mnt/evafs; wyjątek, jeśli poniżej MIN_WOLNE_GB (dyrygent staje)."""
+    import subprocess
+    for _ in range(3):
+        r = subprocess.run(['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=40', 'eden-cluster',
+                            'lfs quota -p 1299 /mnt/evafs'], capture_output=True, text=True, timeout=180)
+        wiersz = [l.split() for l in r.stdout.splitlines() if l.strip().startswith('/mnt/evafs')]
+        if wiersz:
+            uzyte, kwota = int(wiersz[0][1].rstrip('*')), int(wiersz[0][2])
+            wolne = (kwota - uzyte) / 1024 ** 2
+            print(f'kwota Edenu: wolne {wolne:.1f} GB', flush=True)
+            if wolne < MIN_WOLNE_GB:
+                raise RuntimeError(f'za mało miejsca na Edenie: {wolne:.1f} GB < {MIN_WOLNE_GB} GB')
+            return wolne
+        time.sleep(30)
+    raise RuntimeError('nie odczytano kwoty Edenu')
+
+
 def etap_prognoza(s, k):
+    kwota_edenu()
     rows, mapa, fit = sondy()
     Y = historia(s, k, mapa)                                          # (T, 72, 5)
     V = np.diff(Y, axis=0)
@@ -197,6 +219,9 @@ def selekcja(nazwa, dodane, baza):
 
 def etap_wybor(s, k):
     sys.path.insert(0, str(KT))
+    # faiss-cpu (libomp140) i torch (libiomp5md) z F:\Python ładują dwa środowiska OpenMP w każdej kolejności
+    # (OMP Error #15); wyszukiwanie w tej sesji zawsze szło z tym obejściem, top-k sprawdzane cosinusem w numpy.
+    os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
     from wyszukiwanie import query_index
     lok = W / f's{s}' / 'fastgan' / f'k{k:02d}'
     zad = jz(lok / 'zadanie.json')

@@ -185,6 +185,9 @@ def run(args):
     dm=PairedData(mc,tc)
     trainer=build_trainer(tc,mc,max_steps=args.stop_step,precision='32-true',deterministic=True,
                           enable_progress_bar=False)
+    from rfdetr.training.callbacks.best_model import BestModelCallback
+    # zapis 'najlepszego modelu' odrzuca wycofana konfiguracje LargeDeprecated; wagi i tak zapisujemy sami
+    trainer.callbacks[:] = [c for c in trainer.callbacks if not isinstance(c, BestModelCallback)]
     history_callback=History();trainer.callbacks.append(history_callback)
     torch.set_float32_matmul_precision('highest')
     torch.backends.cuda.matmul.allow_tf32=False
