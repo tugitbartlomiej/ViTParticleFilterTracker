@@ -176,6 +176,7 @@ def run(args):
                 torch.save({'model':module.model.state_dict(),'args':args_dict,'model_config':mc.model_dump(mode='json'),
                             'step':step},out/f'model_{step:07d}.pth')
         def on_train_epoch_end(self,trainer,module):
+            if cfg.get('wagi_tylko_koniec'): return   # 1,57 GB stanu Lightning; obrót startuje z samych wag (kwota Edena)
             trainer.save_checkpoint(out/f'FULL_{int(trainer.global_step):07d}.ckpt')
         def on_train_end(self,trainer,module):
             self.record(trainer,module)
@@ -188,6 +189,10 @@ def run(args):
     from rfdetr.training.callbacks.best_model import BestModelCallback
     # zapis 'najlepszego modelu' odrzuca wycofana konfiguracje LargeDeprecated; wagi i tak zapisujemy sami
     trainer.callbacks[:] = [c for c in trainer.callbacks if not isinstance(c, BestModelCallback)]
+    if cfg.get('wagi_tylko_koniec'):
+        # last.ckpt z domyślnego ModelCheckpoint: 1,57 GB na zadanie, nieużywany; tylko zapis, bez wpływu na uczenie
+        from pytorch_lightning.callbacks import ModelCheckpoint
+        trainer.callbacks[:] = [c for c in trainer.callbacks if not isinstance(c, ModelCheckpoint)]
     history_callback=History();trainer.callbacks.append(history_callback)
     torch.set_float32_matmul_precision('highest')
     torch.backends.cuda.matmul.allow_tf32=False
@@ -198,9 +203,10 @@ def run(args):
         trainer.fit(module, datamodule=dm, ckpt_path=args.resume)
     if int(trainer.global_step)!=args.stop_step:raise RuntimeError('Actual update budget differs from target')
     history_callback.final_boundary=True
-    trainer.save_checkpoint(out/'FINAL.ckpt')
-    torch.save({'model':module.model.state_dict(),'args':args_dict,'model_config':mc.model_dump(mode='json'),
-                'global_step':int(trainer.global_step)},out/'FINAL.pth')
+    if not cfg.get('wagi_tylko_koniec'):   # duży model: model_{stop}.pth ma te same wagi, FINAL.* to duplikaty (kwota Edena)
+        trainer.save_checkpoint(out/'FINAL.ckpt')
+        torch.save({'model':module.model.state_dict(),'args':args_dict,'model_config':mc.model_dump(mode='json'),
+                    'global_step':int(trainer.global_step)},out/'FINAL.pth')
     # Explicit final validation; unrelated historic best-score callback states are not used.
     with diagnostic_kernels():
         metrics=trainer.validate(module, datamodule=dm, verbose=False)

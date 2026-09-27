@@ -1,0 +1,841 @@
+{
+ "opis": "Diagnoza domknięcia latentu tożsamości w pętli ../petla_od_poczatku_large (PLAN.md tutaj): trzy warunki na każdym\nkońcu obrotu, osobno dla pętli koopman, losowe, bez i ziaren 42, 43, 44.\n\nLatent tożsamości sondy i: a_i = w·(narzędzie_i − tło_i) (skalar) i 5 liczb (w, S_4) z kierunki.npz ziarna.\nSondy: 12 obrazów × 6 wariantów (original, rotation90, black, yellow, length08, foreground_bright); 8 obrazów fit,\n4 holdout.\n\n  W1 zatrzymanie:     v = średni |Δa| na 5 aktualizacji / rozrzut a między sondami (ułamek na krok)\n  W2 niezmienniczość: R = średnie odchylenie a między wariantami tego samego obrazu / odchylenie średnich obrazów;\n                      przesunięcie wariantu = średnia (a_wariant − a_original) po obrazach;\n                      rozpoznanie = odsetek sond, których najbliższy środek obrazu (5 liczb, bez tej sondy) jest ich\n                      własnym obrazem (przypadek 1/12)\n  W3 rozdzielenie:    min_i a_i (narzędzie odróżnione od tła, gdy > 0)\n\n    py -3.11 diagnoza_domkniecia.py      ->  wyniki/DIAGNOZA.json\n",
+ "sond": 72,
+ "obrazow": 12,
+ "wynik": {
+  "42": {
+   "koopman": [
+    {
+     "obrot": "start",
+     "krok": 0,
+     "skalar_sredni": 16.787227627853806,
+     "W1_predkosc_na_krok": 0.009106483077185912,
+     "W2_R": 1.3027852613478719,
+     "W2_R_holdout": 2.7708253822577493,
+     "W2_przesuniecia": {
+      "rotation90": -3.974784860819792,
+      "black": 4.418768248210205,
+      "yellow": 9.270292560486732,
+      "length08": 0.6981331529475175,
+      "foreground_bright": 4.963410263514915
+     },
+     "W2_rozpoznanie": 0.2916666666666667,
+     "W2_rozpoznanie_holdout": 0.25,
+     "W3_min_skalar": 2.982428596211185
+    },
+    {
+     "obrot": "k00",
+     "krok": 32,
+     "skalar_sredni": 19.085024142905542,
+     "W1_predkosc_na_krok": 0.012921979894701804,
+     "W2_R": 0.9046968268714768,
+     "W2_R_holdout": 2.4090479605766366,
+     "W2_przesuniecia": {
+      "rotation90": -3.8718867369788215,
+      "black": 1.067878811442851,
+      "yellow": 5.778961587291975,
+      "length08": 0.30960511356157744,
+      "foreground_bright": 4.470244766723622
+     },
+     "W2_rozpoznanie": 0.3194444444444444,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.379874042787392
+    },
+    {
+     "obrot": "k01",
+     "krok": 64,
+     "skalar_sredni": 20.120229579478504,
+     "W1_predkosc_na_krok": 0.005830024987253953,
+     "W2_R": 0.8127348441797917,
+     "W2_R_holdout": 2.2848134983350405,
+     "W2_przesuniecia": {
+      "rotation90": -3.5976754980016685,
+      "black": -0.31639594596691706,
+      "yellow": 4.289362990629175,
+      "length08": 0.24345055497884452,
+      "foreground_bright": 4.194988324769365
+     },
+     "W2_rozpoznanie": 0.3194444444444444,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.16435093842303
+    },
+    {
+     "obrot": "k02",
+     "krok": 96,
+     "skalar_sredni": 20.279052475858023,
+     "W1_predkosc_na_krok": 0.0025766477606491475,
+     "W2_R": 0.790463681616604,
+     "W2_R_holdout": 2.528640499048772,
+     "W2_przesuniecia": {
+      "rotation90": -3.458694785903789,
+      "black": -0.7547959772329634,
+      "yellow": 3.7544734559242663,
+      "length08": 0.2309181412559337,
+      "foreground_bright": 4.0146373659237975
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.537386351194812
+    },
+    {
+     "obrot": "k03",
+     "krok": 128,
+     "skalar_sredni": 20.31084232492528,
+     "W1_predkosc_na_krok": 0.0021063088335654227,
+     "W2_R": 0.786298099602187,
+     "W2_R_holdout": 2.808872910493659,
+     "W2_przesuniecia": {
+      "rotation90": -3.398138896624301,
+      "black": -0.8276167716084033,
+      "yellow": 3.590882536300134,
+      "length08": 0.22787787495549008,
+      "foreground_bright": 3.9081495809612243
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.599352280700159
+    }
+   ],
+   "losowe": [
+    {
+     "obrot": "start",
+     "krok": 0,
+     "skalar_sredni": 16.787227627853806,
+     "W1_predkosc_na_krok": 0.009106483077185912,
+     "W2_R": 1.3027852613478719,
+     "W2_R_holdout": 2.7708253822577493,
+     "W2_przesuniecia": {
+      "rotation90": -3.974784860819792,
+      "black": 4.418768248210205,
+      "yellow": 9.270292560486732,
+      "length08": 0.6981331529475175,
+      "foreground_bright": 4.963410263514915
+     },
+     "W2_rozpoznanie": 0.2916666666666667,
+     "W2_rozpoznanie_holdout": 0.25,
+     "W3_min_skalar": 2.982428596211185
+    },
+    {
+     "obrot": "k00",
+     "krok": 32,
+     "skalar_sredni": 19.085024142905542,
+     "W1_predkosc_na_krok": 0.012921979894701804,
+     "W2_R": 0.9046968268714768,
+     "W2_R_holdout": 2.4090479605766366,
+     "W2_przesuniecia": {
+      "rotation90": -3.8718867369788215,
+      "black": 1.067878811442851,
+      "yellow": 5.778961587291975,
+      "length08": 0.30960511356157744,
+      "foreground_bright": 4.470244766723622
+     },
+     "W2_rozpoznanie": 0.3194444444444444,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.379874042787392
+    },
+    {
+     "obrot": "k01",
+     "krok": 64,
+     "skalar_sredni": 20.086882719876442,
+     "W1_predkosc_na_krok": 0.00581338617950773,
+     "W2_R": 0.8070551672922722,
+     "W2_R_holdout": 2.2334943162203675,
+     "W2_przesuniecia": {
+      "rotation90": -3.5741126396289915,
+      "black": -0.3233974687506101,
+      "yellow": 4.275442236392332,
+      "length08": 0.27560349200869977,
+      "foreground_bright": 4.221784859328552
+     },
+     "W2_rozpoznanie": 0.3472222222222222,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.144465512513587
+    },
+    {
+     "obrot": "k02",
+     "krok": 96,
+     "skalar_sredni": 20.194403886734246,
+     "W1_predkosc_na_krok": 0.002524344428490547,
+     "W2_R": 0.7864616867276133,
+     "W2_R_holdout": 2.476604923698674,
+     "W2_przesuniecia": {
+      "rotation90": -3.4179665334750156,
+      "black": -0.7391951231378097,
+      "yellow": 3.761346064534236,
+      "length08": 0.253574358215332,
+      "foreground_bright": 4.036683252320998
+     },
+     "W2_rozpoznanie": 0.3194444444444444,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.466491770574852
+    },
+    {
+     "obrot": "k03",
+     "krok": 128,
+     "skalar_sredni": 20.246035691523005,
+     "W1_predkosc_na_krok": 0.0016956134941987404,
+     "W2_R": 0.7733980969021902,
+     "W2_R_holdout": 2.737119925981304,
+     "W2_przesuniecia": {
+      "rotation90": -3.2707286410963774,
+      "black": -0.9030666021149872,
+      "yellow": 3.526378094639769,
+      "length08": 0.21535887897385378,
+      "foreground_bright": 3.896448285105002
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.527154777836643
+    }
+   ],
+   "bez": [
+    {
+     "obrot": "start",
+     "krok": 0,
+     "skalar_sredni": 16.787227627853806,
+     "W1_predkosc_na_krok": 0.009106483077185912,
+     "W2_R": 1.3027852613478719,
+     "W2_R_holdout": 2.7708253822577493,
+     "W2_przesuniecia": {
+      "rotation90": -3.974784860819792,
+      "black": 4.418768248210205,
+      "yellow": 9.270292560486732,
+      "length08": 0.6981331529475175,
+      "foreground_bright": 4.963410263514915
+     },
+     "W2_rozpoznanie": 0.2916666666666667,
+     "W2_rozpoznanie_holdout": 0.25,
+     "W3_min_skalar": 2.982428596211185
+    },
+    {
+     "obrot": "k00",
+     "krok": 32,
+     "skalar_sredni": 19.085024142905542,
+     "W1_predkosc_na_krok": 0.012921979894701804,
+     "W2_R": 0.9046968268714768,
+     "W2_R_holdout": 2.4090479605766366,
+     "W2_przesuniecia": {
+      "rotation90": -3.8718867369788215,
+      "black": 1.067878811442851,
+      "yellow": 5.778961587291975,
+      "length08": 0.30960511356157744,
+      "foreground_bright": 4.470244766723622
+     },
+     "W2_rozpoznanie": 0.3194444444444444,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.379874042787392
+    },
+    {
+     "obrot": "k01",
+     "krok": 64,
+     "skalar_sredni": 20.070799377323397,
+     "W1_predkosc_na_krok": 0.0058556720540642775,
+     "W2_R": 0.8120031586534828,
+     "W2_R_holdout": 2.267786501905459,
+     "W2_przesuniecia": {
+      "rotation90": -3.608278478319916,
+      "black": -0.3159862063805165,
+      "yellow": 4.29962556674394,
+      "length08": 0.27159863836386494,
+      "foreground_bright": 4.184169407700841
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.150111753848713
+    },
+    {
+     "obrot": "k02",
+     "krok": 96,
+     "skalar_sredni": 20.171644261580823,
+     "W1_predkosc_na_krok": 0.0025231742232009885,
+     "W2_R": 0.7957488098940929,
+     "W2_R_holdout": 2.4293050099769733,
+     "W2_przesuniecia": {
+      "rotation90": -3.467332824120996,
+      "black": -0.6203314099533426,
+      "yellow": 3.8692360830234365,
+      "length08": 0.24053779096585,
+      "foreground_bright": 4.021525153317356
+     },
+     "W2_rozpoznanie": 0.3194444444444444,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.466138571722946
+    },
+    {
+     "obrot": "k03",
+     "krok": 128,
+     "skalar_sredni": 20.2672584587029,
+     "W1_predkosc_na_krok": 0.002272326578012023,
+     "W2_R": 0.7860226260231331,
+     "W2_R_holdout": 2.678041902191074,
+     "W2_przesuniecia": {
+      "rotation90": -3.3724486661280046,
+      "black": -0.9059542262283112,
+      "yellow": 3.514214162355264,
+      "length08": 0.21865470904837245,
+      "foreground_bright": 3.9340749175416363
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.439424422109263
+    }
+   ]
+  },
+  "43": {
+   "koopman": [
+    {
+     "obrot": "start",
+     "krok": 0,
+     "skalar_sredni": 16.7769758339768,
+     "W1_predkosc_na_krok": 0.00959708344740334,
+     "W2_R": 1.2999401215280153,
+     "W2_R_holdout": 2.8138943905773908,
+     "W2_przesuniecia": {
+      "rotation90": -3.9818912086214553,
+      "black": 4.407535636523684,
+      "yellow": 9.26021621072723,
+      "length08": 0.6934785563436493,
+      "foreground_bright": 4.94111558366032
+     },
+     "W2_rozpoznanie": 0.2916666666666667,
+     "W2_rozpoznanie_holdout": 0.25,
+     "W3_min_skalar": 2.966036283812969
+    },
+    {
+     "obrot": "k00",
+     "krok": 32,
+     "skalar_sredni": 19.0871212493874,
+     "W1_predkosc_na_krok": 0.012607185139713657,
+     "W2_R": 0.9088039819685915,
+     "W2_R_holdout": 2.4118420009105326,
+     "W2_przesuniecia": {
+      "rotation90": -3.9493607864317255,
+      "black": 1.0077603483189033,
+      "yellow": 5.756093981607436,
+      "length08": 0.28679620730699384,
+      "foreground_bright": 4.461476897342215
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.259767271279271
+    },
+    {
+     "obrot": "k01",
+     "krok": 64,
+     "skalar_sredni": 20.061860272097924,
+     "W1_predkosc_na_krok": 0.005808115185121985,
+     "W2_R": 0.8185322505827317,
+     "W2_R_holdout": 2.3498788498876064,
+     "W2_przesuniecia": {
+      "rotation90": -3.7086234300990593,
+      "black": -0.4106086938955582,
+      "yellow": 4.26652200608637,
+      "length08": 0.2193122081494967,
+      "foreground_bright": 4.140438173281102
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.969847064886008
+    },
+    {
+     "obrot": "k02",
+     "krok": 96,
+     "skalar_sredni": 20.2064481426513,
+     "W1_predkosc_na_krok": 0.002525455551550565,
+     "W2_R": 0.7968166925877957,
+     "W2_R_holdout": 2.620738588055563,
+     "W2_przesuniecia": {
+      "rotation90": -3.60879148662289,
+      "black": -0.8308120463251787,
+      "yellow": 3.7095334596639833,
+      "length08": 0.18949374639960884,
+      "foreground_bright": 3.9731039134524835
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.260038436862586
+    },
+    {
+     "obrot": "k03",
+     "krok": 128,
+     "skalar_sredni": 20.317268102655312,
+     "W1_predkosc_na_krok": 0.0022873407634849533,
+     "W2_R": 0.7920745967282197,
+     "W2_R_holdout": 2.623026738391992,
+     "W2_przesuniecia": {
+      "rotation90": -3.501934032681744,
+      "black": -0.9251532192753126,
+      "yellow": 3.5611505505070027,
+      "length08": 0.2134041352882842,
+      "foreground_bright": 3.8999324740086934
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.471735442267616
+    }
+   ],
+   "losowe": [
+    {
+     "obrot": "start",
+     "krok": 0,
+     "skalar_sredni": 16.7769758339768,
+     "W1_predkosc_na_krok": 0.00959708344740334,
+     "W2_R": 1.2999401215280153,
+     "W2_R_holdout": 2.8138943905773908,
+     "W2_przesuniecia": {
+      "rotation90": -3.9818912086214553,
+      "black": 4.407535636523684,
+      "yellow": 9.26021621072723,
+      "length08": 0.6934785563436493,
+      "foreground_bright": 4.94111558366032
+     },
+     "W2_rozpoznanie": 0.2916666666666667,
+     "W2_rozpoznanie_holdout": 0.25,
+     "W3_min_skalar": 2.966036283812969
+    },
+    {
+     "obrot": "k00",
+     "krok": 32,
+     "skalar_sredni": 19.0871212493874,
+     "W1_predkosc_na_krok": 0.012607185139713657,
+     "W2_R": 0.9088039819685915,
+     "W2_R_holdout": 2.4118420009105326,
+     "W2_przesuniecia": {
+      "rotation90": -3.9493607864317255,
+      "black": 1.0077603483189033,
+      "yellow": 5.756093981607436,
+      "length08": 0.28679620730699384,
+      "foreground_bright": 4.461476897342215
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.259767271279271
+    },
+    {
+     "obrot": "k01",
+     "krok": 64,
+     "skalar_sredni": 20.011269738470986,
+     "W1_predkosc_na_krok": 0.00540517666743032,
+     "W2_R": 0.8243740193368658,
+     "W2_R_holdout": 2.2981548715811493,
+     "W2_przesuniecia": {
+      "rotation90": -3.7328629252515557,
+      "black": -0.3595455403185855,
+      "yellow": 4.311477087020682,
+      "length08": 0.16510665575794756,
+      "foreground_bright": 4.163482648736891
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.95495639952108
+    },
+    {
+     "obrot": "k02",
+     "krok": 96,
+     "skalar_sredni": 20.191598930894163,
+     "W1_predkosc_na_krok": 0.0022969164195724306,
+     "W2_R": 0.805735678439571,
+     "W2_R_holdout": 2.497600910268325,
+     "W2_przesuniecia": {
+      "rotation90": -3.5880899318764747,
+      "black": -0.7965294875051061,
+      "yellow": 3.7912027936754544,
+      "length08": 0.1637268461190183,
+      "foreground_bright": 4.011263274699414
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.307959119699676
+    },
+    {
+     "obrot": "k03",
+     "krok": 128,
+     "skalar_sredni": 20.302090487369227,
+     "W1_predkosc_na_krok": 0.002088918221092719,
+     "W2_R": 0.79579759451609,
+     "W2_R_holdout": 2.5246917618573925,
+     "W2_przesuniecia": {
+      "rotation90": -3.421379845958281,
+      "black": -1.0218849784441817,
+      "yellow": 3.517812602000877,
+      "length08": 0.18187328307854092,
+      "foreground_bright": 3.932445867249934
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.501100957336324
+    }
+   ],
+   "bez": [
+    {
+     "obrot": "start",
+     "krok": 0,
+     "skalar_sredni": 16.7769758339768,
+     "W1_predkosc_na_krok": 0.00959708344740334,
+     "W2_R": 1.2999401215280153,
+     "W2_R_holdout": 2.8138943905773908,
+     "W2_przesuniecia": {
+      "rotation90": -3.9818912086214553,
+      "black": 4.407535636523684,
+      "yellow": 9.26021621072723,
+      "length08": 0.6934785563436493,
+      "foreground_bright": 4.94111558366032
+     },
+     "W2_rozpoznanie": 0.2916666666666667,
+     "W2_rozpoznanie_holdout": 0.25,
+     "W3_min_skalar": 2.966036283812969
+    },
+    {
+     "obrot": "k00",
+     "krok": 32,
+     "skalar_sredni": 19.0871212493874,
+     "W1_predkosc_na_krok": 0.012607185139713657,
+     "W2_R": 0.9088039819685915,
+     "W2_R_holdout": 2.4118420009105326,
+     "W2_przesuniecia": {
+      "rotation90": -3.9493607864317255,
+      "black": 1.0077603483189033,
+      "yellow": 5.756093981607436,
+      "length08": 0.28679620730699384,
+      "foreground_bright": 4.461476897342215
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.259767271279271
+    },
+    {
+     "obrot": "k01",
+     "krok": 64,
+     "skalar_sredni": 19.966655161187848,
+     "W1_predkosc_na_krok": 0.00602112488955702,
+     "W2_R": 0.8175577211109246,
+     "W2_R_holdout": 2.4517325182719296,
+     "W2_przesuniecia": {
+      "rotation90": -3.6981450533003866,
+      "black": -0.39655684956410314,
+      "yellow": 4.261746938875723,
+      "length08": 0.17968038004489162,
+      "foreground_bright": 4.114640114321578
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.99906162647795
+    },
+    {
+     "obrot": "k02",
+     "krok": 96,
+     "skalar_sredni": 20.158164811310453,
+     "W1_predkosc_na_krok": 0.0023775035328743835,
+     "W2_R": 0.8002180554073711,
+     "W2_R_holdout": 2.655858256257397,
+     "W2_przesuniecia": {
+      "rotation90": -3.56226029736372,
+      "black": -0.8619939460660553,
+      "yellow": 3.7867188890650745,
+      "length08": 0.1342177442566983,
+      "foreground_bright": 3.95223686598994
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.312175220589739
+    },
+    {
+     "obrot": "k03",
+     "krok": 128,
+     "skalar_sredni": 20.07253358762406,
+     "W1_predkosc_na_krok": 0.0021531123829075403,
+     "W2_R": 0.7929759423665301,
+     "W2_R_holdout": 2.7079569821375826,
+     "W2_przesuniecia": {
+      "rotation90": -3.4231112507527826,
+      "black": -0.8620261181907569,
+      "yellow": 3.681567321208733,
+      "length08": 0.1611121352898747,
+      "foreground_bright": 3.89777797057976
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.385270864604966
+    }
+   ]
+  },
+  "44": {
+   "koopman": [
+    {
+     "obrot": "start",
+     "krok": 0,
+     "skalar_sredni": 16.77456664986949,
+     "W1_predkosc_na_krok": 0.007249686451597564,
+     "W2_R": 1.2983543425819732,
+     "W2_R_holdout": 2.8048564848349247,
+     "W2_przesuniecia": {
+      "rotation90": -3.97226254007645,
+      "black": 4.383664693024623,
+      "yellow": 9.24668558460873,
+      "length08": 0.7037479451609746,
+      "foreground_bright": 4.942196188319046
+     },
+     "W2_rozpoznanie": 0.2916666666666667,
+     "W2_rozpoznanie_holdout": 0.25,
+     "W3_min_skalar": 2.9785468468559984
+    },
+    {
+     "obrot": "k00",
+     "krok": 32,
+     "skalar_sredni": 19.133781021327188,
+     "W1_predkosc_na_krok": 0.013032393501168535,
+     "W2_R": 0.9124836584704866,
+     "W2_R_holdout": 2.6299629563175677,
+     "W2_przesuniecia": {
+      "rotation90": -3.9568692336769313,
+      "black": 0.9643676272434388,
+      "yellow": 5.721705699682602,
+      "length08": 0.2575604464224532,
+      "foreground_bright": 4.441220256632751
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.29222730868052
+    },
+    {
+     "obrot": "k01",
+     "krok": 64,
+     "skalar_sredni": 20.166220743480885,
+     "W1_predkosc_na_krok": 0.005761663845016112,
+     "W2_R": 0.8178116867486909,
+     "W2_R_holdout": 2.325218823501402,
+     "W2_przesuniecia": {
+      "rotation90": -3.7205624267350674,
+      "black": -0.40843468159113233,
+      "yellow": 4.246911804954286,
+      "length08": 0.1875529200147993,
+      "foreground_bright": 4.088581657310858
+     },
+     "W2_rozpoznanie": 0.3194444444444444,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.139320046058118
+    },
+    {
+     "obrot": "k02",
+     "krok": 96,
+     "skalar_sredni": 20.327976301672518,
+     "W1_predkosc_na_krok": 0.0025572380648069925,
+     "W2_R": 0.7963088295197118,
+     "W2_R_holdout": 2.4935070587437442,
+     "W2_przesuniecia": {
+      "rotation90": -3.5279768663232987,
+      "black": -0.8110782345442331,
+      "yellow": 3.750651255466129,
+      "length08": 0.185919314628103,
+      "foreground_bright": 3.915098270016587
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.474032402532861
+    },
+    {
+     "obrot": "k03",
+     "krok": 128,
+     "skalar_sredni": 20.328909608796682,
+     "W1_predkosc_na_krok": 0.0018994826608908246,
+     "W2_R": 0.7880957219123259,
+     "W2_R_holdout": 2.727713179191477,
+     "W2_przesuniecia": {
+      "rotation90": -3.447897387630558,
+      "black": -0.9683348131032478,
+      "yellow": 3.5302400894299466,
+      "length08": 0.1727411023897507,
+      "foreground_bright": 3.8145864475549316
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.642558250930038
+    }
+   ],
+   "losowe": [
+    {
+     "obrot": "start",
+     "krok": 0,
+     "skalar_sredni": 16.77456664986949,
+     "W1_predkosc_na_krok": 0.007249686451597564,
+     "W2_R": 1.2983543425819732,
+     "W2_R_holdout": 2.8048564848349247,
+     "W2_przesuniecia": {
+      "rotation90": -3.97226254007645,
+      "black": 4.383664693024623,
+      "yellow": 9.24668558460873,
+      "length08": 0.7037479451609746,
+      "foreground_bright": 4.942196188319046
+     },
+     "W2_rozpoznanie": 0.2916666666666667,
+     "W2_rozpoznanie_holdout": 0.25,
+     "W3_min_skalar": 2.9785468468559984
+    },
+    {
+     "obrot": "k00",
+     "krok": 32,
+     "skalar_sredni": 19.133781021327188,
+     "W1_predkosc_na_krok": 0.013032393501168535,
+     "W2_R": 0.9124836584704866,
+     "W2_R_holdout": 2.6299629563175677,
+     "W2_przesuniecia": {
+      "rotation90": -3.9568692336769313,
+      "black": 0.9643676272434388,
+      "yellow": 5.721705699682602,
+      "length08": 0.2575604464224532,
+      "foreground_bright": 4.441220256632751
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.29222730868052
+    },
+    {
+     "obrot": "k01",
+     "krok": 64,
+     "skalar_sredni": 20.135673169485127,
+     "W1_predkosc_na_krok": 0.005779172603438965,
+     "W2_R": 0.8139617174512342,
+     "W2_R_holdout": 2.4569524669362734,
+     "W2_przesuniecia": {
+      "rotation90": -3.6640939061409394,
+      "black": -0.4068599251181941,
+      "yellow": 4.257845931298956,
+      "length08": 0.17435872444125797,
+      "foreground_bright": 4.078116387383801
+     },
+     "W2_rozpoznanie": 0.3194444444444444,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.151048397046184
+    },
+    {
+     "obrot": "k02",
+     "krok": 96,
+     "skalar_sredni": 20.298484773084926,
+     "W1_predkosc_na_krok": 0.0023878859532324393,
+     "W2_R": 0.795170052624004,
+     "W2_R_holdout": 2.595583401267908,
+     "W2_przesuniecia": {
+      "rotation90": -3.5061777245310495,
+      "black": -0.8511462480107329,
+      "yellow": 3.702270470881053,
+      "length08": 0.13131114027530214,
+      "foreground_bright": 3.9335817562465665
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.537527307455394
+    },
+    {
+     "obrot": "k03",
+     "krok": 128,
+     "skalar_sredni": 20.27834547679978,
+     "W1_predkosc_na_krok": 0.002098792672807708,
+     "W2_R": 0.7849800142487073,
+     "W2_R_holdout": 2.8507380437729775,
+     "W2_przesuniecia": {
+      "rotation90": -3.4443518011850247,
+      "black": -1.027463602507993,
+      "yellow": 3.484666281335349,
+      "length08": 0.09811975102744534,
+      "foreground_bright": 3.8407238817131337
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.678762410026565
+    }
+   ],
+   "bez": [
+    {
+     "obrot": "start",
+     "krok": 0,
+     "skalar_sredni": 16.77456664986949,
+     "W1_predkosc_na_krok": 0.007249686451597564,
+     "W2_R": 1.2983543425819732,
+     "W2_R_holdout": 2.8048564848349247,
+     "W2_przesuniecia": {
+      "rotation90": -3.97226254007645,
+      "black": 4.383664693024623,
+      "yellow": 9.24668558460873,
+      "length08": 0.7037479451609746,
+      "foreground_bright": 4.942196188319046
+     },
+     "W2_rozpoznanie": 0.2916666666666667,
+     "W2_rozpoznanie_holdout": 0.25,
+     "W3_min_skalar": 2.9785468468559984
+    },
+    {
+     "obrot": "k00",
+     "krok": 32,
+     "skalar_sredni": 19.133781021327188,
+     "W1_predkosc_na_krok": 0.013032393501168535,
+     "W2_R": 0.9124836584704866,
+     "W2_R_holdout": 2.6299629563175677,
+     "W2_przesuniecia": {
+      "rotation90": -3.9568692336769313,
+      "black": 0.9643676272434388,
+      "yellow": 5.721705699682602,
+      "length08": 0.2575604464224532,
+      "foreground_bright": 4.441220256632751
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 4.29222730868052
+    },
+    {
+     "obrot": "k01",
+     "krok": 64,
+     "skalar_sredni": 20.13393842653238,
+     "W1_predkosc_na_krok": 0.005989504706381249,
+     "W2_R": 0.8147132624818616,
+     "W2_R_holdout": 2.3399530428076125,
+     "W2_przesuniecia": {
+      "rotation90": -3.6330000008183503,
+      "black": -0.3809204143127009,
+      "yellow": 4.272243664692881,
+      "length08": 0.2157757116390422,
+      "foreground_bright": 4.140228369319417
+     },
+     "W2_rozpoznanie": 0.3333333333333333,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.133098357012912
+    },
+    {
+     "obrot": "k02",
+     "krok": 96,
+     "skalar_sredni": 20.254032036065855,
+     "W1_predkosc_na_krok": 0.0023962046533590087,
+     "W2_R": 0.7953945623751455,
+     "W2_R_holdout": 2.563825563162602,
+     "W2_przesuniecia": {
+      "rotation90": -3.48462091212441,
+      "black": -0.7625516768999235,
+      "yellow": 3.7886269807691257,
+      "length08": 0.2633288328227532,
+      "foreground_bright": 3.9843829775883304
+     },
+     "W2_rozpoznanie": 0.3194444444444444,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.4314264310276075
+    },
+    {
+     "obrot": "k03",
+     "krok": 128,
+     "skalar_sredni": 20.233891130515595,
+     "W1_predkosc_na_krok": 0.0022243903749209243,
+     "W2_R": 0.7902657853334202,
+     "W2_R_holdout": 2.669041382881707,
+     "W2_przesuniecia": {
+      "rotation90": -3.378720070651791,
+      "black": -0.8761125718387951,
+      "yellow": 3.650161463224755,
+      "length08": 0.274886273412275,
+      "foreground_bright": 3.9178997992920936
+     },
+     "W2_rozpoznanie": 0.3055555555555556,
+     "W2_rozpoznanie_holdout": 0.20833333333333334,
+     "W3_min_skalar": 5.605830757950977
+    }
+   ]
+  }
+ }
+}

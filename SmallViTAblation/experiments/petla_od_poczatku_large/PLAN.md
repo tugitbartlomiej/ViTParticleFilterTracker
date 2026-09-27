@@ -45,3 +45,16 @@ obrotach i zniknie, gdy dryf latentu zgaśnie.
    zatrzymuję się i raportuję przed obrotami 1–6.
 2. Kod pętli dla Large (prognoza w nowych kierunkach tożsamości liczonych z latentu rozgrzewki, FastGAN na Edenie,
    ocena „do nauczenia”), próba na sucho, potem obroty 1–6.
+
+## Uwagi z przebiegu (2026-09-27)
+
+- Rozgrzewka k00: mAP@0,5 0,8622 (s42), 0,8610 (s43), 0,8591 (s44); 49 min na zadanie (hopper), w planie.
+- Obrót 1: zadanie pętli 50–55 min (hopper, dgx-2), razem z FastGAN i wyborem około 65 min na obrót.
+- Wybór klatek: faiss-cpu i torch z F:\Python ładują dwa środowiska OpenMP (OMP Error #15) w każdej kolejności
+  importu; etap `wybor` ustawia KMP_DUPLICATE_LIB_OK=TRUE. Sprawdzone: top-90 z faiss = top-90 z iloczynu
+  skalarnego w numpy na 20 zapytaniach, różnica wyniku 8e-7.
+- Kwota Edenu: obrót 1 zapisywał na końcu każdego zadania FULL_*.ckpt, last.ckpt i FINAL.ckpt (3 × 1,57 GB) oraz
+  FINAL.pth; sprzątanie usuwało je dopiero po walidacji, więc chwilowo zajęte było ~30 GB (wolne spadło do 4 GB).
+  Od obrotu 2 (`wagi_tylko_koniec`) te pliki nie powstają: następny obrót startuje z `model_0000160.pth`,
+  stanu optymalizatora nikt nie czyta, a zapis nie zmienia przebiegu uczenia. Przed każdym obrotem `prognoza`
+  sprawdza kwotę projektu 1299 i zatrzymuje dyrygenta poniżej 8 GB wolnego.
