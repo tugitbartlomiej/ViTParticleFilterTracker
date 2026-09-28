@@ -117,3 +117,24 @@ realizuje przewidzianą zmianę, a wyszukane klatki są w dwóch trzecich inne n
 poprawia uczenia: ramię z prognozą i ramię kontrolne bez niej dają identyczną trafność. Przewaga nad losowaniem
 (+0,01, nieistotna, ta sama co w wersji 2) pochodzi z wybierania klatek podobnych do wycinków narzędzia, nie z
 prognozy. Kolejne klatki tych samych filmów są gorsze od losowych (−0,007), a każde dokładanie bije brak dokładania.
+
+## Po wyniku: zliczenie wygranych i sondy syntetyczne (2026-09-29, prośba użytkownika; analizy dodatkowe)
+
+**Wygrane `tozsamosc` w 10 ziarnach** (`wyniki_eden/ANALIZA.json`):
+- pole pod krzywą mAP@0,5 (obroty 3–9): z `current` 5, z `losowe` 7, z `kolejne` 10, z `bez` 10;
+- mAP@0,5 na końcu (krok 4500): z `current` 6 (+0,012), z `losowe` 8 (+0,023), z `kolejne` 9, z `bez` 9;
+- `current` wygrywa z `losowe` w 9 z 10 (pole pod krzywą) — przewagę nad losowaniem daje wybór klatek podobnych do
+  wycinków narzędzia, wspólny dla obu ramion; sama prognoza (`tozsamosc` − `current`) jest na poziomie rzutu monetą.
+
+**Sondy syntetyczne** (`ocena_sond.py` → `wyniki_eden/OCENA_SOND.json`, `.png`; końcowe sieci 5 ramion i stan po
+rozgrzewce, 10 ziaren, 12 wycinków × 15 wersji + `empty_black`):
+- pewność trafnego wykrycia (IoU ≥ 0,5), średnio po wersjach: `tozsamosc` 0,133, `current` 0,139, `losowe` 0,128,
+  `kolejne` 0,124, `bez` 0,132, po rozgrzewce 0,086; `tozsamosc` lepsza od `losowe` w 7 z 10 ziaren, od `current` w 2;
+- najpewniejsze wykrycie trafia w narzędzie w ~20 % sond we wszystkich ramionach (0,17–0,21); żółte tło ~0,07;
+- na `empty_black` (narzędzia nie ma) detektor zgłasza wykrycie z pewnością 0,24–0,39, wyższą niż na narzędziu;
+- wersja, w której `tozsamosc` bije `losowe` w ≥ 8 z 10 ziaren: tylko `yellow`, gdzie wszystkie ramiona mają ~0,02.
+
+**Wniosek.** Sondy są dla tego detektora za daleko od danych uczących (wycinek 256 px powiększony do 176 px, sztuczne
+tło), więc detektor prawie ich nie wykrywa i różnice między ramionami giną w szumie. Do porównania ramion na obrotach
+i tłach potrzebne są sondy w skali klatek uczących (narzędzie wklejone w pełną klatkę 480×320), albo pomiar na
+prawdziwych klatkach walidacji pogrupowanych według kąta i tła.
