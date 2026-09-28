@@ -95,3 +95,22 @@ naturalnej zmiany wyglądu (samo wejście 4 %, głębsze warstwy do 36 % z artef
 do pętli: dokręcanie gradientem na warstwach 8×8 i 16×16 obrazu z inwersji, z celem względnym (start + krok).
 Możliwa zmiana metody (wymaga decyzji użytkownika): szukać prawdziwych klatek wprost po latencie ViT (latent klatek
 puli liczony bieżącą siecią, wybór najbliższych do przewidzianego latentu), bez pośrednictwa FastGAN-a.
+
+## Krok 3: sterowanie po przeglądzie literatury (2026-09-28, `sterowanie3.py`, `NOTATKA_LITERATURA.md`)
+
+Przegląd: [Rou26] „Show Me What You Don't Know” (zbiory niezmiennicze, sterowana dyfuzja; w pikselach wychodzi szum
+w stylu ataku), [Vat25] (sieci nieodporne wymagają stabilizacji sterowania), [Ngu16], [San19], [Ban23c].
+Test na 12 celach Koopmana (400 kroków, z + cechy 8×8 + 16×16; postęp czysty / odporny = latent na zaburzonych kopiach
+obrazu: jasność, szum, rozmycie; `wyniki/STEROWANIE3.json`, `STEROWANIE3.png`):
+- D0 (bez ochrony): czysty 0,29, odporny 0,15 (wzdłuż 0,54, w bok 0,57), zmiana obrazu 0,068 — połowa zmiany znika
+  przy drobnym zaburzeniu obrazu;
+- D_E (cel liczony na zaburzonych kopiach): odporny 0,19, czysty 0,01, zmiana 0,080 — niewielki zysk;
+- D_ER (+ kara dyskryminatora): dyskryminator oszukany (wynik −1,13 → +3,43, szum ocenia wyżej niż obrazy), odporny
+  0,12, zmiana 0,108, silne artefakty — **kara dyskryminatora odrzucona**;
+- P_E (piksele, cel odporny): odporny 0,49 (wzdłuż 0,79, w bok 0,38), zmiana 0,028 — na obrazie widać drobne barwne
+  ziarno na całej scenie, nie naturalną zmianę narzędzia.
+
+**Wniosek kroku 3.** Żaden wariant sterowania FastGAN-em nie daje naturalnego obrazu, który realizuje krok Koopmana:
+generator dochodzi do ~30 % drogi kosztem plam i drobin w tle, a odporna część zmiany to ~15–19 %. Zgodnie z [Rou26]
+lepszym narzędziem jest priorytet dyfuzyjny sterowany celem (z dynamicznym celem i stabilizacją jak w [Vat25]),
+co wymaga wyuczenia małego modelu dyfuzyjnego na wycinkach narzędzia (godziny GPU, osobna zgoda).
