@@ -1,0 +1,215 @@
+{
+ "opis": "Diagnoza, dlaczego pętla koopman nie przyspiesza uczenia (DIAGNOZA_PORAZKI.md). Cztery pomiary na danych kampanii:\n\n  1. prognoza   błąd prognozy Koopmana 3 obroty naprzód (96 kroków) wobec „brak zmiany” i „stała prędkość”,\n                w jednostkach rozrzutu sond, pętla koopman, obroty startowe k1..k4; korelacja kierunku skalara\n  2. wagi       względna zmiana wag ‖ΔW‖/‖W‖ per część sieci (kręgosłup DINOv2, projektor, dekoder, głowice):\n                COCO → k00 i k00 → k06 (ziarno 42, pętla koopman; wagi lokalne)\n  3. latent-mAP korelacja Spearmana skalara tożsamości i R z mAP@0,5 między pętlami w tym samym (ziarno, obrót)\n  4. wybor      różnorodność dodanych klatek (koopman vs losowe): średni cos DINOv2 między dodanymi, sąsiedzi\n                w filmie ≤ 30 klatek, mediana pola ramki, pokrycie puli (średni max cos klatki puli do zbioru uczącego)\n\n    <venv rfdetr>/python diagnoza_porazki.py      ->  wyniki/DIAGNOZA_PORAZKI.json\n",
+ "prognoza": [
+  {
+   "s": 42,
+   "k": 1,
+   "ruch": 0.16611217800817693,
+   "blad_koopman": 0.38207597014058053,
+   "blad_brak_zmiany": 0.16611217800817693,
+   "blad_stala_predkosc": 0.5159685514621862,
+   "korelacja_kierunku_skalara": 0.9263344453348726
+  },
+  {
+   "s": 42,
+   "k": 2,
+   "ruch": 0.06486672557971701,
+   "blad_koopman": 0.18055903259383796,
+   "blad_brak_zmiany": 0.06486672557971701,
+   "blad_stala_predkosc": 0.11279407224679815,
+   "korelacja_kierunku_skalara": 0.8339777918286673
+  },
+  {
+   "s": 42,
+   "k": 3,
+   "ruch": 0.03937725997543277,
+   "blad_koopman": 0.10905518514059338,
+   "blad_brak_zmiany": 0.03937725997543277,
+   "blad_stala_predkosc": 0.06975823899817456,
+   "korelacja_kierunku_skalara": 0.7720250320166784
+  },
+  {
+   "s": 42,
+   "k": 4,
+   "ruch": 0.03298482604363185,
+   "blad_koopman": 0.06991942649218694,
+   "blad_brak_zmiany": 0.03298482604363185,
+   "blad_stala_predkosc": 0.09779868689608258,
+   "korelacja_kierunku_skalara": 0.6834720478512958
+  },
+  {
+   "s": 43,
+   "k": 1,
+   "ruch": 0.16917060475070925,
+   "blad_koopman": 0.3895735171292097,
+   "blad_brak_zmiany": 0.16917060475070925,
+   "blad_stala_predkosc": 0.49401744915775725,
+   "korelacja_kierunku_skalara": 0.9152575210470147
+  },
+  {
+   "s": 43,
+   "k": 2,
+   "ruch": 0.06478936078227077,
+   "blad_koopman": 0.14100561351026994,
+   "blad_brak_zmiany": 0.06478936078227077,
+   "blad_stala_predkosc": 0.14406295954944878,
+   "korelacja_kierunku_skalara": 0.9218639457491155
+  },
+  {
+   "s": 43,
+   "k": 3,
+   "ruch": 0.04254433657942062,
+   "blad_koopman": 0.04995309307793669,
+   "blad_brak_zmiany": 0.04254433657942062,
+   "blad_stala_predkosc": 0.163180075164985,
+   "korelacja_kierunku_skalara": 0.5715748901147886
+  },
+  {
+   "s": 43,
+   "k": 4,
+   "ruch": 0.031490734607147644,
+   "blad_koopman": 0.09726430952963751,
+   "blad_brak_zmiany": 0.031490734607147644,
+   "blad_stala_predkosc": 0.09740620639761935,
+   "korelacja_kierunku_skalara": 0.6297047644233992
+  },
+  {
+   "s": 44,
+   "k": 1,
+   "ruch": 0.1686085081140659,
+   "blad_koopman": 0.44063335114614,
+   "blad_brak_zmiany": 0.1686085081140659,
+   "blad_stala_predkosc": 0.4781602933852417,
+   "korelacja_kierunku_skalara": 0.9151135209784426
+  },
+  {
+   "s": 44,
+   "k": 2,
+   "ruch": 0.07395355950031753,
+   "blad_koopman": 0.22594868860178774,
+   "blad_brak_zmiany": 0.07395355950031753,
+   "blad_stala_predkosc": 0.21506239154841553,
+   "korelacja_kierunku_skalara": 0.6704908916155042
+  },
+  {
+   "s": 44,
+   "k": 3,
+   "ruch": 0.04766381263499999,
+   "blad_koopman": 0.19665116698804908,
+   "blad_brak_zmiany": 0.04766381263499999,
+   "blad_stala_predkosc": 0.15663712143777078,
+   "korelacja_kierunku_skalara": 0.6182500010949593
+  },
+  {
+   "s": 44,
+   "k": 4,
+   "ruch": 0.034133028074252135,
+   "blad_koopman": 0.06785248839367054,
+   "blad_brak_zmiany": 0.034133028074252135,
+   "blad_stala_predkosc": 0.07586992340854433,
+   "korelacja_kierunku_skalara": 0.5870345453072263
+  }
+ ],
+ "wagi": {
+  "coco_do_k00": {
+   "dekoder": {
+    "wzgledna_zmiana": 0.007777040975183074,
+    "parametrow": 14298868
+   },
+   "glowice": {
+    "wzgledna_zmiana": 0.0001745852150672719,
+    "parametrow": 1810420
+   },
+   "kregoslup_dinov2": {
+    "wzgledna_zmiana": 0.00013066638295765757,
+    "parametrow": 86580480
+   },
+   "projektor": {
+    "wzgledna_zmiana": 0.007411838386003877,
+    "parametrow": 32457216
+   }
+  },
+  "k00_do_k06": {
+   "dekoder": {
+    "wzgledna_zmiana": 0.01327533276236871,
+    "parametrow": 14308878
+   },
+   "glowice": {
+    "wzgledna_zmiana": 0.0005021699198051393,
+    "parametrow": 1811190
+   },
+   "kregoslup_dinov2": {
+    "wzgledna_zmiana": 0.0002581183388702885,
+    "parametrow": 86580480
+   },
+   "projektor": {
+    "wzgledna_zmiana": 0.015927064860121434,
+    "parametrow": 32457216
+   }
+  }
+ },
+ "latent_mAP": {
+  "n": 53,
+  "skalar_vs_mAP": {
+   "rho": 0.07127882599580712,
+   "p": 0.6120215958647205
+  },
+  "R_vs_mAP": {
+   "rho": -0.19746815029833897,
+   "p": 0.15639251754264463
+  }
+ },
+ "wybor": {
+  "s42_koopman": {
+   "pokrycie_puli": 0.8931873440742493,
+   "dodanych": 804,
+   "cos_sredni": 0.6774601340293884,
+   "sasiedzi_30_klatek": 139,
+   "pole_ramki_mediana": 0.03898292824074073
+  },
+  "s42_losowe": {
+   "pokrycie_puli": 0.8946287035942078,
+   "dodanych": 804,
+   "cos_sredni": 0.6213461756706238,
+   "sasiedzi_30_klatek": 62,
+   "pole_ramki_mediana": 0.0384620949074074
+  },
+  "s42_bez": {
+   "pokrycie_puli": 0.8872181177139282
+  },
+  "s43_koopman": {
+   "pokrycie_puli": 0.8934770226478577,
+   "dodanych": 804,
+   "cos_sredni": 0.6570998430252075,
+   "sasiedzi_30_klatek": 138,
+   "pole_ramki_mediana": 0.037850115740740736
+  },
+  "s43_losowe": {
+   "pokrycie_puli": 0.8943009376525879,
+   "dodanych": 804,
+   "cos_sredni": 0.6176814436912537,
+   "sasiedzi_30_klatek": 71,
+   "pole_ramki_mediana": 0.03823061342592593
+  },
+  "s43_bez": {
+   "pokrycie_puli": 0.8872181177139282
+  },
+  "s44_koopman": {
+   "pokrycie_puli": 0.892706036567688,
+   "dodanych": 804,
+   "cos_sredni": 0.6836653351783752,
+   "sasiedzi_30_klatek": 140,
+   "pole_ramki_mediana": 0.03681423611111111
+  },
+  "s44_losowe": {
+   "pokrycie_puli": 0.8947386145591736,
+   "dodanych": 804,
+   "cos_sredni": 0.6215265989303589,
+   "sasiedzi_30_klatek": 83,
+   "pole_ramki_mediana": 0.038424479166666664
+  },
+  "s44_bez": {
+   "pokrycie_puli": 0.8872181177139282
+  }
+ }
+}
