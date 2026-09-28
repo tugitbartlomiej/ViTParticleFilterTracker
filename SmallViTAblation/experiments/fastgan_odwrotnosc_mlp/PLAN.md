@@ -114,3 +114,40 @@ obrazu: jasność, szum, rozmycie; `wyniki/STEROWANIE3.json`, `STEROWANIE3.png`)
 generator dochodzi do ~30 % drogi kosztem plam i drobin w tle, a odporna część zmiany to ~15–19 %. Zgodnie z [Rou26]
 lepszym narzędziem jest priorytet dyfuzyjny sterowany celem (z dynamicznym celem i stabilizacją jak w [Vat25]),
 co wymaga wyuczenia małego modelu dyfuzyjnego na wycinkach narzędzia (godziny GPU, osobna zgoda).
+
+## Krok 4: sterowanie tylko wzdłuż wektora tożsamości o zmianę przewidzianą przez Langevina (2026-09-28, `wzdluz_tozsamosci.py`)
+
+Decyzja użytkownika: Koopman i Langevin przewidują tylko tożsamość narzędzia, nie cały latent 768. Wektor tożsamości
+jak w `maly_vit_wektor_tozsamosci/wektor_tozsamosci_21ep.py` (rozdzielacz narzędzie/tło na sondach z kroku 1000);
+siła tożsamości = rzut latentu narzędzia na ten wektor. Historia siły 180 sond z kroków 50–1000 (bloki po 5 zapisów),
+prognoza 10 bloków (500 kroków) naprzód. Cel obrazu: siła obrazu startowego (inwersja kotwicy w FastGAN) + przewidziana
+zmiana; reszta latentu ma zostać (słaba kara za zmianę w bok). 300 kroków gradientu, najlepszy stan zachowany.
+
+**Prognoza (kotwice, siła ~6,3):** Langevin przewiduje spadek na 11 z 12 kotwic, średnio ~0,7; Koopman zmiany kilka
+razy mniejsze. **Sprawdzenie na prawdziwym przebiegu** (`sprawdz_prognoze_1500.py`, wspólny odcinek biegu do kroku
+1500, `wyniki/SPRAWDZ_PROGNOZE_1500.txt`): siła kotwic rzeczywiście spadła (11 z 12); Langevin: błąd 0,35 wobec 1,11
+dla „bez zmiany” (zysk 54 %), znak 12/12; na wszystkich 180 sondach zysk 16 %, znak 75 %. Koopman: zysk 10 % / 6 %.
+Jedno ziarno — potwierdza kierunek wyników z 10 ziaren v2 (6–10 %), nie zastępuje ich.
+
+**Sterowanie** (`wyniki/WZDLUZ.json`, `WZDLUZ.png`: kotwica | inwersja | Z_1x | D_1x | D_1x_E | D_3x), mediana po 12
+kotwicach; „część” = osiągnięta zmiana siły / przewidziana (1 = dokładnie); „odporna” = to samo na 4 zaburzonych
+kopiach obrazu (jasność, szum, rozmycie):
+- Z_1x (samo wejście z): część 1,00, odporna 0,85, znak 12/12, zmiana obrazu 0,068;
+- D_1x (z + cechy 8×8 i 16×16): 1,00 / 0,94, znak 12/12, zmiana 0,092;
+- D_1x_E (cel na zaburzonych kopiach): 0,99 / 1,11, znak 12/12, zmiana 0,100;
+- D_3x (trzy razy większa zmiana): 1,00 / 0,93, znak 12/12, zmiana 0,098.
+
+Zmiana w bok (norma zmiany latentu poza kierunkiem tożsamości / |zmiana siły|): 35–41 dla 1×, 13 dla 3×.
+Odniesienie (`odniesienie_bok.py`, `wyniki/ODNIESIENIE_BOK.txt`): w prawdziwym treningu ten stosunek wynosi 58–78,
+więc obrazy zmieniają resztę latentu mniej niż zwykły krok uczenia.
+
+**Wygląd:** Z_1x prawie nie różni się od inwersji (zmiana realna, bo zostaje na obrazach generatora, ale subtelna).
+D_1x, D_1x_E i D_3x obniżają siłę tożsamości, poszarpując narzędzie (łamana, ziarnista krawędź) i dodając jasne
+drobiny w tle — spadek „narzędziowości” jest widoczny, ale częściowo przez artefakty.
+
+**Wniosek kroku 4.** Jeden kierunek FastGAN realizuje: przewidziana zmiana siły tożsamości jest osiągana w całości,
+z właściwym znakiem na wszystkich kotwicach, i w 85–111 % przetrwa zaburzenia obrazu (wobec 15–19 % dla pełnego
+latentu w kroku 3). Najczystszy obraz daje samo wejście z. Zastrzeżenia: (1) inwersja kotwicy sama zmienia siłę
+o ±3 (2,5–9,5 wobec ~6,2 dla kotwic), więcej niż przewidziana zmiana — cel jest względny, ale obraz startowy nie jest
+kotwicą; (2) wariant z warstwami głębszymi osiąga cel częściowo artefaktami; (3) jedna sieć (v1 s42, krok 1000).
+Następny krok w pętli (wymaga zgody): obrazy Z_1x / D_1x jako zapytania do puli, wybór najbliższych prawdziwych klatek.
