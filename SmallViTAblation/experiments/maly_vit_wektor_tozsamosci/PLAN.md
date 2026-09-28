@@ -118,3 +118,18 @@ jak dla neuronów (średnia + 2 sd rzutów negatywów). Wyniki: `wyniki_eden/WEK
 test przechodzi sieć nieuczona. Żeby zmierzyć tożsamość wyuczoną, potrzebne są trudniejsze negatywy (rzeczy podobne
 do narzędzia, które nim nie są: odblaski, krawędzie tkanek, cienkie jasne struktury, klatki bez narzędzia) albo
 próba przyczynowa (usunięcie wektora z latentu psuje wykrywanie).
+
+## Koopman i Langevin na wektorze tożsamości z 21 epok (2026-09-28, `koopman_na_wektorze.py`, 10 ziaren)
+
+Wektor i standaryzacja stałe z kroku 1000; stan = rzut latentu narzędzia każdej ze 180 sond na wektor („siła
+tożsamości” sondy); chwile 1000–4250 co 250 kroków; prawdziwa przyszłość. Wyniki: `wyniki_eden/KOOPMAN_WEKTOR.json`,
+`KOOPMAN_WEKTOR.png`. (Wstępny przebieg na 3 ziarnach dawał lepsze liczby, np. trafność kierunku 85 %; na 10
+ziarnach jest niżej — raportowane są liczby z 10 ziaren.)
+- **Pierwszy raz prognoza bije „brak zmiany”, powtarzalnie, ale niewiele.** Błąd dla sond / brak zmiany, horyzont
+  500 kroków: ramię `bez` Koopman 0,94 (lepszy w 85 % przypadków), Langevin 0,90 (75 %); `losowe` 0,93 / 0,92;
+  `koopman` 0,94 / 0,94. Horyzonty 50 i 250 kroków podobnie (0,90–0,95).
+- Siła tożsamości (średnia po sondach): Langevin 0,86 × brak zmiany w `bez`, ~1,0 w ramionach z dokładaniem.
+- Kierunek zmiany siły (wzrośnie czy spadnie): `bez` Koopman 64 %, Langevin 69 %; `losowe` 67 % / 55 %;
+  `koopman` 54 % / 58 % (rzut monetą 50 %).
+- Siła tożsamości wzdłuż wektora z 21 epok maleje z czasem: 6,13 → 5,30 (`bez`), 4,36 (`losowe` i `koopman`);
+  Langevin widzi hamowanie (k ≈ −0,16 na blok): tożsamość obraca się od kierunku z 21 epok, szybciej przy dokładaniu klatek.
