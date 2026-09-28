@@ -75,3 +75,19 @@ wagi pośrednie, punkty kontrolne `.ckpt` i zrzuty latentu.
 2. Pobrać wynik `1817712_2` (s43 bez k06) i domknąć tabelę pętli Large.
 3. Decyzja o zadaniu 1810406 (równoległa sesja): `scancel`, jeśli usuwamy `2026-09-24_koopman_fastgan_petla`.
 4. Usunąć B, potem C; D i E tylko po osobnej decyzji. Zbiory A przenieść do jednego katalogu `~/smallvit_data`.
+
+## Wykonanie (2026-09-28, po zgodzie użytkownika „usuwaj to” dla grup B i C)
+
+1. Małe pliki wyników (< 1 MB oraz pliki tekstowe < 50 MB i archiwa kodu) z usuwanych katalogów pobrano do
+   `F:\Studia\PhD_projekt\VIT\eden_archiwum\smallvit_runs_raporty_2026-09-28.tar.gz` (1,3 GB, 10 435 plików;
+   spis archiwum sprawdzony z listą: brak 0, zły rozmiar 0). W nim m.in. raport zadania 1817712_2 (Large s43 bez k06).
+2. Końcowy FastGAN (`checkpoint_050000.pth`) skopiowano do `~/smallvit_runs/2026-09-28_maly_vit_od_zera/wejscia/fastgan/`
+   (suma SHA256 zgodna z lokalną) przed usunięciem katalogu `2026-09-23_fastgan`.
+3. Usunięto 14 348 plików z `~/smallvit_runs` według jawnej listy (bez plików pasujących do danych: `data/`,
+   `datasets/`, `images/`, `probe/`, `pool_manifest`, `.jpg`), oraz całe `~/.vscode-server` i `~/.roboflow`.
+   Z listy zdjęto dwa archiwa, które okazały się zbiorami uczącymi: `2026-09-22_dobor_klatek_stan_sieci/context_train.tar`
+   (57 073 obrazy + pool_manifest, 4,9 GB) i `2026-09-23_fastgan/eden_inputs.tar` (1044 wycinki narzędzia dla FastGAN).
+4. Anulowano zadanie 1810406 (równoległa sesja, wiszące od 2026-09-24) na wyraźną prośbę użytkownika.
+
+Kwota po: **52,2 GB z 200 GB** (było 193,2), 109 429 plików (było 148 036). Nie ruszano: `~/grant_tft`, `~/venvs`,
+`~/.cache`, `~/.conda`, plików w katalogu domowym.
