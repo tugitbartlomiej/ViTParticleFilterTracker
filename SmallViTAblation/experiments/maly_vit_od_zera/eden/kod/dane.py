@@ -39,7 +39,7 @@ def jz(p):
 
 
 def frame_id(sciezka):
-    s = Path(sciezka).stem                                   # TR_0002_S1_P03_00000001
+    s = Path(str(sciezka).replace(chr(92), '/')).stem        # TR_0002_S1_P03_00000001 (ścieżki Windows z COCO na Linuksie)
     return f'cataract_lmm/tracking/{s[:14]}/{s[15:]}'
 
 

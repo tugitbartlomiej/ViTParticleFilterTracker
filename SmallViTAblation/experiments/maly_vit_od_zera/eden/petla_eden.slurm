@@ -21,7 +21,7 @@ B=/home2/faculty/bpiotrowski
 MY="$B/smallvit_runs/2026-09-28_maly_vit_od_zera"
 PY="$B/venvs/rfdetr_nano_clean_1_10_1/bin/python"
 ARCHIVE="$B/smallvit_runs/2026-09-15_tracking_static36/data/tracking_static36.tar"
-for f in "$MY/kod/petla.py" "$MY/wejscia/index/features.npy" "$MY/wejscia/fastgan/checkpoint_050000.pth" \
+for f in "$MY/deps/timm/__init__.py" "$MY/kod/petla.py" "$MY/wejscia/index/features.npy" "$MY/wejscia/fastgan/checkpoint_050000.pth" \
          "$MY/wejscia/fastgan/models.py" "$MY/wejscia/dinov2_vits14_pretrain.pth" "$MY/wejscia/probe/manifest.json" "$ARCHIVE"; do
   [ -f "$f" ] || { echo "BRAK $f"; exit 2; }
 done
@@ -30,6 +30,7 @@ cleanup() { case "$SCRATCH" in /dev/shm/malyvit-*) rm -rf -- "$SCRATCH";; *) exi
 trap cleanup EXIT INT TERM
 export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8 PYTHONUNBUFFERED=1 KMP_DUPLICATE_LIB_OK=TRUE
 export MALY_VIT_WEJSCIA="$MY/wejscia" MALY_VIT_DANE="$SCRATCH/data" MALY_VIT_CACHE="$SCRATCH/cache" MALY_VIT_WYNIKI="$MY/wyniki"
+export PYTHONPATH="$MY/deps"   # timm 0.9.16 (brak w venv Edenu; kopia z lokalnego środowiska)
 export MPLCONFIGDIR="$SCRATCH/mpl" TORCH_HOME="$SCRATCH/torch" XDG_CACHE_HOME="$SCRATCH/xdg"
 mkdir -p "$SCRATCH/data" "$SCRATCH/cache" "$MY/wyniki"
 tar -xf "$ARCHIVE" -C "$SCRATCH/data"
