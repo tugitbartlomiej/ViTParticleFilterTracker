@@ -147,3 +147,20 @@ warianty: czarne i żółte tło, obroty. Stąd długość obrotu 500 kroków: r
 Kryterium kampanii (ustalone przed wynikiem): pole pod krzywą mAP@0,5 w obrotach 4–9 (średnia ocen co 100 kroków):
 `koopman` > `losowe` i > `bez` w ≥ 4 z 5 ziaren. Wtórnie: domknięcie tożsamości (udział sond z zapalonym pełnym
 latentem/rdzeniem per wariant) i jakość prognozy względem „braku zmiany”.
+
+## Wyniki lokalne (2026-09-28, przerwane na prośbę użytkownika po ziarnie 42; dalej Eden 1817935, ziarna 47–56)
+
+Ziarno 42 pełne (3 ramiona × 6 obrotów), ziarno 43 przerwane po pierwszym obrocie `koopman` (odrzucone).
+- Pole pod krzywą mAP@0,5 (obroty 4–9): `koopman` 0,4415, `losowe` 0,4225, `bez` 0,3916. Koopman wygrywa w tym
+  ziarnie (+0,019 nad losowym); rozrzut ocen co 100 kroków ±0,03, więc jedno ziarno nic nie rozstrzyga.
+- Dodawanie klatek w ogóle pomaga (`losowe` − `bez` = +0,031): model od zera jest głodny danych, więc dobór ma tu
+  pole do działania (przy dostrajanym RF-DETR różnice były rzędu 0,003).
+- Rdzeń tożsamości pusty w każdym obrocie i ramieniu; pełny latent 28–62 neuronów; domknięcie wariantów 0,18–0,38
+  bez trendu (średnio koopman 0,30, losowe 0,28, bez 0,26); najsłabsze: czarne/żółte tło, obroty.
+- Prognoza (test wsteczny, 1 obrót): langevin / brak zmiany = 0,84; 1,21; 1,14; 1,22; 0,87 — średnio ≈ 1,06;
+  czysty Koopman 4,30; 1,31; 1,04; 0,98; 0,81.
+- FastGAN nie trafia w przewidziany latent: reszta obrazu „target” do celu 2,84 z-jednostki przy odległości
+  cel–obecny 2,34 (obraz jest tak samo daleko od celu jak od stanu obecnego).
+- Mimo to obraz „target” prowadzi do innych prawdziwych klatek niż obraz „current”: wspólne top-90 18,9/90,
+  top-22 2,6/22, podobieństwo DINOv2 obrazów target–current 0,78 (`eden/kontrola_target_current.py`,
+  `wyniki/KONTROLA_TARGET_CURRENT_s42.json`). Nie wiadomo, ile z tej różnicy to prognoza, a ile losowość optymalizacji.
