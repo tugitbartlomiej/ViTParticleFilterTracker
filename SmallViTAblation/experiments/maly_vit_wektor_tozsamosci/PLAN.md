@@ -57,3 +57,27 @@ przyszłością (`wyniki/TEST_WEKTOR_OFFLINE_v1.json`):
 Wniosek przed wynikiem kampanii: stabilny wektor nie znaczy przewidywalny. Zmiana wektora w ciągu jednego obrotu
 jest zdominowana przez wahania uczenia, więc na tych danych prognoza nie powinna bić „braku zmiany” także w wersji 2.
 Kampania i tak rusza (zgoda użytkownika) — mierzy to samo w pętli, z innym startem i z dokładaniem klatek.
+
+## Wyniki kampanii (2026-09-28, Eden 1817949, ziarna 47–56, wszystkie COMPLETED ~20 min)
+
+Pliki: `wyniki_eden/` (JSON i logi; obrazy FastGAN i latenty zostały na Edenie), `wyniki_eden/ANALIZA.json`
+(`analiza.py wyniki_eden`), `wyniki_eden/POMIAR.json` (`analiza_pomiar.py`).
+
+- **Kryterium główne: spełnione, ale słabo.** Pole pod krzywą mAP@0,5 w obrotach 3–9: `koopman` 0,4432, `losowe`
+  0,4341, `bez` 0,3999. `koopman` > obu w 8 z 10 ziaren; nad losowym +0,009 (Wilcoxon p = 0,064, test znaków
+  p = 0,11); nad `bez` +0,043 w 10 z 10 (p = 0,002). Dokładanie losowych klatek daje +0,034 (10 z 10).
+- **Prognoza wektora nie działa (kryterium niespełnione, 0 z 6 obrotów).** Sprawdzenie prognozy z poprzedniego
+  obrotu na tym, co się naprawdę stało, ramię `koopman`: mediana błędu wektora / brak zmiany dla Koopmana 0,989;
+  1,018; 1,006; 1,004; 1,003; 0,999 (obroty 4–9), poniżej 1 w 3–7 z 10 ziaren; Langevin 1,003–1,037. Zgodność znaku
+  zmiany neuronów 0,52–0,61. W ramionach `losowe` i `bez` to samo.
+- Wektor tożsamości między obrotami: cosinus 0,84–0,86 (stabilny kierunek, zmiana w obrocie nieprzewidywalna).
+- **Wersja 2 kontra wersja 1** (średnia mAP@0,5 w krokach 1600–4500, 10 par ziaren): `koopman` +0,014 (lepsza
+  w 7 z 10), `losowe` +0,015 (7 z 10), `bez` +0,003 (6 z 10). Zysk pochodzi z wcześniejszego i większego dokładania
+  (start po 21 epokach, 938 klatek zamiast 804), bo `losowe` zyskuje tyle samo co `koopman`; wektor tożsamości
+  nie zmienił przewagi Koopmana nad losowym (+0,013 w wersji 1, +0,009 w wersji 2).
+
+**Wniosek.** Ramię `koopman` znów dobiera klatki minimalnie lepiej niż losowanie, ale prognoza latentu, na której
+ma się opierać, jest przez całą kampanię równa „brakowi zmiany”. Przewaga nie może więc pochodzić z prognozy;
+najprostsze wyjaśnienie z wersji 1 (klatki szukane wokół obrazów narzędzia) pozostaje. Niesprawdzona hipoteza
+błędu w liczeniu: PCA do 8 wymiarów liczona na poziomach latentu (różnice między sondami), a nie na jego zmianach
+w czasie, więc model może nie widzieć ruchu (użytkownik przerwał sprawdzenie; czeka na decyzję).
