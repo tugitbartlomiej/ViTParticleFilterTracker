@@ -1,6 +1,8 @@
 # Mały Vision Transformer uczony od zera: latent, który się rusza
 
-Data: 2026-09-28. Status: **projekt, czeka na zatwierdzenie** (nic nie uruchomione).
+Data: 2026-09-28. Status: **uruchomione lokalnie (RTX 3070) 2026-09-28 15:43** po zgodzie użytkownika:
+„możesz to zapuścić! Także puść teraz na mojej karcie graficznej i rób monitoring tego wszystkiego”.
+Zrealizowana wersja pętli: sekcja „Wykonanie” na końcu.
 
 Polecenie użytkownika: skoro w dostrajanym RF-DETR kręgosłup stoi, wziąć Vision Transformera bez
 pre-treningu, uczyć od zera, tak żeby enkoder się ruszał i Koopman z Langevinem miały co opisywać;
@@ -102,3 +104,46 @@ jako proces odłączony z logiem.
 Model od zera będzie słabszy niż dostrojony RF-DETR (0,90 mAP@0,5) — to stanowisko do zbadania, czy dobór
 klatek sterowany dynamiką latentu przyspiesza uczenie, nie docelowy detektor. Literatura nie obiecuje, że
 dobór danych pomaga bardziej od zera. Po fazie uczenia plateau wróci; zysk może być tylko w szybkości dojścia.
+
+## Wykonanie (2026-09-28)
+
+Doprecyzowanie metody przez użytkownika (przed startem): uczymy od zera na 1500 klatkach; po trzech checkpointach
+szukamy w latencie elementów odpowiedzialnych za pełną tożsamość narzędzia — **rdzeń** (odpala się zawsze, gdy
+narzędzie jest na obrazie, przy każdym kącie, długości, tle, rozbłysku) i **pełny latent**; Koopman (potem Langevin)
+przewiduje, jak te elementy urosną lub zmaleją w obrotach 4, 5, 6…; FastGAN generuje obrazy pasujące do przewidzianego
+latentu; do nich szukamy prawdziwych klatek w zbiorze uczącym, dodajemy je i uczymy dalej.
+
+Kod (ten katalog):
+- `model.py` — ViT od zera: 4 konwolucje z krokiem 2 (krok 16 px), 6 bloków timm, wymiar 192, 3 głowy,
+  pozycje sin-cos 2D, gęsta głowa (mapa środków + l, t, r, b), strata ogniskowa CenterNet + (1 − GIoU);
+  **2,93 mln parametrów**. Latent: 768 neuronów MLP ostatniego bloku (po GELU).
+- `dane.py` — baza 1500 klatek (720×480 → 480×320), próbka val 3000 z 12 043 (ziarno 0), pula 9136 klatek
+  treningowych z indeksu (bez bazy i kotwic), 192 sondy (12 źródeł × 16 wariantów, 176×176, siatka 11×11).
+- `trening.py` — paczka 32, AdamW lr 5e-4, wd 0,05, rozgrzewka lr 300 kroków, potem stały lr, bf16; odbicie
+  poziome i jasność/kontrast ±20 %; latent sond co 10 kroków; mAP@0,5 (AP jednej klasy, 101 punktów) na próbce val.
+- `tozsamosc.py` — neuron „zapala się”, gdy aktywacja na tokenach narzędzia > średnia negatywów + 2 odchylenia
+  (negatywy: tło wszystkich sond i obszar narzędzia w sondach `empty_black`); rdzeń: w każdym z 15 wariantów na
+  ≥ 75 % źródeł, negatywy ≤ 10 %; pełny latent: negatywy ≤ 10 %, ≥ 30 % sond z narzędziem.
+- `prognoza.py` — stan: aktywacje neuronów pełnego latentu (min. 32) na 180 sondach z narzędziem; odszumianie
+  średnią z bloków po 5 zapisów (punkt co 50 kroków); PCA do 8 wymiarów; `koopman` (przyrosty, 4 opóźnienia, bez
+  hamowania) i `langevin` (hamowanie K y_t + pamięć 4 przyrostów + stała każdej sondy); grzbiet względny 1e-2.
+  Cel FastGAN z modelu `langevin`, 3 obroty naprzód; oba modele raportują test wsteczny względem „braku zmiany”.
+  Test na danych syntetycznych z nasyceniem: langevin 0,59–0,80 × brak zmiany.
+- `generuj.py` — FastGAN 50k (EMA, zamrożony): inwersja kotwicy (4 starty × 160 kroków Adam), potem 250 kroków do
+  przewidzianego latentu (target) i do obecnego (current, kontrola), z wiernością obrazowi kotwicy.
+- `wybor.py` — wyszukiwanie DINOv2 w indeksie puli (top-90 na kotwicę), klatki na przemian z list 6 kotwic
+  (sondy „original” o największej przewidzianej zmianie); reguła różnorodności ±30 klatek tego samego filmu od
+  bazy i już dodanych — **ta sama w ramieniu `losowe`**.
+- `petla.py` — rozgrzewka 3 obroty × 500 kroków (wspólna), potem 6 obrotów × 500 kroków w trzech ramionach
+  (`koopman`, `losowe`, `bez`) z tego samego stanu (wagi i optymalizator); 134 klatki na obrót; ocena co 100 kroków.
+- `kampania.cmd` — ziarna 42–46 po kolei; logi `wyniki/petla_s*.log`.
+
+**Z0 (kalibracja, ziarno 42, sama baza, 6000 kroków):** mAP@0,5 próbki val 0,085 po 250 krokach, 0,36 po 1500,
+0,39–0,42 po 3500–6000 przy spadającej stracie uczenia (nadmierne dopasowanie do 1500 klatek). Bramka Z0 (≥ 0,5)
+**niespełniona**, ale model się uczy i po ~1500 krokach wchodzi w reżim, w którym więcej danych powinno pomagać.
+Rdzeń tożsamości (wg definicji wyżej) w Z0 pusty na każdym etapie; pełny latent 33–55 neuronów; najsłabsze
+warianty: czarne i żółte tło, obroty. Stąd długość obrotu 500 kroków: rozgrzewka (1500 kroków) kończy fazę wzrostu.
+
+Kryterium kampanii (ustalone przed wynikiem): pole pod krzywą mAP@0,5 w obrotach 4–9 (średnia ocen co 100 kroków):
+`koopman` > `losowe` i > `bez` w ≥ 4 z 5 ziaren. Wtórnie: domknięcie tożsamości (udział sond z zapalonym pełnym
+latentem/rdzeniem per wariant) i jakość prognozy względem „braku zmiany”.
