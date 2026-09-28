@@ -1,0 +1,26 @@
+ziarno 47, tryb proba, węzeł hopper, GPU NVIDIA H100 PCIe, start Mon Sep 28 09:51:57 PM CEST 2026
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_sila/kod/petla.py:58: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:206.)
+  img = torch.from_numpy(np.asarray(Image.open(D.PROBE / m['image']).convert('RGB'))).permute(2, 0, 1)[None].float() / 255
+s47: dane gotowe (18 s): baza 1500, val 3000, pula 9136
+s47: wektor tożsamości — siła narzędzia 6.07, negatywów 0.00 (sd 0.20)
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/wejscia/dino/dinov2/layers/swiglu_ffn.py:51: UserWarning: xFormers is not available (SwiGLU)
+  warnings.warn("xFormers is not available (SwiGLU)")
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/wejscia/dino/dinov2/layers/attention.py:33: UserWarning: xFormers is not available (Attention)
+  warnings.warn("xFormers is not available (Attention)")
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/wejscia/dino/dinov2/layers/block.py:40: UserWarning: xFormers is not available (Block)
+  warnings.warn("xFormers is not available (Block)")
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_sila/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+s47 tozsamosc k3: mAP50 0.3796  dodane 10 (zbiór 1510)  model koopman  poprz. prognoza/brak zmiany nan (K nan, L nan)  FastGAN część zmiany 1.00 (odporna 1.63), wspólne top-90 ze startem 32  (72 s)
+s47 tozsamosc k4: mAP50 0.3189  dodane 10 (zbiór 1520)  model koopman  poprz. prognoza/brak zmiany 0.98 (K 0.98, L 1.03)  FastGAN część zmiany 1.00 (odporna 0.98), wspólne top-90 ze startem 38  (19 s)
+s47 current k3: mAP50 0.2787  dodane 10 (zbiór 1510)  model koopman  poprz. prognoza/brak zmiany nan (K nan, L nan)  (12 s)
+s47 current k4: mAP50 0.3520  dodane 10 (zbiór 1520)  model koopman  poprz. prognoza/brak zmiany 0.99 (K 0.99, L 1.19)  (12 s)
+s47 losowe k3: mAP50 0.3124  dodane 10 (zbiór 1510)  model koopman  poprz. prognoza/brak zmiany nan (K nan, L nan)  (4 s)
+s47 losowe k4: mAP50 0.4097  dodane 10 (zbiór 1520)  model koopman  poprz. prognoza/brak zmiany 0.97 (K 0.97, L 1.16)  (4 s)
+s47 kolejne k3: mAP50 0.3738  dodane 10 (zbiór 1510)  model koopman  poprz. prognoza/brak zmiany nan (K nan, L nan)  (4 s)
+s47 kolejne k4: mAP50 0.3620  dodane 10 (zbiór 1520)  model koopman  poprz. prognoza/brak zmiany 0.92 (K 0.92, L 0.97)  (4 s)
+s47 bez k3: mAP50 0.3484  dodane 0 (zbiór 1500)  model koopman  poprz. prognoza/brak zmiany nan (K nan, L nan)  (4 s)
+s47 bez k4: mAP50 0.3365  dodane 0 (zbiór 1500)  model koopman  poprz. prognoza/brak zmiany 0.97 (K 0.97, L 1.14)  (4 s)
+s47: gotowe (167 s)
+KONIEC ziarno 47 Mon Sep 28 09:57:42 PM CEST 2026

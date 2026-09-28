@@ -63,7 +63,8 @@ def main() -> int:
                             fg_obr[k]['wspolne90'].append(a['wspolne_top90_ze_startem'])
                 obr.append(dict(k=k, mAP50=x['ocena']['mAP50'], model=x['prognoza']['model'],
                                 sprawdzenie=None if sp is None else {m: sp[m]['sondy'] for m in ('koopman', 'langevin', 'wybrany')}))
-            z[r] = dict(pole=float(np.mean([o['mAP50'] for o in oc])), koncowy=oc[-1]['mAP50'],
+            z[r] = dict(pole=float(np.mean([o['mAP50'] for o in oc])), koncowy=oc[-1]['mAP50'], dodane=len(kon['dodane']),
+                        dodane_w_obrocie={k: sum(1 for x in kon['dodane'] if x['obrot'] == k) for k in range(3, 10)},
                         krzywa=[(o['krok'], o['mAP50']) for o in oc], obroty=obr,
                         sprawdzenie_koncowe=kon.get('sprawdzenie_koncowe', {}).get('wybrany'))
             krzywe.setdefault(r, []).append(np.array([o['mAP50'] for o in oc]))
@@ -76,6 +77,7 @@ def main() -> int:
     pod = dict(ziaren=len(pelne))
     if pelne:
         pod['pole_srednie'] = {r: float(np.mean([z[r]['pole'] for z in pelne])) for r in RAMIONA}
+        pod['dodane_srednio'] = {r: float(np.mean([z[r]['dodane'] for z in pelne])) for r in RAMIONA}   # limit list wyszukiwania
         pod['glowne_wygrane'] = int(sum(z['wygrywa_glowne'] for z in pelne))
         pod['kryterium_glowne'] = bool(len(pelne) == 10 and pod['glowne_wygrane'] >= 8)
         for c in KONTROLE:

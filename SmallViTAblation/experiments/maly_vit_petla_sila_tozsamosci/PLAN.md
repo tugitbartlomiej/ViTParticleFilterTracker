@@ -85,3 +85,35 @@ Szacunek: ~1 h na ziarno (5 ramion, FastGAN w dwóch), razem ~10 GPU-godzin, ~1 
   `kolejne` bierze klatki puli 5 klatek po klatkach bazy. Liczby prognozy w próbie nic nie znaczą (obrót 50 kroków).
 - Jedyna zmiana kodu wspólnego: `kod/generuj.py` czyta ścieżkę wag FastGAN ze zmiennej `MALY_VIT_FASTGAN_CKPT`,
   gdy jest ustawiona (tylko próba lokalna; na Edenie zmienna nie jest ustawiana).
+
+## Wyniki kampanii (2026-09-28, Eden 1818025, ziarna 47–56, wszystkie COMPLETED, 15–25 min na ziarno)
+
+Pliki: `wyniki_eden/` (JSON-y obrotów i ramion, logi; latenty, wagi, obrazy FastGAN i listy wyszukiwania
+`zapytanie_*.json` tylko na Edenie albo lokalnie poza gitem), `wyniki_eden/ANALIZA.json` (`analiza.py`),
+`wyniki_eden/DIAG_SILA.json` (`diag_sila_ramion.py`, diagnoza po wyniku, nie kryterium).
+
+Pole pod krzywą mAP@0,5 w obrotach 3–9 (średnia 10 ziaren): `tozsamosc` 0,4432, `current` 0,4428, `losowe` 0,4327,
+`kolejne` 0,4255, `bez` 0,4030. Klatek dodanych średnio: `tozsamosc` 930, `current` 929 (w ostatnich obrotach
+wyczerpują się listy podobnych klatek, jak w wersji 2), `losowe` i `kolejne` 938.
+
+- **Kryterium główne: niespełnione (7 z 10, wymagane 8).** `tozsamosc` − `losowe` +0,0105, lepsza w 7 z 10
+  (Wilcoxon p = 0,11); − `kolejne` +0,0177, 10 z 10 (p = 0,002); − `bez` +0,0402, 10 z 10 (p = 0,002).
+- **Rola prognozy: niespełniona.** `tozsamosc` − `current` +0,0004, lepsza w 5 z 10 (p = 0,92). Obraz z przewidzianą
+  zmianą siły i obraz bez niej dają tę samą trafność, choć prowadzą do innych klatek (wspólne top-90 ze startem
+  średnio 27–35 z 90).
+- **Prognoza siły w pętli: spełniona** (5 z 6 obrotów z ≥ 8/10 ziaren poniżej „braku zmiany”); mediana błąd / brak
+  zmiany 0,89–0,97 w ramieniu `tozsamosc`. Tak samo w ramionach kontrolnych (`bez` 0,86–0,98), więc to cecha przebiegu
+  uczenia, nie doboru klatek. Model wybierany: Koopman 40, Langevin 30 razy na 70 obrotów.
+- **FastGAN w pętli: spełnione.** Mediana części zmiany 1,00 w każdym obrocie; na zaburzonych kopiach 0,87–1,02;
+  znak zgodny 0,90–0,97.
+- Diagnoza siły tożsamości (`DIAG_SILA.json`): przewidziane zmiany kotwic są w połowie wzrostami, w połowie spadkami
+  (średnio −0,004); siła na końcu biegu w `tozsamosc` wyżej niż w `current` tylko w 5 z 10 ziaren. Dobór klatek według
+  prognozy nie przesuwa siły tożsamości sieci w żadną stałą stronę.
+- Porównanie z wersją 2 (te same ziarna i rozgrzewka): `koopman` v2 0,4432 = `tozsamosc` v3 0,4432; `losowe`
+  0,4341 → 0,4327; `bez` 0,3999 → 0,4030.
+
+**Wniosek.** Wszystkie ogniwa działają technicznie: prognoza siły tożsamości bije „brak zmiany” o 3–11 %, FastGAN
+realizuje przewidzianą zmianę, a wyszukane klatki są w dwóch trzecich inne niż bez prognozy. Mimo to prognoza nie
+poprawia uczenia: ramię z prognozą i ramię kontrolne bez niej dają identyczną trafność. Przewaga nad losowaniem
+(+0,01, nieistotna, ta sama co w wersji 2) pochodzi z wybierania klatek podobnych do wycinków narzędzia, nie z
+prognozy. Kolejne klatki tych samych filmów są gorsze od losowych (−0,007), a każde dokładanie bije brak dokładania.
