@@ -1,6 +1,6 @@
 # Sterowanie uczeniem przez dobór danych: Koopman + Langevin + Kalman + FastGAN na stanie dekodera
 
-Data: 2026-09-28. Status: **projekt, czeka na zatwierdzenie** (nic nie zgłoszone na Edenie).
+Data: 2026-09-28. Status: **G1 i G2 niespełnione lokalnie na Nano (sekcja „Wynik bramek”)**; nic nie zgłoszone na Edenie.
 
 Polecenie użytkownika: połączyć równanie Koopmana i równanie Langevina z poprzedniej pracy (dryf, pamięć, wymuszenie,
 sterowanie, szum; na błędzie liczony Kalman i odszumianie, teraz także FastGAN) w jedną metodę doboru klatek, która
@@ -85,6 +85,37 @@ Receptura jak w `petla_od_poczatku_large` (porównywalność), plus odczyt dekod
 ramię, jeśli G1 wskaże, że cała poprawa jest w dekoderze i tak ma zostać. Kwota Edenu: G4 ≈ 60 zadań × 0,59 GB ≈ 35 GB
 — wymaga zgody na usunięcie starych katalogów (`2026-09-26_petla_uczenia` 6,9 GB, `2026-09-25_kontynuacja_*`)
 albo wag pośrednich obrotów po ich wykorzystaniu.
+
+## Wynik bramek G1 i G2 policzonych lokalnie na wagach Nano (2026-09-28)
+
+Na prośbę użytkownika najpierw lokalnie, bez Edenu. Skrypty: `../dekoder_sondy_large/odczyt_dekodera_nano.py`,
+`../dekoder_sondy_large/bramki_lokalne.py`; wynik: `../dekoder_sondy_large/wyniki/BRAMKI_LOKALNE.json`.
+Nano ma 2 warstwy dekodera; stan = q po ostatniej.
+
+**G1 — niespełniona.** Między ramionami w tym samym (ziarno, epoka):
+- kampania 5 epok (4 ramiona × 3 ziarna × 5 epok, 60 wag): ρ = −0,07 (p = 0,61); żaden inny odczyt (średnia warstw,
+  IoU propozycji, pojedyncze warianty, najsłabszy wariant) nie przekracza |ρ| = 0,14;
+- pilot (3 pętle × 8 obrotów, ziarno 42): ρ = −0,51 (p = 0,01), **znak odwrotny**; najmocniej dla sond na
+  czarnym i żółtym tle (ρ −0,69 i −0,73). Ramiona z dodanymi klatkami lepiej wykrywają narzędzie na zmienionym tle
+  (q tła: bez 0,257, koopman 0,277, losowe 0,301), a mAP@0,5 val jest w nich minimalnie niższy (0,8989 / 0,8981 /
+  0,8973).
+- Skala: rozrzut mAP@0,5 między ramionami w grupie to 0,0009–0,0011 — ramiona prawie się nie różnią na val.
+
+Wniosek: sondy mierzą rozpoznanie narzędzia w zmienionych warunkach, a val tego nie sprawdza (tło laboratoryjne).
+Domknięcie tożsamości i mAP@0,5 val to dwa różne cele; ρ = 0,86 na Large (w czasie, jedna pętla) był wspólnym
+wzrostem obu wielkości z uczeniem, nie dowodem, że stan dekodera rozróżnia sposoby doboru danych.
+
+**G2 — niespełniona.** Bieg gęsty 1810662 (wagi co 5 aktualizacji, kroki 5–800): q rośnie od 0 (nowa głowica
+jednoklasowa) do ~0,40 w kroku ~400, potem stoi i drga (0,39–0,44). Dopasowanie na krokach ≤ 400, test h = 20
+zapisów (100 aktualizacji): Koopman na przyrostach 1,00 × brak zmiany, OU 1,77 ×, Langevin z pamięcią i wymuszeniem
+1,64 ×, z Kalmanem 1,64 × (model nauczony na fazie wzrostu przestrzela plateau). Kontrola po wyniku, dopasowanie na
+samym plateau (kroki 300–600, test > 600): sondy 0,97–1,00 ×; średnia sond: hamowanie + pamięć 0,92 ×, sama średnia
+plateau 0,82 × — nadal powyżej progu 0,8. Na plateau stan nie ma ruchu do przewidzenia; najlepsza prognoza to
+uśrednienie szumu.
+
+**Decyzja:** G3 i G4 w tej postaci nie idą na Eden. Żeby pętla miała sens, miara sukcesu musi obejmować to, co
+sondy mierzą: zbiór walidacyjny z narzędziem na innym tle i po obrocie (albo sondy wzięte z klatek val), a stan
+modelu trzeba czytać w fazie, w której się rusza (początek dostrajania, nie plateau).
 
 ## Uczciwie
 

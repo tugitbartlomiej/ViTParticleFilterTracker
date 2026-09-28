@@ -1,0 +1,175 @@
+{
+ "opis": "Bramki G1 i G2 z ../sterowanie_langevin_kalman/PLAN.md policzone na lokalnych wagach Nano (odczyt_dekodera_nano.py).\n\nG1 (stan przewiduje zadanie): jakość sond z dekodera (średnia q po ostatniej warstwie) vs mAP@0,5 całego val MIĘDZY\n   ramionami w tym samym (ziarno, epoka) — wartości wycentrowane w grupie, Spearman. Zestawy: nano5ep (4 ramiona ×\n   3 ziarna × 5 epok) i nanopilot (3 pętle × 8 obrotów). Warunek z planu: ρ ≥ 0,4 i p < 0,05.\nG2 (model bije „brak zmiany”): bieg gęsty 1810662 (co 5 aktualizacji, kroki 5..805). Stan: q każdej z 72 sond po\n   ostatniej warstwie. Dopasowanie na krokach ≤ 400, test prognoz z punktów startu > 400 na h = 20 zapisów\n   (100 aktualizacji = 1 epoka). Modele (współczynniki wspólne dla sond, stałe sond osobne):\n     M0 brak zmiany\n     M1 Koopman na przyrostach (8 ostatnich, jak w pętli koopman; bez hamowania)\n     M2 dryf z hamowaniem (OU): Δq_i = a_i + b q_i\n     M3 Langevin: M2 + pamięć 8 przyrostów + wymuszenie (granica epoki)\n     M4 M3 z odszumianiem Kalmana (stan q_i ukryty, odczyt = stan + szum; parametry szumu z danych dopasowania)\n   Miara: RMSE prognozy / RMSE braku zmiany (< 1 = lepiej niż nic). Warunek z planu: ≤ 0,8.\n\n    py -3.11 bramki_lokalne.py  ->  wyniki/BRAMKI_LOKALNE.json\n",
+ "G1_nano5ep": {
+  "n": 60,
+  "grup": 15,
+  "rho": -0.06807446512920257,
+  "p": 0.6052885416337017
+ },
+ "G1_nano5ep_po_fakcie": {
+  "ostatnia_warstwa": {
+   "rho": -0.06807446512920257,
+   "p": 0.6052885416337017
+  },
+  "srednia_warstw": {
+   "rho": -0.09608224506807449,
+   "p": 0.46521542134034377
+  },
+  "propozycje_iou": {
+   "rho": -0.046346207279799954,
+   "p": 0.7251132312827957
+  },
+  "najslabszy_wariant": {
+   "rho": -0.08141150319533204,
+   "p": 0.5363294589659977
+  },
+  "wariant_original": {
+   "rho": 0.04606835232008893,
+   "p": 0.7266966983096895
+  },
+  "wariant_rotation90": {
+   "rho": -0.012058905251458741,
+   "p": 0.9271380260458338
+  },
+  "wariant_black": {
+   "rho": -0.08141150319533204,
+   "p": 0.5363294589659977
+  },
+  "wariant_yellow": {
+   "rho": -0.13153653792720202,
+   "p": 0.31643744893848713
+  },
+  "wariant_length08": {
+   "rho": -0.10391775493192555,
+   "p": 0.42943822234683715
+  },
+  "wariant_foreground_bright": {
+   "rho": -0.037732703528757995,
+   "p": 0.7747020679610581
+  },
+  "rozrzut_mAP_miedzy_ramionami": 0.0011399399320866773
+ },
+ "G1_nanopilot": {
+  "n": 24,
+  "grup": 8,
+  "rho": -0.5147826086956522,
+  "p": 0.010054114049541199
+ },
+ "G1_nanopilot_po_fakcie": {
+  "ostatnia_warstwa": {
+   "rho": -0.5147826086956522,
+   "p": 0.010054114049541199
+  },
+  "srednia_warstw": {
+   "rho": -0.5869565217391304,
+   "p": 0.0025685296168339333
+  },
+  "propozycje_iou": {
+   "rho": 0.5252173913043477,
+   "p": 0.008402700736251656
+  },
+  "najslabszy_wariant": {
+   "rho": -0.6886956521739129,
+   "p": 0.00019842330475024696
+  },
+  "wariant_original": {
+   "rho": -0.4356521739130434,
+   "p": 0.033343241979290644
+  },
+  "wariant_rotation90": {
+   "rho": -0.2643478260869565,
+   "p": 0.21193927878705082
+  },
+  "wariant_black": {
+   "rho": -0.6886956521739129,
+   "p": 0.00019842330475024696
+  },
+  "wariant_yellow": {
+   "rho": -0.7295652173913043,
+   "p": 5.223689984061561e-05
+  },
+  "wariant_length08": {
+   "rho": -0.47391304347826085,
+   "p": 0.019311580010082523
+  },
+  "wariant_foreground_bright": {
+   "rho": -0.19304347826086957,
+   "p": 0.36611583497113964
+  },
+  "rozrzut_mAP_miedzy_ramionami": 0.0009187871959412257
+ },
+ "G2_nanogesty": {
+  "zapisow": 160,
+  "krokow_dopasowania": 400,
+  "horyzont_zapisow": 20,
+  "startow_testu": 52,
+  "rmse": {
+   "M0": 0.04773894599569552,
+   "M1": 0.04779418122217515,
+   "M2": 0.08466955476880128,
+   "M3": 0.07810932460368031,
+   "M4": 0.07821388810773851
+  },
+  "wzgledem_braku_zmiany": {
+   "M0": 1.0,
+   "M1": 1.001157026518445,
+   "M2": 1.7735949758177671,
+   "M3": 1.6361761445408367,
+   "M4": 1.6383664631973824
+  },
+  "hamowanie_b": -0.00981667984020969,
+  "szum_odczytu": 0.001,
+  "szum_procesu": 0.01994633856326418,
+  "jakosc_srednia": {
+   "start": 0.0017173455940388117,
+   "podzial": 0.3944309839797724,
+   "koniec": 0.43343997665215284
+  }
+ },
+ "G2_nanogesty_plateau_po_fakcie": {
+  "sondy_h4": {
+   "startow": 36,
+   "wzgledem_braku_zmiany": {
+    "M0_brak_zmiany": 1.0,
+    "M1_koopman_plateau": 0.9937296453437973,
+    "M3_hamowanie_pamiec": 0.9727962526719734,
+    "Mmu_srednia_plateau": 1.5068401453963005
+   },
+   "rmse_brak_zmiany": 0.040181022699030754
+  },
+  "sondy_h20": {
+   "startow": 20,
+   "wzgledem_braku_zmiany": {
+    "M0_brak_zmiany": 1.0,
+    "M1_koopman_plateau": 0.9949737580116363,
+    "M3_hamowanie_pamiec": 1.001965078899221,
+    "Mmu_srednia_plateau": 1.4720507257374154
+   },
+   "rmse_brak_zmiany": 0.043803590267911814
+  },
+  "sondy_hamowanie_b": -0.014499141851058338,
+  "sondy_pamiec_suma": -0.007349336059599214,
+  "srednia_h4": {
+   "startow": 36,
+   "wzgledem_braku_zmiany": {
+    "M0_brak_zmiany": 1.0,
+    "M1_koopman_plateau": 0.994244092630155,
+    "M3_hamowanie_pamiec": 0.984659712776703,
+    "Mmu_srednia_plateau": 0.6435752307268687
+   },
+   "rmse_brak_zmiany": 0.02258087393114649
+  },
+  "srednia_h20": {
+   "startow": 20,
+   "wzgledem_braku_zmiany": {
+    "M0_brak_zmiany": 1.0,
+    "M1_koopman_plateau": 0.9904822929447438,
+    "M3_hamowanie_pamiec": 0.9185906617106967,
+    "Mmu_srednia_plateau": 0.821562985175731
+   },
+   "rmse_brak_zmiany": 0.015204944941646746
+  },
+  "srednia_hamowanie_b": -0.0049035677034756555,
+  "srednia_pamiec_suma": -0.0013179675066684908
+ }
+}
