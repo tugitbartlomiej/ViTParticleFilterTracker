@@ -81,3 +81,18 @@ ma się opierać, jest przez całą kampanię równa „brakowi zmiany”. Przew
 najprostsze wyjaśnienie z wersji 1 (klatki szukane wokół obrazów narzędzia) pozostaje. Niesprawdzona hipoteza
 błędu w liczeniu: PCA do 8 wymiarów liczona na poziomach latentu (różnice między sondami), a nie na jego zmianach
 w czasie, więc model może nie widzieć ruchu (użytkownik przerwał sprawdzenie; czeka na decyzję).
+
+## Tożsamość po 21 epokach metodą użytkownika (2026-09-28, `tozsamosc_21ep.py`)
+
+Użytkownik: „po 21 epokach wyznacz tożsamość teraz”. Krok 1000 (koniec rozgrzewki wersji 2), średnia 5 ostatnich
+zapisów, 192 sondy (12 wycinków × 16 wersji), definicje z `kod/tozsamosc.py`. Wyniki: `wyniki_eden/TOZSAMOSC_21EP.json`
+(lista neuronów pełnego latentu z udziałem zapaleń w każdej wersji), `wyniki_eden/TOZSAMOSC_21EP.png`.
+- Pełny latent: 45–87 neuronów (średnio 66). **Rdzeń: 0 w każdym z 10 ziaren.** Najlepszy neuron zapala się we
+  wszystkich 15 wersjach na 25–50 % wycinków (próg rdzenia 75 %).
+- Domknięcie wersji (średnio): rozjaśnione narzędzie 0,44, obrót 180° 0,42, przyciemnione 0,40, oryginał 0,39 …
+  skala 0,8: 0,18, **czarne tło 0,03, żółte tło 0,00**. Po 21 epokach neurony tożsamości prawie w ogóle nie
+  zapalają się na narzędziu na sztucznym tle — sieć rozpoznaje narzędzie razem z tłem operacyjnym.
+- Bez czarnego i żółtego tła (13 wersji, odejście od definicji, tylko informacyjnie): ≥ 75 % wycinków w każdej
+  wersji — 2 neurony w s52 i 1 w s55, w pozostałych 0; ≥ 50 % — 1–5 neuronów na ziarno.
+- Sieć nieuczona (krok 0) przechodzi ten sam test lepiej: 231–329 neuronów „pełnego latentu”; 26–58 neuronów
+  z listy po 21 epokach było na niej już w sieci nieuczonej.
