@@ -101,7 +101,7 @@ Nano ma 2 warstwy dekodera; stan = q po ostatniej.
   0,8973).
 - Skala: rozrzut mAP@0,5 między ramionami w grupie to 0,0009–0,0011 — ramiona prawie się nie różnią na val.
 
-Wniosek: sondy mierzą rozpoznanie narzędzia w zmienionych warunkach, a val tego nie sprawdza (tło laboratoryjne).
+Wniosek: sondy mierzą rozpoznanie narzędzia w zmienionych warunkach (wycinek 256 × 256 z filmów treningowych; narzędzie wklejone na jednolite czarne i żółte tło, obrót o 90°), a val tego nie sprawdza: to 12 043 całe kadry operacji zaćmy z 25 innych filmów, zawsze z okiem w tle (`../dekoder_sondy_large/wyniki/SONDY_ARKUSZ.png`, `WAL_PROBKA.png`). Na czarnym tle detektor zwykle trafia ramką, ale z pewnością ~0,1, więc q jest niskie.
 Domknięcie tożsamości i mAP@0,5 val to dwa różne cele; ρ = 0,86 na Large (w czasie, jedna pętla) był wspólnym
 wzrostem obu wielkości z uczeniem, nie dowodem, że stan dekodera rozróżnia sposoby doboru danych.
 
