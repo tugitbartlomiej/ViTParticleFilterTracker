@@ -5,7 +5,8 @@ Kryterium (ustalone przed wynikiem): pole pod krzywą mAP@0,5 w obrotach 4–9 =
 rozgrzewce; `koopman` > `losowe` i > `bez` w ≥ 4 z 5 ziaren. Wtórnie: domknięcie tożsamości po obrotach, jakość
 prognozy (test wsteczny względem braku zmiany), reszty FastGAN, podobieństwo wybranych klatek.
 
-    py -3.11 analiza.py  ->  wyniki/ANALIZA.json, wyniki/ANALIZA.png
+    py -3.11 analiza.py [katalog ...]  ->  <pierwszy katalog>/ANALIZA.json, ANALIZA.png
+    (domyślnie wyniki/; kilka katalogów = ziarna z nich razem, np. wyniki wyniki_eden)
 """
 from __future__ import annotations
 
@@ -24,8 +25,12 @@ def jz(p):
 
 
 def main() -> int:
-    wyn, krzywe = dict(ziarna={}), {}
-    for d in sorted(W.glob('petla_s*')):
+    import sys
+    global W
+    katalogi = [HERE / k for k in sys.argv[1:]] or [W]
+    W = katalogi[0]
+    wyn, krzywe = dict(ziarna={}, katalogi=[str(k) for k in katalogi]), {}
+    for d in sorted(x for k in katalogi for x in k.glob('petla_s*')):
         if not d.is_dir():
             continue
         s = d.name.split('_s')[1]
@@ -63,7 +68,14 @@ def main() -> int:
             roznica_koopman_losowe=float(np.mean([z['roznica_koopman_losowe'] for z in pelne])),
             roznica_koopman_bez=float(np.mean([z['roznica_koopman_bez'] for z in pelne])),
             roznica_losowe_bez=float(np.mean([z['roznica_losowe_bez'] for z in pelne])),
-            koopman_lepszy_od_losowego=int(sum(z['roznica_koopman_losowe'] > 0 for z in pelne)))
+            koopman_lepszy_od_losowego=int(sum(z['roznica_koopman_losowe'] > 0 for z in pelne)),
+            koopman_lepszy_od_bez=int(sum(z['roznica_koopman_bez'] > 0 for z in pelne)))
+        if len(pelne) >= 5:
+            from scipy.stats import wilcoxon, binomtest
+            for k in ('roznica_koopman_losowe', 'roznica_koopman_bez', 'roznica_losowe_bez'):
+                x = [z[k] for z in pelne]
+                wyn['podsumowanie'][k + '_wilcoxon_p'] = float(wilcoxon(x).pvalue)
+                wyn['podsumowanie'][k + '_znak_p'] = float(binomtest(sum(v > 0 for v in x), len(x)).pvalue)
     (W / 'ANALIZA.json').write_text(json.dumps(wyn, indent=1, ensure_ascii=False, default=float), encoding='utf-8')
     try:
         import matplotlib
