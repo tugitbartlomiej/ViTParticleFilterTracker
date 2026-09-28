@@ -96,3 +96,25 @@ zapisów, 192 sondy (12 wycinków × 16 wersji), definicje z `kod/tozsamosc.py`.
   wersji — 2 neurony w s52 i 1 w s55, w pozostałych 0; ≥ 50 % — 1–5 neuronów na ziarno.
 - Sieć nieuczona (krok 0) przechodzi ten sam test lepiej: 231–329 neuronów „pełnego latentu”; 26–58 neuronów
   z listy po 21 epokach było na niej już w sieci nieuczonej.
+
+## Wektor tożsamości po 21 epokach (2026-09-28, `wektor_tozsamosci_21ep.py`)
+
+Użytkownik: „policz wektor tożsamości po 21 epokach teraz” (kierunek w latencie zamiast pojedynczych neuronów).
+Wektor = liniowy rozdzielacz narzędzie/tło (LDA ze ściąganiem kowariancji) na średnich latentach sond, próg zapalenia
+jak dla neuronów (średnia + 2 sd rzutów negatywów). Wyniki: `wyniki_eden/WEKTOR_21EP.json`, `WEKTOR_21EP.npz`
+(wektory 768 na ziarno), `WEKTOR_21EP.png`.
+- **Wersja wyłączona** (wektor uczony bez danej wersji, sprawdzany na niej): narzędzie zapala wektor w 100 % wycinków
+  we wszystkich wersjach poza żółtym tłem (85 %); AUC 1,00 (żółte 0,93). Rdzeń wektorowy według progu użytkownika
+  (≥ 75 % w każdej wersji wyłączonej): **8 z 10 ziaren** (s49 i s50 zawodzą na żółtym tle, 42–50 %).
+- **Wycinek wyłączony** (nowe narzędzie, którego wektor nie widział): 100 % zapaleń, AUC 1,00 w każdym ziarnie.
+- Tło fałszywie zapala wektor w wersjach wyłączonych: 0–41 % (najwięcej obroty i przesunięcia — rogi i krawędzie
+  po przekształceniu), przy AUC 1,00, więc problemem jest próg, nie kierunek.
+- Prosty wektor (średnia narzędzia − średnia tła): słabszy, najsłabsze czarne tło (77 %).
+- **Sieć nieuczona (krok 0) daje to samo albo lepiej**: 100 % we wszystkich wersjach poza żółtym (97 %), mniej
+  fałszywych zapaleń tła. Test na tych sondach nie odróżnia więc tożsamości wyuczonej od zwykłej różnicy wyglądu
+  (jasny, cienki metal kontra tkanka), którą widać już w losowych wagach.
+
+**Wniosek.** Wektor tożsamości po 21 epokach istnieje i przenosi się na nowe wersje i nowe narzędzia, ale ten sam
+test przechodzi sieć nieuczona. Żeby zmierzyć tożsamość wyuczoną, potrzebne są trudniejsze negatywy (rzeczy podobne
+do narzędzia, które nim nie są: odblaski, krawędzie tkanek, cienkie jasne struktury, klatki bez narzędzia) albo
+próba przyczynowa (usunięcie wektora z latentu psuje wykrywanie).
