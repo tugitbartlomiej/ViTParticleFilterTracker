@@ -138,3 +138,28 @@ rozgrzewce, 10 ziaren, 12 wycinków × 15 wersji + `empty_black`):
 tło), więc detektor prawie ich nie wykrywa i różnice między ramionami giną w szumie. Do porównania ramion na obrotach
 i tłach potrzebne są sondy w skali klatek uczących (narzędzie wklejone w pełną klatkę 480×320), albo pomiar na
 prawdziwych klatkach walidacji pogrupowanych według kąta i tła.
+
+## Iteracja 2: dłużej i więcej ziaren (plan do zgody, 2026-09-29; nic nie zgłoszono)
+
+Cel: sprawdzić, czy przewaga metody nad losowaniem (7–8 z 10 ziaren, +1 do +2 punkty mAP@0,5) rośnie przy dłuższym
+dokładaniu i czy utrzymuje się na 20 ziarnach. Próg użytkownika: metoda lepsza w ≥ 80 % ziaren.
+
+Zmiany względem kampanii 1818025 (reszta bez zmian: ramiona, wektor tożsamości, prognoza, FastGAN, wyszukiwanie,
+reguła ±30, ocena co 100 kroków na tych samych 3000 klatkach walidacji):
+1. 14 obrotów zamiast 7: uczenie do kroku 8000, 1876 dodanych klatek zamiast 938. Przewaga nad kolejnymi klatkami
+   rosła z obrotem (+1,4 → +2,7 punktu), więc dłuższe dokładanie powinno ją pokazać wyraźniej.
+2. Lista podobnych klatek na kotwicę 180 zamiast 90, w `tozsamosc` i `current` jednakowo. Przy 90 metoda dostawała
+   w ostatnich obrotach mniej klatek niż kontrole (średnio 930 wobec 938); przy 14 obrotach brak byłby duży.
+   Pula mieści ~3300 klatek przy regule ±30 (sprawdzone losowaniem, 3 próby), więc 1876 się zmieści.
+3. Ziarna 47–66 (20 zamiast 10): 47–56 z rozgrzewką z wersji 2 jak teraz, 57–66 z nową rozgrzewką liczoną w zadaniu
+   (ten sam kod, 1000 kroków, ~3 min).
+4. Wszystkie ramiona od nowa od kroku 1000, bo kampania 1818025 nie zapisała stanu optymalizatora, więc nie da się
+   jej uczciwie przedłużyć.
+
+Kryteria (ustalone przed wynikiem):
+- główne: `tozsamosc` > `losowe` w ≥ 16 z 20 ziaren, osobno dla mAP@0,5 na końcu (krok 8000) i pola pod krzywą;
+- rola prognozy: `tozsamosc` > `current` w ≥ 16 z 20 ziaren;
+- raport także względem `kolejne` i `bez`, test znaków, oraz stan w kroku 4500 (porównanie z kampanią 1818025).
+
+Koszt: ~30 min na ziarno (5 ramion × 14 obrotów), razem ~10 GPU-godzin, ~1–1,5 h zegara; zapis ~38 GB latentów
+(kwota: 68 z 200 GB). Najpierw próba kodu (1 zadanie, krótkie obroty), potem kampania z zależnością `afterok`.
