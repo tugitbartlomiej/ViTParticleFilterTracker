@@ -139,7 +139,12 @@ tło), więc detektor prawie ich nie wykrywa i różnice między ramionami giną
 i tłach potrzebne są sondy w skali klatek uczących (narzędzie wklejone w pełną klatkę 480×320), albo pomiar na
 prawdziwych klatkach walidacji pogrupowanych według kąta i tła.
 
-## Iteracja 2: dłużej i więcej ziaren (plan do zgody, 2026-09-29; nic nie zgłoszono)
+## Iteracja 2: dłużej i więcej ziaren (2026-09-29)
+
+Zgoda użytkownika: „Ok puszczaj na edenie”. Zgłoszone: próba 1818050 (ziarno 57, nowa rozgrzewka, `proba`),
+kampania 1818051 (ziarna 47–66, `afterok`); `~/smallvit_runs/2026-09-29_maly_vit_sila_it2/`, `petla_eden_it2.slurm`
+(`petla.py --obroty 14 --top-k 180`). Wspólna część list liczona teraz na pierwszych 90 klatkach
+(`wspolne_top90_ze_startem`), cała lista osobno (`wspolne_cala_lista_ze_startem`).
 
 Cel: sprawdzić, czy przewaga metody nad losowaniem (7–8 z 10 ziaren, +1 do +2 punkty mAP@0,5) rośnie przy dłuższym
 dokładaniu i czy utrzymuje się na 20 ziarnach. Próg użytkownika: metoda lepsza w ≥ 80 % ziaren.

@@ -13,6 +13,7 @@ Różnice względem maly_vit_wektor_tozsamosci/kod/petla.py (wersja 2):
     (kolejne klatki tych samych filmów), `bez`;
   - rozgrzewka wzięta z wersji 2 (te same ziarna i kod; kopia robiona przez petla_eden.slurm), a gdy jej brak —
     liczona tak samo (2 × 500 kroków).
+Iteracja 2 (PLAN.md): --obroty 14 --top-k 180, ziarna 47–66.
 Pomiar w każdym obrocie i ramieniu: prognoza siły z poprzedniego obrotu kontra to, co się stało.
 
     <venv rfdetr>/python -u petla.py --ziarno 47   ->  $MALY_VIT_WYNIKI/petla_s47/...
@@ -62,13 +63,16 @@ def kotwice_256(opis):
 
 
 def main(argv=None) -> int:
+    global OBROTY, KROKI_OBR, NOWYCH, KOTWIC, CO_OCENA
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--ziarno', type=int, required=True)
     ap.add_argument('--ramiona', default='tozsamosc,current,losowe,kolejne,bez')
     ap.add_argument('--proba', action='store_true', help='próba kodu: krótkie obroty w ramionach, wyniki/proba_s*')
+    ap.add_argument('--obroty', type=int, default=OBROTY, help='obroty w ramionach (iteracja 2: 14)')
+    ap.add_argument('--top-k', type=int, default=WB.TOP_K, help='długość listy podobnych klatek na kotwicę (iteracja 2: 180)')
     a = ap.parse_args(argv)
     s = a.ziarno
-    global OBROTY, KROKI_OBR, NOWYCH, KOTWIC, CO_OCENA
+    OBROTY, WB.TOP_K = a.obroty, a.top_k
     if a.proba:
         OBROTY, KROKI_OBR, NOWYCH, KOTWIC, CO_OCENA = 2, 50, 10, 2, 25
     out = Path(os.environ['MALY_VIT_WYNIKI']) / (f'proba_s{s}' if a.proba else f'petla_s{s}'); out.mkdir(parents=True, exist_ok=True)
@@ -162,7 +166,8 @@ def main(argv=None) -> int:
                     if ramie == 'tozsamosc':                                  # czy prognoza zmienia wyszukane klatki
                         ls_ = WB.zapytaj(start, wykl, start.parent / 'zapytanie_start.json')
                         a_, b_ = [c['frame_id'] for c in lt], [c['frame_id'] for c in ls_]
-                        rap[b]['wspolne_top90_ze_startem'] = len(set(a_) & set(b_))
+                        rap[b]['wspolne_top90_ze_startem'] = len(set(a_[:90]) & set(b_[:90]))
+                        rap[b]['wspolne_cala_lista_ze_startem'] = len(set(a_) & set(b_))
                         rap[b]['wspolne_top22_ze_startem'] = len(set(a_[:22]) & set(b_[:22]))
                     rap[b]['sonda'] = int(poz_obecn[kot[b]])
                 nowe = WB.koopman(listy, pula_id, zajete, NOWYCH)
