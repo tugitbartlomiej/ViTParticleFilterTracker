@@ -164,3 +164,31 @@ Ziarno 42 pełne (3 ramiona × 6 obrotów), ziarno 43 przerwane po pierwszym obr
 - Mimo to obraz „target” prowadzi do innych prawdziwych klatek niż obraz „current”: wspólne top-90 18,9/90,
   top-22 2,6/22, podobieństwo DINOv2 obrazów target–current 0,78 (`eden/kontrola_target_current.py`,
   `wyniki/KONTROLA_TARGET_CURRENT_s42.json`). Nie wiadomo, ile z tej różnicy to prognoza, a ile losowość optymalizacji.
+
+## Wyniki Eden (2026-09-28, zadanie 1817935, ziarna 47–56; razem z ziarnem 42 = 11 ziaren)
+
+Wszystkie 10 zadań COMPLETED (hopper, ~16 min każde). Pliki JSON i obrazy FastGAN w `wyniki_eden/petla_s47..56`,
+logi w `wyniki_eden/logi`, latenty `LATENT.npz` (ignorowane przez git) pobrane do tych samych katalogów.
+Analiza: `py -3.11 analiza.py wyniki wyniki_eden` → `wyniki/ANALIZA.json`, `wyniki/ANALIZA.png`.
+
+- Pole pod krzywą mAP@0,5 (obroty 4–9, średnia 11 ziaren): `koopman` 0,4426, `losowe` 0,4298, `bez` 0,4044.
+- `koopman` > `losowe` w 9 z 11 ziaren (średnio +0,013, czyli +3 % względnie; Wilcoxon p = 0,005, test znaków
+  p = 0,065); `koopman` > `bez` w 11 z 11 (+0,038, p = 0,001); `losowe` > `bez` w 11 z 11 (+0,025, p = 0,001).
+  Kryterium z planu (≥ 4 z 5 ziaren) było ustalone dla 5 ziaren; w proporcji 9 z 11 (82 %) jest spełnione.
+- Przewaga nad losowym jest w każdym obrocie 4–9 (średnio +0,006 … +0,021), bez wyraźnego wzrostu w czasie.
+- **Prognoza nie bije „braku zmiany”.** Mediana langevin / brak zmiany w obrotach 5–9: 0,91; 0,99; 1,14; 1,05; 1,13
+  (poniżej 1 w 9, 6, 1, 2, 2 z 11 ziaren). Czysty Koopman: 1,10; 1,02; 1,04; 1,00; 1,04. W obrocie 4 prognozy nie
+  ma (za krótka historia, 30 punktów). Prognoza **pogarsza się** z czasem uczenia, a nie poprawia — odwrotnie niż
+  zakłada plan następnego sprawdzenia.
+- FastGAN nie trafia w przewidziany latent: mediana reszty obrazu „target” do celu 2,24 przy odległości cel–obecny
+  1,95; reszta mniejsza od tej odległości tylko w 39 % par (obraz–kotwica).
+- Ziarna, w których prognoza Langevina była gorsza, miały **większy** zysk nad losowym (Spearman +0,59, p = 0,056).
+  Przy 11 ziarnach to słaby sygnał, ale kierunek przeczy temu, że zysk bierze się z prognozy.
+- Rdzeń tożsamości pusty w każdym ziarnie, ramieniu i obrocie. Po obrocie 9 pełny latent: koopman 39,7, losowe 36,4,
+  bez 33,8 neuronów (średnio); domknięcie wariantów 0,275 / 0,279 / 0,258 — bez różnicy między koopman i losowe.
+
+**Wniosek.** Ramię `koopman` dokłada klatki trochę lepsze od losowych, powtarzalnie w 9 z 11 ziaren, ale nie ma
+dowodu, że to zasługa prognozy latentu: prognoza jest na poziomie „braku zmiany”, FastGAN nie dochodzi do celu,
+a zysk nie rośnie tam, gdzie prognoza jest lepsza. Najprostsze wyjaśnienie: klatki szukane przez DINOv2 wokół obrazów
+narzędzia z sond (kotwic) są po prostu bardziej „narzędziowe” niż losowe. Rozstrzyga to ramię kontrolne, które
+wybiera klatki tą samą drogą, ale z obrazu „current” (latent bez prognozy) zamiast „target” — wymaga zgody.

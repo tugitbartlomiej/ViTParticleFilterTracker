@@ -1,0 +1,24 @@
+ziarno 1, tryb proba, węzeł hopper, GPU NVIDIA H100 PCIe, start Mon Sep 28 04:21:20 PM CEST 2026
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/kod/petla.py:50: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:206.)
+  img = torch.from_numpy(np.asarray(Image.open(D.PROBE / m['image']).convert('RGB'))).permute(2, 0, 1)[None].float() / 255
+s1: dane gotowe (8 s): baza 1500, val 3000, pula 9136
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+s1 wspólny k1: mAP50 0.0140  rdzeń 0  pełny 47  domknięcie 0.50 (najsłabszy black)  (4 s)
+s1 wspólny k2: mAP50 0.0365  rdzeń 0  pełny 72  domknięcie 0.52 (najsłabszy yellow)  (4 s)
+s1 wspólny k3: mAP50 0.0391  rdzeń 0  pełny 66  domknięcie 0.42 (najsłabszy black)  (4 s)
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/wejscia/dino/dinov2/layers/swiglu_ffn.py:51: UserWarning: xFormers is not available (SwiGLU)
+  warnings.warn("xFormers is not available (SwiGLU)")
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/wejscia/dino/dinov2/layers/attention.py:33: UserWarning: xFormers is not available (Attention)
+  warnings.warn("xFormers is not available (Attention)")
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/wejscia/dino/dinov2/layers/block.py:40: UserWarning: xFormers is not available (Block)
+  warnings.warn("xFormers is not available (Block)")
+s1 koopman k4: mAP50 0.0686  dodane 10 (zbiór 1510)  rdzeń 0  pełny 72  domknięcie 0.36  prognoza/brak zmiany: koopman nan, langevin nan  (51 s)
+s1 koopman k5: mAP50 0.0857  dodane 10 (zbiór 1520)  rdzeń 0  pełny 52  domknięcie 0.33  prognoza/brak zmiany: koopman nan, langevin nan  (39 s)
+s1 losowe k4: mAP50 0.0566  dodane 10 (zbiór 1510)  rdzeń 0  pełny 57  domknięcie 0.36  (4 s)
+s1 losowe k5: mAP50 0.0614  dodane 10 (zbiór 1520)  rdzeń 0  pełny 64  domknięcie 0.33  (4 s)
+s1 bez k4: mAP50 0.0574  dodane 0 (zbiór 1500)  rdzeń 0  pełny 58  domknięcie 0.37  (4 s)
+s1 bez k5: mAP50 0.1139  dodane 0 (zbiór 1500)  rdzeń 0  pełny 40  domknięcie 0.34  (4 s)
+s1: gotowe (132 s)
+KONIEC ziarno 1 Mon Sep 28 04:23:46 PM CEST 2026
