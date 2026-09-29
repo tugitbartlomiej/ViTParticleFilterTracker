@@ -58,3 +58,7 @@ Użytkownik: „do równania nie mogą wchodzić przyszłe klatki, to jest niedo
 paczki kroku t, czyli klatek, na których sieć dopiero się uczy. Wynik z S_t opisuje więc, co porusza latent,
 a nie jest prognozą. Prognoza bez przyszłych klatek: `../maly_vit_rownanie_macierze` (pęd AdamW i paczki t−1
 i wcześniejsze).
+
+Doprecyzowanie użytkownika (2026-09-30): „tłumaczenie aktualnego latentu tymi klatkami, które stworzyły ten latent
+w tej chwili, to ok”. Równanie Δz_{t+1} = a Δz_t + b S_t jest więc dozwolone jako wyjaśnienie latentu z chwili t+1
+klatkami, które go stworzyły. Zakazane jest tylko użycie klatek z kroków, których jeszcze nie było, w prognozie.

@@ -28,7 +28,7 @@ w `wyniki/BIEG_s*.json`, `wyniki/ODNIESIENIA.json`, `wyniki/LINIOWE.json`, krzyw
 | pełna macierz A Δz_t + P S_pęd | + pęd AdamW liczony siecią | 60,9 (53,6) | — |
 | **jedna liczba: 0,76 · Δz_t** | stany do t | **56,8 (56,6)** | **56,3 (56,8)** |
 | **pęd: 0,94 · S_pęd** | pęd AdamW liczony siecią | **66,8 (65,7)** | **64,1 (63,8)** |
-| tylko porównanie: 0,84 Δz_t + 0,99 S_t | paczka kroku t (przyszłe klatki, niedozwolone) | 85,3 (85,7) | 87,8 (89,1) |
+| wyjaśnienie, nie prognoza: 0,84 Δz_t + 0,99 S_t | paczka, która tworzy latent t+1 (dozwolone jako wyjaśnienie) | 85,3 (85,7) | 87,8 (89,1) |
 
 Sondy „holdout” dają to samo z dokładnością do 1–2 punktów (sieci: 38,4–39,1; bezwładność 55,3–55,9; pęd 64,9–65,7).
 Dla ziarna 48 współczynniki odniesień dopasowane na ziarnie 47 (to skalary, więc przenoszą się między sieciami).
@@ -45,7 +45,8 @@ Dla ziarna 48 współczynniki odniesień dopasowane na ziarnie 47 (to skalary, w
 - **Najlepsza uczciwa prognoza to pęd optymalizatora przepuszczony przez sieć: 64–67 procent.** Współczynnik 0,94
   przy sile pędu, a bezwładność dostaje wtedy −0,04: pęd zastępuje ją w całości. Bez przeliczania sieci zostaje
   bezwładność, 56–57 procent (równanie T1 z jądrami na każdej współrzędnej: 59 w medianie 10 ziaren Edenu).
-- Cel 80 procent jest osiągalny tylko z paczką przewidywanego kroku, czyli z przyszłymi klatkami.
+- Ponad 80 procent daje tylko paczka, która tworzy dany latent. Według użytkownika (2026-09-30) tłumaczenie latentu
+  klatkami, które go stworzyły, jest dozwolone; jako prognoza z wyprzedzeniem już nie.
 
 ## Uwaga o kodzie TS (sprawdzone przy przenoszeniu)
 
