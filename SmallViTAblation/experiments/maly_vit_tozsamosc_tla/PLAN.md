@@ -59,3 +59,18 @@ Wniosek: tożsamość narzędzia (to, czy w tym miejscu jest narzędzie) siedzi 
 cząstek, z kilkoma słabszymi kierunkami pomocniczymi. Szczegóły wyglądu narzędzia (różnice między wersjami sond)
 rozkładają się na kilkadziesiąt kierunków, ale te same w sobie słabo odróżniają narzędzie od tła. Pojedyncza
 cząstka jest głośniejsza niż średnia z tokenów sondy (AUC 0,95 zamiast 0,997 wektora `nowy`).
+
+### Zapis kierunków cząstkowych i porównanie z wektorem `nowy` (`zapisz_kierunki_czastek.py`)
+
+`wyniki/KIERUNKI_CZASTEK.npz`: dla każdej sieci 6 kolejnych kierunków (`s47_w`, kształt 6 × 768, w przestrzeni
+(latent − `s47_mu`)/`s47_sd`), wyznaczonych na wszystkich wycinkach. Porównanie (`wyniki/KIERUNKI_CZASTEK.json`,
+średnio 10 sieci):
+
+- Cosinus pierwszego kierunku cząstkowego z wektorem `nowy` w surowym latencie: 0,40 (0,32–0,52), czyli kąt
+  około 66°. To różne strzałki.
+- Obie rozdzielają cząstki: pierwszy kierunek cząstkowy AUC 0,999 na cząstkach, z których go wyznaczono
+  (na wycinkach wyłączonych 0,95, sekcja wyżej); wektor `nowy` na cząstkach 0,96.
+
+Wniosek: tożsamości nie niesie jedna jedyna strzałka, tylko wąska wiązka kierunków. Różne sposoby wyznaczenia
+(średnia sondy albo pojedyncze cząstki) wybierają z niej różne strzałki, a każda z nich rozdziela narzędzie od tła
+tak samo dobrze. Wynik zgodny z łagodnym spadkiem AUC przy usuwaniu kolejnych kierunków.
