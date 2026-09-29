@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Uczenie modelu dyfuzyjnego wycinków narzędzia (PLAN.md). Jeden plik wyjściowy na wszystko, wznawialne.
 
-Dane: katalog z przygotuj_filmy.py (okna.bin + okna_indeks.npy + okna.json; okna z klatek filmów treningowych)
-albo okna240.npy z przygotuj_dane.py. Każdy przykład: losowy wycinek 176×176 z okna 240 (środek obrysu narzędzia
+Dane (wariant główny, prośba użytkownika): --klatki KAT (klatki rozpakowane z context_train.tar na Edenie)
++ --obrysy obrysy.npz (przygotuj_obrysy.py). Wycinanie w trakcie uczenia: klatka (dowolny rozmiar) → zmniejszenie do
+480×320 jak w uczeniu małego ViT → maska z obrysu → kwadrat 176×176 w losowym miejscu, byle środek obrysu był w nim
+z marginesem 16 px.
+Wariant zapasowy: --dane z przygotuj_filmy.py (okna.bin) albo okna240.npy z przygotuj_dane.py. Każdy przykład: losowy wycinek 176×176 z okna 240 (środek obrysu narzędzia
 zostaje w wycinku z marginesem 16 px), losowe odbicie poziome (jak w uczeniu małego ViT); dekodowanie w procesach
 DataLoadera. Każdy krok: losowe t, strata MSE przewidzianego szumu. bf16, AdamW, rozgrzewka lr, obcięcie normy
 gradientu 1, średnia wykładnicza wag (EMA).
@@ -100,6 +103,57 @@ class Okna(torch.utils.data.Dataset):
         return torch.from_numpy(np.ascontiguousarray(w)).permute(2, 0, 1)
 
 
+class KlatkiObrysy(torch.utils.data.Dataset):
+    """Wycinanie w locie z pełnych klatek i obrysów; zwraca (4,176,176) uint8 RGB + maska narzędzia.
+    Klatka dowolnego rozmiaru (720×480, 720×576 …) najpierw zmniejszona do 480×320 jak w `dane.wczytaj` małego ViT,
+    maska z obrysu rysowana w rozmiarze natywnym i zmniejszona tak samo; potem kwadrat 176 px w losowym miejscu,
+    byle środek prostokąta opisanego na obrysie był w nim z marginesem 16 px."""
+    W, H = 480, 320
+
+    def __init__(self, katalog, obrysy, limit=0):
+        d = np.load(obrysy)
+        self.kat = Path(katalog)
+        self.sc, self.ramka = d['sciezka'], d['ramka']
+        self.pkt, self.po, self.ko = d['pkt'], d['poly_od'], d['klatka_od']
+        self.n = min(limit, len(self.sc)) if limit else len(self.sc)
+        self.plik = Path(obrysy)
+
+    def __len__(self):
+        return self.n
+
+    @staticmethod
+    def _zakres(c, wymiar):
+        lo, hi = max(math.ceil(c - S + MARG), 0), min(math.floor(c - MARG), wymiar - S)
+        if lo > hi:
+            lo = hi = int(np.clip(round(c - S / 2), 0, wymiar - S))
+        return lo, hi
+
+    def __getitem__(self, i):
+        bgr = cv2.imread(str(self.kat / str(self.sc[i])), cv2.IMREAD_COLOR)
+        if bgr is None:
+            raise FileNotFoundError(self.kat / str(self.sc[i]))
+        h0, w0 = bgr.shape[:2]
+        m = np.zeros((h0, w0), np.uint8)
+        for q in range(self.ko[i], self.ko[i + 1]):
+            cv2.fillPoly(m, [self.pkt[self.po[q]:self.po[q + 1]].astype(np.int32)], 255)
+        rgb = cv2.resize(bgr, (self.W, self.H), interpolation=cv2.INTER_AREA)[..., ::-1]
+        m = cv2.resize(m, (self.W, self.H), interpolation=cv2.INTER_AREA)
+        sx, sy = self.W / w0, self.H / h0
+        x0, y0, x1, y1 = self.ramka[i]
+        lx, hx = self._zakres((x0 + x1) / 2 * sx, self.W); ly, hy = self._zakres((y0 + y1) / 2 * sy, self.H)
+        ox, oy = int(torch.randint(lx, hx + 1, ())), int(torch.randint(ly, hy + 1, ()))
+        w = np.dstack([rgb[oy:oy + S, ox:ox + S], m[oy:oy + S, ox:ox + S]])
+        if torch.rand(()) < .5:
+            w = w[:, ::-1]
+        return torch.from_numpy(np.ascontiguousarray(w)).permute(2, 0, 1)
+
+
+def podglad_danych(ds, p, n=16):
+    """Siatka n wycinków uczących (RGB i RGB z maską) — kontrola, czy obrys leży na narzędziu."""
+    x = torch.stack([ds[int(i)] for i in torch.randint(0, len(ds), (n,), generator=torch.Generator().manual_seed(7))])
+    siatka_png(x.float().div(127.5).sub(1), p)
+
+
 def ladowarka(ds, B, workery, seed):
     g = torch.Generator().manual_seed(seed)
     los = torch.utils.data.RandomSampler(ds, replacement=True, num_samples=1 << 40, generator=g)
@@ -121,7 +175,9 @@ def siatka_png(x, p, kolumny=4):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument('--dane', required=True)
+    ap.add_argument('--dane', default=None, help='wariant zapasowy: okna.bin (katalog) albo okna240.npy')
+    ap.add_argument('--klatki', default=None, help='katalog z images/ (klatki context_train)')
+    ap.add_argument('--obrysy', default=None, help='obrysy.npz z przygotuj_obrysy.py')
     ap.add_argument('--out', required=True)
     ap.add_argument('--kroki', type=int, default=100_000)
     ap.add_argument('--batch', type=int, default=64)
@@ -145,10 +201,12 @@ def main() -> int:
     signal.signal(signal.SIGTERM, _sygnal)
     torch.backends.cuda.matmul.allow_tf32 = True; torch.backends.cudnn.allow_tf32 = True
 
-    ds = Okna(a.dane, a.limit)
+    ds = KlatkiObrysy(a.klatki, a.obrysy, a.limit) if a.obrysy else Okna(a.dane, a.limit)
     with open(ds.plik, 'rb') as f:
         sha_danych = hashlib.sha256(f.read(1 << 26)).hexdigest()                  # pierwsze 64 MB: tożsamość pliku
-    print(f'dane: {ds.n} okien {ds.okno}×{ds.okno} z {ds.plik}', flush=True)
+    print(f'dane: {ds.n} przykładów z {ds.plik}', flush=True)
+    if not (out / 'dane_podglad.png').exists():
+        podglad_danych(ds, out / 'dane_podglad.png')
 
     model = MD.UNet(baza=a.baza).to(dev)
     ema = MD.EMA(model, a.ema)
@@ -211,7 +269,7 @@ def main() -> int:
         with torch.no_grad():
             k = (t * 4 // harm.T).clamp(max=3)
             kosze.index_add_(0, k, strata_pr.detach()); licz.index_add_(0, k, torch.ones_like(strata_pr))
-        suma += float(strata); n_sum += 1
+        suma += float(strata.detach()); n_sum += 1
         if krok % a.log_co == 0:
             s_na_krok = (time.time() - tlog) / a.log_co; tlog = time.time()
             wpis = dict(krok=krok, strata=suma / n_sum, lr=opt.param_groups[0]['lr'], s_na_krok=round(s_na_krok, 4),

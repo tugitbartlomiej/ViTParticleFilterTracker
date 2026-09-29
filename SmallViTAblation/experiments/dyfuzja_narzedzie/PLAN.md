@@ -12,9 +12,22 @@ a mały ViT w trakcie rysowania popycha obraz w stronę zadanej siły tożsamoś
 z innego szumu daje inne położenie i kąt narzędzia. Wzorem jest Frisch i in. 2023 (własny model dyfuzyjny na
 CATARACTS; klinicyści mylili jego obrazy z prawdziwymi w 61 % par). Przegląd: `../fastgan_odwrotnosc_mlp/NOTATKA_LITERATURA.md`.
 
-## Stan: kod gotowy i sprawdzony lokalnie, NIC nie wysłano na Eden
+## Stan 2026-09-29 17:45: uczenie na Edenie trwa (zgoda użytkownika: „tak zrób i potem rozpocznij trening na Edenie”)
 
-Zgłoszenie na Eden czeka na zgodę użytkownika.
+- Dane (wariant zatwierdzony): klatki już leżące na Edenie w `~/smallvit_runs/2026-09-22_dobor_klatek_stan_sieci/
+  context_train.tar` (57 073 klatki, co piąta klatka 118 filmów treningowych, bez adnotacji; tylko do odczytu) +
+  obrysy cystotomu z lokalnych archiwów (`kod/przygotuj_obrysy.py` → `dane/obrysy/obrysy.npz`, 56 005 klatek, 23 MB).
+  Pliki JPEG na Edenie są bajt w bajt takie same jak w lokalnych archiwach (SHA256 trzech klatek). Wycinanie w trakcie
+  uczenia: klatka zmniejszona do 480×320 (jak w małym ViT; część filmów ma 720×576, np. `TR_0027`), maska z obrysu,
+  kwadrat 176 px w losowym miejscu wokół obrysu, odbicie poziome.
+- Próba 1818351 padła na klatce 720×576 (kod zakładał 720×480); poprawione. Próba 1818352: 500 kroków, strata
+  0,97 → 0,05, 0,385 s/krok na H100 PCIe, 41 GB pamięci karty; podgląd danych poprawny (`wyniki/eden_proba/`).
+- Uczenie: 1818354 (100 000 kroków, batch 64), kolejne fragmenty 1818355 i 1818356 z `--dependency=afterany`.
+  Przy 0,385 s/krok całość ~10,7 h, czyli dwa 6-godzinne fragmenty; trzeci zakończy się od razu, jeśli niepotrzebny.
+- Próbna wysyłka filmów (prośba użytkownika): 3 archiwa (1,38 GB) w 322 s, czyli ~4,3 MB/s, sumy zgodne;
+  leżą w `~/smallvit_runs/2026-09-29_dyfuzja_narzedzie/filmy_zip/`. Wszystkie 118 filmów treningowych to 28,4 GB
+  (~1 h 50 min wysyłki); zmieszczą się (Eden: 121,8 z 200 GB, 168 473 z 200 000 plików), ale nie są potrzebne do
+  obecnego uczenia.
 
 ## Dane (`kod/przygotuj_filmy.py` → `dane/filmy3/`)
 
