@@ -51,3 +51,10 @@ Latent sondy zachowuje się jak cząstka z bezwładnością popychana przez dane
   prognozy na 10 czy 500 kroków.
 - Siła paczki wymaga przeliczenia sieci (gradient paczki i przejście sond), a nie jest zamkniętym wzorem.
 - Ramię bez dokładania klatek; zachowanie przy zmianie zbioru nie jest sprawdzone.
+
+## Reguła użytkownika o przyszłych klatkach (dopisane 2026-09-29)
+
+Użytkownik: „do równania nie mogą wchodzić przyszłe klatki, to jest niedozwolone w prognozie”. Siła S_t używa
+paczki kroku t, czyli klatek, na których sieć dopiero się uczy. Wynik z S_t opisuje więc, co porusza latent,
+a nie jest prognozą. Prognoza bez przyszłych klatek: `../maly_vit_rownanie_macierze` (pęd AdamW i paczki t−1
+i wcześniejsze).

@@ -59,3 +59,10 @@ się zgadza, ale trajektorie nie są identyczne liczba w liczbę: ziarno 47 na E
   więc nie daje wprost prognozy na 10 czy 500 kroków.
 - Tylko ramię bez dokładania klatek i tylko kroki 1000–3000.
 - Dziesięć ziaren to dziesięć przebiegów tego samego uczenia; inne zbiory i architektury niesprawdzone.
+
+## Reguła użytkownika o przyszłych klatkach (dopisane 2026-09-29)
+
+Użytkownik: „do równania nie mogą wchodzić przyszłe klatki, to jest niedozwolone w prognozie”. Siła S_t używa
+paczki kroku t, czyli klatek, na których sieć dopiero się uczy. Wynik z S_t opisuje więc, co porusza latent,
+a nie jest prognozą. Prognoza bez przyszłych klatek: `../maly_vit_rownanie_macierze` (pęd AdamW i paczki t−1
+i wcześniejsze).
