@@ -30,3 +30,11 @@ Stary wektor tożsamości w dużej części mierzył „miejsce i scenę”, a n
 w tym samym miejscu dostaje prawie taką siłę jak narzędzie (różnica 2 sd). Wektor z par „z narzędziem i bez” wyróżnia
 samo narzędzie bardzo wyraźnie (16–17 sd), ale jego zmiany w czasie uczenia Koopman i Langevin przewidują nie lepiej
 niż zmiany starego wektora. Użycie go w pętli wymaga nowej kampanii (osobna zgoda).
+
+## Zapisane wektory i ich skupienie (`zapisz_wektory.py`)
+
+`wyniki/WEKTORY.npz`: dla każdej z 10 sieci (ziarna 47–56, krok 1000) trzy wektory (`stary`, `nowy`, `razem`), każdy
+to 768 wag plus średnia i rozrzut negatywów (`s47_nowy_w`, `s47_nowy_mu`, `s47_nowy_sd` itd.). Wektory różnych sieci
+nie są porównywalne, bo neurony każdej sieci znaczą co innego.
+Skupienie (`wyniki/WEKTORY_SKUPIENIE.json`, średnio 10 sieci): połowę wagi nowego wektora niesie ~78 z 768 liczb
+latentu, 90 % wagi ~312 (stary: 67 i 301) — tożsamość jest rozłożona na setki neuronów, nie na kilka.
