@@ -48,3 +48,18 @@ trwająca `2026-09-29_dyfuzja_narzedzie` (2,9 GB).
 ## Podsumowanie
 
 A: 4,9 GB i 57 tys. plików bez straty. A + B: 16,8 GB. A + B + C: około 65 GB, kwota spadłaby do ~52 GB.
+
+## Wykonanie (2026-09-30, po zgodzie użytkownika „usuwaj”)
+
+Usunięte: rozpakowane kopie `tracking_static36/` i `tracking_calibration/` (przed usunięciem sprawdzone: każdy ich plik
+jest w archiwum `.tar`), `2026-09-21_koopman_langevin/package/frames`, `~/.triton`, oraz katalogi ramion
+(`bez`, `koopman`, `losowe`, `current`, `kolejne`, `tozsamosc`) w `wyniki/petla_s*` czterech pętli:
+`2026-09-28_maly_vit_od_zera` (30), `2026-09-28_maly_vit_wektor` (30), `2026-09-28_maly_vit_sila` (50),
+`2026-09-29_maly_vit_sila_it2` (100).
+
+Zostawione celowo: `wspolny/` każdej pętli (wagi rozgrzewki; `wspolny/k02.pt` z `maly_vit_sila` wczytuje
+`dyfuzja_narzedzie/eden/generuj_eden.slurm`, a `wspolny` z `maly_vit_wektor` kopiują skrypty pętli siły jako start),
+`WEKTOR.json` i `WEKTOR.npz`, `maly_vit_od_zera/wejscia` i `deps` (wejścia wielu skryptów), `~/.vscode-server`
+(serwer VS Code był w chwili sprzątania połączony).
+
+Kwota: 117 GiB → 56,7 GiB, pliki: 168 501 → 70 504.
