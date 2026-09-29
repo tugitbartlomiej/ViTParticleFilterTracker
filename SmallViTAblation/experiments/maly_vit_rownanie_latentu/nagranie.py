@@ -23,13 +23,15 @@ Co CO_ROZKLAD kroków rozkład przyrostu latentu sond (narzędzie) na części �
   rozklad_param  zmiana od samych wag (stare bufory BatchNorm), rozklad_bufory  od samych buforów BatchNorm,
   rozklad_ostatni  od samych wag ostatniego bloku; wszystkie (N, 192, 768) f16, kroki w rozklad_kroki.
 
-Z `--sily` (od kroku SILY_OD) dodatkowo siły działające na sondy w kroku t, liczone w float32 przez podstawienie wag
+Z `--sily` (od kroku `--sily-od`, domyślnie SILY_OD) dodatkowo siły działające na sondy w kroku t, liczone w float32 przez podstawienie wag
 (bez BatchNorm, tryb eval, te same bufory): z(θ_t + d) − z(θ_t) dla części aktualizacji AdamW:
   sila_nowa   d = −lr/b1 · (1−β1) g_t / mianownik        (nowa paczka: jej gradient po obcięciu)
   sila_ped    d = −lr/b1 · β1 m_{t−1} / mianownik        (pęd: pamięć poprzednich paczek w stanie optymalizatora)
   sila_zanik  d = −lr · wd · θ_t                          (zanik wag)
   sila_suma   wszystkie trzy naraz (sprawdzenie liniowości)
-wszystkie (T − SILY_OD, 192, 768) f16, kanał narzędzia.
+wszystkie (T − sily_od, 192, 768) f16, kanał narzędzia.
+Z `--wagi-co N` stan sieci (state_dict) co N kroków od kroku 1000 w `wagi/kNNNNN.pt` (stan po NNNNN aktualizacjach),
+do liczenia cech przyszłych paczek siecią z chwili prognozy (prognoza na wiele kroków bez podglądania przyszłych wag).
 
     <venv rfdetr>/python -u nagranie.py --ziarno 47 --kroki 3000 [--sily --tag _sily]  ->  nagranie_s47<tag>/
 """
@@ -130,6 +132,8 @@ def main(argv=None) -> int:
     ap.add_argument('--ziarno', type=int, default=47)
     ap.add_argument('--kroki', type=int, default=3000)
     ap.add_argument('--sily', action='store_true')
+    ap.add_argument('--sily-od', type=int, default=SILY_OD, help='pierwszy krok z siłami (mniej miejsca na dysku)')
+    ap.add_argument('--wagi-co', type=int, default=0, help='zapis wag sieci co N kroków od kroku 1000 (0 = bez)')
     ap.add_argument('--tag', default='')
     ap.add_argument('--out', default=None, help='katalog nagrania (domyślnie nagranie_s<ziarno><tag> obok skryptu)')
     a = ap.parse_args(argv)
@@ -157,7 +161,7 @@ def main(argv=None) -> int:
     if a.sily:
         net_f = M.MalyViT().to(dev).eval(); nag_f = Nagrywacz(net_f)
         nazwy = {id(p): n for n, p in net.named_parameters()}
-        ns = TK - SILY_OD
+        ns = TK - a.sily_od
         SI = {k: mm(f'sila_{k}', (ns, 192, 768), np.float16) for k in ('nowa', 'ped', 'zanik', 'suma')}
     kol, rng = [], None
     for t in range(TK):
@@ -204,11 +208,11 @@ def main(argv=None) -> int:
             P_g[t] = torch.stack([srednie(G, mask_n), srednie(G, mask_c)], 1).cpu().numpy()
             P_h[t] = torch.stack([srednie(H, mask_n), srednie(H, mask_c)], 1).half().cpu().numpy()
             ma_n[t] = (mask_n.sum(1) > 0).cpu().numpy()
-        if a.sily and t >= SILY_OD:
+        if a.sily and t >= a.sily_od:
             kier = kierunki(u.opt, nazwy)
             th = {n: p.detach() for n, p in net.named_parameters()}; bf = {n: b for n, b in net.named_buffers()}
             z0 = z_fp32(net_f, nag_f, th, bf, X_s, tn, dev)
-            i = t - SILY_OD
+            i = t - a.sily_od
             for k in ('nowa', 'ped', 'zanik'):
                 SI[k][i] = (z_fp32(net_f, nag_f, {n: th[n] + kier[k][n] for n in th}, bf, X_s, tn, dev) - z0).half().cpu().numpy()
             SI['suma'][i] = (z_fp32(net_f, nag_f, {n: th[n] + kier['nowa'][n] + kier['ped'][n] + kier['zanik'][n] for n in th},
@@ -233,6 +237,9 @@ def main(argv=None) -> int:
             i = len(r_kroki)
             R_par[i] = (z_dla(wp) - z0).astype(np.float16); R_buf[i] = (z_dla(wb) - z0).astype(np.float16)
             R_ost[i] = (z_dla(wo) - z0).astype(np.float16); r_kroki.append(t + 1)
+        if a.wagi_co and t + 1 >= ROZGRZEWKA_KROKI and (t + 1) % a.wagi_co == 0:   # stan PO t+1 aktualizacjach
+            (out / 'wagi').mkdir(exist_ok=True)
+            torch.save({k: v.detach().cpu().clone() for k, v in net.state_dict().items()}, out / 'wagi' / f'k{t + 1:05d}.pt')
         if (t + 1) % 250 == 0:
             d = (S_lat[t + 1, :, 0].astype(np.float32) - S_lat[t, :, 0].astype(np.float32))
             print(f'krok {t + 1}: strata {float(L):.3f}, |Δz| 1 krok {np.linalg.norm(d, axis=1).mean():.3f}, '
@@ -243,7 +250,7 @@ def main(argv=None) -> int:
     for arr in (S_lat, S_h, P_lat, P_g, P_h, R_par, R_buf, R_ost) + (tuple(SI.values()) if a.sily else ()):
         arr.flush()
     (out / 'META.json').write_text(json.dumps(dict(ziarno=s, kroki=TK, sekundy=time.time() - t0, obecn=obecn.tolist(),
-                                                  opis=opis, co_rozklad=CO_ROZKLAD, sily_od=SILY_OD if a.sily else None), indent=1, ensure_ascii=False),
+                                                  opis=opis, co_rozklad=CO_ROZKLAD, sily_od=a.sily_od if a.sily else None, wagi_co=a.wagi_co), indent=1, ensure_ascii=False),
                                    encoding='utf-8')
     print(f'koniec {time.time() - t0:.0f} s', flush=True)
     return 0
