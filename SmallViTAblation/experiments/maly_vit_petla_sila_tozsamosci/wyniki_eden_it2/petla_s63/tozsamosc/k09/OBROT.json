@@ -1,0 +1,1143 @@
+{
+ "obrot": 9,
+ "krok": 4000,
+ "sprawdzenie_poprz_obrotu": {
+  "brak_zmiany": 0.7741261828146352,
+  "brak_zmiany_kotwice": 0.7532979283338159,
+  "zmiana_srednia": -0.24396144019232857,
+  "model_wybrany": "koopman",
+  "koopman": {
+   "sondy": 1.0803458710410607,
+   "kotwice": 1.1010342679279945,
+   "znak": 0.5222222222222223,
+   "znak_kotwice": 0.5833333333333334
+  },
+  "langevin": {
+   "sondy": 1.4914804197986704,
+   "kotwice": 1.650396564458481,
+   "znak": 0.4,
+   "znak_kotwice": 0.5
+  },
+  "wybrany": {
+   "sondy": 1.0803458710410607,
+   "kotwice": 1.1010342679279945,
+   "znak": 0.5222222222222223,
+   "znak_kotwice": 0.5833333333333334
+  }
+ },
+ "prognoza": {
+  "model": "koopman",
+  "test_wsteczny": {
+   "koopman": 1.0803458710410607,
+   "langevin": 1.4914804197986704
+  },
+  "punktow": 80,
+  "zmiana_kotwic": {
+   "koopman": [
+    -0.16928824731072556,
+    -0.06686165422060508,
+    -0.06502174380867487,
+    -0.21680133347346242,
+    0.027311918487807674,
+    0.6319189111420336,
+    -0.15578925679836786,
+    0.0003080174381668854,
+    0.25406204284183076,
+    0.22046173352418919,
+    -0.5603093666976431,
+    0.027508074458043374
+   ],
+   "langevin": [
+    0.00326363272324226,
+    0.344082236395149,
+    -0.20081151473443182,
+    -0.09408437517491919,
+    0.9701542003111943,
+    1.2186809251999806,
+    0.1360302784701144,
+    0.5821057158853327,
+    1.0526044208792769,
+    1.1999667959034603,
+    -0.1369179634865736,
+    0.48448907223267135
+   ]
+  },
+  "sila_kotwic": [
+   5.41286563873291,
+   5.8407416343688965,
+   5.7311835289001465,
+   5.992194652557373,
+   5.2920732498168945,
+   3.6921722888946533,
+   5.933821678161621,
+   4.352684020996094,
+   5.02504825592041,
+   4.065410614013672,
+   6.58349084854126,
+   5.419182777404785
+  ],
+  "zmiana_srednia": -0.03444050273348602
+ },
+ "fastgan": [
+  {
+   "inwersja_l1": 0.09937693923711777,
+   "tokenow": 13,
+   "sila_start": 2.8632681369781494,
+   "sila_start_odporna": 2.812410593032837,
+   "przewidziana_zmiana": 0.6319189071655273,
+   "sterowane": true,
+   "zmiana_osiagnieta": 0.6318867206573486,
+   "zmiana_osiagnieta_odporna": 0.5002071857452393,
+   "zmiana_w_bok": 22.03740692138672,
+   "zmiana_obrazu_l1": 0.134568989276886,
+   "czesc_zmiany": 0.9999490654452434,
+   "czesc_zmiany_odporna": 0.7915686333693019,
+   "wspolne_top90_ze_startem": 31,
+   "wspolne_cala_lista_ze_startem": 76,
+   "wspolne_top22_ze_startem": 7,
+   "sonda": 80
+  },
+  {
+   "inwersja_l1": 0.139083132147789,
+   "tokenow": 8,
+   "sila_start": 4.929547309875488,
+   "sila_start_odporna": 4.874218940734863,
+   "przewidziana_zmiana": -0.5603093504905701,
+   "sterowane": true,
+   "zmiana_osiagnieta": -0.5604372024536133,
+   "zmiana_osiagnieta_odporna": -0.24441146850585938,
+   "zmiana_w_bok": 27.64662742614746,
+   "zmiana_obrazu_l1": 0.06891119480133057,
+   "czesc_zmiany": 1.0002281810270188,
+   "czesc_zmiany_odporna": 0.43620808450165743,
+   "wspolne_top90_ze_startem": 49,
+   "wspolne_cala_lista_ze_startem": 117,
+   "wspolne_top22_ze_startem": 10,
+   "sonda": 160
+  },
+  {
+   "inwersja_l1": 0.08787572383880615,
+   "tokenow": 9,
+   "sila_start": 4.866570949554443,
+   "sila_start_odporna": 4.557984828948975,
+   "przewidziana_zmiana": 0.25406205654144287,
+   "sterowane": true,
+   "zmiana_osiagnieta": 0.25426435470581055,
+   "zmiana_osiagnieta_odporna": 0.45485544204711914,
+   "zmiana_w_bok": 11.994756698608398,
+   "zmiana_obrazu_l1": 0.022178007289767265,
+   "czesc_zmiany": 1.000796254927326,
+   "czesc_zmiany_odporna": 1.7903320481581737,
+   "wspolne_top90_ze_startem": 46,
+   "wspolne_cala_lista_ze_startem": 111,
+   "wspolne_top22_ze_startem": 10,
+   "sonda": 128
+  },
+  {
+   "inwersja_l1": 0.07294818013906479,
+   "tokenow": 10,
+   "sila_start": 3.7070460319519043,
+   "sila_start_odporna": 3.825469493865967,
+   "przewidziana_zmiana": 0.22046172618865967,
+   "sterowane": true,
+   "zmiana_osiagnieta": 0.22047090530395508,
+   "zmiana_osiagnieta_odporna": -0.06514883041381836,
+   "zmiana_w_bok": 7.522897720336914,
+   "zmiana_obrazu_l1": 0.04108055680990219,
+   "czesc_zmiany": 1.0000416358678401,
+   "czesc_zmiany_odporna": -0.29551084235849345,
+   "wspolne_top90_ze_startem": 47,
+   "wspolne_cala_lista_ze_startem": 98,
+   "wspolne_top22_ze_startem": 8,
+   "sonda": 144
+  },
+  {
+   "inwersja_l1": 0.12202673405408859,
+   "tokenow": 9,
+   "sila_start": 5.068388938903809,
+   "sila_start_odporna": 4.881422519683838,
+   "przewidziana_zmiana": -0.21680133044719696,
+   "sterowane": true,
+   "zmiana_osiagnieta": -0.21688365936279297,
+   "zmiana_osiagnieta_odporna": -0.1405787467956543,
+   "zmiana_w_bok": 17.641944885253906,
+   "zmiana_obrazu_l1": 0.04560977965593338,
+   "czesc_zmiany": 1.0003797435902546,
+   "czesc_zmiany_odporna": 0.6484219746515483,
+   "wspolne_top90_ze_startem": 18,
+   "wspolne_cala_lista_ze_startem": 53,
+   "wspolne_top22_ze_startem": 1,
+   "sonda": 48
+  },
+  {
+   "inwersja_l1": 0.0977141335606575,
+   "tokenow": 8,
+   "sila_start": 5.9735870361328125,
+   "sila_start_odporna": 5.944869041442871,
+   "przewidziana_zmiana": -0.1692882478237152,
+   "sterowane": true,
+   "zmiana_osiagnieta": -0.16917896270751953,
+   "zmiana_osiagnieta_odporna": -0.14885663986206055,
+   "zmiana_w_bok": 31.586559295654297,
+   "zmiana_obrazu_l1": 0.12090783566236496,
+   "czesc_zmiany": 0.9993544435741961,
+   "czesc_zmiany_odporna": 0.8793087634592881,
+   "wspolne_top90_ze_startem": 18,
+   "wspolne_cala_lista_ze_startem": 48,
+   "wspolne_top22_ze_startem": 3,
+   "sonda": 0
+  }
+ ],
+ "dodane": 134,
+ "zbior": 2438,
+ "krok_po": 4500,
+ "ocena": {
+  "ramie": "tozsamosc",
+  "obrot": 9,
+  "krok": 4500,
+  "mAP50": 0.47006538989524965,
+  "q_sond": 0.1319069178464512,
+  "q_puste": -0.4277552366256714
+ },
+ "sekundy": 37.14715814590454,
+ "wybrane": [
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0109_S1_P03/00002896",
+   "kotwica": 0,
+   "podobienstwo": 0.7278412580490112,
+   "pozycja": 1,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0149_S1_P03/00001361",
+   "kotwica": 1,
+   "podobienstwo": 0.7018265724182129,
+   "pozycja": 1,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0055_S1_P03/00004526",
+   "kotwica": 2,
+   "podobienstwo": 0.6933481693267822,
+   "pozycja": 8,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0082_S1_P03/00000361",
+   "kotwica": 3,
+   "podobienstwo": 0.7378932237625122,
+   "pozycja": 1,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0004_S1_P03/00001476",
+   "kotwica": 4,
+   "podobienstwo": 0.7888081073760986,
+   "pozycja": 2,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0059_S1_P03/00001216",
+   "kotwica": 5,
+   "podobienstwo": 0.8256597518920898,
+   "pozycja": 6,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0111_S1_P03/00001421",
+   "kotwica": 0,
+   "podobienstwo": 0.681665301322937,
+   "pozycja": 8,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0164_S1_P03/00001426",
+   "kotwica": 1,
+   "podobienstwo": 0.6943503022193909,
+   "pozycja": 2,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0133_S1_P03/00000241",
+   "kotwica": 2,
+   "podobienstwo": 0.6905006766319275,
+   "pozycja": 9,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0064_S1_P03/00000521",
+   "kotwica": 3,
+   "podobienstwo": 0.7163059115409851,
+   "pozycja": 3,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0124_S1_P03/00001601",
+   "kotwica": 4,
+   "podobienstwo": 0.7733700275421143,
+   "pozycja": 6,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0054_S1_P03/00000066",
+   "kotwica": 5,
+   "podobienstwo": 0.8213901519775391,
+   "pozycja": 8,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0012_S1_P03/00004051",
+   "kotwica": 0,
+   "podobienstwo": 0.6804730892181396,
+   "pozycja": 10,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0018_S1_P03/00007836",
+   "kotwica": 1,
+   "podobienstwo": 0.6894752979278564,
+   "pozycja": 4,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0015_S1_P03/00002706",
+   "kotwica": 2,
+   "podobienstwo": 0.6857600212097168,
+   "pozycja": 12,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0115_S1_P03/00000596",
+   "kotwica": 3,
+   "podobienstwo": 0.6996186971664429,
+   "pozycja": 6,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0019_S1_P03/00005021",
+   "kotwica": 4,
+   "podobienstwo": 0.7666705846786499,
+   "pozycja": 12,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0012_S1_P03/00003446",
+   "kotwica": 5,
+   "podobienstwo": 0.8177115321159363,
+   "pozycja": 9,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0042_S1_P03/00001861",
+   "kotwica": 0,
+   "podobienstwo": 0.6773465871810913,
+   "pozycja": 11,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0053_S1_P03/00001966",
+   "kotwica": 1,
+   "podobienstwo": 0.686287522315979,
+   "pozycja": 5,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0115_S1_P03/00002151",
+   "kotwica": 2,
+   "podobienstwo": 0.6600661277770996,
+   "pozycja": 26,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0076_S1_P03/00002946",
+   "kotwica": 3,
+   "podobienstwo": 0.6994593143463135,
+   "pozycja": 7,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0115_S1_P03/00003001",
+   "kotwica": 4,
+   "podobienstwo": 0.7662091255187988,
+   "pozycja": 13,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0094_S1_P03/00003986",
+   "kotwica": 5,
+   "podobienstwo": 0.8132896423339844,
+   "pozycja": 13,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0043_S1_P03/00000391",
+   "kotwica": 0,
+   "podobienstwo": 0.6706306338310242,
+   "pozycja": 16,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0094_S1_P03/00000071",
+   "kotwica": 1,
+   "podobienstwo": 0.662575900554657,
+   "pozycja": 25,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0095_S1_P03/00002691",
+   "kotwica": 2,
+   "podobienstwo": 0.6330664753913879,
+   "pozycja": 42,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0038_S1_P03/00001686",
+   "kotwica": 3,
+   "podobienstwo": 0.6976866126060486,
+   "pozycja": 8,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0025_S1_P03/00000231",
+   "kotwica": 4,
+   "podobienstwo": 0.7643944621086121,
+   "pozycja": 14,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0111_S1_P03/00000546",
+   "kotwica": 5,
+   "podobienstwo": 0.8115243315696716,
+   "pozycja": 17,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0026_S1_P03/00001501",
+   "kotwica": 0,
+   "podobienstwo": 0.6643586754798889,
+   "pozycja": 18,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0111_S1_P03/00002031",
+   "kotwica": 1,
+   "podobienstwo": 0.6604111194610596,
+   "pozycja": 28,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0059_S1_P03/00005601",
+   "kotwica": 2,
+   "podobienstwo": 0.6210904121398926,
+   "pozycja": 54,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0069_S1_P03/00000416",
+   "kotwica": 3,
+   "podobienstwo": 0.6897643804550171,
+   "pozycja": 14,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0016_S1_P03/00002656",
+   "kotwica": 4,
+   "podobienstwo": 0.7639045715332031,
+   "pozycja": 15,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0096_S1_P03/00005386",
+   "kotwica": 5,
+   "podobienstwo": 0.8085692524909973,
+   "pozycja": 19,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0089_S1_P03/00001061",
+   "kotwica": 0,
+   "podobienstwo": 0.650804877281189,
+   "pozycja": 25,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0010_S1_P03/00002776",
+   "kotwica": 1,
+   "podobienstwo": 0.6595332622528076,
+   "pozycja": 30,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0050_S1_P03/00002431",
+   "kotwica": 2,
+   "podobienstwo": 0.6210265755653381,
+   "pozycja": 55,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0154_S1_P03/00001631",
+   "kotwica": 3,
+   "podobienstwo": 0.6890250444412231,
+   "pozycja": 15,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0094_S1_P03/00002671",
+   "kotwica": 4,
+   "podobienstwo": 0.7610431909561157,
+   "pozycja": 20,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0063_S1_P03/00000866",
+   "kotwica": 5,
+   "podobienstwo": 0.8065662384033203,
+   "pozycja": 24,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0005_S1_P03/00001581",
+   "kotwica": 0,
+   "podobienstwo": 0.6461341381072998,
+   "pozycja": 28,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0124_S1_P03/00003306",
+   "kotwica": 1,
+   "podobienstwo": 0.6567227840423584,
+   "pozycja": 34,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0111_S1_P03/00000236",
+   "kotwica": 2,
+   "podobienstwo": 0.6194562911987305,
+   "pozycja": 58,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0055_S1_P03/00004196",
+   "kotwica": 3,
+   "podobienstwo": 0.6847203969955444,
+   "pozycja": 24,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0012_S1_P03/00002971",
+   "kotwica": 4,
+   "podobienstwo": 0.7573212385177612,
+   "pozycja": 22,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0049_S1_P03/00000126",
+   "kotwica": 5,
+   "podobienstwo": 0.8038617968559265,
+   "pozycja": 28,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0007_S1_P03/00000671",
+   "kotwica": 0,
+   "podobienstwo": 0.6438158750534058,
+   "pozycja": 30,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0106_S1_P03/00003791",
+   "kotwica": 1,
+   "podobienstwo": 0.6518279314041138,
+   "pozycja": 38,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0109_S1_P03/00004516",
+   "kotwica": 2,
+   "podobienstwo": 0.6123678684234619,
+   "pozycja": 67,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0029_S1_P03/00000311",
+   "kotwica": 3,
+   "podobienstwo": 0.6809967756271362,
+   "pozycja": 26,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0047_S1_P03/00002911",
+   "kotwica": 4,
+   "podobienstwo": 0.7528285980224609,
+   "pozycja": 26,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0055_S1_P03/00000766",
+   "kotwica": 5,
+   "podobienstwo": 0.8020466566085815,
+   "pozycja": 31,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0157_S1_P03/00000841",
+   "kotwica": 0,
+   "podobienstwo": 0.6373878121376038,
+   "pozycja": 32,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0004_S1_P03/00000501",
+   "kotwica": 1,
+   "podobienstwo": 0.64949631690979,
+   "pozycja": 42,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0064_S1_P03/00001091",
+   "kotwica": 2,
+   "podobienstwo": 0.6097188591957092,
+   "pozycja": 71,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0059_S1_P03/00002206",
+   "kotwica": 3,
+   "podobienstwo": 0.6774665117263794,
+   "pozycja": 28,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0063_S1_P03/00001631",
+   "kotwica": 4,
+   "podobienstwo": 0.7424787282943726,
+   "pozycja": 39,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0157_S1_P03/00000466",
+   "kotwica": 5,
+   "podobienstwo": 0.7984418869018555,
+   "pozycja": 35,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0087_S1_P03/00000831",
+   "kotwica": 0,
+   "podobienstwo": 0.6208076477050781,
+   "pozycja": 45,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0016_S1_P03/00000056",
+   "kotwica": 1,
+   "podobienstwo": 0.6446971893310547,
+   "pozycja": 44,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0103_S1_P03/00001491",
+   "kotwica": 2,
+   "podobienstwo": 0.6057605147361755,
+   "pozycja": 75,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0065_S1_P03/00000436",
+   "kotwica": 3,
+   "podobienstwo": 0.6724517345428467,
+   "pozycja": 34,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0157_S1_P03/00000131",
+   "kotwica": 4,
+   "podobienstwo": 0.7399746179580688,
+   "pozycja": 40,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0124_S1_P03/00001131",
+   "kotwica": 5,
+   "podobienstwo": 0.7980400323867798,
+   "pozycja": 36,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0104_S1_P03/00003601",
+   "kotwica": 0,
+   "podobienstwo": 0.6112935543060303,
+   "pozycja": 52,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0080_S1_P03/00001201",
+   "kotwica": 1,
+   "podobienstwo": 0.6443894505500793,
+   "pozycja": 45,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0057_S1_P03/00000386",
+   "kotwica": 2,
+   "podobienstwo": 0.6019810438156128,
+   "pozycja": 79,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0042_S1_P03/00000171",
+   "kotwica": 3,
+   "podobienstwo": 0.6617716550827026,
+   "pozycja": 44,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0022_S1_P03/00001006",
+   "kotwica": 4,
+   "podobienstwo": 0.737925112247467,
+   "pozycja": 46,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0050_S1_P03/00000436",
+   "kotwica": 5,
+   "podobienstwo": 0.7975599765777588,
+   "pozycja": 37,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0006_S1_P03/00002131",
+   "kotwica": 0,
+   "podobienstwo": 0.6059842109680176,
+   "pozycja": 57,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0152_S1_P03/00000021",
+   "kotwica": 1,
+   "podobienstwo": 0.6408355236053467,
+   "pozycja": 50,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0054_S1_P03/00002596",
+   "kotwica": 2,
+   "podobienstwo": 0.5975276827812195,
+   "pozycja": 85,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0018_S1_P03/00007526",
+   "kotwica": 3,
+   "podobienstwo": 0.660186231136322,
+   "pozycja": 47,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0072_S1_P03/00002176",
+   "kotwica": 4,
+   "podobienstwo": 0.7366259098052979,
+   "pozycja": 49,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0025_S1_P03/00000656",
+   "kotwica": 5,
+   "podobienstwo": 0.7955197095870972,
+   "pozycja": 38,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0120_S1_P03/00000736",
+   "kotwica": 0,
+   "podobienstwo": 0.5943900346755981,
+   "pozycja": 66,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0047_S1_P03/00001801",
+   "kotwica": 1,
+   "podobienstwo": 0.6302184462547302,
+   "pozycja": 57,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0094_S1_P03/00001731",
+   "kotwica": 2,
+   "podobienstwo": 0.5846953392028809,
+   "pozycja": 93,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0105_S1_P03/00000196",
+   "kotwica": 3,
+   "podobienstwo": 0.6591353416442871,
+   "pozycja": 48,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0151_S1_P03/00000996",
+   "kotwica": 4,
+   "podobienstwo": 0.7343605756759644,
+   "pozycja": 51,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0003_S1_P03/00002546",
+   "kotwica": 5,
+   "podobienstwo": 0.7890709638595581,
+   "pozycja": 47,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0022_S1_P03/00001696",
+   "kotwica": 0,
+   "podobienstwo": 0.5708110332489014,
+   "pozycja": 74,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0139_S1_P03/00004096",
+   "kotwica": 1,
+   "podobienstwo": 0.6209056377410889,
+   "pozycja": 61,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0108_S1_P03/00001321",
+   "kotwica": 2,
+   "podobienstwo": 0.5691826939582825,
+   "pozycja": 104,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0027_S1_P03/00001706",
+   "kotwica": 3,
+   "podobienstwo": 0.6590067148208618,
+   "pozycja": 49,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0109_S1_P03/00000041",
+   "kotwica": 4,
+   "podobienstwo": 0.7339737415313721,
+   "pozycja": 52,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0112_S1_P03/00001456",
+   "kotwica": 5,
+   "podobienstwo": 0.786384642124176,
+   "pozycja": 48,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0124_S1_P03/00002796",
+   "kotwica": 0,
+   "podobienstwo": 0.5663973093032837,
+   "pozycja": 80,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0048_S1_P03/00000716",
+   "kotwica": 1,
+   "podobienstwo": 0.6179741024971008,
+   "pozycja": 70,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0101_S1_P03/00001566",
+   "kotwica": 2,
+   "podobienstwo": 0.5498838424682617,
+   "pozycja": 111,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0142_S1_P03/00000806",
+   "kotwica": 3,
+   "podobienstwo": 0.6571623086929321,
+   "pozycja": 51,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0006_S1_P03/00002871",
+   "kotwica": 4,
+   "podobienstwo": 0.7317018508911133,
+   "pozycja": 53,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0019_S1_P03/00004776",
+   "kotwica": 5,
+   "podobienstwo": 0.786262035369873,
+   "pozycja": 49,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0029_S1_P03/00000576",
+   "kotwica": 0,
+   "podobienstwo": 0.550222635269165,
+   "pozycja": 86,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0151_S1_P03/00001601",
+   "kotwica": 1,
+   "podobienstwo": 0.6174500584602356,
+   "pozycja": 71,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0070_S1_P03/00001341",
+   "kotwica": 2,
+   "podobienstwo": 0.5423556566238403,
+   "pozycja": 113,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0028_S1_P03/00002921",
+   "kotwica": 3,
+   "podobienstwo": 0.6563364267349243,
+   "pozycja": 55,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0048_S1_P03/00000041",
+   "kotwica": 4,
+   "podobienstwo": 0.7306265234947205,
+   "pozycja": 54,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0042_S1_P03/00000896",
+   "kotwica": 5,
+   "podobienstwo": 0.7861478328704834,
+   "pozycja": 51,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0070_S1_P03/00001196",
+   "kotwica": 0,
+   "podobienstwo": 0.5491489768028259,
+   "pozycja": 87,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0054_S1_P03/00003741",
+   "kotwica": 1,
+   "podobienstwo": 0.6160569190979004,
+   "pozycja": 73,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0098_S1_P03/00000341",
+   "kotwica": 2,
+   "podobienstwo": 0.6641284227371216,
+   "pozycja": 128,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0072_S1_P03/00000291",
+   "kotwica": 3,
+   "podobienstwo": 0.6513161659240723,
+   "pozycja": 63,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0114_S1_P03/00001676",
+   "kotwica": 4,
+   "podobienstwo": 0.7305023670196533,
+   "pozycja": 55,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0123_S1_P03/00001391",
+   "kotwica": 5,
+   "podobienstwo": 0.7849897146224976,
+   "pozycja": 52,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0091_S1_P03/00000986",
+   "kotwica": 0,
+   "podobienstwo": 0.5397425293922424,
+   "pozycja": 94,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0154_S1_P03/00001796",
+   "kotwica": 1,
+   "podobienstwo": 0.6148573160171509,
+   "pozycja": 74,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0167_S1_P03/00001046",
+   "kotwica": 2,
+   "podobienstwo": 0.6511312127113342,
+   "pozycja": 135,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0003_S1_P03/00004826",
+   "kotwica": 3,
+   "podobienstwo": 0.6505393981933594,
+   "pozycja": 64,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0028_S1_P03/00002011",
+   "kotwica": 4,
+   "podobienstwo": 0.7280939221382141,
+   "pozycja": 58,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0018_S1_P03/00008456",
+   "kotwica": 5,
+   "podobienstwo": 0.7808466553688049,
+   "pozycja": 57,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0114_S1_P03/00001571",
+   "kotwica": 0,
+   "podobienstwo": 0.5250797271728516,
+   "pozycja": 99,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0003_S1_P03/00005551",
+   "kotwica": 1,
+   "podobienstwo": 0.6067101955413818,
+   "pozycja": 78,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0096_S1_P03/00002071",
+   "kotwica": 2,
+   "podobienstwo": 0.6187945604324341,
+   "pozycja": 159,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0170_S1_P03/00001671",
+   "kotwica": 3,
+   "podobienstwo": 0.6501073837280273,
+   "pozycja": 65,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0106_S1_P03/00001541",
+   "kotwica": 4,
+   "podobienstwo": 0.7275922298431396,
+   "pozycja": 60,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0036_S1_P03/00002171",
+   "kotwica": 5,
+   "podobienstwo": 0.76973557472229,
+   "pozycja": 66,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0115_S1_P03/00001531",
+   "kotwica": 0,
+   "podobienstwo": 0.519657552242279,
+   "pozycja": 100,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0038_S1_P03/00001036",
+   "kotwica": 1,
+   "podobienstwo": 0.5963935852050781,
+   "pozycja": 86,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0105_S1_P03/00000151",
+   "kotwica": 2,
+   "podobienstwo": 0.6155415177345276,
+   "pozycja": 162,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0045_S1_P03/00001461",
+   "kotwica": 3,
+   "podobienstwo": 0.6455765962600708,
+   "pozycja": 71,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0055_S1_P03/00006006",
+   "kotwica": 4,
+   "podobienstwo": 0.723219096660614,
+   "pozycja": 64,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0158_S1_P03/00000536",
+   "kotwica": 5,
+   "podobienstwo": 0.7688406705856323,
+   "pozycja": 68,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0082_S1_P03/00001096",
+   "kotwica": 0,
+   "podobienstwo": 0.5133177042007446,
+   "pozycja": 102,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0082_S1_P03/00001896",
+   "kotwica": 1,
+   "podobienstwo": 0.5944865942001343,
+   "pozycja": 87,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0168_S1_P03/00000406",
+   "kotwica": 2,
+   "podobienstwo": 0.6128247976303101,
+   "pozycja": 165,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0158_S1_P03/00001631",
+   "kotwica": 3,
+   "podobienstwo": 0.6425458192825317,
+   "pozycja": 72,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0087_S1_P03/00000326",
+   "kotwica": 4,
+   "podobienstwo": 0.7162786722183228,
+   "pozycja": 70,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0088_S1_P03/00000746",
+   "kotwica": 5,
+   "podobienstwo": 0.7645095586776733,
+   "pozycja": 72,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0059_S1_P03/00004831",
+   "kotwica": 0,
+   "podobienstwo": 0.5116673111915588,
+   "pozycja": 103,
+   "obrot": 9
+  },
+  {
+   "frame_id": "cataract_lmm/tracking/TR_0137_S1_P03/00000466",
+   "kotwica": 1,
+   "podobienstwo": 0.5815885066986084,
+   "pozycja": 92,
+   "obrot": 9
+  }
+ ]
+}

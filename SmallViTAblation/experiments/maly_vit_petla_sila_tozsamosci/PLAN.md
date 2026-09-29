@@ -168,3 +168,28 @@ Kryteria (ustalone przed wynikiem):
 
 Koszt: ~30 min na ziarno (5 ramion × 14 obrotów), razem ~10 GPU-godzin, ~1–1,5 h zegara; zapis ~38 GB latentów
 (kwota: 68 z 200 GB). Najpierw próba kodu (1 zadanie, krótkie obroty), potem kampania z zależnością `afterok`.
+
+### Wyniki iteracji 2 (2026-09-29, Eden 1818051, ziarna 47–66, wszystkie COMPLETED, 30–48 min na ziarno)
+
+Pliki: `wyniki_eden_it2/` (JSON-y, logi; latenty i listy wyszukiwania na Edenie), `wyniki_eden_it2/ANALIZA.json`.
+
+mAP@0,5 średnio z 20 ziaren — na końcu (krok 8000): `tozsamosc` 0,545, `current` 0,548, `losowe` 0,536, `kolejne`
+0,534, `bez` 0,456; pole pod krzywą: 0,478 / 0,473 / 0,468 / 0,463 / 0,416; w kroku 4500: 0,496 / 0,480 / 0,475 /
+0,477 / 0,421. Dodanych klatek: `tozsamosc` 1708, `current` 1721, `losowe` i `kolejne` 1876 (lista 180 też się
+wyczerpuje, metoda dostaje ~9 % klatek mniej).
+
+Wygrane `tozsamosc` (z 20 ziaren; próg 16):
+- z `losowe`: pole pod krzywą 15 (+0,010; Wilcoxon p = 0,006, test znaków p = 0,04), na końcu 11 (+0,009, p = 0,41),
+  w kroku 4500: 17 (+0,021);
+- z `current`: pole 13 (+0,005, p = 0,14), na końcu 8 (−0,003);
+- z `kolejne`: pole 18 (+0,014, p < 0,001), na końcu 12; z `bez`: 20 i 20.
+
+Kryteria: z `losowe` — niespełnione (15 i 11 z 20, wymagane 16 w obu); z `current` — niespełnione; prognoza siły
+w pętli — niespełnione (8 z 13 obrotów z ≥ 16/20 poniżej „braku zmiany”; mediana 0,87–0,99, lepsza w późnych
+obrotach); FastGAN — spełnione (odporna część zmiany 0,87–0,98, znak 0,89–0,97).
+
+**Wniosek.** Dobór klatek przez metodę daje szybszą naukę: w połowie drogi (krok 4500) detektor jest lepszy od
+uczonego losowymi klatkami w 17 z 20 ziaren, a przez cały przebieg w 15 z 20 (różnica istotna, p = 0,006). Pod koniec,
+gdy każde ramię ma już ~1700–1900 dodanych klatek (ponad połowę tego, co pula mieści przy regule ±30), ramiona się
+zrównują. Ramię bez prognozy (`current`) jest prawie tak samo dobre, więc zysk nadal pochodzi głównie z wybierania
+klatek podobnych do wycinków narzędzia, a udziału samej prognozy Koopmana/Langevina nie wykazano.
