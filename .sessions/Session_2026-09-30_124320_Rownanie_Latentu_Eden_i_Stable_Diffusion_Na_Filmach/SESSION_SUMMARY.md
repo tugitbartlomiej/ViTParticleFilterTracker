@@ -85,8 +85,10 @@ Rozmowa prowadzona z katalogu projektu grantowego `F:\Studia\MCHTR\Grant\Projekt
 12. **Pełne uczenie** po „tak wysyłaj i trenuj”: przygotowanie latentów wszystkich klatek `train` (1818494,
     4 x H100) i co 10. klatki `val` (1818495), uczenie 1818496 (4 x H100, 32 na kartę x akumulacja 2, 20 000 kroków).
     Tempo 209 obrazów/s, 1,22 s na krok, 57,1 GB pamięci na karcie. W chwili zapisu: krok 5050, strata 0,107
-    (start około 0,17), zero błędów w logu. Podgląd po 4000 krokach: 32 klatki realistycznego oka w trakcie operacji,
-    narzędzie w miejscu obrysu; kilka klatek w dolnym rzędzie jeszcze zaszumionych. Koniec przewidziany około 17:45.
+    (start około 0,17), zero błędów w logu. Podgląd po 4000 krokach: 16 par (u góry prawdziwa klatka walidacyjna po
+    koderze i dekoderze VAE, pod nią obraz wygenerowany z jej masek; poprawka 30.09: wcześniej opisane jako „32 klatki
+    wygenerowane”), wygenerowane klatki to realistyczne oko w trakcie operacji z narzędziem w miejscu obrysu; kilka klatek
+    w dolnym rzędzie jeszcze zaszumionych. Koniec przewidziany około 17:45.
 13. Odpowiedzi użytkownikowi: uczenie idzie na latentach VAE (obraz ściśnięty 8 razy w każdym wymiarze), bo to
     zasada Stable Diffusion i przyspiesza uczenie wielokrotnie; latenty powstały z klatek filmów wysłanych na Eden.
 

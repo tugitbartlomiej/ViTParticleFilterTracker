@@ -16,6 +16,8 @@ Najnowsza decyzja autora: **najpierw szybkie testy na małych detektorach, potem
 
 Metoda przewidywania latentu w uczeniu małego ViT (równanie z bezwładnością i siłą danych, tryb wyjaśnienia i tryb prognozy bez przyszłych klatek): [23 — Metoda przewidywania latentu](23_METODA_PRZEWIDYWANIA_LATENTU.md).
 
+Pełny opis linii prac z 21-30 września 2026 (Koopman i Langevin na latencie detektora, tożsamość narzędzia, dobór klatek, pętle z FastGAN-em, mały ViT od zera, równanie ruchu latentu, Stable Diffusion na filmach), ze streszczeniem, słownikiem, osią czasu i sprzecznościami w źródłach: [24 - Opis eksperymentu od początku do końca](24_OPIS_EKSPERYMENTU_KOOPMAN_LANGEVIN_OD_POCZATKU_DO_KONCA.md).
+
 Osobny kierunek badawczy: [25 — Diagnostyka latentu, aktywna kuracja i uzupełnianie stanu](Analiza_ponownej_publikacji/25_DIAGNOSTYKA_LATENTU_I_AKTYWNA_KURACJA.md). Zaczyna się od testów na CPU; nie zastępuje ani nie rozszerza automatycznie planu ponownej publikacji i małych detektorów.
 
 | Pliki | Rola i sposób użycia |
