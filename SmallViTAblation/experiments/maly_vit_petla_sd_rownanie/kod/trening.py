@@ -42,13 +42,16 @@ class Uczen:
     def _lr(self):
         return LR * min(1.0, (self.krok + 1) / ROZGRZEWKA)
 
-    def kroki(self, zb, n, rng, sondy=None, latent_out=None, co_ocena=None, ocena=None):
-        """n kroków na zbiorze zb (losowanie ze zwracaniem między epokami: permutacje kolejno)."""
+    def kroki(self, zb, n, rng, sondy=None, latent_out=None, co_ocena=None, ocena=None, obserwator=None):
+        """n kroków na zbiorze zb (losowanie ze zwracaniem między epokami: permutacje kolejno).
+        obserwator (wersja 4.2, sprawdzian równania jednego kroku): gdy obserwator.czy(j) dla j-tego kroku biegu,
+        obserwator.przed(u, x, heat, ltrb, poz) dostaje dokładnie paczkę kroku (po odbiciu i jasności) przed krokiem,
+        a obserwator.po(u) jest wołany po kroku. Nie zmienia uczenia ani losowania."""
         self.net.train()
         kol = []
         cel0, cel1 = zb.cele
         t0 = time.time()
-        for _ in range(n):
+        for _j in range(n):
             if len(kol) < PACZKA:
                 kol += rng.permutation(len(zb)).tolist()
             idx = np.array(kol[:PACZKA]); kol = kol[PACZKA:]
@@ -65,6 +68,10 @@ class Uczen:
             poz = torch.where(torch.from_numpy(odb)[:, None, None], cel1[2][it], cel0[2][it]).to(self.dev)
             for g in self.opt.param_groups:
                 g['lr'] = self._lr()
+            patrz = obserwator is not None and obserwator.czy(_j)
+            if patrz:
+                obserwator.przed(self, x, heat, ltrb, poz)
+                self.net.train()
             with torch.autocast('cuda', dtype=torch.bfloat16):
                 o, _ = self.net(x)
             L, cz = M.strata(o, heat, ltrb, poz)
@@ -73,6 +80,9 @@ class Uczen:
             torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1.0)
             self.opt.step()
             self.krok += 1
+            if patrz:
+                obserwator.po(self)
+                self.net.train()
             if self.krok % 50 == 0:
                 self.log.append(dict(krok=self.krok, strata=float(L), **cz, s_na_krok=(time.time() - t0) / 50))
                 t0 = time.time()

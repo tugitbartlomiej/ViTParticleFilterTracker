@@ -43,10 +43,15 @@ def _cele(zb, idx, odbicie=False):
 def gradient_paczki(u, zb, idx, odbicie=False):
     """Gradient straty treningowej na klatkach zb[idx] w trybie uczenia (bf16 jak w treningu), obcięty do normy 1 jak
     w `Uczen.kroki`. Zwraca dict nazwa -> tensor float32. Bufory BatchNorm sieci pozostają nietknięte."""
-    net = u.net; net.train()
-    par = _parametry(net)
     x = _wejscie(zb.X[idx], u.dev, odbicie)
     heat, ltrb, poz = (t.to(u.dev) for t in _cele(zb, idx, odbicie))
+    return gradient_tensorow(u, x, heat, ltrb, poz)
+
+
+def gradient_tensorow(u, x, heat, ltrb, poz):
+    """Jak `gradient_paczki`, ale dla gotowej paczki (np. dokładnie tej z kroku uczenia, po odbiciu i jasności)."""
+    net = u.net; net.train()
+    par = _parametry(net)
     with torch.autocast('cuda', dtype=torch.bfloat16):
         o, _ = functional_call(net, (par, _bufory_kopia(net)), (x,))
     L, _ = M.strata(o, heat, ltrb, poz)
