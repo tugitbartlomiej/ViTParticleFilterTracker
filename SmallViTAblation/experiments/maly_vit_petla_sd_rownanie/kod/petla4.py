@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
-"""Pętla, wersja 4.2 (maly_vit_petla_sd_rownanie/PLAN.md): metoda użytkownika z prognozą latentu tożsamości na JEDEN
-krok naprzód (Δz(t+1) = S_pęd(t) + S_paczka(t), `prognoza_krok.py`) i Stable Diffusion z maskami zamiast FastGAN-a.
+"""Pętla, wersja 4.3 (docs/26_PIPELINE_TOZSAMOSC_PROGNOZA_SD.md, maly_vit_petla_sd_rownanie/PLAN.md): metoda
+użytkownika, bliźniak wersji 3 z nowymi narzędziami. Obrót (7 × 500 kroków po rozgrzewce 1000 kroków, 134 klatki):
+  1. prognoza siły tożsamości 180 sond na 500 kroków: równanie Langevina z jądrem pamięci dopasowane wprost na horyzont
+     obrotu (`prognoza_gle.py`) i, równolegle, Koopman/Langevin wersji 3 (`sila.prognozy`); obie mierzone po obrocie;
+  2. 6 kotwic o największej przewidzianej zmianie |Δs|; cel obrazu z* = latent klatki kotwicy + Δs·(sd ⊙ w);
+  3. Stable Diffusion (ema_020000) z masek kotwicy, start z zaszumionej klatki kotwicy, prowadzone latentem
+     tożsamości małego ViT do z* (`prowadzenie.py`); zapis pokrycia tożsamości i latentu;
+  4. wycinek prowadzonego obrazu → DINOv2 → podobne prawdziwe klatki; 134 na przemian z 6 list; uczenie 500 kroków.
+Ramiona: `metoda` (prognoza Langevina z jądrem), `metoda_kl3` (prognoza Koopman/Langevin wersji 3), `sd_bez_prognozy`
+(te same kotwice, cel z* = latent kotwicy, Δs = 0), `losowe`, `kolejne`, `bez`. Opcjonalne (--ramiona): `krok_sd`
+(wersja 4.2: wybór wersji SD pchnięciem jednego kroku), `sd_strata`, `sd_strata_losowo`, `kotwice_strata`.
+We wszystkich ramionach: obie prognozy i ich trafność, sprawdzian równania jednego kroku, pchnięcie dodanych klatek,
+wagi sieci po każdym obrocie.
 
-Obrót (7 × 500 kroków po rozgrzewce 1000 kroków, 134 klatki na obrót, jak w wersji 3), ramię `sd_prognoza`:
-  1. prognoza na krok t+1 bez nowych klatek (pęd + średnia paczka obecnego zbioru): 6 kotwic, w których siła
-     tożsamości narzędzia będzie po kroku najsłabsza;
-  2. dla każdej kotwicy 8 wersji z SD (4 × ten sam układ, 4 × narzędzie przestawione); wycinek każdej wersji →
-     DINOv2 → lista podobnych prawdziwych klatek → grupa jej pierwszych 22 klatek, które wybór i tak by wziął;
-  3. prognoza na krok t+1 z paczką z tej grupy: gdzie będzie siła tożsamości sond kotwicy; wybór wersji, której
-     klatki najmocniej podniosą tożsamość (pęd wspólny, decyduje S_paczka);
-  4. 134 klatki na przemian z 6 wybranych list (jak wersja 3), uczenie 500 kroków.
-We wszystkich ramionach: sprawdzian równania na prawdziwych krokach uczenia (`prognoza_krok.Sprawdzian`) oraz
-przewidziane pchnięcie tożsamości przez dodany zestaw klatek (to samo równanie, przed uczeniem).
-
-Ramiona: `sd_prognoza` (metoda), kontrole bez prognozy `losowe` i `kolejne` (jak w wersji 3), `bez`, pomocnicze
-`sd_bez_prognozy` (kotwice według obecnej siły, wersja SD losowa: jedyna różnica wobec metody to prognoza).
-Dodatkowe ramiona wyboru przez spadek straty kontrolnej (docs/25, nie metoda użytkownika, tylko przez --ramiona):
-`sd_strata`, `sd_strata_losowo`, `kotwice_strata`.
-
-    <venv>/python -u petla4.py --ziarno 47 [--proba] [--ramiona ...]   ->  $MALY_VIT_WYNIKI/petla_krok_s47/...
+    <venv>/python -u petla4.py --ziarno 47 [--proba] [--ramiona ...]   ->  $MALY_VIT_WYNIKI/petla43_s47/...
 """
 from __future__ import annotations
 
@@ -35,7 +30,10 @@ import torch
 from PIL import Image
 
 import dane as D
+import prognoza as PR
+import prognoza_gle as PGL
 import prognoza_krok as PK
+import prowadzenie as PW
 import rownanie as RW
 import sila as SI
 import trening as T
@@ -47,9 +45,10 @@ ROZGRZEWKA, KROKI_ROZG, OBROTY, KROKI_OBR = 2, 500, 7, 500
 NOWYCH, KOTWIC, CO_OCENA = 134, 6, 100
 WERSJI, N_PACZEK_F = 8, 8
 N_SD, MAX_SYNT, N_KONTROLA, N_FILMOW_KONTROLI, N_LOSOWYCH_GRUP, N_BEZPOSR = 48, 40, 512, 10, 6, 3
-NR_RAMIENIA = dict(losowe=2, bez=3, kolejne=4, sd_prognoza=31, sd_bez_prognozy=32, sd_strata=11, sd_strata_losowo=12,
-                   kotwice_strata=13)
-RAMIONA = 'sd_prognoza,losowe,kolejne,bez,sd_bez_prognozy'
+NR_RAMIENIA = dict(losowe=2, bez=3, kolejne=4, metoda=41, metoda_kl3=42, sd_bez_prognozy=43, krok_sd=31,
+                   sd_strata=11, sd_strata_losowo=12, kotwice_strata=13)
+RAMIONA = 'metoda,metoda_kl3,sd_bez_prognozy,losowe,kolejne,bez'
+PROWADZENIE = dict(sila_startu=0.5, eta=0.15, iteracje=3, koniec_prowadzenia=2, waga_latentu=1.0)   # test 1.10
 SPR_NA_POCZATKU, SPR_CO = 10, 50          # sprawdzian równania: pierwsze 10 kroków obrotu i co 50-ty
 
 
@@ -218,13 +217,15 @@ def main(argv=None) -> int:
     ap.add_argument('--ramiona', default=RAMIONA)
     ap.add_argument('--proba', action='store_true', help='próba kodu: krótka rozgrzewka i obroty, wyniki/proba_s*')
     ap.add_argument('--obroty', type=int, default=OBROTY)
+    ap.add_argument('--top-k', type=int, default=WB.TOP_K, help='długość listy podobnych klatek DINOv2 (w. 3 it. 2: 180)')
     a = ap.parse_args(argv)
     s = a.ziarno
     OBROTY = a.obroty
+    WB.TOP_K = a.top_k
     if a.proba:
         OBROTY, KROKI_OBR, NOWYCH, KOTWIC, CO_OCENA, N_SD, MAX_SYNT, N_KONTROLA, KROKI_ROZG = 2, 40, 24, 2, 20, 16, 8, 128, 60
         WERSJI, N_PACZEK_F = 4, 2
-    out = Path(os.environ['MALY_VIT_WYNIKI']) / (f'proba_krok_s{s}' if a.proba else f'petla_krok_s{s}'); out.mkdir(parents=True, exist_ok=True)
+    out = Path(os.environ['MALY_VIT_WYNIKI']) / (f'proba43_s{s}' if a.proba else f'petla43_s{s}'); out.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     baza = D.baza(); wal_w, wal_X = D.walidacja(); sondy = D.sondy()
     _, _, _, _, obecn, opis = sondy
@@ -285,6 +286,9 @@ def main(argv=None) -> int:
     wek = SI.wektor(lat_wsp[-1][-5:].astype(np.float32).mean(0), obecn)      # wektor tożsamości jak w wersji 3
     wek_glob[0] = wek
     s_wsp = [SI.sila(l[:, obecn, 0], wek) for l in lat_wsp]
+    H_ZAP = max(1, KROKI_OBR // T.ZAPIS_CO)                    # horyzont w zapisach (50 = 500 kroków)
+    H_BLOK = max(1, H_ZAP // PR.B_BLOK)                        # horyzont w blokach wersji 3
+    kier = wek['w'] * wek['sd']                                # przesunięcie latentu o 1 w sile tożsamości
     zj(out / 'KOTWICE.json', {int(j): dict(sonda=kk['sonda'], frame_id=opis[kk['sonda']]['frame_id'], sond_kotwicy=len(kk['moje']),
                                            z_ukladem=kk['uklad'] is not None) for j, kk in kotwice.items()})
 
@@ -303,9 +307,8 @@ def main(argv=None) -> int:
         ocena = nowa_ocena(oceny, ramie, obr)
         s_hist = list(s_wsp)
         spr = PK.Sprawdzian(sondy, obecn, wek, SPR_NA_POCZATKU, SPR_CO)
-        if ramie.startswith('sd_') and G is None:
-            import generator_sd as GS
-            G = GS.GeneratorSD()
+        if (ramie.startswith('sd_') or ramie.startswith('metoda') or ramie == 'krok_sd') and G is None:
+            G = PW.Prowadzony()
             zj(out / f'SD_{ramie}.json', G.zrodlo); print(f's{s}: SD z {G.zrodlo["unet"]}', flush=True)
         for k in range(ROZGRZEWKA + 1, ROZGRZEWKA + OBROTY + 1):
             tk = time.time(); obr[0] = k
@@ -319,10 +322,45 @@ def main(argv=None) -> int:
             info['prognoza_krok'] = dict(sila_teraz=float(prog['s0'].mean()), ped=float(prog['ped'].mean()),
                                          paczka_srednia=float(prog['paczka'].mean()), sila_za_krok=float(prog['s1'].mean()),
                                          paczek_w_sredniej=N_PACZEK_F)
+            # --- prognoza siły tożsamości na obrót (wszystkie ramiona): Langevin z jądrem pamięci i Koopman/Langevin w. 3
+            S_all = np.concatenate(s_hist)
+            d_gle, inf_gle = PGL.prognoza(S_all, H_ZAP)
+            pp = SI.prognozy(PR.bloki(S_all[:, :, None]), H_BLOK)
+            d_kl = pp['prognozy'][pp['model']] - pp['teraz']
+            info['prognoza_obrotu'] = dict(gle=dict(zmiana_srednia=float(d_gle.mean()), zmiana_sd=float(d_gle.std()), **inf_gle),
+                                           kl3=dict(model=pp['model'], test_wsteczny=pp['test_wsteczny'],
+                                                    zmiana_srednia=float(d_kl.mean()), zmiana_sd=float(d_kl.std())))
             nowe, synt_zb = [], None
             # --- wybór klatek
-            if ramie in ('sd_prognoza', 'sd_bez_prognozy'):
-                z_prog = ramie == 'sd_prognoza'
+            if ramie in ('metoda', 'metoda_kl3', 'sd_bez_prognozy'):
+                d = d_kl if ramie == 'metoda_kl3' else d_gle
+                kot = sorted([j for j in orig if kotwice[j]['uklad'] is not None], key=lambda j: -abs(d[j]))[:KOTWIC]
+                listy, rap, kafle = [], [], []
+                for b, j in enumerate(kot):
+                    kk = kotwice[j]
+                    z_k = PW.latent_obrazu(u, kk['obraz576'], kk['uklad'])
+                    dz = 0.0 if ramie == 'sd_bez_prognozy' else float(d[j])
+                    z_cel = z_k + dz * kier
+                    img, przebieg = G.rysuj_prowadzony(u.net, UK.maski(kk['uklad']), kk['uklad'], z_cel, wek,
+                                                       ziarno=1000 * s + 10 * k + b, start=kk['obraz576'], **PROWADZENIE)
+                    pk = PW.pokrycie(PW.latent_obrazu(u, img, kk['uklad']), z_cel, wek)
+                    pz = kd / 'zapytania' / f'kotwica_{b}.png'
+                    Image.fromarray(UK.wycinek_zapytania(img, kk['uklad'])).save(pz)
+                    listy.append(WB.zapytaj(pz, wykl, pz.with_name(f'kotwica_{b}_zapytanie.json')))
+                    rap.append(dict(sonda=int(kk['sonda']), frame_id=kk['uklad']['frame_id'], zmiana_przewidziana=dz,
+                                    zmiana_gle=float(d_gle[j]), zmiana_kl3=float(d_kl[j]), s_kotwicy=PW.pokrycie(z_k, z_k, wek)['s'],
+                                    **{f'pokrycie_{x}': v for x, v in pk.items()},
+                                    energia_start=przebieg[0]['E'] if przebieg else None,
+                                    energia_koniec=przebieg[-1]['E'] if przebieg else None,
+                                    zmiana_pikseli=float(np.abs(img.astype(np.float32) - kk['obraz576'].astype(np.float32)).mean())))
+                    kafle.append(np.concatenate([UK.wycinek_176(kk['obraz576'], kk['uklad'])[0], UK.wycinek_176(img, kk['uklad'])[0]], 1))
+                if kafle:
+                    cv2.imwrite(str(kd / 'KOTWICE_I_OBRAZY.jpg'), cv2.cvtColor(np.concatenate(kafle, 0), cv2.COLOR_RGB2BGR),
+                                [cv2.IMWRITE_JPEG_QUALITY, 88])
+                nowe = [dict(dd, zrodlo='pula') for dd in WB.koopman(listy, pula_id, zajete, NOWYCH)]
+                info['obrazy_sd'] = rap
+            elif ramie in ('krok_sd',):
+                z_prog = True
                 ocena_k = {j: float(prog['s1' if z_prog else 's0'][kotwice[j]['moje']].mean()) for j in orig
                            if kotwice[j]['uklad'] is not None}
                 kot = sorted(ocena_k, key=lambda j: ocena_k[j])[:KOTWIC]            # najsłabsza tożsamość
@@ -414,6 +452,18 @@ def main(argv=None) -> int:
             s_rot = SI.sila(arr[:, obecn, 0], wek)
             s_hist.append(s_rot)
             info['sprawdzian_rownania'] = spr.wynik()
+            real_k = s_rot[-1] - S_all[-1]
+            teraz_b, real_b = S_all[-PR.B_BLOK:].mean(0), s_rot[-PR.B_BLOK:].mean(0)
+
+            def traf(pred, real):
+                e0 = float((real ** 2).sum()) + 1e-12
+                duze = np.abs(real) >= np.median(np.abs(real))
+                return dict(umiejetnosc=float(100 * (1 - ((real - pred) ** 2).sum() / e0)),
+                            wzgl_braku_zmiany=float(np.sqrt(((real - pred) ** 2).sum() / e0)),
+                            znak=float((np.sign(pred[duze]) == np.sign(real[duze])).mean()))
+            info['trafnosc_prognozy'] = dict(gle=traf(d_gle, real_k), kl3=traf(pp['prognozy'][pp['model']] - teraz_b, real_b - teraz_b),
+                                             zmiana_rzeczywista_srednia=float(real_k.mean()))
+            torch.save(u.net.state_dict(), kd / 'wagi.pth')
             if 'strata_kontrolna_start' in info:
                 info['strata_kontrolna_koniec'] = kontrola.strata(u)
             info.update(dodane=len(nowe), syntetycznych=sum(d['zrodlo'] == 'sd' for d in nowe), zbior=len(zb), krok_po=u.krok,
@@ -427,6 +477,12 @@ def main(argv=None) -> int:
                    f'{sp.get("caly_latent", {}).get("rownanie", float("nan")):.1f} %')
             if 'pchniecie_dodanych' in info:
                 txt += f'  pchnięcie dodanych {info["pchniecie_dodanych"]["wszystkie_sondy"]:+.4f}'
+            tp = info['trafnosc_prognozy']
+            txt += f'  prognoza 500 kr.: Langevin+jądro {tp["gle"]["umiejetnosc"]:.0f} %, Koopman/Langevin w.3 {tp["kl3"]["umiejetnosc"]:.0f} %'
+            if info.get('obrazy_sd'):
+                r_ = info['obrazy_sd']
+                txt += (f'  SD pokrycie: tożsamość {np.median([r["pokrycie_tozsamosc"] for r in r_]):.0f} %, '
+                        f'latent {np.median([r["pokrycie_latent"] for r in r_]):.0f} %')
             if info.get('wersje_sd'):
                 r_ = info['wersje_sd']
                 txt += (f'  SD: paczka wybranej {np.mean([r["paczka_wybranej"] for r in r_]):+.4f} vs losowych grup '

@@ -20,6 +20,8 @@ Pełny opis linii prac z 21-30 września 2026 (Koopman i Langevin na latencie de
 
 Propozycja nowego potoku doboru klatek (czeka na zgodę, nic nie uruchomiono): dobór jako sterowanie uczeniem, wirtualny krok AdamW na stracie kontrolnej, bank klatek ze Stable Diffusion z maskami, etapy E0-E4 z bramkami: [25 - Propozycja potoku doboru klatek](25_PROPOZYCJA_POTOKU_DOBORU_KLATEK.md).
 
+Kanoniczny, aktualizowany opis metody użytkownika krok po kroku (tożsamość, prognoza Koopman/Langevin, Stable Diffusion prowadzone latentem tożsamości, wyszukanie, uczenie, ramiona i kryteria): [26 - Pipeline doboru klatek](26_PIPELINE_TOZSAMOSC_PROGNOZA_SD.md).
+
 Osobny kierunek badawczy: [25 — Diagnostyka latentu, aktywna kuracja i uzupełnianie stanu](Analiza_ponownej_publikacji/25_DIAGNOSTYKA_LATENTU_I_AKTYWNA_KURACJA.md). Zaczyna się od testów na CPU; nie zastępuje ani nie rozszerza automatycznie planu ponownej publikacji i małych detektorów.
 
 | Pliki | Rola i sposób użycia |

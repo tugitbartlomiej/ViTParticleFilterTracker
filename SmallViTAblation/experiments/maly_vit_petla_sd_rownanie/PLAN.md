@@ -1,4 +1,11 @@
-# Pętla małego ViT, wersja 4.2: prognoza latentu tożsamości na jeden krok i Stable Diffusion zamiast FastGAN-a
+# Pętla małego ViT: wersja 4.3 (aktualna) i historia 4.0-4.2
+
+**Wersja 4.3 (2026-10-01)** jest opisana krok po kroku w `../../docs/26_PIPELINE_TOZSAMOSC_PROGNOZA_SD.md` (kanoniczny opis
+metody użytkownika, aktualizowany z kodem). Uruchomienie na Edenie: `eden/wyslij43.sh`, potem
+`sbatch --array=0-0 eden/petla43_eden.slurm 47 proba` i `sbatch --array=0-9%5 eden/petla43_eden.slurm 47`.
+Poniżej opis wersji 4.2, zostawiony jako historia.
+
+# (historia) Pętla małego ViT, wersja 4.2: prognoza latentu tożsamości na jeden krok i Stable Diffusion zamiast FastGAN-a
 
 Prośby użytkownika (2026-09-30):
 - „pobrać checkpoint Stable Diffusion, zastąpić FastGAN-a i zaimplementować nowe równanie; zobaczmy, co da nowa pętla”;
