@@ -3919,7 +3919,13 @@ nie działało nic, co różniło się od losowania: ani prognoza, ani dobór tr
 ### F.1 Uczenie Stable Diffusion
 
 Stan na 30.09, 13:44: zadanie 1818496 (4 × H100, partycja `hopper`) przy kroku 8100 z 20 000, strata 0,102, bez błędów w
-logu, szacowany koniec około 17:45. Wynik końcowy: [dopisywany po zakończeniu uczenia].
+logu, szacowany koniec około 17:45.
+
+Wynik końcowy (dopisany 1.10): zadanie zakończone 30.09 o 17:56 bez błędów, 20 000 kroków w 7 h 05 min (16 epok po
+311 886 klatkach ze 118 filmów). Strata spadła z 0,179 do 0,092 i pod koniec spada już bardzo wolno. Na podglądzie z
+kroku 20 000 oko i źrenica leżą w obrysach, a narzędzie w większości przykładów wzdłuż swojej maski; część obrazów ma
+ziarnistą teksturę. Finalna migawka `ema_020000` jest lokalnie w `eden_archiwum/sd_modele` (suma sha256 zgodna z
+Edenem) i pętla wersji 4.2 bierze ją automatycznie jako najnowszą. Opis: `experiments/dyfuzja_sd_filmy/README.md`.
 
 ### F.2 Co czeka na zgodę użytkownika
 

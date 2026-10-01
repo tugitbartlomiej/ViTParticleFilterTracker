@@ -40,3 +40,20 @@ Filmy na Edenie: `~/smallvit_data/cataract_lmm/3_Object_Tracking` (wysyłka `../
 - Zgłoszone: przygotowanie wszystkich klatek 118 filmów `train` (1818494, 4 × H100) i co 10. klatki 25 filmów `val`
   (1818495, 1 × H100); uczenie 1818496 (4 × H100, 32 na kartę × akumulacja 2 = 256, 20 000 kroków) po obu.
   Szacunek: ~220 obrazów/s, 5,1 mln przykładów ≈ 6,5 h.
+
+## Wynik uczenia 1818496 (zakończone 2026-09-30 17:56)
+
+- COMPLETED, kod wyjścia 0, 7 h 05 min; 20 000 kroków, 16 epok po 311 886 klatkach ze 118 filmów `train`;
+  1,225 s/krok, ok. 209 obrazów/s, 57,1 GB na kartę; bez NaN i błędów w logu.
+- Strata (średnia z ostatnich 500 kroków): 0,179 (krok 50) → 0,130 (2000) → 0,113 (5000) → 0,102 (10 000) →
+  0,095 (15 000) → 0,092 (20 000). Spada coraz wolniej, ale jeszcze nie stoi.
+- Podgląd `wyniki_eden_1818496/podglad_020000.jpg` (rzędy 1 i 3: klatka prawdziwa po VAE; rzędy 2 i 4: obraz z
+  modelu z tych samych masek; kontury: czerwony narzędzie, zielony rogówka, niebieski źrenica): oko i źrenica w
+  obrysach, narzędzie w większości przykładów wzdłuż czerwonego konturu; w kilku obrazach ziarnista, plamista
+  tekstura; napis szpitala i daty rysowany jako nieczytelne znaki.
+- Migawki EMA na Edenie: 5000, 10 000, 15 000, 20 000 (`modele`/katalog biegu) i `ostatni.pt` 13,75 GB. Lokalnie
+  `F:\Studia\PhD_projekt\VIT\eden_archiwum\sd_modele\ema_020000` (sha256 safetensors
+  `255fb1a5c207a9d81392d72baecbba6d88bdd79adb9fe43917778db0d6738eb6`, zgodne z Edenem), obok `ema_010000` i `ema_015000`.
+- Log, konfiguracja i podglądy końca: `wyniki_eden_1818496/` (`LOG.jsonl`, `KONFIG.json`, `STATUS.json`,
+  `podglad_018000.jpg`, `podglad_020000.jpg`).
+- Nie zmierzone: jakość liczbowa (FD-DINOv2, kopiowanie klatek, zgodność narzędzia z maską) — `ocena_sd.py` czeka na zgodę.
