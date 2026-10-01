@@ -14,7 +14,7 @@
 # Ziarno = $1 + indeks tablicy. Rozgrzewka (21 epok = 1000 kroków) z wersji 2 o tym samym ziarnie (ziarna 47–56,
 # twarde dowiązania), jak w wersji 3; inne ziarna liczą ją w zadaniu.
 # Próba kodu:  sbatch --array=0-0 petla43_eden.slurm 47 proba
-# Kampania:    sbatch --array=0-9%5 petla43_eden.slurm 47
+# Kampania:    sbatch --array=0-9%5 petla43_eden.slurm 47   (wyniki w petla43b_s*; petla43_s47 to przerwany pierwszy bieg)
 set -euo pipefail
 export PATH=/usr/local/bin:/usr/bin:/bin
 BAZA=${1:?pierwsze ziarno}; TRYB=${2:-pelny}
@@ -34,7 +34,7 @@ for f in "$V1/deps/timm/__init__.py" "$SD/deps/diffusers/__init__.py" "$MY/kod/p
          "$SD/modele/sd-vae-ft-mse/config.json" "$ADN/TR_0001_S1_P03.zip" "$ARCHIVE"; do
   [ -f "$f" ] || { echo "BRAK $f"; exit 2; }
 done
-D="$MY/wyniki/petla43_s$S"; [ "$TRYB" = proba ] && D="$MY/wyniki/proba43_s$S"
+D="$MY/wyniki/petla43b_s$S"; [ "$TRYB" = proba ] && D="$MY/wyniki/proba43_s$S"
 if [ ! -f "$D/wspolny/k02.pt" ] && [ -f "$V2W/k02.pt" ] && [ -f "$V2W/k01/LATENT.npz" ] && [ -f "$V2W/k02/LATENT.npz" ] && [ -f "$V2W/OCENY.json" ]; then
   mkdir -p "$D" && cp -al "$V2W" "$D/" && echo "rozgrzewka z wersji 2: $V2W"
 else

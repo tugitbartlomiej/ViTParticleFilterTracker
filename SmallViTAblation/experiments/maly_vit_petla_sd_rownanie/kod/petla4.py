@@ -225,7 +225,7 @@ def main(argv=None) -> int:
     if a.proba:
         OBROTY, KROKI_OBR, NOWYCH, KOTWIC, CO_OCENA, N_SD, MAX_SYNT, N_KONTROLA, KROKI_ROZG = 2, 40, 24, 2, 20, 16, 8, 128, 60
         WERSJI, N_PACZEK_F = 4, 2
-    out = Path(os.environ['MALY_VIT_WYNIKI']) / (f'proba43_s{s}' if a.proba else f'petla43_s{s}'); out.mkdir(parents=True, exist_ok=True)
+    out = Path(os.environ['MALY_VIT_WYNIKI']) / (f'proba43_s{s}' if a.proba else f'petla43b_s{s}'); out.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     baza = D.baza(); wal_w, wal_X = D.walidacja(); sondy = D.sondy()
     _, _, _, _, obecn, opis = sondy
@@ -335,7 +335,7 @@ def main(argv=None) -> int:
             if ramie in ('metoda', 'metoda_kl3', 'sd_bez_prognozy'):
                 d = d_kl if ramie == 'metoda_kl3' else d_gle
                 kot = sorted([j for j in orig if kotwice[j]['uklad'] is not None], key=lambda j: -abs(d[j]))[:KOTWIC]
-                listy, rap, kafle = [], [], []
+                listy, rap, kafle, zap = [], [], [], []
                 for b, j in enumerate(kot):
                     kk = kotwice[j]
                     z_k = PW.latent_obrazu(u, kk['obraz576'], kk['uklad'])
@@ -347,6 +347,7 @@ def main(argv=None) -> int:
                     pz = kd / 'zapytania' / f'kotwica_{b}.png'
                     Image.fromarray(UK.wycinek_zapytania(img, kk['uklad'])).save(pz)
                     listy.append(WB.zapytaj(pz, wykl, pz.with_name(f'kotwica_{b}_zapytanie.json')))
+                    zap.append(pz)
                     rap.append(dict(sonda=int(kk['sonda']), frame_id=kk['uklad']['frame_id'], zmiana_przewidziana=dz,
                                     zmiana_gle=float(d_gle[j]), zmiana_kl3=float(d_kl[j]), s_kotwicy=PW.pokrycie(z_k, z_k, wek)['s'],
                                     **{f'pokrycie_{x}': v for x, v in pk.items()},
@@ -358,6 +359,16 @@ def main(argv=None) -> int:
                     cv2.imwrite(str(kd / 'KOTWICE_I_OBRAZY.jpg'), cv2.cvtColor(np.concatenate(kafle, 0), cv2.COLOR_RGB2BGR),
                                 [cv2.IMWRITE_JPEG_QUALITY, 88])
                 nowe = [dict(dd, zrodlo='pula') for dd in WB.koopman(listy, pula_id, zajete, NOWYCH)]
+                # równy budżet klatek z kontrolami: gdy listy się wyczerpią (późne obroty, reguła ±30), te same
+                # zapytania z dłuższą listą podobnych klatek (2×, 4×, ...), aż będzie NOWYCH klatek
+                tk0, tk = WB.TOP_K, WB.TOP_K
+                while len(nowe) < NOWYCH and tk < 20000:
+                    tk *= 2; WB.TOP_K = tk
+                    juz_n = {dd['frame_id'] for dd in nowe}
+                    listy2 = [WB.zapytaj(pz, wykl | juz_n, pz.with_name(f'{pz.stem}_zapytanie_top{tk}.json')) for pz in zap]
+                    nowe += [dict(dd, zrodlo='pula', top_k=tk) for dd in WB.koopman(listy2, pula_id, zajete, NOWYCH - len(nowe))]
+                WB.TOP_K = tk0
+                info['top_k_uzyte'] = tk
                 info['obrazy_sd'] = rap
             elif ramie in ('krok_sd',):
                 z_prog = True
@@ -463,7 +474,7 @@ def main(argv=None) -> int:
                             znak=float((np.sign(pred[duze]) == np.sign(real[duze])).mean()))
             info['trafnosc_prognozy'] = dict(gle=traf(d_gle, real_k), kl3=traf(pp['prognozy'][pp['model']] - teraz_b, real_b - teraz_b),
                                              zmiana_rzeczywista_srednia=float(real_k.mean()))
-            torch.save(u.net.state_dict(), kd / 'wagi.pth')
+            torch.save({k_: v.half() if v.is_floating_point() else v for k_, v in u.net.state_dict().items()}, kd / 'wagi_fp16.pth')
             if 'strata_kontrolna_start' in info:
                 info['strata_kontrolna_koniec'] = kontrola.strata(u)
             info.update(dodane=len(nowe), syntetycznych=sum(d['zrodlo'] == 'sd' for d in nowe), zbior=len(zb), krok_po=u.krok,

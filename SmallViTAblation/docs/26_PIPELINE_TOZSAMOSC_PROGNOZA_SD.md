@@ -104,6 +104,8 @@ do 10 637 wycinków puli → 90 najbliższych z różnorodnością grup; bez kla
 ### Krok 7. Dobór
 
 134 klatki na obrót, na przemian z 6 list (po jednej na kotwicę), reguła ±30 klatek tego samego filmu.
+Gdy listy się wyczerpią (późne obroty), te same zapytania z dłuższą listą (2×, 4×, ...), aż będzie dokładnie 134 klatki:
+równy budżet z ramionami kontrolnymi (pierwszy bieg 1818733 dokładał od 13. obrotu tylko 63-100 klatek; przerwany).
 
 ### Krok 8. Uczenie i ocena
 
@@ -116,7 +118,8 @@ rozgrzewce, 938 dodanych klatek).
 - Pokrycie latentu przez obrazy SD z kroku 5.
 - Sprawdzian równania jednego kroku na prawdziwych krokach uczenia (`prognoza_krok.Sprawdzian`): w próbie 4.2 97-99 %.
 - Przewidziane pchnięcie tożsamości przez dodane klatki (S_paczka zestawu).
-- Zapisy: OBROT.json, OCENY.json, SILA.npy, wagi sieci po każdym obrocie (telemetria na każdym punkcie kontrolnym).
+- Zapisy: OBROT.json, OCENY.json, SILA.npy, wagi sieci po każdym obrocie w fp16 (`wagi_fp16.pth`, telemetria na każdym
+  punkcie kontrolnym), obraz kotwic i obrazów SD (`KOTWICE_I_OBRAZY.jpg`).
 
 ### Krok 10. Porównanie i kampania
 
@@ -129,7 +132,8 @@ rozgrzewce, 938 dodanych klatek).
   ziaren; K3 metoda > sd_bez_prognozy w ≥ 70 % ziaren.
 - Kolejność (zgoda użytkownika 1.10 na start na Edenie): próba kodu lokalnie (zrobiona, 504 s, 6 ramion) → próba na
   Edenie (`--array=0-0 ... 47 proba`) → 10 ziaren 47-56 (`--array=0-9%5`), 14 obrotów, listy 180, rozgrzewka 21 epok z
-  wersji 2. Kod na Edenie: `~/smallvit_runs/2026-10-01_petla43_sd_prowadzenie`.
+  wersji 2. Kod na Edenie: `~/smallvit_runs/2026-10-01_petla43_sd_prowadzenie`, wyniki `wyniki/petla43b_s*`
+  (`petla43_s47` to przerwany pierwszy bieg z nierównym budżetem).
 - Wcześniejszy wynik (wersja 3, FastGAN): ramię z prognozą 0,4432, bez prognozy 0,4428 (w szumie); przewagę nad losowaniem
   dawało wyszukiwanie podobnych klatek (`docs/24`, A.3).
 
@@ -137,8 +141,8 @@ rozgrzewce, 938 dodanych klatek).
 
 - Kwota 2026-10-01: 152 GiB z 200 GB, 78 tys. plików z 200 tys.
 - Do usunięcia, gdy kampania będzie potrzebować miejsca (zgoda użytkownika 2026-10-01 na usunięcie starych punktów
-  kontrolnych): `ostatni.pt` biegu SD 1818496 (13,75 GB, stan do wznowienia uczenia), migawki EMA 5000/10 000/15 000 tego
-  biegu (kopie 10 000 i 15 000 są lokalnie), artefakty próby SD (`wyniki/proba/ostatni.pt`, 13,75 GB, i jej migawki).
+  kontrolnych): `ostatni.pt` biegu SD 1818496 (13,75 GB, stan do wznowienia uczenia), migawki EMA 10 000/15 000 tego
+  biegu (kopie są lokalnie). Usunięte 1.10 (zgoda): `wyniki/proba/ostatni.pt` i migawki próby SD, `ema_005000`.
   Zostaje `ema_020000` (generator kampanii). Nie dotykać `~/grant_tft`, `~/venvs`, `~/.cache`.
 - Kampania zapisuje na Edenie wagi sieci po każdym obrocie każdego ramienia (około 11 MB × 7 × 5 ramion × 10 ziaren).
 

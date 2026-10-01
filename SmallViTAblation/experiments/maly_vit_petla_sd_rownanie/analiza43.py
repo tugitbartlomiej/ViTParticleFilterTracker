@@ -34,7 +34,7 @@ KONTRASTY = [('metoda', 'losowe'), ('metoda', 'kolejne'), ('metoda', 'sd_bez_pro
 
 def wczytaj():
     dane = {}
-    for d in sorted(WE.glob('petla43_s*')):
+    for d in sorted(WE.glob('petla43b_s*')):
         s = int(d.name.split('_s')[1])
         for r in RAMIONA:
             f = d / r / 'OCENY.json'
