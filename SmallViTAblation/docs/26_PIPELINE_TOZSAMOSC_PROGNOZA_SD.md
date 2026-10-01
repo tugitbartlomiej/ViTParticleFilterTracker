@@ -27,7 +27,7 @@ kolejne.
 | 7 | dobór 134 klatek | `wybor.py` (`koopman`) | gotowe |
 | 8 | uczenie 500 kroków i ocena | `trening.py`, `petla4.py` | gotowe |
 | 9 | pomiary w każdym obrocie | `prognoza_krok.py`, `petla4.py` | gotowe w 4.2; rozszerzyć w 4.3 |
-| 10 | porównanie ramion i kampania | `petla4.py`, `eden/petla43_eden.slurm` | zgoda 1.10; próba na Edenie, potem 10 ziaren |
+| 10 | porównanie ramion i kampania | `petla4.py`, `eden/petla43_eden.slurm`, `analiza43.py` | zrobione: K1, K2 tak; K3 nie |
 
 ### Krok 0. Dane i model
 
@@ -136,6 +136,15 @@ rozgrzewce, 938 dodanych klatek).
   (`petla43_s47` to przerwany pierwszy bieg z nierównym budżetem).
 - Wcześniejszy wynik (wersja 3, FastGAN): ramię z prognozą 0,4432, bez prognozy 0,4428 (w szumie); przewagę nad losowaniem
   dawało wyszukiwanie podobnych klatek (`docs/24`, A.3).
+
+## Wynik kampanii 4.3 (2026-10-01, 10 ziaren)
+
+- Pole pod krzywą mAP@0,5: metoda 0,4883, losowe 0,4720, kolejne 0,4646, bez 0,4219; metoda wygrywa z losowymi i kolejnymi
+  w 10/10 ziaren (Wilcoxon p = 0,002): **K1 i K2 spełnione**.
+- **K3 niespełnione**: metoda ≈ sd_bez_prognozy (+0,0012, 5/10). Zysk daje SD prowadzone + wyszukanie, nie prognoza.
+- Langevin z jądrem pamięci przewiduje 500 kroków trafniej niż wersja 3 (28,7 wobec 16,2 %), bez wpływu na dobór klatek.
+- Pokrycie latentu przez SD w kampanii: mediana 88,5 % tożsamość, 88,8 % cały latent.
+- Szczegóły: `experiments/maly_vit_petla_sd_rownanie/WYNIKI.md`, wykres `wyniki_eden43/WYNIKI_EDEN43.png`.
 
 ## Eden: przechowywanie
 
