@@ -280,6 +280,10 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
 - `zakladka_filmu.py`: zakładka filmu; `przestrzen_makro.py`: przestrzeń makrowektorów.
 - `uklad.py`: układ zawijający kontrolki, `dodaj()` (etykieta i pole zawijają się razem) i `PanelOpcji`
   (pasek przycisków widoku plus zakładki z grupami opcji, chowane przyciskiem „Opcje”).
+- `ustawienia.py`: plik konfiguracyjny `ustawienia.json` (158 list, pól i opcji ze wszystkich zakładek i widoków;
+  bez danych i bez przycisków przełączanych), wczytywany przy starcie i zapisywany przy zamknięciu; menu
+  „Ustawienia”: zapisz, zapisz jako, wczytaj, przywróć domyślne, zapis przy zamknięciu.
+  `EDYTOR_BEZ_USTAWIEN=1` uruchamia bez pliku (testy).
 - `wygoda.py`: kółko myszy zmienia pole, listę albo suwak tylko po kliknięciu (inaczej przewija panel), liczby
   zatwierdzane Enterem albo wyjściem z pola, przyspieszanie przytrzymanej strzałki.
 - `styl.py`: hierarchia przycisków (rola „glowny”: główna akcja zakładki, „narzedzie”: małe przyciski widoku).

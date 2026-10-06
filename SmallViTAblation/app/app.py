@@ -88,6 +88,7 @@ class Okno(QMainWindow):
         self._buduj_ui()
         from wygoda import ulatw
         ulatw(self)                           # kółko tylko w klikniętym polu, liczby zatwierdzane Enterem
+        self._ustawienia_startowe()
         self.combo_jednostki.blockSignals(True)
         self.combo_jednostki.setCurrentIndex(2)   # domyślnie zmiana −100..+100% limitu
         self.combo_jednostki.blockSignals(False)
@@ -980,6 +981,64 @@ class Okno(QMainWindow):
 
     # --------------------------------------------------------------- błędy
 
+    # ------------------------------------------------------------------ ustawienia (plik konfiguracyjny)
+
+    def _ustawienia_startowe(self):
+        """Menu Ustawienia, zapamiętanie domyślnych i wczytanie ustawienia.json (gdy jest)."""
+        import ustawienia as U
+        from PyQt6.QtGui import QAction
+        self._domyslne = U.stan(self)
+        m = self.menuBar().addMenu('Ustawienia')
+        for nazwa, opis, fn in (
+                ('Zapisz ustawienia', f'Zapisuje stan wszystkich list, pól i opcji do {U.PLIK.name} (wczytywany przy starcie).',
+                 lambda: self._zapisz_ustawienia(U.PLIK)),
+                ('Zapisz ustawienia jako…', 'Zapis do wybranego pliku JSON (np. osobny zestaw do porównań).',
+                 lambda: self._zapisz_ustawienia(None)),
+                ('Wczytaj ustawienia…', 'Ustawia listy, pola i opcje z wybranego pliku JSON.', self._wczytaj_ustawienia),
+                ('Przywróć domyślne', 'Wartości z chwili uruchomienia programu bez pliku ustawień.', self._przywroc_ustawienia)):
+            akcja = QAction(nazwa, self); akcja.setToolTip(opis); akcja.setStatusTip(opis); akcja.triggered.connect(fn)
+            m.addAction(akcja)
+        m.setToolTipsVisible(True)
+        m.addSeparator()
+        self.akcja_autozapis = QAction('Zapisuj przy zamknięciu', self); self.akcja_autozapis.setCheckable(True)
+        self.akcja_autozapis.setChecked(True); m.addAction(self.akcja_autozapis)
+        if U.PLIK.exists() and not _bez_ustawien():
+            try:
+                ok, pom = U.wczytaj(self)
+                self.statusBar().showMessage(f'Wczytano ustawienia z {U.PLIK.name}: {ok} kontrolek'
+                                             + (f', {pom} pominiętych (brak pozycji)' if pom else ''), 8000)
+            except Exception as e:
+                self.statusBar().showMessage(f'Nie wczytano {U.PLIK.name}: {e}', 8000)
+
+    def _zapisz_ustawienia(self, plik):
+        import ustawienia as U
+        if plik is None:
+            plik, _ = QFileDialog.getSaveFileName(self, 'Zapisz ustawienia', str(U.PLIK), 'Ustawienia (*.json)')
+            if not plik:
+                return
+        n = U.zapisz(self, plik)
+        self.statusBar().showMessage(f'Zapisano {n} ustawień do {plik}', 8000)
+
+    def _wczytaj_ustawienia(self):
+        import ustawienia as U
+        plik, _ = QFileDialog.getOpenFileName(self, 'Wczytaj ustawienia', str(U.PLIK), 'Ustawienia (*.json)')
+        if plik:
+            ok, pom = U.wczytaj(self, plik)
+            self.statusBar().showMessage(f'Wczytano {ok} ustawień z {plik}' + (f', {pom} pominiętych' if pom else ''), 8000)
+
+    def _przywroc_ustawienia(self):
+        ok, _ = __import__('ustawienia').ustaw(self, self._domyslne)
+        self.statusBar().showMessage(f'Przywrócono {ok} ustawień domyślnych (zapis do pliku przy zamknięciu albo z menu).', 8000)
+
+    def closeEvent(self, e):
+        import ustawienia as U
+        if getattr(self, 'akcja_autozapis', None) is not None and self.akcja_autozapis.isChecked() and not _bez_ustawien():
+            try:
+                U.zapisz(self)
+            except Exception:
+                traceback.print_exc()
+        super().closeEvent(e)
+
     def _blad_krytyczny(self, komunikat):
         self.etykieta_model.setText('Błąd ładowania modelu — szczegóły w oknie dialogowym.')
         QMessageBox.critical(self, 'Błąd', komunikat)
@@ -988,6 +1047,11 @@ class Okno(QMainWindow):
         self.btn_obraz.setEnabled(True)
         self.statusBar().showMessage('Wystąpił błąd — szczegóły w oknie dialogowym.')
         QMessageBox.warning(self, 'Błąd', komunikat)
+
+
+def _bez_ustawien():
+    import os
+    return os.environ.get('EDYTOR_BEZ_USTAWIEN') == '1'
 
 
 def main():
