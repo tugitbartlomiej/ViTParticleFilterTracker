@@ -11,10 +11,9 @@ cel każdego patcha, najsilniejsze pary). Głowa: średnia, maksimum albo jedna.
 """
 import numpy as np
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QHBoxLayout, QLabel, QSpinBox, QWidget
-from uklad import Przeplyw
-
-WIERSZE, KOLUMNY = 20, 30
+from PyQt6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QWidget
+from uklad import Przeplyw, dodaj
+from wspolne import KOLUMNY, WIERSZE
 _t = np.arange(600)
 ODLEGLOSC = np.hypot((_t[:, None] % KOLUMNY) - (_t[None] % KOLUMNY), (_t[:, None] // KOLUMNY) - (_t[None] // KOLUMNY))
 
@@ -38,12 +37,7 @@ class OpcjeAtencji(QWidget):
         self.fn, self._bloki, self._cache = None, {}, {}
         w = Przeplyw(self)
 
-        def dodaj(nazwa, widget, opis):
-            e = QLabel(nazwa); e.setToolTip(opis); widget.setToolTip(opis)
-            w.addWidget(e); w.addWidget(widget)
-            return widget
-
-        self.combo_mapa = dodaj('mapa:', QComboBox(),
+        self.combo_mapa = dodaj(w, 'mapa:', QComboBox(),
                                 'Co pokazuje mapa cieplna na siatce 20x30 (A[i, j] = ile patch i patrzy na patch j):\n'
                                 '- średnia otrzymana: średnia kolumny, czyli ile uwagi patch dostaje od wszystkich,\n'
                                 '- z wybranego patcha: wiersz A[wybrany, :], skąd wybrany patch ciągnie informację,\n'
@@ -53,12 +47,12 @@ class OpcjeAtencji(QWidget):
                                 '- na siebie: A[i, i], ile patch patrzy na samego siebie.\n'
                                 'Wybrany patch ustawia się kliknięciem.')
         self.combo_mapa.addItems(self.MAPY)
-        self.combo_glowa = dodaj('głowa:', QComboBox(), 'Średnia albo maksimum po głowach atencji, albo jedna głowa.\n'
+        self.combo_glowa = dodaj(w, 'głowa:', QComboBox(), 'Średnia albo maksimum po głowach atencji, albo jedna głowa.\n'
                                  'Każda głowa uczy się innego wzorca, więc warto przejrzeć je osobno.')
         self.combo_glowa.addItems(['średnia', 'maksimum'])
-        self.spin_blok = dodaj('blok', QSpinBox(), 'Blok transformera ViT (1–6). 6 = ostatni, tuż przed latentem.')
+        self.spin_blok = dodaj(w, 'blok', QSpinBox(), 'Blok transformera ViT (1–6). 6 = ostatni, tuż przed latentem.')
         self.spin_blok.setRange(1, 6); self.spin_blok.setValue(6)
-        self.combo_bloki = dodaj('', QComboBox(), 'Tylko ten blok: wagi atencji jednego bloku.\n'
+        self.combo_bloki = dodaj(w, '', QComboBox(), 'Tylko ten blok: wagi atencji jednego bloku.\n'
                                  'Rollout: iloczyn (A + I) / 2 przez bloki 1..blok (Abnar i Zuidema 2020).\n'
                                  'Pokazuje, z których patchy wejścia pochodzi informacja tokenu po przejściu przez\n'
                                  'kolejne warstwy, z uwzględnieniem połączeń rezydualnych (I).')
@@ -67,10 +61,10 @@ class OpcjeAtencji(QWidget):
         self.chk_bez_siebie.setToolTip('Zeruje atencję patcha na samego siebie (przekątna) i normuje wiersze od nowa.\n'
                                        'Przekątna często dominuje i zasłania, do których INNYCH patchy patch ciągnie.')
         w.addWidget(self.chk_bez_siebie)
-        self.combo_skala = dodaj('skala:', QComboBox(), 'Liniowa: wprost wagi.\nLogarytmiczna: widać też słabe wagi.\n'
+        self.combo_skala = dodaj(w, 'skala:', QComboBox(), 'Liniowa: wprost wagi.\nLogarytmiczna: widać też słabe wagi.\n'
                                  'Rangi: kolor = percentyl wartości (równy rozkład kolorów).')
         self.combo_skala.addItems(['liniowa', 'logarytmiczna', 'rangi'])
-        self.combo_strz = dodaj('strzałki:', QComboBox(),
+        self.combo_strz = dodaj(w, 'strzałki:', QComboBox(),
                                 'Strzałka źródło → cel: patch u nasady patrzy na patch na grocie (ciągnie z niego).\n'
                                 'Grubość i jasność = waga atencji.\n'
                                 '- z wybranego patcha: k celów, na które wybrany patrzy najmocniej,\n'
@@ -78,11 +72,11 @@ class OpcjeAtencji(QWidget):
                                 '- każdy patch: 600 strzałek do najsilniejszego celu każdego patcha (pole przepływu),\n'
                                 '- najsilniejsze pary: k największych wag A[i, j] w całym obrazie (bez przekątnej).')
         self.combo_strz.addItems(self.STRZALKI)
-        self.spin_k = dodaj('k', QSpinBox(), 'Liczba strzałek dla opcji „k najsilniejszych”.')
+        self.spin_k = dodaj(w, 'k', QSpinBox(), 'Liczba strzałek dla opcji „k najsilniejszych”.')
         self.spin_k.setRange(1, 600); self.spin_k.setValue(10)
         self.spin_alfa = None
         if z_kryciem:
-            self.spin_alfa = dodaj('krycie', QDoubleSpinBox(), 'Krycie mapy atencji: 0 = niewidoczna, 1 = pełna.')
+            self.spin_alfa = dodaj(w, 'krycie', QDoubleSpinBox(), 'Krycie mapy atencji: 0 = niewidoczna, 1 = pełna.')
             self.spin_alfa.setRange(0, 1); self.spin_alfa.setSingleStep(.1); self.spin_alfa.setValue(.5)
         w.addStretch(1)
         for s in (self.combo_mapa.currentIndexChanged, self.combo_glowa.currentIndexChanged, self.spin_blok.valueChanged,

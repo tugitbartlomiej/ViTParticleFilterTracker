@@ -1,7 +1,7 @@
 """Układ „przepływowy”: kontrolki w wierszu, a gdy brakuje miejsca, zawijają się do następnej linii
 (jak tekst). Dzięki temu panele z wieloma opcjami nie rozpychają okna na szerokość."""
 from PyQt6.QtCore import QPoint, QRect, QSize, Qt
-from PyQt6.QtWidgets import QLayout, QSizePolicy, QWidgetItem
+from PyQt6.QtWidgets import QLabel, QLayout, QWidgetItem
 
 
 class Przeplyw(QLayout):
@@ -71,3 +71,10 @@ class Przeplyw(QLayout):
             x += h.width() + self._odstep
             wys_linii = max(wys_linii, h.height())
         return y + wys_linii - r.y() + m.bottom()
+
+
+def dodaj(uklad, nazwa, widget, opis):
+    """Etykieta i kontrolka obok siebie w układzie, ten sam opis jako podpowiedź obu; zwraca kontrolkę."""
+    e = QLabel(nazwa); e.setToolTip(opis); widget.setToolTip(opis)
+    uklad.addWidget(e); uklad.addWidget(widget)
+    return widget

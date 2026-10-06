@@ -15,12 +15,13 @@ from pathlib import Path
 
 import numpy as np
 
+from wspolne import SZER, WYS   # wejście ViT 480 x 320
+
 ZBIOR = Path('F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Dataset/Cataract-LMM/3_Object_Tracking')
 ADNOTACJE = ZBIOR / 'annotations'
 WIDEO = ZBIOR / 'videos'
 KATALOG_MP4 = ZBIOR / 'videos_mp4'
 MANIFEST = Path(__file__).resolve().parents[1] / 'outputs' / 'vit_sd_pelny_latent_filmy_eden_20261006' / 'FILMY.json'
-SZER, WYS = 480, 320
 
 
 def lista_filmow():

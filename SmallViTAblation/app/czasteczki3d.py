@@ -12,87 +12,18 @@ import time
 from pathlib import Path
 
 import numpy as np
-from PyQt6.QtCore import QPoint, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QVector3D, QVector4D
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QHBoxLayout, QLabel, QPushButton, QSlider,
-                             QSpinBox, QVBoxLayout, QWidget)
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QVector3D
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QPushButton, QSlider, QVBoxLayout,
+                             QWidget)
 
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
 from opcje_atencji import OpcjeAtencji
-from uklad import Przeplyw
-
-KOMORKA = 16
-WIERSZE, KOLUMNY = 20, 30
-SZER, WYS = KOLUMNY * KOMORKA, WIERSZE * KOMORKA
-WYNIKI = Path(__file__).resolve().parents[1] / 'outputs' / 'latent_editor_sd_20261006'
-
-
-def kolory_kanalow():
-    import matplotlib
-    return matplotlib.colormaps['hsv'](np.arange(768) / 768).astype(np.float32)
-
-
-def kierunki(polsfera):
-    """768 kierunków jednostkowych [768, 3]: spirala Fibonacciego, kanał c ma wysokość malejącą z c."""
-    c = np.arange(768) + .5
-    z = 1 - c / 768 if polsfera else 1 - 2 * c / 768
-    r = np.sqrt(np.clip(1 - z * z, 0, None))
-    phi = np.pi * (3 - np.sqrt(5)) * np.arange(768)
-    return np.stack([r * np.cos(phi), r * np.sin(phi), z], 1).astype(np.float32)
-
-
-class WidokGL(gl.GLViewWidget):
-    """GLViewWidget odporny na pierwsze klatki: zaraz po pokazaniu widżetu w zakładce Qt woła paintGL, zanim
-    kontekst jest gotowy, i OpenGL zgłasza GL_INVALID_OPERATION (1282) przy glClearColor (tak samo pusty
-    GLViewWidget). Taką klatkę pomijamy i prosimy o następną; potem rysowanie działa normalnie."""
-
-    def paintGL(self):
-        from OpenGL import GL
-        from OpenGL.error import GLError
-        try:
-            for _ in range(16):
-                if GL.glGetError() == GL.GL_NO_ERROR:
-                    break
-            super().paintGL()
-        except GLError:
-            self._pominiete = getattr(self, '_pominiete', 0) + 1
-            if self._pominiete < 50:
-                from PyQt6.QtCore import QTimer
-                QTimer.singleShot(30, self.update)
-
-
-class Widok3D(WidokGL):
-    """GLViewWidget, który zgłasza kliknięcie (bez przeciągania) jako punkt na płaszczyźnie obrazu z = 0."""
-    klik = pyqtSignal(float, float)
-
-    def mousePressEvent(self, ev):
-        self._start = ev.position().toPoint()
-        super().mousePressEvent(ev)
-
-    def mouseReleaseEvent(self, ev):
-        super().mouseReleaseEvent(ev)
-        p = ev.position().toPoint()
-        if ev.button() == Qt.MouseButton.LeftButton and (p - getattr(self, '_start', QPoint())).manhattanLength() < 4:
-            xy = self.punkt_na_obrazie(p.x(), p.y())
-            if xy is not None:
-                self.klik.emit(*xy)
-
-    def punkt_na_obrazie(self, px, py):
-        w, h = self.width(), self.height()
-        m = self.projectionMatrix((0, 0, w, h), (0, 0, w, h)) * self.viewMatrix()
-        inv, ok = m.inverted()
-        if not ok:
-            return None
-        nx, ny = 2 * px / w - 1, 1 - 2 * py / h
-        a = inv.map(QVector4D(nx, ny, -1, 1)); b = inv.map(QVector4D(nx, ny, 1, 1))
-        a = np.array([a.x(), a.y(), a.z()]) / a.w(); b = np.array([b.x(), b.y(), b.z()]) / b.w()
-        if abs(b[2] - a[2]) < 1e-9:
-            return None
-        t = -a[2] / (b[2] - a[2])
-        x, y = (a + t * (b - a))[:2]
-        return (x, y) if 0 <= x < SZER and 0 <= y < WYS else None
+from uklad import Przeplyw, dodaj
+from widok_gl import Widok3D
+from wspolne import KOLUMNY, KOMORKA, SZER, WIERSZE, WYNIKI, WYS, kierunki, kolory_kanalow
 
 
 class WidokCzasteczek3D(QWidget):
@@ -115,11 +46,6 @@ class WidokCzasteczek3D(QWidget):
             w = Przeplyw(); lay.addLayout(w)
             return w
 
-        def dodaj(w, nazwa, widget, opis):
-            e = QLabel(nazwa); e.setToolTip(opis); widget.setToolTip(opis)
-            w.addWidget(e); w.addWidget(widget)
-            return widget
-
         w = wiersz()
         self.combo_tryb = dodaj(w, 'Pokaż:', QComboBox(),
                                 'PRZED / PO: wartości latentu tokenu.\n'
@@ -131,10 +57,12 @@ class WidokCzasteczek3D(QWidget):
                                'Kierunek i kolor kanału są zawsze te same.')
         self.combo_kan.addItems(self.KANALY)
         self.combo_ksztalt = dodaj(w, 'Kierunki:', QComboBox(),
-                                   'Półsfera: wszystkie 768 kierunków nad obrazem (z > 0), nic nie chowa się pod zdjęciem.\n'
-                                   'Sfera: kierunki na całej sferze, część wektorów idzie pod płaszczyznę obrazu.\n'
+                                   'Pełna sfera (domyślnie): 768 kierunków równo we wszystkie strony, także w dół.\n'
+                                   'Środki cząsteczek są wtedy uniesione nad obraz o najdłuższy wektor,\n'
+                                   'żeby dolna połowa kuli nie chowała się pod zdjęciem.\n'
+                                   'Półsfera: wszystkie 768 kierunków nad obrazem (z > 0), cząsteczki leżą na obrazie.\n'
                                    'Kanał 0 wskazuje w górę, kolejne schodzą spiralą w dół (kolor zmienia się razem z wysokością).')
-        self.combo_ksztalt.addItems(['półsfera nad obrazem', 'pełna sfera'])
+        self.combo_ksztalt.addItems(['pełna sfera (kula)', 'półsfera nad obrazem'])
         self.combo_styl = dodaj(w, 'Styl:', QComboBox(), 'Wektory: odcinki od środka cząsteczki.\n'
                                 'Końce: tylko punkty na końcach wektorów (chmura cząstek).')
         self.combo_styl.addItems(['wektory', 'końce (punkty)', 'wektory i końce'])
@@ -280,7 +208,7 @@ class WidokCzasteczek3D(QWidget):
         # legenda: 768 kierunków i kolorów kanałów na kuli obok obrazu
         self.legenda = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=4, pxMode=True, glOptions='translucent')
         v.addItem(self.legenda)
-        self.legenda_tekst = gl.GLTextItem(pos=(-70, WYS - 10, 75), text='kanał c: kierunek i kolor',
+        self.legenda_tekst = gl.GLTextItem(pos=(-70, WYS - 10, 95), text='kanał c: kierunek i kolor',
                                            color=(220, 220, 220, 255))
         v.addItem(self.legenda_tekst)
         for pos, txt in (((SZER / 2, -18, 0), 'kolumna patcha →'), ((-18, WYS / 2, 0), 'wiersz ↓'),
@@ -289,8 +217,9 @@ class WidokCzasteczek3D(QWidget):
         self._legenda()
 
     def _legenda(self):
-        d = kierunki(self.combo_ksztalt.currentIndex() == 0)
-        self.legenda.setData(pos=np.array([-60, WYS - 60, 0], np.float32) + 40 * d, color=self.kolory)
+        polsfera = self.combo_ksztalt.currentIndex() == 1
+        d = kierunki(polsfera)
+        self.legenda.setData(pos=np.array([-60, WYS - 60, 0 if polsfera else 40], np.float32) + 40 * d, color=self.kolory)
 
     def _kamera(self):
         self.widok.setCameraPosition(pos=QVector3D(SZER / 2, WYS / 2, 0), distance=720, elevation=38, azimuth=-90)
@@ -418,8 +347,13 @@ class WidokCzasteczek3D(QWidget):
             zakres = np.abs(np.concatenate([self.przed[:, kan]] + ([self.po[:, kan]] if self.po is not None and tryb in (1, 3, 4) else [])))
         m = max(float(np.percentile(zakres, 99.5)), 1e-6)            # stała skala w czasie animacji
         skala = (polowa - r0) / m * self.spin_skala.value() / 100 if polowa > r0 else polowa / m
-        d = kierunki(self.combo_ksztalt.currentIndex() == 0)
+        polsfera = self.combo_ksztalt.currentIndex() == 1
+        d = kierunki(polsfera)
         srodki = self._srodki()
+        if not polsfera:                                              # kula: dolna połowa nad obrazem, nie pod nim
+            maks = KOMORKA * self.spin_maks.value() / 100
+            dl = r0 + (polowa - r0) * self.spin_skala.value() / 100
+            srodki[:, 2] += min(dl, maks) if maks else dl
         pos, konce = self._wektory(L, kan, tok, srodki, d, r0, skala)
         styl = self.combo_styl.currentIndex()
         kol = self.kolory[kan]

@@ -6,11 +6,18 @@ checkpoint krok 8500, tryb cross-attention).
 
 ## Uruchomienie
 
-```bat
-uruchom.bat
-```
+Najprościej: `Edytor latentu.exe` w tym katalogu (dwuklik, bez konsoli). To mały uruchamiacz (48 kB): nie pakuje
+Pythona ani torcha, tylko startuje zainstalowany `F:\Python\3.13\pythonw.exe` (torch 2.10 z CUDA 12.6) ze skryptem
+`start.py`. Inny Python: pełna ścieżka do `pythonw.exe` w pliku `python.txt` obok exe. Źródło i ikona:
+`uruchamiacz/` (przebudowa: `csc.exe /target:winexe /win32icon:ikona.ico /r:System.Windows.Forms.dll
+"/out:..\Edytor latentu.exe" Uruchamiacz.cs`, kompilator z .NET Framework 4 w Windows).
 
-albo ręcznie: `python app.py` z tego katalogu (`SmallViTAblation/app/`).
+Z konsoli: `uruchom.bat` albo `python start.py` z tego katalogu (`SmallViTAblation/app/`).
+
+`start.py` od razu pokazuje okienko ładowania z krokami (torch, silnik SD, ViT z timm i torchvision, OpenGL,
+okno). Pierwszy start po włączeniu komputera trwa do minuty (import bibliotek z zimnego dysku), kolejne około
+7 s. Błąd startu pokazuje się w oknie i trafia do `start.log`; bez konsoli (exe) wyjście programu idzie do
+`wyjscie.log`. `python app.py` też działa, ale bez okienka ładowania.
 
 Wymagania: torch+CUDA, diffusers 0.39.0, timm, PyQt6, opencv-python, PIL.
 Wszystkie wagi są lokalne; pierwsze ładowanie weryfikuje sha256 bazowego UNet/VAE
@@ -160,8 +167,8 @@ w bloku 5 dla 584, w bloku 6 dla 591; średnia waga do niego w bloku 6 to 0,129 
 ### Zakładka „Cząsteczki 3D: globalny układ (GPU, OpenGL)” (`czasteczki3d.py`)
 
 Wszystkie 600 tokenów w jednym układzie 3D: x = kolumna w pikselach wejścia ViT, y = wiersz od dołu,
-z = wysokość nad obrazem. Kanał c ma stały kierunek (spirala Fibonacciego na półsferze nad obrazem albo
-na pełnej sferze) i stały kolor; długość = promień sfery zera + skala · wartość. Rysuje pyqtgraph.opengl
+z = wysokość nad obrazem. Kanał c ma stały kierunek (spirala Fibonacciego na pełnej sferze, domyślnie,
+ze środkami cząsteczek uniesionymi nad obraz o najdłuższy wektor, albo na półsferze nad obrazem) i stały kolor; długość = promień sfery zera + skala · wartość. Rysuje pyqtgraph.opengl
 (bufory VBO na karcie): obrót kamery nie przelicza danych, pełne przeliczenie 600 x 768 wektorów trwa
 około 40 ms (RTX 3070).
 
@@ -206,8 +213,10 @@ przesuwają cząstki tam, dokąd pchają je nowe siły kanałów; przelot jest p
 rozrzut; na TR_0001 0:20–0:30 wyjaśniają 58 % wariancji), sfera Fibonacciego jak w widoku 3D albo losowe.
 μ = średni latent sekwencji (można wyłączyć), s stałe w sekwencji (99. percentyl promienia = 100).
 Siły z: wszystkich kanałów, tylko J128 albo bez J128. Kolor: położenie patcha, narzędzie / tło (maska),
-pewność ViT. Łańcuch mikrowektorów wybranego patcha: 768 wektorów od najsilniejszego, koniec do początku,
-kończy się w cząstce.
+pewność ViT. Mikrowektory wybranego patcha: domyślnie wszystkie 768 ze wspólnego środka układu plus biała
+wypadkowa (ich suma) kończąca się w cząstce; mnożnik „powiększ mikrowektory” wydłuża tylko rysunek mikrowektorów
+(TR_0001, klatka 21, patch 315: najdłuższy 7,6, mediana 0,04, wypadkowa 90). Do wyboru też łańcuch (koniec do
+początku, od najsilniejszego), oba albo brak; łańcuch i wypadkowa to to samo dodawanie wektorów.
 
 Uwaga o OpenGL: przy rozłączonej sesji Windows (pulpit zdalny rozłączony, ekran zablokowany) sterownik
 nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki zamiast zgłaszać błąd.
@@ -215,14 +224,18 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
 ## Pliki
 
 - `silnik.py`: ładowanie modeli, DDIM z postępem, latent z ViT, zakresy kanałów.
-- `app.py`: GUI.
+- `start.py`: start z okienkiem ładowania; `Edytor latentu.exe` i `uruchamiacz/`: uruchamiacz exe.
+- `app.py`: okno główne i logika zakładki „Edytor SD”; `widzety_edytora.py`: jej widżety (obraz z siatką,
+  lista suwaków) i wątki (model SD, generacja, latent ViT).
 - `detekcja.py`: ViT z checkpointu, metryki (IoU, AP, mAP), ogon od latentu, optymalizacja.
 - `zakladka_detekcji.py`: zakładka detekcji i auto-szukania.
 - `czasteczki.py`, `czasteczki3d.py`: widoki cząsteczek 2D (matplotlib) i 3D (pyqtgraph.opengl).
 - `opcje_atencji.py`: wspólny panel opcji atencji (mapy, głowy, rollout, strzałki).
 - `film.py`: filmy, zakres czasu na klatki, etykiety i obrysy, maska patchy.
 - `zakladka_filmu.py`: zakładka filmu; `przestrzen_makro.py`: przestrzeń makrowektorów.
-- `uklad.py`: układ zawijający kontrolki do kolejnych linii.
+- `uklad.py`: układ zawijający kontrolki do kolejnych linii i `dodaj()` (etykieta + kontrolka z podpowiedzią).
+- `wspolne.py`: siatka patchy (16 px, 20 x 30, wejście 480 x 320), kolory i kierunki 768 kanałów, katalog wyników.
+- `widok_gl.py`: widoki OpenGL (`WidokGL` odporny na błędy kontekstu, `Widok3D` z kliknięciem w obraz).
 - Wyniki (obrazy PNG, latenty NPZ) zapisują się do `outputs/latent_editor_sd_20261006/`.
 
 ## Ścieżki

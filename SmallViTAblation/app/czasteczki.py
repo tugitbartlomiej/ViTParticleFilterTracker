@@ -7,25 +7,14 @@ Opcje: przed / po / różnica / przed i po nałożone, przerzedzenie kanałów, 
 mapa atencji ViT i strzałki „który patch ciągnie z którego” (opcje w opcje_atencji.py).
 """
 import numpy as np
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QHBoxLayout, QLabel, QSpinBox, QVBoxLayout,
-                             QWidget)
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget)
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 
 from opcje_atencji import OpcjeAtencji
-
-KOMORKA = 16           # piksele wejścia ViT na patch
-WIERSZE, KOLUMNY = 20, 30
-KOLORY = None          # 768 x 4 RGBA, liczone raz
-
-
-def kolory_kanalow():
-    global KOLORY
-    if KOLORY is None:
-        import matplotlib
-        KOLORY = matplotlib.colormaps['hsv'](np.arange(768) / 768)
-    return KOLORY
+from uklad import dodaj
+from wspolne import KOLUMNY, KOMORKA, WIERSZE, kolory_kanalow
 
 
 class WidokCzasteczek(QWidget):
@@ -45,26 +34,21 @@ class WidokCzasteczek(QWidget):
 
         w = QHBoxLayout()
 
-        def dodaj(nazwa, widget, opis):
-            e = QLabel(nazwa); e.setToolTip(opis); widget.setToolTip(opis)
-            w.addWidget(e); w.addWidget(widget)
-            return widget
-
-        self.combo_tryb = dodaj('Pokaż:', QComboBox(), 'PRZED / PO: wartości latentu tokenu.\n'
+        self.combo_tryb = dodaj(w, 'Pokaż:', QComboBox(), 'PRZED / PO: wartości latentu tokenu.\n'
                                 'Różnica: po − przed (wektor dłuższy od okręgu = kanał wzmocniony, krótszy = osłabiony).\n'
                                 'Nałożone: przed na szaro, po w kolorach kanałów.')
         self.combo_tryb.addItems(self.TRYBY)
-        self.combo_kan = dodaj('Kanały:', QComboBox(), 'Ile z 768 wektorów rysować w każdym okręgu (mniej = szybciej i czytelniej).\n'
+        self.combo_kan = dodaj(w, 'Kanały:', QComboBox(), 'Ile z 768 wektorów rysować w każdym okręgu (mniej = szybciej i czytelniej).\n'
                                'Kąt i kolor kanału są zawsze te same: kanał c pod kątem 360° · c / 768.')
         self.combo_kan.addItems(self.KANALY)
-        self.spin_r0 = dodaj('Okrąg zera:', QDoubleSpinBox(), 'Promień szarego okręgu oznaczającego wartość 0, w % połowy patcha.\n'
+        self.spin_r0 = dodaj(w, 'Okrąg zera:', QDoubleSpinBox(), 'Promień szarego okręgu oznaczającego wartość 0, w % połowy patcha.\n'
                              'Wektor krótszy od okręgu = wartość ujemna.')
         self.spin_r0.setRange(0, 90); self.spin_r0.setValue(25); self.spin_r0.setSuffix(' %')
-        self.spin_skala = dodaj('Skala długości:', QDoubleSpinBox(), 'Mnożnik długości wektorów. 100 % = wartość większa od 99,5 % wszystkich na rysunku\n'
+        self.spin_skala = dodaj(w, 'Skala długości:', QDoubleSpinBox(), 'Mnożnik długości wektorów. 100 % = wartość większa od 99,5 % wszystkich na rysunku\n'
                                 'sięga brzegu patcha (nieliczne dłuższe wchodzą na sąsiednie patche);\n'
                                 'więcej = dłuższe wektory. Wartość brzegu patcha jest w tytule wykresu.')
         self.spin_skala.setRange(5, 2000); self.spin_skala.setValue(100); self.spin_skala.setSuffix(' %')
-        self.spin_gr = dodaj('Grubość:', QDoubleSpinBox(), 'Grubość linii wektorów.')
+        self.spin_gr = dodaj(w, 'Grubość:', QDoubleSpinBox(), 'Grubość linii wektorów.')
         self.spin_gr.setRange(.05, 3); self.spin_gr.setSingleStep(.05); self.spin_gr.setValue(.3)
         w.addStretch(1)
         lay.addLayout(w)
@@ -73,7 +57,7 @@ class WidokCzasteczek(QWidget):
         self.chk_obraz = QCheckBox('Nałóż obraz'); self.chk_obraz.setChecked(True)
         self.chk_obraz.setToolTip('Zdjęcie 480x320 (wejście ViT) pod okręgami.')
         w.addWidget(self.chk_obraz)
-        self.spin_alfa = dodaj('przezroczystość obrazu', QDoubleSpinBox(), '0 = obraz niewidoczny, 1 = pełny.')
+        self.spin_alfa = dodaj(w, 'przezroczystość obrazu', QDoubleSpinBox(), '0 = obraz niewidoczny, 1 = pełny.')
         self.spin_alfa.setRange(0, 1); self.spin_alfa.setSingleStep(.1); self.spin_alfa.setValue(.55)
         self.chk_atencja = QCheckBox('Nałóż atencję')
         self.chk_atencja.setToolTip('Mapa cieplna atencji ViT na siatce 20x30 i strzałki źródło → cel (opcje w wierszu niżej).\n'

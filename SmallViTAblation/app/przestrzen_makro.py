@@ -18,16 +18,15 @@ import time
 import numpy as np
 from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtGui import QVector3D
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QHBoxLayout, QLabel, QPushButton, QSpinBox,
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QPushButton, QSpinBox,
                              QVBoxLayout, QWidget)
 
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
-from czasteczki3d import WidokGL, kierunki, kolory_kanalow
-from uklad import Przeplyw
-
-KOLUMNY = 30
+from uklad import Przeplyw, dodaj
+from widok_gl import WidokGL
+from wspolne import KOLUMNY, kierunki, kolory_kanalow
 
 
 class WidokPrzestrzeniMakro(QWidget):
@@ -50,11 +49,6 @@ class WidokPrzestrzeniMakro(QWidget):
         def wiersz():
             w = Przeplyw(); lay.addLayout(w)
             return w
-
-        def dodaj(w, nazwa, widget, opis):
-            e = QLabel(nazwa); e.setToolTip(opis); widget.setToolTip(opis)
-            w.addWidget(e); w.addWidget(widget)
-            return widget
 
         w = wiersz()
         self.combo_kier = dodaj(w, 'Kierunki kanałów:', QComboBox(),
@@ -79,10 +73,18 @@ class WidokPrzestrzeniMakro(QWidget):
         self.spin_slad.setRange(0, 200); self.spin_slad.setValue(8)
         self.spin_rozmiar = dodaj(w, 'Rozmiar:', QDoubleSpinBox(), 'Średnica cząstek w pikselach ekranu.')
         self.spin_rozmiar.setRange(1, 30); self.spin_rozmiar.setValue(6)
-        self.chk_lancuch = QCheckBox('łańcuch mikrowektorów wybranego patcha'); self.chk_lancuch.setChecked(True)
-        self.chk_lancuch.setToolTip('768 mikrowektorów wybranej cząstki dodanych koniec do początku (od najsilniejszego),\n'
-                                    'w kolorach kanałów. Łańcuch zaczyna się w środku układu i kończy dokładnie w cząstce.')
-        w.addWidget(self.chk_lancuch)
+        self.combo_mikro = dodaj(w, 'Mikrowektory wybranego patcha:', QComboBox(),
+                                 'Jak pokazać 768 mikrowektorów (z_c − μ_c) · s · d_c wybranej cząstki. Oba sposoby\n'
+                                 'to to samo dodawanie wektorów, wynik jest ten sam: położenie cząstki.\n'
+                                 '- ze wspólnego środka: każdy mikrowektor wychodzi z tego samego punktu (środek układu),\n'
+                                 '  biała strzałka = ich suma (wypadkowa), kończy się w cząstce;\n'
+                                 '- łańcuch: wektory dokładane koniec do początku (od najsilniejszego), ostatni kończy się w cząstce;\n'
+                                 '- oba naraz.')
+        self.combo_mikro.addItems(['ze wspólnego środka + wypadkowa', 'łańcuch (koniec do początku)', 'oba', 'brak'])
+        self.spin_mikro = dodaj(w, 'Powiększ mikrowektory:', QDoubleSpinBox(),
+                                'Mnożnik długości mikrowektorów ze wspólnego środka (tylko rysunek, wypadkowa bez zmian).\n'
+                                'Pojedynczy mikrowektor jest zwykle dużo krótszy od wypadkowej.')
+        self.spin_mikro.setRange(1, 500); self.spin_mikro.setValue(1); self.spin_mikro.setPrefix('× ')
         self.chk_gwiazda = QCheckBox('kierunki kanałów'); self.chk_gwiazda.setChecked(True)
         self.chk_gwiazda.setToolTip('Gwiazda 768 kierunków d_c w środku układu (kolor kanału jak w widoku 3D).')
         w.addWidget(self.chk_gwiazda)
@@ -110,6 +112,13 @@ class WidokPrzestrzeniMakro(QWidget):
         v.addItem(self.slady)
         self.lancuch = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='line_strip', width=2, glOptions='translucent')
         v.addItem(self.lancuch)
+        self.mikro = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=1.5, glOptions='translucent')
+        self.mikro.setVisible(False)
+        v.addItem(self.mikro)
+        self.wypadkowa = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=4, color=(1, 1, 1, .95),
+                                           glOptions='translucent')
+        self.wypadkowa.setVisible(False)
+        v.addItem(self.wypadkowa)
         self.punkty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=6, pxMode=True, glOptions='translucent')
         v.addItem(self.punkty)
         self.wybrany = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=16, color=(1, 1, 1, 1), pxMode=True)
@@ -122,7 +131,8 @@ class WidokPrzestrzeniMakro(QWidget):
         for s in (self.combo_kier.currentIndexChanged, self.combo_kan.currentIndexChanged, self.chk_srodek.toggled):
             s.connect(lambda *_: self._przelicz())
         for s in (self.combo_kolor.currentIndexChanged, self.spin_slad.valueChanged, self.spin_rozmiar.valueChanged,
-                  self.chk_lancuch.toggled, self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled):
+                  self.combo_mikro.currentIndexChanged, self.spin_mikro.valueChanged,
+                  self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled):
             s.connect(lambda *_: self._rysuj(skok=True))
 
     def _kamera(self):
@@ -236,19 +246,30 @@ class WidokPrzestrzeniMakro(QWidget):
             self.wybrany.setVisible(True)
         else:
             self.wybrany.setVisible(False)
-        if self.chk_lancuch.isChecked() and self.token is not None and self.Z is not None:
-            # mikrowektory w kolejności od najsilniejszego; koniec łańcucha = bieżące położenie cząstki
+        tryb_m = self.combo_mikro.currentIndex()
+        jest = self.token is not None and self.Z is not None
+        if jest and tryb_m != 3:
             v = (self.Z[self.t, self.token].astype(np.float32) - self.mu)[:, None] * self.D * self.s   # [768, 3]
-            kol_v = self.kolory_kan.copy()
-            kolej = np.argsort(-np.linalg.norm(v, axis=1))
-            lan = np.concatenate([np.zeros((1, 3), np.float32), np.cumsum(v[kolej], 0)])
-            lan += (P[self.token] - lan[-1])                                     # przelot: łańcuch jedzie z cząstką
-            if self._u >= 1:
-                lan -= lan[0]                                                    # w spoczynku zaczyna się w (0, 0, 0)
+            kol_v = self.kolory_kan
+            # przelot: w trakcie przelotu wszystko jedzie razem z cząstką, w spoczynku początek = (0, 0, 0)
+            o = (P[self.token] - v.sum(0)) if self._u < 1 else np.zeros(3, np.float32)
+        if jest and tryb_m in (1, 2):
+            kolej = np.argsort(-np.linalg.norm(v, axis=1))                       # od najsilniejszego
+            lan = o + np.concatenate([np.zeros((1, 3), np.float32), np.cumsum(v[kolej], 0)])
             self.lancuch.setData(pos=lan, color=np.concatenate([kol_v[kolej[:1]], kol_v[kolej]]))
             self.lancuch.setVisible(True)
         else:
             self.lancuch.setVisible(False)
+        if jest and tryb_m in (0, 2):
+            seg = np.stack([np.broadcast_to(o, v.shape), o + v * self.spin_mikro.value()], 1).reshape(-1, 3)
+            dl = np.linalg.norm(v, axis=1)
+            c = np.repeat(kol_v, 2, 0).copy()
+            c[:, 3] = np.repeat(.25 + .75 * dl / max(float(dl.max()), 1e-9), 2)  # silniejszy = mniej przezroczysty
+            self.mikro.setData(pos=np.ascontiguousarray(seg, np.float32), color=c)
+            self.wypadkowa.setData(pos=np.stack([o, P[self.token]]).astype(np.float32))
+            self.mikro.setVisible(True); self.wypadkowa.setVisible(True)
+        else:
+            self.mikro.setVisible(False); self.wypadkowa.setVisible(False)
         if tylko_punkty:
             return
         L = self.spin_slad.value()

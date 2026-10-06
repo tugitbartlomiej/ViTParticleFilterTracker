@@ -10,8 +10,8 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from PyQt6.QtCore import QEvent, QObject, QPointF, QRectF, Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
+from PyQt6.QtCore import QEvent, QRectF, Qt, QThread, pyqtSignal
+from PyQt6.QtGui import QColor, QImage, QPainter, QPen
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFileDialog, QGroupBox, QHBoxLayout,
                              QLabel, QMessageBox, QProgressBar, QPushButton, QScrollArea, QSpinBox, QTabWidget,
                              QVBoxLayout, QWidget)
