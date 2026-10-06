@@ -11,9 +11,9 @@ import traceback
 from pathlib import Path
 
 import numpy as np
-from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QObject, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QGroupBox, QDoubleSpinBox, QFileDialog, QHBoxLayout, QLabel, QMessageBox,
-                             QProgressBar, QPushButton, QSlider, QSpinBox, QSplitter, QVBoxLayout, QWidget)
+                             QProgressBar, QPushButton, QSizePolicy, QSlider, QSpinBox, QSplitter, QVBoxLayout, QWidget)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
@@ -21,12 +21,32 @@ import detekcja as D
 import film as F
 import silnik
 from styl import rola
-from uklad import Przeplyw
+from uklad import Przeplyw, dodaj
 
 KOLOR_GT = (0, 1, 1, 1)           # obrys z etykiety
 KOLOR_RECZNY = (1, 1, 0, 1)       # obwód narysowany
 KOLOR_VIT = (0.2, 1, 0.2, 1)      # ramka ViT
 KOLOR_RAMKA_GT = (0, .6, 1, 1)
+TYTUL_KLATKI = .07                # część wysokości płótna klatki na tytuł nad obrazem
+STYL_OPISU = 'color: #a4a8ae;'    # etykiety opisowe (zakres, opis filmu), szare zamiast białych
+
+
+class ProporcjaKlatki(QObject):
+    """Trzyma wysokość płótna klatki równą szerokości panelu razy 2/3 (obraz 480x320) plus tytuł,
+    żeby nad i pod obrazem nie zostawały puste pasy; resztę wysokości panelu dostaje wykres przebiegu."""
+
+    def __init__(self, plotno, panel):
+        super().__init__(panel)
+        self.plotno = plotno
+        panel.installEventFilter(self)
+
+    def eventFilter(self, obj, ev):
+        if ev.type() == QEvent.Type.Resize:
+            wys = int(round(obj.width() * 320 / 480 / (1 - TYTUL_KLATKI)))
+            wys = max(200, min(wys, int(obj.height() * .6)))      # bardzo szeroki panel: nie wypychać wykresu
+            if self.plotno.height() != wys:
+                self.plotno.setFixedHeight(wys)
+        return False
 
 
 class WatekFilmu(QThread):
@@ -67,75 +87,90 @@ class ZakladkaFilmu(QWidget):
 
         # ---------------- góra: dwie grupy obok siebie, źródło klatek | zakres i konwersja
         gora = QHBoxLayout(); lay.addLayout(gora)
-        g1 = QGroupBox('1. Źródło klatek'); w = Przeplyw(); g1.setLayout(w); gora.addWidget(g1, 2)
-        e = QLabel('Film:'); w.addWidget(e)
+        g1 = QGroupBox('1. Źródło klatek'); l1 = QVBoxLayout(g1); l1.setSpacing(4); gora.addWidget(g1, 2)
+        w = Przeplyw(); l1.addLayout(w)                                  # wiersz 1: wybór filmu
         self.combo_film = QComboBox(); self.combo_film.setMinimumWidth(340)
-        self.combo_film.setToolTip('Filmy Cataract-LMM 3_Object_Tracking (170 zipów adnotacji).\n'
-                                   'train = zbiór uczący ViT (118 filmów), val = walidacyjny (25), poza manifestem = pozostałe.\n'
-                                   'W nawiasie: klatek z oznaczonym narzędziem / wszystkich klatek.')
         for f in self.filmy:
             n = f'{f["z_narzedziem"]}/{f["klatek"]}' if f['klatek'] else '?'
             self.combo_film.addItem(f'{f["id"]}  [{f["split"]}]  ({n} z narzędziem)', f['id'])
-        w.addWidget(self.combo_film)
+        dodaj(w, 'Film:', self.combo_film, 'Filmy Cataract-LMM 3_Object_Tracking (170 zipów adnotacji).\n'
+              'train = zbiór uczący ViT (118 filmów), val = walidacyjny (25), poza manifestem = pozostałe.\n'
+              'W nawiasie: klatek z oznaczonym narzędziem / wszystkich klatek.')
         self.combo_split = QComboBox(); self.combo_split.addItems(['wszystkie', 'tylko train', 'tylko val'])
         self.combo_split.setToolTip('Filtr listy filmów po podziale na zbiory.')
         w.addWidget(self.combo_split)
         self.btn_otworz = QPushButton('Otwórz film')
         self.btn_otworz.setToolTip(f'Wypakowuje MP4 wybranego filmu (raz) do {F.KATALOG_MP4} i czyta jego długość.')
         w.addWidget(self.btn_otworz)
-        self.btn_plik = QPushButton('Plik MP4…'); self.btn_plik.setToolTip('Dowolny plik MP4. Etykiety są wczytywane,\n'
-                                                                            'jeśli nazwa pliku zawiera identyfikator TR_xxxx_Sx_Pxx.')
+        w = Przeplyw(); l1.addLayout(w)                                  # wiersz 2: inne źródła i checkpoint
+        e = QLabel('albo:'); e.setStyleSheet(STYL_OPISU); w.addWidget(e)
+        self.btn_plik = rola(QPushButton('Plik MP4…'), 'narzedzie')
+        self.btn_plik.setToolTip('Dowolny plik MP4. Etykiety są wczytywane,\n'
+                                 'jeśli nazwa pliku zawiera identyfikator TR_xxxx_Sx_Pxx.')
         w.addWidget(self.btn_plik)
-        self.btn_folder = QPushButton('Folder zdjęć…')
+        self.btn_folder = rola(QPushButton('Folder zdjęć…'), 'narzedzie')
         self.btn_folder.setToolTip('Sekwencja z folderu zdjęć (PNG, JPG, BMP, TIF), w kolejności nazw plików,\n'
                                    'np. app/narzedzie_czarne_tlo/<sekwencja> (samo narzędzie na czarnym tle).\n'
                                    'Gdy folder ma MANIFEST.json (wytnij_narzedzie.py), etykiety i obrysy narzędzia\n'
                                    'są brane z annotation.csv dla właściwych numerów klatek. Czas = numer zdjęcia / kl./s.')
         w.addWidget(self.btn_folder)
-        self.btn_ckpt = QPushButton('Checkpoint ViT…'); self.btn_ckpt.setToolTip('Checkpoint małego ViT do latentu i detekcji.')
+        self.btn_ckpt = rola(QPushButton('Checkpoint ViT…'), 'narzedzie')
+        self.btn_ckpt.setToolTip('Checkpoint małego ViT do latentu i detekcji.')
         w.addWidget(self.btn_ckpt)
-        g2 = QGroupBox('2. Zakres i konwersja na sekwencję'); w = Przeplyw(); g2.setLayout(w); gora.addWidget(g2, 3)
-        self.etykieta_filmu = QLabel(''); self.etykieta_filmu.setWordWrap(True); lay.addWidget(self.etykieta_filmu)
+
+        g2 = QGroupBox('2. Zakres i konwersja na sekwencję'); l2 = QVBoxLayout(g2); l2.setSpacing(4); gora.addWidget(g2, 3)
+        w = Przeplyw(); l2.addLayout(w)                                  # wiersz 1: zakres czasu i liczba klatek
 
         def czas(nazwa, opis):
-            e = QLabel(nazwa); e.setToolTip(opis); w.addWidget(e)
             m = QSpinBox(); m.setRange(0, 600); m.setSuffix(' min'); m.setToolTip(opis)
             s = QDoubleSpinBox(); s.setRange(0, 59.9); s.setDecimals(1); s.setSingleStep(1); s.setSuffix(' s'); s.setToolTip(opis)
-            w.addWidget(m); w.addWidget(s)
+            para = QWidget(); l = QHBoxLayout(para); l.setContentsMargins(0, 0, 0, 0); l.setSpacing(2)
+            l.addWidget(m); l.addWidget(s)
+            dodaj(w, nazwa, para, opis)
             return m, s
 
         self.od_min, self.od_s = czas('Od:', 'Początek zakresu: minuta i sekunda filmu.')
         self.do_min, self.do_s = czas('Do:', 'Koniec zakresu: minuta i sekunda filmu (włącznie).')
         self.do_s.setValue(10)
-        e = QLabel('Klatek:'); w.addWidget(e)
         self.spin_n = QSpinBox(); self.spin_n.setRange(2, 1000); self.spin_n.setValue(100)
-        self.spin_n.setToolTip('Ile klatek wziąć z zakresu, równo rozłożonych. Gdy zakres ma mniej klatek, bierze wszystkie.\n'
-                               '100 klatek to około 18 MB latentu (float16) i 46 MB obrazów w pamięci.')
-        e.setToolTip(self.spin_n.toolTip()); w.addWidget(self.spin_n)
+        dodaj(w, 'Klatek:', self.spin_n,
+              'Ile klatek wziąć z zakresu, równo rozłożonych. Gdy zakres ma mniej klatek, bierze wszystkie.\n'
+              '100 klatek to około 18 MB latentu (float16) i 46 MB obrazów w pamięci.')
+        self.etykieta_zakresu = QLabel(''); self.etykieta_zakresu.setStyleSheet(STYL_OPISU)
+        self.etykieta_zakresu.setToolTip('Zakres czasu, numery klatek filmu i co ile klatek bierze sekwencja.')
+        w.addWidget(self.etykieta_zakresu)
+        w = Przeplyw(); l2.addLayout(w)                                  # wiersz 2: skąd czytać i konwersja
+        self.combo_zrodlo = QComboBox(); self.combo_zrodlo.addItems(['MP4', 'JPG z zipa adnotacji', 'folder zdjęć'])
+        dodaj(w, 'Czytaj z:', self.combo_zrodlo, 'Skąd czytać klatki. MP4: film. JPG: te same klatki zapisane w zipie adnotacji\n'
+              '(na nich robiono etykiety; nie trzeba wypakowywać MP4).')
         self.chk_z_narz = QCheckBox('tylko klatki z etykietą narzędzia')
         self.chk_z_narz.setToolTip('Bierze tylko klatki, na których w annotation.csv oznaczono cystotom.')
         w.addWidget(self.chk_z_narz)
-        self.combo_zrodlo = QComboBox(); self.combo_zrodlo.addItems(['MP4', 'JPG z zipa adnotacji', 'folder zdjęć'])
-        self.combo_zrodlo.setToolTip('Skąd czytać klatki. MP4: film. JPG: te same klatki zapisane w zipie adnotacji\n'
-                                     '(na nich robiono etykiety; nie trzeba wypakowywać MP4).')
-        w.addWidget(QLabel('źródło:')); w.addWidget(self.combo_zrodlo)
-        self.etykieta_zakresu = QLabel(''); w.addWidget(self.etykieta_zakresu)
         self.btn_konwertuj = rola(QPushButton('Konwertuj na sekwencję'), 'glowny')
         self.btn_konwertuj.setToolTip('Czyta klatki zakresu, liczy latent ViT (600 x 768) i detekcję każdej klatki,\n'
                                       'wczytuje etykiety i obrysy narzędzia.')
         w.addWidget(self.btn_konwertuj)
         self.btn_przerwij = QPushButton('Przerwij'); self.btn_przerwij.setEnabled(False); w.addWidget(self.btn_przerwij)
-        self.pasek = QProgressBar(); self.pasek.setMaximumWidth(220); w.addWidget(self.pasek)
+        self.pasek = QProgressBar(); self.pasek.setMinimumWidth(160); self.pasek.setMaximumWidth(220)
+        self.pasek.setToolTip('Postęp konwersji (klatki wczytane i przeliczone przez ViT).')
+        w.addWidget(self.pasek)
         self.btn_zapisz = QPushButton('Zapisz sekwencję')
         self.btn_zapisz.setToolTip(f'NPZ (latent float16, ramki ViT, etykiety) i JSON (ręczne obwody) do {silnik.WYJSCIE}.\n'
                                    'Klatki obrazu nie są zapisywane.')
         w.addWidget(self.btn_zapisz)
         w.addStretch(1)
+        self.etykieta_filmu = QLabel(''); self.etykieta_filmu.setWordWrap(True); self.etykieta_filmu.setStyleSheet(STYL_OPISU)
+        lay.addWidget(self.etykieta_filmu)
 
         # ---------------- środek: klatka | 3D nad obrazem | przestrzeń makrowektorów
         podzial = QSplitter(Qt.Orientation.Horizontal)
-        lewa = QWidget(); ll = QVBoxLayout(lewa); ll.setContentsMargins(0, 0, 0, 0)
-        w = Przeplyw(); ll.addLayout(w)
+        lewa = QWidget(); ll = QVBoxLayout(lewa); ll.setContentsMargins(0, 0, 0, 0); ll.setSpacing(4)
+
+        def grupa(tytul):
+            g = QGroupBox(tytul); w = Przeplyw(); g.setLayout(w); w.setContentsMargins(8, 4, 8, 4); ll.addWidget(g)
+            return w
+
+        w = grupa('Nakładki na klatce')
         self.chk = {}
         for k, nazwa, opis, wl in (('obrys', 'obrys narzędzia', 'Obrys cystotomu z etykiety (cystotome_seg), turkusowy.', True),
                                    ('ramka', 'ramka GT', 'Ramka narzędzia z etykiety (cystotome_bbox), niebieska.', False),
@@ -145,37 +180,38 @@ class ZakladkaFilmu(QWidget):
                                    ('zrenica', 'źrenica', 'Obrys źrenicy z etykiety.', False),
                                    ('siatka', 'siatka patchy', 'Siatka 20x30 i patche maski narzędzia.', False)):
             c = QCheckBox(nazwa); c.setChecked(wl); c.setToolTip(opis); w.addWidget(c); self.chk[k] = c
-        w.addStretch(1)
-        w = Przeplyw(); ll.addLayout(w)
-        self.btn_rysuj = QPushButton('Rysuj obwód'); self.btn_rysuj.setCheckable(True)
+        w = grupa('Obwód narzędzia ręcznie')
+        self.btn_rysuj = rola(QPushButton('✎ Rysuj obwód'), 'narzedzie'); self.btn_rysuj.setCheckable(True)
         self.btn_rysuj.setToolTip('Lewy klik dodaje punkt obwodu narzędzia, prawy klik zamyka obwód.\n'
                                   'Obwód należy do bieżącej klatki (żółty). Można narysować kilka.')
         w.addWidget(self.btn_rysuj)
-        self.btn_cofnij = QPushButton('Cofnij punkt'); w.addWidget(self.btn_cofnij)
-        self.btn_wyczysc = QPushButton('Wyczyść obwody klatki'); w.addWidget(self.btn_wyczysc)
-        self.btn_kopiuj = QPushButton('Kopiuj obwody na resztę')
+        self.btn_cofnij = rola(QPushButton('Cofnij punkt'), 'narzedzie')
+        self.btn_cofnij.setToolTip('Usuwa ostatni punkt rysowanego obwodu, a gdy go nie ma, ostatni obwód klatki.')
+        w.addWidget(self.btn_cofnij)
+        self.btn_wyczysc = rola(QPushButton('Wyczyść klatkę'), 'narzedzie')
+        self.btn_wyczysc.setToolTip('Usuwa wszystkie obwody narysowane na bieżącej klatce.')
+        w.addWidget(self.btn_wyczysc)
+        self.btn_kopiuj = rola(QPushButton('Kopiuj na następne'), 'narzedzie')
         self.btn_kopiuj.setToolTip('Kopiuje obwody bieżącej klatki na wszystkie następne klatki bez obwodu.')
         w.addWidget(self.btn_kopiuj)
-        w.addStretch(1)
-        w = Przeplyw(); ll.addLayout(w)
-        w.addWidget(QLabel('maska patchy z:'))
+        w = grupa('Maska patchy narzędzia')
         self.combo_maska = QComboBox(); self.combo_maska.addItems(['obrys z etykiety', 'obwód narysowany', 'oba (suma)'])
-        self.combo_maska.setToolTip('Z którego obrysu liczyć, które patche należą do narzędzia\n'
-                                    '(wybór cząstek „tylko w obrysie” w 3D i kolor „narzędzie” w przestrzeni makrowektorów).')
-        w.addWidget(self.combo_maska)
-        w.addWidget(QLabel('pokrycie ≥'))
+        dodaj(w, 'Z:', self.combo_maska, 'Z którego obrysu liczyć, które patche należą do narzędzia\n'
+              '(wybór cząstek „tylko w obrysie” w 3D i kolor „narzędzie” w przestrzeni makrowektorów).')
         self.spin_prog = QDoubleSpinBox(); self.spin_prog.setRange(1, 100); self.spin_prog.setValue(10); self.spin_prog.setSuffix(' %')
-        self.spin_prog.setToolTip('Patch należy do narzędzia, gdy obrys pokrywa co najmniej tyle procent jego pikseli.')
-        w.addWidget(self.spin_prog)
-        w.addStretch(1)
-        self.fig = Figure(figsize=(6, 4.2), facecolor='#1e1f22'); self.ax = self.fig.add_axes([0, 0, 1, .93])
-        self.canvas = FigureCanvasQTAgg(self.fig); self.canvas.setMinimumHeight(300)
-        ll.addWidget(self.canvas, 3)
+        dodaj(w, 'Pokrycie ≥', self.spin_prog,
+              'Patch należy do narzędzia, gdy obrys pokrywa co najmniej tyle procent jego pikseli.')
+        # klatka 480x320 (3:2) plus pasek tytułu: wysokość płótna idzie za szerokością panelu, bez pustych pasów
+        self.fig = Figure(figsize=(6, 4.3), facecolor='#1e1f22'); self.ax = self.fig.add_axes([0, 0, 1, 1 - TYTUL_KLATKI])
+        self.canvas = FigureCanvasQTAgg(self.fig); self.canvas.setMinimumHeight(200)
+        self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        ll.addWidget(self.canvas)
         self.fig_os = Figure(figsize=(6, 1.8), facecolor='#1e1f22'); self.ax_os = self.fig_os.add_axes([.08, .22, .9, .7])
         self.canvas_os = FigureCanvasQTAgg(self.fig_os); self.canvas_os.setMinimumHeight(140)
         self.canvas_os.setToolTip('Przebieg sekwencji: pewność ViT, IoU z ramką etykiety i zmiana latentu względem\n'
                                   'poprzedniej klatki. Kliknięcie przechodzi do klatki.')
         ll.addWidget(self.canvas_os, 1)
+        self._proporcja = ProporcjaKlatki(self.canvas, lewa)
         podzial.addWidget(lewa)
 
         from czasteczki3d import WidokCzasteczek3D
@@ -196,29 +232,32 @@ class ZakladkaFilmu(QWidget):
                         (self.btn_dalej, 'Następna klatka.'), (self.btn_kon, 'Ostatnia klatka sekwencji.')):
             b.setToolTip(opis); w.addWidget(b)
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setRange(0, 0); w.addWidget(self.suwak, 1)
-        w.addWidget(QLabel('kl./s'))
         self.spin_fps = QDoubleSpinBox(); self.spin_fps.setRange(.5, 30); self.spin_fps.setValue(6)
-        self.spin_fps.setToolTip('Szybkość odtwarzania sekwencji. Przy 768 wektorach x 600 patchy jedna klatka 3D to około 60 ms.')
-        w.addWidget(self.spin_fps)
-        self.chk_petla = QCheckBox('pętla'); self.chk_petla.setChecked(True); w.addWidget(self.chk_petla)
-        w.addWidget(QLabel('porównanie w 3D:'))
+        dodaj(w, 'kl./s', self.spin_fps,
+              'Szybkość odtwarzania sekwencji. Przy 768 wektorach x 600 patchy jedna klatka 3D to około 60 ms.')
+        self.chk_petla = QCheckBox('pętla'); self.chk_petla.setChecked(True)
+        self.chk_petla.setToolTip('Po ostatniej klatce odtwarzanie wraca do pierwszej.')
+        w.addWidget(self.chk_petla)
+        # drugi wiersz: co pokazują widoki obok (porównanie, śledzony patch) i opis bieżącej klatki
+        w = QHBoxLayout(); lay.addLayout(w)
         self.combo_por = QComboBox(); self.combo_por.addItems(['brak', 'z poprzednią klatką', 'z pierwszą klatką'])
-        self.combo_por.setToolTip('Co jest „PRZED” w widoku 3D: brak (tylko bieżąca klatka), poprzednia klatka\n'
-                                  'albo pierwsza klatka sekwencji; „PO” = bieżąca. Tryb „różnica” w 3D pokaże zmianę.')
-        w.addWidget(self.combo_por)
-        e = QLabel('śledź czubek:'); w.addWidget(e)
+        dodaj(w, 'Porównanie w 3D:', self.combo_por,
+              'Co jest „PRZED” w widoku 3D: brak (tylko bieżąca klatka), poprzednia klatka\n'
+              'albo pierwsza klatka sekwencji; „PO” = bieżąca. Tryb „różnica” w 3D pokaże zmianę.')
+        w.addSpacing(12)
         self.combo_czubek = QComboBox()
         self.combo_czubek.addItems(['wyłączone', 'czubek z etykiety (ViT, gdy brak)', 'najpewniejszy patch ViT'])
-        self.combo_czubek.setToolTip('W każdej klatce automatycznie wybiera patch z czubkiem igły (cząstka w 3D,\n'
-                                     'cząstka i jej mikrowektory w przestrzeni makrowektorów, ramka na klatce):\n'
-                                     '- czubek z etykiety: patch, w którym leży cystotome_tip z annotation.csv;\n'
-                                     '  w klatce bez oznaczonego czubka bierze najpewniejszy patch ViT;\n'
-                                     '- najpewniejszy patch ViT: patch o największej pewności środka na mapie ViT\n'
-                                     '  (środek wykrytego narzędzia, nie zawsze sam czubek).\n'
-                                     'Ręczny klik w patch wyłącza śledzenie.')
-        e.setToolTip(self.combo_czubek.toolTip())
-        w.addWidget(self.combo_czubek)
-        self.etykieta_klatki = QLabel(''); self.etykieta_klatki.setWordWrap(True); lay.addWidget(self.etykieta_klatki)
+        dodaj(w, 'Śledź czubek:', self.combo_czubek,
+              'W każdej klatce automatycznie wybiera patch z czubkiem igły (cząstka w 3D,\n'
+              'cząstka i jej mikrowektory w przestrzeni makrowektorów, ramka na klatce):\n'
+              '- czubek z etykiety: patch, w którym leży cystotome_tip z annotation.csv;\n'
+              '  w klatce bez oznaczonego czubka bierze najpewniejszy patch ViT;\n'
+              '- najpewniejszy patch ViT: patch o największej pewności środka na mapie ViT\n'
+              '  (środek wykrytego narzędzia, nie zawsze sam czubek).\n'
+              'Ręczny klik w patch wyłącza śledzenie.')
+        w.addSpacing(16)
+        self.etykieta_klatki = QLabel(''); self.etykieta_klatki.setWordWrap(True)
+        w.addWidget(self.etykieta_klatki, 1)
         self.timer = QTimer(self); self.timer.timeout.connect(self._nastepna)
 
         # ---------------- sygnały
