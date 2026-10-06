@@ -26,6 +26,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBox,
 
 import silnik
 from styl import STYL, rola
+from uklad import Przeplyw, dodaj
 from widzety_edytora import SUWAK_MAX, ListaKanalow, ObrazSiatka, WatekGeneracji, WatekModelu, WatekViT
 from wspolne import KOLUMNY as KOLUMNY_SIATKI   # siatka patchy 20x30
 
@@ -106,7 +107,9 @@ class Okno(QMainWindow):
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(self._panel_edycji())
         splitter.addWidget(self._panel_obrazu())
-        splitter.setSizes([820, 600])
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([680, 740])               # obraz dostaje ponad połowę okna
         from zakladka_detekcji import ZakladkaDetekcji
         self.zakladki_glowne = QTabWidget()
         self.zakladki_glowne.addTab(splitter, 'Edytor SD')
@@ -121,19 +124,27 @@ class Okno(QMainWindow):
             self.zakladki_glowne.addTab(QLabel(f'Zakładka filmu niedostępna: {e}'), 'Film')
         self.setCentralWidget(self.zakladki_glowne)
 
+    @staticmethod
+    def _razem(*elementy):
+        """Kilka kontrolek (tekst = etykieta) w jednym kawałku: w układzie Przeplyw zawijają się razem."""
+        kawalek = QWidget()
+        l = QHBoxLayout(kawalek)
+        l.setContentsMargins(0, 0, 0, 0)
+        l.setSpacing(4)
+        for e in elementy:
+            l.addWidget(QLabel(e) if isinstance(e, str) else e)
+        return kawalek
+
     def _panel_edycji(self):
         panel = QWidget()
         lay = QVBoxLayout(panel)
+        lay.setContentsMargins(4, 4, 4, 4)
 
         grupa_baza = QGroupBox('Latent bazowy 600x768')
         grupa_baza.setToolTip('Punkt odniesienia edycji: pełny latent 600 tokenów x 768 kanałów.\n'
                               'Wektor z suwaków jest nakładany na tę bazę zgodnie z wybranym trybem.\n'
                               'Domyślnie: naturalny latent "before" z LATENT_PELNY.npz.')
-        b = QVBoxLayout(grupa_baza)
-        self.etykieta_bazy = QLabel(f'Źródło: {self.zrodlo_bazy}')
-        self.etykieta_bazy.setWordWrap(True)
-        b.addWidget(self.etykieta_bazy)
-        wiersz = QHBoxLayout()
+        b = QHBoxLayout(grupa_baza)                 # przyciski i źródło w jednym wierszu
         self.btn_obraz = QPushButton('Z obrazu (ViT)...')
         self.btn_obraz.setToolTip('Wczytuje dowolny obraz (JPG/PNG...), skaluje go do 480x320\n'
                                   'i liczy naturalny latent zamrożonym ViT (MODEL_VIT_K1000.pt).\n'
@@ -144,88 +155,79 @@ class Okno(QMainWindow):
                                 'Rozpoznawane klucze: latent / after / before, a gdy ich brak —\n'
                                 'pierwsza tablica o kształcie 600x768 (np. latent zapisany w tej aplikacji).')
         self.btn_npz.clicked.connect(self._wczytaj_baze_z_npz)
-        self.btn_baza_reset = QPushButton('Przywróć domyślną')
+        self.btn_baza_reset = rola(QPushButton('Przywróć domyślną'), 'narzedzie')
         self.btn_baza_reset.setToolTip('Przywraca domyślny latent bazowy: naturalny latent "before"\n'
                                        'z outputs/vit_latent128_jedno_zdjecie_90/LATENT_PELNY.npz.')
         self.btn_baza_reset.clicked.connect(self._przywroc_baze)
         for w in (self.btn_obraz, self.btn_npz, self.btn_baza_reset):
-            wiersz.addWidget(w)
-        wiersz.addStretch(1)
-        b.addLayout(wiersz)
+            b.addWidget(w)
+        b.addSpacing(10)
+        self.etykieta_bazy = QLabel(f'Źródło: {self.zrodlo_bazy}')
+        self.etykieta_bazy.setWordWrap(True)
+        b.addWidget(self.etykieta_bazy, 1)
         lay.addWidget(grupa_baza)
         lay.addWidget(self._grupa_limitow())
 
         grupa_wektor = QGroupBox('Wektor 768 wartości (suwaki)')
         g = QVBoxLayout(grupa_wektor)
-        wiersz_tryb = QHBoxLayout()
-        etykieta_tryb = QLabel('Tryb:')
-        etykieta_tryb.setToolTip('Jak wektor 768 wartości nakłada się na latent bazowy.')
-        wiersz_tryb.addWidget(etykieta_tryb)
+        wiersz_tryb = Przeplyw()
         self.combo_tryb = QComboBox()
         self.combo_tryb.addItems(TRYBY)
-        self.combo_tryb.setToolTip('Sposób nałożenia wektora na bazę:\n'
-                                   '- Offset do wszystkich tokenów: latent = baza + wektor\n'
-                                   '  (te same 768 wartości dodane do każdego z 600 tokenów),\n'
-                                   '- Offset do jednego tokena: latent[token] = baza[token] + wektor,\n'
-                                   '- Ustaw token na wektor: latent[token] = wektor (nadpisuje token).\n'
-                                   'Tokeny odpowiadają siatce 20x30 patchy obrazu (numeracja wierszami).')
         self.combo_tryb.currentIndexChanged.connect(self._zmiana_trybu)
-        wiersz_tryb.addWidget(self.combo_tryb, 1)
-        etykieta_token = QLabel('Token:')
-        etykieta_token.setToolTip('Indeks tokena używanego w trybach "jeden token".')
-        wiersz_tryb.addWidget(etykieta_token)
+        dodaj(wiersz_tryb, 'Tryb:', self.combo_tryb,
+              'Sposób nałożenia wektora na bazę:\n'
+              '- Offset do wszystkich tokenów: latent = baza + wektor\n'
+              '  (te same 768 wartości dodane do każdego z 600 tokenów),\n'
+              '- Offset do jednego tokena: latent[token] = baza[token] + wektor,\n'
+              '- Ustaw token na wektor: latent[token] = wektor (nadpisuje token).\n'
+              'Tokeny odpowiadają siatce 20x30 patchy obrazu (numeracja wierszami).')
         self.spin_token = QSpinBox()
         self.spin_token.setRange(0, silnik.TOKENY - 1)
         self.spin_token.setEnabled(False)
-        self.spin_token.setToolTip('Indeks tokena 0-599, aktywny w trybach "Offset do jednego tokena"\n'
-                                   'i "Ustaw token na wektor". Token = jeden patch z siatki 20x30\n'
-                                   '(token 0 = lewy górny róg obrazu, numeracja wierszami).')
         self.spin_token.valueChanged.connect(self._aktualizuj_statystyki)
         self.spin_token.valueChanged.connect(self._pokaz_token)
-        wiersz_tryb.addWidget(self.spin_token)
-        self.btn_zeruj = QPushButton('Zeruj wektor')
+        dodaj(wiersz_tryb, 'Token:', self.spin_token,
+              'Indeks tokena 0-599, aktywny w trybach "Offset do jednego tokena"\n'
+              'i "Ustaw token na wektor". Token = jeden patch z siatki 20x30\n'
+              '(token 0 = lewy górny róg obrazu, numeracja wierszami).')
+        self.btn_zeruj = rola(QPushButton('Zeruj wektor'), 'narzedzie')
         self.btn_zeruj.setToolTip('Ustawia wszystkie 768 wartości wektora na 0.\n'
                                   'Latent efektywny staje się równy bazie.')
         self.btn_zeruj.clicked.connect(self._zeruj_wektor)
         wiersz_tryb.addWidget(self.btn_zeruj)
         g.addLayout(wiersz_tryb)
 
-        wiersz_jednostki = QHBoxLayout()
-        etykieta_jednostki = QLabel('Jednostki pól liczbowych:')
-        etykieta_jednostki.setToolTip('Tylko sposób wyświetlania wartości przy suwakach.')
-        wiersz_jednostki.addWidget(etykieta_jednostki)
+        wiersz_jednostki = Przeplyw()
         self.combo_jednostki = QComboBox()
         self.combo_jednostki.addItems(JEDNOSTKI)
-        self.combo_jednostki.setToolTip('Jednostki pól liczbowych (NIE zmieniają wektora w pamięci):\n'
-                                        '- Absolutne: surowe wartości latentu — takich oczekuje model\n'
-                                        '  (naturalne wartości są zawsze >= -0,17; górna granica nie istnieje,\n'
-                                        '  w latentcie bazowym max ok. 4,0),\n'
-                                        '- % zakresu kanału: 0% = minimum kanału w bazie, 100% = maksimum;\n'
-                                        '  można wpisać wartości poza 0-100%. Suwak zawsze odpowiada 0-100%.\n'
-                                        'Generacja zawsze używa wartości absolutnych.')
         self.combo_jednostki.currentIndexChanged.connect(self._zmiana_zakresu)
-        wiersz_jednostki.addWidget(self.combo_jednostki, 1)
-        etykieta_zakres = QLabel('Zakres suwaków:')
-        etykieta_zakres.setToolTip('Skala, po której chodzi suwak.')
-        wiersz_jednostki.addWidget(etykieta_zakres)
+        dodaj(wiersz_jednostki, 'Jednostki pól:', self.combo_jednostki,
+              'Jednostki pól liczbowych (NIE zmieniają wektora w pamięci):\n'
+              '- Absolutne: surowe wartości latentu — takich oczekuje model\n'
+              '  (naturalne wartości są zawsze >= -0,17; górna granica nie istnieje,\n'
+              '  w latentcie bazowym max ok. 4,0),\n'
+              '- % zakresu kanału: 0% = minimum kanału w bazie, 100% = maksimum;\n'
+              '  można wpisać wartości poza 0-100%. Suwak zawsze odpowiada 0-100%.\n'
+              'Generacja zawsze używa wartości absolutnych.')
         self.combo_zakres = QComboBox()
         self.combo_zakres.addItems(ZAKRESY)
-        self.combo_zakres.setToolTip('Zakres wartości pokrywany przez suwak:\n'
-                                     '- Statystyki kanału: [min - 3 sigma, max + 3 sigma] z latentu bazowego;\n'
-                                     '  dla kanałów o małej zmienności zero może leżeć poza suwakiem,\n'
-                                     '- Bipolarny: [-M, +M], gdzie M = max(|min|, |max|) kanału;\n'
-                                     '  zero jest DOKŁADNIE na środku suwaka — w lewo wartości ujemne,\n'
-                                     '  w prawo dodatnie. Wygodne dla offsetów dodatnich/ujemnych.\n'
-                                     'W trybie % bipolarny 50% = 0. Zmiana zakresu nie zmienia wektora,\n'
-                                     'a jedynie pozycje suwaków.')
         self.combo_zakres.currentIndexChanged.connect(self._zmiana_zakresu)
-        wiersz_jednostki.addWidget(self.combo_zakres, 1)
+        dodaj(wiersz_jednostki, 'Zakres suwaków:', self.combo_zakres,
+              'Zakres wartości pokrywany przez suwak:\n'
+              '- Statystyki kanału: [min - 3 sigma, max + 3 sigma] z latentu bazowego;\n'
+              '  dla kanałów o małej zmienności zero może leżeć poza suwakiem,\n'
+              '- Bipolarny: [-M, +M], gdzie M = max(|min|, |max|) kanału;\n'
+              '  zero jest DOKŁADNIE na środku suwaka — w lewo wartości ujemne,\n'
+              '  w prawo dodatnie. Wygodne dla offsetów dodatnich/ujemnych.\n'
+              'W trybie % bipolarny 50% = 0. Zmiana zakresu nie zmienia wektora,\n'
+              'a jedynie pozycje suwaków.')
         g.addLayout(wiersz_jednostki)
 
         self.zakladki = QTabWidget()
         self.zakladki.setToolTip('Obie zakładki edytują ten sam wektor 768 wartości.')
         strona_wszystkie = QWidget()
         lay_wszystkie = QVBoxLayout(strona_wszystkie)
+        lay_wszystkie.setContentsMargins(6, 6, 6, 6)
         wiersz_stron = QHBoxLayout()
         wiersz_stron.addWidget(QLabel('Kanały:'))
         self.combo_strona = QComboBox()
@@ -234,16 +236,19 @@ class Okno(QMainWindow):
         self.combo_strona.setToolTip('Wybór strony 64 kanałów. Wszystkich kanałów jest 768 (12 stron).\n'
                                      'Najedź na etykietę K### przy suwaku, by zobaczyć zakres kanału.')
         self.combo_strona.currentIndexChanged.connect(self._odswiez_strone)
-        wiersz_stron.addWidget(self.combo_strona, 1)
-        btn_popr = QPushButton('<')
+        wiersz_stron.addWidget(self.combo_strona)
+        btn_popr = rola(QPushButton('<'), 'narzedzie')
+        btn_popr.setFixedWidth(34)
         btn_popr.setToolTip('Poprzednia strona kanałów.')
         btn_popr.clicked.connect(lambda: self.combo_strona.setCurrentIndex(max(0, self.combo_strona.currentIndex()-1)))
-        btn_nast = QPushButton('>')
+        btn_nast = rola(QPushButton('>'), 'narzedzie')
+        btn_nast.setFixedWidth(34)
         btn_nast.setToolTip('Następna strona kanałów.')
         btn_nast.clicked.connect(lambda: self.combo_strona.setCurrentIndex(min(STRON-1, self.combo_strona.currentIndex()+1)))
         wiersz_stron.addWidget(btn_popr)
         wiersz_stron.addWidget(btn_nast)
-        etykieta_skok = QLabel('Skok do:')
+        wiersz_stron.addSpacing(12)
+        etykieta_skok = QLabel('Skok do kanału:')
         etykieta_skok.setToolTip('Szybkie przejście do wybranego kanału.')
         wiersz_stron.addWidget(etykieta_skok)
         self.spin_skok = QSpinBox()
@@ -251,6 +256,7 @@ class Okno(QMainWindow):
         self.spin_skok.setToolTip('Wpisz numer kanału (0-767), a lista przewinie się na właściwą stronę.')
         self.spin_skok.valueChanged.connect(lambda c: self.combo_strona.setCurrentIndex(c // NA_STRONE))
         wiersz_stron.addWidget(self.spin_skok)
+        wiersz_stron.addStretch(1)
         lay_wszystkie.addLayout(wiersz_stron)
         self.lista_wszystkie = ListaKanalow(self, NA_STRONE)
         scroll = QScrollArea()
@@ -261,16 +267,12 @@ class Okno(QMainWindow):
 
         strona_narzedzie = QWidget()
         lay_narz = QVBoxLayout(strona_narzedzie)
+        lay_narz.setContentsMargins(6, 6, 6, 6)
         opis = QLabel(f'{len(self.narzedzie)} kanałów tożsamości narzędzia (J128), posortowane wg siły zmiany '
                       'w sztucznej korekcie (delta RMS). Pozostałe 640 kanałów nie są tu pokazywane.')
         opis.setWordWrap(True)
         lay_narz.addWidget(opis)
         wiersz_narz = QHBoxLayout()
-        btn_zeruj_narz = QPushButton('Zeruj kanały narzędzia')
-        btn_zeruj_narz.setToolTip('Ustawia 0 tylko na 128 kanałach narzędzia; reszta wektora bez zmian.')
-        btn_zeruj_narz.clicked.connect(self._zeruj_narzedzie)
-        wiersz_narz.addWidget(btn_zeruj_narz)
-        wiersz_narz.addWidget(QLabel('Wszystkie 128 o:'))
         self.spin_narz_procent = QDoubleSpinBox()
         self.spin_narz_procent.setRange(-100, 100)
         self.spin_narz_procent.setDecimals(1)
@@ -278,13 +280,16 @@ class Okno(QMainWindow):
         self.spin_narz_procent.setValue(10)
         self.spin_narz_procent.setToolTip('Wspólna zmiana dla wszystkich 128 kanałów narzędzia,\n'
                                           'w procentach szerokości limitu każdego kanału (max − min).')
-        wiersz_narz.addWidget(self.spin_narz_procent)
         btn_narz_procent = QPushButton('Ustaw')
         btn_narz_procent.setToolTip('Przesunięcie każdego z 128 kanałów = % × (max_c − min_c) jego limitu.\n'
                                     'Działa jak offset w trybach „Offset do …”.')
         btn_narz_procent.clicked.connect(self._narzedzie_procent)
-        wiersz_narz.addWidget(btn_narz_procent)
+        wiersz_narz.addWidget(self._razem('Przesuń wszystkie 128 o:', self.spin_narz_procent, btn_narz_procent))
         wiersz_narz.addStretch(1)
+        btn_zeruj_narz = rola(QPushButton('Zeruj kanały narzędzia'), 'narzedzie')
+        btn_zeruj_narz.setToolTip('Ustawia 0 tylko na 128 kanałach narzędzia; reszta wektora bez zmian.')
+        btn_zeruj_narz.clicked.connect(self._zeruj_narzedzie)
+        wiersz_narz.addWidget(btn_zeruj_narz)
         lay_narz.addLayout(wiersz_narz)
         self.lista_narzedzie = ListaKanalow(self, len(self.narzedzie))
         self.lista_narzedzie.kanaly = [w['kanal'] for w in self.narzedzie]
@@ -306,65 +311,56 @@ class Okno(QMainWindow):
                          'jednostkę „Zmiana o % limitu” i opcjonalne przycinanie latentu.\n'
                          'Wyprowadzenie granic: experiments/vit_granice_latentu/README.md.')
         v = QVBoxLayout(grupa)
-        w1 = QHBoxLayout()
-        w1.addWidget(QLabel('Źródło:'))
+        # wiersz 1: skąd brać limity
+        w1 = Przeplyw()
         self.combo_limity = QComboBox()
         self.combo_limity.addItems(LIMITY)
-        self.combo_limity.setToolTip(
-            '- Matematyczne z wag ViT: dokładny przedział dla ustalonych wag (min −0,17, max 7–10 dla k1000).\n'
-            '- Po T krokach uczenia AdamW: twarda granica dla dowolnych danych po T krokach przepisu\n'
-            '  maly_vit_od_zera (wspólna dla kanałów; bez limitu kroków granica nie istnieje).\n'
-            '- Statystyki latentu bazowego: min..max obecnej bazy.\n'
-            '- Z pliku: NPZ (h_min/h_max, min/max, lo/hi), CSV (kanal,min,max) albo JSON.\n'
-            '- Ręczne: wspólne min i max dla wszystkich kanałów z pól poniżej.')
         self.combo_limity.activated.connect(self._zmiana_zrodla_limitow)
-        w1.addWidget(self.combo_limity, 1)
-        w1.addWidget(QLabel('T kroków:'))
+        dodaj(w1, 'Źródło:', self.combo_limity,
+              '- Matematyczne z wag ViT: dokładny przedział dla ustalonych wag (min −0,17, max 7–10 dla k1000).\n'
+              '- Po T krokach uczenia AdamW: twarda granica dla dowolnych danych po T krokach przepisu\n'
+              '  maly_vit_od_zera (wspólna dla kanałów; bez limitu kroków granica nie istnieje).\n'
+              '- Statystyki latentu bazowego: min..max obecnej bazy.\n'
+              '- Z pliku: NPZ (h_min/h_max, min/max, lo/hi), CSV (kanal,min,max) albo JSON.\n'
+              '- Ręczne: wspólne min i max dla wszystkich kanałów z pól poniżej.')
         self.spin_T = QSpinBox()
         self.spin_T.setRange(1, 1_000_000)
         self.spin_T.setValue(1000)
-        self.spin_T.setToolTip('Liczba kroków uczenia dla źródła „Po T krokach uczenia AdamW”.')
         self.spin_T.editingFinished.connect(lambda: self.combo_limity.currentIndex() == 1 and self._zmiana_zrodla_limitow(1))
-        w1.addWidget(self.spin_T)
-        btn_ckpt = QPushButton('Checkpoint ViT...')
+        dodaj(w1, 'T kroków:', self.spin_T, 'Liczba kroków uczenia dla źródła „Po T krokach uczenia AdamW”.')
+        btn_ckpt = rola(QPushButton('Checkpoint ViT...'), 'narzedzie')
         btn_ckpt.setToolTip('Wybór checkpointu ViT dla źródła „Matematyczne z wag ViT”\n'
                             '(np. wagi z innego kroku uczenia, k0000..k1000).')
         btn_ckpt.clicked.connect(self._wybierz_checkpoint_limitow)
         w1.addWidget(btn_ckpt)
         v.addLayout(w1)
 
-        w2 = QHBoxLayout()
-        w2.addWidget(QLabel('Ręczne: min'))
+        # wiersz 2: ręczne limity — wspólne dla wszystkich kanałów albo dla jednego kanału
+        w2 = Przeplyw(odstep=18)
         self.spin_lim_min = QDoubleSpinBox()
         self.spin_lim_min.setRange(-1e6, 1e6); self.spin_lim_min.setDecimals(4)
         self.spin_lim_min.setValue(silnik.GELU_MIN)
-        w2.addWidget(self.spin_lim_min)
-        w2.addWidget(QLabel('max'))
         self.spin_lim_max = QDoubleSpinBox()
         self.spin_lim_max.setRange(-1e6, 1e6); self.spin_lim_max.setDecimals(4)
         self.spin_lim_max.setValue(4.43)
         self.spin_lim_max.setToolTip('Domyślnie 4,43: największa wartość latentu na 400 prawdziwych zdjęciach (k1000).')
-        w2.addWidget(self.spin_lim_max)
         btn_wsp = QPushButton('Zastosuj wspólne')
         btn_wsp.setToolTip('Ustawia te same min i max dla wszystkich 768 kanałów.')
         btn_wsp.clicked.connect(lambda: (self.combo_limity.setCurrentIndex(4), self._zmiana_zrodla_limitow(4)))
-        w2.addWidget(btn_wsp)
-        w2.addSpacing(16)
-        w2.addWidget(QLabel('Kanał'))
+        w2.addWidget(self._razem('Wspólne: min', self.spin_lim_min, 'max', self.spin_lim_max, btn_wsp))
         self.spin_lim_kanal = QSpinBox()
         self.spin_lim_kanal.setRange(0, silnik.KANALY - 1)
         self.spin_lim_kanal.valueChanged.connect(self._pokaz_limit_kanalu)
-        w2.addWidget(self.spin_lim_kanal)
         self.spin_k_min = QDoubleSpinBox(); self.spin_k_min.setRange(-1e6, 1e6); self.spin_k_min.setDecimals(4)
         self.spin_k_max = QDoubleSpinBox(); self.spin_k_max.setRange(-1e6, 1e6); self.spin_k_max.setDecimals(4)
-        w2.addWidget(QLabel('min')); w2.addWidget(self.spin_k_min)
-        w2.addWidget(QLabel('max')); w2.addWidget(self.spin_k_max)
         btn_k = QPushButton('Ustaw dla kanału')
         btn_k.setToolTip('Nadpisuje limit jednego kanału; pozostałe kanały bez zmian.')
         btn_k.clicked.connect(self._ustaw_limit_kanalu)
-        w2.addWidget(btn_k)
+        w2.addWidget(self._razem('Kanał', self.spin_lim_kanal, 'min', self.spin_k_min,
+                                 'max', self.spin_k_max, btn_k))
         v.addLayout(w2)
 
+        # wiersz 3: przycinanie, zapis i opis bieżących limitów
         w3 = QHBoxLayout()
         self.chk_przytnij = QCheckBox('Przycinaj latent efektywny do limitów')
         self.chk_przytnij.setChecked(True)
@@ -372,13 +368,15 @@ class Okno(QMainWindow):
                                      'swojego kanału przed generowaniem i zapisem.')
         self.chk_przytnij.toggled.connect(self._aktualizuj_statystyki)
         w3.addWidget(self.chk_przytnij)
-        btn_zapisz_lim = QPushButton('Zapisz limity')
+        btn_zapisz_lim = rola(QPushButton('Zapisz limity'), 'narzedzie')
         btn_zapisz_lim.setToolTip('Zapisuje limity 768 kanałów do outputs/latent_editor_sd_20261006/\n'
                                   'jako NPZ (h_min, h_max) i CSV (kanal,min,max).')
         btn_zapisz_lim.clicked.connect(self._zapisz_limity)
         w3.addWidget(btn_zapisz_lim)
+        w3.addSpacing(10)
         self.etykieta_limitow = QLabel('')
         self.etykieta_limitow.setWordWrap(True)
+        self.etykieta_limitow.setStyleSheet('color: #a8abb2;')
         w3.addWidget(self.etykieta_limitow, 1)
         v.addLayout(w3)
         return grupa
@@ -386,6 +384,7 @@ class Okno(QMainWindow):
     def _panel_obrazu(self):
         panel = QWidget()
         lay = QVBoxLayout(panel)
+        lay.setContentsMargins(4, 4, 4, 4)
 
         self.etykieta_model = QLabel('Model: ładowanie...')
         self.etykieta_model.setWordWrap(True)
@@ -394,6 +393,7 @@ class Okno(QMainWindow):
                                        'Przy starcie weryfikowane są hashe wag bazowych — stąd ~1 min ładowania.')
         lay.addWidget(self.etykieta_model)
 
+        # obraz zabiera całą wolną wysokość; opcje pod nim są zwięzłe
         self.etykieta_obraz = ObrazSiatka()
         self.etykieta_obraz.tokenWybrany.connect(self._token_klikniety)
         lay.addWidget(self.etykieta_obraz, 1)
@@ -402,119 +402,119 @@ class Okno(QMainWindow):
         self.chk_siatka.setChecked(True)
         self.chk_siatka.toggled.connect(self.etykieta_obraz.ustaw_siatke)
         wiersz_siatka.addWidget(self.chk_siatka)
+        wiersz_siatka.addStretch(1)
         self.etykieta_tokena = QLabel('token 0 (wiersz 0, kolumna 0)')
-        wiersz_siatka.addWidget(self.etykieta_tokena, 1)
+        wiersz_siatka.addWidget(self.etykieta_tokena)
         lay.addLayout(wiersz_siatka)
 
         grupa_start = QGroupBox('Start odszumiania')
         gs = QVBoxLayout(grupa_start)
-        w1 = QHBoxLayout()
+        w1 = Przeplyw()
         self.combo_start = QComboBox()
         self.combo_start.addItems(['Czysty szum', 'Zaszumione zdjęcie (img2img)'])
         self.combo_start.setToolTip('Czysty szum: zwykła generacja od szumu Gaussa.\n'
                                     'Zaszumione zdjęcie: VAE koduje zdjęcie startowe, dostaje szum o wybranej sile,\n'
                                     'a ostatnie kroki DDIM odszumiają je sterowane latentem 600x768.')
         self.combo_start.currentIndexChanged.connect(lambda _: self._zaplanuj_na_biezaco())
-        w1.addWidget(self.combo_start, 1)
+        w1.addWidget(self.combo_start)
         btn_start = QPushButton('Zdjęcie startowe...')
         btn_start.setToolTip('Dowolne zdjęcie; skalowane do 576x384 (INTER_AREA) jak w treningu SD.')
         btn_start.clicked.connect(self._wybierz_zdjecie_startowe)
-        w1.addWidget(btn_start)
-        btn_jak_baza = QPushButton('Jak baza')
+        btn_jak_baza = rola(QPushButton('Jak baza'), 'narzedzie')
         btn_jak_baza.setToolTip('Używa zdjęcia, z którego policzono latent bazowy (Z obrazu (ViT)...).')
         btn_jak_baza.clicked.connect(self._start_jak_baza)
-        w1.addWidget(btn_jak_baza)
-        gs.addLayout(w1)
-        w2 = QHBoxLayout()
-        w2.addWidget(QLabel('Siła szumu:'))
+        w1.addWidget(self._razem(btn_start, btn_jak_baza))
         self.spin_sila = QDoubleSpinBox()
         self.spin_sila.setRange(0.02, 1.0)
         self.spin_sila.setSingleStep(0.05)
         self.spin_sila.setDecimals(2)
         self.spin_sila.setValue(0.6)
-        self.spin_sila.setToolTip('Ułamek kroków DDIM: 0,6 przy 50 krokach = szum do kroku czasowego ok. 600\n'
-                                  'i 30 kroków odszumiania. Mało = blisko zdjęcia, 1,0 = jak czysty szum.')
         self.spin_sila.valueChanged.connect(lambda _: self._zaplanuj_na_biezaco())
-        w2.addWidget(self.spin_sila)
-        self.chk_podglad = QCheckBox('Podgląd kolejnych kroków co')
-        self.chk_podglad.setToolTip('Pokazuje obraz w trakcie odszumiania (każdy podgląd to dodatkowy decode VAE).')
-        w2.addWidget(self.chk_podglad)
-        self.spin_podglad_co = QSpinBox()
-        self.spin_podglad_co.setRange(1, 100)
-        self.spin_podglad_co.setValue(2)
-        w2.addWidget(self.spin_podglad_co)
-        self.combo_podglad = QComboBox()
-        self.combo_podglad.addItems(['bieżący stan (z szumem)', 'przewidywany obraz końcowy'])
-        self.combo_podglad.setToolTip('Bieżący stan: zaszumiony obraz po danym kroku.\n'
-                                      'Przewidywany: oszacowanie czystego obrazu z tego kroku (pred x0).')
-        w2.addWidget(self.combo_podglad, 1)
-        gs.addLayout(w2)
+        dodaj(w1, 'Siła szumu:', self.spin_sila,
+              'Ułamek kroków DDIM: 0,6 przy 50 krokach = szum do kroku czasowego ok. 600\n'
+              'i 30 kroków odszumiania. Mało = blisko zdjęcia, 1,0 = jak czysty szum.')
+        gs.addLayout(w1)
         self.etykieta_startu = QLabel('Zdjęcie startowe: brak')
         self.etykieta_startu.setWordWrap(True)
+        self.etykieta_startu.setStyleSheet('color: #a8abb2;')
         gs.addWidget(self.etykieta_startu)
         lay.addWidget(grupa_start)
 
+        grupa_gen = QGroupBox('Generowanie')
+        gg = QVBoxLayout(grupa_gen)
         wiersz_gen = QHBoxLayout()
-        etykieta_kroki = QLabel('Kroki DDIM:')
-        etykieta_kroki.setToolTip('Liczba kroków odszumiania.')
-        wiersz_gen.addWidget(etykieta_kroki)
         self.spin_kroki = QSpinBox()
         self.spin_kroki.setRange(1, 200)
         self.spin_kroki.setValue(50)
-        self.spin_kroki.setToolTip('Liczba kroków DDIM (1-200, domyślnie 50).\n'
-                                   'Więcej kroków = wolniej, zwykle lepsza jakość.\n'
-                                   'Scheduler: DDIM eta=0, 1000 kroków treningowych.')
-        wiersz_gen.addWidget(self.spin_kroki)
-        etykieta_ziarno = QLabel('Ziarno:')
-        etykieta_ziarno.setToolTip('Ziarno szumu początkowego.')
-        wiersz_gen.addWidget(etykieta_ziarno)
+        dodaj(wiersz_gen, 'Kroki DDIM:', self.spin_kroki,
+              'Liczba kroków DDIM (1-200, domyślnie 50).\n'
+              'Więcej kroków = wolniej, zwykle lepsza jakość.\n'
+              'Scheduler: DDIM eta=0, 1000 kroków treningowych.')
+        wiersz_gen.addSpacing(10)
         self.spin_ziarno = QSpinBox()
         self.spin_ziarno.setRange(0, 2**31 - 1)
         self.spin_ziarno.setValue(20261006)
-        self.spin_ziarno.setToolTip('Ziarno generatora szumu początkowego (Gaussa).\n'
-                                    'To samo ziarno + ten sam latent = identyczny obraz.\n'
-                                    'Zmień ziarno, by dostać inną realizację dla tego samego latentu.')
-        wiersz_gen.addWidget(self.spin_ziarno)
+        dodaj(wiersz_gen, 'Ziarno:', self.spin_ziarno,
+              'Ziarno generatora szumu początkowego (Gaussa).\n'
+              'To samo ziarno + ten sam latent = identyczny obraz.\n'
+              'Zmień ziarno, by dostać inną realizację dla tego samego latentu.')
+        wiersz_gen.addStretch(1)
         self.btn_generuj = rola(QPushButton('GENERUJ OBRAZ'), 'glowny')
         self.btn_generuj.setEnabled(False)
+        self.btn_generuj.setMinimumWidth(220)
+        self.btn_generuj.setMinimumHeight(34)
         self.btn_generuj.setToolTip('Uruchamia generację z aktualnego latentu efektywnego\n'
                                     '(baza + wektor zgodnie z trybem) w osobnym wątku.\n'
                                     'DDIM odszumia z czystego szumu; VAE dekoduje do RGB 384x576.\n'
                                     'Przycisk aktywny po załadowaniu modelu.')
         self.btn_generuj.clicked.connect(lambda: self._generuj())
-        wiersz_gen.addWidget(self.btn_generuj, 1)
-        lay.addLayout(wiersz_gen)
+        wiersz_gen.addWidget(self.btn_generuj)
+        gg.addLayout(wiersz_gen)
 
-        wiersz_live = QHBoxLayout()
+        wiersz_live = Przeplyw()
         self.chk_na_biezaco = QCheckBox('Generuj na bieżąco po zmianie')
         self.chk_na_biezaco.setToolTip('Po każdej zmianie suwaka, pola, limitu, trybu albo bazy obraz jest\n'
                                        'generowany automatycznie, gdy suwak przestanie się ruszać\n'
                                        '(opóźnienie poniżej). Zmiana w trakcie generacji jest liczona zaraz po niej.')
         self.chk_na_biezaco.toggled.connect(lambda on: on and self._zaplanuj_na_biezaco())
         wiersz_live.addWidget(self.chk_na_biezaco)
-        wiersz_live.addWidget(QLabel('Kroki:'))
         self.spin_kroki_live = QSpinBox()
         self.spin_kroki_live.setRange(1, 200)
         self.spin_kroki_live.setValue(15)
-        self.spin_kroki_live.setToolTip('Kroki DDIM dla generowania na bieżąco (mniej = szybciej).\n'
-                                        'Przycisk GENERUJ OBRAZ używa pola „Kroki DDIM” powyżej.')
-        wiersz_live.addWidget(self.spin_kroki_live)
-        wiersz_live.addWidget(QLabel('Opóźnienie:'))
+        dodaj(wiersz_live, 'Kroki:', self.spin_kroki_live,
+              'Kroki DDIM dla generowania na bieżąco (mniej = szybciej).\n'
+              'Przycisk GENERUJ OBRAZ używa pola „Kroki DDIM” powyżej.')
         self.spin_opoznienie = QSpinBox()
         self.spin_opoznienie.setRange(0, 5000)
         self.spin_opoznienie.setSingleStep(50)
         self.spin_opoznienie.setValue(300)
         self.spin_opoznienie.setSuffix(' ms')
-        self.spin_opoznienie.setToolTip('Ile czekać od ostatniej zmiany, zanim ruszy generacja.')
-        wiersz_live.addWidget(self.spin_opoznienie)
-        wiersz_live.addStretch(1)
-        lay.addLayout(wiersz_live)
+        dodaj(wiersz_live, 'Opóźnienie:', self.spin_opoznienie, 'Ile czekać od ostatniej zmiany, zanim ruszy generacja.')
+        gg.addLayout(wiersz_live)
+        wiersz_podglad = Przeplyw()
+        self.chk_podglad = QCheckBox('Podgląd kolejnych kroków co')
+        self.chk_podglad.setToolTip('Pokazuje obraz w trakcie odszumiania (każdy podgląd to dodatkowy decode VAE).')
+        self.spin_podglad_co = QSpinBox()
+        self.spin_podglad_co.setRange(1, 100)
+        self.spin_podglad_co.setValue(2)
+        self.combo_podglad = QComboBox()
+        self.combo_podglad.addItems(['bieżący stan (z szumem)', 'przewidywany obraz końcowy'])
+        self.combo_podglad.setToolTip('Bieżący stan: zaszumiony obraz po danym kroku.\n'
+                                      'Przewidywany: oszacowanie czystego obrazu z tego kroku (pred x0).')
+        wiersz_podglad.addWidget(self._razem(self.chk_podglad, self.spin_podglad_co, 'pokaż:', self.combo_podglad))
+        gg.addLayout(wiersz_podglad)
 
         self.pasek = QProgressBar()
         self.pasek.setValue(0)
         self.pasek.setToolTip('Postęp odszumiania DDIM (krok / liczba kroków).')
-        lay.addWidget(self.pasek)
+        gg.addWidget(self.pasek)
+        lay.addWidget(grupa_gen)
 
+        grupa_zapis = QGroupBox('Wynik i zapis')
+        gz = QVBoxLayout(grupa_zapis)
+        self.etykieta_stats = QLabel('')
+        self.etykieta_stats.setWordWrap(True)
+        gz.addWidget(self.etykieta_stats)
         wiersz_zapis = QHBoxLayout()
         self.btn_zapisz_obraz = QPushButton('Zapisz obraz PNG')
         self.btn_zapisz_obraz.setEnabled(False)
@@ -529,11 +529,8 @@ class Okno(QMainWindow):
         wiersz_zapis.addWidget(self.btn_zapisz_obraz)
         wiersz_zapis.addWidget(self.btn_zapisz_latent)
         wiersz_zapis.addStretch(1)
-        lay.addLayout(wiersz_zapis)
-
-        self.etykieta_stats = QLabel('')
-        lay.addWidget(self.etykieta_stats)
-        lay.addStretch(1)
+        gz.addLayout(wiersz_zapis)
+        lay.addWidget(grupa_zapis)
         return panel
 
     # ------------------------------------------------------------- edycja
