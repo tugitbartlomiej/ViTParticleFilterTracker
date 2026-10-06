@@ -10,43 +10,12 @@ cel każdego patcha, najsilniejsze pary). Głowa: średnia, maksimum albo jedna.
 (Abnar i Zuidema 2020: iloczyn (A + I) / 2 przez kolejne bloki, przepływ przez warstwy).
 """
 import numpy as np
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QStyle, QStyleOptionComboBox,
-                             QStylePainter, QVBoxLayout, QWidget)
-from uklad import Przeplyw, dodaj
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QVBoxLayout, QWidget
+from uklad import Przeplyw, WaskiCombo, dodaj
 from wspolne import KOLUMNY, WIERSZE
 _t = np.arange(600)
 ODLEGLOSC = np.hypot((_t[:, None] % KOLUMNY) - (_t[None] % KOLUMNY), (_t[:, None] // KOLUMNY) - (_t[None] // KOLUMNY))
-
-
-class WaskiCombo(QComboBox):
-    """Pole wyboru o stałej szerokości około `znaki` znaków: za długi wybrany tekst kończy się „…”, a rozwinięta
-    lista ma pełną szerokość. Długie opisy pozycji nie rozpychają wąskich kolumn (pełny opis w podpowiedzi)."""
-
-    def __init__(self, znaki=14):
-        super().__init__()
-        self.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-        self.setMinimumContentsLength(znaki)
-
-    def showPopup(self):
-        fm = self.view().fontMetrics()
-        self.view().setMinimumWidth(max([fm.horizontalAdvance(self.itemText(i)) for i in range(self.count())] + [0]) + 36)
-        super().showPopup()
-
-    def paintEvent(self, _):
-        p = QStylePainter(self)
-        opt = QStyleOptionComboBox(); self.initStyleOption(opt)
-        p.drawComplexControl(QStyle.ComplexControl.CC_ComboBox, opt)
-        r = self.style().subControlRect(QStyle.ComplexControl.CC_ComboBox, opt, QStyle.SubControl.SC_ComboBoxEditField, self)
-        opt.currentText = self.fontMetrics().elidedText(opt.currentText, Qt.TextElideMode.ElideRight, max(r.width() - 4, 10))
-        p.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, opt)
-
-
-def etykieta_statusu(etykieta):
-    """Tekst stanu widoku (liczby cząsteczek, skala, PCA): mniejsza, szara czcionka, żeby nie konkurował z opcjami."""
-    etykieta.setStyleSheet('color: #9a9da3; font-size: 8pt;')
-    etykieta.setWordWrap(True)
-    return etykieta
 
 
 class OpcjeAtencji(QWidget):

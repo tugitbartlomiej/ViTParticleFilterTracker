@@ -1,7 +1,8 @@
 """Układ „przepływowy”: kontrolki w wierszu, a gdy brakuje miejsca, zawijają się do następnej linii
 (jak tekst). Dzięki temu panele z wieloma opcjami nie rozpychają okna na szerokość."""
 from PyQt6.QtCore import QPoint, QRect, QSize, Qt
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QLayout, QPushButton, QTabWidget, QVBoxLayout, QWidget, QWidgetItem
+from PyQt6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QLayout, QPushButton, QStyle, QStyleOptionComboBox,
+                             QStylePainter, QTabWidget, QVBoxLayout, QWidget, QWidgetItem)
 
 
 class Przeplyw(QLayout):
@@ -115,3 +116,39 @@ class PanelOpcji:
     def zakoncz(self):
         for lay in self._strony.values():
             lay.addStretch(1)
+
+
+class WaskiCombo(QComboBox):
+    """Pole wyboru o stałej szerokości około `znaki` znaków: za długi wybrany tekst kończy się „…”, a rozwinięta
+    lista ma pełną szerokość. Długie opisy pozycji nie rozpychają wąskich kolumn (pełny opis w podpowiedzi)."""
+
+    def __init__(self, znaki=14):
+        super().__init__()
+        self.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.setMinimumContentsLength(znaki)
+
+    def showPopup(self):
+        fm = self.view().fontMetrics()
+        self.view().setMinimumWidth(max([fm.horizontalAdvance(self.itemText(i)) for i in range(self.count())] + [0]) + 36)
+        super().showPopup()
+
+    def paintEvent(self, _):
+        p = QStylePainter(self)
+        opt = QStyleOptionComboBox(); self.initStyleOption(opt)
+        p.drawComplexControl(QStyle.ComplexControl.CC_ComboBox, opt)
+        r = self.style().subControlRect(QStyle.ComplexControl.CC_ComboBox, opt, QStyle.SubControl.SC_ComboBoxEditField, self)
+        opt.currentText = self.fontMetrics().elidedText(opt.currentText, Qt.TextElideMode.ElideRight, max(r.width() - 4, 10))
+        p.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, opt)
+
+
+def etykieta_statusu(etykieta):
+    """Tekst stanu widoku (liczby cząsteczek, skala, PCA): mała szara czcionka (rola „status”), z zawijaniem."""
+    from styl import rola
+    etykieta.setWordWrap(True)
+    return rola(etykieta, 'status')
+
+
+def etykieta_opisu(etykieta):
+    """Tekst objaśnień (zakres, źródło, opis filmu): szary (rola „opis”), żeby nie konkurował z kontrolkami."""
+    from styl import rola
+    return rola(etykieta, 'opis')

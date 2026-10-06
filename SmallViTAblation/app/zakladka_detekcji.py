@@ -477,7 +477,7 @@ class ZakladkaDetekcji(QWidget):
             w1b.addWidget(b)
         self.etykieta_info = QLabel(f'Checkpoint: {Path(self.ckpt).name} (ładowany przy pierwszej detekcji). Etykieta: —')
         self.etykieta_info.setWordWrap(True)
-        self.etykieta_info.setStyleSheet('color: #a8abb0;')
+        rola(self.etykieta_info, 'opis')
         v.addWidget(self.etykieta_info)
         v.addStretch(1)
         gora.addWidget(g, 1)

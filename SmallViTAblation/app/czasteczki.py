@@ -7,12 +7,13 @@ Opcje: przed / po / różnica / przed i po nałożone, przerzedzenie kanałów, 
 mapa atencji ViT i strzałki „który patch ciągnie z którego” (opcje w opcje_atencji.py).
 """
 import numpy as np
-from PyQt6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QCheckBox, QDoubleSpinBox, QLabel, QVBoxLayout, QWidget
 from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 
-from opcje_atencji import OpcjeAtencji, WaskiCombo, etykieta_statusu
+from opcje_atencji import OpcjeAtencji
+from uklad import WaskiCombo, etykieta_statusu
 from uklad import PanelOpcji, dodaj
 from wspolne import KOLUMNY, KOMORKA, WIERSZE, kolory_kanalow
 

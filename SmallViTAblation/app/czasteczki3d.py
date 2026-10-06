@@ -14,13 +14,14 @@ from pathlib import Path
 import numpy as np
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QVector3D
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QPushButton, QSlider, QVBoxLayout,
+from PyQt6.QtWidgets import (QCheckBox, QDoubleSpinBox, QLabel, QPushButton, QSlider, QVBoxLayout,
                              QWidget)
 
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
-from opcje_atencji import OpcjeAtencji, WaskiCombo, etykieta_statusu
+from opcje_atencji import OpcjeAtencji
+from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
 from uklad import PanelOpcji, dodaj
 from widok_gl import ObrazPrzezroczysty, Widok3D

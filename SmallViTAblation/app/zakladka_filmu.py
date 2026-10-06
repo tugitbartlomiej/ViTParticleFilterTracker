@@ -28,7 +28,6 @@ KOLOR_RECZNY = (1, 1, 0, 1)       # obwód narysowany
 KOLOR_VIT = (0.2, 1, 0.2, 1)      # ramka ViT
 KOLOR_RAMKA_GT = (0, .6, 1, 1)
 TYTUL_KLATKI = .07                # część wysokości płótna klatki na tytuł nad obrazem
-STYL_OPISU = 'color: #a4a8ae;'    # etykiety opisowe (zakres, opis filmu), szare zamiast białych
 
 
 class ProporcjaKlatki(QObject):
@@ -103,7 +102,7 @@ class ZakladkaFilmu(QWidget):
         self.btn_otworz.setToolTip(f'Wypakowuje MP4 wybranego filmu (raz) do {F.KATALOG_MP4} i czyta jego długość.')
         w.addWidget(self.btn_otworz)
         w = Przeplyw(); l1.addLayout(w)                                  # wiersz 2: inne źródła i checkpoint
-        e = QLabel('albo:'); e.setStyleSheet(STYL_OPISU); w.addWidget(e)
+        e = rola(QLabel('albo:'), 'opis'); w.addWidget(e)
         self.btn_plik = rola(QPushButton('Plik MP4…'), 'narzedzie')
         self.btn_plik.setToolTip('Dowolny plik MP4. Etykiety są wczytywane,\n'
                                  'jeśli nazwa pliku zawiera identyfikator TR_xxxx_Sx_Pxx.')
@@ -136,7 +135,7 @@ class ZakladkaFilmu(QWidget):
         dodaj(w, 'Klatek:', self.spin_n,
               'Ile klatek wziąć z zakresu, równo rozłożonych. Gdy zakres ma mniej klatek, bierze wszystkie.\n'
               '100 klatek to około 18 MB latentu (float16) i 46 MB obrazów w pamięci.')
-        self.etykieta_zakresu = QLabel(''); self.etykieta_zakresu.setStyleSheet(STYL_OPISU)
+        self.etykieta_zakresu = rola(QLabel(''), 'opis')
         self.etykieta_zakresu.setToolTip('Zakres czasu, numery klatek filmu i co ile klatek bierze sekwencja.')
         w.addWidget(self.etykieta_zakresu)
         w = Przeplyw(); l2.addLayout(w)                                  # wiersz 2: skąd czytać i konwersja
@@ -159,7 +158,7 @@ class ZakladkaFilmu(QWidget):
                                    'Klatki obrazu nie są zapisywane.')
         w.addWidget(self.btn_zapisz)
         w.addStretch(1)
-        self.etykieta_filmu = QLabel(''); self.etykieta_filmu.setWordWrap(True); self.etykieta_filmu.setStyleSheet(STYL_OPISU)
+        self.etykieta_filmu = rola(QLabel(''), 'opis'); self.etykieta_filmu.setWordWrap(True)
         lay.addWidget(self.etykieta_filmu)
 
         # ---------------- środek: klatka | 3D nad obrazem | przestrzeń makrowektorów
@@ -219,7 +218,10 @@ class ZakladkaFilmu(QWidget):
         self.w3d = WidokCzasteczek3D(self.j128)
         self.makro = WidokPrzestrzeniMakro(self.j128)
         podzial.addWidget(self.w3d); podzial.addWidget(self.makro)
-        podzial.setSizes([520, 760, 640])
+        podzial.setStretchFactor(0, 0); podzial.setStretchFactor(1, 1); podzial.setStretchFactor(2, 1)
+        podzial.setSizes([480, 700, 700])          # lewa kolumna stała, oba widoki 3D dzielą resztę po równo
+        self._podzial = podzial
+        self._podzielono = False                   # podział kolumn ustawiany przy pierwszym pokazaniu zakładki
         lay.addWidget(podzial, 1)
 
         # ---------------- odtwarzanie
@@ -292,6 +294,18 @@ class ZakladkaFilmu(QWidget):
         self.combo_czubek.currentIndexChanged.connect(lambda *_: self.idz(self.t))
         self.w3d.widok.klik.connect(lambda *_: self._wybierz_token(self.w3d.token))
         self._opis_zakresu()
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        if not self._podzielono:                   # dopiero teraz splitter ma prawdziwą szerokość
+            self._podzielono = True
+            QTimer.singleShot(0, self._podziel_kolumny)
+
+    def _podziel_kolumny(self):
+        szer = self._podzial.width()
+        if szer > 900:
+            lewa = min(460, szer // 3)
+            self._podzial.setSizes([lewa, (szer - lewa) // 2, (szer - lewa) // 2])
 
     # ------------------------------------------------------------ film
     def _status(self, t, ms=8000):

@@ -376,7 +376,7 @@ class Okno(QMainWindow):
         w3.addSpacing(10)
         self.etykieta_limitow = QLabel('')
         self.etykieta_limitow.setWordWrap(True)
-        self.etykieta_limitow.setStyleSheet('color: #a8abb2;')
+        rola(self.etykieta_limitow, 'opis')
         w3.addWidget(self.etykieta_limitow, 1)
         v.addLayout(w3)
         return grupa
@@ -436,7 +436,7 @@ class Okno(QMainWindow):
         gs.addLayout(w1)
         self.etykieta_startu = QLabel('Zdjęcie startowe: brak')
         self.etykieta_startu.setWordWrap(True)
-        self.etykieta_startu.setStyleSheet('color: #a8abb2;')
+        rola(self.etykieta_startu, 'opis')
         gs.addWidget(self.etykieta_startu)
         lay.addWidget(grupa_start)
 

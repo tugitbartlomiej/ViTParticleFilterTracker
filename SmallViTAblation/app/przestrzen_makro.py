@@ -18,13 +18,13 @@ import time
 import numpy as np
 from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtGui import QVector3D
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QPushButton, QSpinBox,
+from PyQt6.QtWidgets import (QCheckBox, QDoubleSpinBox, QLabel, QPushButton, QSpinBox,
                              QVBoxLayout, QWidget)
 
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
-from opcje_atencji import WaskiCombo, etykieta_statusu
+from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
 from uklad import PanelOpcji, dodaj
 from widok_gl import WidokGL
