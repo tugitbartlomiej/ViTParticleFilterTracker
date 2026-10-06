@@ -45,6 +45,8 @@ def main():
             pokaz(f'Ładowanie: {opis}...')
             importlib.import_module(modul)
         import app
+        from styl import STYL
+        aplikacja.setStyleSheet(STYL)
         pokaz('Budowanie okna...')
         okno = app.Okno()
         okno.show()

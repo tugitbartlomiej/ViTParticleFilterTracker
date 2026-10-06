@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBox,
                              QSplitter, QTabWidget, QVBoxLayout, QWidget)
 
 import silnik
+from styl import STYL, rola
 from widzety_edytora import SUWAK_MAX, ListaKanalow, ObrazSiatka, WatekGeneracji, WatekModelu, WatekViT
 from wspolne import KOLUMNY as KOLUMNY_SIATKI   # siatka patchy 20x30
 
@@ -149,6 +150,7 @@ class Okno(QMainWindow):
         self.btn_baza_reset.clicked.connect(self._przywroc_baze)
         for w in (self.btn_obraz, self.btn_npz, self.btn_baza_reset):
             wiersz.addWidget(w)
+        wiersz.addStretch(1)
         b.addLayout(wiersz)
         lay.addWidget(grupa_baza)
         lay.addWidget(self._grupa_limitow())
@@ -473,9 +475,8 @@ class Okno(QMainWindow):
                                     'To samo ziarno + ten sam latent = identyczny obraz.\n'
                                     'Zmień ziarno, by dostać inną realizację dla tego samego latentu.')
         wiersz_gen.addWidget(self.spin_ziarno)
-        self.btn_generuj = QPushButton('GENERUJ OBRAZ')
+        self.btn_generuj = rola(QPushButton('GENERUJ OBRAZ'), 'glowny')
         self.btn_generuj.setEnabled(False)
-        self.btn_generuj.setStyleSheet('font-weight:bold; padding:6px;')
         self.btn_generuj.setToolTip('Uruchamia generację z aktualnego latentu efektywnego\n'
                                     '(baza + wektor zgodnie z trybem) w osobnym wątku.\n'
                                     'DDIM odszumia z czystego szumu; VAE dekoduje do RGB 384x576.\n'
@@ -527,6 +528,7 @@ class Okno(QMainWindow):
         self.btn_zapisz_latent.clicked.connect(self._zapisz_latent)
         wiersz_zapis.addWidget(self.btn_zapisz_obraz)
         wiersz_zapis.addWidget(self.btn_zapisz_latent)
+        wiersz_zapis.addStretch(1)
         lay.addLayout(wiersz_zapis)
 
         self.etykieta_stats = QLabel('')
@@ -991,6 +993,7 @@ class Okno(QMainWindow):
 
 def main():
     aplikacja = QApplication(sys.argv)
+    aplikacja.setStyleSheet(STYL)
     okno = Okno()
     okno.show()
     sys.exit(aplikacja.exec())

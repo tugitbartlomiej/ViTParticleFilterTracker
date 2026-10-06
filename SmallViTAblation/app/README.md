@@ -278,7 +278,9 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
 - `opcje_atencji.py`: wspólny panel opcji atencji (mapy, głowy, rollout, strzałki).
 - `film.py`: filmy, zakres czasu na klatki, etykiety i obrysy, maska patchy.
 - `zakladka_filmu.py`: zakładka filmu; `przestrzen_makro.py`: przestrzeń makrowektorów.
-- `uklad.py`: układ zawijający kontrolki do kolejnych linii i `dodaj()` (etykieta + kontrolka z podpowiedzią).
+- `uklad.py`: układ zawijający kontrolki, `dodaj()` (etykieta i pole zawijają się razem) i `PanelOpcji`
+  (pasek przycisków widoku plus zakładki z grupami opcji, chowane przyciskiem „Opcje”).
+- `styl.py`: hierarchia przycisków (rola „glowny”: główna akcja zakładki, „narzedzie”: małe przyciski widoku).
 - `wspolne.py`: siatka patchy (16 px, 20 x 30, wejście 480 x 320), kolory i kierunki 768 kanałów, katalog wyników.
 - `polozenie.py`: latent samego położenia patcha (średnia z 3000 klatek walidacji) i jego kierunki.
 - `wytnij_narzedzie.py`: sekwencja klatek z samym narzędziem na czarnym tle (`narzedzie_czarne_tlo/`).

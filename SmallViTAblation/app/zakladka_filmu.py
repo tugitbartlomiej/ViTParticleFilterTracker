@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QHBoxLayout, QLabel, QMessageBox,
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QGroupBox, QDoubleSpinBox, QFileDialog, QHBoxLayout, QLabel, QMessageBox,
                              QProgressBar, QPushButton, QSlider, QSpinBox, QSplitter, QVBoxLayout, QWidget)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -20,6 +20,7 @@ from matplotlib.figure import Figure
 import detekcja as D
 import film as F
 import silnik
+from styl import rola
 from uklad import Przeplyw
 
 KOLOR_GT = (0, 1, 1, 1)           # obrys z etykiety
@@ -64,8 +65,9 @@ class ZakladkaFilmu(QWidget):
         self.t, self.token, self.watek = 0, None, None
         lay = QVBoxLayout(self)
 
-        # ---------------- wiersz 1: film
-        w = Przeplyw(); lay.addLayout(w)
+        # ---------------- góra: dwie grupy obok siebie, źródło klatek | zakres i konwersja
+        gora = QHBoxLayout(); lay.addLayout(gora)
+        g1 = QGroupBox('1. Źródło klatek'); w = Przeplyw(); g1.setLayout(w); gora.addWidget(g1, 2)
         e = QLabel('Film:'); w.addWidget(e)
         self.combo_film = QComboBox(); self.combo_film.setMinimumWidth(340)
         self.combo_film.setToolTip('Filmy Cataract-LMM 3_Object_Tracking (170 zipów adnotacji).\n'
@@ -92,10 +94,8 @@ class ZakladkaFilmu(QWidget):
         w.addWidget(self.btn_folder)
         self.btn_ckpt = QPushButton('Checkpoint ViT…'); self.btn_ckpt.setToolTip('Checkpoint małego ViT do latentu i detekcji.')
         w.addWidget(self.btn_ckpt)
+        g2 = QGroupBox('2. Zakres i konwersja na sekwencję'); w = Przeplyw(); g2.setLayout(w); gora.addWidget(g2, 3)
         self.etykieta_filmu = QLabel(''); self.etykieta_filmu.setWordWrap(True); lay.addWidget(self.etykieta_filmu)
-
-        # ---------------- wiersz 2: zakres
-        w = Przeplyw(); lay.addLayout(w)
 
         def czas(nazwa, opis):
             e = QLabel(nazwa); e.setToolTip(opis); w.addWidget(e)
@@ -120,7 +120,7 @@ class ZakladkaFilmu(QWidget):
                                      '(na nich robiono etykiety; nie trzeba wypakowywać MP4).')
         w.addWidget(QLabel('źródło:')); w.addWidget(self.combo_zrodlo)
         self.etykieta_zakresu = QLabel(''); w.addWidget(self.etykieta_zakresu)
-        self.btn_konwertuj = QPushButton('Konwertuj zakres na sekwencję')
+        self.btn_konwertuj = rola(QPushButton('Konwertuj na sekwencję'), 'glowny')
         self.btn_konwertuj.setToolTip('Czyta klatki zakresu, liczy latent ViT (600 x 768) i detekcję każdej klatki,\n'
                                       'wczytuje etykiety i obrysy narzędzia.')
         w.addWidget(self.btn_konwertuj)
@@ -168,10 +168,10 @@ class ZakladkaFilmu(QWidget):
         self.spin_prog.setToolTip('Patch należy do narzędzia, gdy obrys pokrywa co najmniej tyle procent jego pikseli.')
         w.addWidget(self.spin_prog)
         w.addStretch(1)
-        self.fig = Figure(figsize=(6, 4.2)); self.ax = self.fig.add_axes([0, 0, 1, .93])
+        self.fig = Figure(figsize=(6, 4.2), facecolor='#1e1f22'); self.ax = self.fig.add_axes([0, 0, 1, .93])
         self.canvas = FigureCanvasQTAgg(self.fig); self.canvas.setMinimumHeight(300)
         ll.addWidget(self.canvas, 3)
-        self.fig_os = Figure(figsize=(6, 1.8)); self.ax_os = self.fig_os.add_axes([.08, .22, .9, .7])
+        self.fig_os = Figure(figsize=(6, 1.8), facecolor='#1e1f22'); self.ax_os = self.fig_os.add_axes([.08, .22, .9, .7])
         self.canvas_os = FigureCanvasQTAgg(self.fig_os); self.canvas_os.setMinimumHeight(140)
         self.canvas_os.setToolTip('Przebieg sekwencji: pewność ViT, IoU z ramką etykiety i zmiana latentu względem\n'
                                   'poprzedniej klatki. Kliknięcie przechodzi do klatki.')
@@ -188,10 +188,13 @@ class ZakladkaFilmu(QWidget):
 
         # ---------------- odtwarzanie
         w = QHBoxLayout(); lay.addLayout(w)
-        self.btn_pocz = QPushButton('⏮'); self.btn_wstecz = QPushButton('◀'); self.btn_graj = QPushButton('▶ Odtwarzaj')
-        self.btn_graj.setCheckable(True); self.btn_dalej = QPushButton('▶|'); self.btn_kon = QPushButton('⏭')
-        for b in (self.btn_pocz, self.btn_wstecz, self.btn_graj, self.btn_dalej, self.btn_kon):
-            w.addWidget(b)
+        self.btn_pocz = QPushButton('⏮ Początek'); self.btn_wstecz = QPushButton('◀ Klatka')
+        self.btn_graj = rola(QPushButton('▶ Odtwarzaj'), 'glowny'); self.btn_graj.setMinimumWidth(130)
+        self.btn_graj.setCheckable(True); self.btn_dalej = QPushButton('Klatka ▶'); self.btn_kon = QPushButton('Koniec ⏭')
+        for b, opis in ((self.btn_pocz, 'Pierwsza klatka sekwencji.'), (self.btn_wstecz, 'Poprzednia klatka.'),
+                        (self.btn_graj, 'Odtwarzanie sekwencji (spacja w polu suwaka też przesuwa).'),
+                        (self.btn_dalej, 'Następna klatka.'), (self.btn_kon, 'Ostatnia klatka sekwencji.')):
+            b.setToolTip(opis); w.addWidget(b)
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setRange(0, 0); w.addWidget(self.suwak, 1)
         w.addWidget(QLabel('kl./s'))
         self.spin_fps = QDoubleSpinBox(); self.spin_fps.setRange(.5, 30); self.spin_fps.setValue(6)
@@ -641,7 +644,7 @@ class ZakladkaFilmu(QWidget):
             linia(prostokat([k_ * 16, r_ * 16, k_ * 16 + 16, r_ * 16 + 16]), (1, 1, 1), 1.2)
         ax.set_xlim(0, 480); ax.set_ylim(320, 0); ax.axis('off')
         tryb = ' | RYSOWANIE: lewy klik = punkt, prawy = zamknij' if self.btn_rysuj.isChecked() else ' | klik = wybór patcha'
-        ax.set_title(f'{s["film"]} kl. {int(s["idx"][t])}{tryb}', fontsize=8)
+        ax.set_title(f'{s["film"]} kl. {int(s["idx"][t])}{tryb}', fontsize=8, color='#dddddd')
         self.canvas.draw_idle()
 
     def _rysuj_os(self):
@@ -653,10 +656,15 @@ class ZakladkaFilmu(QWidget):
         zm = s['zmiana']
         if np.isfinite(zm).any():
             ax.plot(x, zm / np.nanmax(zm) * 100, color='tab:orange', lw=1, alpha=.8, label='zmiana latentu (wzgl. maks.)')
-        ax.set_ylim(0, 105); ax.set_xlim(0, max(1, len(x) - 1)); ax.tick_params(labelsize=7)
-        ax.set_xlabel('klatka sekwencji', fontsize=7)
-        ax.legend(fontsize=6, loc='lower left', ncol=3)
-        self._linia_os = ax.axvline(0, color='k', lw=1)
+        ax.set_ylim(0, 105); ax.set_xlim(0, max(1, len(x) - 1)); ax.tick_params(labelsize=7, colors='#cccccc')
+        ax.set_facecolor('#26282c')
+        for b in ax.spines.values():
+            b.set_color('#55585e')
+        ax.set_xlabel('klatka sekwencji', fontsize=7, color='#cccccc')
+        leg = ax.legend(fontsize=6, loc='lower left', ncol=3, facecolor='#26282c', edgecolor='#55585e')
+        for t in leg.get_texts():
+            t.set_color('#dddddd')
+        self._linia_os = ax.axvline(0, color='white', lw=1)
         self.canvas_os.draw_idle()
 
     def _znacznik_osi(self):

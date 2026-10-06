@@ -21,7 +21,8 @@ import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
 from opcje_atencji import OpcjeAtencji
-from uklad import Przeplyw, dodaj
+from styl import rola
+from uklad import PanelOpcji, Przeplyw, dodaj
 from widok_gl import ObrazPrzezroczysty, Widok3D
 from wspolne import (CZASTECZKI_CO, KOLUMNY, KOMORKA, PCA_SKLADOWE, SZER, WIERSZE, WYNIKI, WYS, kierunki,
                      kolory_kanalow, opisy_czasteczek, pca, tokeny_co)
@@ -42,12 +43,10 @@ class WidokCzasteczek3D(QWidget):
         self.kolory = kolory_kanalow()
         self._okna = []
         lay = QVBoxLayout(self)
+        self.panel = PanelOpcji(lay, ['Wektory', 'Obraz', 'Atencja', 'Cząsteczki'])
+        pasek = self.panel.pasek
 
-        def wiersz():
-            w = Przeplyw(); lay.addLayout(w)
-            return w
-
-        w = wiersz()
+        w = self.panel.wiersz('Wektory')
         self.combo_tryb = dodaj(w, 'Pokaż:', QComboBox(),
                                 'PRZED / PO: wartości latentu tokenu.\n'
                                 'Różnica: po − przed (wektor dłuższy od sfery zera = kanał wzmocniony, krótszy = osłabiony).\n'
@@ -90,7 +89,7 @@ class WidokCzasteczek3D(QWidget):
         self.spin_gr.setRange(1, 10); self.spin_gr.setSingleStep(.5); self.spin_gr.setValue(1)
         w.addStretch(1)
 
-        w = wiersz()
+        w = self.panel.wiersz('Obraz')
         self.chk_obraz = QCheckBox('Obraz pod spodem'); self.chk_obraz.setChecked(True)
         self.chk_obraz.setToolTip('Zdjęcie 480x320 (wejście ViT) jako płaszczyzna z = 0.')
         w.addWidget(self.chk_obraz)
@@ -118,9 +117,9 @@ class WidokCzasteczek3D(QWidget):
         self.spin_wys.setRange(0, 1000); self.spin_wys.setValue(0); self.spin_wys.setSuffix(' px')
         w.addStretch(1)
         self.opcje = OpcjeAtencji()
-        lay.addWidget(self.opcje)
+        self.panel.strona('Atencja').addWidget(self.opcje)
 
-        w = wiersz()
+        w = self.panel.wiersz('Cząsteczki')
         self.chk_tylko = QCheckBox('Tylko wybrany patch')
         self.chk_tylko.setToolTip('Rysuje tylko cząsteczkę klikniętego patcha (kliknij na obrazie) i ustawia na niej kamerę.')
         w.addWidget(self.chk_tylko)
@@ -135,26 +134,28 @@ class WidokCzasteczek3D(QWidget):
                                'od środka pierwszego bloku n x n, więc wybrane leżą równo po całym obrazie.\n'
                                'Łączy się z „tylko w obrysie” (część wspólna). PCA i atencja liczą się dalej ze wszystkich 600.')
         self.combo_ile.addItems(opisy_czasteczek())
+        w = pasek                                   # pasek nad widokiem: przejście, kamera, zapis
         w.addWidget(QLabel('PRZED'))
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setRange(0, 100); self.suwak.setValue(100)
         self.suwak.setToolTip('t w trybie przejścia: 0 = latent PRZED, 100 = latent PO.')
         self.suwak.setMaximumWidth(260)
         w.addWidget(self.suwak); w.addWidget(QLabel('PO'))
-        self.btn_anim = QPushButton('Animuj'); self.btn_anim.setCheckable(True)
+        self.btn_anim = rola(QPushButton('Animuj'), 'narzedzie'); self.btn_anim.setCheckable(True)
         self.btn_anim.setToolTip('Przesuwa t tam i z powrotem (tryb przejścia). Każda klatka to nowe pozycje na karcie.')
         w.addWidget(self.btn_anim)
-        self.btn_kamera = QPushButton('Kamera od nowa'); self.btn_kamera.setToolTip('Widok całego obrazu z ukosa.')
+        self.btn_kamera = rola(QPushButton('Kamera od nowa'), 'narzedzie'); self.btn_kamera.setToolTip('Widok całego obrazu z ukosa.')
         w.addWidget(self.btn_kamera)
-        self.btn_gora = QPushButton('Z góry'); self.btn_gora.setToolTip('Widok prosto z góry, jak na zdjęciu.')
+        self.btn_gora = rola(QPushButton('Z góry'), 'narzedzie'); self.btn_gora.setToolTip('Widok prosto z góry, jak na zdjęciu.')
         w.addWidget(self.btn_gora)
-        self.btn_png = QPushButton('Zapisz PNG')
+        self.btn_png = rola(QPushButton('Zapisz PNG'), 'narzedzie')
         self.btn_png.setToolTip(f'Zapis bieżącego widoku do {WYNIKI}')
         w.addWidget(self.btn_png)
-        self.btn_okno = QPushButton('Osobne okno'); self.btn_okno.setToolTip('Ten sam widok w dużym, osobnym oknie.')
+        self.btn_okno = rola(QPushButton('Osobne okno'), 'narzedzie'); self.btn_okno.setToolTip('Ten sam widok w dużym, osobnym oknie.')
         w.addWidget(self.btn_okno)
         self.etykieta = QLabel('Obrót: lewy przycisk. Przesuwanie: środkowy albo Ctrl + lewy. Zoom: kółko. '
                                'Klik bez ruchu = wybór patcha.')
         self.etykieta.setWordWrap(True)
+        self.panel.zakoncz()
         lay.addWidget(self.etykieta)
 
         self.widok = Widok3D()

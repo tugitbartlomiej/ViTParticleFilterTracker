@@ -1,7 +1,7 @@
 """Układ „przepływowy”: kontrolki w wierszu, a gdy brakuje miejsca, zawijają się do następnej linii
 (jak tekst). Dzięki temu panele z wieloma opcjami nie rozpychają okna na szerokość."""
 from PyQt6.QtCore import QPoint, QRect, QSize, Qt
-from PyQt6.QtWidgets import QLabel, QLayout, QWidgetItem
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QLayout, QPushButton, QTabWidget, QVBoxLayout, QWidget, QWidgetItem
 
 
 class Przeplyw(QLayout):
@@ -76,5 +76,42 @@ class Przeplyw(QLayout):
 def dodaj(uklad, nazwa, widget, opis):
     """Etykieta i kontrolka obok siebie w układzie, ten sam opis jako podpowiedź obu; zwraca kontrolkę."""
     e = QLabel(nazwa); e.setToolTip(opis); widget.setToolTip(opis)
-    uklad.addWidget(e); uklad.addWidget(widget)
+    if isinstance(uklad, Przeplyw):                 # etykieta i pole w jednym kawałku: zawijają się razem
+        para = QWidget(); l = QHBoxLayout(para); l.setContentsMargins(0, 0, 0, 0); l.setSpacing(4)
+        l.addWidget(e); l.addWidget(widget)
+        uklad.addWidget(para)
+    else:
+        uklad.addWidget(e); uklad.addWidget(widget)
     return widget
+
+
+class PanelOpcji:
+    """Opcje widoku: pasek przycisków zawsze widoczny (z przyciskiem „Opcje”, który chowa resztę) i zakładki
+    z grupami opcji. Dzięki temu widok 3D dostaje prawie całą wysokość, a opcje są pogrupowane tematycznie."""
+
+    def __init__(self, uklad, strony):
+        from styl import rola
+        self.pasek = Przeplyw(); uklad.addLayout(self.pasek)
+        self.btn_opcje = rola(QPushButton('Opcje ▾'), 'narzedzie'); self.btn_opcje.setCheckable(True)
+        self.btn_opcje.setChecked(True)
+        self.btn_opcje.setToolTip('Pokaż albo schowaj opcje widoku (więcej miejsca na widok).')
+        self.pasek.addWidget(self.btn_opcje)
+        self.zakladki = QTabWidget(); self.zakladki.setObjectName('opcje_widoku'); self.zakladki.setDocumentMode(True)
+        self._strony = {}
+        for n in strony:
+            s = QWidget(); lay = QVBoxLayout(s); lay.setContentsMargins(6, 4, 6, 4); lay.setSpacing(2)
+            self.zakladki.addTab(s, n); self._strony[n] = lay
+        uklad.addWidget(self.zakladki)
+        self.btn_opcje.toggled.connect(lambda v: (self.zakladki.setVisible(v),
+                                                  self.btn_opcje.setText('Opcje ▾' if v else 'Opcje ▸')))
+
+    def wiersz(self, strona):
+        w = Przeplyw(); self._strony[strona].addLayout(w)
+        return w
+
+    def strona(self, strona):
+        return self._strony[strona]
+
+    def zakoncz(self):
+        for lay in self._strony.values():
+            lay.addStretch(1)

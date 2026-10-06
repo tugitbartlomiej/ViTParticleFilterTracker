@@ -24,7 +24,8 @@ from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QPush
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
-from uklad import Przeplyw, dodaj
+from styl import rola
+from uklad import PanelOpcji, Przeplyw, dodaj
 from widok_gl import WidokGL
 from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanalow, opisy_czasteczek, pca, tokeny_co
 
@@ -48,11 +49,9 @@ class WidokPrzestrzeniMakro(QWidget):
         self._poz, self._opis_poz = None, ''
         lay = QVBoxLayout(self)
 
-        def wiersz():
-            w = Przeplyw(); lay.addLayout(w)
-            return w
+        self.panel = PanelOpcji(lay, ['Siły i kierunki', 'Wygląd', 'Mikrowektory'])
 
-        w = wiersz()
+        w = self.panel.wiersz('Siły i kierunki')
         self.combo_kier = dodaj(w, 'Kierunki kanałów:', QComboBox(),
                                 'Stały kierunek d_c każdego z 768 kanałów (makrowektor):\n'
                                 '- sfera Fibonacciego: te same kierunki co w widoku 3D nad obrazem (pełna sfera),\n'
@@ -85,15 +84,17 @@ class WidokPrzestrzeniMakro(QWidget):
         self.chk_srodek.setToolTip('Siła kanału = z − μ (średnia sekwencji). Bez tego wszystkie cząstki odlatują razem\n'
                                    'w stronę średniej, bo po GELU prawie wszystkie wartości są dodatnie.')
         w.addWidget(self.chk_srodek)
+        w = self.panel.wiersz('Wygląd')
         self.combo_kolor = dodaj(w, 'Kolor cząstek:', QComboBox(), 'Jak barwić 600 cząstek.')
         self.combo_kolor.addItems(self.KOLORY)
         w.addStretch(1)
 
-        w = wiersz()
+        w = self.panel.wiersz('Wygląd')
         self.spin_slad = dodaj(w, 'Ślad (klatek):', QSpinBox(), 'Ile poprzednich klatek pokazuje linia toru każdej cząstki. 0 = bez śladu.')
         self.spin_slad.setRange(0, 200); self.spin_slad.setValue(8)
         self.spin_rozmiar = dodaj(w, 'Rozmiar:', QDoubleSpinBox(), 'Średnica cząstek w pikselach ekranu.')
         self.spin_rozmiar.setRange(1, 30); self.spin_rozmiar.setValue(6)
+        w = self.panel.wiersz('Mikrowektory')
         self.combo_mikro = dodaj(w, 'Mikrowektory wybranego patcha:', QComboBox(),
                                  'Jak pokazać 768 mikrowektorów (z_c − μ_c) · s · d_c wybranej cząstki. Oba sposoby\n'
                                  'to to samo dodawanie wektorów, wynik jest ten sam: położenie cząstki.\n'
@@ -106,6 +107,7 @@ class WidokPrzestrzeniMakro(QWidget):
                                 'Mnożnik długości mikrowektorów ze wspólnego środka (tylko rysunek, wypadkowa bez zmian).\n'
                                 'Pojedynczy mikrowektor jest zwykle dużo krótszy od wypadkowej.')
         self.spin_mikro.setRange(1, 500); self.spin_mikro.setValue(1); self.spin_mikro.setPrefix('× ')
+        w = self.panel.wiersz('Wygląd')
         self.chk_gwiazda = QCheckBox('kierunki kanałów'); self.chk_gwiazda.setChecked(True)
         self.chk_gwiazda.setToolTip('Gwiazda 768 kierunków d_c w środku układu (kolor kanału jak w widoku 3D).')
         w.addWidget(self.chk_gwiazda)
@@ -118,7 +120,8 @@ class WidokPrzestrzeniMakro(QWidget):
         self.combo_ile.addItems(opisy_czasteczek())
         self.spin_przejscie = dodaj(w, 'Przelot:', QSpinBox(), 'Czas płynnego przelotu cząstek do nowej klatki (ms). 0 = skok.')
         self.spin_przejscie.setRange(0, 3000); self.spin_przejscie.setValue(250); self.spin_przejscie.setSuffix(' ms')
-        b = QPushButton('Kamera od nowa'); b.clicked.connect(self._kamera); w.addWidget(b)
+        b = rola(QPushButton('Kamera od nowa'), 'narzedzie'); b.clicked.connect(self._kamera); self.panel.pasek.addWidget(b)
+        self.panel.zakoncz()
         w.addStretch(1)
         self.etykieta = QLabel('Wczytaj sekwencję w zakładce filmu.'); self.etykieta.setWordWrap(True)
         lay.addWidget(self.etykieta)

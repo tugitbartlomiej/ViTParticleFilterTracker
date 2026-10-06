@@ -20,6 +20,7 @@ from matplotlib.figure import Figure
 
 import detekcja as D
 import silnik
+from styl import rola
 
 TESTOWE = Path(__file__).resolve().parent / 'zdjeciatestowe'
 
@@ -386,36 +387,38 @@ class ZakladkaDetekcji(QWidget):
     # ---------------------------------------------------------------- UI
     def _buduj(self):
         lay = QVBoxLayout(self)
-        g = QGroupBox('Zdjęcie, checkpoint ViT i auto-szukanie latentu')
+        g = QGroupBox('Zdjęcie i detekcja ViT, auto-szukanie latentu')
         v = QVBoxLayout(g)
         w1 = QHBoxLayout()
-        b1 = QPushButton('1. Wczytaj zdjęcie...')
+        b1 = QPushButton('Wczytaj zdjęcie…')
         b1.setToolTip('Dowolne zdjęcie. Etykieta narzędzia jest wczytywana automatycznie z annotation.csv,\n'
                       'jeśli nazwa pliku wskazuje film i klatkę (np. TR_0001_S1_P03_klatka_000870.jpg).')
         b1.clicked.connect(self._wczytaj_zdjecie)
-        bsd = QPushButton('Obraz z SD (zakładka Edytor)')
+        bsd = QPushButton('Obraz z Edytora SD')
         bsd.setToolTip('Bierze ostatni obraz wygenerowany przez SD i sprawdza na nim detekcję ViT.\n'
                        'Etykieta: ta sama co dla zdjęcia, z którego policzono latent bazowy (jeśli była).')
         bsd.clicked.connect(self._obraz_z_sd)
-        b2 = QPushButton('2. Checkpoint ViT...')
+        b2 = QPushButton('Checkpoint ViT…')
         b2.setToolTip('Słownik z kluczem net (dowolny krok uczenia małego ViT).')
         b2.clicked.connect(self._wybierz_checkpoint)
-        self.btn_wykryj = QPushButton('Wykryj')
+        self.btn_wykryj = rola(QPushButton('Wykryj'), 'glowny')
         self.btn_wykryj.clicked.connect(self._wykryj)
         bmap = QPushButton('mAP na zdjęciach testowych')
         bmap.setToolTip(f'AP@0,5 i mAP@0,5:0,95 ViT na wszystkich zdjęciach z etykietą w {TESTOWE.name}/.')
         bmap.clicked.connect(self._map_testowe)
-        for b in (b1, bsd, b2, self.btn_wykryj, bmap):
+        for b in (b1, bsd, b2, self.btn_wykryj):
             w1.addWidget(b)
+        w1.addSpacing(18)
+        w1.addWidget(bmap)
         self.chk_rysuj = QCheckBox('Rysuj etykietę myszą')
         self.chk_rysuj.setToolTip('Przeciągnij prostokąt na obrazie PRZED, aby ustawić etykietę narzędzia ręcznie.')
         self.chk_rysuj.toggled.connect(lambda on: setattr(self.panel_przed, 'rysowanie', on))
         w1.addWidget(self.chk_rysuj)
+        w1.addStretch(1)
         v.addLayout(w1)
 
         w2 = QHBoxLayout()
-        self.btn_auto = QPushButton('3. Auto-szukanie latentu')
-        self.btn_auto.setStyleSheet('font-weight:bold; padding:4px;')
+        self.btn_auto = rola(QPushButton('Auto-szukanie latentu'), 'glowny')
         self.btn_auto.setToolTip('Optymalizacja (Adam) wartości latentu tego zdjęcia, aby IoU i pewność ViT dążyły do 100%.\n'
                                  'Wagi ViT i piksele bez zmian; zmieniają się tylko wybrane kanały latentu,\n'
                                  'po każdym kroku przycinane do limitów makrowektorów (grupa Limity w Edytorze).')
