@@ -18,7 +18,7 @@ import time
 import numpy as np
 from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtGui import QVector3D
-from PyQt6.QtWidgets import (QCheckBox, QDoubleSpinBox, QLabel, QPushButton, QSpinBox,
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QLineEdit, QPushButton, QSpinBox,
                              QVBoxLayout, QWidget)
 
 import pyqtgraph as pg
@@ -140,6 +140,32 @@ class WidokPrzestrzeniMakro(QWidget):
         self.spin_wzm = dodaj(self.panel.wiersz('Atencja'), 'Powiększ wg mapy:', QDoubleSpinBox(),
                               'Rozmiar cząstki = rozmiar · (0,4 + ta wartość · mapa). 0 = sam kolor.')
         self.spin_wzm.setRange(0, 10); self.spin_wzm.setSingleStep(.5); self.spin_wzm.setValue(2.5)
+        w = self.panel.wiersz('Atencja')
+        self.combo_zbior = dodaj(w, 'Mapa z patchy:', WaskiCombo(14),
+                                 'Dla map „z wybranego patcha” i „do wybranego patcha”: z którego zbioru patchy (średnia):\n'
+                                 '- wybrany patch: kliknięty albo śledzony czubek,\n'
+                                 '- wszystkie widoczne cząstki (z „Cząstek” i „tylko cząstki narzędzia”),\n'
+                                 '- patche narzędzia z maski bieżącej klatki,\n'
+                                 '- lista: numery patchy w polu obok, np. 315, 316, 340-345 (wiersz · 30 + kolumna).')
+        self.combo_zbior.addItems(['wybrany patch', 'wszystkie widoczne cząstki', 'patche narzędzia (maska klatki)',
+                                   'lista patchy (pole obok)'])
+        self.edit_lista = QLineEdit(); self.edit_lista.setPlaceholderText('np. 315, 316, 340-345'); self.edit_lista.setMaximumWidth(170)
+        self.edit_lista.setToolTip(self.combo_zbior.toolTip()); w.addWidget(self.edit_lista)
+        w = self.panel.wiersz('Atencja')
+        self.chk_objetosc = QCheckBox('Heatmapa całej przestrzeni')
+        self.chk_objetosc.setToolTip('Mapa atencji rozlana gradientem po przestrzeni makrowektorów: na siatce 48 x 48 x 48\n'
+                                     'wartość = gładka średnia mapy pobliskich cząstek (rozmycie Gaussa z normalizacją),\n'
+                                     'barwa inferno, rysowana jako świecąca mgła (nie zasłania cząstek).\n'
+                                     'Mapę i zbiór patchy wybiera się jak dla cząstek; działa też bez „Atencja na cząstkach”.')
+        w.addWidget(self.chk_objetosc)
+        self.combo_zasieg = dodaj(w, 'Zasięg:', WaskiCombo(12),
+                                  'Przy cząstkach: mgła tylko tam, gdzie są cząstki (krycie rośnie z ich gęstością).\n'
+                                  'Cała przestrzeń: cały sześcian zamalowany, dalej od cząstek wartość najbliższych.')
+        self.combo_zasieg.addItems(['przy cząstkach', 'cała przestrzeń'])
+        self.spin_rozmycie = dodaj(w, 'Rozmycie:', QDoubleSpinBox(), 'Szerokość gradientu: odchylenie Gaussa w % boku sześcianu.')
+        self.spin_rozmycie.setRange(1, 40); self.spin_rozmycie.setValue(6); self.spin_rozmycie.setSuffix(' %')
+        self.spin_krycie_obj = dodaj(w, 'Krycie mgły:', QDoubleSpinBox(), 'Jasność mgły (0..1).')
+        self.spin_krycie_obj.setRange(0, 1); self.spin_krycie_obj.setSingleStep(.05); self.spin_krycie_obj.setValue(.35)
         from opcje_atencji import OpcjeAtencji
         self.opcje = OpcjeAtencji(na_poczatku=(self.chk_atencja,))
         self.panel.strona('Atencja').addWidget(self.opcje)
@@ -177,6 +203,8 @@ class WidokPrzestrzeniMakro(QWidget):
         self.luki.setVisible(False); v.addItem(self.luki)
         self.groty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=7, pxMode=True, glOptions='translucent')
         self.groty.setVisible(False); v.addItem(self.groty)
+        self.objetosc = gl.GLVolumeItem(np.zeros((2, 2, 2, 4), np.uint8), sliceDensity=2, smooth=True, glOptions='additive')
+        self.objetosc.setVisible(False); v.addItem(self.objetosc)
         self.punkty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=6, pxMode=True, glOptions='translucent')
         v.addItem(self.punkty)
         self.wybrany = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=16, color=(1, 1, 1, 1), pxMode=True)
@@ -192,6 +220,8 @@ class WidokPrzestrzeniMakro(QWidget):
         for s in (self.combo_kolor.currentIndexChanged, self.spin_slad.valueChanged, self.spin_rozmiar.valueChanged,
                   self.combo_mikro.currentIndexChanged, self.spin_mikro.valueChanged,
                   self.chk_atencja.toggled, self.opcje.zmiana, self.spin_wzm.valueChanged, self.chk_czastki.toggled,
+                  self.combo_zbior.currentIndexChanged, self.edit_lista.editingFinished, self.chk_objetosc.toggled,
+                  self.combo_zasieg.currentIndexChanged, self.spin_rozmycie.valueChanged, self.spin_krycie_obj.valueChanged,
                   self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled, self.combo_ile.currentIndexChanged):
             s.connect(lambda *_: self._rysuj(skok=True))
 
@@ -382,12 +412,65 @@ class WidokPrzestrzeniMakro(QWidget):
         self.atencja_fn = atencja_fn
         self.opcje.ustaw_zrodlo(atencja_fn)
 
+    def _zbior(self):
+        """Patch albo zbiór patchy dla map „z / do wybranego” (combo_zbior); None = brak."""
+        i = self.combo_zbior.currentIndex()
+        if i == 1:
+            return self._widoczne()
+        if i == 2:
+            return np.flatnonzero(self.maski[self.t]) if self.maski is not None else None
+        if i == 3:
+            tok = set()
+            for cz in self.edit_lista.text().replace(';', ',').split(','):
+                cz = cz.strip()
+                try:
+                    a, _, b = cz.partition('-')
+                    tok.update(range(int(a), int(b or a) + 1))
+                except ValueError:
+                    continue
+            tok = np.array(sorted(t for t in tok if 0 <= t < 600), int)
+            return tok if len(tok) else None
+        return self.token
+
     def _atencja(self):
-        """(mapa [600] 0..1 albo None, strzałki (src, dst, w) albo None, opis)."""
-        if not self.chk_atencja.isChecked() or self.atencja_fn is None:
+        """(mapa [600] 0..1 albo None, strzałki (src, dst, w) albo None, opis). Liczona, gdy włączono atencję na
+        cząstkach albo heatmapę przestrzeni."""
+        if not (self.chk_atencja.isChecked() or self.chk_objetosc.isChecked()) or self.atencja_fn is None:
             return None, None, ''
-        A, opis = self.opcje.mapa(self.token)
-        return (None if A is None else A.reshape(-1)), self.opcje.strzalki(self.token), opis
+        zb = self._zbior()
+        if zb is not None and np.ndim(zb) and len(zb) == 0:
+            zb = None
+        A, opis = self.opcje.mapa(zb)
+        strz = self.opcje.strzalki(self.token) if self.chk_atencja.isChecked() else None
+        return (None if A is None else A.reshape(-1)), strz, opis
+
+    def _rysuj_objetosc(self, P, A, tok):
+        """Heatmapa objętościowa: gładka średnia mapy cząstek na siatce n^3 (Nadaraya-Watson z jądrem Gaussa)."""
+        from scipy import ndimage
+        import matplotlib
+        n = 48
+        L = max(float(np.percentile(np.abs(self.P), 99.5)) * 1.15, 1e-6)
+        ix = np.clip(((P[tok] + L) / (2 * L) * n).astype(int), 0, n - 1)
+        waga = np.zeros((n, n, n), np.float32); suma = np.zeros((n, n, n), np.float32)
+        np.add.at(waga, tuple(ix.T), 1.0); np.add.at(suma, tuple(ix.T), A[tok].astype(np.float32))
+        sig = self.spin_rozmycie.value() / 100 * n
+        waga = ndimage.gaussian_filter(waga, sig, mode='constant'); suma = ndimage.gaussian_filter(suma, sig, mode='constant')
+        jest = waga > waga.max() * 1e-4
+        wart = np.where(jest, suma / np.maximum(waga, 1e-12), 0)
+        if self.combo_zasieg.currentIndex() == 1:            # cała przestrzeń: puste voksele = wartość najbliższych
+            _, ind = ndimage.distance_transform_edt(~jest, return_indices=True)
+            wart = wart[tuple(ind)]
+            alfa = .25 + .75 * wart
+        else:
+            gest = np.sqrt(waga / max(float(waga.max()), 1e-12))
+            alfa = gest * (.3 + .7 * wart)
+        rgba = matplotlib.colormaps['inferno'](np.clip(wart, 0, 1))
+        rgba[..., 3] = np.clip(alfa * self.spin_krycie_obj.value(), 0, 1)
+        self.objetosc.setData((rgba * 255).astype(np.uint8))
+        self.objetosc.resetTransform()
+        self.objetosc.scale(2 * L / n, 2 * L / n, 2 * L / n)
+        self.objetosc.translate(-L, -L, -L)
+        self.objetosc.setVisible(True)
 
     def _widoczne(self):
         tok = np.arange(600)
@@ -408,7 +491,12 @@ class WidokPrzestrzeniMakro(QWidget):
         kol = self._kolory()
         rozm = self.spin_rozmiar.value()
         A, strz, self._opis_at = self._atencja()
-        if A is not None:                                    # mapa atencji: kolor inferno, rozmiar według wartości
+        if self.chk_objetosc.isChecked() and A is not None:
+            if not tylko_punkty or self._u >= 1:             # w czasie przelotu mgła stoi, liczona na jego końcu
+                self._rysuj_objetosc(P, A, tok)
+        else:
+            self.objetosc.setVisible(False)
+        if A is not None and self.chk_atencja.isChecked():   # mapa atencji: kolor inferno, rozmiar według wartości
             import matplotlib
             kol = matplotlib.colormaps['inferno'](A).astype(np.float32); kol[:, 3] = .95
             rozm = (rozm * (.4 + self.spin_wzm.value() * A)).astype(np.float32)[tok]

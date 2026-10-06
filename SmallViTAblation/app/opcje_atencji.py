@@ -161,7 +161,8 @@ class OpcjeAtencji(QWidget):
             self.combo_strz.currentIndex() in self.POTRZEBUJE_TOKENU_STRZALEK
 
     def mapa(self, token):
-        """(mapa [20, 30] znormowana do 0..1 według skali albo None, opis)."""
+        """(mapa [20, 30] znormowana do 0..1 według skali albo None, opis). token: jeden patch albo zbiór patchy
+        (tablica): mapy „z wybranego” i „do wybranego” są wtedy średnią po patchach zbioru."""
         M = self.macierz()
         if M is None:
             return None, ''
@@ -171,9 +172,9 @@ class OpcjeAtencji(QWidget):
         if i == 0:
             v = M.mean(0)
         elif i == 1:
-            v = M[token]
+            v = M[token].mean(0) if np.ndim(token) else M[token]
         elif i == 2:
-            v = M[:, token]
+            v = M[:, token].mean(1) if np.ndim(token) else M[:, token]
         elif i == 3:
             v = 1 + (M * np.log(np.maximum(M, 1e-12))).sum(1) / np.log(600)
         elif i == 4:
@@ -194,7 +195,8 @@ class OpcjeAtencji(QWidget):
         m = self.MAPY[self.combo_mapa.currentIndex()].split(':')[0]
         g = self.combo_glowa.currentText()
         bl = f'blok {self.spin_blok.value()}' if self.combo_bloki.currentIndex() == 0 else f'rollout 1..{self.spin_blok.value()}'
-        t = f'atencja {bl}, {g}: {m}' + (f' (patch {token})' if self.combo_mapa.currentIndex() in (1, 2) else '')
+        kto = f'{len(token)} patchy' if np.ndim(token) else f'patch {token}'
+        t = f'atencja {bl}, {g}: {m}' + (f' ({kto})' if self.combo_mapa.currentIndex() in (1, 2) else '')
         if v is not None:
             t += f', zakres {float(v.min()):.3g}..{float(v.max()):.3g}'
         return t

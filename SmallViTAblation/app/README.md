@@ -253,6 +253,12 @@ Zakładka opcji „Atencja” (ten sam panel co w widoku nad obrazem: mapa, gło
 „Atencja na cząstkach” barwi cząstki mapą atencji bieżącej klatki (inferno) i powiększa je według wartości
 („Powiększ wg mapy”); strzałki źródło -> cel są liniami między cząstkami w 3D (nadążają za przelotem).
 Atencja liczona z obrazu każdej klatki tylko przy włączonej opcji; około 106 ms na klatkę razem z resztą widoków.
+„Mapa z patchy”: mapy „z wybranego / do wybranego patcha” liczone ze zbioru (średnia): wybrany patch, wszystkie
+widoczne cząstki, patche narzędzia z maski klatki albo lista numerów (np. `315, 316, 340-345`).
+„Heatmapa całej przestrzeni”: mapa rozlana gradientem po przestrzeni makrowektorów, siatka 48 x 48 x 48, wartość
+= gładka średnia mapy pobliskich cząstek (rozmycie Gaussa z normalizacją, „Rozmycie” w % boku), inferno, świecąca
+mgła (rysowanie addytywne, nie zasłania cząstek). Zasięg: przy cząstkach (krycie z gęstości) albo cała przestrzeń
+(dalej od cząstek wartość najbliższych). Około 50 ms na klatkę przy wyłączonym widoku 3D.
 
 ### PCA wektorów (oba widoki 3D)
 
