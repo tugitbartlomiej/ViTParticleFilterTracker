@@ -293,22 +293,43 @@ class WidokPrzestrzeniMakro(QWidget):
     def pokaz_klatke(self, t, token=None):
         if self.P is None:
             return
+        stary_token = self.token
         self.token = token if token is not None else self.token
         stare = self._biezace() if self._od is not None else None
+        v_stare = self._v_biezace() if stary_token == self.token else None      # mikrowektory z chwili startu przelotu
         self.t = int(np.clip(t, 0, len(self.P) - 1))
         if stare is not None and self.spin_przejscie.value() > 0:
             self._od, self._u = stare, 0.0
+            self._v_od = v_stare
             self._t0 = time.perf_counter()
             self._timer.start()
             self._rysuj()
         else:
             self._rysuj(skok=True)
 
+    def _gladkie_u(self):
+        return self._u * self._u * (3 - 2 * self._u)                           # łagodny start i koniec
+
     def _biezace(self):
         if self._od is None or self._u >= 1:
             return self.P[self.t]
-        u = self._u * self._u * (3 - 2 * self._u)                              # łagodny start i koniec
-        return self._od + (self.P[self.t] - self._od) * u
+        return self._od + (self.P[self.t] - self._od) * self._gladkie_u()
+
+    def _v_biezace(self):
+        """Mikrowektory wybranej cząstki w tej chwili [K, 3]. W czasie przelotu przechodzą płynnie od tych z chwili
+        startu do tych z nowej klatki, tym samym tempem co cząstka, więc ich suma (wypadkowa ze wspólnego środka)
+        trafia w lecącą cząstkę w każdej chwili, a początek zostaje w środku układu."""
+        if self.token is None or self.Z is None or self.P is None:
+            return None
+        v = self.sily(self.t)[self.token][:, None] * self.D * self.s
+        vo = getattr(self, '_v_od', None)
+        if self._od is None or self._u >= 1:
+            return v
+        if vo is not None and vo.shape == v.shape:
+            v = vo + (v - vo) * self._gladkie_u()
+        # reszta do położenia lecącej cząstki (0 przy spójnym przelocie; inna, gdy cząstkę wybrano w trakcie
+        # przelotu) rozłożona po równo na mikrowektory: suma zawsze trafia dokładnie w cząstkę
+        return v + (self._biezace()[self.token] - v.sum(0)) / len(v)
 
     def _krok_przelotu(self):
         self._u = min(1.0, (time.perf_counter() - self._t0) * 1000 / max(1, self.spin_przejscie.value()))
@@ -343,7 +364,7 @@ class WidokPrzestrzeniMakro(QWidget):
         if self.P is None:
             return
         if skok:
-            self._od, self._u = self.P[self.t], 1.0
+            self._od, self._u, self._v_od = self.P[self.t], 1.0, None
             self._timer.stop()
         P = self._biezace()
         tok = self._widoczne()
@@ -357,10 +378,9 @@ class WidokPrzestrzeniMakro(QWidget):
         tryb_m = self.combo_mikro.currentIndex()
         jest = self.token is not None and self.Z is not None
         if jest and tryb_m != 3:
-            v = self.sily(self.t)[self.token][:, None] * self.D * self.s   # [K, 3]: mikrowektory cząstki
+            v = self._v_biezace()                                           # [K, 3]: mikrowektory cząstki
             kol_v = self.kolory_kan
-            # przelot: w trakcie przelotu wszystko jedzie razem z cząstką, w spoczynku początek = (0, 0, 0)
-            o = (P[self.token] - v.sum(0)) if self._u < 1 else np.zeros(3, np.float32)
+            o = np.zeros(3, np.float32)                                     # wspólny początek: zawsze środek układu
         if jest and tryb_m in (1, 2):
             kolej = np.argsort(-np.linalg.norm(v, axis=1))                       # od najsilniejszego
             lan = o + np.concatenate([np.zeros((1, 3), np.float32), np.cumsum(v[kolej], 0)])
@@ -374,7 +394,7 @@ class WidokPrzestrzeniMakro(QWidget):
             c = np.repeat(kol_v, 2, 0).copy()
             c[:, 3] = np.repeat(.25 + .75 * dl / max(float(dl.max()), 1e-9), 2)  # silniejszy = mniej przezroczysty
             self.mikro.setData(pos=np.ascontiguousarray(seg, np.float32), color=c)
-            self.wypadkowa.setData(pos=np.stack([o, P[self.token]]).astype(np.float32))
+            self.wypadkowa.setData(pos=np.stack([o, o + v.sum(0)]).astype(np.float32))   # = położenie cząstki
             self.mikro.setVisible(True); self.wypadkowa.setVisible(True)
         else:
             self.mikro.setVisible(False); self.wypadkowa.setVisible(False)
