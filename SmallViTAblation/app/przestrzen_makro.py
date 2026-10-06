@@ -33,7 +33,8 @@ from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanal
 
 class WidokPrzestrzeniMakro(QWidget):
     token_wybrany = pyqtSignal(int)
-    KIERUNKI = ['sfera Fibonacciego (jak widok 3D)', 'losowe (stałe ziarno)', 'PCA latentu sekwencji (3 składowe)']
+    KIERUNKI = ['sfera Fibonacciego (jak widok 3D)', 'losowe (stałe ziarno)', 'PCA latentu sekwencji (3 składowe)',
+                'półsfera Fibonacciego (z > 0)']
     KOLORY = ['wg położenia patcha (kolumna = barwa, wiersz = jasność)', 'narzędzie (czerwone) i tło (szare)',
               'wg pewności ViT w patchu']
 
@@ -59,6 +60,7 @@ class WidokPrzestrzeniMakro(QWidget):
                                 '- sfera Fibonacciego: te same kierunki co w widoku 3D nad obrazem (pełna sfera),\n'
                                 '- losowe: 768 losowych kierunków jednostkowych (projekcja losowa),\n'
                                 '- PCA: kierunek kanału = jego ładunki w 3 głównych składowych latentu sekwencji;\n'
+                                '- półsfera Fibonacciego: jak sfera, ale wszystkie kierunki mają z > 0 (w górę);\n'
                                 '  największy rozrzut cząstek, ale kierunki zależą od sekwencji.')
         self.combo_kier.addItems(self.KIERUNKI); self.combo_kier.setCurrentIndex(2)
         self.combo_kan = dodaj(w, 'Siły z kanałów:', WaskiCombo(9), 'Które kanały pchają cząstkę (pozostałe mają siłę 0).')
@@ -102,6 +104,10 @@ class WidokPrzestrzeniMakro(QWidget):
         self.combo_kolor.addItems(self.KOLORY)
         self.spin_rozmiar = dodaj(w, 'Rozmiar:', QDoubleSpinBox(), 'Średnica cząstek w pikselach ekranu.')
         self.spin_rozmiar.setRange(1, 30); self.spin_rozmiar.setValue(6)
+        self.chk_czastki = QCheckBox('Pokaż cząstki'); self.chk_czastki.setChecked(True)
+        self.chk_czastki.setToolTip('Wyłączone: bez 600 cząstek i ich śladów; zostają mikrowektory wybranego patcha,\n'
+                                    'jego cząstka, gwiazda kierunków i strzałki atencji.')
+        w.addWidget(self.chk_czastki)
         self.chk_gwiazda = QCheckBox('Gwiazda kierunków'); self.chk_gwiazda.setChecked(True)
         self.chk_gwiazda.setToolTip('Gwiazda 768 kierunków d_c w środku układu (kolor kanału jak w widoku 3D).')
         w.addWidget(self.chk_gwiazda)
@@ -185,7 +191,7 @@ class WidokPrzestrzeniMakro(QWidget):
             s.connect(lambda *_: self._przelicz())
         for s in (self.combo_kolor.currentIndexChanged, self.spin_slad.valueChanged, self.spin_rozmiar.valueChanged,
                   self.combo_mikro.currentIndexChanged, self.spin_mikro.valueChanged,
-                  self.chk_atencja.toggled, self.opcje.zmiana, self.spin_wzm.valueChanged,
+                  self.chk_atencja.toggled, self.opcje.zmiana, self.spin_wzm.valueChanged, self.chk_czastki.toggled,
                   self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled, self.combo_ile.currentIndexChanged):
             s.connect(lambda *_: self._rysuj(skok=True))
 
@@ -289,8 +295,8 @@ class WidokPrzestrzeniMakro(QWidget):
             if self.chk_srodek.isChecked():
                 self.mu = np.mean([self._z(t).mean(0) for t in range(T)], 0)
         k = self.combo_kier.currentIndex()
-        if k == 0:
-            D = kierunki(False, K)
+        if k in (0, 3):
+            D = kierunki(k == 3, K)                                          # 3: półsfera, wszystkie kierunki w górę
         elif k == 1:
             D = np.random.default_rng(0).standard_normal((K, 3)).astype(np.float32)
             D /= np.linalg.norm(D, axis=1, keepdims=True)
@@ -407,6 +413,7 @@ class WidokPrzestrzeniMakro(QWidget):
             kol = matplotlib.colormaps['inferno'](A).astype(np.float32); kol[:, 3] = .95
             rozm = (rozm * (.4 + self.spin_wzm.value() * A)).astype(np.float32)[tok]
         self.punkty.setData(pos=P[tok], color=kol[tok], size=rozm)
+        self.punkty.setVisible(self.chk_czastki.isChecked())
         if strz is not None:                                 # strzałki źródło -> cel między cząstkami
             import matplotlib
             src, dst, w = strz
@@ -455,7 +462,7 @@ class WidokPrzestrzeniMakro(QWidget):
             a = np.linspace(.08, .6, len(S) - 1, dtype=np.float32)
             c = np.repeat(kol[tok][:, None, :], len(S) - 1, 1).copy(); c[..., 3] = a
             self.slady.setData(pos=seg, color=np.repeat(c, 2, 1).reshape(-1, 4))
-            self.slady.setVisible(True)
+            self.slady.setVisible(self.chk_czastki.isChecked())
         else:
             self.slady.setVisible(False)
         if self.chk_gwiazda.isChecked():

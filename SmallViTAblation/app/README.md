@@ -238,6 +238,15 @@ wypadkowa (ich suma) kończąca się w cząstce; mnożnik „powiększ mikrowekt
 (TR_0001, klatka 21, patch 315: najdłuższy 7,6, mediana 0,04, wypadkowa 90). Do wyboru też łańcuch (koniec do
 początku, od najsilniejszego), oba albo brak; łańcuch i wypadkowa to to samo dodawanie wektorów.
 
+### Włączanie cząsteczek i widoków
+
+- „Pokaż cząsteczki” (widok 3D, zakładka Cząsteczki) i „Pokaż cząstki” (makrowektory, Wygląd): bez wektorów
+  i punktów cząsteczek; w 3D zostaje obraz, mapa atencji i łuki, w makro mikrowektory wybranego patcha.
+- Zakładka filmu, „Widoki: widok 3D / makrowektory”: wyłączony widok znika i nie jest przeliczany.
+  TR_0001, 400 klatek: wszystko 73 ms na klatkę, 3D bez cząsteczek 22 ms, bez widoku 3D 16 ms, bez obu 12 ms.
+- Wykres przebiegu sekwencji pod klatką schowany (niepotrzebny); klatka zajmuje lewą kolumnę.
+- Makrowektory, „Kierunki kanałów”: także półsfera Fibonacciego (wszystkie kierunki z > 0).
+
 ### Atencja w przestrzeni makrowektorów
 
 Zakładka opcji „Atencja” (ten sam panel co w widoku nad obrazem: mapa, głowa, blok, rollout, strzałki):

@@ -131,6 +131,10 @@ class WidokCzasteczek3D(QWidget):
                                   'Patch należy do obrysu, gdy obrys pokrywa co najmniej ustawiony procent jego pikseli.')
         self.combo_patche.addItems(['wszystkie patche', 'tylko patche w obrysie narzędzia', 'tylko patche poza obrysem'])
         self.combo_patche.setEnabled(False)
+        self.chk_czasteczki = QCheckBox('Pokaż cząsteczki'); self.chk_czasteczki.setChecked(True)
+        self.chk_czasteczki.setToolTip('Wyłączone: bez wektorów i punktów cząsteczek (zostaje obraz, mapa atencji i łuki);\n'
+                                       'widok liczy się wtedy dużo szybciej.')
+        w.addWidget(self.chk_czasteczki)
         self.chk_tylko = QCheckBox('Tylko wybrany patch')
         self.chk_tylko.setToolTip('Rysuje tylko cząsteczkę klikniętego patcha (kliknij na obrazie) i ustawia na niej kamerę.')
         w.addWidget(self.chk_tylko)
@@ -194,7 +198,7 @@ class WidokCzasteczek3D(QWidget):
                   self.combo_ksztalt.currentIndexChanged, self.combo_styl.currentIndexChanged,
                   self.spin_r0.valueChanged, self.spin_skala.valueChanged, self.spin_wys.valueChanged,
                   self.spin_maks.valueChanged, self.chk_tylko.toggled, self.combo_patche.currentIndexChanged,
-                  self.combo_ile.currentIndexChanged):
+                  self.combo_ile.currentIndexChanged, self.chk_czasteczki.toggled):
             k.connect(lambda *_: self._rysuj())
         self.suwak.valueChanged.connect(lambda *_: self._rysuj(tylko_pozycje=True))
         self.spin_gr.valueChanged.connect(self._grubosc)
@@ -408,6 +412,12 @@ class WidokCzasteczek3D(QWidget):
         if self.przed is None:
             return
         t0 = time.perf_counter()
+        if not self.chk_czasteczki.isChecked():                   # cząsteczki wyłączone: sam obraz, atencja i łuki
+            for it in (self.linie, self.punkty, self.szare, self.zera):
+                it.setVisible(False)
+            tekst_at = self._luki(self._srodki())
+            self.etykieta.setText('cząsteczki wyłączone („Pokaż cząsteczki” w zakładce Cząsteczki)' + tekst_at)
+            return
         polsfera = self.combo_ksztalt.currentIndex() == 1
         przed, po, kan, kolory, d, opis_pca = self._dane(polsfera)
         L, tryb = self._latent(przed, po)

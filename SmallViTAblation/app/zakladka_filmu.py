@@ -42,7 +42,7 @@ class ProporcjaKlatki(QObject):
     def eventFilter(self, obj, ev):
         if ev.type() == QEvent.Type.Resize:
             wys = int(round(obj.width() * 320 / 480 / (1 - TYTUL_KLATKI)))
-            wys = max(200, min(wys, int(obj.height() * .6)))      # bardzo szeroki panel: nie wypychać wykresu
+            wys = max(200, min(wys, int(obj.height() * .95)))     # bez wykresu przebiegu klatka może zająć prawie całość
             if self.plotno.height() != wys:
                 self.plotno.setFixedHeight(wys)
         return False
@@ -210,6 +210,8 @@ class ZakladkaFilmu(QWidget):
         self.canvas_os.setToolTip('Przebieg sekwencji: pewność ViT, IoU z ramką etykiety i zmiana latentu względem\n'
                                   'poprzedniej klatki. Kliknięcie przechodzi do klatki.')
         ll.addWidget(self.canvas_os, 1)
+        self.canvas_os.setVisible(False)                   # przebieg sekwencji niepotrzebny: klatka dostaje miejsce
+        ll.addStretch(1)
         self._proporcja = ProporcjaKlatki(self.canvas, lewa)
         podzial.addWidget(lewa)
 
@@ -258,6 +260,14 @@ class ZakladkaFilmu(QWidget):
               '  (środek wykrytego narzędzia, nie zawsze sam czubek).\n'
               'Ręczny klik w patch wyłącza śledzenie.')
         w.addSpacing(16)
+        self.chk_widok3d = QCheckBox('widok 3D'); self.chk_widok3d.setChecked(True)
+        self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_makro.setChecked(True)
+        for c, opis in ((self.chk_widok3d, 'Widok cząsteczek 3D nad obrazem (środkowa kolumna).'),
+                        (self.chk_widok_makro, 'Przestrzeń makrowektorów (prawa kolumna).')):
+            c.setToolTip(opis + '\nWyłączony widok znika i nie jest przeliczany, więc odtwarzanie jest szybsze.')
+        e = QLabel('Widoki:'); e.setToolTip('Które widoki obok klatki pokazywać i liczyć.')
+        w.addWidget(e); w.addWidget(self.chk_widok3d); w.addWidget(self.chk_widok_makro)
+        w.addSpacing(16)
         self.etykieta_klatki = QLabel(''); self.etykieta_klatki.setWordWrap(True)
         w.addWidget(self.etykieta_klatki, 1)
         self.timer = QTimer(self); self.timer.timeout.connect(self._nastepna)
@@ -291,6 +301,8 @@ class ZakladkaFilmu(QWidget):
         self.btn_graj.toggled.connect(self._graj)
         self.spin_fps.valueChanged.connect(lambda v: self.timer.setInterval(int(1000 / v)))
         self.combo_por.currentIndexChanged.connect(lambda *_: self.idz(self.t))
+        self.chk_widok3d.toggled.connect(lambda v: self._pokaz_widok(self.w3d, v))
+        self.chk_widok_makro.toggled.connect(lambda v: self._pokaz_widok(self.makro, v))
         self.combo_czubek.currentIndexChanged.connect(lambda *_: self.idz(self.t))
         self.w3d.widok.klik.connect(lambda *_: self._wybierz_token(self.w3d.token))
         self._opis_zakresu()
@@ -609,6 +621,14 @@ class ZakladkaFilmu(QWidget):
             t = 0
         self.suwak.setValue(t)
 
+    def _pokaz_widok(self, widok, wl):
+        """Włącza albo wyłącza widok obok klatki; odpięty widok najpierw wraca na miejsce."""
+        if not wl and getattr(widok, 'odpinanie', None) is not None and widok.odpinanie.okno is not None:
+            widok.odpinanie.przycisk.setChecked(False)
+        widok.setVisible(wl)
+        if wl:
+            self.idz(self.t)
+
     def idz(self, t):
         if self.sek is None:
             return
@@ -631,16 +651,18 @@ class ZakladkaFilmu(QWidget):
         if self.chk['ramka'].isChecked() and s['etykiety'][t]['ramka'] is not None:
             obrysy.append((prostokat(s['etykiety'][t]['ramka']), KOLOR_RAMKA_GT))
         maska = F.maska_patchy(self._wielokaty_maski(t), self.spin_prog.value() / 100)
-        self.w3d.ustaw_obrysy(obrysy, maska)
         fn = (lambda b, rgb=rgb: det.atencja(rgb, b)) if det is not None else None
-        if przed is None:
-            self.w3d.pokaz(z, None, rgb, fn)
-        else:
-            if self.w3d.combo_tryb.currentIndex() == 0:
-                self.w3d.combo_tryb.blockSignals(True); self.w3d.combo_tryb.setCurrentIndex(1); self.w3d.combo_tryb.blockSignals(False)
-            self.w3d.pokaz(przed, z, rgb, fn)
-        self.makro.ustaw_atencje(fn)                        # mapa i strzałki atencji tej klatki
-        self.makro.pokaz_klatke(t, self.token)
+        if self.chk_widok3d.isChecked():                    # wyłączony widok nie jest przeliczany
+            self.w3d.ustaw_obrysy(obrysy, maska)
+            if przed is None:
+                self.w3d.pokaz(z, None, rgb, fn)
+            else:
+                if self.w3d.combo_tryb.currentIndex() == 0:
+                    self.w3d.combo_tryb.blockSignals(True); self.w3d.combo_tryb.setCurrentIndex(1); self.w3d.combo_tryb.blockSignals(False)
+                self.w3d.pokaz(przed, z, rgb, fn)
+        if self.chk_widok_makro.isChecked():
+            self.makro.ustaw_atencje(fn)                    # mapa i strzałki atencji tej klatki
+            self.makro.pokaz_klatke(t, self.token)
         self._rysuj_klatke()
         self._znacznik_osi()
         i = int(s['idx'][t])
@@ -722,7 +744,7 @@ class ZakladkaFilmu(QWidget):
         self.canvas_os.draw_idle()
 
     def _znacznik_osi(self):
-        if getattr(self, '_linia_os', None) is not None:
+        if getattr(self, '_linia_os', None) is not None and self.canvas_os.isVisible():
             self._linia_os.set_xdata([self.t, self.t])
             self.canvas_os.draw_idle()
 
