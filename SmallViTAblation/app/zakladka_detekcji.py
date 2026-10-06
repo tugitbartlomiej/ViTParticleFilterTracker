@@ -498,6 +498,18 @@ class ZakladkaDetekcji(QWidget):
                                      'J128: tylko 128 kanałów tożsamości narzędzia, pozostałe 640 bez zmian.\n'
                                      'Wszystkie 768: pełny latent; zwykle łatwiej osiągnąć cel, ale zmiana jest szersza.')
         w2.addWidget(self.combo_kanaly)
+        self.combo_patche_opt = QComboBox()
+        self.combo_patche_opt.addItems(['we wszystkich 600 patchach', 'tylko patche w ramce etykiety',
+                                        'ramka etykiety + 1 patch obwódki', 'tylko patch środka etykiety',
+                                        'tylko wybrany patch (klik w widoku cząsteczek)'])
+        self.combo_patche_opt.setToolTip('W których patchach (tokenach) wolno zmieniać latent; w pozostałych zostaje naturalny:\n'
+                                         '- wszystkie 600: jak dotąd;\n'
+                                         '- ramka etykiety: patche, których środek leży w ramce narzędzia;\n'
+                                         '- ramka + obwódka: to samo powiększone o 1 patch z każdej strony;\n'
+                                         '- patch środka etykiety: jeden patch, w którym ViT ma wskazać środek narzędzia;\n'
+                                         '- wybrany patch: patch kliknięty w widoku cząsteczek 2D albo 3D poniżej.\n'
+                                         'Mniej patchy = zmiana bardziej lokalna; pokazuje, ile wystarczy zmienić, żeby ViT trafił.')
+        w2.addWidget(self.combo_patche_opt)
 
         def pole(nazwa, opis, widget, szer=None):
             if szer:
@@ -773,11 +785,35 @@ class ZakladkaDetekcji(QWidget):
                     waga_ramki=self.spin_waga_r.value(),
                     harmonogram=('staly', 'cos', 'liniowy', 'krokowy', 'plateau', 'restarty')[self.combo_harm.currentIndex()],
                     lr_min=self.spin_lr_min.value(), rozgrzewka=self.spin_rozgrzewka.value())
+        tokeny = self._tokeny_opt(gt)
+        if tokeny is not None and len(tokeny) == 0:
+            QMessageBox.information(self, 'Brak patchy', 'Wybierz patch w widoku cząsteczek (klik) albo inną opcję patchy.')
+            self.btn_auto.setEnabled(True); self.btn_stop.setEnabled(False)
+            return
+        cele['tokeny'] = tokeny
         self._kanaly_opt, self._cele = kanaly, cele
         self._status('Auto-szukanie latentu...', 0)
         self._uruchom(lambda post: self._detektor().optymalizuj(a, gt, kanaly, lo, hi, kroki, postep=post,
                                                                 przerwij=lambda: self._przerwij, **cele),
                       self._po_auto, self._postep_auto)
+
+    def _tokeny_opt(self, gt):
+        """Indeksy patchy do zmiany wg combo_patche_opt (None = wszystkie 600)."""
+        i = self.combo_patche_opt.currentIndex()
+        if i == 0:
+            return None
+        g = np.asarray(gt, np.float32)
+        t = np.arange(600); sx, sy = (t % 30 + .5) * 16, (t // 30 + .5) * 16
+        if i in (1, 2):
+            m = 16 * (i == 2)
+            return t[(sx >= g[0] - m) & (sx <= g[2] + m) & (sy >= g[1] - m) & (sy <= g[3] + m)]
+        if i == 3:
+            cx = int(np.clip(round((g[0] + g[2]) / 32 - .5), 0, 29)); cy = int(np.clip(round((g[1] + g[3]) / 32 - .5), 0, 19))
+            return np.array([cy * 30 + cx])
+        for w in (self.widok_cz3d, self.widok_cz):
+            if w is not None and w.token is not None:
+                return np.array([int(w.token)])
+        return np.array([], int)
 
     def _postep_auto(self, krok, d):
         self.pasek.setValue(krok)

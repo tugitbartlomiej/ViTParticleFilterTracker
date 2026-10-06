@@ -163,7 +163,7 @@ class Detektor:
 
     def optymalizuj(self, a, gt480, kanaly, lim_lo, lim_hi, kroki=2000, lr=0.05, cel_pewnosc=.99, cel_iou=.99,
                     postep=None, przerwij=lambda: False, cel_map=1.0, waga_pewnosci=1.0, waga_ramki=1.0,
-                    harmonogram='staly', lr_min=0.005, rozgrzewka=0):
+                    harmonogram='staly', lr_min=0.005, rozgrzewka=0, tokeny=None):
         """Adam po latencie na wybranych kanałach, z rzutem na limity makrowektorów po każdym kroku.
 
         gt480: ramka xyxy w pikselach wejścia 480x320. kanaly: indeksy kanałów do zmiany (pozostałe bez zmian).
@@ -175,6 +175,8 @@ class Detektor:
         4 razy w trakcie), 'plateau' (połowa, gdy strata nie spadła o 1 % przez 100 kroków, nie niżej
         niż lr_min), 'restarty' (3 etapy lr x1, x3, x6 od najlepszego wyniku, nowy Adam; jak w
         eksperymencie J128). rozgrzewka: liczba pierwszych kroków z liniowym wzrostem lr od 0.
+        tokeny: indeksy patchy (0..599), w których wolno zmieniać latent; None = wszystkie 600 (jak dotąd).
+        Pozostałe patche mają latent bez zmian, więc ViT musi osiągnąć cel zmianą tylko w nich.
         Zwraca (z_po [1,600,768], historia). postep(krok, slownik) co 25 kroków.
         """
         import math
@@ -183,6 +185,9 @@ class Detektor:
         g = np.asarray(gt480, np.float32)
         z0 = a['z']
         J = torch.as_tensor(np.asarray(kanaly), dtype=torch.long, device=self.dev)
+        T = torch.as_tensor(np.arange(600) if tokeny is None else np.unique(np.asarray(tokeny, int)),
+                            dtype=torch.long, device=self.dev)
+        TJ = (T[:, None], J[None, :])                                       # [nT, nJ]: wybrane patche x kanały
         lo = torch.as_tensor(np.asarray(lim_lo)[np.asarray(kanaly)], dtype=torch.float32, device=self.dev)
         hi = torch.as_tensor(np.asarray(lim_hi)[np.asarray(kanaly)], dtype=torch.float32, device=self.dev)
         cx = int(np.clip(round((g[0] + g[2]) / (2 * KROK) - .5), 0, 29))
@@ -203,10 +208,10 @@ class Detektor:
             return waga_pewnosci * (pozyt + negat + .5 * rank) + waga_ramki * (20 * ramka + 10 * (1 - giou))
 
         def pelny(zm):
-            z = z0.clone(); z[:, :, J] = zm
+            z = z0.clone(); z[(slice(None),) + TJ] = zm
             return z
 
-        start = torch.max(torch.min(z0[:, :, J], hi), lo)
+        start = torch.max(torch.min(z0[(slice(None),) + TJ], hi), lo)
         kroki = int(kroki)
         etapy = [(1.0, kroki)] if harmonogram != 'restarty' else \
             [(1.0, kroki // 3), (3.0, kroki // 3), (6.0, kroki - 2 * (kroki // 3))]

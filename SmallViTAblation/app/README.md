@@ -180,6 +180,15 @@ około 40 ms (RTX 3070).
 - Klik bez ruchu wybiera patch; „Tylko wybrany patch” ustawia kamerę na jednej cząsteczce.
 - „Zapisz PNG” zapisuje widok do `outputs/latent_editor_sd_20261006/czasteczki3d_*.png`.
 
+### Auto-szukanie w wybranych patchach
+
+„Patche” w optymalizacji: latent wolno zmieniać we wszystkich 600 patchach, tylko w ramce etykiety, w ramce
+z obwódką 1 patcha, tylko w patchu środka etykiety albo w patchu klikniętym w widoku cząsteczek; w pozostałych
+latent zostaje naturalny (`Detektor.optymalizuj(..., tokeny=...)`, None = wszystkie, wynik identyczny jak dotąd).
+TR_0001 kl. 870, J128, 1500 kroków: 600 / 40 / 72 / 1 patch dają tę samą pewność 84,1 % i IoU 99,9–100 %.
+Latent to wyjście MLP ostatniego bloku, za nim nie ma już atencji, więc patch wpływa tylko na własne wyjście
+detekcji: do trafienia wystarcza zmiana w patchu środka, reszta zmienia jedynie pewności tła.
+
 ## Zakładka „Film: sekwencja klatek, cząsteczki 3D i makrowektory” (`zakladka_filmu.py`, `film.py`)
 
 1. Film: lista 170 filmów Cataract-LMM 3_Object_Tracking z podziałem (train 118, val 25, poza manifestem)
