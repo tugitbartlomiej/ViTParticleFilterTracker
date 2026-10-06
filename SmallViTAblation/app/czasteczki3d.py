@@ -293,6 +293,8 @@ class WidokCzasteczek3D(QWidget):
         w.setWindowTitle('Cząsteczki 3D: globalny układ, 768 wektorów na token')
         w.resize(1600, 1000)
         w.pokaz(self.przed, self.po, self.rgb, self.atencja_fn)
+        from wygoda import ulatw
+        ulatw(w)
         w.show()
         self._okna.append(w)
 

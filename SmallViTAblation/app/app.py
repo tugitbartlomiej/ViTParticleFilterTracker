@@ -86,6 +86,8 @@ class Okno(QMainWindow):
         self.zrodlo_limitow = f'matematyczne z wag {Path(self.ckpt_limitow).name}'
 
         self._buduj_ui()
+        from wygoda import ulatw
+        ulatw(self)                           # kółko tylko w klikniętym polu, liczby zatwierdzane Enterem
         self.combo_jednostki.blockSignals(True)
         self.combo_jednostki.setCurrentIndex(2)   # domyślnie zmiana −100..+100% limitu
         self.combo_jednostki.blockSignals(False)

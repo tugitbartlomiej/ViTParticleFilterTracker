@@ -112,6 +112,8 @@ class WidokCzasteczek(QWidget):
             w.token = self.token
             w.panel.wys_baz = 1300
             w.pokaz(self.przed, self.po, self.rgb, self.atencja_fn)
+            from wygoda import ulatw
+            ulatw(w)
             return w
         self._osobne_okno(self, 'Cząsteczki: okręgi 768 wektorów na patchach', nowy)
 
