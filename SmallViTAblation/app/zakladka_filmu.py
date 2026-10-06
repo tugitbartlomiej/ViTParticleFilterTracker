@@ -639,6 +639,7 @@ class ZakladkaFilmu(QWidget):
             if self.w3d.combo_tryb.currentIndex() == 0:
                 self.w3d.combo_tryb.blockSignals(True); self.w3d.combo_tryb.setCurrentIndex(1); self.w3d.combo_tryb.blockSignals(False)
             self.w3d.pokaz(przed, z, rgb, fn)
+        self.makro.ustaw_atencje(fn)                        # mapa i strzałki atencji tej klatki
         self.makro.pokaz_klatke(t, self.token)
         self._rysuj_klatke()
         self._znacznik_osi()

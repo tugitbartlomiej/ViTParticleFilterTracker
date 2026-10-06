@@ -50,7 +50,7 @@ class WidokPrzestrzeniMakro(QWidget):
         self._poz, self._opis_poz = None, ''
         lay = QVBoxLayout(self); lay.setContentsMargins(4, 4, 4, 4)
 
-        self.panel = PanelOpcji(lay, ['Siły i kierunki', 'Wygląd', 'Mikrowektory'])
+        self.panel = PanelOpcji(lay, ['Siły i kierunki', 'Wygląd', 'Mikrowektory', 'Atencja'])
 
         # Siły i kierunki: skąd siły | co odjąć z latentu
         w = self.panel.wiersz('Siły i kierunki')
@@ -125,6 +125,19 @@ class WidokPrzestrzeniMakro(QWidget):
                                 'Mnożnik długości mikrowektorów ze wspólnego środka (tylko rysunek, wypadkowa bez zmian).\n'
                                 'Pojedynczy mikrowektor jest zwykle dużo krótszy od wypadkowej.')
         self.spin_mikro.setRange(1, 500); self.spin_mikro.setValue(1); self.spin_mikro.setPrefix('× ')
+        self.chk_atencja = QCheckBox('Atencja na cząstkach')
+        self.chk_atencja.setToolTip('Mapa atencji ViT bieżącej klatki na cząstkach: kolor (inferno) i rozmiar według\n'
+                                    'wartości mapy patcha (0..1, jak na obrazie w widoku nad obrazem), oraz strzałki\n'
+                                    'źródło -> cel jako linie między cząstkami w przestrzeni makrowektorów\n'
+                                    '(źródło patrzy na cel, czyli ciągnie z niego). Opcje mapy i strzałek niżej, jak w 3D.\n'
+                                    'Działa w zakładce filmu (atencja liczona z obrazu każdej klatki).')
+        self.spin_wzm = dodaj(self.panel.wiersz('Atencja'), 'Powiększ wg mapy:', QDoubleSpinBox(),
+                              'Rozmiar cząstki = rozmiar · (0,4 + ta wartość · mapa). 0 = sam kolor.')
+        self.spin_wzm.setRange(0, 10); self.spin_wzm.setSingleStep(.5); self.spin_wzm.setValue(2.5)
+        from opcje_atencji import OpcjeAtencji
+        self.opcje = OpcjeAtencji(na_poczatku=(self.chk_atencja,))
+        self.panel.strona('Atencja').addWidget(self.opcje)
+        self.atencja_fn = None
         b = rola(QPushButton('Kamera od nowa'), 'narzedzie'); b.clicked.connect(self._kamera); self.panel.pasek.addWidget(b)
         self.btn_odepnij = rola(QPushButton('Odepnij'), 'narzedzie'); self.panel.pasek.addWidget(self.btn_odepnij)
         self.odpinanie = Odpinanie(self, 'Przestrzeń makrowektorów', self.btn_odepnij)
@@ -154,6 +167,10 @@ class WidokPrzestrzeniMakro(QWidget):
                                            glOptions='translucent')
         self.wypadkowa.setVisible(False)
         v.addItem(self.wypadkowa)
+        self.luki = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=1.5, glOptions='translucent')
+        self.luki.setVisible(False); v.addItem(self.luki)
+        self.groty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=7, pxMode=True, glOptions='translucent')
+        self.groty.setVisible(False); v.addItem(self.groty)
         self.punkty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=6, pxMode=True, glOptions='translucent')
         v.addItem(self.punkty)
         self.wybrany = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=16, color=(1, 1, 1, 1), pxMode=True)
@@ -168,6 +185,7 @@ class WidokPrzestrzeniMakro(QWidget):
             s.connect(lambda *_: self._przelicz())
         for s in (self.combo_kolor.currentIndexChanged, self.spin_slad.valueChanged, self.spin_rozmiar.valueChanged,
                   self.combo_mikro.currentIndexChanged, self.spin_mikro.valueChanged,
+                  self.chk_atencja.toggled, self.opcje.zmiana, self.spin_wzm.valueChanged,
                   self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled, self.combo_ile.currentIndexChanged):
             s.connect(lambda *_: self._rysuj(skok=True))
 
@@ -352,6 +370,19 @@ class WidokPrzestrzeniMakro(QWidget):
         return np.array([(*colorsys.hsv_to_rgb((k % KOLUMNY) / KOLUMNY, .85, .45 + .55 * (k // KOLUMNY) / 19), .9)
                          for k in t], np.float32)
 
+    def ustaw_atencje(self, atencja_fn):
+        """Źródło atencji bieżącej klatki: atencja_fn(blok_od_0) -> [głowy, 600, 600] (zakładka filmu, przed
+        pokaz_klatke). Liczona dopiero, gdy włączono „Atencja na cząstkach”."""
+        self.atencja_fn = atencja_fn
+        self.opcje.ustaw_zrodlo(atencja_fn)
+
+    def _atencja(self):
+        """(mapa [600] 0..1 albo None, strzałki (src, dst, w) albo None, opis)."""
+        if not self.chk_atencja.isChecked() or self.atencja_fn is None:
+            return None, None, ''
+        A, opis = self.opcje.mapa(self.token)
+        return (None if A is None else A.reshape(-1)), self.opcje.strzalki(self.token), opis
+
     def _widoczne(self):
         tok = np.arange(600)
         if self.chk_tylko_maska.isChecked() and self.maski is not None:
@@ -369,7 +400,23 @@ class WidokPrzestrzeniMakro(QWidget):
         P = self._biezace()
         tok = self._widoczne()
         kol = self._kolory()
-        self.punkty.setData(pos=P[tok], color=kol[tok], size=self.spin_rozmiar.value())
+        rozm = self.spin_rozmiar.value()
+        A, strz, self._opis_at = self._atencja()
+        if A is not None:                                    # mapa atencji: kolor inferno, rozmiar według wartości
+            import matplotlib
+            kol = matplotlib.colormaps['inferno'](A).astype(np.float32); kol[:, 3] = .95
+            rozm = (rozm * (.4 + self.spin_wzm.value() * A)).astype(np.float32)[tok]
+        self.punkty.setData(pos=P[tok], color=kol[tok], size=rozm)
+        if strz is not None:                                 # strzałki źródło -> cel między cząstkami
+            import matplotlib
+            src, dst, w = strz
+            c = matplotlib.colormaps['cool'](w).astype(np.float32); c[:, 3] = .25 + .75 * w
+            self.luki.setData(pos=np.stack([P[src], P[dst]], 1).reshape(-1, 3).astype(np.float32),
+                              color=np.repeat(c, 2, 0))
+            self.groty.setData(pos=P[dst].astype(np.float32), color=c)
+            self.luki.setVisible(True); self.groty.setVisible(True)
+        else:
+            self.luki.setVisible(False); self.groty.setVisible(False)
         if self.token is not None:
             self.wybrany.setData(pos=P[self.token][None], size=self.spin_rozmiar.value() + 10, color=(1, 1, 1, .9))
             self.wybrany.setVisible(True)
@@ -423,4 +470,5 @@ class WidokPrzestrzeniMakro(QWidget):
         self.etykieta.setText(f'klatka {self.t + 1}/{T}: {len(tok)} cząstek; położenie = suma mikrowektorów '
                               f'(skala s = {self.s:.3g}); średni przelot od poprzedniej klatki {przes:.1f} jedn.'
                               + ('' if self.token is None else f'; wybrany patch {self.token}, '
-                                 f'odległość od środka {float(np.linalg.norm(self.P[self.t, self.token])):.1f}') + self._opis_pca + self._opis_poz)
+                                 f'odległość od środka {float(np.linalg.norm(self.P[self.t, self.token])):.1f}') + self._opis_pca + self._opis_poz
+                              + (f'; atencja: {self._opis_at}' if getattr(self, '_opis_at', '') else ''))

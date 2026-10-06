@@ -238,6 +238,13 @@ wypadkowa (ich suma) kończąca się w cząstce; mnożnik „powiększ mikrowekt
 (TR_0001, klatka 21, patch 315: najdłuższy 7,6, mediana 0,04, wypadkowa 90). Do wyboru też łańcuch (koniec do
 początku, od najsilniejszego), oba albo brak; łańcuch i wypadkowa to to samo dodawanie wektorów.
 
+### Atencja w przestrzeni makrowektorów
+
+Zakładka opcji „Atencja” (ten sam panel co w widoku nad obrazem: mapa, głowa, blok, rollout, strzałki):
+„Atencja na cząstkach” barwi cząstki mapą atencji bieżącej klatki (inferno) i powiększa je według wartości
+(„Powiększ wg mapy”); strzałki źródło -> cel są liniami między cząstkami w 3D (nadążają za przelotem).
+Atencja liczona z obrazu każdej klatki tylko przy włączonej opcji; około 106 ms na klatkę razem z resztą widoków.
+
 ### PCA wektorów (oba widoki 3D)
 
 „PCA wektorów”: zamiast 768 kanałów cząsteczka ma k = 3, 4, 8, 16, 32 albo 128 wektorów, czyli k głównych
