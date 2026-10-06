@@ -10,12 +10,43 @@ cel każdego patcha, najsilniejsze pary). Głowa: średnia, maksimum albo jedna.
 (Abnar i Zuidema 2020: iloczyn (A + I) / 2 przez kolejne bloki, przepływ przez warstwy).
 """
 import numpy as np
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QWidget
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QStyle, QStyleOptionComboBox,
+                             QStylePainter, QVBoxLayout, QWidget)
 from uklad import Przeplyw, dodaj
 from wspolne import KOLUMNY, WIERSZE
 _t = np.arange(600)
 ODLEGLOSC = np.hypot((_t[:, None] % KOLUMNY) - (_t[None] % KOLUMNY), (_t[:, None] // KOLUMNY) - (_t[None] // KOLUMNY))
+
+
+class WaskiCombo(QComboBox):
+    """Pole wyboru o stałej szerokości około `znaki` znaków: za długi wybrany tekst kończy się „…”, a rozwinięta
+    lista ma pełną szerokość. Długie opisy pozycji nie rozpychają wąskich kolumn (pełny opis w podpowiedzi)."""
+
+    def __init__(self, znaki=14):
+        super().__init__()
+        self.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.setMinimumContentsLength(znaki)
+
+    def showPopup(self):
+        fm = self.view().fontMetrics()
+        self.view().setMinimumWidth(max([fm.horizontalAdvance(self.itemText(i)) for i in range(self.count())] + [0]) + 36)
+        super().showPopup()
+
+    def paintEvent(self, _):
+        p = QStylePainter(self)
+        opt = QStyleOptionComboBox(); self.initStyleOption(opt)
+        p.drawComplexControl(QStyle.ComplexControl.CC_ComboBox, opt)
+        r = self.style().subControlRect(QStyle.ComplexControl.CC_ComboBox, opt, QStyle.SubControl.SC_ComboBoxEditField, self)
+        opt.currentText = self.fontMetrics().elidedText(opt.currentText, Qt.TextElideMode.ElideRight, max(r.width() - 4, 10))
+        p.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, opt)
+
+
+def etykieta_statusu(etykieta):
+    """Tekst stanu widoku (liczby cząsteczek, skala, PCA): mniejsza, szara czcionka, żeby nie konkurował z opcjami."""
+    etykieta.setStyleSheet('color: #9a9da3; font-size: 8pt;')
+    etykieta.setWordWrap(True)
+    return etykieta
 
 
 class OpcjeAtencji(QWidget):
@@ -32,12 +63,19 @@ class OpcjeAtencji(QWidget):
     POTRZEBUJE_TOKENU_MAPY = (1, 2)
     POTRZEBUJE_TOKENU_STRZALEK = (1, 2)
 
-    def __init__(self, z_kryciem=True):
+    def __init__(self, z_kryciem=True, na_poczatku=()):
+        """na_poczatku: kontrolki widoku wstawiane na początek pierwszego wiersza (np. „Atencja na obrazie”).
+        Wiersze: włącznik i wygląd mapy | co pokazać (mapa, strzałki) | z której macierzy (blok, głowa)."""
         super().__init__()
         self.fn, self._bloki, self._cache = None, {}, {}
-        w = Przeplyw(self)
+        lay = QVBoxLayout(self); lay.setContentsMargins(0, 0, 0, 0); lay.setSpacing(2)
+        w1, w2, w3 = Przeplyw(), Przeplyw(), Przeplyw()
+        for w in (w1, w2, w3):
+            lay.addLayout(w)
+        for k in na_poczatku:
+            w1.addWidget(k)
 
-        self.combo_mapa = dodaj(w, 'mapa:', QComboBox(),
+        self.combo_mapa = dodaj(w2, 'Mapa:', WaskiCombo(18),
                                 'Co pokazuje mapa cieplna na siatce 20x30 (A[i, j] = ile patch i patrzy na patch j):\n'
                                 '- średnia otrzymana: średnia kolumny, czyli ile uwagi patch dostaje od wszystkich,\n'
                                 '- z wybranego patcha: wiersz A[wybrany, :], skąd wybrany patch ciągnie informację,\n'
@@ -47,24 +85,26 @@ class OpcjeAtencji(QWidget):
                                 '- na siebie: A[i, i], ile patch patrzy na samego siebie.\n'
                                 'Wybrany patch ustawia się kliknięciem.')
         self.combo_mapa.addItems(self.MAPY)
-        self.combo_glowa = dodaj(w, 'głowa:', QComboBox(), 'Średnia albo maksimum po głowach atencji, albo jedna głowa.\n'
+        self.spin_blok = dodaj(w3, 'Blok:', QSpinBox(), 'Blok transformera ViT (1–6). 6 = ostatni, tuż przed latentem.')
+        self.spin_blok.setRange(1, 6); self.spin_blok.setValue(6)
+        self.combo_bloki = QComboBox()
+        self.combo_bloki.setToolTip('Tylko ten blok: wagi atencji jednego bloku.\n'
+                                    'Rollout: iloczyn (A + I) / 2 przez bloki 1..blok (Abnar i Zuidema 2020).\n'
+                                    'Pokazuje, z których patchy wejścia pochodzi informacja tokenu po przejściu przez\n'
+                                    'kolejne warstwy, z uwzględnieniem połączeń rezydualnych (I).')
+        self.combo_bloki.addItems(['tylko ten blok', 'rollout bloków 1..blok'])
+        w3.addWidget(self.combo_bloki)
+        self.combo_glowa = dodaj(w3, 'Głowa:', QComboBox(), 'Średnia albo maksimum po głowach atencji, albo jedna głowa.\n'
                                  'Każda głowa uczy się innego wzorca, więc warto przejrzeć je osobno.')
         self.combo_glowa.addItems(['średnia', 'maksimum'])
-        self.spin_blok = dodaj(w, 'blok', QSpinBox(), 'Blok transformera ViT (1–6). 6 = ostatni, tuż przed latentem.')
-        self.spin_blok.setRange(1, 6); self.spin_blok.setValue(6)
-        self.combo_bloki = dodaj(w, '', QComboBox(), 'Tylko ten blok: wagi atencji jednego bloku.\n'
-                                 'Rollout: iloczyn (A + I) / 2 przez bloki 1..blok (Abnar i Zuidema 2020).\n'
-                                 'Pokazuje, z których patchy wejścia pochodzi informacja tokenu po przejściu przez\n'
-                                 'kolejne warstwy, z uwzględnieniem połączeń rezydualnych (I).')
-        self.combo_bloki.addItems(['tylko ten blok', 'rollout bloków 1..blok'])
-        self.chk_bez_siebie = QCheckBox('pomiń siebie')
+        self.chk_bez_siebie = QCheckBox('Pomiń siebie')
         self.chk_bez_siebie.setToolTip('Zeruje atencję patcha na samego siebie (przekątna) i normuje wiersze od nowa.\n'
                                        'Przekątna często dominuje i zasłania, do których INNYCH patchy patch ciągnie.')
-        w.addWidget(self.chk_bez_siebie)
-        self.combo_skala = dodaj(w, 'skala:', QComboBox(), 'Liniowa: wprost wagi.\nLogarytmiczna: widać też słabe wagi.\n'
+        w3.addWidget(self.chk_bez_siebie)
+        self.combo_skala = dodaj(w1, 'Skala:', QComboBox(), 'Liniowa: wprost wagi.\nLogarytmiczna: widać też słabe wagi.\n'
                                  'Rangi: kolor = percentyl wartości (równy rozkład kolorów).')
         self.combo_skala.addItems(['liniowa', 'logarytmiczna', 'rangi'])
-        self.combo_strz = dodaj(w, 'strzałki:', QComboBox(),
+        self.combo_strz = dodaj(w2, 'Strzałki:', WaskiCombo(15),
                                 'Strzałka źródło → cel: patch u nasady patrzy na patch na grocie (ciągnie z niego).\n'
                                 'Grubość i jasność = waga atencji.\n'
                                 '- z wybranego patcha: k celów, na które wybrany patrzy najmocniej,\n'
@@ -72,13 +112,12 @@ class OpcjeAtencji(QWidget):
                                 '- każdy patch: 600 strzałek do najsilniejszego celu każdego patcha (pole przepływu),\n'
                                 '- najsilniejsze pary: k największych wag A[i, j] w całym obrazie (bez przekątnej).')
         self.combo_strz.addItems(self.STRZALKI)
-        self.spin_k = dodaj(w, 'k', QSpinBox(), 'Liczba strzałek dla opcji „k najsilniejszych”.')
+        self.spin_k = dodaj(w2, 'k:', QSpinBox(), 'Liczba strzałek dla opcji „k najsilniejszych”.')
         self.spin_k.setRange(1, 600); self.spin_k.setValue(10)
         self.spin_alfa = None
         if z_kryciem:
-            self.spin_alfa = dodaj(w, 'krycie', QDoubleSpinBox(), 'Krycie mapy atencji: 0 = niewidoczna, 1 = pełna.')
+            self.spin_alfa = dodaj(w1, 'Krycie mapy:', QDoubleSpinBox(), 'Krycie mapy atencji: 0 = niewidoczna, 1 = pełna.')
             self.spin_alfa.setRange(0, 1); self.spin_alfa.setSingleStep(.1); self.spin_alfa.setValue(.5)
-        w.addStretch(1)
         for s in (self.combo_mapa.currentIndexChanged, self.combo_glowa.currentIndexChanged, self.spin_blok.valueChanged,
                   self.combo_bloki.currentIndexChanged, self.chk_bez_siebie.toggled, self.combo_skala.currentIndexChanged,
                   self.combo_strz.currentIndexChanged, self.spin_k.valueChanged) + (

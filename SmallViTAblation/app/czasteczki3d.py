@@ -20,9 +20,9 @@ from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QPush
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
-from opcje_atencji import OpcjeAtencji
+from opcje_atencji import OpcjeAtencji, WaskiCombo, etykieta_statusu
 from styl import rola
-from uklad import PanelOpcji, Przeplyw, dodaj
+from uklad import PanelOpcji, dodaj
 from widok_gl import ObrazPrzezroczysty, Widok3D
 from wspolne import (CZASTECZKI_CO, KOLUMNY, KOMORKA, PCA_SKLADOWE, SZER, WIERSZE, WYNIKI, WYS, kierunki,
                      kolory_kanalow, opisy_czasteczek, pca, tokeny_co)
@@ -42,21 +42,22 @@ class WidokCzasteczek3D(QWidget):
         self.maska_tokenow = None          # bool [600]: patche narzędzia (z obrysu), ustawiane z zakładki filmu
         self.kolory = kolory_kanalow()
         self._okna = []
-        lay = QVBoxLayout(self)
+        lay = QVBoxLayout(self); lay.setContentsMargins(4, 4, 4, 4)
         self.panel = PanelOpcji(lay, ['Wektory', 'Obraz', 'Atencja', 'Cząsteczki'])
         pasek = self.panel.pasek
 
+        # Wektory: co rysować | jak wyglądają | jak długie
         w = self.panel.wiersz('Wektory')
-        self.combo_tryb = dodaj(w, 'Pokaż:', QComboBox(),
+        self.combo_tryb = dodaj(w, 'Pokaż:', WaskiCombo(10),
                                 'PRZED / PO: wartości latentu tokenu.\n'
                                 'Różnica: po − przed (wektor dłuższy od sfery zera = kanał wzmocniony, krótszy = osłabiony).\n'
                                 'Nałożone: przed na szaro, po w kolorach kanałów.\n'
                                 'Przejście: latent przed + t · (po − przed), t z suwaka; „Animuj” przesuwa t w pętli.')
         self.combo_tryb.addItems(self.TRYBY)
-        self.combo_kan = dodaj(w, 'Kanały:', QComboBox(), 'Ile z 768 wektorów rysować w każdej cząsteczce.\n'
+        self.combo_kan = dodaj(w, 'Kanały:', WaskiCombo(9), 'Ile z 768 wektorów rysować w każdej cząsteczce.\n'
                                'Kierunek i kolor kanału są zawsze te same.')
         self.combo_kan.addItems(self.KANALY)
-        self.combo_pca = dodaj(w, 'PCA wektorów:', QComboBox(),
+        self.combo_pca = dodaj(w, 'PCA wektorów:', WaskiCombo(9),
                                'Zamiast 768 kanałów każda cząsteczka dostaje k wektorów = k głównych składowych (PCA)\n'
                                'latentu: wektor j ma długość sfera zera + skala · (z − μ) · w_j, gdzie w_j to j-ta składowa.\n'
                                'Sfera zera = średni token (μ), krótszy wektor = wynik ujemny. Składowe liczone z kanałów\n'
@@ -64,38 +65,43 @@ class WidokCzasteczek3D(QWidget):
                                'sekwencji, więc baza jest ta sama we wszystkich klatkach. Kierunki i kolory: k wektorów\n'
                                'równo na sferze (jak dla 768), składowa 1 u góry.')
         self.combo_pca.addItems(['bez PCA (kanały)'] + [f'{k} składowych' for k in PCA_SKLADOWE])
-        self.combo_ksztalt = dodaj(w, 'Kierunki:', QComboBox(),
+        w = self.panel.wiersz('Wektory')
+        self.combo_ksztalt = dodaj(w, 'Kierunki:', WaskiCombo(12),
                                    'Pełna sfera (domyślnie): 768 kierunków równo we wszystkie strony, także w dół.\n'
                                    'Środki cząsteczek leżą na obrazie, dolna połowa kuli jest pod nim i widać ją\n'
                                    'przez półprzezroczyste zdjęcie (pole „krycie”).\n'
                                    'Półsfera: wszystkie 768 kierunków nad obrazem (z > 0), cząsteczki leżą na obrazie.\n'
                                    'Kanał 0 wskazuje w górę, kolejne schodzą spiralą w dół (kolor zmienia się razem z wysokością).')
         self.combo_ksztalt.addItems(['pełna sfera (kula)', 'półsfera nad obrazem'])
-        self.combo_styl = dodaj(w, 'Styl:', QComboBox(), 'Wektory: odcinki od środka cząsteczki.\n'
+        self.combo_styl = dodaj(w, 'Styl:', WaskiCombo(10), 'Wektory: odcinki od środka cząsteczki.\n'
                                 'Końce: tylko punkty na końcach wektorów (chmura cząstek).')
         self.combo_styl.addItems(['wektory', 'końce (punkty)', 'wektory i końce'])
+        self.spin_gr = dodaj(w, 'Grubość:', QDoubleSpinBox(), 'Grubość linii i punktów w pikselach ekranu.')
+        self.spin_gr.setRange(1, 10); self.spin_gr.setSingleStep(.5); self.spin_gr.setValue(1)
+        w = self.panel.wiersz('Wektory')
         self.spin_r0 = dodaj(w, 'Sfera zera:', QDoubleSpinBox(), 'Promień sfery oznaczającej wartość 0, w % połowy patcha.\n'
                              'Wektor krótszy od niej = wartość ujemna.')
-        self.spin_r0.setRange(0, 90); self.spin_r0.setValue(25); self.spin_r0.setSuffix(' %')
+        self.spin_r0.setRange(0, 90); self.spin_r0.setDecimals(0); self.spin_r0.setValue(25); self.spin_r0.setSuffix(' %')
+        self.chk_zero = QCheckBox('Okręgi zera'); self.chk_zero.setChecked(False)
+        self.chk_zero.setToolTip('Szary okrąg (przekrój sfery zera) wokół środka każdej cząsteczki.')
+        w.addWidget(self.chk_zero)
         self.spin_skala = dodaj(w, 'Skala długości:', QDoubleSpinBox(),
                                 'Mnożnik długości. 100 % = wartość większa od 99,5 % wszystkich na rysunku sięga połowy patcha.\n'
                                 'W 3D można dać więcej, bo wektory idą w górę i mniej się zasłaniają.')
-        self.spin_skala.setRange(5, 5000); self.spin_skala.setValue(200); self.spin_skala.setSuffix(' %')
+        self.spin_skala.setRange(5, 5000); self.spin_skala.setDecimals(0); self.spin_skala.setValue(200); self.spin_skala.setSuffix(' %')
         self.spin_maks = dodaj(w, 'Maks. długość:', QDoubleSpinBox(),
                                'Przycina wektory dłuższe niż ta wartość (w % szerokości patcha), żeby nieliczne bardzo duże\n'
                                'wartości nie przecinały całego obrazu. 0 = bez przycinania.')
-        self.spin_maks.setRange(0, 5000); self.spin_maks.setValue(0); self.spin_maks.setSuffix(' %')
-        self.spin_gr = dodaj(w, 'Grubość:', QDoubleSpinBox(), 'Grubość linii i punktów w pikselach ekranu.')
-        self.spin_gr.setRange(1, 10); self.spin_gr.setSingleStep(.5); self.spin_gr.setValue(1)
-        w.addStretch(1)
+        self.spin_maks.setRange(0, 5000); self.spin_maks.setDecimals(0); self.spin_maks.setValue(0); self.spin_maks.setSuffix(' %')
 
+        # Obraz: płaszczyzna zdjęcia pod cząsteczkami
         w = self.panel.wiersz('Obraz')
         self.chk_obraz = QCheckBox('Obraz pod spodem'); self.chk_obraz.setChecked(True)
         self.chk_obraz.setToolTip('Zdjęcie 480x320 (wejście ViT) jako płaszczyzna z = 0.')
         w.addWidget(self.chk_obraz)
-        self.spin_alfa = dodaj(w, 'jasność', QDoubleSpinBox(), '0 = obraz czarny, 1 = pełny.')
+        self.spin_alfa = dodaj(w, 'Jasność:', QDoubleSpinBox(), '0 = obraz czarny, 1 = pełny.')
         self.spin_alfa.setRange(0, 1); self.spin_alfa.setSingleStep(.1); self.spin_alfa.setValue(.7)
-        self.spin_krycie = dodaj(w, 'krycie', QDoubleSpinBox(),
+        self.spin_krycie = dodaj(w, 'Krycie:', QDoubleSpinBox(),
                                  'Krycie płaszczyzny obrazu: 1 = nieprzezroczysty (wektory pod obrazem niewidoczne),\n'
                                  '0,5 = półprzezroczysty (wektory pod spodem widać przez zdjęcie), 0 = sam obraz znika.\n'
                                  'Środki cząsteczek leżą na płaszczyźnie obrazu; przy pełnej sferze połowa wektorów idzie pod nią.')
@@ -103,42 +109,42 @@ class WidokCzasteczek3D(QWidget):
         self.chk_siatka = QCheckBox('Siatka patchy'); self.chk_siatka.setChecked(True)
         self.chk_siatka.setToolTip('Linie siatki 20x30 na płaszczyźnie obrazu.')
         w.addWidget(self.chk_siatka)
-        self.chk_zero = QCheckBox('Okręgi zera'); self.chk_zero.setChecked(False)
-        self.chk_zero.setToolTip('Szary okrąg (przekrój sfery zera) wokół środka każdej cząsteczki.')
-        w.addWidget(self.chk_zero)
+
+        # Atencja: włącznik w pierwszym wierszu wspólnego panelu opcji atencji
         self.chk_atencja = QCheckBox('Atencja na obrazie')
         self.chk_atencja.setToolTip('Mapa cieplna atencji ViT wtopiona w płaszczyznę obrazu i łuki źródło → cel\n'
-                                    '(opcje w wierszu niżej). Atencja liczy się z obrazu; auto-szukanie zmienia latent\n'
+                                    '(opcje obok). Atencja liczy się z obrazu; auto-szukanie zmienia latent\n'
                                     'za atencją, więc jej nie zmienia.')
-        w.addWidget(self.chk_atencja)
-        self.spin_wys = dodaj(w, 'podnieś o atencję', QDoubleSpinBox(),
-                              'Środek cząsteczki leży na wysokości z = ta wartość · mapa atencji (0..1, jak na obrazie).\n'
-                              'Patche o największej wartości mapy unoszą się najwyżej. 0 = wszystkie na obrazie.')
-        self.spin_wys.setRange(0, 1000); self.spin_wys.setValue(0); self.spin_wys.setSuffix(' px')
-        w.addStretch(1)
-        self.opcje = OpcjeAtencji()
+        self.opcje = OpcjeAtencji(na_poczatku=(self.chk_atencja,))
         self.panel.strona('Atencja').addWidget(self.opcje)
 
+        # Cząsteczki: które rysować i gdzie leżą ich środki
         w = self.panel.wiersz('Cząsteczki')
-        self.chk_tylko = QCheckBox('Tylko wybrany patch')
-        self.chk_tylko.setToolTip('Rysuje tylko cząsteczkę klikniętego patcha (kliknij na obrazie) i ustawia na niej kamerę.')
-        w.addWidget(self.chk_tylko)
-        self.combo_patche = QComboBox()
-        self.combo_patche.addItems(['wszystkie patche', 'tylko patche w obrysie narzędzia', 'tylko patche poza obrysem'])
-        self.combo_patche.setToolTip('Które cząsteczki rysować, gdy znany jest obrys narzędzia (zakładka filmu).\n'
-                                     'Patch należy do obrysu, gdy obrys pokrywa co najmniej ustawiony procent jego pikseli.')
-        self.combo_patche.setEnabled(False)
-        w.addWidget(self.combo_patche)
-        self.combo_ile = dodaj(w, 'Cząsteczek:', QComboBox(),
+        self.combo_ile = dodaj(w, 'Cząsteczek:', WaskiCombo(10),
                                'Ile cząsteczek rysować: co n-ty patch w wierszach i w kolumnach siatki 20 x 30,\n'
                                'od środka pierwszego bloku n x n, więc wybrane leżą równo po całym obrazie.\n'
                                'Łączy się z „tylko w obrysie” (część wspólna). PCA i atencja liczą się dalej ze wszystkich 600.')
         self.combo_ile.addItems(opisy_czasteczek())
+        self.combo_patche = dodaj(w, 'Obrys:', WaskiCombo(12),
+                                  'Które cząsteczki rysować, gdy znany jest obrys narzędzia (zakładka filmu).\n'
+                                  'Patch należy do obrysu, gdy obrys pokrywa co najmniej ustawiony procent jego pikseli.')
+        self.combo_patche.addItems(['wszystkie patche', 'tylko patche w obrysie narzędzia', 'tylko patche poza obrysem'])
+        self.combo_patche.setEnabled(False)
+        self.chk_tylko = QCheckBox('Tylko wybrany patch')
+        self.chk_tylko.setToolTip('Rysuje tylko cząsteczkę klikniętego patcha (kliknij na obrazie) i ustawia na niej kamerę.')
+        w.addWidget(self.chk_tylko)
+        w = self.panel.wiersz('Cząsteczki')
+        self.spin_wys = dodaj(w, 'Podnieś o atencję:', QDoubleSpinBox(),
+                              'Środek cząsteczki leży na wysokości z = ta wartość · mapa atencji (0..1, jak na obrazie).\n'
+                              'Patche o największej wartości mapy unoszą się najwyżej. 0 = wszystkie na obrazie.\n'
+                              'Mapę wybiera się w zakładce „Atencja”.')
+        self.spin_wys.setRange(0, 1000); self.spin_wys.setDecimals(0); self.spin_wys.setValue(0); self.spin_wys.setSuffix(' px')
+
         w = pasek                                   # pasek nad widokiem: przejście, kamera, zapis
         w.addWidget(QLabel('PRZED'))
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setRange(0, 100); self.suwak.setValue(100)
         self.suwak.setToolTip('t w trybie przejścia: 0 = latent PRZED, 100 = latent PO.')
-        self.suwak.setMaximumWidth(260)
+        self.suwak.setFixedWidth(80)
         w.addWidget(self.suwak); w.addWidget(QLabel('PO'))
         self.btn_anim = rola(QPushButton('Animuj'), 'narzedzie'); self.btn_anim.setCheckable(True)
         self.btn_anim.setToolTip('Przesuwa t tam i z powrotem (tryb przejścia). Każda klatka to nowe pozycje na karcie.')
@@ -152,16 +158,18 @@ class WidokCzasteczek3D(QWidget):
         w.addWidget(self.btn_png)
         self.btn_okno = rola(QPushButton('Osobne okno'), 'narzedzie'); self.btn_okno.setToolTip('Ten sam widok w dużym, osobnym oknie.')
         w.addWidget(self.btn_okno)
-        self.etykieta = QLabel('Obrót: lewy przycisk. Przesuwanie: środkowy albo Ctrl + lewy. Zoom: kółko. '
-                               'Klik bez ruchu = wybór patcha.')
-        self.etykieta.setWordWrap(True)
         self.panel.zakoncz()
-        lay.addWidget(self.etykieta)
 
         self.widok = Widok3D()
         self.widok.setBackgroundColor(pg.mkColor(12, 12, 16))
         self.widok.setMinimumHeight(500)
         lay.addWidget(self.widok, 1)
+        # stan widoku pod nim, małą szarą czcionką: widok zaczyna się zawsze na tej samej wysokości
+        self.etykieta = etykieta_statusu(QLabel('Obrót: lewy przycisk. Przesuwanie: środkowy albo Ctrl + lewy. '
+                                                'Zoom: kółko. Klik bez ruchu = wybór patcha.'))
+        self.etykieta.setToolTip('Stan widoku. Obrót: lewy przycisk, przesuwanie: środkowy albo Ctrl + lewy,\n'
+                                 'zoom: kółko, klik bez ruchu = wybór patcha.')
+        lay.addWidget(self.etykieta)
         self._buduj_scene()
         self._kamera()
 

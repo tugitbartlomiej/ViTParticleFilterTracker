@@ -24,8 +24,9 @@ from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QPush
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 
+from opcje_atencji import WaskiCombo, etykieta_statusu
 from styl import rola
-from uklad import PanelOpcji, Przeplyw, dodaj
+from uklad import PanelOpcji, dodaj
 from widok_gl import WidokGL
 from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanalow, opisy_czasteczek, pca, tokeny_co
 
@@ -47,28 +48,30 @@ class WidokPrzestrzeniMakro(QWidget):
         self.kolory_kan = kolory_kanalow()
         self._pca, self._opis_pca = None, ''
         self._poz, self._opis_poz = None, ''
-        lay = QVBoxLayout(self)
+        lay = QVBoxLayout(self); lay.setContentsMargins(4, 4, 4, 4)
 
         self.panel = PanelOpcji(lay, ['Siły i kierunki', 'Wygląd', 'Mikrowektory'])
 
+        # Siły i kierunki: skąd siły | co odjąć z latentu
         w = self.panel.wiersz('Siły i kierunki')
-        self.combo_kier = dodaj(w, 'Kierunki kanałów:', QComboBox(),
+        self.combo_kier = dodaj(w, 'Kierunki kanałów:', WaskiCombo(13),
                                 'Stały kierunek d_c każdego z 768 kanałów (makrowektor):\n'
                                 '- sfera Fibonacciego: te same kierunki co w widoku 3D nad obrazem (pełna sfera),\n'
                                 '- losowe: 768 losowych kierunków jednostkowych (projekcja losowa),\n'
                                 '- PCA: kierunek kanału = jego ładunki w 3 głównych składowych latentu sekwencji;\n'
                                 '  największy rozrzut cząstek, ale kierunki zależą od sekwencji.')
         self.combo_kier.addItems(self.KIERUNKI); self.combo_kier.setCurrentIndex(2)
-        self.combo_kan = dodaj(w, 'Siły z kanałów:', QComboBox(), 'Które kanały pchają cząstkę (pozostałe mają siłę 0).')
+        self.combo_kan = dodaj(w, 'Siły z kanałów:', WaskiCombo(9), 'Które kanały pchają cząstkę (pozostałe mają siłę 0).')
         self.combo_kan.addItems(['wszystkie 768', 'tylko J128 (narzędzie)', 'wszystkie poza J128'])
-        self.combo_pca = dodaj(w, 'PCA wektorów:', QComboBox(),
+        self.combo_pca = dodaj(w, 'PCA wektorów:', WaskiCombo(9),
                                'Zamiast 768 mikrowektorów kanałów cząstka ma k mikrowektorów = k głównych składowych\n'
                                '(PCA) latentu sekwencji, liczonych z kanałów wybranych w „Siły z kanałów”.\n'
                                'Siła składowej j = (z − μ) · w_j (μ = średni latent sekwencji, zawsze odejmowany),\n'
                                'kierunek = d_j z „Kierunki kanałów” policzony dla k wektorów.\n'
                                'Przy kierunkach PCA położenie to po prostu 3 pierwsze składowe.')
         self.combo_pca.addItems(['bez PCA (768 kanałów)'] + [f'{k} składowych' for k in PCA_SKLADOWE])
-        self.combo_poz = dodaj(w, 'Położenie patcha:', QComboBox(),
+        w = self.panel.wiersz('Siły i kierunki')
+        self.combo_poz = dodaj(w, 'Położenie patcha:', WaskiCombo(13),
                                'Odjęcie z latentu tego, co wynika z samego miejsca patcha na obrazie (przed PCA i kierunkami):\n'
                                '- średnia tego patcha w sekwencji: z − M_i(sekwencja) + g; usuwa położenie i wszystko, co\n'
                                '  w tym miejscu stoi przez całą sekwencję (nieruchome tło); zostaje to, co się zmienia;\n'
@@ -80,22 +83,37 @@ class WidokPrzestrzeniMakro(QWidget):
         self.combo_poz.addItems(['nie odejmuj', 'odejmij średnią patcha z sekwencji', 'odejmij średnią patcha z 3000 klatek',
                                  'usuń kierunki położenia (rzut)'])
         self.ckpt = None                     # checkpoint ViT sekwencji (ustawia zakładka filmu), do średniej położenia
-        self.chk_srodek = QCheckBox('odejmij średni latent'); self.chk_srodek.setChecked(True)
+        self.chk_srodek = QCheckBox('Odejmij średni latent'); self.chk_srodek.setChecked(True)
         self.chk_srodek.setToolTip('Siła kanału = z − μ (średnia sekwencji). Bez tego wszystkie cząstki odlatują razem\n'
                                    'w stronę średniej, bo po GELU prawie wszystkie wartości są dodatnie.')
         w.addWidget(self.chk_srodek)
-        w = self.panel.wiersz('Wygląd')
-        self.combo_kolor = dodaj(w, 'Kolor cząstek:', QComboBox(), 'Jak barwić 600 cząstek.')
-        self.combo_kolor.addItems(self.KOLORY)
-        w.addStretch(1)
 
+        # Wygląd: które cząstki | jak wyglądają | ruch między klatkami
+        w = self.panel.wiersz('Wygląd')
+        self.combo_ile = dodaj(w, 'Cząstek:', WaskiCombo(10),
+                               'Ile cząstek rysować: co n-ty patch w wierszach i w kolumnach siatki 20 x 30 (równo po obrazie).\n'
+                               'Łączy się z „tylko cząstki narzędzia”. PCA i skala liczą się dalej ze wszystkich 600.')
+        self.combo_ile.addItems(opisy_czasteczek())
+        self.chk_tylko_maska = QCheckBox('Tylko cząstki narzędzia')
+        self.chk_tylko_maska.setToolTip('Pokazuje tylko patche w obrysie narzędzia bieżącej klatki.')
+        w.addWidget(self.chk_tylko_maska)
+        w = self.panel.wiersz('Wygląd')
+        self.combo_kolor = dodaj(w, 'Kolor cząstek:', WaskiCombo(11), 'Jak barwić 600 cząstek.')
+        self.combo_kolor.addItems(self.KOLORY)
+        self.spin_rozmiar = dodaj(w, 'Rozmiar:', QDoubleSpinBox(), 'Średnica cząstek w pikselach ekranu.')
+        self.spin_rozmiar.setRange(1, 30); self.spin_rozmiar.setValue(6)
+        self.chk_gwiazda = QCheckBox('Gwiazda kierunków'); self.chk_gwiazda.setChecked(True)
+        self.chk_gwiazda.setToolTip('Gwiazda 768 kierunków d_c w środku układu (kolor kanału jak w widoku 3D).')
+        w.addWidget(self.chk_gwiazda)
         w = self.panel.wiersz('Wygląd')
         self.spin_slad = dodaj(w, 'Ślad (klatek):', QSpinBox(), 'Ile poprzednich klatek pokazuje linia toru każdej cząstki. 0 = bez śladu.')
         self.spin_slad.setRange(0, 200); self.spin_slad.setValue(8)
-        self.spin_rozmiar = dodaj(w, 'Rozmiar:', QDoubleSpinBox(), 'Średnica cząstek w pikselach ekranu.')
-        self.spin_rozmiar.setRange(1, 30); self.spin_rozmiar.setValue(6)
+        self.spin_przejscie = dodaj(w, 'Przelot:', QSpinBox(), 'Czas płynnego przelotu cząstek do nowej klatki (ms). 0 = skok.')
+        self.spin_przejscie.setRange(0, 3000); self.spin_przejscie.setValue(250); self.spin_przejscie.setSuffix(' ms')
+
+        # Mikrowektory wybranego patcha
         w = self.panel.wiersz('Mikrowektory')
-        self.combo_mikro = dodaj(w, 'Mikrowektory wybranego patcha:', QComboBox(),
+        self.combo_mikro = dodaj(w, 'Wybrany patch:', WaskiCombo(15),
                                  'Jak pokazać 768 mikrowektorów (z_c − μ_c) · s · d_c wybranej cząstki. Oba sposoby\n'
                                  'to to samo dodawanie wektorów, wynik jest ten sam: położenie cząstki.\n'
                                  '- ze wspólnego środka: każdy mikrowektor wychodzi z tego samego punktu (środek układu),\n'
@@ -103,33 +121,20 @@ class WidokPrzestrzeniMakro(QWidget):
                                  '- łańcuch: wektory dokładane koniec do początku (od najsilniejszego), ostatni kończy się w cząstce;\n'
                                  '- oba naraz.')
         self.combo_mikro.addItems(['ze wspólnego środka + wypadkowa', 'łańcuch (koniec do początku)', 'oba', 'brak'])
-        self.spin_mikro = dodaj(w, 'Powiększ mikrowektory:', QDoubleSpinBox(),
+        self.spin_mikro = dodaj(w, 'Powiększ:', QDoubleSpinBox(),
                                 'Mnożnik długości mikrowektorów ze wspólnego środka (tylko rysunek, wypadkowa bez zmian).\n'
                                 'Pojedynczy mikrowektor jest zwykle dużo krótszy od wypadkowej.')
         self.spin_mikro.setRange(1, 500); self.spin_mikro.setValue(1); self.spin_mikro.setPrefix('× ')
-        w = self.panel.wiersz('Wygląd')
-        self.chk_gwiazda = QCheckBox('kierunki kanałów'); self.chk_gwiazda.setChecked(True)
-        self.chk_gwiazda.setToolTip('Gwiazda 768 kierunków d_c w środku układu (kolor kanału jak w widoku 3D).')
-        w.addWidget(self.chk_gwiazda)
-        self.chk_tylko_maska = QCheckBox('tylko cząstki narzędzia')
-        self.chk_tylko_maska.setToolTip('Pokazuje tylko patche w obrysie narzędzia bieżącej klatki.')
-        w.addWidget(self.chk_tylko_maska)
-        self.combo_ile = dodaj(w, 'Cząstek:', QComboBox(),
-                               'Ile cząstek rysować: co n-ty patch w wierszach i w kolumnach siatki 20 x 30 (równo po obrazie).\n'
-                               'Łączy się z „tylko cząstki narzędzia”. PCA i skala liczą się dalej ze wszystkich 600.')
-        self.combo_ile.addItems(opisy_czasteczek())
-        self.spin_przejscie = dodaj(w, 'Przelot:', QSpinBox(), 'Czas płynnego przelotu cząstek do nowej klatki (ms). 0 = skok.')
-        self.spin_przejscie.setRange(0, 3000); self.spin_przejscie.setValue(250); self.spin_przejscie.setSuffix(' ms')
         b = rola(QPushButton('Kamera od nowa'), 'narzedzie'); b.clicked.connect(self._kamera); self.panel.pasek.addWidget(b)
+        b.setToolTip('Widok całego układu z ukosa.')
         self.panel.zakoncz()
-        w.addStretch(1)
-        self.etykieta = QLabel('Wczytaj sekwencję w zakładce filmu.'); self.etykieta.setWordWrap(True)
-        lay.addWidget(self.etykieta)
 
         self.widok = WidokGL()
         self.widok.setBackgroundColor(pg.mkColor(10, 10, 14))
         self.widok.setMinimumHeight(400)
         lay.addWidget(self.widok, 1)
+        self.etykieta = etykieta_statusu(QLabel('Wczytaj sekwencję w zakładce filmu.'))     # stan widoku, pod nim
+        lay.addWidget(self.etykieta)
         v = self.widok
         osie = gl.GLAxisItem(); osie.setSize(60, 60, 60); v.addItem(osie)
         self.siatka = gl.GLGridItem(); self.siatka.setSize(300, 300); self.siatka.setSpacing(25, 25); self.siatka.setColor((255, 255, 255, 25))
