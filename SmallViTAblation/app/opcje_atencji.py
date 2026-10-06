@@ -83,13 +83,17 @@ class OpcjeAtencji(QWidget):
         self.combo_strz.addItems(self.STRZALKI)
         self.spin_k = dodaj(w2, 'k:', QSpinBox(), 'Liczba strzałek dla opcji „k najsilniejszych”.')
         self.spin_k.setRange(1, 600); self.spin_k.setValue(10)
+        self.spin_grubosc = dodaj(w2, 'Grubość strzałek:', QDoubleSpinBox(),
+                                  'Grubość najsilniejszej strzałki w pikselach; słabsze cieńsze, w 5 klasach według siły\n'
+                                  'atencji (waga strzałki względem najsilniejszej). 1 = wszystkie cienkie.')
+        self.spin_grubosc.setRange(1, 20); self.spin_grubosc.setSingleStep(1); self.spin_grubosc.setValue(6)
         self.spin_alfa = None
         if z_kryciem:
             self.spin_alfa = dodaj(w1, 'Krycie mapy:', QDoubleSpinBox(), 'Krycie mapy atencji: 0 = niewidoczna, 1 = pełna.')
             self.spin_alfa.setRange(0, 1); self.spin_alfa.setSingleStep(.1); self.spin_alfa.setValue(.5)
         for s in (self.combo_mapa.currentIndexChanged, self.combo_glowa.currentIndexChanged, self.spin_blok.valueChanged,
                   self.combo_bloki.currentIndexChanged, self.chk_bez_siebie.toggled, self.combo_skala.currentIndexChanged,
-                  self.combo_strz.currentIndexChanged, self.spin_k.valueChanged) + (
+                  self.combo_strz.currentIndexChanged, self.spin_k.valueChanged, self.spin_grubosc.valueChanged) + (
                      (self.spin_alfa.valueChanged,) if self.spin_alfa else ()):
             s.connect(lambda *_: self.zmiana.emit())
 
@@ -98,6 +102,7 @@ class OpcjeAtencji(QWidget):
                      (self.combo_skala, inne.combo_skala), (self.combo_strz, inne.combo_strz)):
             a.setCurrentIndex(b.currentIndex())
         self.spin_blok.setValue(inne.spin_blok.value()); self.spin_k.setValue(inne.spin_k.value())
+        self.spin_grubosc.setValue(inne.spin_grubosc.value())
         self.chk_bez_siebie.setChecked(inne.chk_bez_siebie.isChecked())
         if self.spin_alfa and inne.spin_alfa:
             self.spin_alfa.setValue(inne.spin_alfa.value())

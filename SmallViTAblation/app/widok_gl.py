@@ -77,3 +77,40 @@ class Widok3D(WidokGL):
         t = -a[2] / (b[2] - a[2])
         x, y = (a + t * (b - a))[:2]
         return (x, y) if 0 <= x < SZER and 0 <= y < WYS else None
+
+
+class LinieGrube:
+    """Odcinki o grubości zależnej od wagi (0..1): OpenGL ma jedną grubość na element, więc odcinki trafiają do
+    KLAS elementów GLLinePlotItem o grubościach od 1 px do `grubosc_max` (najsilniejsze najgrubsze).
+    API jak GLLinePlotItem w trybie 'lines': setData(pos [2E, 3], color [2E, 4], wagi [E], grubosc_max),
+    setVisible, visible, pos (wszystkie odcinki razem)."""
+    KLAS = 5
+
+    def __init__(self, widok):
+        self.elementy = [gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', glOptions='translucent')
+                         for _ in range(self.KLAS)]
+        for e in self.elementy:
+            e.setVisible(False); widok.addItem(e)
+        self.pos = np.zeros((0, 3), np.float32)
+        self._widoczne = False
+
+    def setData(self, pos, color, wagi, grubosc_max=6.0):
+        pos = np.asarray(pos, np.float32); color = np.asarray(color, np.float32); wagi = np.asarray(wagi, np.float32)
+        self.pos = pos
+        klasa = np.minimum((np.clip(wagi, 0, 1) * self.KLAS).astype(int), self.KLAS - 1)       # [E]
+        grub = np.linspace(1.0, max(1.0, float(grubosc_max)), self.KLAS)
+        for k, e in enumerate(self.elementy):
+            m = np.repeat(klasa == k, 2)
+            if m.any():
+                e.setData(pos=np.ascontiguousarray(pos[m]), color=np.ascontiguousarray(color[m]), width=float(grub[k]))
+            e.setVisible(bool(m.any()) and self._widoczne)
+            e._ma_dane = bool(m.any())
+
+    def setVisible(self, v):
+        self._widoczne = bool(v)
+        for e in self.elementy:
+            e.setVisible(self._widoczne and getattr(e, '_ma_dane', False))
+
+    def visible(self):
+        return self._widoczne
+

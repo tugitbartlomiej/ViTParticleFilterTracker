@@ -260,6 +260,8 @@ Zakładka opcji „Atencja” (ten sam panel co w widoku nad obrazem: mapa, gło
 „Atencja na cząstkach” barwi cząstki mapą atencji bieżącej klatki (inferno) i powiększa je według wartości
 („Powiększ wg mapy”); strzałki źródło -> cel są liniami między cząstkami w 3D (nadążają za przelotem).
 Atencja liczona z obrazu każdej klatki tylko przy włączonej opcji; około 106 ms na klatkę razem z resztą widoków.
+„Grubość strzałek” (panel atencji, wszystkie widoki): strzałki i łuki grubsze dla silniejszej atencji, w 5 klasach
+od 1 px do ustawionej grubości (`widok_gl.LinieGrube`; OpenGL ma jedną grubość na element linii).
 „Mapa z patchy”: mapy „z wybranego / do wybranego patcha” liczone ze zbioru (średnia): wybrany patch, wszystkie
 widoczne cząstki, patche narzędzia z maski klatki albo lista numerów (np. `315, 316, 340-345`).
 „Heatmapa całej przestrzeni”: mapa rozlana gradientem po przestrzeni makrowektorów, siatka 48 x 48 x 48, wartość

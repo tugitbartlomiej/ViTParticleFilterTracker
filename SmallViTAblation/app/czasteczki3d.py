@@ -24,7 +24,7 @@ from opcje_atencji import OpcjeAtencji
 from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
 from uklad import Odpinanie, PanelOpcji, dodaj
-from widok_gl import ObrazPrzezroczysty, Widok3D
+from widok_gl import LinieGrube, ObrazPrzezroczysty, Widok3D
 from wspolne import (CZASTECZKI_CO, KOLUMNY, KOMORKA, PCA_SKLADOWE, SZER, WIERSZE, WYNIKI, WYS, kierunki,
                      kolory_kanalow, opisy_czasteczek, pca, tokeny_co)
 
@@ -232,10 +232,7 @@ class WidokCzasteczek3D(QWidget):
         v.addItem(self.linie)
         self.punkty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=2, pxMode=True, glOptions='translucent')
         v.addItem(self.punkty)
-        self.luki = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), color=(1, 1, 1, 1), width=2, mode='lines',
-                                      glOptions='translucent')
-        self.luki.setVisible(False)
-        v.addItem(self.luki)
+        self.luki = LinieGrube(v)                         # łuki atencji, grubość według siły
         self.groty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=6, pxMode=True, glOptions='translucent')
         self.groty.setVisible(False)
         v.addItem(self.groty)
@@ -511,7 +508,7 @@ class WidokCzasteczek3D(QWidget):
         alfa = .15 + .85 * np.repeat(np.stack([u[:-1], u[1:]], 1)[None], len(src), 0)      # jaśniej przy celu
         c = np.repeat(np.repeat(kol[:, None, None, :], n, 1), 2, 2).copy()
         c[..., 3] = alfa * (.35 + .65 * wg[:, None, None])
-        self.luki.setData(pos=odc, color=c.reshape(-1, 4), width=1.5 if len(src) > 100 else 2.5)
+        self.luki.setData(pos=odc, color=c.reshape(-1, 4), wagi=np.repeat(wg, n), grubosc_max=self.opcje.spin_grubosc.value())
         kg = kol.copy(); kg[:, 3] = 1
         self.groty.setData(pos=b + np.array([0, 0, .5], np.float32), color=kg, size=4 + 8 * wg)
         self.luki.setVisible(True); self.groty.setVisible(True)

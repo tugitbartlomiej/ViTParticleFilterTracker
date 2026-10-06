@@ -185,9 +185,15 @@ class WidokCzasteczek(QWidget):
                 t = np.arange(600)
                 c = np.stack([(t % KOLUMNY) * KOMORKA + KOMORKA / 2, (t // KOLUMNY) * KOMORKA + KOMORKA / 2], 1)
                 d = c[dst] - c[src]
-                ax.quiver(c[src, 0], c[src, 1], d[:, 0], d[:, 1], wg, cmap='cool', clim=(0, 1), angles='xy',
-                          scale_units='xy', scale=1, width=.0022 if len(src) > 100 else .0035, headwidth=4,
-                          headlength=5, alpha=.9, zorder=7)
+                klasa = np.minimum((wg * 5).astype(int), 4)          # grubość według siły atencji (5 klas)
+                g_max = self.opcje.spin_grubosc.value()
+                for k in range(5):
+                    m = klasa == k
+                    if m.any():
+                        sz = (.0018 if len(src) > 100 else .0028) * (1 + (g_max - 1) * k / 4) / 2
+                        ax.quiver(c[src[m], 0], c[src[m], 1], d[m, 0], d[m, 1], wg[m], cmap='cool', clim=(0, 1),
+                                  angles='xy', scale_units='xy', scale=1, width=sz, headwidth=4, headlength=5,
+                                  alpha=.9, zorder=7)
                 ax.scatter(c[dst, 0], c[dst, 1], s=8 + 40 * wg, facecolors='none', edgecolors='w', lw=.6, zorder=7)
                 tekst_at += f' | strzałki: {self.opcje.combo_strz.currentText()} ({len(src)})'
             elif self.opcje.combo_strz.currentIndex() in (1, 2) and self.token is None:

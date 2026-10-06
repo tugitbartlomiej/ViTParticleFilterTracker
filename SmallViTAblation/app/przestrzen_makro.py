@@ -27,7 +27,7 @@ import pyqtgraph.opengl as gl
 from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
 from uklad import Odpinanie, PanelOpcji, dodaj
-from widok_gl import WidokGL
+from widok_gl import LinieGrube, WidokGL
 from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanalow, opisy_czasteczek, pca, tokeny_co
 
 
@@ -206,8 +206,7 @@ class WidokPrzestrzeniMakro(QWidget):
                                            glOptions='translucent')
         self.wypadkowa.setVisible(False)
         v.addItem(self.wypadkowa)
-        self.luki = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=1.5, glOptions='translucent')
-        self.luki.setVisible(False); v.addItem(self.luki)
+        self.luki = LinieGrube(v)                         # strzałki atencji, grubość według siły
         self.groty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=7, pxMode=True, glOptions='translucent')
         self.groty.setVisible(False); v.addItem(self.groty)
         self.objetosc = gl.GLVolumeItem(np.zeros((2, 2, 2, 4), np.uint8), sliceDensity=2, smooth=True, glOptions='additive')
@@ -543,7 +542,7 @@ class WidokPrzestrzeniMakro(QWidget):
             src, dst, w = strz
             c = matplotlib.colormaps['cool'](w).astype(np.float32); c[:, 3] = .25 + .75 * w
             self.luki.setData(pos=np.stack([P[src], P[dst]], 1).reshape(-1, 3).astype(np.float32),
-                              color=np.repeat(c, 2, 0))
+                              color=np.repeat(c, 2, 0), wagi=w, grubosc_max=self.opcje.spin_grubosc.value())
             self.groty.setData(pos=P[dst].astype(np.float32), color=c)
             self.luki.setVisible(True); self.groty.setVisible(True)
         else:
