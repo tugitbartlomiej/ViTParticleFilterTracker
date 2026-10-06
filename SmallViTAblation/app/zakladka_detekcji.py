@@ -16,13 +16,69 @@ from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFil
                              QLabel, QMessageBox, QProgressBar, QPushButton, QScrollArea, QSpinBox, QTabWidget,
                              QVBoxLayout, QWidget)
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
+from matplotlib.colors import to_rgba_array
 from matplotlib.figure import Figure
 
 import detekcja as D
 import silnik
 from styl import rola
+from uklad import Przeplyw, dodaj
 
 TESTOWE = Path(__file__).resolve().parent / 'zdjeciatestowe'
+
+# ciemny motyw wykresów (te same barwy co w zakładce filmu)
+TLO_FIG, TLO_OSI, TEKST, RAMKA, JASNY = '#1e1f22', '#26282c', '#d4d4d4', '#55585e', '#c8c8c8'
+
+
+def _czarny(c):
+    """Czy kolor (albo jednolita tablica kolorów) jest czarny: domyślny kolor tekstu i linii w matplotlib."""
+    try:
+        a = to_rgba_array(c)
+    except (ValueError, TypeError):
+        return False
+    return len(a) == 1 and a[0, 3] > 0 and not a[0, :3].any()
+
+
+def ciemny_motyw(fig):
+    """Przemalowuje figurę na ciemno tuż przed rysowaniem: tło, ramki osi, podziałki, napisy, legendy,
+    a czarne linie, słupki i punkty na jasne. Działa po każdym fig.clear()/ax.clear(), bo wołane przy draw."""
+    fig.set_facecolor(TLO_FIG)
+    for t in fig.texts:
+        if _czarny(t.get_color()):
+            t.set_color(TEKST)
+    for ax in fig.axes:
+        ax.set_facecolor(TLO_OSI)
+        for s in ax.spines.values():
+            s.set_edgecolor(RAMKA)
+        ax.tick_params(which='both', colors=TEKST)
+        for t in [ax.title, ax._left_title, ax._right_title, ax.xaxis.label, ax.yaxis.label] + ax.texts:
+            if _czarny(t.get_color()):
+                t.set_color(TEKST)
+        for l in ax.lines:
+            if _czarny(l.get_color()):
+                l.set_color(JASNY)
+        for p in ax.patches:
+            if _czarny(p.get_facecolor()):
+                p.set_facecolor(JASNY)
+        for c in ax.collections:
+            if _czarny(c.get_facecolor()):
+                c.set_facecolor(JASNY)
+            if _czarny(c.get_edgecolor()):
+                c.set_edgecolor(JASNY)
+        leg = ax.get_legend()
+        if leg is not None:
+            leg.get_frame().set_facecolor(TLO_OSI); leg.get_frame().set_edgecolor(RAMKA)
+            for t in leg.get_texts():
+                if _czarny(t.get_color()):
+                    t.set_color(TEKST)
+
+
+class PlotnoCiemne(FigureCanvasQTAgg):
+    """Płótno matplotlib w ciemnym motywie aplikacji (motyw nakładany przy każdym rysowaniu)."""
+
+    def draw(self):
+        ciemny_motyw(self.figure)
+        super().draw()
 
 
 class PanelDetekcji(QWidget):
@@ -121,7 +177,7 @@ class PanelWykresu(QWidget):
     def __init__(self, fig, wysokosc_bazowa=900, osobne_okno=None):
         super().__init__()
         self.fig, self.wys_baz = fig, wysokosc_bazowa
-        self.canvas = FigureCanvasQTAgg(fig)
+        self.canvas = PlotnoCiemne(fig)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         w = QHBoxLayout()
@@ -139,11 +195,12 @@ class PanelWykresu(QWidget):
         self.spin_y.setToolTip(f'100% = {wysokosc_bazowa} px; przewijaj suwakiem góra-dół z prawej.\n'
                                'Ctrl + kółko myszy na wykresie powiększa oba kierunki.')
         w.addWidget(self.spin_y)
-        b = QPushButton('Dopasuj'); b.setToolTip('Szerokość 100%, wysokość 100%.')
+        b = rola(QPushButton('Dopasuj'), 'narzedzie'); b.setToolTip('Szerokość 100%, wysokość 100%.')
         b.clicked.connect(lambda: (self.spin_x.setValue(100), self.spin_y.setValue(100)))
         w.addWidget(b)
         if osobne_okno is not None:
-            bo = QPushButton('Osobne okno'); bo.setToolTip('Ten sam wykres w osobnym, zmaksymalizowanym oknie.')
+            bo = rola(QPushButton('Osobne okno'), 'narzedzie')
+            bo.setToolTip('Ten sam wykres w osobnym, zmaksymalizowanym oknie.')
             bo.clicked.connect(osobne_okno)
             w.addWidget(bo)
         w.addStretch(1)
@@ -276,7 +333,7 @@ class WidokMakrowektorow(QWidget):
         self.combo.setToolTip('Jak z 600 wartości kanału (po jednej na token) zrobić jedną wartość globalną.\n'
                               'Średnia i suma zachowują znak (−0,17 to minimum GELU); RMS mierzy samą siłę.')
         self.combo.currentIndexChanged.connect(lambda _: self._rysuj())
-        w.addWidget(self.combo, 1)
+        w.addWidget(self.combo)
         w.addWidget(QLabel('Skala osi:'))
         self.combo_skala = QComboBox()
         self.combo_skala.addItems(['symetryczna logarytmiczna (widać małe ujemne)', 'liniowa'])
@@ -284,7 +341,8 @@ class WidokMakrowektorow(QWidget):
                                     '(rzędu −0,05) przy dodatnich do kilku jednostek. Skala symetryczna logarytmiczna\n'
                                     'rozciąga okolice zera w obie strony, żeby piki w dół były widoczne.')
         self.combo_skala.currentIndexChanged.connect(lambda _: self._rysuj())
-        w.addWidget(self.combo_skala, 1)
+        w.addWidget(self.combo_skala)
+        w.addStretch(1)
         lay.addLayout(w)
         self.fig = Figure(figsize=(9, 6), tight_layout=True)
         self.panel = PanelWykresu(self.fig, 1000, self._osobne)
@@ -387,9 +445,12 @@ class ZakladkaDetekcji(QWidget):
     # ---------------------------------------------------------------- UI
     def _buduj(self):
         lay = QVBoxLayout(self)
-        g = QGroupBox('Zdjęcie i detekcja ViT, auto-szukanie latentu')
-        v = QVBoxLayout(g)
-        w1 = QHBoxLayout()
+        gora = QHBoxLayout(); lay.addLayout(gora)
+
+        # ---- grupa 1: zdjęcie, checkpoint, detekcja
+        g = QGroupBox('Zdjęcie i detekcja ViT')
+        v = QVBoxLayout(g); v.setSpacing(6)
+        w1 = Przeplyw(); v.addLayout(w1)
         b1 = QPushButton('Wczytaj zdjęcie…')
         b1.setToolTip('Dowolne zdjęcie. Etykieta narzędzia jest wczytywana automatycznie z annotation.csv,\n'
                       'jeśli nazwa pliku wskazuje film i klatkę (np. TR_0001_S1_P03_klatka_000870.jpg).')
@@ -401,29 +462,36 @@ class ZakladkaDetekcji(QWidget):
         b2 = QPushButton('Checkpoint ViT…')
         b2.setToolTip('Słownik z kluczem net (dowolny krok uczenia małego ViT).')
         b2.clicked.connect(self._wybierz_checkpoint)
+        for b in (b1, bsd, b2):
+            w1.addWidget(b)
+        w1b = Przeplyw(); v.addLayout(w1b)
         self.btn_wykryj = rola(QPushButton('Wykryj'), 'glowny')
         self.btn_wykryj.clicked.connect(self._wykryj)
         bmap = QPushButton('mAP na zdjęciach testowych')
         bmap.setToolTip(f'AP@0,5 i mAP@0,5:0,95 ViT na wszystkich zdjęciach z etykietą w {TESTOWE.name}/.')
         bmap.clicked.connect(self._map_testowe)
-        for b in (b1, bsd, b2, self.btn_wykryj):
-            w1.addWidget(b)
-        w1.addSpacing(18)
-        w1.addWidget(bmap)
         self.chk_rysuj = QCheckBox('Rysuj etykietę myszą')
         self.chk_rysuj.setToolTip('Przeciągnij prostokąt na obrazie PRZED, aby ustawić etykietę narzędzia ręcznie.')
         self.chk_rysuj.toggled.connect(lambda on: setattr(self.panel_przed, 'rysowanie', on))
-        w1.addWidget(self.chk_rysuj)
-        w1.addStretch(1)
-        v.addLayout(w1)
+        for b in (self.btn_wykryj, bmap, self.chk_rysuj):
+            w1b.addWidget(b)
+        self.etykieta_info = QLabel(f'Checkpoint: {Path(self.ckpt).name} (ładowany przy pierwszej detekcji). Etykieta: —')
+        self.etykieta_info.setWordWrap(True)
+        self.etykieta_info.setStyleSheet('color: #a8abb0;')
+        v.addWidget(self.etykieta_info)
+        v.addStretch(1)
+        gora.addWidget(g, 1)
 
-        w2 = QHBoxLayout()
-        self.btn_auto = rola(QPushButton('Auto-szukanie latentu'), 'glowny')
-        self.btn_auto.setToolTip('Optymalizacja (Adam) wartości latentu tego zdjęcia, aby IoU i pewność ViT dążyły do 100%.\n'
-                                 'Wagi ViT i piksele bez zmian; zmieniają się tylko wybrane kanały latentu,\n'
-                                 'po każdym kroku przycinane do limitów makrowektorów (grupa Limity w Edytorze).')
-        self.btn_auto.clicked.connect(self._auto)
-        w2.addWidget(self.btn_auto)
+        # ---- grupa 2: auto-szukanie latentu (ustawienia, cele, akcje)
+        g2 = QGroupBox('Auto-szukanie latentu')
+        v2 = QVBoxLayout(g2); v2.setSpacing(6)
+
+        def naglowek(tekst, opis=''):
+            e = QLabel(tekst); e.setStyleSheet('font-weight:bold;'); e.setToolTip(opis)
+            return e
+
+        w2 = Przeplyw(); v2.addLayout(w2)          # wiersz 1: zakres i optymalizator
+        w2.addWidget(naglowek('Optymalizacja:', 'Co wolno zmieniać i jak szybko (optymalizator Adam).'))
         self.combo_kanaly = QComboBox()
         self.combo_kanaly.addItems(['128 kanałów narzędzia (J128)', 'Wszystkie 768 kanałów'])
         self.combo_kanaly.setToolTip('Które kanały latentu wolno zmieniać (w każdym z 600 tokenów).\n'
@@ -431,17 +499,17 @@ class ZakladkaDetekcji(QWidget):
                                      'Wszystkie 768: pełny latent; zwykle łatwiej osiągnąć cel, ale zmiana jest szersza.')
         w2.addWidget(self.combo_kanaly)
 
-        def pole(nazwa, opis, widget):
-            e = QLabel(nazwa); e.setToolTip(opis); widget.setToolTip(opis)
-            w2.addWidget(e); w2.addWidget(widget)
-            return widget
+        def pole(nazwa, opis, widget, szer=None):
+            if szer:
+                widget.setFixedWidth(szer)
+            return dodaj(w2, nazwa, widget, opis)
 
         self.spin_kroki = pole('Kroki', 'Największa liczba kroków optymalizatora Adam. Szukanie kończy się wcześniej,\n'
-                               'gdy wszystkie cele są spełnione. Pomiar celów co 25 kroków.', QSpinBox())
+                               'gdy wszystkie cele są spełnione. Pomiar celów co 25 kroków.', QSpinBox(), 80)
         self.spin_kroki.setRange(25, 50000); self.spin_kroki.setValue(1500)
         self.spin_lr = pole('lr', 'Współczynnik uczenia Adama: o ile mniej więcej zmienia się wartość kanału w jednym kroku.\n'
                             'Zalecane 0,05 (jak w eksperymencie J128; restarty 0,15 i 0,3). Powyżej ~0,5\n'
-                            'wartości skaczą między limitami i wynik bywa niestabilny.', QDoubleSpinBox())
+                            'wartości skaczą między limitami i wynik bywa niestabilny.', QDoubleSpinBox(), 85)
         self.spin_lr.setRange(1e-4, 5); self.spin_lr.setDecimals(4); self.spin_lr.setValue(0.05)
         self.combo_harm = pole('Harmonogram lr', 'Jak lr zmienia się w trakcie szukania:\n'
                                '- stały: przez cały czas lr,\n'
@@ -454,61 +522,66 @@ class ZakladkaDetekcji(QWidget):
                                QComboBox())
         self.combo_harm.addItems(['stały', 'cosinusowy', 'liniowy', 'krokowy', 'plateau', 'restarty x1/x3/x6'])
         self.spin_lr_min = pole('lr min', 'Najmniejszy lr dla harmonogramów cosinusowego, liniowego, krokowego i plateau.',
-                                QDoubleSpinBox())
+                                QDoubleSpinBox(), 90)
         self.spin_lr_min.setRange(0, 5); self.spin_lr_min.setDecimals(5); self.spin_lr_min.setValue(0.005)
         self.spin_rozgrzewka = pole('rozgrzewka', 'Liczba pierwszych kroków, w których lr rośnie liniowo od 0 do lr\n'
-                                    '(łagodny start; 0 = bez rozgrzewki). W restartach dotyczy każdego etapu.', QSpinBox())
+                                    '(łagodny start; 0 = bez rozgrzewki). W restartach dotyczy każdego etapu.', QSpinBox(), 70)
         self.spin_rozgrzewka.setRange(0, 10000); self.spin_rozgrzewka.setValue(0)
-        w2.addStretch(1)
-        v.addLayout(w2)
-        w2 = QHBoxLayout()          # drugi wiersz: cele i wagi (pole() dokłada do bieżącego w2)
-        e_cele = QLabel('Cele, do których dąży ViT:')
-        e_cele.setStyleSheet('font-weight:bold;')
-        e_cele.setToolTip('Szukanie kończy się, gdy jednocześnie spełnione są cele pewności, IoU i mAP\n'
-                          '(albo po wyczerpaniu kroków / przerwaniu). Wartości w procentach.')
-        w2.addWidget(e_cele)
-
-        def procent(nazwa, opis, wartosc, minimum=0.0):
-            w = QDoubleSpinBox(); w.setRange(minimum, 100.0); w.setDecimals(1); w.setSingleStep(0.5)
-            w.setSuffix(' %'); w.setValue(wartosc)
-            return pole(nazwa, opis, w)
-
-        self.spin_cel_p = procent('Cel pewności', 'Pewność 0–100 %, z jaką ViT ma wskazać narzędzie w miejscu etykiety\n'
-                                  '(ta sama pewność, którą ViT pokazuje przy ramce).\n'
-                                  'Szukanie podnosi pewność do tego poziomu (z małym zapasem), nie wyżej.\n'
-                                  'Wyższy cel = mocniejsze zmiany latentu.', 99.0)
-        self.spin_cel_i = procent('Cel IoU', 'IoU 0–100 %: jak bardzo ramka ViT pokrywa się z etykietą narzędzia\n'
-                                  '(pole części wspólnej podzielone przez pole sumy obu ramek).\n'
-                                  '100 % = ramka dokładnie na etykiecie. Szukanie zawsze dopasowuje ramkę\n'
-                                  'jak najlepiej; ten cel mówi, kiedy wynik jest już wystarczający.', 99.0)
-        self.spin_cel_map = procent('Cel mAP', 'mAP 0–100 % (mAP@0,5:0,95) na tym jednym obrazie: ile z dziesięciu progów\n'
-                                    'IoU (50 %, 55 %, ..., 95 %) przekracza ramka ViT. 100 % wymaga IoU >= 95 %,\n'
-                                    '50 % to IoU od 70 do 75 %. 0 % = nie sprawdzaj.', 100.0)
-        self.spin_waga_p = pole('Waga pewności', 'Jak bardzo szukanie dba o pewność względem dopasowania ramki.\n'
-                                '1 = tak jak w eksperymencie J128; 3 = trzy razy ważniejsza pewność; 0 = pomijana.', QDoubleSpinBox())
-        self.spin_waga_p.setRange(0.0, 100.0); self.spin_waga_p.setDecimals(2); self.spin_waga_p.setValue(1.0)
-        self.spin_waga_r = pole('Waga ramki', 'Jak bardzo szukanie dba o dopasowanie ramki (IoU) względem pewności.\n'
-                                '1 = tak jak w eksperymencie J128; większa = ważniejsze IoU; 0 = pomijane.', QDoubleSpinBox())
-        self.spin_waga_r.setRange(0.0, 100.0); self.spin_waga_r.setDecimals(2); self.spin_waga_r.setValue(1.0)
         self.chk_limity = QCheckBox('w limitach makrowektorów')
         self.chk_limity.setChecked(True)
         self.chk_limity.setToolTip('Włączone: każdy kanał w [min_c, max_c] z grupy Limity w Edytorze.\n'
                                    'Wyłączone: tylko twarde minimum GELU −0,17, bez górnej granicy.')
         w2.addWidget(self.chk_limity)
+
+        w2 = Przeplyw(); v2.addLayout(w2)          # wiersz 2: cele i wagi (pole() dokłada do bieżącego w2)
+        w2.addWidget(naglowek('Cele, do których dąży ViT:',
+                              'Szukanie kończy się, gdy jednocześnie spełnione są cele pewności, IoU i mAP\n'
+                              '(albo po wyczerpaniu kroków / przerwaniu). Wartości w procentach.'))
+
+        def procent(nazwa, opis, wartosc, minimum=0.0):
+            w = QDoubleSpinBox(); w.setRange(minimum, 100.0); w.setDecimals(1); w.setSingleStep(0.5)
+            w.setSuffix(' %'); w.setValue(wartosc)
+            return pole(nazwa, opis, w, 85)
+
+        self.spin_cel_p = procent('pewność', 'Pewność 0–100 %, z jaką ViT ma wskazać narzędzie w miejscu etykiety\n'
+                                  '(ta sama pewność, którą ViT pokazuje przy ramce).\n'
+                                  'Szukanie podnosi pewność do tego poziomu (z małym zapasem), nie wyżej.\n'
+                                  'Wyższy cel = mocniejsze zmiany latentu.', 99.0)
+        self.spin_cel_i = procent('IoU', 'IoU 0–100 %: jak bardzo ramka ViT pokrywa się z etykietą narzędzia\n'
+                                  '(pole części wspólnej podzielone przez pole sumy obu ramek).\n'
+                                  '100 % = ramka dokładnie na etykiecie. Szukanie zawsze dopasowuje ramkę\n'
+                                  'jak najlepiej; ten cel mówi, kiedy wynik jest już wystarczający.', 99.0)
+        self.spin_cel_map = procent('mAP', 'mAP 0–100 % (mAP@0,5:0,95) na tym jednym obrazie: ile z dziesięciu progów\n'
+                                    'IoU (50 %, 55 %, ..., 95 %) przekracza ramka ViT. 100 % wymaga IoU >= 95 %,\n'
+                                    '50 % to IoU od 70 do 75 %. 0 % = nie sprawdzaj.', 100.0)
+        w2.addWidget(naglowek('  Wagi straty:', 'Jak bardzo szukanie dba o pewność względem dopasowania ramki.'))
+        self.spin_waga_p = pole('pewności', 'Jak bardzo szukanie dba o pewność względem dopasowania ramki.\n'
+                                '1 = tak jak w eksperymencie J128; 3 = trzy razy ważniejsza pewność; 0 = pomijana.',
+                                QDoubleSpinBox(), 75)
+        self.spin_waga_p.setRange(0.0, 100.0); self.spin_waga_p.setDecimals(2); self.spin_waga_p.setValue(1.0)
+        self.spin_waga_r = pole('ramki', 'Jak bardzo szukanie dba o dopasowanie ramki (IoU) względem pewności.\n'
+                                '1 = tak jak w eksperymencie J128; większa = ważniejsze IoU; 0 = pomijane.',
+                                QDoubleSpinBox(), 75)
+        self.spin_waga_r.setRange(0.0, 100.0); self.spin_waga_r.setDecimals(2); self.spin_waga_r.setValue(1.0)
+
+        w4 = QHBoxLayout(); v2.addLayout(w4)        # wiersz 3: akcje i postęp razem
+        self.btn_auto = rola(QPushButton('Auto-szukanie latentu'), 'glowny')
+        self.btn_auto.setToolTip('Optymalizacja (Adam) wartości latentu tego zdjęcia, aby IoU i pewność ViT dążyły do 100%.\n'
+                                 'Wagi ViT i piksele bez zmian; zmieniają się tylko wybrane kanały latentu,\n'
+                                 'po każdym kroku przycinane do limitów makrowektorów (grupa Limity w Edytorze).')
+        self.btn_auto.clicked.connect(self._auto)
+        w4.addWidget(self.btn_auto)
         self.btn_stop = QPushButton('Przerwij'); self.btn_stop.setEnabled(False)
         self.btn_stop.setToolTip('Zatrzymuje szukanie po najbliższym pomiarze (co 25 kroków) i pokazuje bieżący wynik.')
         self.btn_stop.clicked.connect(lambda: setattr(self, '_przerwij', True))
-        w2.addWidget(self.btn_stop)
+        w4.addWidget(self.btn_stop)
+        self.pasek = QProgressBar(); self.pasek.setMinimumWidth(120)
+        w4.addWidget(self.pasek, 1)
         bprz = QPushButton('Latent PO → baza Edytora SD')
         bprz.setToolTip('Ustawia zoptymalizowany latent jako latent bazowy w Edytorze, aby wygenerować z niego obraz SD.')
         bprz.clicked.connect(self._do_edytora)
-        w2.addWidget(bprz)
-        v.addLayout(w2)
-        self.pasek = QProgressBar(); v.addWidget(self.pasek)
-        self.etykieta_info = QLabel(f'Checkpoint: {Path(self.ckpt).name} (ładowany przy pierwszej detekcji). Etykieta: —')
-        self.etykieta_info.setWordWrap(True)
-        v.addWidget(self.etykieta_info)
-        lay.addWidget(g)
+        w4.addWidget(bprz)
+        gora.addWidget(g2, 2)
 
         w3 = QHBoxLayout()
         self.panel_przed = PanelDetekcji('PRZED (naturalny latent)')
