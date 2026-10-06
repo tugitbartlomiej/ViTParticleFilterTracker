@@ -2,7 +2,9 @@
 
 Plan: [PLAN.md](PLAN.md). Zadania SLURM: próba 1823464 (7 x 20 kroków, wszystkie ukończone), bieg 1823465
 (7 x 5000 kroków, wszystkie COMPLETED, 2:27 do 3:03 na ramię, H100 PCIe, 24 do 28 ms na krok).
-Wyniki lokalnie w `wyniki/pelny_<ramię>/` (MODEL_<ramię>.pt i LATENT_KONTROLNY.npz poza gitem), na Edenie
+Modele końcowe przeniesione 2026-10-07 do `assets/MalyViT_rozne_latenty_5000kl/<ramię>/MODEL_<ramię>.pt`
+(opis i ładowanie: README.md tego folderu). Reszta wyników lokalnie w `wyniki/pelny_<ramię>/`
+(wagi pośrednie i LATENT_KONTROLNY.npz poza gitem), na Edenie
 w `~/smallvit_runs/2026-10-06_maly_vit_rozne_latenty_5000/wyniki` (2,2 GB, 253 pliki z próbami).
 
 ## mAP@0,5 na 3000 klatkach walidacji (filmy walidacyjne, jedno ziarno 47)
