@@ -247,6 +247,13 @@ początku, od najsilniejszego), oba albo brak; łańcuch i wypadkowa to to samo 
 - Wykres przebiegu sekwencji pod klatką schowany (niepotrzebny); klatka zajmuje lewą kolumnę.
 - Makrowektory, „Kierunki kanałów”: także półsfera Fibonacciego (wszystkie kierunki z > 0).
 
+### Wygładzanie EMA torów (przestrzeń makrowektorów)
+
+„Wygładzanie EMA α” (Wygląd): wygładzone(t) = α · bieżące(t) + (1 − α) · wygładzone(t − 1), od pierwszej klatki;
+1 = bez wygładzania (domyślnie). Wygładzane są siły mikrowektorów (EMA jest liniowa), więc mikrowektory wybranej
+cząstki i wypadkowa nadal kończą się dokładnie w wygładzonej cząstce (błąd do 3e-5). TR_0001 0:20–0:30: średni
+przelot między klatkami 11,6 (α = 1) / 5,4 (0,5) / 2,2 (0,2) / 0,6 (0,05). Opóźnia ruch o około 1/α klatek.
+
 ### Atencja w przestrzeni makrowektorów
 
 Zakładka opcji „Atencja” (ten sam panel co w widoku nad obrazem: mapa, głowa, blok, rollout, strzałki):

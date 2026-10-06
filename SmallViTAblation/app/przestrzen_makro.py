@@ -114,6 +114,13 @@ class WidokPrzestrzeniMakro(QWidget):
         w = self.panel.wiersz('Wygląd')
         self.spin_slad = dodaj(w, 'Ślad (klatek):', QSpinBox(), 'Ile poprzednich klatek pokazuje linia toru każdej cząstki. 0 = bez śladu.')
         self.spin_slad.setRange(0, 200); self.spin_slad.setValue(8)
+        self.spin_ema = dodaj(w, 'Wygładzanie EMA α:', QDoubleSpinBox(),
+                              'Wygładza tory cząstek średnią wykładniczą po klatkach: wygładzone(t) = α · bieżące(t)\n'
+                              '+ (1 − α) · wygładzone(t − 1), od pierwszej klatki sekwencji. 1 = bez wygładzania;\n'
+                              '0,3 = mocno (pamięć około 3 klatek), 0,1 = bardzo mocno (około 10 klatek).\n'
+                              'Wygładzane są siły mikrowektorów (liniowo), więc mikrowektory wybranej cząstki i ich\n'
+                              'suma (wypadkowa) nadal kończą się dokładnie w wygładzonej cząstce. Opóźnia ruch.')
+        self.spin_ema.setRange(.02, 1); self.spin_ema.setSingleStep(.05); self.spin_ema.setDecimals(2); self.spin_ema.setValue(1)
         self.spin_przejscie = dodaj(w, 'Przelot:', QSpinBox(), 'Czas płynnego przelotu cząstek do nowej klatki (ms). 0 = skok.')
         self.spin_przejscie.setRange(0, 3000); self.spin_przejscie.setValue(250); self.spin_przejscie.setSuffix(' ms')
 
@@ -215,7 +222,7 @@ class WidokPrzestrzeniMakro(QWidget):
         self._timer = QTimer(self); self._timer.setInterval(16); self._timer.timeout.connect(self._krok_przelotu)
         self._od = self._do = None; self._u = 1.0
         for s in (self.combo_kier.currentIndexChanged, self.combo_kan.currentIndexChanged, self.chk_srodek.toggled,
-                  self.combo_pca.currentIndexChanged, self.combo_poz.currentIndexChanged):
+                  self.combo_pca.currentIndexChanged, self.combo_poz.currentIndexChanged, self.spin_ema.valueChanged):
             s.connect(lambda *_: self._przelicz())
         for s in (self.combo_kolor.currentIndexChanged, self.spin_slad.valueChanged, self.spin_rozmiar.valueChanged,
                   self.combo_mikro.currentIndexChanged, self.spin_mikro.valueChanged,
@@ -301,6 +308,31 @@ class WidokPrzestrzeniMakro(QWidget):
         mu, W, maska = self._pca
         return (z[:, maska] - mu) @ W
 
+    def _sily_wierszy(self, t0, t1, tok):
+        """Siły mikrowektorów jednej cząstki tok w klatkach t0..t1 włącznie: [t1 - t0 + 1, K] (jak sily(t)[tok])."""
+        z = self.Z[t0:t1 + 1, tok].astype(np.float32)                          # [n, 768]
+        p = self._poz
+        if p is not None and p[0] == 'rzut':
+            _, g, U = p
+            z = z - ((z - g) @ U) @ U.T
+        elif p is not None:
+            _, M, g = p
+            z = z - M[tok] + g
+        if self._pca is None:
+            return z - self.mu
+        mu, W, maska = self._pca
+        return (z[:, maska] - mu) @ W
+
+    def sily_tokenu(self, t, tok):
+        """Siły mikrowektorów cząstki tok w klatce t [K], po wygładzeniu EMA (gdy α < 1), dokładnie jak w self.P."""
+        a = self.spin_ema.value()
+        if a >= 1:
+            return self._sily_wierszy(t, t, tok)[0]
+        X = self._sily_wierszy(0, t, tok)                                       # EMA od pierwszej klatki
+        w = a * (1 - a) ** np.arange(t, -1, -1, dtype=np.float64)
+        w[0] = (1 - a) ** t
+        return (w[:, None] * X).sum(0).astype(np.float32)
+
     def _przelicz(self):
         """Siły (kanały albo składowe PCA), kierunki D [K, 3], skala s i położenia cząstek we wszystkich klatkach."""
         if self.Z is None:
@@ -341,6 +373,10 @@ class WidokPrzestrzeniMakro(QWidget):
         surowe = np.stack([self.sily(t) @ D for t in range(T)])               # [T, 600, 3]
         r = np.linalg.norm(surowe, axis=-1)
         self.s = 100 / max(float(np.percentile(r, 99)), 1e-9)
+        a = self.spin_ema.value()
+        if a < 1:                                                               # EMA torów po klatkach (liniowa)
+            for t in range(1, T):
+                surowe[t] = a * surowe[t] + (1 - a) * surowe[t - 1]
         self.P = surowe * self.s
         self._rysuj(skok=True)
 
@@ -375,7 +411,7 @@ class WidokPrzestrzeniMakro(QWidget):
         trafia w lecącą cząstkę w każdej chwili, a początek zostaje w środku układu."""
         if self.token is None or self.Z is None or self.P is None:
             return None
-        v = self.sily(self.t)[self.token][:, None] * self.D * self.s
+        v = self.sily_tokenu(self.t, self.token)[:, None] * self.D * self.s
         vo = getattr(self, '_v_od', None)
         if self._od is None or self._u >= 1:
             return v
