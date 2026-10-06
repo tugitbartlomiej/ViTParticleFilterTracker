@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import QCoreApplication, Qt, QTimer
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog,
                              QGroupBox, QHBoxLayout, QLabel, QMainWindow, QMessageBox,
@@ -1055,6 +1055,9 @@ def _bez_ustawien():
 
 
 def main():
+    # wspólne konteksty OpenGL: widok 3D przeniesiony do osobnego okna (Odepnij) dostaje nowy kontekst,
+    # a shadery i bufory pyqtgraph muszą w nim dalej istnieć (bez tego GL_INVALID_VALUE przy glUseProgram)
+    QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
     aplikacja = QApplication(sys.argv)
     aplikacja.setStyleSheet(STYL)
     okno = Okno()

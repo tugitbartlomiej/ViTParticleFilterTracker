@@ -26,7 +26,7 @@ import pyqtgraph.opengl as gl
 
 from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
-from uklad import PanelOpcji, dodaj
+from uklad import Odpinanie, PanelOpcji, dodaj
 from widok_gl import WidokGL
 from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanalow, opisy_czasteczek, pca, tokeny_co
 
@@ -126,6 +126,8 @@ class WidokPrzestrzeniMakro(QWidget):
                                 'Pojedynczy mikrowektor jest zwykle dużo krótszy od wypadkowej.')
         self.spin_mikro.setRange(1, 500); self.spin_mikro.setValue(1); self.spin_mikro.setPrefix('× ')
         b = rola(QPushButton('Kamera od nowa'), 'narzedzie'); b.clicked.connect(self._kamera); self.panel.pasek.addWidget(b)
+        self.btn_odepnij = rola(QPushButton('Odepnij'), 'narzedzie'); self.panel.pasek.addWidget(self.btn_odepnij)
+        self.odpinanie = Odpinanie(self, 'Przestrzeń makrowektorów', self.btn_odepnij)
         b.setToolTip('Widok całego układu z ukosa.')
         self.panel.zakoncz()
 

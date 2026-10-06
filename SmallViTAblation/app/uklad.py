@@ -1,8 +1,8 @@
 """Układ „przepływowy”: kontrolki w wierszu, a gdy brakuje miejsca, zawijają się do następnej linii
 (jak tekst). Dzięki temu panele z wieloma opcjami nie rozpychają okna na szerokość."""
 from PyQt6.QtCore import QPoint, QRect, QSize, Qt
-from PyQt6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QLayout, QPushButton, QStyle, QStyleOptionComboBox,
-                             QStylePainter, QTabWidget, QVBoxLayout, QWidget, QWidgetItem)
+from PyQt6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QLayout, QPushButton, QSplitter, QStackedWidget, QStyle,
+                             QStyleOptionComboBox, QStylePainter, QTabWidget, QVBoxLayout, QWidget, QWidgetItem)
 
 
 class Przeplyw(QLayout):
@@ -152,3 +152,74 @@ def etykieta_opisu(etykieta):
     """Tekst objaśnień (zakres, źródło, opis filmu): szary (rola „opis”), żeby nie konkurował z kontrolkami."""
     from styl import rola
     return rola(etykieta, 'opis')
+
+
+class _OknoOdpiete(QWidget):
+    def __init__(self, odpinanie, tytul):
+        super().__init__(None, Qt.WindowType.Window)
+        self._odp = odpinanie
+        self.setWindowTitle(tytul)
+        lay = QVBoxLayout(self); lay.setContentsMargins(4, 4, 4, 4)
+
+    def closeEvent(self, e):
+        self._odp.przycisk.setChecked(False)          # zamknięcie okna = przypięcie widoku z powrotem
+        super().closeEvent(e)
+
+
+class Odpinanie:
+    """Przycisk „Odepnij”: przenosi żywy widok (ten sam widżet, dalej aktualizowany przez zakładkę, np. przy
+    odtwarzaniu filmu) do osobnego okna, a w jego miejscu zostawia napis. „Przypnij” albo zamknięcie okna
+    wstawia widok z powrotem w to samo miejsce (splitter, zakładka albo zwykły układ)."""
+
+    def __init__(self, widok, tytul, przycisk):
+        self.widok, self.tytul, self.przycisk = widok, tytul, przycisk
+        self.okno = self._oddaj = None
+        przycisk.setCheckable(True)
+        przycisk.setToolTip('Przenosi ten widok do osobnego okna (np. na drugi monitor); dalej działa i odtwarza\n'
+                            'sekwencję razem z zakładką. Przypnij albo zamknij okno, żeby wrócił na miejsce.')
+        przycisk.toggled.connect(lambda v: self.odepnij() if v else self.przypnij())
+
+    def _wyjmij(self, zastepca):
+        """Wstawia zastępcę w miejsce widoku; zwraca funkcję, która odda widok na to miejsce."""
+        w = self.widok
+        rodzic = w.parentWidget()
+        if isinstance(rodzic, QSplitter):
+            i = rodzic.indexOf(w); rozm = rodzic.sizes()
+            rodzic.replaceWidget(i, zastepca)
+            return lambda: (rodzic.replaceWidget(i, w), rodzic.setSizes(rozm))
+        if isinstance(rodzic, QStackedWidget) and isinstance(rodzic.parentWidget(), QTabWidget):
+            tab = rodzic.parentWidget(); i = tab.indexOf(w); tekst = tab.tabText(i); biezaca = tab.currentIndex()
+            tab.removeTab(i); tab.insertTab(i, zastepca, tekst); tab.setCurrentIndex(biezaca)
+
+            def oddaj():
+                j = tab.indexOf(zastepca); tab.removeTab(j); tab.insertTab(j, w, tekst); tab.setCurrentIndex(j)
+            return oddaj
+        lay = rodzic.layout()
+        lay.replaceWidget(w, zastepca)
+        return lambda: lay.replaceWidget(zastepca, w)
+
+    def odepnij(self):
+        if self.okno is not None:
+            return
+        zastepca = QLabel(f'„{self.tytul}” jest w osobnym oknie.\nZamknij to okno albo kliknij „Przypnij”, żeby widok wrócił tutaj.')
+        zastepca.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._zastepca = zastepca
+        rozmiar = self.widok.size()
+        self._oddaj = self._wyjmij(zastepca)
+        self.okno = _OknoOdpiete(self, self.tytul)
+        self.okno.layout().addWidget(self.widok)
+        self.widok.show()
+        self.okno.resize(max(900, rozmiar.width()), max(700, rozmiar.height()))
+        self.okno.show()
+        self.przycisk.setText('Przypnij')
+
+    def przypnij(self):
+        if self.okno is None:
+            return
+        okno, self.okno = self.okno, None
+        self.widok.setParent(None)
+        self._oddaj()
+        self.widok.show()
+        self._zastepca.deleteLater()
+        okno.hide(); okno.deleteLater()
+        self.przycisk.setText('Odepnij')

@@ -9,7 +9,7 @@ import time
 import traceback
 from pathlib import Path
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QCoreApplication, Qt
 from PyQt6.QtWidgets import QApplication, QLabel, QMessageBox
 
 LOG = Path(__file__).with_name('start.log')
@@ -22,6 +22,9 @@ def main():
         wyjscie = open(LOG.with_name('wyjscie.log'), 'w', encoding='utf-8', buffering=1)
         sys.stdout = sys.stdout or wyjscie
         sys.stderr = sys.stderr or wyjscie
+    # wspólne konteksty OpenGL: widok 3D przeniesiony do osobnego okna (Odepnij) dostaje nowy kontekst,
+    # a shadery i bufory pyqtgraph muszą w nim dalej istnieć (bez tego GL_INVALID_VALUE przy glUseProgram)
+    QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
     aplikacja = QApplication(sys.argv)
     okienko = QLabel()
     okienko.setWindowFlags(Qt.WindowType.SplashScreen | Qt.WindowType.WindowStaysOnTopHint)

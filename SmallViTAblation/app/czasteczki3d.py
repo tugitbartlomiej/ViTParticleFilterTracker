@@ -23,7 +23,7 @@ import pyqtgraph.opengl as gl
 from opcje_atencji import OpcjeAtencji
 from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
-from uklad import PanelOpcji, dodaj
+from uklad import Odpinanie, PanelOpcji, dodaj
 from widok_gl import ObrazPrzezroczysty, Widok3D
 from wspolne import (CZASTECZKI_CO, KOLUMNY, KOMORKA, PCA_SKLADOWE, SZER, WIERSZE, WYNIKI, WYS, kierunki,
                      kolory_kanalow, opisy_czasteczek, pca, tokeny_co)
@@ -157,7 +157,10 @@ class WidokCzasteczek3D(QWidget):
         self.btn_png = rola(QPushButton('Zapisz PNG'), 'narzedzie')
         self.btn_png.setToolTip(f'Zapis bieżącego widoku do {WYNIKI}')
         w.addWidget(self.btn_png)
-        self.btn_okno = rola(QPushButton('Osobne okno'), 'narzedzie'); self.btn_okno.setToolTip('Ten sam widok w dużym, osobnym oknie.')
+        self.btn_odepnij = rola(QPushButton('Odepnij'), 'narzedzie'); w.addWidget(self.btn_odepnij)
+        self.odpinanie = Odpinanie(self, 'Cząsteczki 3D', self.btn_odepnij)
+        self.btn_okno = rola(QPushButton('Kopia w oknie'), 'narzedzie')
+        self.btn_okno.setToolTip('Nieruchoma kopia bieżącego widoku w nowym oknie (do porównań; nie odtwarza dalej).')
         w.addWidget(self.btn_okno)
         self.panel.zakoncz()
 

@@ -284,6 +284,10 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   bez danych i bez przycisków przełączanych), wczytywany przy starcie i zapisywany przy zamknięciu; menu
   „Ustawienia”: zapisz, zapisz jako, wczytaj, przywróć domyślne, zapis przy zamknięciu.
   `EDYTOR_BEZ_USTAWIEN=1` uruchamia bez pliku (testy).
+- `uklad.Odpinanie`: przycisk „Odepnij” w widokach 3D (cząsteczki nad obrazem, przestrzeń makrowektorów,
+  też w zakładce detekcji) przenosi żywy widok do osobnego okna; dalej odtwarza sekwencję razem z zakładką.
+  „Przypnij” albo zamknięcie okna oddaje go na miejsce. Wymaga wspólnych kontekstów OpenGL
+  (`AA_ShareOpenGLContexts` w `start.py` i `app.main`). Dawne „Osobne okno” to teraz „Kopia w oknie”.
 - `wygoda.py`: kółko myszy zmienia pole, listę albo suwak tylko po kliknięciu (inaczej przewija panel), liczby
   zatwierdzane Enterem albo wyjściem z pola, przyspieszanie przytrzymanej strzałki.
 - `styl.py`: hierarchia przycisków (rola „glowny”: główna akcja zakładki, „narzedzie”: małe przyciski widoku).
