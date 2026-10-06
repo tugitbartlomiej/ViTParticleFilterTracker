@@ -1,0 +1,95 @@
+{
+ "status": "complete",
+ "created_utc": "2026-10-06T21:13:00.863079+00:00",
+ "ramie": "nano_tl8",
+ "konfig": {
+  "dim": 96,
+  "glowy": 3,
+  "tokeny": 8,
+  "po_bloku": 3
+ },
+ "ksztalt_latentu": [
+  8,
+  384
+ ],
+ "parametry": 828205,
+ "seed": 47,
+ "krokow": 5000,
+ "n_zdjec": 5000,
+ "zapis_wag": 500,
+ "co_ocena": 500,
+ "hyper": {
+  "paczka": 32,
+  "beta1": 0.9,
+  "lr": 0.0005,
+  "wd": 0.05,
+  "rozgrzewka_lr": 300,
+  "autocast_uczenia": "bf16",
+  "augmentacja": "odbicie poziome 0,5; jasność i kontrast 0,8-1,2"
+ },
+ "latent_layer": "bloki[-1].mlp.act (GELU)",
+ "klatki_pomiaru": "CZASTKI_WEJSCIA/obrazy.npy (12 klatek)",
+ "code": [
+  {
+   "path": "bieg.py",
+   "sha256": "f0bf580d98dda28659a59c6cc768a6a80b4e6abc0f377b3e36ec79d9cf23b515"
+  },
+  {
+   "path": "dane.py",
+   "sha256": "03b566c2e8563db43a2a7508909dcc59cf9ab933edf66572ffa564b69688f689"
+  },
+  {
+   "path": "model.py",
+   "sha256": "3e34664e319af859f7cc231381dd839aed3142ea3251d71420a64cac39f08363"
+  },
+  {
+   "path": "trening.py",
+   "sha256": "4103cf11a323725bb0c091fc1a15f88abec94659bd89563ea63c4caf5bb467d1"
+  }
+ ],
+ "versions": {
+  "python": "3.11.15",
+  "torch": "2.9.1+cu128",
+  "numpy": "2.3.5"
+ },
+ "device": "NVIDIA H100 PCIe",
+ "host": "hopper",
+ "slurm_job": "1823465",
+ "proba": false,
+ "completed_utc": "2026-10-06T21:15:13.254322+00:00",
+ "training_seconds": 130.2815489768982,
+ "total_seconds": 146.28557109832764,
+ "s_na_krok": 0.02605630979537964,
+ "mAP50_koniec": 0.5422024238341625,
+ "mAP50_najlepszy": 0.6077865899468713,
+ "latent_kontrolny": {
+  "kroki": [
+   11
+  ],
+  "latent": [
+   11,
+   12,
+   8,
+   384
+  ],
+  "mapy": [
+   11,
+   12,
+   600,
+   8
+  ]
+ },
+ "wagi": [
+  "k00000.pt",
+  "k00500.pt",
+  "k01000.pt",
+  "k01500.pt",
+  "k02000.pt",
+  "k02500.pt",
+  "k03000.pt",
+  "k03500.pt",
+  "k04000.pt",
+  "k04500.pt",
+  "k05000.pt"
+ ]
+}

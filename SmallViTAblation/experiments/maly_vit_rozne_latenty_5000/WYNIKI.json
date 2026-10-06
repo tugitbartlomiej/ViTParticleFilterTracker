@@ -1,18 +1,42 @@
 {
   "rodzina": "maly_vit_rozne_latenty_5000",
   "klasa": "badawcza",
-  "status": "uruchomione_na_edenie",
+  "status": "zakonczone",
   "created": "2026-10-06",
   "pytanie": "Jak wygląda latent detektora końcówki narzędzia przy różnej wielkości małego ViT (600 x 128 do 600 x 1536) i przy 8 tokenach TokenLearner zamiast 600, przy tym samym przepisie i zbiorze 5000 klatek?",
-  "werdykt": null,
+  "werdykt": "mAP@0,5 na 3000 klatkach val (koniec / najlepszy): femto 0,559, pico 0,585, nano 0,612, tiny 0,654, small 0,589 / 0,624, tiny_tl8 0,595 / 0,628, nano_tl8 0,542 / 0,608. Do tiny rośnie z latentem, small nie lepszy; 8 tokenów kosztuje mało; w nano_tl8 jeden token skupia się na narzędziu (15,6 x). Jedno ziarno, szum ocen 0,03-0,05.",
   "confirmatory": false,
   "primary_replications": 1,
   "training_new_vit": true,
-  "ramiona": ["femto", "pico", "nano", "tiny", "small", "tiny_tl8", "nano_tl8"],
-  "slurm": {"proba": 1823464, "pelny": 1823465},
+  "ramiona": [
+    "femto",
+    "pico",
+    "nano",
+    "tiny",
+    "small",
+    "tiny_tl8",
+    "nano_tl8"
+  ],
+  "slurm": {
+    "proba": 1823464,
+    "pelny": 1823465
+  },
   "eden": "~/smallvit_runs/2026-10-06_maly_vit_rozne_latenty_5000",
   "code_or_results_executed": true,
   "plan": "PLAN.md",
-  "raport": null,
-  "dane": ["wyniki/pelny_<ramie>/MODEL_<ramie>.pt", "wyniki/pelny_<ramie>/dane/LATENT_KONTROLNY.npz", "wyniki/pelny_<ramie>/dane/OCENY.json"]
+  "raport": "WYNIKI.md",
+  "dane": [
+    "wyniki/pelny_<ramie>/MODEL_<ramie>.pt",
+    "wyniki/pelny_<ramie>/dane/LATENT_KONTROLNY.npz",
+    "wyniki/pelny_<ramie>/dane/OCENY.json"
+  ],
+  "metryki": [
+    "wyniki/pelny_femto/dane/OCENY.json",
+    "wyniki/pelny_pico/dane/OCENY.json",
+    "wyniki/pelny_nano/dane/OCENY.json",
+    "wyniki/pelny_tiny/dane/OCENY.json",
+    "wyniki/pelny_small/dane/OCENY.json",
+    "wyniki/pelny_tiny_tl8/dane/OCENY.json",
+    "wyniki/pelny_nano_tl8/dane/OCENY.json"
+  ]
 }
