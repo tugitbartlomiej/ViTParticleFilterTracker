@@ -13,23 +13,55 @@ SZER, WYS = KOLUMNY * KOMORKA, WIERSZE * KOMORKA   # 480 x 320, wejście ViT
 KANALY = 768
 WYNIKI = Path(__file__).resolve().parents[1] / 'outputs' / 'latent_editor_sd_20261006'
 
-_kolory = None
+PCA_SKLADOWE = (3, 4, 8, 16, 32, 128)          # wybór liczby wektorów po PCA w widokach 3D
+
+CZASTECZKI_CO = (1, 2, 3, 4, 5, 7, 10)         # wybór liczby cząsteczek: co n-ty patch w wierszach i kolumnach
 
 
-def kolory_kanalow():
-    """[768, 4] RGBA float32: kolor kanału c z koła barw hsv (kopia, można zmieniać)."""
-    global _kolory
-    if _kolory is None:
+def tokeny_co(n):
+    """Tokeny co n-ty patch w wierszach i w kolumnach siatki, od środka pierwszego bloku n x n (równo po obrazie).
+    n = 1: wszystkie 600; 2: 150; 3: 70; 4: 35; 5: 24; 7: 12; 10: 6."""
+    w = np.arange(n // 2, WIERSZE, n)
+    k = np.arange(n // 2, KOLUMNY, n)
+    return (w[:, None] * KOLUMNY + k[None, :]).reshape(-1)
+
+
+def opisy_czasteczek():
+    return [f'wszystkie {WIERSZE * KOLUMNY}' if n == 1 else f'co {n}. patch: {len(tokeny_co(n))}' for n in CZASTECZKI_CO]
+
+
+_kolory = {}
+
+
+def kolory_kanalow(n=KANALY):
+    """[n, 4] RGBA float32: kolor wektora c z koła barw hsv (kopia, można zmieniać)."""
+    if n not in _kolory:
         import matplotlib
-        _kolory = matplotlib.colormaps['hsv'](np.arange(KANALY) / KANALY).astype(np.float32)
-    return _kolory.copy()
+        _kolory[n] = matplotlib.colormaps['hsv'](np.arange(n) / n).astype(np.float32)
+    return _kolory[n].copy()
 
 
-def kierunki(polsfera):
-    """768 kierunków jednostkowych [768, 3]: spirala Fibonacciego, kanał c ma wysokość malejącą z c.
+def kierunki(polsfera, n=KANALY):
+    """n kierunków jednostkowych [n, 3]: spirala Fibonacciego, wektor c ma wysokość malejącą z c.
     polsfera=False: cała kula (z od 1 do −1), True: półsfera nad obrazem (z od 1 do 0)."""
-    c = np.arange(KANALY) + .5
-    z = 1 - c / KANALY if polsfera else 1 - 2 * c / KANALY
+    c = np.arange(n) + .5
+    z = 1 - c / n if polsfera else 1 - 2 * c / n
     r = np.sqrt(np.clip(1 - z * z, 0, None))
-    phi = np.pi * (3 - np.sqrt(5)) * np.arange(KANALY)
+    phi = np.pi * (3 - np.sqrt(5)) * np.arange(n)
     return np.stack([r * np.cos(phi), r * np.sin(phi), z], 1).astype(np.float32)
+
+
+def pca(X, k=max(PCA_SKLADOWE)):
+    """PCA wierszy X [N, C]: średnia mu [C], składowe W [C, k] (kolumny ortonormalne, od największej wariancji)
+    i udział wariancji każdej składowej [k]. Wynik składowych: (x − mu) @ W. Składowe są zagnieżdżone, więc
+    pierwsze m kolumn W to PCA do m wymiarów. Znak każdej składowej ustalony tak, żeby jej największy co do
+    modułu ładunek był dodatni (ta sama baza przy ponownym liczeniu)."""
+    X = np.asarray(X, np.float32)
+    mu = X.mean(0)
+    _, S, Vt = np.linalg.svd(X - mu, full_matrices=False)
+    k = min(k, len(S))
+    W = Vt[:k].T.copy()
+    znak = np.sign(W[np.abs(W).argmax(0), np.arange(k)]); znak[znak == 0] = 1
+    W *= znak
+    wariancja = S ** 2
+    return mu, W.astype(np.float32), (wariancja[:k] / max(float(wariancja.sum()), 1e-12)).astype(np.float32)

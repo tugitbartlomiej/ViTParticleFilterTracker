@@ -188,6 +188,40 @@ def czytaj_klatki_jpg(film, indeksy, postep=None, przerwij=lambda: False):
             yield int(i), np.asarray(Image.open(io.BytesIO(z.read(nazwa))).convert('RGB'))
 
 
+ROZSZERZENIA_OBRAZOW = ('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff', '.webp')
+
+
+def folder_zdjec(katalog, fps=29.97):
+    """Sekwencja z folderu zdjęć: pliki obrazów w kolejności nazw (bez podfolderów). Gdy obok leży MANIFEST.json
+    z polami film i klatki[].frame_number (np. z wytnij_narzedzie.py), zwraca też film i numer klatki każdego pliku,
+    więc etykiety i obrysy z annotation.csv pasują do zdjęć.
+    Wynik: dict(katalog, pliki, film, frame_numbers albo None, fps, opis)."""
+    k = Path(katalog)
+    pliki = sorted(p for p in k.iterdir() if p.is_file() and p.suffix.lower() in ROZSZERZENIA_OBRAZOW)
+    film, nr, opis = id_filmu(k.name), None, ''
+    m = k / 'MANIFEST.json'
+    if m.exists():
+        j = json.loads(m.read_text(encoding='utf-8'))
+        film = j.get('film') or film
+        fps = float(j.get('fps') or fps)
+        po_nazwie = {w['plik']: int(w['frame_number']) for w in j.get('klatki', []) if 'plik' in w and 'frame_number' in w}
+        if pliki and all(p.name in po_nazwie for p in pliki):
+            nr = [po_nazwie[p.name] for p in pliki]
+        opis = f'MANIFEST: {film}, {j.get("od", "?")} – {j.get("do", "?")}' + (f', {j["tlo"]}' if j.get('tlo') else '')
+    return dict(katalog=str(k), pliki=[str(p) for p in pliki], film=film, frame_numbers=nr, fps=fps, opis=opis)
+
+
+def czytaj_klatki_folder(pliki, indeksy, postep=None, przerwij=lambda: False):
+    """Klatki z listy plików obrazów (RGB uint8), indeksy = pozycje na liście."""
+    from PIL import Image
+    for k, i in enumerate(indeksy):
+        if przerwij():
+            return
+        if postep:
+            postep(k)
+        yield int(i), np.asarray(Image.open(pliki[int(i)]).convert('RGB'))
+
+
 def mmss(sekundy):
     m, s = divmod(max(0.0, float(sekundy)), 60)
     return f'{int(m):02d}:{s:04.1f}'

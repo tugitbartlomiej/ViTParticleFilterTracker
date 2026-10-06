@@ -8,6 +8,7 @@ Klatek nie zapisuje się na dysk; w pamięci jest sekwencja (obrazy 480x320 i la
 import json
 import time
 import traceback
+from pathlib import Path
 
 import numpy as np
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
@@ -55,6 +56,7 @@ class ZakladkaFilmu(QWidget):
         self.j128 = [w['kanal'] for w in okno.narzedzie]
         self.filmy = F.lista_filmow()
         self.mp4 = None; self.info = None; self.film = None
+        self.folder = None                 # sekwencja z folderu zdjęć (F.folder_zdjec)
         self.ckpt, self.det = silnik.VIT_CHECKPOINT, None
         self.sek = None                    # słownik sekwencji
         self.obwody = {}                   # t -> lista wielokątów narysowanych ręcznie (480x320)
@@ -82,6 +84,12 @@ class ZakladkaFilmu(QWidget):
         self.btn_plik = QPushButton('Plik MP4…'); self.btn_plik.setToolTip('Dowolny plik MP4. Etykiety są wczytywane,\n'
                                                                             'jeśli nazwa pliku zawiera identyfikator TR_xxxx_Sx_Pxx.')
         w.addWidget(self.btn_plik)
+        self.btn_folder = QPushButton('Folder zdjęć…')
+        self.btn_folder.setToolTip('Sekwencja z folderu zdjęć (PNG, JPG, BMP, TIF), w kolejności nazw plików,\n'
+                                   'np. app/narzedzie_czarne_tlo/<sekwencja> (samo narzędzie na czarnym tle).\n'
+                                   'Gdy folder ma MANIFEST.json (wytnij_narzedzie.py), etykiety i obrysy narzędzia\n'
+                                   'są brane z annotation.csv dla właściwych numerów klatek. Czas = numer zdjęcia / kl./s.')
+        w.addWidget(self.btn_folder)
         self.btn_ckpt = QPushButton('Checkpoint ViT…'); self.btn_ckpt.setToolTip('Checkpoint małego ViT do latentu i detekcji.')
         w.addWidget(self.btn_ckpt)
         self.etykieta_filmu = QLabel(''); self.etykieta_filmu.setWordWrap(True); lay.addWidget(self.etykieta_filmu)
@@ -107,7 +115,7 @@ class ZakladkaFilmu(QWidget):
         self.chk_z_narz = QCheckBox('tylko klatki z etykietą narzędzia')
         self.chk_z_narz.setToolTip('Bierze tylko klatki, na których w annotation.csv oznaczono cystotom.')
         w.addWidget(self.chk_z_narz)
-        self.combo_zrodlo = QComboBox(); self.combo_zrodlo.addItems(['MP4', 'JPG z zipa adnotacji'])
+        self.combo_zrodlo = QComboBox(); self.combo_zrodlo.addItems(['MP4', 'JPG z zipa adnotacji', 'folder zdjęć'])
         self.combo_zrodlo.setToolTip('Skąd czytać klatki. MP4: film. JPG: te same klatki zapisane w zipie adnotacji\n'
                                      '(na nich robiono etykiety; nie trzeba wypakowywać MP4).')
         w.addWidget(QLabel('źródło:')); w.addWidget(self.combo_zrodlo)
@@ -195,6 +203,18 @@ class ZakladkaFilmu(QWidget):
         self.combo_por.setToolTip('Co jest „PRZED” w widoku 3D: brak (tylko bieżąca klatka), poprzednia klatka\n'
                                   'albo pierwsza klatka sekwencji; „PO” = bieżąca. Tryb „różnica” w 3D pokaże zmianę.')
         w.addWidget(self.combo_por)
+        e = QLabel('śledź czubek:'); w.addWidget(e)
+        self.combo_czubek = QComboBox()
+        self.combo_czubek.addItems(['wyłączone', 'czubek z etykiety (ViT, gdy brak)', 'najpewniejszy patch ViT'])
+        self.combo_czubek.setToolTip('W każdej klatce automatycznie wybiera patch z czubkiem igły (cząstka w 3D,\n'
+                                     'cząstka i jej mikrowektory w przestrzeni makrowektorów, ramka na klatce):\n'
+                                     '- czubek z etykiety: patch, w którym leży cystotome_tip z annotation.csv;\n'
+                                     '  w klatce bez oznaczonego czubka bierze najpewniejszy patch ViT;\n'
+                                     '- najpewniejszy patch ViT: patch o największej pewności środka na mapie ViT\n'
+                                     '  (środek wykrytego narzędzia, nie zawsze sam czubek).\n'
+                                     'Ręczny klik w patch wyłącza śledzenie.')
+        e.setToolTip(self.combo_czubek.toolTip())
+        w.addWidget(self.combo_czubek)
         self.etykieta_klatki = QLabel(''); self.etykieta_klatki.setWordWrap(True); lay.addWidget(self.etykieta_klatki)
         self.timer = QTimer(self); self.timer.timeout.connect(self._nastepna)
 
@@ -202,6 +222,7 @@ class ZakladkaFilmu(QWidget):
         self.combo_split.currentIndexChanged.connect(self._filtruj)
         self.btn_otworz.clicked.connect(self._otworz)
         self.btn_plik.clicked.connect(self._plik)
+        self.btn_folder.clicked.connect(self._wybierz_folder)
         self.btn_ckpt.clicked.connect(self._wybierz_ckpt)
         for s in (self.od_min, self.od_s, self.do_min, self.do_s, self.spin_n):
             s.valueChanged.connect(self._opis_zakresu)
@@ -226,6 +247,7 @@ class ZakladkaFilmu(QWidget):
         self.btn_graj.toggled.connect(self._graj)
         self.spin_fps.valueChanged.connect(lambda v: self.timer.setInterval(int(1000 / v)))
         self.combo_por.currentIndexChanged.connect(lambda *_: self.idz(self.t))
+        self.combo_czubek.currentIndexChanged.connect(lambda *_: self.idz(self.t))
         self.w3d.widok.klik.connect(lambda *_: self._wybierz_token(self.w3d.token))
         self._opis_zakresu()
 
@@ -245,10 +267,51 @@ class ZakladkaFilmu(QWidget):
         if j >= 0:
             self.combo_film.setCurrentIndex(j)
 
+    def _wybierz_folder(self):
+        start = self.folder['katalog'] if self.folder else str(Path(__file__).resolve().parent / 'narzedzie_czarne_tlo')
+        s = QFileDialog.getExistingDirectory(self, 'Folder z sekwencją zdjęć', start)
+        if s:
+            self.otworz_folder(s)
+
+    def otworz_folder(self, katalog):
+        """Wczytuje sekwencję z folderu zdjęć; zakres ustawia na cały folder, liczbę klatek na wszystkie."""
+        if self.watek:
+            return
+        f = F.folder_zdjec(katalog)
+        if not f['pliki']:
+            QMessageBox.information(self, 'Folder zdjęć', f'W folderze nie ma zdjęć:\n{katalog}')
+            return
+        from PIL import Image
+        with Image.open(f['pliki'][0]) as im:
+            szer, wys = im.size
+        wiersze = {}
+        if f['film']:
+            et = F.etykiety(f['film'])
+            nr = f['frame_numbers']
+            if nr:                                                        # plik k <-> frame_number z MANIFEST
+                wiersze = {k + 1: et[n] for k, n in enumerate(nr) if n in et}
+        n = len(f['pliki'])
+        self.folder, self.mp4 = f, None
+        self.combo_zrodlo.blockSignals(True); self.combo_zrodlo.setCurrentIndex(2); self.combo_zrodlo.blockSignals(False)
+        info = dict(fps=f['fps'], klatek=n, sekund=n / f['fps'], szer=szer, wys=wys)
+        self._po_otwarciu((f['film'] or Path(katalog).name, None, info, wiersze))
+        for m, s, t in ((self.od_min, self.od_s, 0.0), (self.do_min, self.do_s, (n - 1) / f['fps'])):
+            m.setValue(int(t // 60)); s.setValue(round(t % 60, 1))
+        self.spin_n.setValue(min(n, self.spin_n.maximum()))
+        self.etykieta_filmu.setText(f'Folder {Path(katalog).name}: {n} zdjęć {szer}x{wys}, {f["fps"]:.2f} kl./s'
+                                    + (f'; {f["opis"]}' if f['opis'] else '')
+                                    + (f'; etykiety z annotation.csv dla {len(wiersze)} zdjęć' if wiersze else '; bez etykiet'))
+        self._opis_zakresu()
+        self._konwertuj()                                  # folder = od razu cała sekwencja (latent, detekcja, widoki)
+
     def _otworz(self):
+        if self.combo_zrodlo.currentIndex() == 2:
+            self._wybierz_folder()
+            return
         film = self.combo_film.currentData()
         if not film or self.watek:
             return
+        self.folder = None
 
         def zadanie(wt):
             if self.combo_zrodlo.currentIndex() == 0:
@@ -264,6 +327,7 @@ class ZakladkaFilmu(QWidget):
         if not s:
             return
         film = F.id_filmu(s)
+        self.folder = None
         self.combo_zrodlo.setCurrentIndex(0)
         self._uruchom(lambda wt: (film, s, F.info_mp4(s), F.etykiety(film) if film else {}), self._po_otwarciu)
 
@@ -333,12 +397,17 @@ class ZakladkaFilmu(QWidget):
             QMessageBox.information(self, 'Film', 'W tym zakresie nie ma klatek (albo klatek z etykietą narzędzia).')
             return
         film, mp4, wiersze, jpg = self.film, self.mp4, self.wiersze, self.combo_zrodlo.currentIndex() == 1 or self.mp4 is None
+        folder = self.folder if self.folder and (self.combo_zrodlo.currentIndex() == 2 or self.mp4 is None) else None
         det = self._detektor()
         self.pasek.setRange(0, len(idx))
 
         def zadanie(wt):
-            czytnik = (F.czytaj_klatki_jpg(film, idx, przerwij=lambda: wt.stop) if jpg
-                       else F.czytaj_klatki(mp4, idx, przerwij=lambda: wt.stop))
+            if folder:
+                czytnik = F.czytaj_klatki_folder(folder['pliki'], idx, przerwij=lambda: wt.stop)
+            elif jpg:
+                czytnik = F.czytaj_klatki_jpg(film, idx, przerwij=lambda: wt.stop)
+            else:
+                czytnik = F.czytaj_klatki(mp4, idx, przerwij=lambda: wt.stop)
             I, Z, ramki, pew, mapy_pew, obrazy, et = [], [], [], [], [], [], []
             t0 = time.perf_counter()
             for k, (i, rgb) in enumerate(czytnik):
@@ -360,7 +429,7 @@ class ZakladkaFilmu(QWidget):
                              for t in range(1, len(Z))]
             return dict(film=film, idx=np.array(I), obrazy=obrazy, Z=Z, ramki=np.array(ramki), pewnosc=np.array(pew),
                         mapy_pew=np.stack(mapy_pew), etykiety=et, iou=np.array(iou), zmiana=np.array(zm),
-                        fps=self.info['fps'], zrodlo='JPG' if jpg else 'MP4')
+                        fps=self.info['fps'], zrodlo=('folder ' + folder['katalog']) if folder else ('JPG' if jpg else 'MP4'))
         self.btn_graj.setChecked(False)
         self._uruchom(zadanie, self._po_konwersji, f'konwertuję {len(idx)} klatek...')
 
@@ -368,7 +437,9 @@ class ZakladkaFilmu(QWidget):
         self.sek, self.obwody, self.rysowany, self.t = s, {}, [], 0
         T = len(s['idx'])
         maski = self._maski()
+        self.makro.ckpt = self.ckpt
         self.makro.ustaw_sekwencje(s['Z'], maski, s['mapy_pew'])
+        self.w3d.ustaw_baze_pca(s['Z'])            # PCA w 3D: jedna baza dla całej sekwencji
         self.suwak.blockSignals(True); self.suwak.setRange(0, T - 1); self.suwak.setValue(0); self.suwak.blockSignals(False)
         self._rysuj_os()
         self.idz(0)
@@ -421,9 +492,23 @@ class ZakladkaFilmu(QWidget):
             k = int(np.clip(e.xdata // 16, 0, 29)); r = int(np.clip(e.ydata // 16, 0, 19))
             self._wybierz_token(r * 30 + k)
 
-    def _wybierz_token(self, tok):
+    def _token_czubka(self, t):
+        """Patch czubka w klatce t (wg combo_czubek) i skąd wzięty; (None, '') gdy śledzenie wyłączone."""
+        tryb = self.combo_czubek.currentIndex()
+        if tryb == 0 or self.sek is None:
+            return None, ''
+        if tryb == 1:
+            c = self.sek['etykiety'][t]['czubek']
+            if c is not None:
+                k = int(np.clip(c[0] // 16, 0, 29)); r = int(np.clip(c[1] // 16, 0, 19))
+                return r * 30 + k, 'czubek z etykiety'
+        return int(np.argmax(self.sek['mapy_pew'][t])), 'najpewniejszy patch ViT'
+
+    def _wybierz_token(self, tok, reczny=True):
         if tok is None:
             return
+        if reczny and self.combo_czubek.currentIndex():
+            self.combo_czubek.blockSignals(True); self.combo_czubek.setCurrentIndex(0); self.combo_czubek.blockSignals(False)
         self.token = tok
         self.w3d.token = tok
         self.idz(self.t)
@@ -475,6 +560,9 @@ class ZakladkaFilmu(QWidget):
         self.t = t = int(np.clip(t, 0, len(s['idx']) - 1))
         if self.suwak.value() != t:
             self.suwak.blockSignals(True); self.suwak.setValue(t); self.suwak.blockSignals(False)
+        tok, zrodlo_czubka = self._token_czubka(t)
+        if tok is not None:                                 # śledzenie czubka: patch wybierany automatycznie
+            self.token = tok; self.w3d.token = tok
         rgb = s['obrazy'][t]
         z = s['Z'][t].astype(np.float32)
         por = self.combo_por.currentIndex()
@@ -503,7 +591,9 @@ class ZakladkaFilmu(QWidget):
         self.etykieta_klatki.setText(f'klatka {t + 1}/{len(s["idx"])}: film kl. {i} (t = {F.mmss(i / s["fps"])}), '
                                      f'pewność {s["pewnosc"][t] * 100:.1f} %'
                                      + ('' if np.isnan(iou) else f', IoU {iou * 100:.1f} %')
-                                     + f', patchy narzędzia {int(maska.sum())}')
+                                     + f', patchy narzędzia {int(maska.sum())}'
+                                     + (f'; czubek: patch {tok} (wiersz {tok // 30}, kolumna {tok % 30}, {zrodlo_czubka})'
+                                        if tok is not None else ''))
 
     # ------------------------------------------------------------ rysunki 2D
     def _rysuj_klatke(self):

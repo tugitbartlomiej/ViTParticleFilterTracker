@@ -22,8 +22,9 @@ import pyqtgraph.opengl as gl
 
 from opcje_atencji import OpcjeAtencji
 from uklad import Przeplyw, dodaj
-from widok_gl import Widok3D
-from wspolne import KOLUMNY, KOMORKA, SZER, WIERSZE, WYNIKI, WYS, kierunki, kolory_kanalow
+from widok_gl import ObrazPrzezroczysty, Widok3D
+from wspolne import (CZASTECZKI_CO, KOLUMNY, KOMORKA, PCA_SKLADOWE, SZER, WIERSZE, WYNIKI, WYS, kierunki,
+                     kolory_kanalow, opisy_czasteczek, pca, tokeny_co)
 
 
 class WidokCzasteczek3D(QWidget):
@@ -56,10 +57,18 @@ class WidokCzasteczek3D(QWidget):
         self.combo_kan = dodaj(w, 'Kanały:', QComboBox(), 'Ile z 768 wektorów rysować w każdej cząsteczce.\n'
                                'Kierunek i kolor kanału są zawsze te same.')
         self.combo_kan.addItems(self.KANALY)
+        self.combo_pca = dodaj(w, 'PCA wektorów:', QComboBox(),
+                               'Zamiast 768 kanałów każda cząsteczka dostaje k wektorów = k głównych składowych (PCA)\n'
+                               'latentu: wektor j ma długość sfera zera + skala · (z − μ) · w_j, gdzie w_j to j-ta składowa.\n'
+                               'Sfera zera = średni token (μ), krótszy wektor = wynik ujemny. Składowe liczone z kanałów\n'
+                               'wybranych w „Kanały” (np. tylko J128), z latentu przed i po; w zakładce filmu z całej\n'
+                               'sekwencji, więc baza jest ta sama we wszystkich klatkach. Kierunki i kolory: k wektorów\n'
+                               'równo na sferze (jak dla 768), składowa 1 u góry.')
+        self.combo_pca.addItems(['bez PCA (kanały)'] + [f'{k} składowych' for k in PCA_SKLADOWE])
         self.combo_ksztalt = dodaj(w, 'Kierunki:', QComboBox(),
                                    'Pełna sfera (domyślnie): 768 kierunków równo we wszystkie strony, także w dół.\n'
-                                   'Środki cząsteczek są wtedy uniesione nad obraz o najdłuższy wektor,\n'
-                                   'żeby dolna połowa kuli nie chowała się pod zdjęciem.\n'
+                                   'Środki cząsteczek leżą na obrazie, dolna połowa kuli jest pod nim i widać ją\n'
+                                   'przez półprzezroczyste zdjęcie (pole „krycie”).\n'
                                    'Półsfera: wszystkie 768 kierunków nad obrazem (z > 0), cząsteczki leżą na obrazie.\n'
                                    'Kanał 0 wskazuje w górę, kolejne schodzą spiralą w dół (kolor zmienia się razem z wysokością).')
         self.combo_ksztalt.addItems(['pełna sfera (kula)', 'półsfera nad obrazem'])
@@ -87,6 +96,11 @@ class WidokCzasteczek3D(QWidget):
         w.addWidget(self.chk_obraz)
         self.spin_alfa = dodaj(w, 'jasność', QDoubleSpinBox(), '0 = obraz czarny, 1 = pełny.')
         self.spin_alfa.setRange(0, 1); self.spin_alfa.setSingleStep(.1); self.spin_alfa.setValue(.7)
+        self.spin_krycie = dodaj(w, 'krycie', QDoubleSpinBox(),
+                                 'Krycie płaszczyzny obrazu: 1 = nieprzezroczysty (wektory pod obrazem niewidoczne),\n'
+                                 '0,5 = półprzezroczysty (wektory pod spodem widać przez zdjęcie), 0 = sam obraz znika.\n'
+                                 'Środki cząsteczek leżą na płaszczyźnie obrazu; przy pełnej sferze połowa wektorów idzie pod nią.')
+        self.spin_krycie.setRange(0, 1); self.spin_krycie.setSingleStep(.1); self.spin_krycie.setValue(.5)
         self.chk_siatka = QCheckBox('Siatka patchy'); self.chk_siatka.setChecked(True)
         self.chk_siatka.setToolTip('Linie siatki 20x30 na płaszczyźnie obrazu.')
         w.addWidget(self.chk_siatka)
@@ -116,6 +130,11 @@ class WidokCzasteczek3D(QWidget):
                                      'Patch należy do obrysu, gdy obrys pokrywa co najmniej ustawiony procent jego pikseli.')
         self.combo_patche.setEnabled(False)
         w.addWidget(self.combo_patche)
+        self.combo_ile = dodaj(w, 'Cząsteczek:', QComboBox(),
+                               'Ile cząsteczek rysować: co n-ty patch w wierszach i w kolumnach siatki 20 x 30,\n'
+                               'od środka pierwszego bloku n x n, więc wybrane leżą równo po całym obrazie.\n'
+                               'Łączy się z „tylko w obrysie” (część wspólna). PCA i atencja liczą się dalej ze wszystkich 600.')
+        self.combo_ile.addItems(opisy_czasteczek())
         w.addWidget(QLabel('PRZED'))
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setRange(0, 100); self.suwak.setValue(100)
         self.suwak.setToolTip('t w trybie przejścia: 0 = latent PRZED, 100 = latent PO.')
@@ -155,14 +174,19 @@ class WidokCzasteczek3D(QWidget):
         self.btn_png.clicked.connect(self.zapisz_png)
         self.btn_okno.clicked.connect(self._osobne)
         self.widok.klik.connect(self._klik)
+        self.combo_pca.currentIndexChanged.connect(lambda *_: (self._legenda(), self._rysuj()))
+        self._pca_zrodlo = None                  # latent sekwencji [N, 768] do bazy PCA (zakładka filmu)
+        self._pca_cache = {}
         for k in (self.combo_tryb.currentIndexChanged, self.combo_kan.currentIndexChanged,
                   self.combo_ksztalt.currentIndexChanged, self.combo_styl.currentIndexChanged,
                   self.spin_r0.valueChanged, self.spin_skala.valueChanged, self.spin_wys.valueChanged,
-                  self.spin_maks.valueChanged, self.chk_tylko.toggled, self.combo_patche.currentIndexChanged):
+                  self.spin_maks.valueChanged, self.chk_tylko.toggled, self.combo_patche.currentIndexChanged,
+                  self.combo_ile.currentIndexChanged):
             k.connect(lambda *_: self._rysuj())
         self.suwak.valueChanged.connect(lambda *_: self._rysuj(tylko_pozycje=True))
         self.spin_gr.valueChanged.connect(self._grubosc)
-        for k in (self.chk_obraz.toggled, self.spin_alfa.valueChanged, self.chk_atencja.toggled, self.opcje.zmiana):
+        for k in (self.chk_obraz.toggled, self.spin_alfa.valueChanged, self.chk_atencja.toggled, self.opcje.zmiana,
+                  self.spin_krycie.valueChanged):
             k.connect(lambda *_: (self._podloze(), self._rysuj()))
         self.chk_siatka.toggled.connect(lambda v: self.siatka.setVisible(v))
         self.chk_zero.toggled.connect(lambda *_: self._rysuj())
@@ -170,7 +194,7 @@ class WidokCzasteczek3D(QWidget):
     # ------------------------------------------------------------ scena
     def _buduj_scene(self):
         v = self.widok
-        self.podloze = gl.GLImageItem(np.zeros((SZER, WYS, 4), np.uint8), glOptions='opaque')
+        self.podloze = ObrazPrzezroczysty(np.zeros((SZER, WYS, 4), np.uint8))
         v.addItem(self.podloze)
         lin = []
         for x in range(0, SZER + 1, KOMORKA):
@@ -208,7 +232,7 @@ class WidokCzasteczek3D(QWidget):
         # legenda: 768 kierunków i kolorów kanałów na kuli obok obrazu
         self.legenda = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=4, pxMode=True, glOptions='translucent')
         v.addItem(self.legenda)
-        self.legenda_tekst = gl.GLTextItem(pos=(-70, WYS - 10, 95), text='kanał c: kierunek i kolor',
+        self.legenda_tekst = gl.GLTextItem(pos=(-70, WYS - 10, 75), text='kanał c: kierunek i kolor',
                                            color=(220, 220, 220, 255))
         v.addItem(self.legenda_tekst)
         for pos, txt in (((SZER / 2, -18, 0), 'kolumna patcha →'), ((-18, WYS / 2, 0), 'wiersz ↓'),
@@ -218,8 +242,11 @@ class WidokCzasteczek3D(QWidget):
 
     def _legenda(self):
         polsfera = self.combo_ksztalt.currentIndex() == 1
-        d = kierunki(polsfera)
-        self.legenda.setData(pos=np.array([-60, WYS - 60, 0 if polsfera else 40], np.float32) + 40 * d, color=self.kolory)
+        k = self._k_pca()
+        d = kierunki(polsfera, k or 768)
+        kol = kolory_kanalow(k) if k else self.kolory
+        self.legenda.setData(pos=np.array([-60, WYS - 60, 0], np.float32) + 40 * d, color=kol,
+                             size=4 if not k else (10 if k <= 32 else 6))
 
     def _kamera(self):
         self.widok.setCameraPosition(pos=QVector3D(SZER / 2, WYS / 2, 0), distance=720, elevation=38, azimuth=-90)
@@ -228,6 +255,7 @@ class WidokCzasteczek3D(QWidget):
     def pokaz(self, przed, po=None, rgb480=None, atencja_fn=None):
         self.przed = np.asarray(przed, np.float32)
         self.po = None if po is None else np.asarray(po, np.float32)
+        self._wersja = getattr(self, '_wersja', 0) + 1     # nowe dane = nowa baza PCA (gdy nie z sekwencji)
         self.rgb, self.atencja_fn = rgb480, atencja_fn
         self.opcje.ustaw_zrodlo(atencja_fn)
         if self.po is None and self.combo_tryb.currentIndex() != 0:
@@ -239,10 +267,11 @@ class WidokCzasteczek3D(QWidget):
         if self.przed is None:
             return
         w = WidokCzasteczek3D(self.j128)
+        w._pca_zrodlo = self._pca_zrodlo
         for a, b in ((w.combo_tryb, self.combo_tryb), (w.combo_kan, self.combo_kan), (w.combo_ksztalt, self.combo_ksztalt),
-                     (w.combo_styl, self.combo_styl)):
+                     (w.combo_styl, self.combo_styl), (w.combo_pca, self.combo_pca), (w.combo_ile, self.combo_ile)):
             a.setCurrentIndex(b.currentIndex())
-        for a, b in ((w.spin_r0, self.spin_r0), (w.spin_skala, self.spin_skala), (w.spin_gr, self.spin_gr),
+        for a, b in ((w.spin_r0, self.spin_r0), (w.spin_skala, self.spin_skala), (w.spin_gr, self.spin_gr), (w.spin_krycie, self.spin_krycie),
                      (w.spin_alfa, self.spin_alfa), (w.spin_wys, self.spin_wys), (w.spin_maks, self.spin_maks)):
             a.setValue(b.value())
         for a, b in ((w.chk_obraz, self.chk_obraz), (w.chk_atencja, self.chk_atencja), (w.chk_siatka, self.chk_siatka),
@@ -282,7 +311,8 @@ class WidokCzasteczek3D(QWidget):
                 kol = np.repeat(np.repeat(kol, KOMORKA, 0), KOMORKA, 1)
                 a = self.opcje.krycie()
                 img = img * (1 - a) + kol * a
-        rgba = np.concatenate([np.clip(img * 255, 0, 255).astype(np.uint8), np.full((WYS, SZER, 1), 255, np.uint8)], 2)
+        alfa = int(round(255 * self.spin_krycie.value())) if (self.chk_obraz.isChecked() or self.chk_atencja.isChecked()) else 0
+        rgba = np.concatenate([np.clip(img * 255, 0, 255).astype(np.uint8), np.full((WYS, SZER, 1), alfa, np.uint8)], 2)
         self.podloze.setData(np.ascontiguousarray(np.flipud(rgba).transpose(1, 0, 2)))   # [x, y, RGBA], y w górę
 
     # ------------------------------------------------------------ geometria
@@ -301,16 +331,53 @@ class WidokCzasteczek3D(QWidget):
                 s[:, 2] = h * A.reshape(-1)
         return s
 
-    def _latent(self):
-        tryb = self.combo_tryb.currentIndex() if self.po is not None else 0
+    def ustaw_baze_pca(self, Z):
+        """Latent, z którego liczyć bazę PCA (np. cała sekwencja filmu [T, 600, 768] albo [N, 768]); None = z przed i po."""
+        self._pca_zrodlo = None if Z is None else np.asarray(Z).reshape(-1, np.shape(Z)[-1])
+        self._pca_cache = {}
+        if self._k_pca():
+            self._rysuj()
+
+    def _k_pca(self):
+        i = self.combo_pca.currentIndex()
+        return PCA_SKLADOWE[i - 1] if i > 0 else 0
+
+    def _dane(self, polsfera):
+        """Przestrzeń wektorów cząsteczki: (przed, po, indeksy wektorów, kolory [n, 4], kierunki [n, 3], opis).
+        Bez PCA to 768 kanałów; z PCA k wyników składowych (z − μ) W, liczonych na wybranych kanałach."""
+        kan = self._kanaly()
+        k = self._k_pca()
+        if not k:
+            return self.przed, self.po, kan, self.kolory, kierunki(polsfera), ''
+        zr = self._pca_zrodlo
+        klucz = (self.combo_kan.currentIndex(), 'sekwencja' if zr is not None else self._wersja)
+        if klucz not in self._pca_cache:
+            if zr is not None:
+                X = zr[::max(1, len(zr) // 12000)][:, kan]
+            else:
+                X = np.concatenate([self.przed[:, kan]] + ([self.po[:, kan]] if self.po is not None else []))
+            self._pca_cache = {klucz: pca(X)}
+        mu, W, udz = self._pca_cache[klucz]
+        k = min(k, W.shape[1])
+        W = W[:, :k]
+        przed = (self.przed[:, kan] - mu) @ W
+        po = None if self.po is None else (self.po[:, kan] - mu) @ W
+        zrodlo = 'sekwencji' if zr is not None else ('przed i po' if self.po is not None else 'klatki')
+        opis = f'; PCA {k} składowych z {len(kan)} kanałów ({zrodlo}) wyjaśnia {100 * float(udz[:k].sum()):.1f} % wariancji'
+        return przed, po, np.arange(k), kolory_kanalow(k), kierunki(polsfera, k), opis
+
+    def _latent(self, przed=None, po=None):
+        przed = self.przed if przed is None else przed
+        po = self.po if po is None else po
+        tryb = self.combo_tryb.currentIndex() if po is not None else 0
         if tryb == 0:
-            return self.przed, tryb
+            return przed, tryb
         if tryb == 2:
-            return self.po - self.przed, tryb
+            return po - przed, tryb
         if tryb == 4:
             t = self.suwak.value() / 100
-            return self.przed + t * (self.po - self.przed), tryb
-        return self.po, tryb
+            return przed + t * (po - przed), tryb
+        return po, tryb
 
     def _wektory(self, L, kan, tok, srodki, d, r0, skala):
         """Pozycje [len(tok)*K*2, 3] odcinków (środek, koniec) i końce [len(tok)*K, 3]."""
@@ -326,14 +393,17 @@ class WidokCzasteczek3D(QWidget):
         if self.przed is None:
             return
         t0 = time.perf_counter()
-        kan = self._kanaly()
-        L, tryb = self._latent()
+        polsfera = self.combo_ksztalt.currentIndex() == 1
+        przed, po, kan, kolory, d, opis_pca = self._dane(polsfera)
+        L, tryb = self._latent(przed, po)
         tok = np.arange(600)
         if self.chk_tylko.isChecked() and self.token is not None:
             tok = np.array([self.token])
         elif self.maska_tokenow is not None and self.combo_patche.currentIndex():
             m = self.maska_tokenow if self.combo_patche.currentIndex() == 1 else ~self.maska_tokenow
             tok = tok[m]
+        if not (self.chk_tylko.isChecked() and self.token is not None) and self.combo_ile.currentIndex():
+            tok = np.intersect1d(tok, tokeny_co(CZASTECZKI_CO[self.combo_ile.currentIndex()]))
         if len(tok) == 0:
             for it in (self.linie, self.punkty, self.szare, self.zera, self.luki, self.groty):
                 it.setVisible(False)
@@ -344,21 +414,15 @@ class WidokCzasteczek3D(QWidget):
         if tryb == 2:
             zakres = np.abs(L[:, kan])
         else:
-            zakres = np.abs(np.concatenate([self.przed[:, kan]] + ([self.po[:, kan]] if self.po is not None and tryb in (1, 3, 4) else [])))
+            zakres = np.abs(np.concatenate([przed[:, kan]] + ([po[:, kan]] if po is not None and tryb in (1, 3, 4) else [])))
         m = max(float(np.percentile(zakres, 99.5)), 1e-6)            # stała skala w czasie animacji
         skala = (polowa - r0) / m * self.spin_skala.value() / 100 if polowa > r0 else polowa / m
-        polsfera = self.combo_ksztalt.currentIndex() == 1
-        d = kierunki(polsfera)
-        srodki = self._srodki()
-        if not polsfera:                                              # kula: dolna połowa nad obrazem, nie pod nim
-            maks = KOMORKA * self.spin_maks.value() / 100
-            dl = r0 + (polowa - r0) * self.spin_skala.value() / 100
-            srodki[:, 2] += min(dl, maks) if maks else dl
+        srodki = self._srodki()                                       # środki na płaszczyźnie obrazu (z = 0)
         pos, konce = self._wektory(L, kan, tok, srodki, d, r0, skala)
         styl = self.combo_styl.currentIndex()
-        kol = self.kolory[kan]
-        if not tylko_pozycje or not hasattr(self, '_kol_n') or self._kol_n != (len(tok), len(kan)):
-            self._kol_n = (len(tok), len(kan))
+        kol = kolory[kan]
+        if not tylko_pozycje or not hasattr(self, '_kol_n') or self._kol_n != (len(tok), len(kan), len(kolory)):
+            self._kol_n = (len(tok), len(kan), len(kolory))
             self._kol_odc = np.ascontiguousarray(np.broadcast_to(kol[None, :, None, :], (len(tok), len(kan), 2, 4)).reshape(-1, 4))
             self._kol_pkt = np.ascontiguousarray(np.broadcast_to(kol[None], (len(tok), len(kan), 4)).reshape(-1, 4))
             self.linie.setData(color=self._kol_odc)
@@ -371,7 +435,7 @@ class WidokCzasteczek3D(QWidget):
         if styl in (1, 2):
             self.punkty.setData(pos=konce, size=gr + 1.5)
         if tryb == 3:
-            szare, _ = self._wektory(self.przed, kan, tok, srodki, d, r0, skala)
+            szare, _ = self._wektory(przed, kan, tok, srodki, d, r0, skala)
             self.szare.setData(pos=szare, width=gr); self.szare.setVisible(True)
         else:
             self.szare.setVisible(False)
@@ -399,7 +463,7 @@ class WidokCzasteczek3D(QWidget):
         opis = self.TRYBY[tryb] + (f' t = {self.suwak.value()} %' if tryb == 4 else '')
         self.etykieta.setText(f'{opis}: {len(tok)} cząsteczek x {len(kan)} wektorów = {len(tok) * len(kan):,} '
                               f'(przeliczenie {ms:.0f} ms); połowa patcha = wartość {m * self.spin_skala.value() / 100:.3g}'
-                              + ('' if self.token is None else f'; patch: token {self.token}') + tekst_at)
+                              + ('' if self.token is None else f'; patch: token {self.token}') + opis_pca + tekst_at)
 
     def _luki(self, srodki):
         """Łuki źródło -> cel nad obrazem: patch u nasady patrzy na patch na końcu (ciągnie z niego)."""

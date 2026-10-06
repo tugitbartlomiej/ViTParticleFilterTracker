@@ -28,6 +28,24 @@ class WidokGL(gl.GLViewWidget):
                 QTimer.singleShot(30, self.update)
 
 
+class ObrazPrzezroczysty(gl.GLImageItem):
+    """Płaszczyzna obrazu z przezroczystością (kanał alfa tekstury), która nie zasłania tego, co leży nad nią,
+    i przepuszcza to, co leży pod nią. Rysowana po liniach (wysoka wartość głębi), z testem głębi, ale bez zapisu
+    do bufora głębi: wektory nad obrazem zostają ostre, wektory pod obrazem są przyciemnione o krycie obrazu."""
+
+    def __init__(self, dane):
+        super().__init__(dane, glOptions='translucent')
+        self.setDepthValue(10)
+
+    def paint(self):
+        from OpenGL import GL
+        GL.glDepthMask(GL.GL_FALSE)
+        try:
+            super().paint()
+        finally:
+            GL.glDepthMask(GL.GL_TRUE)
+
+
 class Widok3D(WidokGL):
     """GLViewWidget, który zgłasza kliknięcie (bez przeciągania) jako punkt na płaszczyźnie obrazu z = 0."""
     klik = pyqtSignal(float, float)

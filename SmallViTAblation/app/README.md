@@ -168,7 +168,8 @@ w bloku 5 dla 584, w bloku 6 dla 591; średnia waga do niego w bloku 6 to 0,129 
 
 Wszystkie 600 tokenów w jednym układzie 3D: x = kolumna w pikselach wejścia ViT, y = wiersz od dołu,
 z = wysokość nad obrazem. Kanał c ma stały kierunek (spirala Fibonacciego na pełnej sferze, domyślnie,
-ze środkami cząsteczek uniesionymi nad obraz o najdłuższy wektor, albo na półsferze nad obrazem) i stały kolor; długość = promień sfery zera + skala · wartość. Rysuje pyqtgraph.opengl
+ze środkami cząsteczek na płaszczyźnie obrazu, albo na półsferze nad obrazem). Obraz jest półprzezroczysty
+(„krycie”, domyślnie 0,5): wektory pod nim widać przez zdjęcie, a te nad nim zostają ostre i stały kolor; długość = promień sfery zera + skala · wartość. Rysuje pyqtgraph.opengl
 (bufory VBO na karcie): obrót kamery nie przelicza danych, pełne przeliczenie 600 x 768 wektorów trwa
 około 40 ms (RTX 3070).
 
@@ -184,6 +185,11 @@ około 40 ms (RTX 3070).
 1. Film: lista 170 filmów Cataract-LMM 3_Object_Tracking z podziałem (train 118, val 25, poza manifestem)
    i liczbą klatek z narzędziem; „Otwórz film” wypakowuje MP4 raz z `videos_part00N.zip` do
    `Dataset/Cataract-LMM/3_Object_Tracking/videos_mp4/`; „Plik MP4…” otwiera dowolny film.
+   „Folder zdjęć…” (źródło „folder zdjęć”): sekwencja z plików PNG / JPG / BMP / TIF w kolejności nazw, np.
+   `app/narzedzie_czarne_tlo/<sekwencja>`; zakres ustawia się na cały folder. Gdy folder ma `MANIFEST.json`
+   (z `wytnij_narzedzie.py`), etykiety i obrysy są brane z annotation.csv dla właściwych numerów klatek.
+   TR_0001 0:20–0:33, 400 klatek samego narzędzia na czarnym tle: konwersja 16 s, średnia pewność ViT 45,1 %,
+   średnie IoU 65,0 % (na pełnych klatkach tego filmu 0:20–0:30: 71,0 % i 72,5 %).
 2. Zakres: od min:s do min:s, liczba klatek (domyślnie 100, równo rozłożone), opcjonalnie tylko klatki
    z etykietą narzędzia; źródło MP4 albo JPG z zipa adnotacji. Klatka MP4 i = frame_number i + 1
    (sprawdzone na TR_0001), 29,97 kl./s, 720x480.
@@ -197,6 +203,11 @@ około 40 ms (RTX 3070).
    próg pokrycia patcha w %.
 5. Przebieg: pewność, IoU i zmiana latentu w czasie; klik przechodzi do klatki.
 6. Odtwarzanie: ⏮ ◀ ▶ ▶| ⏭, suwak, kl./s, pętla; porównanie w 3D z poprzednią albo pierwszą klatką.
+   „Śledź czubek”: w każdej klatce automatycznie wybrany patch z czubkiem igły (cząstka w 3D, jej mikrowektory
+   w przestrzeni makrowektorów, ramka na klatce): z etykiety cystotome_tip (w klatce bez czubka najpewniejszy
+   patch ViT) albo najpewniejszy patch ViT. Ręczny klik w patch wyłącza śledzenie. TR_0001 0:20–0:33, co 10.
+   klatka: patch z etykiety zmienia się 10 razy na 40 klatek; najpewniejszy patch ViT leży średnio 5,4 patcha
+   od czubka (to środek wykrytego narzędzia, nie sam czubek).
    Jedna klatka (obraz, 3D z 768 x 600 wektorami, makrowektory) to około 85 ms.
 7. „Zapisz sekwencję”: `outputs/latent_editor_sd_20261006/film_<film>_<od>-<do>_<N>kl.npz` (latent,
    ramki, pewności, IoU, maski) i `.json` (ręczne obwody, ustawienia).
@@ -218,6 +229,40 @@ wypadkowa (ich suma) kończąca się w cząstce; mnożnik „powiększ mikrowekt
 (TR_0001, klatka 21, patch 315: najdłuższy 7,6, mediana 0,04, wypadkowa 90). Do wyboru też łańcuch (koniec do
 początku, od najsilniejszego), oba albo brak; łańcuch i wypadkowa to to samo dodawanie wektorów.
 
+### PCA wektorów (oba widoki 3D)
+
+„PCA wektorów”: zamiast 768 kanałów cząsteczka ma k = 3, 4, 8, 16, 32 albo 128 wektorów, czyli k głównych
+składowych latentu. Wektor j to (z − μ) · w_j, gdzie w_j jest j-tą składową, a μ średnim tokenem (sfera zera
+w widoku nad obrazem = średni token). Składowe liczy się z kanałów wybranych w „Kanały” / „Siły z kanałów”
+(np. tylko J128). Kierunki i kolory: k wektorów równo na sferze, jak dla 768. Baza: w zakładce filmu z całej
+sekwencji (ta sama we wszystkich klatkach), w zakładce detekcji z latentu przed i po. Znak składowej jest
+ustalony (największy ładunek dodatni), więc ponowne liczenie daje tę samą bazę.
+
+TR_0001, 0:20–0:30, 100 klatek: udział wariancji 3 / 4 / 8 / 16 / 32 / 128 składowych = 57,9 / 63,7 / 75,8 /
+86,2 / 92,5 / 98,3 %; błąd odtworzenia latentu klatki 21 (względem odchylenia od średniej) 0,64 / 0,60 / 0,49 /
+0,37 / 0,28 / 0,13. W przestrzeni makrowektorów suma k mikrowektorów nadal trafia dokładnie w cząstkę.
+
+„Cząsteczek” / „Cząstek” (oba widoki 3D): co n-ty patch w wierszach i kolumnach siatki, od środka pierwszego
+bloku n x n: wszystkie 600, co 2. = 150, co 3. = 70, co 4. = 35, co 5. = 24, co 7. = 12, co 10. = 6. Łączy się
+z wyborem patchy w obrysie; PCA, skala i atencja liczą się dalej ze wszystkich 600.
+
+### Odjęcie położenia patcha (przestrzeń makrowektorów, `polozenie.py`)
+
+„Położenie patcha” usuwa z latentu to, co wynika z samego miejsca patcha, zanim policzą się PCA i kierunki.
+Latent położenia M_i = średni latent tokenu i po 3000 klatkach walidacji (treść się uśrednia, miejsce zostaje);
+dla K1000 położenie to 39,2 % wariancji latentu, a 13 kierunków obejmuje 95 % tego wkładu (pierwsze pięć:
+36, 23, 16, 8, 3 %). Liczone raz na checkpoint (15 s na RTX 3070), zapis
+`outputs/latent_editor_sd_20261006/POLOZENIE_<checkpoint>.npz`. Sposoby:
+
+- średnia patcha z sekwencji: z − M_i(sekwencja) + g; usuwa też nieruchome tło, zostaje to, co się zmienia,
+- średnia patcha z 3000 klatek: z − M_i + g (M_i zawiera też typowy układ sceny, np. źrenicę w środku),
+- rzut: z − ((z − g) U) Uᵀ, U = 13 kierunków położenia; reszta latentu bez zmian.
+
+TR_0001, 0:20–0:30, kierunki PCA (3): R² liniowego odczytu kolumny / wiersza patcha z położenia cząstki
+(średniego w czasie) 0,76 / 0,72 bez odjęcia; 0,01 / 0,00 po średniej z sekwencji; 0,46 / 0,26 po średniej
+z 3000 klatek; 0,39 / 0,23 po rzucie. Rozdział narzędzie / tło (odległość środków grup przez rozrzut) spada
+z 1,23 do 0,42 / 0,68 / 0,35: część różnicy narzędzia od tła to jego typowe miejsce w kadrze.
+
 Uwaga o OpenGL: przy rozłączonej sesji Windows (pulpit zdalny rozłączony, ekran zablokowany) sterownik
 nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki zamiast zgłaszać błąd.
 
@@ -235,6 +280,8 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
 - `zakladka_filmu.py`: zakładka filmu; `przestrzen_makro.py`: przestrzeń makrowektorów.
 - `uklad.py`: układ zawijający kontrolki do kolejnych linii i `dodaj()` (etykieta + kontrolka z podpowiedzią).
 - `wspolne.py`: siatka patchy (16 px, 20 x 30, wejście 480 x 320), kolory i kierunki 768 kanałów, katalog wyników.
+- `polozenie.py`: latent samego położenia patcha (średnia z 3000 klatek walidacji) i jego kierunki.
+- `wytnij_narzedzie.py`: sekwencja klatek z samym narzędziem na czarnym tle (`narzedzie_czarne_tlo/`).
 - `widok_gl.py`: widoki OpenGL (`WidokGL` odporny na błędy kontekstu, `Widok3D` z kliknięciem w obraz).
 - Wyniki (obrazy PNG, latenty NPZ) zapisują się do `outputs/latent_editor_sd_20261006/`.
 

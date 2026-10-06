@@ -26,7 +26,7 @@ import pyqtgraph.opengl as gl
 
 from uklad import Przeplyw, dodaj
 from widok_gl import WidokGL
-from wspolne import KOLUMNY, kierunki, kolory_kanalow
+from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanalow, opisy_czasteczek, pca, tokeny_co
 
 
 class WidokPrzestrzeniMakro(QWidget):
@@ -44,6 +44,8 @@ class WidokPrzestrzeniMakro(QWidget):
         self.t, self.token = 0, None
         self.P = None                     # [T, 600, 3] położenia
         self.kolory_kan = kolory_kanalow()
+        self._pca, self._opis_pca = None, ''
+        self._poz, self._opis_poz = None, ''
         lay = QVBoxLayout(self)
 
         def wiersz():
@@ -60,6 +62,25 @@ class WidokPrzestrzeniMakro(QWidget):
         self.combo_kier.addItems(self.KIERUNKI); self.combo_kier.setCurrentIndex(2)
         self.combo_kan = dodaj(w, 'Siły z kanałów:', QComboBox(), 'Które kanały pchają cząstkę (pozostałe mają siłę 0).')
         self.combo_kan.addItems(['wszystkie 768', 'tylko J128 (narzędzie)', 'wszystkie poza J128'])
+        self.combo_pca = dodaj(w, 'PCA wektorów:', QComboBox(),
+                               'Zamiast 768 mikrowektorów kanałów cząstka ma k mikrowektorów = k głównych składowych\n'
+                               '(PCA) latentu sekwencji, liczonych z kanałów wybranych w „Siły z kanałów”.\n'
+                               'Siła składowej j = (z − μ) · w_j (μ = średni latent sekwencji, zawsze odejmowany),\n'
+                               'kierunek = d_j z „Kierunki kanałów” policzony dla k wektorów.\n'
+                               'Przy kierunkach PCA położenie to po prostu 3 pierwsze składowe.')
+        self.combo_pca.addItems(['bez PCA (768 kanałów)'] + [f'{k} składowych' for k in PCA_SKLADOWE])
+        self.combo_poz = dodaj(w, 'Położenie patcha:', QComboBox(),
+                               'Odjęcie z latentu tego, co wynika z samego miejsca patcha na obrazie (przed PCA i kierunkami):\n'
+                               '- średnia tego patcha w sekwencji: z − M_i(sekwencja) + g; usuwa położenie i wszystko, co\n'
+                               '  w tym miejscu stoi przez całą sekwencję (nieruchome tło); zostaje to, co się zmienia;\n'
+                               '- średnia tego patcha z 3000 klatek walidacji: z − M_i + g; M_i to latent „samego miejsca”\n'
+                               '  uśredniony po różnych obrazach (zawiera też typowy układ sceny, np. źrenica w środku);\n'
+                               '- rzut: usuwa z każdego tokenu tylko kierunki, w których różnią się miejsca (13 kierunków\n'
+                               '  = 95 % wariancji położenia dla K1000), resztę latentu zostawia.\n'
+                               'Dla checkpointu K1000 położenie to 39 % wariancji latentu. Liczone raz (około 15 s), potem z pliku.')
+        self.combo_poz.addItems(['nie odejmuj', 'odejmij średnią patcha z sekwencji', 'odejmij średnią patcha z 3000 klatek',
+                                 'usuń kierunki położenia (rzut)'])
+        self.ckpt = None                     # checkpoint ViT sekwencji (ustawia zakładka filmu), do średniej położenia
         self.chk_srodek = QCheckBox('odejmij średni latent'); self.chk_srodek.setChecked(True)
         self.chk_srodek.setToolTip('Siła kanału = z − μ (średnia sekwencji). Bez tego wszystkie cząstki odlatują razem\n'
                                    'w stronę średniej, bo po GELU prawie wszystkie wartości są dodatnie.')
@@ -91,6 +112,10 @@ class WidokPrzestrzeniMakro(QWidget):
         self.chk_tylko_maska = QCheckBox('tylko cząstki narzędzia')
         self.chk_tylko_maska.setToolTip('Pokazuje tylko patche w obrysie narzędzia bieżącej klatki.')
         w.addWidget(self.chk_tylko_maska)
+        self.combo_ile = dodaj(w, 'Cząstek:', QComboBox(),
+                               'Ile cząstek rysować: co n-ty patch w wierszach i w kolumnach siatki 20 x 30 (równo po obrazie).\n'
+                               'Łączy się z „tylko cząstki narzędzia”. PCA i skala liczą się dalej ze wszystkich 600.')
+        self.combo_ile.addItems(opisy_czasteczek())
         self.spin_przejscie = dodaj(w, 'Przelot:', QSpinBox(), 'Czas płynnego przelotu cząstek do nowej klatki (ms). 0 = skok.')
         self.spin_przejscie.setRange(0, 3000); self.spin_przejscie.setValue(250); self.spin_przejscie.setSuffix(' ms')
         b = QPushButton('Kamera od nowa'); b.clicked.connect(self._kamera); w.addWidget(b)
@@ -128,11 +153,12 @@ class WidokPrzestrzeniMakro(QWidget):
 
         self._timer = QTimer(self); self._timer.setInterval(16); self._timer.timeout.connect(self._krok_przelotu)
         self._od = self._do = None; self._u = 1.0
-        for s in (self.combo_kier.currentIndexChanged, self.combo_kan.currentIndexChanged, self.chk_srodek.toggled):
+        for s in (self.combo_kier.currentIndexChanged, self.combo_kan.currentIndexChanged, self.chk_srodek.toggled,
+                  self.combo_pca.currentIndexChanged, self.combo_poz.currentIndexChanged):
             s.connect(lambda *_: self._przelicz())
         for s in (self.combo_kolor.currentIndexChanged, self.spin_slad.valueChanged, self.spin_rozmiar.valueChanged,
                   self.combo_mikro.currentIndexChanged, self.spin_mikro.valueChanged,
-                  self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled):
+                  self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled, self.combo_ile.currentIndexChanged):
             s.connect(lambda *_: self._rysuj(skok=True))
 
     def _kamera(self):
@@ -158,28 +184,97 @@ class WidokPrzestrzeniMakro(QWidget):
             m[self.j128] = self.combo_kan.currentIndex() == 1
         return m
 
+    def _k_pca(self):
+        i = self.combo_pca.currentIndex()
+        return PCA_SKLADOWE[i - 1] if i > 0 else 0
+
+    def _z(self, t):
+        """Latent klatki t [600, 768] float32, z odjętym położeniem patcha, jeśli wybrano."""
+        z = self.Z[t].astype(np.float32)
+        p = self._poz
+        if p is None:
+            return z
+        if p[0] == 'rzut':
+            _, g, U = p
+            return z - ((z - g) @ U) @ U.T
+        _, M, g = p
+        return z - M + g
+
+    def _przygotuj_polozenie(self):
+        """Wybrany sposób odjęcia położenia -> self._poz (None, ('srednia', M, g) albo ('rzut', g, U))."""
+        i = self.combo_poz.currentIndex()
+        self._poz, self._opis_poz = None, ''
+        if i == 0:
+            return
+        if i == 1:
+            M = np.mean([self.Z[t].astype(np.float32) for t in range(len(self.Z))], 0)       # [600, 768]
+            self._poz = ('srednia', M, M.mean(0))
+            self._opis_poz = '; odjęta średnia każdego patcha z sekwencji'
+            return
+        import polozenie
+        from PyQt6.QtWidgets import QApplication
+        from PyQt6.QtCore import Qt
+        import silnik
+        ckpt = self.ckpt or silnik.VIT_CHECKPOINT
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            w = polozenie.srednia_pozycji(ckpt, postep=lambda k, n: (self.etykieta.setText(
+                f'liczę latent położenia: {k}/{n} klatek walidacji...'), QApplication.processEvents()))
+        finally:
+            QApplication.restoreOverrideCursor()
+        if i == 2:
+            self._poz = ('srednia', w['M'], w['g'])
+            self._opis_poz = f'; odjęta średnia każdego patcha z {int(w["n"])} klatek (położenie = {100 * float(w["udzial"]):.0f} % wariancji)'
+        else:
+            self._poz = ('rzut', w['g'], w['U'])
+            self._opis_poz = f'; usunięte {int(w["r"])} kierunków położenia (95 % jego wariancji)'
+
+    def sily(self, t):
+        """Siły mikrowektorów wszystkich cząstek w klatce t: [600, K] (K = 768 kanałów albo k składowych PCA)."""
+        z = self._z(t)
+        if self._pca is None:
+            return z - self.mu
+        mu, W, maska = self._pca
+        return (z[:, maska] - mu) @ W
+
     def _przelicz(self):
-        """Kierunki D [768, 3], środek μ, skala s i położenia wszystkich cząstek we wszystkich klatkach."""
+        """Siły (kanały albo składowe PCA), kierunki D [K, 3], skala s i położenia cząstek we wszystkich klatkach."""
         if self.Z is None:
             return
         T = len(self.Z)
-        mu = np.zeros(768, np.float32)
-        if self.chk_srodek.isChecked():
-            mu = np.mean([self.Z[t].astype(np.float32).mean(0) for t in range(T)], 0)
+        krok = max(1, T // 50)
+        self._przygotuj_polozenie()
+        maska = self._kanaly_maska()
+        kp = self._k_pca()
+        self._opis_pca = ''
+        self.mu = np.zeros(768, np.float32)
+        if kp:
+            X = np.concatenate([self._z(t)[:, maska] for t in range(0, T, krok)])
+            mu, W, udz = pca(X, kp)
+            self._pca = (mu, W, maska)
+            K = W.shape[1]
+            self._opis_pca = (f'; PCA {K} składowych z {int(maska.sum())} kanałów wyjaśnia '
+                              f'{100 * float(udz.sum()):.1f} % wariancji')
+        else:
+            self._pca = None
+            K = 768
+            if self.chk_srodek.isChecked():
+                self.mu = np.mean([self._z(t).mean(0) for t in range(T)], 0)
         k = self.combo_kier.currentIndex()
         if k == 0:
-            D = kierunki(False)
+            D = kierunki(False, K)
         elif k == 1:
-            D = np.random.default_rng(0).standard_normal((768, 3)).astype(np.float32)
+            D = np.random.default_rng(0).standard_normal((K, 3)).astype(np.float32)
             D /= np.linalg.norm(D, axis=1, keepdims=True)
         else:
-            krok = max(1, T // 50)
-            X = np.concatenate([self.Z[t].astype(np.float32) for t in range(0, T, krok)]) - mu
+            X = np.concatenate([self.sily(t) for t in range(0, T, krok)])
             _, _, Vt = np.linalg.svd(X - X.mean(0), full_matrices=False)
-            D = Vt[:3].T.astype(np.float32)                                    # ładunki: [768, 3]
-        D = D * self._kanaly_maska()[:, None]
-        self.D, self.mu = D, mu
-        surowe = np.stack([(self.Z[t].astype(np.float32) - mu) @ D for t in range(T)])   # [T, 600, 3]
+            D = Vt[:3].T.astype(np.float32)                                    # ładunki: [K, 3]
+        if not kp:
+            D = D * maska[:, None]                                             # kanały spoza wyboru: siła 0
+        self.D = D
+        self.kolory_kan = kolory_kanalow(K)
+        surowe = np.stack([self.sily(t) @ D for t in range(T)])               # [T, 600, 3]
         r = np.linalg.norm(surowe, axis=-1)
         self.s = 100 / max(float(np.percentile(r, 99)), 1e-9)
         self.P = surowe * self.s
@@ -227,9 +322,12 @@ class WidokPrzestrzeniMakro(QWidget):
                          for k in t], np.float32)
 
     def _widoczne(self):
+        tok = np.arange(600)
         if self.chk_tylko_maska.isChecked() and self.maski is not None:
-            return np.flatnonzero(self.maski[self.t])
-        return np.arange(600)
+            tok = np.flatnonzero(self.maski[self.t])
+        if self.combo_ile.currentIndex():
+            tok = np.intersect1d(tok, tokeny_co(CZASTECZKI_CO[self.combo_ile.currentIndex()]))
+        return tok
 
     def _rysuj(self, skok=False, tylko_punkty=False):
         if self.P is None:
@@ -249,7 +347,7 @@ class WidokPrzestrzeniMakro(QWidget):
         tryb_m = self.combo_mikro.currentIndex()
         jest = self.token is not None and self.Z is not None
         if jest and tryb_m != 3:
-            v = (self.Z[self.t, self.token].astype(np.float32) - self.mu)[:, None] * self.D * self.s   # [768, 3]
+            v = self.sily(self.t)[self.token][:, None] * self.D * self.s   # [K, 3]: mikrowektory cząstki
             kol_v = self.kolory_kan
             # przelot: w trakcie przelotu wszystko jedzie razem z cząstką, w spoczynku początek = (0, 0, 0)
             o = (P[self.token] - v.sum(0)) if self._u < 1 else np.zeros(3, np.float32)
@@ -295,4 +393,4 @@ class WidokPrzestrzeniMakro(QWidget):
         self.etykieta.setText(f'klatka {self.t + 1}/{T}: {len(tok)} cząstek; położenie = suma mikrowektorów '
                               f'(skala s = {self.s:.3g}); średni przelot od poprzedniej klatki {przes:.1f} jedn.'
                               + ('' if self.token is None else f'; wybrany patch {self.token}, '
-                                 f'odległość od środka {float(np.linalg.norm(self.P[self.t, self.token])):.1f}'))
+                                 f'odległość od środka {float(np.linalg.norm(self.P[self.t, self.token])):.1f}') + self._opis_pca + self._opis_poz)
