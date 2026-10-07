@@ -9,7 +9,7 @@ własne Koopmana. Liczenie w tle; rozkład kroku nadąża za suwakiem uczenia.
 """
 import numpy as np
 from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import (QComboBox, QLabel, QLineEdit, QMessageBox, QPushButton, QScrollArea, QSpinBox, QVBoxLayout,
+from PyQt6.QtWidgets import (QComboBox, QLabel, QLineEdit, QMessageBox, QPushButton, QScrollArea, QSpinBox, QSplitter, QVBoxLayout,
                              QWidget)
 from matplotlib.figure import Figure
 
@@ -80,12 +80,30 @@ class PanelRownania(QWidget):
         self.combo_szcz = QComboBox(); self.combo_szcz.setMinimumWidth(110)
         dodaj(w, 'Wykresy dla:', self.combo_szcz, 'Której cząstki dotyczą wykresy rozkładu równania.')
         self.etykieta = QLabel('Wpisz cząstki i „Licz równania” (po wczytaniu historii). Około 2 s na cząstkę.')
-        self.etykieta.setWordWrap(True); self.etykieta.setTextFormat(self._rich()); lay.addWidget(self.etykieta)
+        self.etykieta.setWordWrap(True); self.etykieta.setTextFormat(self._rich())
+        from PyQt6.QtCore import Qt
+        self.etykieta.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.etykieta.setContentsMargins(4, 2, 4, 2)
+        # równanie i tabela u góry, wykresy pod spodem: dwa osobno przewijane pola z przeciąganym podziałem
+        sc_t = QScrollArea(); sc_t.setWidget(self.etykieta); sc_t.setWidgetResizable(True)
         self.fig = Figure(figsize=(6, 13)); self.canvas = PlotnoCiemne(self.fig); self.canvas.setMinimumHeight(1250)
-        sc = QScrollArea(); sc.setWidget(self.canvas); sc.setWidgetResizable(True); lay.addWidget(sc, 1)
+        sc = QScrollArea(); sc.setWidget(self.canvas); sc.setWidgetResizable(True)
+        sc.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.podzial = QSplitter(Qt.Orientation.Vertical); self.podzial.addWidget(sc_t); self.podzial.addWidget(sc)
+        self.podzial.setChildrenCollapsible(False); self.podzial.setHandleWidth(7)
+        self.podzial.setStretchFactor(0, 2); self.podzial.setStretchFactor(1, 3)
+        self.podzial.setToolTip('Przeciągnij pasek między tabelą a wykresami, żeby zmienić podział.')
+        lay.addWidget(self.podzial, 1)
         self.combo_szcz.currentIndexChanged.connect(lambda *_: self.rysuj())
         self._timer = QTimer(self); self._timer.setSingleShot(True); self._timer.setInterval(150)
         self._timer.timeout.connect(self._rysuj_rozklad)
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        if not getattr(self, '_podzielono', False):              # pierwszy raz: tabela 40 %, wykresy 60 %
+            self._podzielono = True
+            QTimer.singleShot(0, lambda: self.podzial.setSizes(
+                [self.podzial.height() * 2 // 5, self.podzial.height() - self.podzial.height() * 2 // 5]))
 
     @staticmethod
     def _rich():
@@ -265,7 +283,7 @@ class PanelRownania(QWidget):
         self.etykieta.setText(self._opis(tok))
         r = self.wyniki[tok]; g = r['gle']; m1, m2 = r['modele'][1], r['modele'][2]
         osie = f.subplots(4, 2)
-        f.subplots_adjust(left=.1, right=.97, top=.97, bottom=.04, hspace=.45, wspace=.3)
+        f.subplots_adjust(left=.11, right=.97, top=.96, bottom=.04, hspace=.6, wspace=.35)
         self._osie = osie
         ax = osie[0, 0]
         for t, rr in self.wyniki.items():
@@ -274,13 +292,13 @@ class PanelRownania(QWidget):
                 ax.plot(hs, [o[h] for h in hs], STYLE[m], marker='o', ms=3, color=self.kolor(t),
                         lw=1.6 if t == tok else .7, alpha=1 if t == tok else .45)
         ax.axhline(1, color='gray', lw=.7); ax.set_xscale('log')
-        ax.set_title('błąd / „bez ruchu” vs horyzont h\n(ciągła Langevin, przerywana GLE, kropki Koopman)', fontsize=8)
+        ax.set_title('błąd / „bez ruchu” vs horyzont h\nciągła: Langevin, przerywana: GLE,\nkropki: Koopman', fontsize=7.5)
         ax = osie[0, 1]
         n = len(g['K_reg'])
         ax.bar(np.arange(n), g['K_reg'], color=self.kolor(tok), alpha=.7, label='regresja (δ − a_l)')
         ax.plot(np.arange(n), g['K_volterra'], 'w.-', lw=1, label='z korelacji (Volterra)')
         ax.axhline(0, color='gray', lw=.6); ax.legend(fontsize=6, framealpha=.3)
-        ax.set_title('jądro pamięci K(s)\n(tarcie z opóźnieniem s)', fontsize=8); ax.set_xlabel('opóźnienie s (kroków)', fontsize=7)
+        ax.set_title('jądro pamięci K(s)\n(tarcie z opóźnieniem s)', fontsize=7.5); ax.set_xlabel('opóźnienie s (kroków)', fontsize=7)
         self._rysuj_rozklad(rysuj=False)
         ax = osie[1, 1]
         y, M, v, u1 = m1['y'], m1['M'], m1['v'], m1['u1']
@@ -293,29 +311,29 @@ class PanelRownania(QWidget):
                   color='#9aa', alpha=.6, width=.004)
         k = self.z.idx[self.z.t] if self.z.Z is not None else od
         ax.plot([(y[k] - M[k]) @ u1], [v[k] @ u1], 'o', color='white', ms=6)
-        ax.set_title('portret fazowy (1. składowa toru)\nstrzałki: pole oscylatora', fontsize=8)
+        ax.set_title('portret fazowy (1. składowa toru)\nstrzałki: pole oscylatora', fontsize=7.5)
         ax.set_xlabel('z − m', fontsize=7); ax.set_ylabel('v', fontsize=7)
         ax = osie[2, 0]
         ax.bar(np.arange(len(g['acf'])), g['acf'], color=self.kolor(tok), alpha=.8)
         ax.axhspan(-g['pasmo'], g['pasmo'], color='gray', alpha=.3)
-        ax.set_title('autokorelacja szumu η\n(szare: pasmo szumu białego)', fontsize=8)
+        ax.set_title('autokorelacja szumu η\n(szare: pasmo szumu białego)', fontsize=7.5)
         ax = osie[2, 1]
         e = g['eta'].reshape(-1) / max(g['sigma'], 1e-12)
         ax.hist(e, bins=80, range=(-6, 6), density=True, color=self.kolor(tok), alpha=.75)
         xs = np.linspace(-6, 6, 200); ax.plot(xs, np.exp(-xs ** 2 / 2) / np.sqrt(2 * np.pi), 'w', lw=1)
         ax.set_yscale('log'); ax.set_ylim(1e-4, 1)
-        ax.set_title(f'rozkład szumu η / σ (biała: Gauss)\nkurtoza {g["kurtoza"]:.1f}', fontsize=8)
+        ax.set_title(f'rozkład szumu η / σ (biała: Gauss)\nkurtoza {g["kurtoza"]:.1f}', fontsize=7.5)
         ax = osie[3, 0]
         ax.plot(g['vacf'], 'o-', ms=3, color=self.kolor(tok), label='dane')
         ax.plot(g['vacf_model'], 'w--', lw=1, label='model GLE + szum biały')
         ax.axhline(0, color='gray', lw=.6); ax.legend(fontsize=6, framealpha=.3)
-        ax.set_title('autokorelacja prędkości (VACF)', fontsize=8); ax.set_xlabel('opóźnienie (kroków)', fontsize=7)
+        ax.set_title('autokorelacja prędkości (VACF)', fontsize=7.5); ax.set_xlabel('opóźnienie (kroków)', fontsize=7)
         ax = osie[3, 1]
         th = np.linspace(0, 2 * np.pi, 200); ax.plot(np.cos(th), np.sin(th), color='gray', lw=.7)
         lam = m2['lam']
         ax.scatter(lam.real, lam.imag, s=8, color=self.kolor(tok))
         ax.set_aspect('equal'); ax.set_xlim(-1.1, 1.1); ax.set_ylim(-1.1, 1.1)
-        ax.set_title('wartości własne Koopmana\n(koło jednostkowe)', fontsize=8)
+        ax.set_title('wartości własne Koopmana\n(koło jednostkowe)', fontsize=7.5)
         for a in f.axes:
             a.tick_params(labelsize=6)
         self.canvas.draw_idle()
@@ -344,7 +362,7 @@ class PanelRownania(QWidget):
             dol_p = dol_p + np.clip(val, 0, None); dol_u = dol_u + np.clip(val, None, 0)
         ax.plot(x, g['v'][w], 'w.-', lw=.8, ms=3, label='rzeczywisty krok')
         ax.legend(fontsize=5, ncol=3, framealpha=.3, loc='upper left')
-        ax.set_title(f'rozkład kroku v(t) na części GLE\n(1. składowa toru), kroki {max(0, k - 39)}–{k}', fontsize=8)
+        ax.set_title(f'rozkład kroku v(t) na części GLE\n(1. składowa toru), kroki {max(0, k - 39)}–{k}', fontsize=7.5)
         ax.tick_params(labelsize=6)
         if rysuj:
             self.canvas.draw_idle()
