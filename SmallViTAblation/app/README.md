@@ -385,7 +385,7 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   czerwona niedopasowanie; ślad w kolorze wygładzonego błędu. Patch 255, GLE, kroki 700-1000: mediana błędu
   kroku 0,54 (kroczące) i 0,55 (stałe okno), cos 0,86.
 - Grupy ustawień pod odtwarzaniem zwijają się polem w tytule; pole „ustawienia” w „Widoki” chowa je wszystkie.
-- Panele zakładki „Uczenie ViT” (obraz i wykresy, widok 3D, makro, równanie) mają pasek z „Odepnij”
+- Panele zakładki „Uczenie ViT” (obraz klatki, wykresy uczenia, widok 3D, makro, równanie; obraz i wykresy osobno) mają pasek z „Odepnij”
   (osobne okno, np. na drugi monitor) i „✕” (chowa panel); pola „Widoki” w górnej grupie pokazują je z powrotem.
 - W zakładce „Uczenie ViT” przyciski „Atlas kanałów” i „Krajobraz i tunele” przełączają główny panel (zamiast
   widoku 3D nad obrazem); ponowny klik wraca do widoku 3D. W zakładce filmu otwierają osobne okna.

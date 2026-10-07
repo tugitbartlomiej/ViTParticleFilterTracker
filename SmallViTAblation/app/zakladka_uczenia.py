@@ -86,7 +86,8 @@ class ZakladkaUczenia(QWidget):
         w.addWidget(self.etykieta_biegu)
 
         # ---------------- widoki: które panele są pokazane (każdy ma też ✕ i „Odepnij” na swoim pasku)
-        self.chk_widok_obraz = QCheckBox('obraz i wykresy'); self.chk_widok3d = QCheckBox('widok 3D')
+        self.chk_widok_obraz = QCheckBox('obraz'); self.chk_widok_wyk = QCheckBox('wykresy')
+        self.chk_widok3d = QCheckBox('widok 3D')
         self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_rown = QCheckBox('równanie')
         self.chk_widok_ust = QCheckBox('ustawienia')
         self.chk_widok_ust.setToolTip('Pokazuje albo chowa ustawienia pod paskiem odtwarzania (porównanie, prognoza Langevina,\n'
@@ -94,24 +95,24 @@ class ZakladkaUczenia(QWidget):
                                       'polem w jej tytule.')
         self.chk_widok_rown.setToolTip('Czwarty panel: równanie Langevina, GLE i Koopmana wybranych cząstek z ich własnej historii.')
         w.addWidget(rola(QLabel('Widoki:'), 'opis'))
-        for c in (self.chk_widok_obraz, self.chk_widok3d, self.chk_widok_makro, self.chk_widok_rown, self.chk_widok_ust):
+        for c in (self.chk_widok_obraz, self.chk_widok_wyk, self.chk_widok3d, self.chk_widok_makro, self.chk_widok_rown,
+                  self.chk_widok_ust):
             c.setChecked(True); w.addWidget(c)
             if not c.toolTip():
                 c.setToolTip(f'Pokazuje albo chowa panel „{c.text()}” (to samo co ✕ na jego pasku).')
 
         # ---------------- środek: klatka i wykresy | 3D | makro
         podzial = QSplitter(Qt.Orientation.Horizontal)
-        lewa = QWidget(); ll = QVBoxLayout(lewa); ll.setContentsMargins(0, 0, 0, 0); ll.setSpacing(4)
+        lewa = QSplitter(Qt.Orientation.Vertical); lewa.setChildrenCollapsible(False)   # obraz | wykresy, osobne panele
         self.fig = Figure(figsize=(5, 3.6)); self.ax = self.fig.add_axes([0, 0, 1, .9])
-        self.canvas = PlotnoCiemne(self.fig); self.canvas.setFixedHeight(300)
+        self.canvas = PlotnoCiemne(self.fig); self.canvas.setMinimumHeight(160)
         self.canvas.setToolTip('Klatka próbna: patche narzędzia (czerwone kropki), ramka ViT z wag najbliższego\n'
                                'checkpointu (zielona) i wybrany patch (biały). Klik wybiera patch.\n'
                                'Prawy przycisk + przeciągnij: zaznacz prostokąt patchy; ich cząstki w przestrzeni\n'
                                'makro zostają jasne, reszta blednie. Prawy klik bez przeciągania czyści zaznaczenie.\n'
                                'Ctrl + klik: dodaj albo usuń jeden patch; Ctrl + prawy przycisk + przeciągnij: dołącz prostokąt.\n'
                                'W przestrzeni makro to samo: Shift + przeciągnij lewym przyciskiem, Ctrl + klik w cząstkę.')
-        ll.addWidget(self.canvas)
-        self.zakl_wyk = QTabWidget(); ll.addWidget(self.zakl_wyk, 1)
+        self.zakl_wyk = QTabWidget()
         self.fig_r = Figure(figsize=(5, 7)); self.canvas_r = PlotnoCiemne(self.fig_r)
         self.canvas_r.setToolTip('Przebieg uczenia; pionowa linia = bieżący krok. Klik przechodzi do kroku.')
         self.zakl_wyk.addTab(self.canvas_r, 'Ruch cząsteczek')
@@ -136,7 +137,12 @@ class ZakladkaUczenia(QWidget):
                                   'uczenia prognoza następnego kroku cząstki w 768 wymiarach i jej niedopasowanie do\n'
                                   'prawdziwego ruchu. Cienkie linie: każdy krok, grube: wygładzone. Klik: krok.')
         self.zakl_wyk.addTab(self.canvas_rk, 'Równanie krok po kroku')
-        podzial.addWidget(RamaPanelu('Obraz klatki i wykresy uczenia', lewa, self.chk_widok_obraz))
+        lewa.addWidget(RamaPanelu('Obraz klatki', self.canvas, self.chk_widok_obraz))
+        lewa.addWidget(RamaPanelu('Wykresy uczenia', self.zakl_wyk, self.chk_widok_wyk))
+        lewa.setStretchFactor(0, 0); lewa.setStretchFactor(1, 1); lewa.setSizes([320, 700])
+        for c in (self.chk_widok_obraz, self.chk_widok_wyk):     # kolumna znika, gdy oba panele schowane
+            c.toggled.connect(lambda *_: lewa.setVisible(self.chk_widok_obraz.isChecked() or self.chk_widok_wyk.isChecked()))
+        podzial.addWidget(lewa)
 
         from czasteczki3d import WidokCzasteczek3D
         from przestrzen_makro import WidokPrzestrzeniMakro
