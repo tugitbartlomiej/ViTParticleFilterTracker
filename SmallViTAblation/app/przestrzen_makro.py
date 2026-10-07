@@ -134,6 +134,30 @@ class WidokPrzestrzeniMakro(QWidget):
         self.spin_ema.setRange(.02, 1); self.spin_ema.setSingleStep(.05); self.spin_ema.setDecimals(2); self.spin_ema.setValue(1)
         self.spin_przejscie = dodaj(w, 'Przelot:', QSpinBox(), 'Czas płynnego przelotu cząstek do nowej klatki (ms). 0 = skok.')
         self.spin_przejscie.setRange(0, 3000); self.spin_przejscie.setValue(250); self.spin_przejscie.setSuffix(' ms')
+        w = self.panel.wiersz('Wygląd')
+        self.combo_zdj = dodaj(w, 'Zdjęcie w przestrzeni:', WaskiCombo(12),
+                               'Zdjęcie zdeformowane do położeń cząstek, żeby wiedzieć, co jest czym:\n'
+                               'siatka 20 x 30 patchy, w której każdy węzeł leży tam, gdzie jest cząstka tego patcha,\n'
+                               'a sąsiedzi na obrazie są połączeni. Między węzłami położenie i kolor są interpolowane.\n'
+                               'Gdzie siatka jest gładka, sąsiednie patche mają podobny latent; gdzie się rozdziera albo\n'
+                               'zawija, latent zmienia się skokowo (np. na krawędzi narzędzia).\n'
+                               '- powierzchnia: półprzezroczyste zdjęcie rozpięte na siatce;\n'
+                               '- siatka linii: same linie wierszy i kolumn patchy (lżejsze, cząstki lepiej widać).')
+        self.combo_zdj.addItems(['brak', 'powierzchnia', 'siatka linii', 'powierzchnia i siatka'])
+        self.combo_zdj.setCurrentIndex(3)
+        self.combo_zdj_kolor = dodaj(w, 'Kolor:', WaskiCombo(11),
+                                     'Kolory zdjęcia albo kolory cząstek (jak w „Kolor cząstek”).')
+        self.combo_zdj_kolor.addItems(['kolory zdjęcia', 'kolory cząstek', 'zdjęcie, narzędzie na czerwono'])
+        self.spin_zdj_krycie = dodaj(w, 'Krycie:', QDoubleSpinBox(), 'Krycie zdjęcia w przestrzeni (0..1).')
+        self.spin_zdj_krycie.setRange(.02, 1); self.spin_zdj_krycie.setSingleStep(.05); self.spin_zdj_krycie.setValue(.45)
+        self.spin_zdj_gest = dodaj(w, 'Gęstość:', QSpinBox(),
+                                   'Ile punktów siatki na bok patcha (1 = tylko środki patchy; 4 = gładsze zdjęcie).')
+        self.spin_zdj_gest.setRange(1, 8); self.spin_zdj_gest.setValue(4)
+        self.chk_podpisy = QCheckBox('Podpisy'); self.chk_podpisy.setChecked(True)
+        self.chk_podpisy.setToolTip('Podpisy przy cząstkach rogów obrazu (lewy górny itd.), środka obrazu i środka\n'
+                                    'narzędzia, oraz ramka wokół brzegu obrazu (niebieska: góra, żółta: lewa strona).')
+        w.addWidget(self.chk_podpisy)
+        self.rgb = None
 
         # Mikrowektory wybranego patcha
         w = self.panel.wiersz('Mikrowektory')
@@ -230,6 +254,14 @@ class WidokPrzestrzeniMakro(QWidget):
         v.addItem(self.wybrany)
         self.przyczyny = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=3, glOptions='translucent')
         self.przyczyny.setVisible(False); v.addItem(self.przyczyny)      # strzałki przyczyn ruchu (zakładka uczenia)
+        self.zdj_pow = gl.GLMeshItem(vertexes=np.zeros((3, 3), np.float32), faces=np.array([[0, 1, 2]]), smooth=False,
+                                     glOptions='translucent')
+        self.zdj_pow.setVisible(False); v.addItem(self.zdj_pow)         # zdjęcie zdeformowane do położeń cząstek
+        self.zdj_lin = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=1, glOptions='translucent')
+        self.zdj_lin.setVisible(False); v.addItem(self.zdj_lin)
+        self.brzeg = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=2.5, glOptions='translucent')
+        self.brzeg.setVisible(False); v.addItem(self.brzeg)
+        self.podpisy = []
         self.znaczniki = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=10, pxMode=True)
         self.znaczniki.setVisible(False); v.addItem(self.znaczniki)      # dodatkowe kropki (np. średnia narzędzia)
         self._kamera()
@@ -245,7 +277,9 @@ class WidokPrzestrzeniMakro(QWidget):
                   self.chk_atencja.toggled, self.opcje.zmiana, self.spin_wzm.valueChanged, self.chk_czastki.toggled,
                   self.combo_zbior.currentIndexChanged, self.edit_lista.editingFinished, self.chk_objetosc.toggled,
                   self.combo_zasieg.currentIndexChanged, self.spin_rozmycie.valueChanged, self.spin_krycie_obj.valueChanged,
-                  self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled, self.combo_ile.currentIndexChanged):
+                  self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled, self.combo_ile.currentIndexChanged,
+                  self.combo_zdj.currentIndexChanged, self.combo_zdj_kolor.currentIndexChanged,
+                  self.spin_zdj_krycie.valueChanged, self.spin_zdj_gest.valueChanged, self.chk_podpisy.toggled):
             s.connect(lambda *_: self._rysuj(skok=True))
 
     def _kamera(self):
@@ -357,6 +391,84 @@ class WidokPrzestrzeniMakro(QWidget):
             self.przyczyny.setVisible(False); return
         self.przyczyny.setData(pos=np.ascontiguousarray(odcinki, np.float32), color=np.ascontiguousarray(kolory, np.float32))
         self.przyczyny.setVisible(True)
+
+    def ustaw_obraz(self, rgb480):
+        """Zdjęcie bieżącej klatki [320, 480, 3] uint8 (do zdeformowanego zdjęcia w przestrzeni); wołać przed pokaz_klatke."""
+        self.rgb = None if rgb480 is None else np.asarray(rgb480)[:320, :480, :3]
+
+    def _rysuj_zdjecie(self, P, kol):
+        """Zdjęcie rozpięte na siatce 20 x 30 położeń cząstek P [600, 3] (interpolacja dwuliniowa między węzłami)."""
+        tryb = self.combo_zdj.currentIndex()
+        if tryb == 0 or (self.rgb is None and self.combo_zdj_kolor.currentIndex() != 1):
+            self.zdj_pow.setVisible(False); self.zdj_lin.setVisible(False)
+        else:
+            from scipy import ndimage
+            n = self.spin_zdj_gest.value()
+            R, C = 19 * n + 1, 29 * n + 1
+            r, c = np.linspace(0, 19, R), np.linspace(0, 29, C)
+            rr, cc = np.meshgrid(r, c, indexing='ij')
+            G = P.reshape(20, 30, 3)
+            V = np.stack([ndimage.map_coordinates(G[..., i], [rr, cc], order=1) for i in range(3)], -1)   # [R, C, 3]
+            k = self.combo_zdj_kolor.currentIndex()
+            if k == 1:
+                K = kol[:, :3].reshape(20, 30, 3)
+                K = np.stack([ndimage.map_coordinates(K[..., i], [rr, cc], order=1) for i in range(3)], -1)
+            else:
+                y = np.clip((8 + rr * 16).round().astype(int), 0, 319); x = np.clip((8 + cc * 16).round().astype(int), 0, 479)
+                K = self.rgb[y, x].astype(np.float32) / 255
+                if k == 2 and self.maski is not None:
+                    m = self.maski[self.t].reshape(20, 30).astype(np.float32)
+                    mm = ndimage.map_coordinates(m, [rr, cc], order=1)[..., None]
+                    K = K * (1 - .7 * mm) + np.array([1, .15, .1]) * .7 * mm
+            a = self.spin_zdj_krycie.value()
+            if tryb in (1, 3):
+                if getattr(self, '_twarze_n', None) != (R, C):
+                    i = np.arange(R * C).reshape(R, C)
+                    q = np.stack([i[:-1, :-1], i[:-1, 1:], i[1:, 1:], i[1:, :-1]], -1).reshape(-1, 4)
+                    self._twarze = np.concatenate([q[:, [0, 1, 2]], q[:, [0, 2, 3]]]).astype(np.int32)
+                    self._twarze_n = (R, C)
+                kv = np.concatenate([K.reshape(-1, 3), np.full((R * C, 1), a)], 1).astype(np.float32)
+                self.zdj_pow.setMeshData(vertexes=V.reshape(-1, 3).astype(np.float32), faces=self._twarze, vertexColors=kv)
+                self.zdj_pow.setVisible(True)
+            else:
+                self.zdj_pow.setVisible(False)
+            if tryb in (2, 3):                                           # linie wierszy i kolumn patchy
+                Vp, Kp = V[::n, ::n], K[::n, ::n]                          # środki patchy [20, 30]
+                seg = np.concatenate([np.stack([Vp[:, :-1], Vp[:, 1:]], 2).reshape(-1, 3),
+                                      np.stack([Vp[:-1], Vp[1:]], 2).reshape(-1, 3)])
+                ks = np.concatenate([np.stack([Kp[:, :-1], Kp[:, 1:]], 2).reshape(-1, 3),
+                                     np.stack([Kp[:-1], Kp[1:]], 2).reshape(-1, 3)])
+                al = min(1., a * 1.6) if tryb == 2 else min(1., a + .25)
+                ks = np.concatenate([np.clip(ks * 1.3, 0, 1), np.full((len(ks), 1), al)], 1)
+                self.zdj_lin.setData(pos=seg.astype(np.float32), color=ks.astype(np.float32))
+                self.zdj_lin.setVisible(True)
+            else:
+                self.zdj_lin.setVisible(False)
+        self._rysuj_podpisy(P)
+
+    def _rysuj_podpisy(self, P):
+        if not self.chk_podpisy.isChecked():
+            self.brzeg.setVisible(False)
+            for it in self.podpisy:
+                it.setVisible(False)
+            return
+        G = P.reshape(20, 30, 3)
+        gora, dol, lewa, prawa = G[0], G[-1], G[:, 0], G[:, -1]
+        seg, kol = [], []
+        for L, c in ((gora, (.3, .6, 1, .9)), (lewa, (1, .85, .2, .9)), (dol, (.6, .6, .6, .5)), (prawa, (.6, .6, .6, .5))):
+            seg.append(np.stack([L[:-1], L[1:]], 1).reshape(-1, 3)); kol += [c] * (2 * (len(L) - 1))
+        self.brzeg.setData(pos=np.concatenate(seg).astype(np.float32), color=np.array(kol, np.float32))
+        self.brzeg.setVisible(True)
+        napisy = [(0, 'lewy górny róg'), (29, 'prawy górny'), (570, 'lewy dolny'), (599, 'prawy dolny'), (315, 'środek obrazu')]
+        pozycje = [(P[t], tekst) for t, tekst in napisy]
+        if self.maski is not None and self.maski[self.t].any():
+            pozycje.append((P[self.maski[self.t]].mean(0), 'narzędzie (średnia)'))
+        while len(self.podpisy) < len(pozycje):                          # napisy tworzone raz, potem tylko przesuwane
+            it = gl.GLTextItem(color=(235, 235, 235, 230)); self.widok.addItem(it); self.podpisy.append(it)
+        for it, (pos, tekst) in zip(self.podpisy, pozycje):
+            it.setData(pos=np.asarray(pos, float), text=tekst); it.setVisible(True)
+        for it in self.podpisy[len(pozycje):]:
+            it.setVisible(False)
 
     def rysuj_znaczniki(self, pos=None, kolory=None, rozmiary=None):
         """Dodatkowe kropki [n, 3] z kolorami [n, 4] i rozmiarami w pikselach [n]; None chowa."""
@@ -645,6 +757,7 @@ class WidokPrzestrzeniMakro(QWidget):
             rozm = (rozm * (.4 + self.spin_wzm.value() * A)).astype(np.float32)[tok]
         self.punkty.setData(pos=P[tok], color=kol[tok], size=rozm)
         self.punkty.setVisible(self.chk_czastki.isChecked())
+        self._rysuj_zdjecie(P, kol)
         if strz is not None:                                 # strzałki źródło -> cel między cząstkami
             import matplotlib
             src, dst, w = strz

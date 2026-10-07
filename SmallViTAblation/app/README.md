@@ -335,6 +335,17 @@ z 1,23 do 0,42 / 0,68 / 0,35: część różnicy narzędzia od tła to jego typo
 Uwaga o OpenGL: przy rozłączonej sesji Windows (pulpit zdalny rozłączony, ekran zablokowany) sterownik
 nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki zamiast zgłaszać błąd.
 
+### Orientacja: zdjęcie w przestrzeni makrowektorów i kolor wektorów na obrazie
+
+- Przestrzeń makro, „Wygląd”, „Zdjęcie w przestrzeni”: siatka 20 x 30 patchy rozpięta na położeniach
+  cząstek (węzeł = cząstka patcha, sąsiedzi z obrazu połączeni), pokolorowana zdjęciem bieżącej klatki,
+  kolorami cząstek albo zdjęciem z narzędziem na czerwono. Powierzchnia, linie albo oba; krycie i gęstość
+  interpolacji. „Podpisy”: rogi obrazu, środek obrazu, środek narzędzia; brzeg obrazu ma kolor (górny
+  niebieski, lewy żółty). Gładka siatka = podobny latent sąsiadów, rozdarcie = skok latentu.
+- Widok 3D nad obrazem, „Obraz”, „Koloruj obraz mieszanką kolorów wektorów”: kolor patcha = średnia
+  kolorów jego wektorów (kanałów albo składowych PCA) ważona siłą (|wartość|, wartość², wartość⁴ albo
+  tylko dodatnie), z automatycznym nasyceniem, opcjonalnie jasność według łącznej siły i gładkie przejścia.
+
 ### Wycinanie na żywo i Langevin po klatkach (zakładka filmu)
 
 - **Wycinanie na żywo** (pole „na żywo” w grupie wycinania, domyślnie włączone): zmiana obszarów (obrys narzędzia,

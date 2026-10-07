@@ -767,6 +767,7 @@ class ZakladkaFilmu(QWidget):
                 self.w3d.pokaz(przed, z, rgb, fn)
         if self.chk_widok_makro.isChecked():
             self.makro.ustaw_atencje(fn)                    # mapa i strzałki atencji tej klatki
+            self.makro.ustaw_obraz(rgb)                     # zdjęcie zdeformowane do położeń cząstek
             self.makro.pokaz_klatke(t, self.token)
             self._tor_langevina(t)
         self._rysuj_klatke()

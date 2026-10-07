@@ -441,6 +441,7 @@ class ZakladkaUczenia(QWidget):
         self._opis_lang = ''
         if self.chk_widok_makro.isChecked():
             self.makro.ustaw_atencje(fn)
+            self.makro.ustaw_obraz(self.rgb)
             self.makro.pokaz_klatke(t, self.token)
             self._strzalki_przyczyn(k)
         self._rysuj_klatke(k, kc)
