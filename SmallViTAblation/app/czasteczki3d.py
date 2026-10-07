@@ -42,6 +42,7 @@ class WidokCzasteczek3D(QWidget):
         self.atencja_fn = None
         self.token = None
         self.maska_tokenow = None          # bool [600]: patche narzędzia (z obrysu), ustawiane z zakładki filmu
+        self.zaznaczenie = None            # zaznaczone patche (Ctrl + klik, prostokąt), ustawiane z zakładki
         self.kolory = kolory_kanalow()
         self._okna = []
         lay = QVBoxLayout(self); lay.setContentsMargins(4, 4, 4, 4)
@@ -174,6 +175,10 @@ class WidokCzasteczek3D(QWidget):
         self.chk_tylko = QCheckBox('Tylko wybrany patch')
         self.chk_tylko.setToolTip('Rysuje tylko cząsteczkę klikniętego patcha (kliknij na obrazie) i ustawia na niej kamerę.')
         w.addWidget(self.chk_tylko)
+        self.chk_zazn = QCheckBox('Tylko zaznaczone patche')
+        self.chk_zazn.setToolTip('Rysuje tylko zaznaczone patche (Ctrl + klik albo prostokąt prawym przyciskiem na obrazie,\n'
+                                 'Shift + przeciągnij albo Ctrl + klik w przestrzeni makro). Bez zaznaczenia: wszystkie.')
+        w.addWidget(self.chk_zazn)
         w = self.panel.wiersz('Cząsteczki')
         self.spin_wys = dodaj(w, 'Podnieś o atencję:', QDoubleSpinBox(),
                               'Środek cząsteczki leży na wysokości z = ta wartość · mapa atencji (0..1, jak na obrazie).\n'
@@ -235,7 +240,7 @@ class WidokCzasteczek3D(QWidget):
                   self.combo_ksztalt.currentIndexChanged, self.combo_styl.currentIndexChanged,
                   self.spin_r0.valueChanged, self.spin_skala.valueChanged, self.spin_wys.valueChanged,
                   self.spin_maks.valueChanged, self.chk_tylko.toggled, self.combo_patche.currentIndexChanged,
-                  self.combo_ile.currentIndexChanged, self.chk_czasteczki.toggled):
+                  self.combo_ile.currentIndexChanged, self.chk_czasteczki.toggled, self.chk_zazn.toggled):
             k.connect(lambda *_: self._rysuj())
         self.suwak.valueChanged.connect(lambda *_: self._rysuj(tylko_pozycje=True))
         self.spin_gr.valueChanged.connect(self._grubosc)
@@ -332,6 +337,7 @@ class WidokCzasteczek3D(QWidget):
         w.spin_mies_krycie.setValue(self.spin_mies_krycie.value()); w.spin_nasyc.setValue(self.spin_nasyc.value())
         for a, b in ((w.chk_obraz, self.chk_obraz), (w.chk_atencja, self.chk_atencja), (w.chk_siatka, self.chk_siatka),
                      (w.chk_zero, self.chk_zero), (w.chk_tylko, self.chk_tylko), (w.chk_mies, self.chk_mies),
+                     (w.chk_zazn, self.chk_zazn),
                      (w.chk_mies_jasn, self.chk_mies_jasn), (w.chk_mies_gladko, self.chk_mies_gladko)):
             a.setChecked(b.isChecked())
         w.suwak.setValue(self.suwak.value())
@@ -540,12 +546,15 @@ class WidokCzasteczek3D(QWidget):
         przed, po, kan, kolory, d, opis_pca = self._dane(polsfera)
         L, tryb = self._latent(przed, po)
         tok = np.arange(600)
+        zazn = self.chk_zazn.isChecked() and self.zaznaczenie is not None and len(self.zaznaczenie) > 0
         if self.chk_tylko.isChecked() and self.token is not None:
             tok = np.array([self.token])
+        elif zazn:                                                # tylko zaznaczone: bez innych filtrów
+            tok = np.sort(np.asarray(self.zaznaczenie, int))
         elif self.maska_tokenow is not None and self.combo_patche.currentIndex():
             m = self.maska_tokenow if self.combo_patche.currentIndex() == 1 else ~self.maska_tokenow
             tok = tok[m]
-        if not (self.chk_tylko.isChecked() and self.token is not None) and self.combo_ile.currentIndex():
+        if not (self.chk_tylko.isChecked() and self.token is not None) and not zazn and self.combo_ile.currentIndex():
             tok = np.intersect1d(tok, tokeny_co(CZASTECZKI_CO[self.combo_ile.currentIndex()]))
         if len(tok) == 0:
             for it in (self.linie, self.punkty, self.szare, self.zera, self.luki, self.groty):

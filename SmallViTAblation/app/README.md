@@ -366,6 +366,18 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   (najwyżej N modeli) albo „średnią zaznaczonych”. Karta „Zaznaczone patche” pod obrazem: przez całe uczenie
   prędkość w latencie i w makro, odległość i cos do stanu końcowego każdego patcha oraz rozrzut zaznaczonych
   (średnia odległość od ich środka). W zakładce filmu działa to samo Ctrl + klik i Ctrl przy prostokącie.
+  Widok 3D („Cząsteczki”) i przestrzeń makro („Wygląd”) mają własne pole „Tylko zaznaczone patche”;
+  „śledź tylko zaznaczone” ustawia oba naraz. W panelu równania przycisk „zaznaczone” liczy Langevina, GLE
+  i Koopmana osobno dla każdego zaznaczonego patcha (do 20, kolory jak zaznaczenie).
+- Policzona sekwencja na dysku: pierwsze wczytanie klatki (około 40-50 s) zapisuje w `app/cache_uczenia`
+  latent float16, miary ruchu, detekcję z wag, oscylator i czubek (`*_wyniki.npz`); następne wczytanie bierze
+  je z dysku (kilkanaście sekund, głównie odczyt latentu 0,9 GB). Oceny i rozkłady równań cząstek trafiają do
+  `*_rownania.pkl` (na patch i parametry). Zmiana latentu albo wag biegu unieważnia zapis.
+- „przy starcie” (obok „Wczytaj historię”): po uruchomieniu programu ostatnio oglądany bieg i klatka
+  wczytują się w tle, razem z ostatnio policzonymi równaniami (`cache_uczenia/ostatnie.json`).
+  Zmienna środowiskowa `EDYTOR_BEZ_AUTOSTARTU=1` wyłącza to w testach.
+- Panele zakładki „Uczenie ViT” (obraz i wykresy, widok 3D, makro, równanie) mają pasek z „Odepnij”
+  (osobne okno, np. na drugi monitor) i „✕” (chowa panel); pola „Widoki” w górnej grupie pokazują je z powrotem.
 - W zakładce „Uczenie ViT” przyciski „Atlas kanałów” i „Krajobraz i tunele” przełączają główny panel (zamiast
   widoku 3D nad obrazem); ponowny klik wraca do widoku 3D. W zakładce filmu otwierają osobne okna.
 - „Krajobraz i tunele” (przycisk w przestrzeni makro, `krajobraz.py`): okno z trzema obrazami tego, po czym

@@ -291,3 +291,30 @@ def dodaj_nawigacje(wlasciciel, panel, widok, strona='Nawigacja'):
         c.toggled.connect(lustro)
     panel.strona(strona).addStretch(1)
 
+
+
+class RamaPanelu(QWidget):
+    """Panel z cienkim paskiem: tytuł, „Odepnij” (osobne okno, np. na drugi monitor) i „✕” (chowa panel).
+    Zamknięcie odznacza pole wyboru `chk` (lista „Widoki”), które pokazuje panel z powrotem; schowanie
+    odpiętego panelu najpierw go przypina."""
+
+    def __init__(self, tytul, widzet, chk):
+        super().__init__()
+        self.widzet, self.chk = widzet, chk
+        lay = QVBoxLayout(self); lay.setContentsMargins(0, 0, 0, 0); lay.setSpacing(1)
+        pasek = QHBoxLayout(); pasek.setContentsMargins(4, 0, 0, 0); pasek.setSpacing(3)
+        from styl import rola
+        et = rola(QLabel(tytul), 'opis'); pasek.addWidget(et, 1)
+        self.btn_odepnij = QPushButton('Odepnij'); self.btn_odepnij.setFixedHeight(20)
+        self.btn_zamknij = QPushButton('✕'); self.btn_zamknij.setFixedSize(24, 20)
+        self.btn_zamknij.setToolTip(f'Chowa panel „{tytul}”. Pokaż go z powrotem polem „{chk.text()}” w „Widoki”.')
+        pasek.addWidget(self.btn_odepnij); pasek.addWidget(self.btn_zamknij)
+        lay.addLayout(pasek); lay.addWidget(widzet, 1)
+        self.odpinanie = Odpinanie(self, tytul, self.btn_odepnij)
+        self.btn_zamknij.clicked.connect(lambda: chk.setChecked(False))
+        chk.toggled.connect(self.pokaz)
+
+    def pokaz(self, wl):
+        if not wl and self.odpinanie.okno is not None:
+            self.btn_odepnij.setChecked(False)
+        self.setVisible(wl)

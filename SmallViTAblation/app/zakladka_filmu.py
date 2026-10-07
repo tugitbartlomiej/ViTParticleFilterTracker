@@ -938,6 +938,7 @@ class ZakladkaFilmu(QWidget):
     def _zaznacz(self, tokeny):
         """Zaznaczone patche: żółte na obrazie, jasne w przestrzeni makro (reszta blada); pusty = wyczyść."""
         self.zaznaczenie = np.asarray(tokeny, int) if tokeny is not None and len(tokeny) else None
+        self.w3d.zaznaczenie = self.zaznaczenie
         self.makro.ustaw_zaznaczenie(self.zaznaczenie)
         self.idz(self.t)
         self._status('Zaznaczenie wyczyszczone.' if self.zaznaczenie is None else

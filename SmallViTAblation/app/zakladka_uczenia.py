@@ -10,6 +10,10 @@ Baza PCA i środek układu liczone są raz z puli wszystkich kroków, a nie osob
 w jednym biegu kanał c w kroku t i t+1 to ten sam neuron, a PCA na krok dawałaby przeskoki osi,
 które wyglądają jak ruch cząstek, a nim nie są (Vernier i in. 2020).
 """
+import json
+import os
+import time
+
 import numpy as np
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QGroupBox, QHBoxLayout, QLabel, QMessageBox,
@@ -24,7 +28,7 @@ from wspolne import (ctrl_wcisniety, paleta_zaznaczenia, polacz_zaznaczenie, prz
                      tokeny_w_prostokacie)
 import przyczyny_ruchu as PR
 from styl import rola
-from uklad import Przeplyw, dodaj
+from uklad import Przeplyw, RamaPanelu, dodaj
 from zakladka_detekcji import PlotnoCiemne
 from zakladka_filmu import KOLOR_VIT, WatekFilmu, prostokat
 
@@ -59,8 +63,16 @@ class ZakladkaUczenia(QWidget):
               'Wykresy zawsze pokazują wszystkie kroki.')
         self.btn_wczytaj = rola(QPushButton('Wczytaj historię'), 'glowny')
         self.btn_wczytaj.setToolTip('Wczytuje latent klatki ze wszystkich kroków, liczy miary ruchu i detekcję z wag.\n'
-                                    'Pierwszy raz około 30-50 s (kopia float16 trafia do app/cache_uczenia), potem kilka sekund.')
+                                    'Pierwszy raz około 50 s; policzona sekwencja (latent float16, miary ruchu, detekcja,\n'
+                                    'oscylator, czubek) trafia do app/cache_uczenia i następnym razem wczytuje się w kilka sekund.\n'
+                                    'Zmiana danych biegu (latent albo wagi) unieważnia zapis i liczy od nowa.')
         w.addWidget(self.btn_wczytaj)
+        self.chk_auto = QCheckBox('przy starcie')
+        self.chk_auto.setChecked(self._ostatnie().get('auto', True))
+        self.chk_auto.setToolTip('Po uruchomieniu programu wczytuje w tle ostatnio oglądany bieg i klatkę (z zapisanej\n'
+                                 'sekwencji, kilka sekund) razem z ostatnio policzonymi równaniami cząstek.')
+        self.chk_auto.toggled.connect(lambda v: self._zapisz_ostatnie(auto=v))
+        w.addWidget(self.chk_auto)
         self.pasek = QProgressBar(); self.pasek.setMaximumWidth(220); self.pasek.setTextVisible(False); w.addWidget(self.pasek)
         self.btn_przyczyny = rola(QPushButton('Licz przyczyny ruchu'), 'narzedzie')
         self.btn_przyczyny.setToolTip('Rozkłada ruch cząsteczek tej klatki w każdym przedziale między checkpointami wag\n'
@@ -71,6 +83,16 @@ class ZakladkaUczenia(QWidget):
         self.etykieta_biegu = rola(QLabel('' if self.biegi else 'Brak biegów z gęstą historią w experiments/*/wyniki/*/dane.'),
                                    'opis')
         w.addWidget(self.etykieta_biegu)
+
+        # ---------------- widoki: które panele są pokazane (każdy ma też ✕ i „Odepnij” na swoim pasku)
+        self.chk_widok_obraz = QCheckBox('obraz i wykresy'); self.chk_widok3d = QCheckBox('widok 3D')
+        self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_rown = QCheckBox('równanie')
+        self.chk_widok_rown.setToolTip('Czwarty panel: równanie Langevina, GLE i Koopmana wybranych cząstek z ich własnej historii.')
+        w.addWidget(rola(QLabel('Widoki:'), 'opis'))
+        for c in (self.chk_widok_obraz, self.chk_widok3d, self.chk_widok_makro, self.chk_widok_rown):
+            c.setChecked(True); w.addWidget(c)
+            if not c.toolTip():
+                c.setToolTip(f'Pokazuje albo chowa panel „{c.text()}” (to samo co ✕ na jego pasku).')
 
         # ---------------- środek: klatka i wykresy | 3D | makro
         podzial = QSplitter(Qt.Orientation.Horizontal)
@@ -104,7 +126,7 @@ class ZakladkaUczenia(QWidget):
         self.canvas_z.setToolTip('Każdy zaznaczony patch osobno przez całe uczenie (kolory jak na obrazie i w przestrzeni\n'
                                  'makro); biała przerywana = średnia zaznaczonych. Pionowa linia = bieżący krok, klik: krok.')
         self.zakl_wyk.addTab(self.canvas_z, 'Zaznaczone patche')
-        podzial.addWidget(lewa)
+        podzial.addWidget(RamaPanelu('Obraz klatki i wykresy uczenia', lewa, self.chk_widok_obraz))
 
         from czasteczki3d import WidokCzasteczek3D
         from przestrzen_makro import WidokPrzestrzeniMakro
@@ -113,7 +135,10 @@ class ZakladkaUczenia(QWidget):
         self.makro.ustaw_wzor(self.w3d)
         from PyQt6.QtWidgets import QStackedWidget
         self._stos = QStackedWidget(); self._stos.addWidget(self.w3d)      # główny panel: widok 3D, atlas albo krajobraz
-        podzial.addWidget(self._stos); podzial.addWidget(self.makro)
+        self.ramy = [RamaPanelu('Widok 3D nad obrazem (atlas, krajobraz)', self._stos, self.chk_widok3d),
+                     RamaPanelu('Przestrzeń makrowektorów', self.makro, self.chk_widok_makro)]
+        podzial.addWidget(self.ramy[0]); podzial.addWidget(self.ramy[1])
+        self.w3d.btn_odepnij.setVisible(False); self.makro.btn_odepnij.setVisible(False)   # odpina pasek ramy
         self.makro.osadz = self._osadz
         for b, opis in ((self.makro.btn_atlas, 'atlas kanałów'), (self.makro.btn_krajobraz, 'krajobraz i tunele')):
             b.setCheckable(True)
@@ -121,7 +146,7 @@ class ZakladkaUczenia(QWidget):
                                        'ponowny klik wraca do widoku 3D.')
         from panel_rownania import PanelRownania
         self.panel = PanelRownania(self)
-        podzial.addWidget(self.panel)
+        podzial.addWidget(RamaPanelu('Równanie cząstek (Langevin, GLE, Koopman)', self.panel, self.chk_widok_rown))
         podzial.setStretchFactor(0, 0); podzial.setStretchFactor(1, 1); podzial.setStretchFactor(2, 1)
         podzial.setSizes([460, 520, 600, 520])
         self._podzial, self._podzielono = podzial, False
@@ -176,12 +201,6 @@ class ZakladkaUczenia(QWidget):
         w.addWidget(self.chk_strzalki)
         self.spin_strz = QDoubleSpinBox(); self.spin_strz.setRange(.1, 100); self.spin_strz.setValue(3)
         dodaj(w, 'x', self.spin_strz, 'Mnożnik długości strzałek przyczyn (ruch w przedziale 10 kroków bywa krótki).')
-        self.chk_widok3d = QCheckBox('widok 3D'); self.chk_widok3d.setChecked(True)
-        self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_makro.setChecked(True)
-        self.chk_widok_rown = QCheckBox('równanie'); self.chk_widok_rown.setChecked(True)
-        self.chk_widok_rown.setToolTip('Czwarty panel: równanie Langevina, GLE i Koopmana wybranych cząstek z ich własnej historii.')
-        w.addWidget(QLabel('Widoki:')); w.addWidget(self.chk_widok3d); w.addWidget(self.chk_widok_makro)
-        w.addWidget(self.chk_widok_rown)
         self.etykieta_kroku = QLabel(''); self.etykieta_kroku.setWordWrap(True); w.addWidget(self.etykieta_kroku, 1)
 
         g = QGroupBox('Prognoza Langevina i ślad toru w przestrzeni makro')
@@ -252,7 +271,8 @@ class ZakladkaUczenia(QWidget):
         self.etykieta_zazn = QLabel('Brak zaznaczenia. Ctrl + klik na obrazie albo w przestrzeni makro dodaje patch.')
         w.addWidget(self.etykieta_zazn)
         self.chk_tylko_zazn = QCheckBox('śledź tylko zaznaczone')
-        self.chk_tylko_zazn.setToolTip('Przestrzeń makro rysuje tylko zaznaczone cząstki i ich ślady (reszta znika), a prognoza\n'
+        self.chk_tylko_zazn.setToolTip('Widok 3D i przestrzeń makro rysują tylko zaznaczone cząstki (makro z ich śladami; każdy widok\n'
+                                       'ma też własne pole „Tylko zaznaczone patche” w opcjach), a prognoza\n'
                                        'Langevina przełącza się na „zaznaczonych patchy (każdy osobno)”. Odtwarzaj uczenie i\n'
                                        'patrz, jak zmieniają się tylko te patche; ich przebiegi są w karcie „Zaznaczone patche”.')
         w.addWidget(self.chk_tylko_zazn)
@@ -287,9 +307,8 @@ class ZakladkaUczenia(QWidget):
         self.combo_sledz.currentIndexChanged.connect(lambda *_: self.idz(self.t))
         self.combo_srodek.currentIndexChanged.connect(lambda *_: self._ustaw_makro())
         self.spin_co.valueChanged.connect(lambda *_: self._po_wczytaniu(None) if self.Z is not None else None)
-        self.chk_widok3d.toggled.connect(lambda v: (self._stos.setVisible(v), self.idz(self.t)))
-        self.chk_widok_makro.toggled.connect(lambda v: (self.makro.setVisible(v), self.idz(self.t)))
-        self.chk_widok_rown.toggled.connect(lambda v: self.panel.setVisible(v))
+        self.chk_widok3d.toggled.connect(lambda v: self.idz(self.t) if v and self.Z is not None else None)
+        self.chk_widok_makro.toggled.connect(lambda v: self.idz(self.t) if v and self.Z is not None else None)
         for sg in (self.panel.combo_model.currentIndexChanged, self.panel.edit.editingFinished, self.panel.spin_L.valueChanged,
                    self.panel.spin_d.valueChanged, self.panel.spin_r.valueChanged, self.panel.spin_od.valueChanged,
                    self.panel.spin_do.valueChanged):
@@ -334,6 +353,35 @@ class ZakladkaUczenia(QWidget):
             v or self.w3d.timer.isActive()), self.w3d.btn_anim.blockSignals(False)))
         self.prz = self.P_prz = None; self._delty = (None, None)
         self._zmiana_biegu()
+        if self.chk_auto.isChecked() and self.biegi and not os.environ.get('EDYTOR_BEZ_AUTOSTARTU'):
+            QTimer.singleShot(1500, self._autostart)                  # po zbudowaniu okna, w tle
+
+    # ------------------------------------------------------------ ostatnio oglądana klatka i autostart
+    def _ostatnie(self):
+        try:
+            return json.loads((AU.CACHE / 'ostatnie.json').read_text(encoding='utf-8'))
+        except Exception:
+            return {}
+
+    def _zapisz_ostatnie(self, **zmiany):
+        d = self._ostatnie(); d.update(zmiany)
+        try:
+            AU.CACHE.mkdir(exist_ok=True)
+            (AU.CACHE / 'ostatnie.json').write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding='utf-8')
+        except OSError:
+            pass
+
+    def _autostart(self):
+        """Wczytaj w tle ostatnio oglądany bieg i klatkę (domyślnie pierwszy bieg, klatka 0)."""
+        if self.watek is not None or self.Z is not None:
+            return
+        d = self._ostatnie()
+        klucze = [b['klucz'] for b in self.biegi]
+        if d.get('bieg') in klucze:
+            self.combo_bieg.setCurrentIndex(klucze.index(d['bieg']))
+        if 0 <= d.get('klatka', 0) < self.combo_klatka.count():
+            self.combo_klatka.setCurrentIndex(d.get('klatka', 0))
+        self._wczytaj()
 
     # ------------------------------------------------------------ wczytanie
     def showEvent(self, e):
@@ -373,11 +421,24 @@ class ZakladkaUczenia(QWidget):
         def zadanie(wt):
             o = AU.opis_biegu(b)
             Z = AU.wczytaj_klatke(b, i, lambda k, n: wt.postep.emit(int(40 * k / n), f'latent: {k}/{n} kroków'))
+            rgb = np.ascontiguousarray(o['obrazy'][i])
+            zap = AU.wczytaj_wyniki(b, i)
+            if zap is not None:                                       # policzona sekwencja z dysku
+                an, d, osc, cz = zap
+                wt.postep.emit(80, 'policzona sekwencja z dysku; model detekcji...')
+                import detekcja as D
+                d['det'] = D.Detektor(o['wagi'][-1])                  # wagi ostatniego checkpointu (jak po detekcje)
+                return dict(opis=o, Z=Z, an=an, dety=d, i=i, rgb=rgb, osc=osc, czubki=cz, z_zapisu=True)
             an = AU.analiza(Z, o['narzedzie'][i], o['tlo'][i],
                             lambda k, n: wt.postep.emit(40 + int(30 * k / n), f'miary ruchu: {k}/{n} kroków'))
-            rgb = np.ascontiguousarray(o['obrazy'][i])
-            d = AU.detekcje(o, rgb, lambda k, n: wt.postep.emit(70 + int(30 * k / n), f'detekcja z wag: {k}/{n}'))
-            return dict(opis=o, Z=Z, an=an, dety=d, i=i, rgb=rgb, osc=AU.oscylator(Z), czubki=AU.czubki_biegu(b))
+            d = AU.detekcje(o, rgb, lambda k, n: wt.postep.emit(70 + int(25 * k / n), f'detekcja z wag: {k}/{n}'))
+            wt.postep.emit(96, 'oscylator i czubek narzędzia...')
+            osc, cz = AU.oscylator(Z), AU.czubki_biegu(b)
+            try:
+                AU.zapisz_wyniki(b, i, an, d, osc, cz)
+            except OSError:
+                pass
+            return dict(opis=o, Z=Z, an=an, dety=d, i=i, rgb=rgb, osc=osc, czubki=cz, z_zapisu=False)
 
         self.watek = WatekFilmu(zadanie, self)
         self.pasek.setRange(0, 100)
@@ -385,6 +446,8 @@ class ZakladkaUczenia(QWidget):
         self.watek.gotowy.connect(lambda w: (setattr(self, 'watek', None), self._po_wczytaniu(w)))
         self.watek.blad.connect(lambda t: (setattr(self, 'watek', None), QMessageBox.critical(self, 'Błąd', t[-2000:])))
         self._status(f'wczytuję historię uczenia klatki {i}...')
+        self._t_wczyt = time.time()
+        self.btn_wczytaj.setEnabled(False)
         self.watek.start()
 
     def _po_wczytaniu(self, w):
@@ -397,6 +460,9 @@ class ZakladkaUczenia(QWidget):
             self.narz = self.opis['narzedzie'][self.i_kl]
             self.token = None
             self.prz = self.P_prz = None; self._delty = (None, None); self.fig_p.clear(); self.canvas_p.draw_idle()
+            self.btn_wczytaj.setEnabled(True)
+            self._zapisz_ostatnie(bieg=self._bieg()['klucz'], klatka=int(self.i_kl))
+            self._z_zapisu = w.get('z_zapisu', False)
         co = self.spin_co.value()
         self.idx = np.arange(0, len(self.Z), co)
         if self.idx[-1] != len(self.Z) - 1:
@@ -413,7 +479,12 @@ class ZakladkaUczenia(QWidget):
         self._zazn_miary = (None, None); self._rysuj_zazn()
         self.idz(0)
         a = self.an
-        self._status(f'Historia: {len(self.Z)} kroków, klatka {self.i_kl}; animacja co {co} krok(ów). '
+        skad = ''
+        if w is not None:
+            skad = (' z zapisanej sekwencji' if self._z_zapisu else ' (policzona i zapisana w cache_uczenia)') + \
+                   f' w {time.time() - getattr(self, "_t_wczyt", time.time()):.1f} s'
+            self.panel.po_wczytaniu()                                 # ostatnio policzone równania cząstek z dysku
+        self._status(f'Historia: {len(self.Z)} kroków, klatka {self.i_kl}{skad}; animacja co {co} krok(ów). '
                      f'Względna zmiana latentu na krok: mediana {np.median(a["wzgl"][1:]) * 100:.2f} %.', 15000)
 
     def _ustaw_makro(self, rysuj=True):
@@ -950,7 +1021,7 @@ class ZakladkaUczenia(QWidget):
         """Zaznaczone patche: kolorowe (albo żółte) na obrazie, jasne w przestrzeni makro (reszta blada albo ukryta
         przy „śledź tylko zaznaczone”), przebiegi w karcie „Zaznaczone patche”; pusty = wyczyść."""
         self.zaznaczenie = np.asarray(tokeny, int) if tokeny is not None and len(tokeny) else None
-        self.makro.tylko_zaznaczone = self.chk_tylko_zazn.isChecked()
+        self.w3d.zaznaczenie = self.zaznaczenie
         self.makro.ustaw_zaznaczenie(self.zaznaczenie, self._kolory_zazn())
         n = 0 if self.zaznaczenie is None else len(self.zaznaczenie)
         self.etykieta_zazn.setText('Brak zaznaczenia. Ctrl + klik na obrazie albo w przestrzeni makro dodaje patch.' if not n else
@@ -969,6 +1040,8 @@ class ZakladkaUczenia(QWidget):
             self.combo_czastka.blockSignals(True); self.combo_czastka.setCurrentIndex(4); self.combo_czastka.blockSignals(False)
         elif not wl and self.combo_czastka.currentIndex() == 4:
             self.combo_czastka.blockSignals(True); self.combo_czastka.setCurrentIndex(0); self.combo_czastka.blockSignals(False)
+        for c in (self.w3d.chk_zazn, self.makro.chk_zazn):          # oba widoki naraz; w każdym można osobno
+            c.blockSignals(True); c.setChecked(wl); c.blockSignals(False)
         if wl and self.zaznaczenie is None:
             self._status('Najpierw zaznacz patche: Ctrl + klik na obrazie albo w przestrzeni makro, prawy przycisk + przeciągnij.')
         self._zaznacz(self.zaznaczenie)

@@ -281,3 +281,51 @@ def czubki_biegu(bieg):
         except Exception:
             wynik.append(None)
     return wynik
+
+
+# ------------------------------------------------------------ policzona sekwencja zapisana na dysku
+WERSJA_WYNIKOW = 1
+
+
+def znacznik_biegu(bieg):
+    """Odcisk danych biegu: rozmiar i czas zmiany latentu, liczba i ostatni checkpoint wag. Inny odcisk = przelicz."""
+    p = bieg['dane'] / 'LATENT_GESTY.npy'
+    st = p.stat()
+    wagi = sorted(bieg['wagi'].glob('k*.pt'))
+    ost = max((w.stat().st_mtime for w in wagi), default=0)
+    return f"v{WERSJA_WYNIKOW}_{st.st_size}_{int(st.st_mtime)}_{len(wagi)}_{int(ost)}"
+
+
+def plik_wynikow(bieg, i, rodzaj='wyniki', rozszerzenie='npz'):
+    return CACHE / f"{bieg['klucz']}_klatka{i:02d}_{rodzaj}.{rozszerzenie}"
+
+
+def zapisz_wyniki(bieg, i, an, dety, osc, czubki):
+    """Miary ruchu, detekcja z wag, oscylator i czubki narzędzia klatki i jako jeden plik npz w cache_uczenia."""
+    CACHE.mkdir(exist_ok=True)
+    d = {'znacznik': np.array(znacznik_biegu(bieg))}
+    d.update({f'an_{k}': np.asarray(v) for k, v in an.items()})
+    d.update({f'de_{k}': np.asarray(v) for k, v in dety.items() if k != 'det'})
+    d.update({f'os_{k}': np.asarray(v) for k, v in osc.items()})
+    d['czubki'] = np.array([(np.nan, np.nan) if c is None else tuple(c) for c in czubki], np.float64).reshape(-1, 2)
+    plik = plik_wynikow(bieg, i)
+    tmp = plik.with_name(plik.stem + '.tmp.npz')
+    np.savez(tmp, **d)
+    tmp.replace(plik)
+
+
+def wczytaj_wyniki(bieg, i):
+    """(an, dety bez modelu, osc, czubki) zapisane przez zapisz_wyniki albo None, gdy brak lub dane biegu się zmieniły."""
+    plik = plik_wynikow(bieg, i)
+    if not plik.exists():
+        return None
+    try:
+        with np.load(plik) as f:
+            if str(f['znacznik']) != znacznik_biegu(bieg):
+                return None
+            czesc = lambda p: {k[len(p):]: (f[k].item() if f[k].ndim == 0 else f[k]) for k in f.files if k.startswith(p)}
+            an, dety, osc = czesc('an_'), czesc('de_'), czesc('os_')
+            czubki = [None if np.isnan(c).any() else (float(c[0]), float(c[1])) for c in f['czubki']]
+        return an, dety, osc, czubki
+    except Exception:
+        return None

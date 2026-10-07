@@ -115,6 +115,10 @@ class WidokPrzestrzeniMakro(QWidget):
         self.chk_tylko_maska = QCheckBox('Tylko cząstki narzędzia')
         self.chk_tylko_maska.setToolTip('Pokazuje tylko patche w obrysie narzędzia bieżącej klatki.')
         w.addWidget(self.chk_tylko_maska)
+        self.chk_zazn = QCheckBox('Tylko zaznaczone patche')
+        self.chk_zazn.setToolTip('Rysuje tylko zaznaczone cząstki i ich ślady (Ctrl + klik albo Shift + przeciągnij tutaj,\n'
+                                 'Ctrl + klik albo prostokąt prawym przyciskiem na obrazie). Bez zaznaczenia: wszystkie.')
+        w.addWidget(self.chk_zazn)
         w = self.panel.wiersz('Wygląd')
         self.combo_kolor = dodaj(w, 'Kolor cząstek:', WaskiCombo(11),
                                  'Jak barwić 600 cząstek (i ich ślady).\n'
@@ -314,7 +318,6 @@ class WidokPrzestrzeniMakro(QWidget):
         self.os_kanalu.setVisible(False); v.addItem(self.os_kanalu)
         self.zaznaczenie, self.kanal = None, None
         self.kolory_zazn = None       # [n, 4] osobne kolory zaznaczonych patchy (None = kolory wg „Kolor cząstek”)
-        self.tylko_zaznaczone = False  # rysuj tylko zaznaczone cząstki (i ich ślady)
         self.osadz = None             # funkcja(nazwa, widżet) zakładki: atlas / krajobraz w jej panelu zamiast okna
         self.znaczniki = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=10, pxMode=True)
         self.znaczniki.setVisible(False); v.addItem(self.znaczniki)      # dodatkowe kropki (np. średnia narzędzia)
@@ -334,7 +337,7 @@ class WidokPrzestrzeniMakro(QWidget):
                   self.chk_atencja.toggled, self.opcje.zmiana, self.spin_wzm.valueChanged, self.chk_czastki.toggled,
                   self.combo_zbior.currentIndexChanged, self.edit_lista.editingFinished, self.chk_objetosc.toggled,
                   self.combo_zasieg.currentIndexChanged, self.spin_rozmycie.valueChanged, self.spin_krycie_obj.valueChanged,
-                  self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled, self.combo_ile.currentIndexChanged,
+                  self.chk_gwiazda.toggled, self.chk_tylko_maska.toggled, self.combo_ile.currentIndexChanged, self.chk_zazn.toggled,
                   self.combo_zdj.currentIndexChanged, self.combo_zdj_kolor.currentIndexChanged,
                   self.spin_zdj_krycie.valueChanged, self.spin_zdj_gest.valueChanged, self.chk_podpisy.toggled):
             s.connect(lambda *_: self._rysuj(skok=True))
@@ -478,7 +481,7 @@ class WidokPrzestrzeniMakro(QWidget):
                     mm = ndimage.map_coordinates(m, [rr, cc], order=1)[..., None]
                     K = K * (1 - .7 * mm) + np.array([1, .15, .1]) * .7 * mm
             a = self.spin_zdj_krycie.value()
-            if self.tylko_zaznaczone and self.zaznaczenie is not None:
+            if self.chk_zazn.isChecked() and self.zaznaczenie is not None:
                 a *= .3                                      # śledzenie zaznaczonych: zdjęcie tylko jako tło do orientacji
             if tryb in (1, 3):
                 if getattr(self, '_twarze_n', None) != (R, C):
@@ -926,7 +929,7 @@ class WidokPrzestrzeniMakro(QWidget):
         self.objetosc.setVisible(True)
 
     def _widoczne(self):
-        if self.tylko_zaznaczone and self.zaznaczenie is not None and len(self.zaznaczenie):
+        if self.chk_zazn.isChecked() and self.zaznaczenie is not None and len(self.zaznaczenie):
             return np.sort(self.zaznaczenie)                         # śledzenie tylko zaznaczonych: bez innych filtrów
         tok = np.arange(600)
         if self.chk_tylko_maska.isChecked() and self.maski is not None:

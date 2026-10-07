@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (QComboBox, QLabel, QLineEdit, QMessageBox, QPushBut
                              QWidget)
 from matplotlib.figure import Figure
 
+import analiza_uczenia as AU
 import rownanie_czastki as RC
 from styl import rola
 from uklad import Przeplyw, dodaj
@@ -20,6 +21,7 @@ from zakladka_detekcji import PlotnoCiemne
 
 KOLORY = ['#ff9f1c', '#2ec4b6', '#e71d36', '#a06cd5', '#7bd389', '#f15bb5', '#4cc9f0', '#fee440']
 STYLE = ['-', '--', ':']
+MAKS_CZASTEK = 20
 
 
 def lista_patchy(tekst):
@@ -35,7 +37,7 @@ def lista_patchy(tekst):
     for t in tok:
         if 0 <= t < 600 and t not in wynik:
             wynik.append(t)
-    return wynik[:8]
+    return wynik[:MAKS_CZASTEK]
 
 
 class PanelRownania(QWidget):
@@ -47,10 +49,15 @@ class PanelRownania(QWidget):
         lay = QVBoxLayout(self); lay.setContentsMargins(0, 0, 0, 0)
         w = Przeplyw(); lay.addLayout(w)
         self.edit = QLineEdit(); self.edit.setPlaceholderText('np. 255, 300, 45, 512'); self.edit.setMinimumWidth(150)
-        dodaj(w, 'Cząstki:', self.edit, 'Numery patchy (wiersz · 30 + kolumna), do 8. Puste: czubek / wybrany, środek\n'
+        dodaj(w, 'Cząstki:', self.edit, 'Numery patchy (wiersz · 30 + kolumna), do 20. Puste: czubek / wybrany, środek\n'
               'narzędzia, środek obrazu i róg tła. Każda cząstka ma swój kolor w przestrzeni makro.')
         b = rola(QPushButton('+ wybrany'), 'narzedzie'); b.setToolTip('Dopisz wybrany patch do listy.')
         b.clicked.connect(self._dodaj_wybrany); w.addWidget(b)
+        b = rola(QPushButton('zaznaczone'), 'narzedzie')
+        b.setToolTip(f'Wpisuje zaznaczone patche (Ctrl + klik, prostokąt; do {MAKS_CZASTEK}) i od razu liczy równanie\n'
+                     'Langevina, GLE i Koopmana osobno dla każdej z tych cząstek, z jej własnej historii.\n'
+                     'Kolory jak zaznaczenie na obrazie i w przestrzeni makro. Policzone raz wracają z zapisu.')
+        b.clicked.connect(self._zaznaczone); w.addWidget(b)
         self.combo_model = QComboBox(); self.combo_model.addItems(RC.MODELE); self.combo_model.setCurrentIndex(1)
         dodaj(w, 'Model:', self.combo_model,
               'Model prognozy rysowany w przestrzeni makro (wszystkie trzy są liczone i porównane w tabeli):\n'
@@ -89,8 +96,22 @@ class PanelRownania(QWidget):
         return lista_patchy(self.edit.text())
 
     def kolor(self, tok):
+        zazn = getattr(self.z, 'zaznaczenie', None)
+        if zazn is not None and tok in list(zazn):                       # kolor zaznaczenia (obraz, makro, wykresy)
+            from matplotlib.colors import to_hex
+            from wspolne import paleta_zaznaczenia
+            return to_hex(paleta_zaznaczenia(len(zazn))[list(zazn).index(tok)][:3])
         t = self.tokeny()
         return KOLORY[t.index(tok) % len(KOLORY)] if tok in t else '#ffffff'
+
+    def _zaznaczone(self):
+        zazn = getattr(self.z, 'zaznaczenie', None)
+        if zazn is None:
+            self.z._status('Najpierw zaznacz patche: Ctrl + klik na obrazie albo w przestrzeni makro.'); return
+        self.edit.setText(', '.join(str(int(t)) for t in list(zazn)[:MAKS_CZASTEK]))
+        if len(zazn) > MAKS_CZASTEK:
+            self.z._status(f'Panel równania liczy najwyżej {MAKS_CZASTEK} cząstek; wzięte pierwsze {MAKS_CZASTEK} zaznaczone.')
+        self.licz()
 
     def _dodaj_wybrany(self):
         if self.z.token is None:
@@ -98,7 +119,7 @@ class PanelRownania(QWidget):
         t = self.tokeny()
         if self.z.token not in t:
             t.append(self.z.token)
-        self.edit.setText(', '.join(map(str, t[:8])))
+        self.edit.setText(', '.join(map(str, t[:MAKS_CZASTEK])))
 
     def parametry(self):
         return dict(od=self.spin_od.value(), do=self.spin_do.value(), L=self.spin_L.value(), d=self.spin_d.value(),
@@ -117,16 +138,31 @@ class PanelRownania(QWidget):
             self.edit.setText(', '.join(map(str, tok)))
         par = self.parametry()
         Z = z.Z
+        plik = self._plik()
         from zakladka_filmu import WatekFilmu
 
         def zadanie(wt):
-            wynik = {}
+            zap = self._wczytaj_zapis(plik)
+            klucz_par = tuple(sorted(par.items()))
+            wynik, nowe = {}, 0
             for i, t in enumerate(tok):
                 x = np.asarray(Z[:, t], np.float32)
-                modele = [RC.dopasuj(x, m, **par) for m in range(3)]
-                ocena = [RC.ocena(mdl, par['do']) for mdl in modele]
-                wynik[t] = dict(modele=modele, ocena=ocena, gle=RC.analiza_gle(modele[1]))
+                modele = [RC.dopasuj(x, m, **par) for m in range(3)]              # szybkie (około 0,6 s razem)
+                r = zap['wpisy'].get((t, klucz_par))
+                if r is None:                                                    # ocena i rozkład: wolne, zapisywane
+                    r = dict(ocena=[RC.ocena(mdl, par['do']) for mdl in modele], gle=RC.analiza_gle(modele[1]))
+                    zap['wpisy'][(t, klucz_par)] = r; nowe += 1
+                wynik[t] = dict(modele=modele, ocena=r['ocena'], gle=r['gle'])
                 wt.postep.emit(int(100 * (i + 1) / len(tok)), f'równanie cząstki {t}: {i + 1}/{len(tok)}')
+            zap['ostatnie'] = (list(tok), par)
+            if plik is not None:
+                try:
+                    import pickle
+                    tmp = plik.with_suffix('.tmp')
+                    tmp.write_bytes(pickle.dumps(zap, protocol=4)); tmp.replace(plik)
+                except OSError:
+                    pass
+            self._z_zapisu = len(tok) - nowe
             return wynik
 
         self.watek = WatekFilmu(zadanie, self)
@@ -136,6 +172,40 @@ class PanelRownania(QWidget):
         self.btn.setEnabled(False)
         self.watek.start()
 
+    # ------------------------------------------------------------ zapis policzonych równań (app/cache_uczenia)
+    def _plik(self):
+        b = self.z._bieg()
+        return None if b is None else AU.plik_wynikow(b, self.z.i_kl, 'rownania', 'pkl')
+
+    def _wczytaj_zapis(self, plik):
+        """Zapisane oceny i rozkłady GLE {(patch, parametry): ...} i ostatnio liczona lista; inny odcisk biegu = pusty."""
+        znacznik = AU.znacznik_biegu(self.z._bieg())
+        try:
+            import pickle
+            d = pickle.loads(plik.read_bytes())
+            if d.get('znacznik') == znacznik:
+                return d
+        except Exception:
+            pass
+        return dict(znacznik=znacznik, wpisy={}, ostatnie=None)
+
+    def po_wczytaniu(self):
+        """Po wczytaniu historii: ostatnio policzone równania tej klatki wracają same (w tle, z zapisu)."""
+        self.wyniki = {}; self.combo_szcz.clear(); self.fig.clear(); self.canvas.draw_idle()
+        plik = self._plik()
+        if plik is None or not plik.exists():
+            return
+        ost = self._wczytaj_zapis(plik).get('ostatnie')
+        if not ost:
+            return
+        tok, par = ost
+        spiny = dict(od=self.spin_od, do=self.spin_do, L=self.spin_L, d=self.spin_d, r=self.spin_r)
+        for k, sp in spiny.items():
+            sp.blockSignals(True); sp.setValue(int(par.get(k, sp.value()))); sp.blockSignals(False)
+        self.edit.blockSignals(True); self.edit.setText(', '.join(map(str, tok))); self.edit.blockSignals(False)
+        self.etykieta.setText('Wczytuję zapisane równania cząstek...')
+        self.licz()
+
     def _gotowe(self, w):
         self.watek = None; self.btn.setEnabled(True)
         self.wyniki = w
@@ -144,6 +214,9 @@ class PanelRownania(QWidget):
         self.z._tory = {}
         self.rysuj()
         self.z.idz(self.z.t)
+        zz = getattr(self, '_z_zapisu', 0)
+        self.z._status(f'Równania {len(w)} cząstek' + (f', {zz} z zapisu w cache_uczenia' if zz else ', zapisane w cache_uczenia')
+                       + '.', 8000)
 
     def model_dla(self, tok):
         """Dopasowany model wybranego typu dla patcha z listy (albo None)."""
