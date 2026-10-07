@@ -228,6 +228,8 @@ class WidokPrzestrzeniMakro(QWidget):
         self.wybrany = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=16, color=(1, 1, 1, 1), pxMode=True)
         self.wybrany.setVisible(False)
         v.addItem(self.wybrany)
+        self.przyczyny = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=3, glOptions='translucent')
+        self.przyczyny.setVisible(False); v.addItem(self.przyczyny)      # strzałki przyczyn ruchu (zakładka uczenia)
         self._kamera()
 
         self._timer = QTimer(self); self._timer.setInterval(16); self._timer.timeout.connect(self._krok_przelotu)
@@ -332,6 +334,27 @@ class WidokPrzestrzeniMakro(QWidget):
         else:
             self._poz = ('rzut', w['g'], w['U'])
             self._opis_poz = f'; usunięte {int(w["r"])} kierunków położenia (95 % jego wariancji)'
+
+    def rzut_delty(self, dz):
+        """Zmiana latentu dz [..., 768] -> przesunięcie cząstki w przestrzeni makro [..., 3] (ta sama baza, kierunki
+        i skala co położenia; średnia i położenie patcha nie grają roli, bo to różnica)."""
+        dz = np.asarray(dz, np.float32)
+        if self._wb is not None:
+            kan, p3 = self._wb
+            F = dz[..., kan] if p3 is None else dz[..., kan] @ p3[1]
+        elif self._pca is not None:
+            mu, W, maska = self._pca
+            F = dz[..., maska] @ W
+        else:
+            F = dz
+        return F @ self.D * self.s
+
+    def rysuj_przyczyny(self, odcinki=None, kolory=None):
+        """Dodatkowe odcinki [2n, 3] z kolorami [2n, 4] (strzałki przyczyn ruchu); None chowa."""
+        if odcinki is None or len(odcinki) == 0:
+            self.przyczyny.setVisible(False); return
+        self.przyczyny.setData(pos=np.ascontiguousarray(odcinki, np.float32), color=np.ascontiguousarray(kolory, np.float32))
+        self.przyczyny.setVisible(True)
 
     def _z_na_sily(self, z):
         """Latent [..., 768] po korekcie położenia -> siły [..., K] w tej samej bazie co widok 3D (tryb „jak 3D”)."""

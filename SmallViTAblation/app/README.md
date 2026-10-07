@@ -335,6 +335,31 @@ z 1,23 do 0,42 / 0,68 / 0,35: część różnicy narzędzia od tła to jego typo
 Uwaga o OpenGL: przy rozłączonej sesji Windows (pulpit zdalny rozłączony, ekran zablokowany) sterownik
 nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki zamiast zgłaszać błąd.
 
+## Zakładka „Uczenie ViT: ruch cząsteczek po krokach” (`zakladka_uczenia.py`, `analiza_uczenia.py`, `przyczyny_ruchu.py`)
+
+Oś czasu to krok uczenia, nie klatka filmu. Źródło: bieg z gęstą historią latentu
+(`experiments/*/wyniki/*/dane/LATENT_GESTY.npy`, obecnie `maly_vit_ruch_czastek_gesta_historia/pelny`:
+1001 kroków co 1, 12 stałych klatek próbnych, wagi co 10 kroków). Pierwsze wczytanie klatki trwa około
+30 s i zapisuje kopię float16 w `app/cache_uczenia/` (0,9 GB na klatkę, poza gitem).
+
+- **Animacja:** suwak i odtwarzanie po krokach, widok 3D nad obrazem i przestrzeń makrowektorów
+  z tymi samymi kierunkami i kolorami. Baza PCA i środek z puli wszystkich kroków (bez PCA na krok,
+  która dawałaby przeskoki osi). „Środek makro”: średnia, stan końcowy (cząstki zbiegają do środka)
+  albo krok 0. Detekcja i atencja z najbliższego checkpointu wag (podpisane w tytule klatki).
+- **Ruch cząsteczek:** strata i mAP, prędkość tokenów w latencie i cząstek w makro (narzędzie, tło,
+  wybrany patch), odległość od stanu końcowego, rozdzielenie narzędzie / tło, efektywny rząd,
+  mapa CKA krok x krok (klik = krok).
+- **Przyczyny ruchu** (przycisk „Licz przyczyny ruchu”, około 30 s), w przedziałach między checkpointami:
+  udział 13 grup wag (łodyga, atencja i MLP każdego bloku) w ruchu cząstek, zmiana wag grup,
+  cos(−∂L/∂z, Δz) i siła gradientu straty względem latentu (ramka z obrysu narzędzia), ruch razem
+  z tokenami, na które token patrzy (z kontrolą: ruch ze średnią wszystkich), zmiana atencji.
+  W makro strzałki dla wybranej cząstki: biała = ruch w przedziale, kolorowe = wkłady grup wag,
+  żółta przerywana = kierunek −gradientu.
+
+Zastrzeżenia: łodyga zawiera biegnące statystyki BatchNorm (zmieniają się też bez gradientu);
+gradient liczony na jednej klatce próbnej, a uczenie szło po paczkach 32 obrazów z AdamW;
+wszystko dotyczy tylko stałych klatek próbnych. Plan dalszych etapów: `PLAN_ANIMACJA_UCZENIA.md`.
+
 ## Pliki
 
 - `silnik.py`: ładowanie modeli, DDIM z postępem, latent z ViT, zakresy kanałów.

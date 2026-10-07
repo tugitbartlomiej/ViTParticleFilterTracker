@@ -19,6 +19,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 
 import analiza_uczenia as AU
+import przyczyny_ruchu as PR
 from styl import rola
 from uklad import Przeplyw, dodaj
 from zakladka_detekcji import PlotnoCiemne
@@ -58,6 +59,12 @@ class ZakladkaUczenia(QWidget):
                                     'Pierwszy raz około 30-50 s (kopia float16 trafia do app/cache_uczenia), potem kilka sekund.')
         w.addWidget(self.btn_wczytaj)
         self.pasek = QProgressBar(); self.pasek.setMaximumWidth(220); self.pasek.setTextVisible(False); w.addWidget(self.pasek)
+        self.btn_przyczyny = rola(QPushButton('Licz przyczyny ruchu'), 'narzedzie')
+        self.btn_przyczyny.setToolTip('Rozkłada ruch cząsteczek tej klatki w każdym przedziale między checkpointami wag\n'
+                                      '(co 10 kroków) na przyczyny: grupy wag (łodyga, atencja i MLP każdego bloku),\n'
+                                      'gradient straty względem latentu i atencję. Około 30 s. Wyniki w zakładce\n'
+                                      '„Przyczyny ruchu” pod klatką i jako strzałki w przestrzeni makro.')
+        w.addWidget(self.btn_przyczyny)
         self.etykieta_biegu = rola(QLabel('' if self.biegi else 'Brak biegów z gęstą historią w experiments/*/wyniki/*/dane.'),
                                    'opis')
         w.addWidget(self.etykieta_biegu)
@@ -78,6 +85,14 @@ class ZakladkaUczenia(QWidget):
         self.canvas_c.setToolTip('Liniowe CKA tokenów klatki między krokami (1 = ta sama geometria 600 tokenów,\n'
                                  'niezależnie od obrotu i skali). Kwadratowe bloki = fazy uczenia. Klik: krok z osi x.')
         self.zakl_wyk.addTab(self.canvas_c, 'Mapa CKA krok × krok')
+        strona = QWidget(); ls = QVBoxLayout(strona); ls.setContentsMargins(0, 0, 0, 0)
+        wp = Przeplyw(); ls.addLayout(wp)
+        self.combo_zbior_p = QComboBox(); self.combo_zbior_p.addItems(['patche narzędzia', 'patche tła', 'wybrany patch'])
+        dodaj(wp, 'Wykresy dla:', self.combo_zbior_p, 'Po których cząstkach uśredniać wykresy przyczyn ruchu.')
+        self.fig_p = Figure(figsize=(5, 7)); self.canvas_p = PlotnoCiemne(self.fig_p)
+        self.canvas_p.setToolTip('Przyczyny ruchu cząsteczek w przedziałach między checkpointami wag. Klik: krok.')
+        ls.addWidget(self.canvas_p, 1)
+        self.zakl_wyk.addTab(strona, 'Przyczyny ruchu')
         podzial.addWidget(lewa)
 
         from czasteczki3d import WidokCzasteczek3D
@@ -119,6 +134,16 @@ class ZakladkaUczenia(QWidget):
               '- krok 0: cząstki startują ze środka i rozchodzą się w miarę uczenia.')
         self.combo_sledz = QComboBox(); self.combo_sledz.addItems(['wyłączone', 'najpewniejszy patch ViT', 'najszybszy patch w kroku'])
         dodaj(w, 'Śledź patch:', self.combo_sledz, 'Automatyczny wybór patcha w każdym kroku; ręczny klik wyłącza.')
+        self.chk_strzalki = QCheckBox('Strzałki przyczyn w makro'); self.chk_strzalki.setChecked(True)
+        self.chk_strzalki.setToolTip('Dla wybranej cząstki w przestrzeni makro, z jej bieżącego położenia (po „Licz przyczyny”):\n'
+                                     '- biała: rzeczywisty ruch w bieżącym przedziale wag (np. krok 500 -> 510);\n'
+                                     '- kolorowe: wkład każdej grupy wag (łodyga, atencja i MLP bloków; kolory jak w\n'
+                                     '  wykresie przyczyn), ich suma ≈ biała strzałka;\n'
+                                     '- żółta przerywana: kierunek −gradient straty względem latentu tej klatki, tej\n'
+                                     '  samej długości co biała (dokąd strata „chciałaby” przesunąć cząstkę).')
+        w.addWidget(self.chk_strzalki)
+        self.spin_strz = QDoubleSpinBox(); self.spin_strz.setRange(.1, 100); self.spin_strz.setValue(3)
+        dodaj(w, 'x', self.spin_strz, 'Mnożnik długości strzałek przyczyn (ruch w przedziale 10 kroków bywa krótki).')
         self.chk_widok3d = QCheckBox('widok 3D'); self.chk_widok3d.setChecked(True)
         self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_makro.setChecked(True)
         w.addWidget(QLabel('Widoki:')); w.addWidget(self.chk_widok3d); w.addWidget(self.chk_widok_makro)
@@ -145,6 +170,12 @@ class ZakladkaUczenia(QWidget):
         self.canvas.mpl_connect('button_press_event', self._klik_klatki)
         self.canvas_r.mpl_connect('button_press_event', self._klik_wykresu)
         self.canvas_c.mpl_connect('button_press_event', self._klik_cka)
+        self.canvas_p.mpl_connect('button_press_event', self._klik_cka)
+        self.btn_przyczyny.clicked.connect(self._licz_przyczyny)
+        self.combo_zbior_p.currentIndexChanged.connect(lambda *_: self._rysuj_przyczyny())
+        self.chk_strzalki.toggled.connect(lambda *_: self.idz(self.t))
+        self.spin_strz.valueChanged.connect(lambda *_: self.idz(self.t))
+        self.prz = self.P_prz = None; self._delty = (None, None)
         self._zmiana_biegu()
 
     # ------------------------------------------------------------ wczytanie
@@ -204,6 +235,7 @@ class ZakladkaUczenia(QWidget):
             self.det = self.dety.pop('det'); self._ckpt_det = len(self.opis['wagi']) - 1
             self.narz = self.opis['narzedzie'][self.i_kl]
             self.token = None
+            self.prz = self.P_prz = None; self._delty = (None, None); self.fig_p.clear(); self.canvas_p.draw_idle()
         co = self.spin_co.value()
         self.idx = np.arange(0, len(self.Z), co)
         if self.idx[-1] != len(self.Z) - 1:
@@ -277,7 +309,10 @@ class ZakladkaUczenia(QWidget):
         if self.combo_sledz.currentIndex():
             self.combo_sledz.blockSignals(True); self.combo_sledz.setCurrentIndex(0); self.combo_sledz.blockSignals(False)
         self.token = int(tok); self.w3d.token = self.token
-        self._rysuj_wykresy(); self.idz(self.t)
+        self._rysuj_wykresy()
+        if self.prz is not None and self.combo_zbior_p.currentIndex() == 2:
+            self._rysuj_przyczyny()
+        self.idz(self.t)
 
     def idz(self, t):
         if self.Z is None:
@@ -310,6 +345,7 @@ class ZakladkaUczenia(QWidget):
         if self.chk_widok_makro.isChecked():
             self.makro.ustaw_atencje(fn)
             self.makro.pokaz_klatke(t, self.token)
+            self._strzalki_przyczyn(k)
         self._rysuj_klatke(k, kc)
         self._kursor(k)
         a = self.an
@@ -389,8 +425,116 @@ class ZakladkaUczenia(QWidget):
         self._linie_c = [ax.axvline(kr[0], color='cyan', lw=.8), ax.axhline(kr[0], color='cyan', lw=.8)]
         self.canvas_c.draw_idle()
 
+    # ------------------------------------------------------------ przyczyny ruchu
+    def _licz_przyczyny(self):
+        if self.Z is None or self.watek:
+            return
+        b, o, i, rgb = self._bieg(), self.opis, self.i_kl, self.rgb
+
+        def zadanie(wt):
+            P = PR.Przyczyny(b, o, i, rgb)
+            return P, P.licz(lambda k, n: wt.postep.emit(int(100 * k / n), f'przyczyny ruchu: checkpoint {k}/{n}'))
+
+        def gotowe(w):
+            self.P_prz, self.prz = w
+            self._delty = (None, None)
+            self._rysuj_przyczyny(); self.zakl_wyk.setCurrentIndex(2); self.idz(self.t)
+            r = self.prz
+            self._status(f'Przyczyny ruchu: {len(r["kroki_wag"]) - 1} przedziałów; średni cos(−gradient, ruch) '
+                         f'{np.nanmean(r["cos_grad"]):.3f}; ruch razem z atencją {np.nanmean(r["cos_atencji"]):.2f} '
+                         f'(kontrola: ze średnią {np.nanmean(r["cos_rowno"]):.2f})', 20000)
+
+        self.watek = WatekFilmu(zadanie, self)
+        self.watek.postep.connect(lambda k, t: (self.pasek.setValue(k), self._status(t, 3000)))
+        self.watek.gotowy.connect(lambda w: (setattr(self, 'watek', None), gotowe(w)))
+        self.watek.blad.connect(lambda t: (setattr(self, 'watek', None), QMessageBox.critical(self, 'Błąd', t[-2000:])))
+        self.watek.start()
+
+    def _maska_p(self):
+        i = self.combo_zbior_p.currentIndex()
+        if i == 2 and self.token is not None:
+            m = np.zeros(600, bool); m[self.token] = True
+            return m, f'patch {self.token}'
+        return (self.narz, 'narzędzie') if i == 0 else (~self.narz, 'tło')
+
+    def _rysuj_przyczyny(self):
+        r = self.prz
+        f = self.fig_p; f.clear()
+        if r is None:
+            self.canvas_p.draw_idle(); return
+        import matplotlib
+        from matplotlib.colors import TwoSlopeNorm
+        m, nazwa = self._maska_p()
+        kw = r['kroki_wag']; x0, x1 = float(kw[0]), float(kw[-1])
+        osie = f.subplots(4, 1, sharex=True)
+        f.subplots_adjust(left=.2, right=.86, top=.96, bottom=.06, hspace=.35)
+        U = r['udzialy'][:, :, m].mean(-1).T                                        # [G, przedziały]
+        v = max(.05, float(np.percentile(np.abs(U), 98)))
+        ax = osie[0]
+        ax.imshow(U, aspect='auto', cmap='coolwarm', norm=TwoSlopeNorm(0, -v, v), extent=(x0, x1, len(PR.GRUPY) - .5, -.5),
+                  interpolation='nearest')
+        ax.set_yticks(range(len(PR.GRUPY))); ax.set_yticklabels(PR.GRUPY, fontsize=6)
+        ax.set_title(f'udział grup wag w ruchu cząstek ({nazwa}); czerwone = pcha w stronę ruchu', fontsize=8)
+        kol = matplotlib.colormaps['tab20'](np.arange(len(PR.GRUPY)) % 20)
+        for g in range(len(PR.GRUPY)):
+            ax.add_patch(matplotlib.patches.Rectangle((x0 - (x1 - x0) * .03, g - .5), (x1 - x0) * .025, 1, color=kol[g],
+                                                      clip_on=False))
+        ax = osie[1]
+        ax.imshow(np.log10(np.maximum(r['zmiana_wag'].T, 1e-6)), aspect='auto', cmap='viridis',
+                  extent=(x0, x1, len(PR.GRUPY) - .5, -.5), interpolation='nearest')
+        ax.set_yticks(range(len(PR.GRUPY))); ax.set_yticklabels(PR.GRUPY, fontsize=6)
+        ax.set_title('zmiana wag grupy w przedziale log10(||ΔW|| / ||W||)', fontsize=8)
+        ax = osie[2]
+        xs = kw[:-1]
+        ax.plot(xs, r['cos_grad'][:, m].mean(1), color='#ffd84a', lw=1, label='cos(−∂L/∂z, Δz)')
+        ax.axhline(0, color='gray', lw=.6)
+        ax.set_ylabel('cos', fontsize=8)
+        ax2 = ax.twinx(); ax2.plot(kw, r['grad_norma'][:, m].mean(1), color='#ff8c40', lw=.9); ax2.set_ylabel('||∂L/∂z||', fontsize=8)
+        ax.set_title('czy cząstki ruszają się wzdłuż −gradientu straty tej klatki (żółta) i jego siła (pomarańczowa)', fontsize=8)
+        ax = osie[3]
+        ax.plot(xs, r['cos_atencji'][:, m].mean(1), color='#40d0ff', lw=1, label='z tym, na co patrzy (atencja)')
+        ax.plot(xs, r['cos_rowno'][:, m].mean(1), color='#8fa3b8', lw=1, ls='--', label='kontrola: ze średnią wszystkich')
+        ax.set_ylabel('cos', fontsize=8)
+        ax2 = ax.twinx(); ax2.plot(kw[1:], r['zmiana_atencji'][:, m].mean(1), color='#d080ff', lw=.9)
+        ax2.set_ylabel('zmiana atencji', fontsize=8)
+        ax.legend(fontsize=6, loc='lower left', framealpha=.3)
+        ax.set_title('ruch razem z tokenami, na które patrzy (niebieska) i zmiana atencji (fioletowa)', fontsize=8)
+        ax.set_xlabel('krok uczenia (początek przedziału wag)', fontsize=8)
+        for ax in f.axes:
+            ax.tick_params(labelsize=7)
+        self._linie_p = [ax.axvline(0, color='white', lw=.8, alpha=.7) for ax in osie]
+        self.canvas_p.draw_idle()
+
+    def _strzalki_przyczyn(self, k):
+        if self.prz is None or self.token is None or not self.chk_strzalki.isChecked():
+            self.makro.rysuj_przyczyny(None); return
+        import matplotlib
+        kw = self.prz['kroki_wag']
+        i = int(np.clip(np.searchsorted(kw, self.kroki[k], 'right') - 1, 0, len(kw) - 2))
+        if self._delty[0] != i:
+            z0, dz, D = self.P_prz.delty(i)
+            g = self.P_prz.gradient(i)[0]
+            self._delty = (i, (dz.cpu().numpy(), D.cpu().numpy(), g.cpu().numpy()))
+        dz, D, g = self._delty[1]
+        tok = self.token
+        mn = self.spin_strz.value()
+        o = self.makro._biezace()[tok]
+        wek = self.makro.rzut_delty(np.concatenate([dz[tok][None], D[:, tok]], 0)) * mn          # [1 + G, 3]
+        gn = self.makro.rzut_delty(-g[tok][None])[0]
+        gn = gn / max(float(np.linalg.norm(gn)), 1e-12) * float(np.linalg.norm(wek[0]))
+        kol = np.concatenate([[[1, 1, 1, 1]], matplotlib.colormaps['tab20'](np.arange(len(PR.GRUPY)) % 20)]).astype(np.float32)
+        seg = [o, o + wek[0]] + sum(([o, o + v] for v in wek[1:]), [])
+        kolory = [kol[0], kol[0]] + sum(([c, c] for c in kol[1:]), [])
+        for a in range(6):                                                          # przerywana żółta: −gradient
+            seg += [o + gn * a / 6, o + gn * (a + .5) / 6]; kolory += [(1, .85, .2, 1)] * 2
+        self.makro.rysuj_przyczyny(np.array(seg), np.array(kolory))
+
     def _kursor(self, k):
         x = float(self.kroki[k])
+        for l in getattr(self, '_linie_p', []):
+            l.set_xdata([x, x])
+        if getattr(self, '_linie_p', None) and self.zakl_wyk.currentIndex() == 2:
+            self.canvas_p.draw_idle()
         for l in getattr(self, '_linie', []):
             l.set_xdata([x, x])
         self.canvas_r.draw_idle()
