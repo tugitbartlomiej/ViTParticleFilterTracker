@@ -35,7 +35,8 @@ class WidokPrzestrzeniMakro(QWidget):
     token_wybrany = pyqtSignal(int)
     KIERUNKI = ['sfera Fibonacciego (jak widok 3D)', 'losowe (stałe ziarno)', 'PCA latentu sekwencji (3 składowe)',
                 'półsfera Fibonacciego (z > 0)', 'jak widok 3D nad obrazem (te same kierunki, PCA i kanały)']
-    KOLORY = ['wg położenia patcha (kolumna = barwa, wiersz = jasność)', 'narzędzie (czerwone) i tło (szare)',
+    KOLORY = ['kolor najsilniejszego mikrowektora (jak w widoku 3D)', 'mieszanka kolorów mikrowektorów (ważona długością)',
+              'wg położenia patcha w siatce (kolumna = barwa, wiersz = jasność)', 'narzędzie (czerwone) i tło (szare)',
               'wg pewności ViT w patchu']
 
     def __init__(self, kanaly_j128=None):
@@ -104,7 +105,12 @@ class WidokPrzestrzeniMakro(QWidget):
         self.chk_tylko_maska.setToolTip('Pokazuje tylko patche w obrysie narzędzia bieżącej klatki.')
         w.addWidget(self.chk_tylko_maska)
         w = self.panel.wiersz('Wygląd')
-        self.combo_kolor = dodaj(w, 'Kolor cząstek:', WaskiCombo(11), 'Jak barwić 600 cząstek.')
+        self.combo_kolor = dodaj(w, 'Kolor cząstek:', WaskiCombo(11),
+                                 'Jak barwić 600 cząstek (i ich ślady).\n'
+                                 '- najsilniejszy mikrowektor: kolor kanału (składowej PCA) o największej długości\n'
+                                 '  mikrowektora tej cząstki w bieżącej klatce; te same kolory co wektory w widoku 3D;\n'
+                                 '- mieszanka: średnia kolorów wszystkich mikrowektorów ważona ich długością;\n'
+                                 '- położenie w siatce, narzędzie/tło, pewność ViT: kolory niezależne od wektorów.')
         self.combo_kolor.addItems(self.KOLORY)
         self.spin_rozmiar = dodaj(w, 'Rozmiar:', QDoubleSpinBox(), 'Średnica cząstek w pikselach ekranu.')
         self.spin_rozmiar.setRange(1, 30); self.spin_rozmiar.setValue(6)
@@ -416,13 +422,22 @@ class WidokPrzestrzeniMakro(QWidget):
                 D = D * maska[:, None]                                         # kanały spoza wyboru: siła 0
             self.D = D
             self.kolory_kan = kolory_kanalow(K)
-        surowe = np.stack([self.sily(t) @ D for t in range(T)])               # [T, 600, 3]
+        a = self.spin_ema.value()
+        dl_d = np.linalg.norm(D, axis=1)                                        # [K]: 0 dla kanałów spoza wyboru
+        kol = self.kolory_kan[:, :3]
+        surowe = np.zeros((T, 600, 3), np.float32)
+        self._dom = np.zeros((T, 600), np.int32)                                # najsilniejszy mikrowektor cząstki
+        self._mieszanka = np.zeros((T, 600, 3), np.float32)                     # kolory mikrowektorów ważone długością
+        F = None
+        for t in range(T):
+            Ft = self.sily(t)                                                   # [600, K]
+            F = Ft if (F is None or a >= 1) else a * Ft + (1 - a) * F           # EMA sił (liniowa) = EMA torów
+            surowe[t] = F @ D
+            dl = np.abs(F) * dl_d                                               # długości mikrowektorów [600, K]
+            self._dom[t] = dl.argmax(1)
+            self._mieszanka[t] = dl @ kol / np.maximum(dl.sum(1, keepdims=True), 1e-12)
         r = np.linalg.norm(surowe, axis=-1)
         self.s = 100 / max(float(np.percentile(r, 99)), 1e-9)
-        a = self.spin_ema.value()
-        if a < 1:                                                               # EMA torów po klatkach (liniowa)
-            for t in range(1, T):
-                surowe[t] = a * surowe[t] + (1 - a) * surowe[t - 1]
         self.P = surowe * self.s
         self._rysuj(skok=True)
 
@@ -477,6 +492,16 @@ class WidokPrzestrzeniMakro(QWidget):
     def _kolory(self):
         i = self.combo_kolor.currentIndex()
         t = np.arange(600)
+        if i in (0, 1) and getattr(self, '_dom', None) is not None and len(self._dom) == len(self.P):
+            if i == 0:                                                          # kolor kanału, jak wektor w 3D
+                c = self.kolory_kan[self._dom[self.t]].copy()
+            else:
+                m = self._mieszanka[self.t]
+                m = m / np.maximum(m.max(1, keepdims=True), 1e-6)               # pełna jasność, ta sama barwa
+                c = np.concatenate([m, np.ones((600, 1), np.float32)], 1)
+            c[:, 3] = .9
+            return c.astype(np.float32)
+        i = max(0, i - 2)
         if i == 1 and self.maski is not None:
             m = self.maski[self.t]
             c = np.tile(np.array([.55, .55, .6, .55], np.float32), (600, 1)); c[m] = (1, .2, .15, 1)
@@ -616,7 +641,7 @@ class WidokPrzestrzeniMakro(QWidget):
             seg = np.stack([np.broadcast_to(o, v.shape), o + v * self.spin_mikro.value()], 1).reshape(-1, 3)
             dl = np.linalg.norm(v, axis=1)
             c = np.repeat(kol_v, 2, 0).copy()
-            c[:, 3] = np.repeat(.25 + .75 * dl / max(float(dl.max()), 1e-9), 2)  # silniejszy = mniej przezroczysty
+            c[:, 3] = 1                                                         # pełne kolory, jak wektory w 3D
             self.mikro.setData(pos=np.ascontiguousarray(seg, np.float32), color=c)
             self.wypadkowa.setData(pos=np.stack([o, o + v.sum(0)]).astype(np.float32))   # = położenie cząstki
             self.mikro.setVisible(True); self.wypadkowa.setVisible(True)
