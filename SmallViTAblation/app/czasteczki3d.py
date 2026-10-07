@@ -110,6 +110,34 @@ class WidokCzasteczek3D(QWidget):
         self.chk_siatka = QCheckBox('Siatka patchy'); self.chk_siatka.setChecked(True)
         self.chk_siatka.setToolTip('Linie siatki 20x30 na płaszczyźnie obrazu.')
         w.addWidget(self.chk_siatka)
+        w = self.panel.wiersz('Obraz')
+        self.chk_mies = QCheckBox('Koloruj obraz mieszanką kolorów wektorów')
+        self.chk_mies.setToolTip(
+            'Każdy patch obrazu dostaje kolor = średnia kolorów jego wektorów (kanałów albo składowych PCA,\n'
+            'te same kolory co wektory) ważona siłą wektora. Silniejszy wektor ma większy udział w kolorze.\n'
+            'Liczone z tego, co pokazuje widok (PRZED, PO, różnica, przejście), dla wszystkich 600 patchy.')
+        w.addWidget(self.chk_mies)
+        self.combo_waga = dodaj(w, 'Waga:', WaskiCombo(12),
+                                'Waga wektora c w mieszance:\n'
+                                '- |wartość|: długość wektora (siła kanału albo składowej);\n'
+                                '- wartość²: mocniej faworyzuje najsilniejsze wektory;\n'
+                                '- wartość⁴: prawie sam najsilniejszy wektor, ale płynnie;\n'
+                                '- tylko dodatnie: wektory skierowane na zewnątrz (wartość > 0), waga = wartość.')
+        self.combo_waga.addItems(['|wartość| (długość)', 'wartość²', 'wartość⁴', 'tylko dodatnie'])
+        self.spin_mies_krycie = dodaj(w, 'Krycie koloru:', QDoubleSpinBox(),
+                                      '0 = sam obraz, 1 = sam kolor mieszanki (bez zdjęcia).')
+        self.spin_mies_krycie.setRange(0, 1); self.spin_mies_krycie.setSingleStep(.1); self.spin_mies_krycie.setValue(.6)
+        self.spin_nasyc = dodaj(w, 'Nasycenie:', QDoubleSpinBox(),
+                                'Mieszanka wielu kolorów szarzeje, więc kolor jest automatycznie oddalany od szarości tak,\n'
+                                'żeby 98 % patchy mieściło się w pełnej palecie; ten mnożnik wzmacnia (> 1) albo osłabia (< 1).')
+        self.spin_nasyc.setRange(.1, 10); self.spin_nasyc.setSingleStep(.1); self.spin_nasyc.setValue(1)
+        self.chk_mies_jasn = QCheckBox('jasność wg siły')
+        self.chk_mies_jasn.setToolTip('Patche o większej łącznej sile wektorów jaśniejsze (względem 99. centyla w klatce).')
+        w.addWidget(self.chk_mies_jasn)
+        self.chk_mies_gladko = QCheckBox('gładko')
+        self.chk_mies_gladko.setToolTip('Płynne przejścia między patchami (interpolacja); wyłączone = kwadraty patchy.')
+        w.addWidget(self.chk_mies_gladko)
+        self._mies = None
 
         # Atencja: włącznik w pierwszym wierszu wspólnego panelu opcji atencji
         self.chk_atencja = QCheckBox('Atencja na obrazie')
@@ -207,6 +235,9 @@ class WidokCzasteczek3D(QWidget):
                   self.spin_krycie.valueChanged):
             k.connect(lambda *_: (self._podloze(), self._rysuj()))
         self.chk_siatka.toggled.connect(lambda v: self.siatka.setVisible(v))
+        for k in (self.chk_mies.toggled, self.combo_waga.currentIndexChanged, self.spin_mies_krycie.valueChanged,
+                  self.spin_nasyc.valueChanged, self.chk_mies_jasn.toggled, self.chk_mies_gladko.toggled):
+            k.connect(lambda *_: self._rysuj())
         self.chk_zero.toggled.connect(lambda *_: self._rysuj())
 
     # ------------------------------------------------------------ scena
@@ -289,8 +320,11 @@ class WidokCzasteczek3D(QWidget):
         for a, b in ((w.spin_r0, self.spin_r0), (w.spin_skala, self.spin_skala), (w.spin_gr, self.spin_gr), (w.spin_krycie, self.spin_krycie),
                      (w.spin_alfa, self.spin_alfa), (w.spin_wys, self.spin_wys), (w.spin_maks, self.spin_maks)):
             a.setValue(b.value())
+        w.combo_waga.setCurrentIndex(self.combo_waga.currentIndex())
+        w.spin_mies_krycie.setValue(self.spin_mies_krycie.value()); w.spin_nasyc.setValue(self.spin_nasyc.value())
         for a, b in ((w.chk_obraz, self.chk_obraz), (w.chk_atencja, self.chk_atencja), (w.chk_siatka, self.chk_siatka),
-                     (w.chk_zero, self.chk_zero), (w.chk_tylko, self.chk_tylko)):
+                     (w.chk_zero, self.chk_zero), (w.chk_tylko, self.chk_tylko), (w.chk_mies, self.chk_mies),
+                     (w.chk_mies_jasn, self.chk_mies_jasn), (w.chk_mies_gladko, self.chk_mies_gladko)):
             a.setChecked(b.isChecked())
         w.suwak.setValue(self.suwak.value())
         w.opcje.kopiuj_z(self.opcje)
@@ -328,9 +362,44 @@ class WidokCzasteczek3D(QWidget):
                 kol = np.repeat(np.repeat(kol, KOMORKA, 0), KOMORKA, 1)
                 a = self.opcje.krycie()
                 img = img * (1 - a) + kol * a
-        alfa = int(round(255 * self.spin_krycie.value())) if (self.chk_obraz.isChecked() or self.chk_atencja.isChecked()) else 0
+        if self.chk_mies.isChecked() and self._mies is not None:
+            M = self._mies.reshape(WIERSZE, KOLUMNY, 3)
+            if self.chk_mies_gladko.isChecked():
+                from scipy import ndimage
+                M = ndimage.zoom(M, (KOMORKA, KOMORKA, 1), order=1, mode='nearest')[:WYS, :SZER]
+            else:
+                M = np.repeat(np.repeat(M, KOMORKA, 0), KOMORKA, 1)
+            a = self.spin_mies_krycie.value()
+            img = img * (1 - a) + M * a
+        alfa = int(round(255 * self.spin_krycie.value())) if (self.chk_obraz.isChecked() or self.chk_atencja.isChecked()
+                                                               or self.chk_mies.isChecked()) else 0
         rgba = np.concatenate([np.clip(img * 255, 0, 255).astype(np.uint8), np.full((WYS, SZER, 1), alfa, np.uint8)], 2)
         self.podloze.setData(np.ascontiguousarray(np.flipud(rgba).transpose(1, 0, 2)))   # [x, y, RGBA], y w górę
+
+    def _mieszanka(self):
+        """Kolor każdego z 600 patchy: kolory wektorów ważone ich siłą w tym, co pokazuje widok -> [600, 3] w 0..1."""
+        polsfera = self.combo_ksztalt.currentIndex() == 1
+        przed, po, kan, kolory, _, _ = self._dane(polsfera)
+        L, _ = self._latent(przed, po)
+        X = np.asarray(L, np.float32)[:, kan]
+        i = self.combo_waga.currentIndex()
+        W = np.abs(X) if i == 0 else X ** 2 if i == 1 else X ** 4 if i == 2 else np.clip(X, 0, None)
+        sila = W.sum(1)
+        C = W @ np.asarray(kolory, np.float32)[kan, :3] / np.maximum(sila, 1e-12)[:, None]
+        g = C.mean(1, keepdims=True)
+        ref = max(float(np.percentile(np.abs(C - g).max(1), 98)), 1e-6)       # różnica od szarości w tej klatce
+        C = np.clip(g + (C - g) * (.45 / ref) * self.spin_nasyc.value(), 0, 1)
+        if self.chk_mies_jasn.isChecked():
+            C = C * np.clip(sila / max(float(np.percentile(sila, 99)), 1e-12), 0, 1)[:, None]
+        return C.astype(np.float32)
+
+    def _odswiez_mieszanke(self):
+        if not self.chk_mies.isChecked():
+            if self._mies is not None:
+                self._mies = None; self._podloze()
+            return
+        self._mies = self._mieszanka()
+        self._podloze()
 
     # ------------------------------------------------------------ geometria
     def _kanaly(self):
@@ -434,6 +503,7 @@ class WidokCzasteczek3D(QWidget):
         if self.przed is None:
             return
         t0 = time.perf_counter()
+        self._odswiez_mieszanke()
         if not self.chk_czasteczki.isChecked():                   # cząsteczki wyłączone: sam obraz, atencja i łuki
             for it in (self.linie, self.punkty, self.szare, self.zera):
                 it.setVisible(False)
