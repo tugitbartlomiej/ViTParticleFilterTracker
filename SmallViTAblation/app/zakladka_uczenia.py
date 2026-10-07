@@ -149,6 +149,7 @@ class ZakladkaUczenia(QWidget):
         self.w3d = WidokCzasteczek3D(self.j128)
         self.makro = WidokPrzestrzeniMakro(self.j128)
         self.makro.ustaw_wzor(self.w3d)
+        self._domyslne_makro()
         from PyQt6.QtWidgets import QStackedWidget
         self._stos = QStackedWidget(); self._stos.addWidget(self.w3d)      # główny panel: widok 3D, atlas albo krajobraz
         self.ramy = [RamaPanelu('Widok 3D nad obrazem (atlas, krajobraz)', self._stos, self.chk_widok3d),
@@ -428,6 +429,27 @@ class ZakladkaUczenia(QWidget):
         self._zmiana_biegu()
         if self.chk_auto.isChecked() and self.biegi and not os.environ.get('EDYTOR_BEZ_AUTOSTARTU'):
             QTimer.singleShot(1500, self._autostart)                  # po zbudowaniu okna, w tle
+
+    def _domyslne_makro(self):
+        """Domyślne ustawienia przestrzeni makro w tej zakładce (wybrane przez użytkownika 2026-10-07)."""
+        m = self.makro
+
+        def wybierz(combo, tekst):
+            i = combo.findText(tekst, Qt.MatchFlag.MatchStartsWith)
+            if i >= 0:
+                combo.setCurrentIndex(i)
+
+        wybierz(m.combo_kier, 'sfera Fibonacciego'); wybierz(m.combo_kan, 'wszystkie 768')
+        wybierz(m.combo_pca, 'bez PCA'); wybierz(m.combo_poz, 'nie odejmuj')
+        m.chk_srodek.setChecked(False); m.chk_orto.setChecked(False)
+        wybierz(m.combo_ile, 'wszystkie'); m.chk_tylko_maska.setChecked(False); m.chk_zazn.setChecked(True)
+        wybierz(m.combo_kolor, 'kolor najsilniejszego'); m.spin_rozmiar.setValue(6)
+        m.chk_czastki.setChecked(True); m.chk_gwiazda.setChecked(False)
+        wybierz(m.combo_mies_waga, '|wartość|'); m.spin_mies_nasyc.setValue(1); m.chk_mies_jasn.setChecked(False)
+        m.spin_slad.setValue(8); m.spin_ema.setValue(1); m.spin_przejscie.setValue(250)
+        wybierz(m.combo_zdj, 'brak'); wybierz(m.combo_zdj_kolor, 'kolory zdjęcia')
+        m.spin_zdj_krycie.setValue(.45); m.spin_zdj_gest.setValue(4); m.chk_podpisy.setChecked(False)
+        wybierz(m.combo_mikro, 'brak'); m.spin_mikro.setValue(1)
 
     # ------------------------------------------------------------ ostatnio oglądana klatka i autostart
     def _ostatnie(self):
