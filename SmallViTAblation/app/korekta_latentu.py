@@ -63,6 +63,7 @@ CELE = {
     'strata': 'zmniejszenie pełnej straty detekcji (ogniskowa + 2 (1 − GIoU))',
     'lokalizacja': 'lokalizacja (ogniskowa pozytywna + 2 (1 − GIoU)) z karą za fałszywe szczyty',
     'najmniejsza': 'najmniejsza znaleziona korekta osiągająca próg jakości (siatka promieni normy)',
+    'detekcja': 'wielocelowy z zakładki Detekcja: pewność środka do celu, tłumienie tła, ranking, ramka i GIoU',
 }
 TOKENY = ['wszystkie 600', 'zaznaczone w zakładce Uczenie', 'obiekt (z GT)', 'granica obiektu (z GT)', 'tło (z GT)']
 NORMY = {'brak': 'bez ograniczenia normy', 'calosc': '||δ|| całej korekty <= ρ', 'token': '||δ|| każdego tokenu <= ρ'}
@@ -434,9 +435,36 @@ def cel_z_ramek(ramki, dev):
     return heat.to(dev), ltrb.to(dev), poz.to(dev)
 
 
-def funkcja_celu(cel, cz, lam_fp):
+def strata_detekcji(o, ramka, cel_pewnosc=0.95, waga_pewnosci=1.0, waga_ramki=1.0):
+    """Strata wielocelowa jak w detekcja.Detektor.optymalizuj (zakładka „Detekcja ViT”): logit komórki środka etykiety
+    dąży do logit(cel_pewnosc) + 0,5 (softplus), tłumienie pozostałych 599 logitów, ranking (entropia krzyżowa środka),
+    log-odległości ramki w komórce środka (smooth L1) i 1 − GIoU. Jedna ramka (pierwsza z etykiety)."""
+    import math
+    import torch.nn.functional as F
+    g = np.asarray(ramka, np.float32).reshape(-1, 4)[0]
+    p_cel = min(max(float(cel_pewnosc), 1e-3), 1 - 1e-4)
+    logit_cel = math.log(p_cel / (1 - p_cel)) + 0.5
+    cx = int(np.clip(round((g[0] + g[2]) / 32 - .5), 0, 29)); cy = int(np.clip(round((g[1] + g[3]) / 32 - .5), 0, 19))
+    s = cy * 30 + cx
+    px, py = (cx + .5) * 16, (cy + .5) * 16
+    odl = torch.tensor([[px - g[0], py - g[1], g[2] - px, g[3] - py]], device=o.device).clamp(min=.05) / 16
+    flat = o.reshape(1, 600, 5); logit = flat[:, :, 0]
+    neg = torch.ones(1, 600, device=o.device); neg[0, s] = 0
+    pozyt = F.softplus(logit_cel - logit[0, s])
+    negat = (F.softplus(logit + 2) * neg).sum() / 599
+    rank = F.cross_entropy(logit, torch.tensor([s], device=o.device))
+    ramka_l = F.smooth_l1_loss(flat[:, s, 1:], odl.log())
+    giou = _giou(flat[:, s, 1:].clamp(-10, 10).exp(), odl).mean()
+    return (waga_pewnosci * (pozyt + negat + .5 * rank) + waga_ramki * (20 * ramka_l + 10 * (1 - giou)))[None]
+
+
+def funkcja_celu(cel, cz, lam_fp, o=None, ramki=None, spec=None):
     if cel == 'lokalizacja':
         return cz['ogniskowa_poz'] + 2 * cz['ramka'] + lam_fp * cz['kara_fp']
+    if cel == 'detekcja':
+        spec = spec or {}
+        return strata_detekcji(o, ramki, spec.get('cel_pewnosc', .95), spec.get('waga_pewnosci', 1.),
+                               spec.get('waga_ramki', 1.))
     return cz['strata']
 
 
@@ -516,7 +544,7 @@ def _jeden_przebieg(st, baza, ramki, cel_t, spec, przerwij=None, postep=None, za
     for krok in range(kroki + 1):
         zp, rr, o = st.wyjscie(d, baza, spec)
         cz = skladniki_straty(o, *cel_t, tau_fp=tau_fp)
-        Lc = funkcja_celu(cel, cz, lam_fp)[0]
+        Lc = funkcja_celu(cel, cz, lam_fp, o, ramki, spec)[0]
         L = Lc + lam * (d ** 2).mean()
         opt.zero_grad(set_to_none=True)
         L.backward()

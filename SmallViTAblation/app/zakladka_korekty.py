@@ -465,7 +465,7 @@ class ZakladkaKorekty(QWidget):
             spec = self._spec()
         except Exception as e:
             self._status(f'Ustawienia: {e}'); return
-        if spec['cel'] in ('lokalizacja', 'najmniejsza') and (self.ramki is None or not len(self.ramki)):
+        if spec['cel'] in ('lokalizacja', 'najmniejsza', 'detekcja') and (self.ramki is None or not len(self.ramki)):
             self._status('Brak etykiety obiektu: ten cel wymaga ramki GT.'); return
         rgb, ramki, opis = self.rgb, self.ramki, dict(self.opis_obr)
         zazn = self._zaznaczenie()
