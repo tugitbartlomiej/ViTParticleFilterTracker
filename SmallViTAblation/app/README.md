@@ -347,6 +347,8 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   tylko dodatnie), z automatycznym nasyceniem, opcjonalnie jasność według łącznej siły i gładkie przejścia.
 - Przestrzeń makro, „Kolor cząstek: mieszanka kolorów mikrowektorów”: ta sama mieszanka na ruchomych
   cząstkach, liczona w każdej klatce przy rysowaniu (waga, nasycenie, jasność według siły w „Wygląd”).
+- Klik (bez przeciągania) w cząstkę w przestrzeni makro wybiera jej patch: biała ramka na obrazie, w widoku
+  3D nad obrazem i duża biała cząstka w makro (zakładki filmu i uczenia; wyłącza automatyczne śledzenie).
 - Zakładka uczenia: „kroków/s” do 10 000; powyżej szybkości odświeżania ekranu odtwarzanie przeskakuje
   kroki według zegara.
 
