@@ -564,6 +564,7 @@ class WidokCzasteczek3D(QWidget):
         if wl:
             if self.po is None:
                 self.btn_anim.setChecked(False)
+                self.etykieta.setText('Animuj: potrzebne dwa stany, PRZED i PO (porównanie); teraz jest tylko jeden.')
                 return
             if self.combo_tryb.currentIndex() != 4:
                 self.combo_tryb.setCurrentIndex(4)

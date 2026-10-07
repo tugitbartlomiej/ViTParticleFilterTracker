@@ -132,8 +132,15 @@ class ZakladkaUczenia(QWidget):
               '- stan końcowy: cząstka = s · (z_t − z_końcowy tego patcha) · D, więc na końcu uczenia wszystkie\n'
               '  cząstki są w środku układu; widać, jak każdy patch dochodzi do swojego stanu końcowego;\n'
               '- krok 0: cząstki startują ze środka i rozchodzą się w miarę uczenia.')
-        self.combo_sledz = QComboBox(); self.combo_sledz.addItems(['wyłączone', 'najpewniejszy patch ViT', 'najszybszy patch w kroku'])
-        dodaj(w, 'Śledź patch:', self.combo_sledz, 'Automatyczny wybór patcha w każdym kroku; ręczny klik wyłącza.')
+        self.combo_sledz = QComboBox()
+        self.combo_sledz.addItems(['wyłączone', 'czubek narzędzia (z etykiety)', 'najpewniejszy patch ViT', 'najszybszy patch w kroku'])
+        self.combo_sledz.setCurrentIndex(1)
+        dodaj(w, 'Śledź patch:', self.combo_sledz,
+              'Automatyczny wybór patcha w każdym kroku; ręczny klik wyłącza.\n'
+              '- czubek narzędzia: patch, w którym leży cystotome_tip z annotation.csv tej klatki (czerwone kółko\n'
+              '  na obrazie); klatka jest stała, więc to ten sam patch w każdym kroku; bez etykiety: najpewniejszy ViT;\n'
+              '- najpewniejszy patch ViT: z wag najbliższego checkpointu (środek wykrytego narzędzia);\n'
+              '- najszybszy patch: największa zmiana latentu w tym kroku.')
         self.chk_strzalki = QCheckBox('Strzałki przyczyn w makro'); self.chk_strzalki.setChecked(True)
         self.chk_strzalki.setToolTip('Dla wybranej cząstki w przestrzeni makro, z jej bieżącego położenia (po „Licz przyczyny”):\n'
                                      '- biała: rzeczywisty ruch w bieżącym przedziale wag (np. krok 500 -> 510);\n'
@@ -144,20 +151,68 @@ class ZakladkaUczenia(QWidget):
         w.addWidget(self.chk_strzalki)
         self.spin_strz = QDoubleSpinBox(); self.spin_strz.setRange(.1, 100); self.spin_strz.setValue(3)
         dodaj(w, 'x', self.spin_strz, 'Mnożnik długości strzałek przyczyn (ruch w przedziale 10 kroków bywa krótki).')
-        self.chk_prognoza = QCheckBox('Prognoza liniowa'); self.chk_prognoza.setChecked(True)
-        self.chk_prognoza.setToolTip('Dla wybranej cząstki w przestrzeni makro:\n'
-                                     '- pomarańczowa przerywana: tor z liniowego modelu ruchu tej cząstki (oscylator:\n'
-                                     '  v(t+1) = beta v(t) − kappa (z(t) − m(t)), z(t+1) = z(t) + v(t+1), m = średnia\n'
-                                     '  ostatnich 50 kroków), liczony TYLKO ze stanów do bieżącego kroku;\n'
-                                     '- turkusowa cienka: rzeczywisty tor tej cząstki w tych samych krokach (do porównania).\n'
-                                     'beta i kappa każdej cząstki dopasowane na krokach 300-700 tej historii.')
-        w.addWidget(self.chk_prognoza)
-        self.spin_h = QSpinBox(); self.spin_h.setRange(2, 300); self.spin_h.setValue(30)
-        dodaj(w, 'na', self.spin_h, 'Na ile kroków do przodu prognoza liniowa.')
         self.chk_widok3d = QCheckBox('widok 3D'); self.chk_widok3d.setChecked(True)
         self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_makro.setChecked(True)
         w.addWidget(QLabel('Widoki:')); w.addWidget(self.chk_widok3d); w.addWidget(self.chk_widok_makro)
         self.etykieta_kroku = QLabel(''); self.etykieta_kroku.setWordWrap(True); w.addWidget(self.etykieta_kroku, 1)
+
+        g = QGroupBox('Prognoza Langevina i ślad toru w przestrzeni makro')
+        w = Przeplyw(); g.setLayout(w); lay.addWidget(g)
+        self.chk_prognoza = QCheckBox('Prognoza Langevina'); self.chk_prognoza.setChecked(True)
+        self.chk_prognoza.setToolTip(
+            'Liniowy model ruchu cząstki z bezwładnością (dyskretny Langevin, oscylator):\n'
+            '  v(t+1) = beta v(t) − kappa (z(t) − m(t)),  z(t+1) = z(t) + v(t+1),  m = średnia ostatnich 50 kroków.\n'
+            'beta i kappa dopasowane na krokach 300-700 tej historii (dla średniej: na torze średniej).\n'
+            'Kolory w przestrzeni makro:\n'
+            '- pomarańczowa przerywana: prognoza z kroku startu na h kroków (tylko ze stanów do startu);\n'
+            '- bledsze pomarańczowe przerywane: poprzednie prognozy;\n'
+            '- pomarańczowa kropka: gdzie prognoza stawiała cząstkę w bieżącym kroku;\n'
+            '- turkusowa ciągła: rzeczywisty ślad cząstki (przeszłe kroki);\n'
+            '- pomarańczowa ciągła: ślad prognoz z wyprzedzeniem (gdzie model stawiał cząstkę w każdym kroku);\n'
+            '- jasnoniebieska blada: rzeczywisty dalszy tor do końca prognozy (podgląd do porównania).')
+        w.addWidget(self.chk_prognoza)
+        self.combo_czastka = QComboBox()
+        self.combo_czastka.addItems(['wybranego patcha', 'średniej cząstek narzędzia (jedna kropka)', 'średniej cząstek tła (jedna kropka)'])
+        dodaj(w, 'dla', self.combo_czastka,
+              'Której cząstki dotyczą prognoza i ślad:\n'
+              '- wybrany patch (kliknięty albo śledzony, np. czubek);\n'
+              '- średnia cząstek narzędzia: średni latent wszystkich patchy narzędzia w każdym kroku, rysowany jako\n'
+              '  jedna duża czerwona kropka (rzut jest liniowy, więc to dokładnie środek ciężkości czerwonych cząstek);\n'
+              '  dla niej osobno dopasowany oscylator (beta, kappa średniej);\n'
+              '- średnia cząstek tła: to samo dla patchy tła (szara kropka).')
+        self.spin_h = QSpinBox(); self.spin_h.setRange(2, 500); self.spin_h.setValue(30)
+        dodaj(w, 'na', self.spin_h, 'Na ile kroków do przodu prognoza.')
+        self.spin_nowa = QSpinBox(); self.spin_nowa.setRange(1, 500); self.spin_nowa.setValue(10)
+        dodaj(w, 'nowa co', self.spin_nowa,
+              'Co ile kroków startuje nowa prognoza. Między startami prognoza stoi w miejscu, a cząstka idzie\n'
+              'dalej, więc widać, czy podąża za przewidzianym torem. 1 = nowa prognoza w każdym kroku.')
+        self.spin_stare = QSpinBox(); self.spin_stare.setRange(0, 30); self.spin_stare.setValue(3)
+        dodaj(w, 'stare prognozy:', self.spin_stare, 'Ile poprzednich prognoz zostawić na ekranie (coraz bledsze).')
+        self.chk_przyszlosc = QCheckBox('rzeczywisty dalszy tor'); self.chk_przyszlosc.setChecked(True)
+        self.chk_przyszlosc.setToolTip('Blada jasnoniebieska linia: prawdziwy tor od bieżącego kroku do końca prognozy.\n'
+                                       'Tylko do porównania na ekranie; prognoza go nie używa.')
+        w.addWidget(self.chk_przyszlosc)
+        self.spin_slad = QSpinBox(); self.spin_slad.setRange(0, 1000); self.spin_slad.setValue(100)
+        dodaj(w, 'Ślad (kroków):', self.spin_slad, 'Długość śladu rzeczywistego i śladu prognoz. 0 = bez śladu.')
+        self.chk_slad_caly = QCheckBox('od kroku 0'); self.chk_slad_caly.setToolTip('Ślad przez całe uczenie od kroku 0.')
+        w.addWidget(self.chk_slad_caly)
+        self.spin_wyprz = QSpinBox(); self.spin_wyprz.setRange(0, 200); self.spin_wyprz.setValue(10)
+        dodaj(w, 'ślad prognoz z wyprzedzeniem', self.spin_wyprz,
+              'Pomarańczowa ciągła linia: dla każdego kroku t śladu położenie, które model przewidział z kroku\n'
+              't − tyle kroków. Obok turkusowego śladu rzeczywistego widać, gdzie model się myli. 0 = bez.')
+        self.chk_ema = QCheckBox('EMA'); self.chk_ema.setChecked(False)
+        self.chk_ema.setToolTip('Wygładza oba ślady średnią wykładniczą po krokach (przyczynowo, od kroku 0):\n'
+                                'ślad(t) = α · tor(t) + (1 − α) · ślad(t − 1). Tylko rysunek; prognoza liczy się z surowych stanów.\n'
+                                'Wygładzony ślad kończy się trochę za cząstką (opóźnienie około 1/α kroków).')
+        w.addWidget(self.chk_ema)
+        self.spin_ema = QDoubleSpinBox(); self.spin_ema.setRange(.01, 1); self.spin_ema.setSingleStep(.05)
+        self.spin_ema.setValue(.2)
+        dodaj(w, 'α', self.spin_ema, 'Siła wygładzania: 0,5 słabo, 0,2 średnio (pamięć około 5 kroków), 0,05 mocno (około 20).')
+        self.combo_zanik = QComboBox(); self.combo_zanik.addItems(['liniowe', 'wykładnicze', 'brak (stała jasność)'])
+        dodaj(w, 'Zanikanie śladu:', self.combo_zanik, 'Jak blednie starsza część śladu.')
+        self.spin_krycie = QDoubleSpinBox(); self.spin_krycie.setRange(0, 1); self.spin_krycie.setSingleStep(.05)
+        self.spin_krycie.setValue(.15)
+        dodaj(w, 'krycie najstarszego', self.spin_krycie, 'Krycie najstarszego odcinka śladu (najnowszy: 1).')
         self.timer = QTimer(self); self.timer.timeout.connect(self._nastepny)
 
         # ---------------- sygnały
@@ -186,7 +241,19 @@ class ZakladkaUczenia(QWidget):
         self.chk_strzalki.toggled.connect(lambda *_: self.idz(self.t))
         self.spin_strz.valueChanged.connect(lambda *_: self.idz(self.t))
         self.chk_prognoza.toggled.connect(lambda *_: self.idz(self.t))
-        self.spin_h.valueChanged.connect(lambda *_: self.idz(self.t))
+        for sg in (self.spin_h.valueChanged, self.combo_czastka.currentIndexChanged, self.spin_nowa.valueChanged,
+                   self.spin_stare.valueChanged, self.chk_przyszlosc.toggled, self.spin_slad.valueChanged,
+                   self.chk_slad_caly.toggled, self.spin_wyprz.valueChanged, self.chk_ema.toggled, self.spin_ema.valueChanged,
+                   self.combo_zanik.currentIndexChanged, self.spin_krycie.valueChanged):
+            sg.connect(lambda *_: self.idz(self.t))
+        self._tory = {}; self.czubek = None; self._opis_lang = ''
+        # „Animuj” w widoku 3D: bez porównania PRZED / PO odtwarza uczenie (sam widok 3D nie miałby czego animować)
+        self.w3d.btn_anim.toggled.disconnect()
+        self.w3d.btn_anim.toggled.connect(self._animuj_3d)
+        self.w3d.btn_anim.setToolTip('Bez „Porównania w 3D”: odtwarza uczenie krok po kroku (jak „Ucz”).\n'
+                                     'Z porównaniem: płynne przejście PRZED -> PO w pętli.')
+        self.btn_graj.toggled.connect(lambda v: (self.w3d.btn_anim.blockSignals(True), self.w3d.btn_anim.setChecked(
+            v or self.w3d.timer.isActive()), self.w3d.btn_anim.blockSignals(False)))
         self.prz = self.P_prz = None; self._delty = (None, None)
         self._zmiana_biegu()
 
@@ -231,7 +298,7 @@ class ZakladkaUczenia(QWidget):
                             lambda k, n: wt.postep.emit(40 + int(30 * k / n), f'miary ruchu: {k}/{n} kroków'))
             rgb = np.ascontiguousarray(o['obrazy'][i])
             d = AU.detekcje(o, rgb, lambda k, n: wt.postep.emit(70 + int(30 * k / n), f'detekcja z wag: {k}/{n}'))
-            return dict(opis=o, Z=Z, an=an, dety=d, i=i, rgb=rgb, osc=AU.oscylator(Z))
+            return dict(opis=o, Z=Z, an=an, dety=d, i=i, rgb=rgb, osc=AU.oscylator(Z), czubki=AU.czubki_biegu(b))
 
         self.watek = WatekFilmu(zadanie, self)
         self.pasek.setRange(0, 100)
@@ -244,7 +311,9 @@ class ZakladkaUczenia(QWidget):
     def _po_wczytaniu(self, w):
         if w is not None:
             self.opis, self.Z, self.an, self.dety, self.i_kl, self.rgb = w['opis'], w['Z'], w['an'], w['dety'], w['i'], w['rgb']
-            self.osc = w['osc']
+            self.osc = w['osc']; self._tory = {}
+            cz = w.get('czubki') or []
+            self.czubek = cz[self.i_kl] if self.i_kl < len(cz) else None
             self.det = self.dety.pop('det'); self._ckpt_det = len(self.opis['wagi']) - 1
             self.narz = self.opis['narzedzie'][self.i_kl]
             self.token = None
@@ -308,6 +377,17 @@ class ZakladkaUczenia(QWidget):
             if wl:
                 self.btn_graj.setChecked(False)
 
+    def _animuj_3d(self, wl):
+        if self.combo_por.currentIndex() and self.w3d.po is not None:
+            self.w3d._animuj(wl)
+            return
+        self.w3d.timer.stop()
+        if self.Z is None:
+            self.w3d.btn_anim.blockSignals(True); self.w3d.btn_anim.setChecked(False); self.w3d.btn_anim.blockSignals(False)
+            self._status('Najpierw „Wczytaj historię”.')
+            return
+        self.btn_graj.setChecked(wl)
+
     def _nastepny(self):
         t = self.t + 1
         if t >= len(self.idx):
@@ -336,9 +416,12 @@ class ZakladkaUczenia(QWidget):
         k = int(self.idx[t])                                     # indeks kroku w historii
         kc = self._ckpt_kroku(k)
         s = self.combo_sledz.currentIndex()
-        if s == 1:
+        if s == 1 and self.czubek is not None:
+            x, y = self.czubek
+            self.token = int(np.clip(y // 16, 0, 19)) * 30 + int(np.clip(x // 16, 0, 29))
+        elif s in (1, 2):
             self.token = int(np.argmax(self.dety['mapy_pew'][kc]))
-        elif s == 2:
+        elif s == 3:
             self.token = int(np.argmax(self.an['v'][k]))
         self.w3d.token = self.token
         z = np.asarray(self.Z[k], np.float32)
@@ -355,6 +438,7 @@ class ZakladkaUczenia(QWidget):
                     self.w3d.combo_tryb.blockSignals(True); self.w3d.combo_tryb.setCurrentIndex(1)
                     self.w3d.combo_tryb.blockSignals(False)
                 self.w3d.pokaz(przed, z, self.rgb, fn)
+        self._opis_lang = ''
         if self.chk_widok_makro.isChecked():
             self.makro.ustaw_atencje(fn)
             self.makro.pokaz_klatke(t, self.token)
@@ -368,7 +452,7 @@ class ZakladkaUczenia(QWidget):
                  f'prędkość narzędzie / tło {a["v"][k][self.narz].mean():.3f} / {a["v"][k][~self.narz].mean():.3f}')
         if self.token is not None:
             tekst += f'; patch {self.token}: prędkość {a["v"][k][self.token]:.3f}, do stanu końcowego {a["do_konca"][k][self.token]:.2f}'
-        self.etykieta_kroku.setText(tekst)
+        self.etykieta_kroku.setText(tekst + self._opis_lang)
 
     # ------------------------------------------------------------ rysunki
     def _rysuj_klatke(self, k, kc):
@@ -379,9 +463,11 @@ class ZakladkaUczenia(QWidget):
         ax.scatter(xy[n, 0], xy[n, 1], s=6, c=KOL_N, alpha=.8)
         x0, y0, x1, y1 = self.dety['ramka'][kc]
         ax.add_patch(Rectangle((x0, y0), x1 - x0, y1 - y0, fill=False, ec=KOLOR_VIT[:3], lw=1.6))
+        if self.czubek is not None:
+            ax.plot(*self.czubek, 'o', ms=7, mfc='none', mec='#ff3030', mew=1.6)
         if self.token is not None:
             r, c = divmod(self.token, 30)
-            ax.add_patch(Rectangle(    (c * 16, r * 16), 16, 16, fill=False, ec='white', lw=1.5))
+            ax.add_patch(Rectangle((c * 16, r * 16), 16, 16, fill=False, ec='white', lw=1.5))
         ax.set_xlim(0, 480); ax.set_ylim(320, 0); ax.axis('off')
         ax.set_title(f'krok {int(self.kroki[k])}: wagi kroku {int(self.opis["kroki_wag"][kc])}, pewność '
                      f'{self.dety["pewnosc"][kc] * 100:.0f} %', fontsize=9, color='white')
@@ -520,28 +606,114 @@ class ZakladkaUczenia(QWidget):
 
     def _strzalki_przyczyn(self, k):
         seg, kolory = self._odcinki_przyczyn(k)
-        s2, k2 = self._odcinki_prognozy(k)
+        s2, k2, pkt = self._odcinki_prognozy(k)
         seg, kolory = seg + s2, kolory + k2
         self.makro.rysuj_przyczyny(np.array(seg) if seg else None, np.array(kolory) if kolory else None)
+        if pkt:
+            self.makro.rysuj_znaczniki(*(np.array(c) for c in zip(*pkt)))
+        else:
+            self.makro.rysuj_znaczniki(None)
+
+    def _tor(self):
+        """Tor cząstki do prognozy: (klucz, dane toru, nazwa) albo None. Dane: x [K, 768], średnia krocząca M,
+        beta, kappa, maska patchy."""
+        i = self.combo_czastka.currentIndex()
+        if i == 0:
+            if self.token is None:
+                return None
+            klucz, nazwa = ('patch', self.token), f'patch {self.token}'
+        else:
+            klucz, nazwa = (('narzedzie',), 'średnia narzędzia') if i == 1 else (('tlo',), 'średnia tła')
+        okno = self.osc['okno']
+        if klucz not in self._tory:
+            if i == 0:
+                maska = np.zeros(600, bool); maska[self.token] = True
+                x = np.asarray(self.Z[:, self.token], np.float32)
+                b, kk = float(self.osc['beta'][self.token]), float(self.osc['kappa'][self.token])
+            else:
+                maska = self.narz if i == 1 else ~self.narz
+                x = AU.tor_sredni(self.Z, maska)
+                b, kk = AU.oscylator_toru(x, okno=okno)
+            self._tory[klucz] = dict(x=x, M=AU.srednia_kroczaca(x, okno), beta=b, kappa=kk, maska=maska, ema={})
+        return klucz, self._tory[klucz], nazwa
+
+    def _zanik(self, n):
+        """Krycie n kolejnych odcinków śladu, od najstarszego do najnowszego."""
+        if n <= 0:
+            return np.zeros(0, np.float32)
+        u = np.linspace(0, 1, n)
+        a0 = self.spin_krycie.value()
+        i = self.combo_zanik.currentIndex()
+        if i == 2:
+            return np.ones(n, np.float32)
+        f = u if i == 0 else np.exp(-4 * (1 - u))
+        return (a0 + (1 - a0) * f).astype(np.float32)
 
     def _odcinki_prognozy(self, k):
-        if not self.chk_prognoza.isChecked() or self.token is None or getattr(self, 'osc', None) is None:
-            return [], []
-        h = self.spin_h.value(); tok = self.token
-        tor = AU.prognoza_oscylatora(self.Z, k, tok, self.osc, h)                       # [h+1, 768]
-        o = self.makro._biezace()[tok]
-        P = o + self.makro.rzut_delty(tor - tor[0])
-        seg, kol = [], []
-        for a in range(0, h, 1):
-            if a % 2 == 0:                                                             # przerywana
-                seg += [P[a], P[a + 1]]; kol += [(1, .55, .1, 1)] * 2
-        kon = min(len(self.Z) - 1, k + h)
-        if kon > k:
-            prawdziwy = np.asarray(self.Z[k:kon + 1, tok], np.float32)
-            Q = o + self.makro.rzut_delty(prawdziwy - prawdziwy[0])
-            for a in range(len(Q) - 1):
-                seg += [Q[a], Q[a + 1]]; kol += [(.2, .9, 1, .8)] * 2
-        return seg, kol
+        """Odcinki (prognozy, ślady) i znaczniki [(pozycja, kolor, rozmiar)] dla wybranej cząstki albo średniej."""
+        if not self.chk_prognoza.isChecked() or getattr(self, 'osc', None) is None:
+            return [], [], []
+        r = self._tor()
+        if r is None:
+            return [], [], []
+        _, d, nazwa = r
+        x, M, b, kk, maska = d['x'], d['M'], d['beta'], d['kappa'], d['maska']
+        K = len(x)
+        m = self.makro
+        o = m.P[m.t][maska].mean(0)                                   # bieżące położenie cząstki (albo średniej)
+        rzut = lambda X: o + m.rzut_delty(np.asarray(X, np.float32) - x[k])
+        seg, kol, pkt = [], [], []
+
+        def linia(P, c, alfy=None, przerywana=False):
+            for a in range(len(P) - 1):
+                if przerywana and a % 2:
+                    continue
+                al = c[3] if alfy is None else c[3] * alfy[a]
+                seg.extend([P[a], P[a + 1]]); kol.extend([(c[0], c[1], c[2], al)] * 2)
+
+        ema = self.chk_ema.isChecked()
+        a_ema = self.spin_ema.value()
+        L = k if self.chk_slad_caly.isChecked() else min(k, self.spin_slad.value())
+        t0 = k - L
+        co = max(1, L // 400)                                         # do 400 odcinków na ślad
+        if L > 0:                                                     # ślad rzeczywisty
+            if ema:
+                if a_ema not in d['ema']:
+                    d['ema'] = {a_ema: AU.ema(x, a_ema)}
+                y = d['ema'][a_ema]
+            else:
+                y = x
+            P = rzut(y[t0:k + 1][::-1][::co][::-1])
+            linia(P, (.2, .9, 1, 1), self._zanik(len(P) - 1))
+        w = self.spin_wyprz.value()
+        if L > 0 and w > 0 and k - w >= 0:                            # ślad prognoz z wyprzedzeniem w
+            ts = np.arange(max(t0, w), k + 1)
+            pred = AU.prognozy_toru(x, M, ts - w, w, b, kk)[:, -1]
+            if ema:
+                pred = AU.ema(pred, a_ema)
+            P = rzut(pred[::-1][::co][::-1])
+            linia(P, (1, .55, .1, .9), self._zanik(len(P) - 1))
+        h, N = self.spin_h.value(), self.spin_nowa.value()
+        k0 = (k // N) * N
+        starty = [k0 - j * N for j in range(self.spin_stare.value() + 1) if k0 - j * N >= 0]
+        tory = AU.prognozy_toru(x, M, starty, h, b, kk)               # [n, h + 1, 768]
+        for j, tor in enumerate(tory):
+            c = (1, .55, .1, 1) if j == 0 else (1, .62, .25, .55 * (1 - j / (len(tory) + 1)))
+            linia(rzut(tor), c, przerywana=True)
+        opis = f'; Langevin ({nazwa}, beta {b:.2f}, kappa {kk:.3f}): prognoza z kroku {int(self.kroki[k0])}'
+        if 0 < k - k0 <= h:                                           # gdzie prognoza stawiała cząstkę teraz
+            pkt.append((rzut(tory[0][k - k0][None])[0], (1, .55, .1, 1), 11))
+            e = float(np.linalg.norm(tory[0][k - k0] - x[k])); ep = float(np.linalg.norm(x[k0] - x[k]))
+            opis += f', po {k - k0} krokach błąd {e:.2f} wobec „bez ruchu” {ep:.2f} (stosunek {e / max(ep, 1e-9):.2f})'
+        if self.chk_przyszlosc.isChecked():                           # rzeczywisty dalszy tor (podgląd)
+            kon = min(K - 1, max(k0 + h, k))
+            if kon > k:
+                linia(rzut(x[k:kon + 1]), (.65, .8, 1, .45))
+        if self.combo_czastka.currentIndex():                         # średnia jako jedna duża kropka
+            pkt.append((o, (1, .3, .25, 1) if self.combo_czastka.currentIndex() == 1 else (.75, .8, .9, 1),
+                        m.spin_rozmiar.value() + 12))
+        self._opis_lang = opis
+        return seg, kol, pkt
 
     def _odcinki_przyczyn(self, k):
         if self.prz is None or self.token is None or not self.chk_strzalki.isChecked():
@@ -556,7 +728,7 @@ class ZakladkaUczenia(QWidget):
         dz, D, g = self._delty[1]
         tok = self.token
         mn = self.spin_strz.value()
-        o = self.makro._biezace()[tok]
+        o = self.makro.P[self.makro.t][tok]
         wek = self.makro.rzut_delty(np.concatenate([dz[tok][None], D[:, tok]], 0)) * mn          # [1 + G, 3]
         gn = self.makro.rzut_delty(-g[tok][None])[0]
         gn = gn / max(float(np.linalg.norm(gn)), 1e-12) * float(np.linalg.norm(wek[0]))

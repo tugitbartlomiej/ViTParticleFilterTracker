@@ -368,6 +368,17 @@ Oś czasu to krok uczenia, nie klatka filmu. Źródło: bieg z gęstą historią
   z tokenami, na które token patrzy (z kontrolą: ruch ze średnią wszystkich), zmiana atencji.
   W makro strzałki dla wybranej cząstki: biała = ruch w przedziale, kolorowe = wkłady grup wag,
   żółta przerywana = kierunek −gradientu.
+- **Śledź patch:** domyślnie czubek narzędzia z etykiety klatki (cystotome_tip, czerwone kółko na obrazie),
+  dalej najpewniejszy patch ViT i najszybszy patch w kroku.
+- **Prognoza Langevina i ślad toru** (osobna grupa pod paskiem odtwarzania): oscylator
+  v(t+1) = beta v(t) − kappa (z(t) − m(t)) dla wybranego patcha albo dla średniej cząstek narzędzia
+  lub tła (jedna duża kropka, osobno dopasowane beta i kappa). Prognoza startuje co „nowa co” kroków
+  i stoi do następnego startu; zostaje kilka starszych prognoz. Pomarańczowa przerywana = prognoza,
+  pomarańczowa kropka = gdzie prognoza stawiała cząstkę teraz, turkusowy = rzeczywisty ślad,
+  pomarańczowy ciągły = ślad prognoz z wyprzedzeniem, blady jasnoniebieski = rzeczywisty dalszy tor.
+  Długość śladu (albo od kroku 0), EMA z α, sposób zanikania i krycie najstarszego odcinka.
+  W opisie kroku: błąd prognozy wobec „bez ruchu”.
+- **Animuj** w widoku 3D: bez porównania PRZED / PO odtwarza uczenie (jak „Ucz”).
 
 Zastrzeżenia: łodyga zawiera biegnące statystyki BatchNorm (zmieniają się też bez gradientu);
 gradient liczony na jednej klatce próbnej, a uczenie szło po paczkach 32 obrazów z AdamW;

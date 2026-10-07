@@ -217,3 +217,67 @@ def ocena_oscylatora(Z, osc, t0, hs=(1, 5, 20)):
     del X, M, V, c
     return wynik
 
+
+
+# ------------------------------------------------------------ jeden tor (cząstka albo średnia zbioru cząstek)
+def srednia_kroczaca(x, okno):
+    """Średnia ostatnich `okno` stanów (z bieżącym) w każdym kroku: [K, D] -> [K, D]."""
+    x = np.asarray(x, np.float64)
+    c = np.cumsum(np.concatenate([np.zeros((1,) + x.shape[1:]), x]), 0)
+    t = np.arange(len(x)); lo = np.clip(t - okno + 1, 0, None)
+    return (c[t + 1] - c[lo]) / (t + 1 - lo)[:, None]
+
+
+def tor_sredni(Z, maska, krok=100):
+    """Średni latent cząstek z maski w każdym kroku: [K, 768] float32 (czytany porcjami, bez kopii całej klatki)."""
+    maska = np.asarray(maska, bool)
+    return np.concatenate([np.asarray(Z[a:a + krok][:, maska], np.float32).mean(1) for a in range(0, len(Z), krok)])
+
+
+def oscylator_toru(x, od=300, do=700, okno=50):
+    """beta, kappa oscylatora (jak `oscylator`) dla jednego toru x [K, D], np. średniej cząstek narzędzia."""
+    x = np.asarray(x, np.float64)
+    K = len(x); do = min(do, K - 2); od = min(od, max(1, do // 2))
+    v = np.concatenate([np.zeros_like(x[:1]), np.diff(x, axis=0)])
+    m = srednia_kroczaca(x, okno)
+    a1, a2, y = v[od:do], -(x[od:do] - m[od:do]), v[od + 1:do + 1]
+    g11, g12, g22 = (a1 * a1).sum(), (a1 * a2).sum(), (a2 * a2).sum()
+    r1, r2 = (a1 * y).sum(), (a2 * y).sum()
+    det = max(g11 * g22 - g12 ** 2, 1e-12)
+    return float((g22 * r1 - g12 * r2) / det), float((g11 * r2 - g12 * r1) / det)
+
+
+def prognozy_toru(x, M, starty, h, beta, kappa):
+    """Tory oscylatora z wielu kroków startu naraz: [len(starty), h + 1, D]. Każdy tylko ze stanów do swojego startu
+    (położenie, prędkość z ostatniego kroku, średnia kroczaca M = srednia_kroczaca(x, okno))."""
+    s = np.asarray(starty, int)
+    z = np.asarray(x[s], np.float64); v = z - np.asarray(x[np.maximum(s - 1, 0)], np.float64); m = M[s]
+    tory = [z]
+    for _ in range(h):
+        v = beta * v - kappa * (z - m); z = z + v; tory.append(z)
+    return np.stack(tory, 1)
+
+
+def ema(x, a):
+    """Wygładzanie wykładnicze wzdłuż osi 0 (przyczynowe, od pierwszego wiersza): y_t = a x_t + (1 − a) y_(t−1)."""
+    x = np.asarray(x, np.float64)
+    if a >= 1 or len(x) == 0:
+        return x
+    y = np.empty_like(x); y[0] = x[0]
+    for t in range(1, len(x)):
+        y[t] = a * x[t] + (1 - a) * y[t - 1]
+    return y
+
+
+def czubki_biegu(bieg):
+    """Czubek narzędzia (cystotome_tip z annotation.csv) każdej klatki próbnej w pikselach obrazu 480x320; None,
+    gdy brak etykiety albo archiwum adnotacji."""
+    wynik = []
+    for o in _json(bieg['dane'] / 'images.json', []):
+        try:
+            import film
+            w = film.etykiety(o['film']).get(int(o['annotation_frame_number']))
+            wynik.append(film.etykieta_klatki(w)['czubek'])
+        except Exception:
+            wynik.append(None)
+    return wynik

@@ -230,6 +230,8 @@ class WidokPrzestrzeniMakro(QWidget):
         v.addItem(self.wybrany)
         self.przyczyny = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=3, glOptions='translucent')
         self.przyczyny.setVisible(False); v.addItem(self.przyczyny)      # strzałki przyczyn ruchu (zakładka uczenia)
+        self.znaczniki = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=10, pxMode=True)
+        self.znaczniki.setVisible(False); v.addItem(self.znaczniki)      # dodatkowe kropki (np. średnia narzędzia)
         self._kamera()
 
         self._timer = QTimer(self); self._timer.setInterval(16); self._timer.timeout.connect(self._krok_przelotu)
@@ -355,6 +357,14 @@ class WidokPrzestrzeniMakro(QWidget):
             self.przyczyny.setVisible(False); return
         self.przyczyny.setData(pos=np.ascontiguousarray(odcinki, np.float32), color=np.ascontiguousarray(kolory, np.float32))
         self.przyczyny.setVisible(True)
+
+    def rysuj_znaczniki(self, pos=None, kolory=None, rozmiary=None):
+        """Dodatkowe kropki [n, 3] z kolorami [n, 4] i rozmiarami w pikselach [n]; None chowa."""
+        if pos is None or len(pos) == 0:
+            self.znaczniki.setVisible(False); return
+        self.znaczniki.setData(pos=np.ascontiguousarray(pos, np.float32), color=np.ascontiguousarray(kolory, np.float32),
+                               size=np.ascontiguousarray(rozmiary, np.float32))
+        self.znaczniki.setVisible(True)
 
     def _z_na_sily(self, z):
         """Latent [..., 768] po korekcie położenia -> siły [..., K] w tej samej bazie co widok 3D (tryb „jak 3D”)."""
