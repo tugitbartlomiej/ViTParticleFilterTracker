@@ -345,6 +345,10 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
 - Widok 3D nad obrazem, „Obraz”, „Koloruj obraz mieszanką kolorów wektorów”: kolor patcha = średnia
   kolorów jego wektorów (kanałów albo składowych PCA) ważona siłą (|wartość|, wartość², wartość⁴ albo
   tylko dodatnie), z automatycznym nasyceniem, opcjonalnie jasność według łącznej siły i gładkie przejścia.
+- Przestrzeń makro, „Kolor cząstek: mieszanka kolorów mikrowektorów”: ta sama mieszanka na ruchomych
+  cząstkach, liczona w każdej klatce przy rysowaniu (waga, nasycenie, jasność według siły w „Wygląd”).
+- Zakładka uczenia: „kroków/s” do 10 000; powyżej szybkości odświeżania ekranu odtwarzanie przeskakuje
+  kroki według zegara.
 
 ### Wycinanie na żywo i Langevin po klatkach (zakładka filmu)
 

@@ -123,6 +123,24 @@ class WidokPrzestrzeniMakro(QWidget):
         self.chk_gwiazda.setToolTip('Gwiazda 768 kierunków d_c w środku układu (kolor kanału jak w widoku 3D).')
         w.addWidget(self.chk_gwiazda)
         w = self.panel.wiersz('Wygląd')
+        self.combo_mies_waga = dodaj(w, 'Mieszanka kolorów, waga:', WaskiCombo(12),
+                                     'Dla koloru „mieszanka kolorów mikrowektorów”: kolor cząstki = średnia kolorów jej\n'
+                                     'mikrowektorów (te same kolory co wektory w widoku 3D) ważona siłą mikrowektora.\n'
+                                     'Liczona w każdej klatce, więc kolor zmienia się, gdy cząstka się rusza.\n'
+                                     '- |wartość|: długość mikrowektora;\n'
+                                     '- wartość²: mocniej faworyzuje najsilniejsze;\n'
+                                     '- wartość⁴: prawie sam najsilniejszy, ale płynnie;\n'
+                                     '- tylko dodatnie: mikrowektory skierowane zgodnie ze swoim kierunkiem (siła > 0).')
+        self.combo_mies_waga.addItems(['|wartość| (długość)', 'wartość²', 'wartość⁴', 'tylko dodatnie'])
+        self.spin_mies_nasyc = dodaj(w, 'Nasycenie:', QDoubleSpinBox(),
+                                     'Mieszanka wielu kolorów szarzeje, więc kolor jest automatycznie oddalany od szarości\n'
+                                     '(98 % cząstek w pełnej palecie); ten mnożnik wzmacnia (> 1) albo osłabia (< 1).')
+        self.spin_mies_nasyc.setRange(.1, 10); self.spin_mies_nasyc.setSingleStep(.1); self.spin_mies_nasyc.setValue(1)
+        self.chk_mies_jasn = QCheckBox('jasność wg siły')
+        self.chk_mies_jasn.setToolTip('Cząstki o większej łącznej sile mikrowektorów jaśniejsze (względem 99. centyla w klatce);\n'
+                                      'wyłączone: każda cząstka w pełnej jasności swojej barwy.')
+        w.addWidget(self.chk_mies_jasn)
+        w = self.panel.wiersz('Wygląd')
         self.spin_slad = dodaj(w, 'Ślad (klatek):', QSpinBox(), 'Ile poprzednich klatek pokazuje linia toru każdej cząstki. 0 = bez śladu.')
         self.spin_slad.setRange(0, 200); self.spin_slad.setValue(8)
         self.spin_ema = dodaj(w, 'Wygładzanie EMA α:', QDoubleSpinBox(),
@@ -272,6 +290,8 @@ class WidokPrzestrzeniMakro(QWidget):
         for s in (self.combo_kier.currentIndexChanged, self.combo_kan.currentIndexChanged, self.chk_srodek.toggled,
                   self.combo_pca.currentIndexChanged, self.combo_poz.currentIndexChanged, self.spin_ema.valueChanged):
             s.connect(lambda *_: self._przelicz())
+        for s in (self.combo_mies_waga.currentIndexChanged, self.spin_mies_nasyc.valueChanged, self.chk_mies_jasn.toggled):
+            s.connect(lambda *_: self._rysuj(skok=True))
         for s in (self.combo_kolor.currentIndexChanged, self.spin_slad.valueChanged, self.spin_rozmiar.valueChanged,
                   self.combo_mikro.currentIndexChanged, self.spin_mikro.valueChanged,
                   self.chk_atencja.toggled, self.opcje.zmiana, self.spin_wzm.valueChanged, self.chk_czastki.toggled,
@@ -572,10 +592,8 @@ class WidokPrzestrzeniMakro(QWidget):
             self.kolory_kan = kolory_kanalow(K)
         a = self.spin_ema.value()
         dl_d = np.linalg.norm(D, axis=1)                                        # [K]: 0 dla kanałów spoza wyboru
-        kol = self.kolory_kan[:, :3]
         surowe = np.zeros((T, 600, 3), np.float32)
         self._dom = np.zeros((T, 600), np.int32)                                # najsilniejszy mikrowektor cząstki
-        self._mieszanka = np.zeros((T, 600, 3), np.float32)                     # kolory mikrowektorów ważone długością
         F = None
         for t in range(T):
             Ft = self.sily(t)                                                   # [600, K]
@@ -583,7 +601,6 @@ class WidokPrzestrzeniMakro(QWidget):
             surowe[t] = F @ D
             dl = np.abs(F) * dl_d                                               # długości mikrowektorów [600, K]
             self._dom[t] = dl.argmax(1)
-            self._mieszanka[t] = dl @ kol / np.maximum(dl.sum(1, keepdims=True), 1e-12)
         r = np.linalg.norm(surowe, axis=-1)
         self.s = 100 / max(float(np.percentile(r, 99)), 1e-9)
         self.P = surowe * self.s
@@ -637,6 +654,25 @@ class WidokPrzestrzeniMakro(QWidget):
             self._timer.stop()
 
     # ------------------------------------------------------------ rysowanie
+    def _mieszanka_klatki(self):
+        """Kolor cząstek bieżącej klatki = kolory mikrowektorów ważone siłą (combo_mies_waga): ([600, 3], siła [600]).
+        Liczona przy rysowaniu (około 3 ms), z sił tej klatki; przy wygładzaniu EMA z sił niewygładzonych."""
+        j = self.combo_mies_waga.currentIndex()
+        klucz = (self.t, j, id(self.D), id(self.Z))
+        if getattr(self, '_mies_klucz', None) != klucz:
+            F = self.sily(self.t)
+            dl_d = np.linalg.norm(self.D, axis=1)
+            dl = np.abs(F) * dl_d
+            if j in (1, 2):
+                dn = dl / np.maximum(dl.max(1, keepdims=True), 1e-12)
+                W = dn * dn if j == 1 else (dn * dn) ** 2
+            else:
+                W = dl if j == 0 else np.clip(F, 0, None) * dl_d
+            sw = W.sum(1)
+            m = W @ self.kolory_kan[:, :3] / np.maximum(sw, 1e-12)[:, None]
+            self._mies_klucz, self._mies_wynik = klucz, (m.astype(np.float32), (dl.sum(1) if j in (1, 2) else sw))
+        return self._mies_wynik
+
     def _kolory(self):
         i = self.combo_kolor.currentIndex()
         t = np.arange(600)
@@ -644,8 +680,14 @@ class WidokPrzestrzeniMakro(QWidget):
             if i == 0:                                                          # kolor kanału, jak wektor w 3D
                 c = self.kolory_kan[self._dom[self.t]].copy()
             else:
-                m = self._mieszanka[self.t]
-                m = m / np.maximum(m.max(1, keepdims=True), 1e-6)               # pełna jasność, ta sama barwa
+                m, sw = self._mieszanka_klatki()
+                g = m.mean(1, keepdims=True)
+                ref = max(float(np.percentile(np.abs(m - g).max(1), 98)), 1e-6)   # różnica od szarości w tej klatce
+                m = np.clip(g + (m - g) * (.45 / ref) * self.spin_mies_nasyc.value(), 0, 1)
+                if self.chk_mies_jasn.isChecked():
+                    m = m * np.clip(sw / max(float(np.percentile(sw, 99)), 1e-12), .08, 1)[:, None]
+                else:
+                    m = m / np.maximum(m.max(1, keepdims=True), 1e-6)           # pełna jasność, ta sama barwa
                 c = np.concatenate([m, np.ones((600, 1), np.float32)], 1)
             c[:, 3] = .9
             return c.astype(np.float32)
