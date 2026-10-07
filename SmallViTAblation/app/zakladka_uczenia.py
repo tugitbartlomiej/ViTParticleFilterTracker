@@ -105,7 +105,14 @@ class ZakladkaUczenia(QWidget):
         self.w3d = WidokCzasteczek3D(self.j128)
         self.makro = WidokPrzestrzeniMakro(self.j128)
         self.makro.ustaw_wzor(self.w3d)
-        podzial.addWidget(self.w3d); podzial.addWidget(self.makro)
+        from PyQt6.QtWidgets import QStackedWidget
+        self._stos = QStackedWidget(); self._stos.addWidget(self.w3d)      # główny panel: widok 3D, atlas albo krajobraz
+        podzial.addWidget(self._stos); podzial.addWidget(self.makro)
+        self.makro.osadz = self._osadz
+        for b, opis in ((self.makro.btn_atlas, 'atlas kanałów'), (self.makro.btn_krajobraz, 'krajobraz i tunele')):
+            b.setCheckable(True)
+            b.setToolTip(b.toolTip() + f'\nW tej zakładce: przełącza główny panel (zamiast widoku 3D) na {opis};\n'
+                                       'ponowny klik wraca do widoku 3D.')
         from panel_rownania import PanelRownania
         self.panel = PanelRownania(self)
         podzial.addWidget(self.panel)
@@ -245,7 +252,7 @@ class ZakladkaUczenia(QWidget):
         self.combo_sledz.currentIndexChanged.connect(lambda *_: self.idz(self.t))
         self.combo_srodek.currentIndexChanged.connect(lambda *_: self._ustaw_makro())
         self.spin_co.valueChanged.connect(lambda *_: self._po_wczytaniu(None) if self.Z is not None else None)
-        self.chk_widok3d.toggled.connect(lambda v: (self.w3d.setVisible(v), self.idz(self.t)))
+        self.chk_widok3d.toggled.connect(lambda v: (self._stos.setVisible(v), self.idz(self.t)))
         self.chk_widok_makro.toggled.connect(lambda v: (self.makro.setVisible(v), self.idz(self.t)))
         self.chk_widok_rown.toggled.connect(lambda v: self.panel.setVisible(v))
         for sg in (self.panel.combo_model.currentIndexChanged, self.panel.edit.editingFinished, self.panel.spin_L.valueChanged,
@@ -419,6 +426,24 @@ class ZakladkaUczenia(QWidget):
         self._t_start, self._poz_start, self._ostatni = time.perf_counter(), self.t, self.t
         self.timer.setInterval(max(15, int(1000 / self.spin_fps.value()))); self.timer.start()
 
+    def _osadz(self, nazwa, widzet):
+        """Przyciski przestrzeni makro „Atlas kanałów” i „Krajobraz i tunele”: pokazują widok w głównym panelu
+        zakładki zamiast widoku 3D; ponowny klik (albo klik drugiego) wraca do widoku 3D / przełącza."""
+        if self._stos.indexOf(widzet) < 0:
+            self._stos.addWidget(widzet)
+        wraca = self._stos.currentWidget() is widzet
+        self._stos.setCurrentWidget(self.w3d if wraca else widzet)
+        self.makro.btn_atlas.setChecked(not wraca and nazwa == 'atlas')
+        self.makro.btn_krajobraz.setChecked(not wraca and nazwa == 'krajobraz')
+        if not self.chk_widok3d.isChecked():
+            self.chk_widok3d.setChecked(True)
+        if wraca:
+            if nazwa == 'atlas':
+                self.makro.podswietl_kanal(None)
+            self.idz(self.t)
+        else:
+            widzet.odswiez(True)
+
     def _nastepny(self):
         import time
         if getattr(self, '_ostatni', None) != self.t:                      # ręczne przesunięcie suwaka: zegar od nowa
@@ -468,7 +493,7 @@ class ZakladkaUczenia(QWidget):
         por = self.combo_por.currentIndex()
         przed = None if por == 0 else np.asarray(self.Z[(int(self.idx[max(0, t - 1)]), 0, -1)[por - 1]], np.float32)
         fn = lambda b, kc=kc: self._atencja(kc, b)
-        if self.chk_widok3d.isChecked():
+        if self.chk_widok3d.isChecked() and self._stos.currentWidget() is self.w3d:
             obrysy = [(prostokat(self.dety['ramka'][kc]), KOLOR_VIT)]
             self.w3d.ustaw_obrysy(obrysy, self.narz)
             if przed is None:

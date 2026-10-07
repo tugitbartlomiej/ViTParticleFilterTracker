@@ -357,6 +357,8 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
      „Grand Tour” (Li i in. 2020): rama rzutu płynie przez losowe podprzestrzenie; wyłączenie zostawia widok.
   4. „Atlas kanałów”: mapy 20 x 30 każdego kanału (albo składowej PCA) bieżącej klatki, wg zmienności, z paskiem
      koloru kanału; klik podświetla kierunek kanału w makro (`atlas_kanalow.py`).
+- W zakładce „Uczenie ViT” przyciski „Atlas kanałów” i „Krajobraz i tunele” przełączają główny panel (zamiast
+  widoku 3D nad obrazem); ponowny klik wraca do widoku 3D. W zakładce filmu otwierają osobne okna.
 - „Krajobraz i tunele” (przycisk w przestrzeni makro, `krajobraz.py`): okno z trzema obrazami tego, po czym
   biegają cząstki, śledzące bieżący krok: teren energii U = −ln gęstość na dwóch głównych osiach chmury
   (studnie, jak w TFT `plotly_studnie.py`), wosk z tunelami (izopowierzchnia odwiedzin wokseli, kolor = krok

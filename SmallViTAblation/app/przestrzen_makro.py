@@ -313,6 +313,7 @@ class WidokPrzestrzeniMakro(QWidget):
         self.os_kanalu = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=6, glOptions='translucent')
         self.os_kanalu.setVisible(False); v.addItem(self.os_kanalu)
         self.zaznaczenie, self.kanal = None, None
+        self.osadz = None             # funkcja(nazwa, widżet) zakładki: atlas / krajobraz w jej panelu zamiast okna
         self.znaczniki = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=10, pxMode=True)
         self.znaczniki.setVisible(False); v.addItem(self.znaczniki)      # dodatkowe kropki (np. średnia narzędzia)
         self._kamera()
@@ -563,12 +564,16 @@ class WidokPrzestrzeniMakro(QWidget):
         from krajobraz import OknoKrajobrazu
         if getattr(self, '_okno_krajobrazu', None) is None:
             self._okno_krajobrazu = OknoKrajobrazu(self)
+        if self.osadz is not None:                                   # zakładka pokazuje widok w swoim głównym panelu
+            self.osadz('krajobraz', self._okno_krajobrazu); return
         self._okno_krajobrazu.show(); self._okno_krajobrazu.raise_(); self._okno_krajobrazu.odswiez(True)
 
     def _atlas(self):
         from atlas_kanalow import OknoAtlasu
         if getattr(self, '_okno_atlasu', None) is None:
             self._okno_atlasu = OknoAtlasu(self)
+        if self.osadz is not None:
+            self.osadz('atlas', self._okno_atlasu); return
         self._okno_atlasu.show(); self._okno_atlasu.raise_(); self._okno_atlasu.odswiez(True)
 
     # ------------------------------------------------------------ Grand Tour
