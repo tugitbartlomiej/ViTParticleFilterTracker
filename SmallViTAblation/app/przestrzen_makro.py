@@ -255,6 +255,11 @@ class WidokPrzestrzeniMakro(QWidget):
                                   'posortowane wg zmienności. Klik w mapę podświetla kierunek tego kanału w tej przestrzeni.')
         self.btn_atlas.clicked.connect(self._atlas)
         self.panel.pasek.addWidget(self.btn_atlas)
+        self.btn_krajobraz = rola(QPushButton('Krajobraz i tunele'), 'narzedzie')
+        self.btn_krajobraz.setToolTip('Okno: po czym biegają cząstki. Teren energii U = −ln gęstość (studnie), wosk z tunelami\n'
+                                      'wydrążonymi przez cząstki (kolor = wiek tunelu) albo otoczka ruchu; śledzi bieżący krok.')
+        self.btn_krajobraz.clicked.connect(self._krajobraz)
+        self.panel.pasek.addWidget(self.btn_krajobraz)
         self.odpinanie = Odpinanie(self, 'Przestrzeń makrowektorów', self.btn_odepnij)
         b.setToolTip('Widok całego układu z ukosa.')
         self.panel.zakoncz()
@@ -553,6 +558,12 @@ class WidokPrzestrzeniMakro(QWidget):
         """Kierunek d_c kanału (albo składowej) c jako gruba linia w jego kolorze; None chowa."""
         self.kanal = None if c is None else int(c)
         self._rysuj(skok=True)
+
+    def _krajobraz(self):
+        from krajobraz import OknoKrajobrazu
+        if getattr(self, '_okno_krajobrazu', None) is None:
+            self._okno_krajobrazu = OknoKrajobrazu(self)
+        self._okno_krajobrazu.show(); self._okno_krajobrazu.raise_(); self._okno_krajobrazu.odswiez(True)
 
     def _atlas(self):
         from atlas_kanalow import OknoAtlasu

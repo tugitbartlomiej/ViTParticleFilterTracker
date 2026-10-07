@@ -357,6 +357,14 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
      „Grand Tour” (Li i in. 2020): rama rzutu płynie przez losowe podprzestrzenie; wyłączenie zostawia widok.
   4. „Atlas kanałów”: mapy 20 x 30 każdego kanału (albo składowej PCA) bieżącej klatki, wg zmienności, z paskiem
      koloru kanału; klik podświetla kierunek kanału w makro (`atlas_kanalow.py`).
+- „Krajobraz i tunele” (przycisk w przestrzeni makro, `krajobraz.py`): okno z trzema obrazami tego, po czym
+  biegają cząstki, śledzące bieżący krok: teren energii U = −ln gęstość na dwóch głównych osiach chmury
+  (studnie, jak w TFT `plotly_studnie.py`), wosk z tunelami (izopowierzchnia odwiedzin wokseli, kolor = krok
+  pierwszego przejścia; opcja „lity wosk”: blok wydrążany przez cząstki) i otoczka (izopowierzchnia z wybranym
+  odsetkiem masy). Gęstość z całej historii, do bieżącego kroku (drążenie) albo z okna N kroków. Pod oknem test
+  wchodzenia w ślady poprzedników: klatka 0, krok 600, siatka 64³: 81,5 % odwiedzin w wokselach przebytych
+  wcześniej przez inną cząstkę wobec 81,6 % w kontroli z przesuniętym czasem, czyli bez wspólnych kanałów jak
+  w szkle; tunele to kształt chmury, a nie wspólne ścieżki.
 - Klik (bez przeciągania) w cząstkę w przestrzeni makro wybiera jej patch: biała ramka na obrazie, w widoku
   3D nad obrazem i duża biała cząstka w makro (zakładki filmu i uczenia; wyłącza automatyczne śledzenie).
 - Zakładka uczenia: „kroków/s” do 10 000; powyżej szybkości odświeżania ekranu odtwarzanie przeskakuje
