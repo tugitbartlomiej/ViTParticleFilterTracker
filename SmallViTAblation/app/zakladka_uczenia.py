@@ -19,6 +19,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 
 import analiza_uczenia as AU
+import rownanie_czastki as RC
 from wspolne import rysuj_zaznaczenie, tokeny_w_prostokacie
 import przyczyny_ruchu as PR
 from styl import rola
@@ -105,8 +106,11 @@ class ZakladkaUczenia(QWidget):
         self.makro = WidokPrzestrzeniMakro(self.j128)
         self.makro.ustaw_wzor(self.w3d)
         podzial.addWidget(self.w3d); podzial.addWidget(self.makro)
+        from panel_rownania import PanelRownania
+        self.panel = PanelRownania(self)
+        podzial.addWidget(self.panel)
         podzial.setStretchFactor(0, 0); podzial.setStretchFactor(1, 1); podzial.setStretchFactor(2, 1)
-        podzial.setSizes([460, 700, 700])
+        podzial.setSizes([460, 520, 600, 520])
         self._podzial, self._podzielono = podzial, False
         lay.addWidget(podzial, 1)
 
@@ -161,7 +165,10 @@ class ZakladkaUczenia(QWidget):
         dodaj(w, 'x', self.spin_strz, 'Mnożnik długości strzałek przyczyn (ruch w przedziale 10 kroków bywa krótki).')
         self.chk_widok3d = QCheckBox('widok 3D'); self.chk_widok3d.setChecked(True)
         self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_makro.setChecked(True)
+        self.chk_widok_rown = QCheckBox('równanie'); self.chk_widok_rown.setChecked(True)
+        self.chk_widok_rown.setToolTip('Czwarty panel: równanie Langevina, GLE i Koopmana wybranych cząstek z ich własnej historii.')
         w.addWidget(QLabel('Widoki:')); w.addWidget(self.chk_widok3d); w.addWidget(self.chk_widok_makro)
+        w.addWidget(self.chk_widok_rown)
         self.etykieta_kroku = QLabel(''); self.etykieta_kroku.setWordWrap(True); w.addWidget(self.etykieta_kroku, 1)
 
         g = QGroupBox('Prognoza Langevina i ślad toru w przestrzeni makro')
@@ -180,7 +187,8 @@ class ZakladkaUczenia(QWidget):
             '- jasnoniebieska blada: rzeczywisty dalszy tor do końca prognozy (podgląd do porównania).')
         w.addWidget(self.chk_prognoza)
         self.combo_czastka = QComboBox()
-        self.combo_czastka.addItems(['wybranego patcha', 'średniej cząstek narzędzia (jedna kropka)', 'średniej cząstek tła (jedna kropka)'])
+        self.combo_czastka.addItems(['wybranego patcha', 'średniej cząstek narzędzia (jedna kropka)', 'średniej cząstek tła (jedna kropka)',
+                                     'cząstek z listy (panel równania)'])
         dodaj(w, 'dla', self.combo_czastka,
               'Której cząstki dotyczą prognoza i ślad:\n'
               '- wybrany patch (kliknięty albo śledzony, np. czubek);\n'
@@ -239,6 +247,11 @@ class ZakladkaUczenia(QWidget):
         self.spin_co.valueChanged.connect(lambda *_: self._po_wczytaniu(None) if self.Z is not None else None)
         self.chk_widok3d.toggled.connect(lambda v: (self.w3d.setVisible(v), self.idz(self.t)))
         self.chk_widok_makro.toggled.connect(lambda v: (self.makro.setVisible(v), self.idz(self.t)))
+        self.chk_widok_rown.toggled.connect(lambda v: self.panel.setVisible(v))
+        for sg in (self.panel.combo_model.currentIndexChanged, self.panel.edit.editingFinished, self.panel.spin_L.valueChanged,
+                   self.panel.spin_d.valueChanged, self.panel.spin_r.valueChanged, self.panel.spin_od.valueChanged,
+                   self.panel.spin_do.valueChanged):
+            sg.connect(lambda *_: self.idz(self.t) if self.Z is not None else None)
         self.w3d.widok.klik.connect(lambda *_: self._wybierz_token(self.w3d.token))
         self.makro.token_wybrany.connect(self._wybierz_token)     # klik w cząstkę: ten sam patch na obrazie i w 3D
         self.canvas.mpl_connect('button_press_event', self._klik_klatki)
@@ -275,7 +288,8 @@ class ZakladkaUczenia(QWidget):
         if not self._podzielono:
             self._podzielono = True
             QTimer.singleShot(0, lambda: self._podzial.setSizes(
-                [460, (self._podzial.width() - 460) // 2, (self._podzial.width() - 460) // 2]))
+                [420, (self._podzial.width() - 420) * 3 // 10, (self._podzial.width() - 420) * 4 // 10,
+                 (self._podzial.width() - 420) * 3 // 10]))
 
     def _status(self, t, ms=8000):
         self.okno.statusBar().showMessage(t, ms)
@@ -470,6 +484,7 @@ class ZakladkaUczenia(QWidget):
             self.makro.ustaw_obraz(self.rgb)
             self.makro.pokaz_klatke(t, self.token)
             self._strzalki_przyczyn(k)
+        self.panel.przy_kroku()
         self._rysuj_klatke(k, kc)
         self._kursor(k)
         a = self.an
@@ -642,28 +657,38 @@ class ZakladkaUczenia(QWidget):
         else:
             self.makro.rysuj_znaczniki(None)
 
-    def _tor(self):
-        """Tor cząstki do prognozy: (klucz, dane toru, nazwa) albo None. Dane: x [K, 768], średnia krocząca M,
-        beta, kappa, maska patchy."""
+    def _wpisy(self):
+        """Cząstki do prognozy: [(klucz, maska [600], nazwa, kolor RGB albo None = kolory domyślne)]."""
         i = self.combo_czastka.currentIndex()
         if i == 0:
             if self.token is None:
-                return None
-            klucz, nazwa = ('patch', self.token), f'patch {self.token}'
-        else:
-            klucz, nazwa = (('narzedzie',), 'średnia narzędzia') if i == 1 else (('tlo',), 'średnia tła')
-        okno = self.osc['okno']
-        if klucz not in self._tory:
-            if i == 0:
-                maska = np.zeros(600, bool); maska[self.token] = True
-                x = np.asarray(self.Z[:, self.token], np.float32)
-                b, kk = float(self.osc['beta'][self.token]), float(self.osc['kappa'][self.token])
+                return []
+            m = np.zeros(600, bool); m[self.token] = True
+            return [(('patch', self.token), m, f'patch {self.token}', None)]
+        if i in (1, 2):
+            return [((('narzedzie',) if i == 1 else ('tlo',)), self.narz if i == 1 else ~self.narz,
+                     'średnia narzędzia' if i == 1 else 'średnia tła', None)]
+        from matplotlib.colors import to_rgb
+        wynik = []
+        for t in self.panel.tokeny():
+            m = np.zeros(600, bool); m[t] = True
+            wynik.append((('patch', t), m, f'patch {t}', to_rgb(self.panel.kolor(t))))
+        return wynik
+
+    def _model(self, klucz, maska):
+        """Dopasowany model (rownanie_czastki) wybranego w panelu typu dla cząstki albo średniej; pamiętany."""
+        mod = self.panel.combo_model.currentIndex(); par = self.panel.parametry()
+        kl = (klucz, mod, tuple(sorted(par.items())))
+        if kl not in self._tory:
+            if klucz[0] == 'patch':
+                x = np.asarray(self.Z[:, klucz[1]], np.float32)
             else:
-                maska = self.narz if i == 1 else ~self.narz
-                x = AU.tor_sredni(self.Z, maska)
-                b, kk = AU.oscylator_toru(x, okno=okno)
-            self._tory[klucz] = dict(x=x, M=AU.srednia_kroczaca(x, okno), beta=b, kappa=kk, maska=maska, ema={})
-        return klucz, self._tory[klucz], nazwa
+                kx = ('x',) + klucz
+                if kx not in self._tory:
+                    self._tory[kx] = AU.tor_sredni(self.Z, maska)
+                x = self._tory[kx]
+            self._tory[kl] = RC.dopasuj(x, mod, **par)
+        return self._tory[kl]
 
     def _zanik(self, n):
         """Krycie n kolejnych odcinków śladu, od najstarszego do najnowszego."""
@@ -678,26 +703,36 @@ class ZakladkaUczenia(QWidget):
         return (a0 + (1 - a0) * f).astype(np.float32)
 
     def _odcinki_prognozy(self, k):
-        """Odcinki (prognozy, ślady) i znaczniki [(pozycja, kolor, rozmiar)] dla wybranej cząstki albo średniej."""
-        if not self.chk_prognoza.isChecked() or getattr(self, 'osc', None) is None:
+        """Odcinki (prognozy, ślady) i znaczniki [(pozycja, kolor, rozmiar)] dla cząstek z _wpisy."""
+        if not self.chk_prognoza.isChecked() or self.Z is None:
             return [], [], []
-        r = self._tor()
-        if r is None:
-            return [], [], []
-        _, d, nazwa = r
-        x, M, b, kk, maska = d['x'], d['M'], d['beta'], d['kappa'], d['maska']
+        seg, kol, pkt, opisy = [], [], [], []
+        for klucz, maska, nazwa, barwa in self._wpisy():
+            s2, k2, p2, op = self._prognoza_wpisu(k, klucz, maska, nazwa, barwa)
+            seg += s2; kol += k2; pkt += p2; opisy.append(op)
+        model = RC.MODELE[self.panel.combo_model.currentIndex()].split(' (')[0]
+        self._opis_lang = (f'; {model}: ' + '; '.join(opisy)) if opisy else ''
+        return seg, kol, pkt
+
+    def _prognoza_wpisu(self, k, klucz, maska, nazwa, barwa):
+        mdl = self._model(klucz, maska)
+        x = mdl['x']
         K = len(x)
         m = self.makro
         o = m.P[m.t][maska].mean(0)                                   # bieżące położenie cząstki (albo średniej)
         rzut = lambda X: o + m.rzut_delty(np.asarray(X, np.float32) - x[k])
         seg, kol, pkt = [], [], []
+        if barwa is None:                                             # jedna cząstka: turkus / pomarańcz
+            k_slad, k_prog, k_przysz = (.2, .9, 1), (1, .55, .1), (.65, .8, 1)
+        else:                                                         # kilka cząstek: kolor cząstki z panelu
+            k_prog = barwa; k_slad = tuple(.45 * c + .55 for c in barwa); k_przysz = tuple(.3 * c + .7 for c in barwa)
 
-        def linia(P, c, alfy=None, przerywana=False):
-            for a in range(len(P) - 1):
-                if przerywana and a % 2:
+        def linia(P, c, a=1., alfy=None, przerywana=False):
+            for j in range(len(P) - 1):
+                if przerywana and j % 2:
                     continue
-                al = c[3] if alfy is None else c[3] * alfy[a]
-                seg.extend([P[a], P[a + 1]]); kol.extend([(c[0], c[1], c[2], al)] * 2)
+                al = a if alfy is None else a * alfy[j]
+                seg.extend([P[j], P[j + 1]]); kol.extend([(c[0], c[1], c[2], al)] * 2)
 
         ema = self.chk_ema.isChecked()
         a_ema = self.spin_ema.value()
@@ -706,42 +741,41 @@ class ZakladkaUczenia(QWidget):
         co = max(1, L // 400)                                         # do 400 odcinków na ślad
         if L > 0:                                                     # ślad rzeczywisty
             if ema:
-                if a_ema not in d['ema']:
-                    d['ema'] = {a_ema: AU.ema(x, a_ema)}
-                y = d['ema'][a_ema]
+                if mdl.get('_ema', (None,))[0] != a_ema:
+                    mdl['_ema'] = (a_ema, AU.ema(x, a_ema))
+                y = mdl['_ema'][1]
             else:
                 y = x
             P = rzut(y[t0:k + 1][::-1][::co][::-1])
-            linia(P, (.2, .9, 1, 1), self._zanik(len(P) - 1))
+            linia(P, k_slad, 1., self._zanik(len(P) - 1))
         w = self.spin_wyprz.value()
         if L > 0 and w > 0 and k - w >= 0:                            # ślad prognoz z wyprzedzeniem w
-            ts = np.arange(max(t0, w), k + 1)
-            pred = AU.prognozy_toru(x, M, ts - w, w, b, kk)[:, -1]
+            ts = np.arange(max(t0, w), k + 1)[::-1][::co][::-1]
+            pred = RC.prognozy(mdl, ts - w, w)[:, -1]
             if ema:
                 pred = AU.ema(pred, a_ema)
-            P = rzut(pred[::-1][::co][::-1])
-            linia(P, (1, .55, .1, .9), self._zanik(len(P) - 1))
+            P = rzut(pred)
+            linia(P, k_prog, .9, self._zanik(len(P) - 1))
         h, N = self.spin_h.value(), self.spin_nowa.value()
         k0 = (k // N) * N
         starty = [k0 - j * N for j in range(self.spin_stare.value() + 1) if k0 - j * N >= 0]
-        tory = AU.prognozy_toru(x, M, starty, h, b, kk)               # [n, h + 1, 768]
+        tory = RC.prognozy(mdl, starty, h)                            # [n, h + 1, 768]
         for j, tor in enumerate(tory):
-            c = (1, .55, .1, 1) if j == 0 else (1, .62, .25, .55 * (1 - j / (len(tory) + 1)))
-            linia(rzut(tor), c, przerywana=True)
-        opis = f'; Langevin ({nazwa}, beta {b:.2f}, kappa {kk:.3f}): prognoza z kroku {int(self.kroki[k0])}'
+            linia(rzut(tor), k_prog, 1. if j == 0 else .55 * (1 - j / (len(tory) + 1)), przerywana=True)
+        opis = f'{nazwa} od kroku {int(self.kroki[k0])}'
         if 0 < k - k0 <= h:                                           # gdzie prognoza stawiała cząstkę teraz
-            pkt.append((rzut(tory[0][k - k0][None])[0], (1, .55, .1, 1), 11))
+            pkt.append((rzut(tory[0][k - k0][None])[0], (*k_prog, 1), 11))
             e = float(np.linalg.norm(tory[0][k - k0] - x[k])); ep = float(np.linalg.norm(x[k0] - x[k]))
-            opis += f', po {k - k0} krokach błąd {e:.2f} wobec „bez ruchu” {ep:.2f} (stosunek {e / max(ep, 1e-9):.2f})'
+            opis += f', po {k - k0} kr. błąd / bez ruchu {e / max(ep, 1e-9):.2f}'
         if self.chk_przyszlosc.isChecked():                           # rzeczywisty dalszy tor (podgląd)
             kon = min(K - 1, max(k0 + h, k))
             if kon > k:
-                linia(rzut(x[k:kon + 1]), (.65, .8, 1, .45))
-        if self.combo_czastka.currentIndex():                         # średnia jako jedna duża kropka
-            pkt.append((o, (1, .3, .25, 1) if self.combo_czastka.currentIndex() == 1 else (.75, .8, .9, 1),
-                        m.spin_rozmiar.value() + 12))
-        self._opis_lang = opis
-        return seg, kol, pkt
+                linia(rzut(x[k:kon + 1]), k_przysz, .45)
+        if klucz[0] != 'patch':                                       # średnia jako jedna duża kropka
+            pkt.append((o, (1, .3, .25, 1) if klucz[0] == 'narzedzie' else (.75, .8, .9, 1), m.spin_rozmiar.value() + 12))
+        elif barwa is not None:
+            pkt.append((o, (*barwa, 1), m.spin_rozmiar.value() + 8))
+        return seg, kol, pkt, opis
 
     def _odcinki_przyczyn(self, k):
         if self.prz is None or self.token is None or not self.chk_strzalki.isChecked():

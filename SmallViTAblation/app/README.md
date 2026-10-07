@@ -406,6 +406,17 @@ Oś czasu to krok uczenia, nie klatka filmu. Źródło: bieg z gęstą historią
   Długość śladu (albo od kroku 0), EMA z α, sposób zanikania i krycie najstarszego odcinka.
   W opisie kroku: błąd prognozy wobec „bez ruchu”.
 - **Animuj** w widoku 3D: bez porównania PRZED / PO odtwarza uczenie (jak „Ucz”).
+- **Panel równania** (czwarty widok, `panel_rownania.py`, `rownanie_czastki.py`): dla do 8 cząstek z listy
+  trzy modele z samej historii cząstki (bez siły paczki): Langevin (oscylator), GLE z jądrem pamięci L kroków
+  (jedno jądro dla 768 kanałów; L = 1 daje dokładnie oscylator) i Koopman (Hankel-DMD na r składowych toru
+  z d opóźnieniami, reszta: oscylator). Tabela błąd / „bez ruchu” dla h = 1, 5, 20, 50 na krokach testowych,
+  równanie z liczbami, udziały części (bezwładność, pamięć, sprężyna, szum), wykresy: błąd vs horyzont, jądro
+  pamięci (regresja i Volterra), rozkład kroku na części wokół bieżącego kroku, portret fazowy z polem
+  oscylatora, autokorelacja i rozkład szumu, VACF danych i modelu, wartości własne Koopmana.
+  „Dla: cząstek z listy (panel równania)” rysuje w makro prognozy wszystkich cząstek z listy w ich kolorach,
+  modelem wybranym w panelu. Klatka 0, patch 255: GLE L = 10 daje 0,32 / 0,76 / 0,81 / 0,79 (h = 1 / 5 / 20 / 50)
+  wobec oscylatora 0,35 / 0,81 / 0,93 / 0,79; Koopman gorszy na dłuższych horyzontach; szum to około 37 % ruchu
+  (jak pchnięcie paczki, 31-35 %) z kurtozą 6-7 (rzadkie silne pchnięcia).
 
 Zastrzeżenia: łodyga zawiera biegnące statystyki BatchNorm (zmieniają się też bez gradientu);
 gradient liczony na jednej klatce próbnej, a uczenie szło po paczkach 32 obrazów z AdamW;
