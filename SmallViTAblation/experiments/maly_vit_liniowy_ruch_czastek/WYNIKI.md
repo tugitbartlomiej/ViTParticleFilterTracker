@@ -65,3 +65,45 @@ Ruch każdej cząstki da się zapisać liniowo w przestrzeni stanu (z, v) cząst
 wolnego środka. Ale z samej historii przewiduje to tylko część ruchu, bo każdy krok dostaje nowe pchnięcie
 od paczki. Etap 2 mierzy to pchnięcie bezpośrednio, osobno dla każdej cząstki, i sprawdza, czy z nim model
 liniowy wyjaśnia ruch każdej cząstki (jak 85 % na średniej w docs/23).
+
+## Etap 2 i 3: siły na każdej cząstce (Eden 1823539, dopasowanie 1823541)
+
+Bieg: ziarno 47, 1000 kroków, H100, 1202 s; klatki 2, 3, 6, wszystkie 600 tokenów w każdym kroku.
+Dane na Edenie: `~/smallvit_runs/2026-10-07_maly_vit_sily_czastek/wyniki/pelny/dane` (Z, S_nowa, S_ped, S_zan,
+S_buf, S_grupy; około 17 GB). Lokalnie: `wyniki/eden_pelny/` (DOPASOWANIE.json, SKALARY.json, metadata.json, logi).
+
+**Reszta liniowości** ||dz − (S_nowa + S_ped + S_zan + S_buf)|| / ||dz|| na krok (cała klatka): mediana 0,055,
+90. centyl 0,107. Na pojedynczych tokenach R^2 sumy sił bez żadnych parametrów: 98,9-99,7 %.
+
+Umiejętność na teście (kroki 700-1000, dopasowanie 300-700), mediana po tokenach, narzędzie / tło:
+
+| model (na każdej cząstce) | klatka 2 | klatka 3 | klatka 6 |
+|---|---|---|---|
+| suma sił, bez parametrów | 99,7 / 99,7 | 99,3 / 99,6 | 98,9 / 99,5 |
+| E1: dz_t = a dz_(t−1) + b S_nowa(t) | 97,6 / 98,0 | 96,5 / 97,3 | 96,1 / 97,0 |
+| E3: + sprężyna, BatchNorm, zanik | 98,1 / 98,4 | 96,9 / 97,6 | 96,6 / 97,5 |
+| **W: E3 z jednymi parametrami dla wszystkich cząstek** | **98,1 / 98,4** | **96,9 / 97,6** | **96,7 / 97,4** |
+| P1: bez siły paczki (pęd + sprężyna), prognoza 1 krok | 59,5 / 59,7 | 53,7 / 58,1 | 54,7 / 56,6 |
+
+Udziały przyczyn w ruchu cząstki (średnio <S_k, dz> / ||dz||^2): pęd AdamW 64-68 %, nowa paczka 31-35 %,
+BatchNorm około 1 %, zanik wag 0 %.
+
+Wspólne prawo ruchu (model W, te same liczby na trzech klatkach): a = 0,86-0,87, b = 0,985-0,99,
+k (sprężyna) = 0,004-0,006, c (BatchNorm) = 0,43-0,55.
+
+## Wniosek
+
+Ruch każdej cząstki w uczeniu jest liniowy w przestrzeni stanu (z_i, v_i) z wejściem równym sile bieżącej paczki:
+
+    v_i(t+1) = 0,87 v_i(t) + S_nowa,i(t)     (+ 0,5 S_buf,i, mała sprężyna 0,005 do średniej)
+    z_i(t+1) = z_i(t) + v_i(t+1)
+
+To jedno prawo z jednymi parametrami dla wszystkich cząstek opisuje 96-98 % ruchu każdej cząstki na krokach
+testowych. Na średniej po tokenach docs/23 dawało 85 %. a = 0,87 to pęd AdamW (beta1 = 0,9), b = 1 to pełne
+pchnięcie paczki. Z czego wynika ruch: w dwóch trzecich z pamięci poprzednich paczek (pęd), w jednej trzeciej
+z bieżącej paczki; BatchNorm i zanik wag praktycznie nic.
+
+Czego to nie rozstrzyga: siła paczki S_nowa,i(t) jest wejściem z zewnątrz. Bez niej prognoza jednego kroku to
+54-60 %. Siła paczki zależy od tego, które obrazy trafią do paczki, a tym da się sterować. To jest punkt wyjścia
+etapu 4 (ulepszenie uczenia): dobór paczek według przewidywanej siły na cząstki narzędzia.
+Zastrzeżenia: 1 ziarno, 3 klatki, kroki 0-1000; parametry dopasowane na 300-700 przy stałym lr.
