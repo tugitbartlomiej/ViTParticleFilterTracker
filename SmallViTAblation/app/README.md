@@ -347,6 +347,16 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   tylko dodatnie), z automatycznym nasyceniem, opcjonalnie jasność według łącznej siły i gładkie przejścia.
 - Przestrzeń makro, „Kolor cząstek: mieszanka kolorów mikrowektorów”: ta sama mieszanka na ruchomych
   cząstkach, liczona w każdej klatce przy rysowaniu (waga, nasycenie, jasność według siły w „Wygląd”).
+- Cztery sposoby orientacji w przestrzeni 768 wymiarów (przegląd literatury 2026-10-07):
+  1. Zaznaczanie w obie strony: prawy przycisk + przeciągnij na obrazie albo Shift + przeciągnij w przestrzeni
+     makro; zaznaczone patche żółte na obrazie, ich cząstki jasne, reszta blada (Rave i in. 2021).
+     Mapa podobieństwa: kolor „podobieństwo do wybranego patcha (cos)” w makro i na obrazie widoku 3D.
+  2. Kolor „PCA: 3 składowe jako RGB” (jak DINOv2, FeatUp) w makro i na obrazie widoku 3D, z tej samej bazy
+     (różnica kolorów 0), więc ten sam kolor = ta sama cząstka.
+  3. „Ortonormalne kierunki”: rzut prostokątny przez QR macierzy kierunków (Lehmann i Theisel 2013) oraz
+     „Grand Tour” (Li i in. 2020): rama rzutu płynie przez losowe podprzestrzenie; wyłączenie zostawia widok.
+  4. „Atlas kanałów”: mapy 20 x 30 każdego kanału (albo składowej PCA) bieżącej klatki, wg zmienności, z paskiem
+     koloru kanału; klik podświetla kierunek kanału w makro (`atlas_kanalow.py`).
 - Klik (bez przeciągania) w cząstkę w przestrzeni makro wybiera jej patch: biała ramka na obrazie, w widoku
   3D nad obrazem i duża biała cząstka w makro (zakładki filmu i uczenia; wyłącza automatyczne śledzenie).
 - Zakładka uczenia: „kroków/s” do 10 000; powyżej szybkości odświeżania ekranu odtwarzanie przeskakuje

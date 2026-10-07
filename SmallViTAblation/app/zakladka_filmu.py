@@ -19,6 +19,7 @@ from matplotlib.figure import Figure
 
 import detekcja as D
 import film as F
+from wspolne import rysuj_zaznaczenie, tokeny_w_prostokacie
 import silnik
 from styl import rola
 from uklad import Przeplyw, dodaj
@@ -334,6 +335,9 @@ class ZakladkaFilmu(QWidget):
         self.combo_maska.currentIndexChanged.connect(lambda *_: self._zmiana_maski())
         self.spin_prog.valueChanged.connect(lambda *_: self._zmiana_maski())
         self.canvas.mpl_connect('button_press_event', self._klik_klatki)
+        self.canvas.mpl_connect('button_release_event', self._puszczenie_klatki)
+        self.makro.zaznaczono.connect(self._zaznacz)               # Shift + przeciągnij w przestrzeni makro
+        self.zaznaczenie = None
         self.canvas_os.mpl_connect('button_press_event', self._klik_osi)
         self.suwak.valueChanged.connect(self.idz)
         self.btn_pocz.clicked.connect(lambda: self.suwak.setValue(0))
@@ -653,6 +657,8 @@ class ZakladkaFilmu(QWidget):
     def _klik_klatki(self, e):
         if self.sek is None or e.xdata is None:
             return
+        if e.button == 3 and not self.btn_rysuj.isChecked():           # prawy + przeciągnij: zaznaczenie patchy
+            self._start_zazn = (e.xdata, e.ydata); return
         if self.btn_rysuj.isChecked():
             if e.button == 1:
                 self.rysowany.append((e.xdata, e.ydata))
@@ -861,6 +867,7 @@ class ZakladkaFilmu(QWidget):
         if self.token is not None:
             r_, k_ = divmod(self.token, 30)
             linia(prostokat([k_ * 16, r_ * 16, k_ * 16 + 16, r_ * 16 + 16]), (1, 1, 1), 1.2)
+        rysuj_zaznaczenie(ax, self.zaznaczenie)
         ax.set_xlim(0, 480); ax.set_ylim(320, 0); ax.axis('off')
         tryb = ' | RYSOWANIE: lewy klik = punkt, prawy = zamknij' if self.btn_rysuj.isChecked() else ' | klik = wybór patcha'
         ax.set_title(f'{s["film"]} kl. {int(s["idx"][t])}{tryb}', fontsize=8, color='#dddddd')
@@ -913,6 +920,23 @@ class ZakladkaFilmu(QWidget):
                     obwody_reczne={int(s['idx'][t]): [p.tolist() for p in v] for t, v in self.obwody.items() if v})
         (silnik.WYJSCIE / f'{tag}.json').write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding='utf-8')
         self._status(f'Zapisano {silnik.WYJSCIE / tag}.npz i .json', 15000)
+
+    # ------------------------------------------------------------ zaznaczanie patchy (obraz <-> przestrzeń makro)
+    def _puszczenie_klatki(self, e):
+        st, self._start_zazn = getattr(self, '_start_zazn', None), None
+        if st is None or e.button != 3:
+            return
+        x1, y1 = (e.xdata, e.ydata) if e.xdata is not None else st
+        duzy = abs(x1 - st[0]) + abs(y1 - st[1]) > 6
+        self._zaznacz(tokeny_w_prostokacie(st[0], st[1], x1, y1) if duzy else [])
+
+    def _zaznacz(self, tokeny):
+        """Zaznaczone patche: żółte na obrazie, jasne w przestrzeni makro (reszta blada); pusty = wyczyść."""
+        self.zaznaczenie = np.asarray(tokeny, int) if len(tokeny) else None
+        self.makro.ustaw_zaznaczenie(self.zaznaczenie)
+        self.idz(self.t)
+        self._status('Zaznaczenie wyczyszczone.' if self.zaznaczenie is None else
+                     f'Zaznaczono {len(self.zaznaczenie)} patchy (prawy przycisk bez przeciągania na obrazie: wyczyść).')
 
 
 def torch_sigmoid(m):

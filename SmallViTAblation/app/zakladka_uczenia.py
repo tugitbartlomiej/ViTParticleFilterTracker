@@ -19,6 +19,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Rectangle
 
 import analiza_uczenia as AU
+from wspolne import rysuj_zaznaczenie, tokeny_w_prostokacie
 import przyczyny_ruchu as PR
 from styl import rola
 from uklad import Przeplyw, dodaj
@@ -75,7 +76,10 @@ class ZakladkaUczenia(QWidget):
         self.fig = Figure(figsize=(5, 3.6)); self.ax = self.fig.add_axes([0, 0, 1, .9])
         self.canvas = PlotnoCiemne(self.fig); self.canvas.setFixedHeight(300)
         self.canvas.setToolTip('Klatka próbna: patche narzędzia (czerwone kropki), ramka ViT z wag najbliższego\n'
-                               'checkpointu (zielona) i wybrany patch (biały). Klik wybiera patch.')
+                               'checkpointu (zielona) i wybrany patch (biały). Klik wybiera patch.\n'
+                               'Prawy przycisk + przeciągnij: zaznacz prostokąt patchy (żółte); ich cząstki w przestrzeni\n'
+                               'makro zostają jasne, reszta blednie. Prawy klik bez przeciągania czyści zaznaczenie.\n'
+                               'W przestrzeni makro to samo: Shift + przeciągnij lewym przyciskiem.')
         ll.addWidget(self.canvas)
         self.zakl_wyk = QTabWidget(); ll.addWidget(self.zakl_wyk, 1)
         self.fig_r = Figure(figsize=(5, 7)); self.canvas_r = PlotnoCiemne(self.fig_r)
@@ -238,6 +242,9 @@ class ZakladkaUczenia(QWidget):
         self.w3d.widok.klik.connect(lambda *_: self._wybierz_token(self.w3d.token))
         self.makro.token_wybrany.connect(self._wybierz_token)     # klik w cząstkę: ten sam patch na obrazie i w 3D
         self.canvas.mpl_connect('button_press_event', self._klik_klatki)
+        self.canvas.mpl_connect('button_release_event', self._puszczenie_klatki)
+        self.makro.zaznaczono.connect(self._zaznacz)               # Shift + przeciągnij w przestrzeni makro
+        self.zaznaczenie = None
         self.canvas_r.mpl_connect('button_press_event', self._klik_wykresu)
         self.canvas_c.mpl_connect('button_press_event', self._klik_cka)
         self.canvas_p.mpl_connect('button_press_event', self._klik_cka)
@@ -488,6 +495,7 @@ class ZakladkaUczenia(QWidget):
         if self.token is not None:
             r, c = divmod(self.token, 30)
             ax.add_patch(Rectangle((c * 16, r * 16), 16, 16, fill=False, ec='white', lw=1.5))
+        rysuj_zaznaczenie(ax, self.zaznaczenie)
         ax.set_xlim(0, 480); ax.set_ylim(320, 0); ax.axis('off')
         ax.set_title(f'krok {int(self.kroki[k])}: wagi kroku {int(self.opis["kroki_wag"][kc])}, pewność '
                      f'{self.dety["pewnosc"][kc] * 100:.0f} %', fontsize=9, color='white')
@@ -790,5 +798,24 @@ class ZakladkaUczenia(QWidget):
     def _klik_klatki(self, e):
         if e.inaxes is None or self.Z is None or e.xdata is None:
             return
+        if e.button == 3:
+            self._start_zazn = (e.xdata, e.ydata); return
         c = int(np.clip(e.xdata // 16, 0, 29)); r = int(np.clip(e.ydata // 16, 0, 19))
         self._wybierz_token(r * 30 + c)
+
+    # ------------------------------------------------------------ zaznaczanie patchy (obraz <-> przestrzeń makro)
+    def _puszczenie_klatki(self, e):
+        st, self._start_zazn = getattr(self, '_start_zazn', None), None
+        if st is None or e.button != 3:
+            return
+        x1, y1 = (e.xdata, e.ydata) if e.xdata is not None else st
+        duzy = abs(x1 - st[0]) + abs(y1 - st[1]) > 6
+        self._zaznacz(tokeny_w_prostokacie(st[0], st[1], x1, y1) if duzy else [])
+
+    def _zaznacz(self, tokeny):
+        """Zaznaczone patche: żółte na obrazie, jasne w przestrzeni makro (reszta blada); pusty = wyczyść."""
+        self.zaznaczenie = np.asarray(tokeny, int) if len(tokeny) else None
+        self.makro.ustaw_zaznaczenie(self.zaznaczenie)
+        self.idz(self.t)
+        self._status('Zaznaczenie wyczyszczone.' if self.zaznaczenie is None else
+                     f'Zaznaczono {len(self.zaznaczenie)} patchy (prawy przycisk bez przeciągania na obrazie: wyczyść).')

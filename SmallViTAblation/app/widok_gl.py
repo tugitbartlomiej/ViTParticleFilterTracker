@@ -1,6 +1,6 @@
 """Widoki OpenGL (pyqtgraph.opengl) wspólne dla cząsteczek 3D i przestrzeni makrowektorów."""
 import numpy as np
-from PyQt6.QtCore import QPoint, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QPoint, QRect, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QVector4D
 
 import pyqtgraph.opengl as gl
@@ -18,12 +18,32 @@ class WidokGL(gl.GLViewWidget):
 
     lustro = (1, 1, 1)
     klik_px = pyqtSignal(float, float)            # klik bez przeciągania: piksel w widżecie
+    prostokat_px = pyqtSignal(float, float, float, float)   # Shift + przeciągnięcie: prostokąt w pikselach
 
     def mousePressEvent(self, ev):
         self._start_px = ev.position().toPoint()
+        if ev.button() == Qt.MouseButton.LeftButton and ev.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+            from PyQt6.QtWidgets import QRubberBand
+            if getattr(self, '_gumka', None) is None:
+                self._gumka = QRubberBand(QRubberBand.Shape.Rectangle, self)
+            self._gumka_start = self._start_px
+            self._gumka.setGeometry(QRect(self._gumka_start, QSize())); self._gumka.show()
+            return
         super().mousePressEvent(ev)
 
+    def mouseMoveEvent(self, ev):
+        if getattr(self, '_gumka_start', None) is not None:
+            self._gumka.setGeometry(QRect(self._gumka_start, ev.position().toPoint()).normalized())
+            return
+        super().mouseMoveEvent(ev)
+
     def mouseReleaseEvent(self, ev):
+        if getattr(self, '_gumka_start', None) is not None:
+            a, b = self._gumka_start, ev.position().toPoint()
+            self._gumka_start = None; self._gumka.hide()
+            self.prostokat_px.emit(float(min(a.x(), b.x())), float(min(a.y(), b.y())),
+                                   float(max(a.x(), b.x())), float(max(a.y(), b.y())))
+            return
         super().mouseReleaseEvent(ev)
         p = ev.position().toPoint()
         if ev.button() == Qt.MouseButton.LeftButton and (p - getattr(self, '_start_px', QPoint())).manhattanLength() < 4:

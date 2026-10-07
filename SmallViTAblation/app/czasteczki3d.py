@@ -25,6 +25,7 @@ from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
 from uklad import Odpinanie, PanelOpcji, dodaj, dodaj_nawigacje
 from widok_gl import LinieGrube, ObrazPrzezroczysty, Widok3D
+from wspolne import baza_pca_rgb, kolor_pca_rgb, kolor_podobienstwa
 from wspolne import (CZASTECZKI_CO, KOLUMNY, KOMORKA, PCA_SKLADOWE, SZER, WIERSZE, WYNIKI, WYS, kierunki,
                      kolory_kanalow, opisy_czasteczek, pca, tokeny_co)
 
@@ -117,13 +118,20 @@ class WidokCzasteczek3D(QWidget):
             'te same kolory co wektory) ważona siłą wektora. Silniejszy wektor ma większy udział w kolorze.\n'
             'Liczone z tego, co pokazuje widok (PRZED, PO, różnica, przejście), dla wszystkich 600 patchy.')
         w.addWidget(self.chk_mies)
-        self.combo_waga = dodaj(w, 'Waga:', WaskiCombo(12),
+        self.combo_waga = dodaj(w, 'Kolor / waga:', WaskiCombo(12),
                                 'Waga wektora c w mieszance:\n'
                                 '- |wartość|: długość wektora (siła kanału albo składowej);\n'
                                 '- wartość²: mocniej faworyzuje najsilniejsze wektory;\n'
                                 '- wartość⁴: prawie sam najsilniejszy wektor, ale płynnie;\n'
-                                '- tylko dodatnie: wektory skierowane na zewnątrz (wartość > 0), waga = wartość.')
-        self.combo_waga.addItems(['|wartość| (długość)', 'wartość²', 'wartość⁴', 'tylko dodatnie'])
+                                '- tylko dodatnie: wektory skierowane na zewnątrz (wartość > 0), waga = wartość.\n'
+                                'Inne kolorowania (nie mieszanka):\n'
+                                '- PCA jako RGB: 3 główne składowe pełnego latentu (768) jako czerwony, zielony, niebieski\n'
+                                '  (jak w DINOv2 i FeatUp); baza wspólna dla całej sekwencji / historii, ta sama co w przestrzeni\n'
+                                '  makro przy „Kolor cząstek: PCA jako RGB”, więc ten sam kolor = ta sama cząstka w obu widokach;\n'
+                                '- podobieństwo do wybranego patcha: kosinus latentu (po odjęciu średniej klatki) każdego patcha\n'
+                                '  z wybranym; czerwony = podobny, niebieski = przeciwny, biały = obojętny.')
+        self.combo_waga.addItems(['|wartość| (długość)', 'wartość²', 'wartość⁴', 'tylko dodatnie',
+                                  'PCA: 3 składowe jako RGB', 'podobieństwo do wybranego patcha (cos)'])
         self.spin_mies_krycie = dodaj(w, 'Krycie koloru:', QDoubleSpinBox(),
                                       '0 = sam obraz, 1 = sam kolor mieszanki (bez zdjęcia).')
         self.spin_mies_krycie.setRange(0, 1); self.spin_mies_krycie.setSingleStep(.1); self.spin_mies_krycie.setValue(.6)
@@ -378,11 +386,14 @@ class WidokCzasteczek3D(QWidget):
 
     def _mieszanka(self):
         """Kolor każdego z 600 patchy: kolory wektorów ważone ich siłą w tym, co pokazuje widok -> [600, 3] w 0..1."""
+        i = self.combo_waga.currentIndex()
+        if i in (4, 5):                                                 # kolor z pełnego latentu, nie mieszanka
+            L, _ = self._latent()
+            return kolor_pca_rgb(L, self.baza_rgb()) if i == 4 else kolor_podobienstwa(L, self.token)
         polsfera = self.combo_ksztalt.currentIndex() == 1
         przed, po, kan, kolory, _, _ = self._dane(polsfera)
         L, _ = self._latent(przed, po)
         X = np.asarray(L, np.float32)[:, kan]
-        i = self.combo_waga.currentIndex()
         W = np.abs(X) if i == 0 else X ** 2 if i == 1 else X ** 4 if i == 2 else np.clip(X, 0, None)
         sila = W.sum(1)
         C = W @ np.asarray(kolory, np.float32)[kan, :3] / np.maximum(sila, 1e-12)[:, None]
@@ -392,6 +403,21 @@ class WidokCzasteczek3D(QWidget):
         if self.chk_mies_jasn.isChecked():
             C = C * np.clip(sila / max(float(np.percentile(sila, 99)), 1e-12), 0, 1)[:, None]
         return C.astype(np.float32)
+
+    def baza_rgb(self):
+        """Baza PCA 3 składowych pełnego latentu do kolorów RGB, z sekwencji (ustaw_baze_pca) albo z przed i po:
+        (mu [768], W [768, 3], dolny i górny 1. / 99. centyl wyników [3]); pamiętana do zmiany danych."""
+        zr = self._pca_zrodlo
+        klucz = 'sekwencja' if zr is not None else getattr(self, '_wersja', 0)
+        if getattr(self, '_rgb_klucz', None) != klucz:
+            if zr is not None:
+                X = zr[::max(1, len(zr) // 12000)]
+            elif self.przed is not None:
+                X = np.concatenate([self.przed] + ([self.po] if self.po is not None else []))
+            else:
+                return None
+            self._rgb, self._rgb_klucz = baza_pca_rgb(X), klucz
+        return self._rgb
 
     def _odswiez_mieszanke(self):
         if not self.chk_mies.isChecked():

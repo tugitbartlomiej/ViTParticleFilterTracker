@@ -28,16 +28,19 @@ from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
 from uklad import Odpinanie, PanelOpcji, dodaj, dodaj_nawigacje
 from widok_gl import LinieGrube, WidokGL
+from wspolne import baza_pca_rgb, kolor_pca_rgb, kolor_podobienstwa
 from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanalow, opisy_czasteczek, pca, tokeny_co
 
 
 class WidokPrzestrzeniMakro(QWidget):
     token_wybrany = pyqtSignal(int)
+    zaznaczono = pyqtSignal(object)                   # tablica patchy z prostokąta Shift + przeciągnij
     KIERUNKI = ['sfera Fibonacciego (jak widok 3D)', 'losowe (stałe ziarno)', 'PCA latentu sekwencji (3 składowe)',
                 'półsfera Fibonacciego (z > 0)', 'jak widok 3D nad obrazem (te same kierunki, PCA i kanały)']
     KOLORY = ['kolor najsilniejszego mikrowektora (jak w widoku 3D)', 'mieszanka kolorów mikrowektorów (ważona długością)',
               'wg położenia patcha w siatce (kolumna = barwa, wiersz = jasność)', 'narzędzie (czerwone) i tło (szare)',
-              'wg pewności ViT w patchu']
+              'wg pewności ViT w patchu', 'PCA: 3 składowe latentu jako RGB (jak w widoku 3D)',
+              'podobieństwo do wybranego patcha (cos)']
 
     def __init__(self, kanaly_j128=None):
         super().__init__()
@@ -91,10 +94,17 @@ class WidokPrzestrzeniMakro(QWidget):
         self.combo_poz.addItems(['nie odejmuj', 'odejmij średnią patcha z sekwencji', 'odejmij średnią patcha z 3000 klatek',
                                  'usuń kierunki położenia (rzut)'])
         self.ckpt = None                     # checkpoint ViT sekwencji (ustawia zakładka filmu), do średniej położenia
+        self.chk_orto = QCheckBox('Ortonormalne kierunki (rzut prostokątny)')
+        self.chk_orto.setToolTip('Kierunki d_c (sfera, losowe, jak 3D) nie są wzajemnie prostopadłe jako 3 kolumny macierzy\n'
+                                 'D [K, 3], więc rzut zniekształca odległości. Włączone: D zastępuje jej ortonormalna wersja\n'
+                                 '(QR), czyli prawdziwy rzut prostokątny przestrzeni K wymiarów na 3 osie (Orthographic Star\n'
+                                 'Coordinates, Lehmann i Theisel 2013): kula w K wymiarach jest kulą w 3D, a odległości\n'
+                                 'w rzucie nigdy nie są większe niż w latencie. Kierunki zmieniają się trochę, kolory zostają.')
         self.chk_srodek = QCheckBox('Odejmij średni latent'); self.chk_srodek.setChecked(True)
         self.chk_srodek.setToolTip('Siła kanału = z − μ (średnia sekwencji). Bez tego wszystkie cząstki odlatują razem\n'
                                    'w stronę średniej, bo po GELU prawie wszystkie wartości są dodatnie.')
         w.addWidget(self.chk_srodek)
+        w.addWidget(self.chk_orto)
 
         # Wygląd: które cząstki | jak wyglądają | ruch między klatkami
         w = self.panel.wiersz('Wygląd')
@@ -232,12 +242,26 @@ class WidokPrzestrzeniMakro(QWidget):
         self.atencja_fn = None
         b = rola(QPushButton('Kamera od nowa'), 'narzedzie'); b.clicked.connect(self._kamera); self.panel.pasek.addWidget(b)
         self.btn_odepnij = rola(QPushButton('Odepnij'), 'narzedzie'); self.panel.pasek.addWidget(self.btn_odepnij)
+        self.btn_tour = rola(QPushButton('Grand Tour'), 'narzedzie'); self.btn_tour.setCheckable(True)
+        self.btn_tour.setToolTip('Płynny obrót rzutu przez kolejne losowe kierunki przestrzeni sił (Grand Tour, Li i in. 2020,\n'
+                                 'Distill). Rzut zostaje liniowy, więc cząstki śledzi się wzrokiem, a kolejne ujęcia pokazują\n'
+                                 'inne przekroje 768 wymiarów. Liczona bieżąca klatka (ślady schowane). Wyłączenie zostawia\n'
+                                 'ostatni widok dla wszystkich klatek; zmiana kierunków w opcjach wraca do zwykłych.')
+        self.panel.pasek.addWidget(self.btn_tour)
+        self._timer_tour = QTimer(self); self._timer_tour.setInterval(40); self._timer_tour.timeout.connect(self._krok_tour)
+        self.btn_tour.toggled.connect(self._tour)
+        self.btn_atlas = rola(QPushButton('Atlas kanałów'), 'narzedzie')
+        self.btn_atlas.setToolTip('Okno z mapą każdego kanału (albo składowej PCA) na siatce patchy 20 x 30 bieżącej klatki,\n'
+                                  'posortowane wg zmienności. Klik w mapę podświetla kierunek tego kanału w tej przestrzeni.')
+        self.btn_atlas.clicked.connect(self._atlas)
+        self.panel.pasek.addWidget(self.btn_atlas)
         self.odpinanie = Odpinanie(self, 'Przestrzeń makrowektorów', self.btn_odepnij)
         b.setToolTip('Widok całego układu z ukosa.')
         self.panel.zakoncz()
 
         self.widok = WidokGL()
         self.widok.klik_px.connect(self._klik)
+        self.widok.prostokat_px.connect(self._prostokat)
         dodaj_nawigacje(self, self.panel, self.widok)       # obrót 360, kroki, ujęcia, lustro
         self.widok.setBackgroundColor(pg.mkColor(10, 10, 14))
         self.widok.setMinimumHeight(400)
@@ -281,6 +305,9 @@ class WidokPrzestrzeniMakro(QWidget):
         self.brzeg = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=2.5, glOptions='translucent')
         self.brzeg.setVisible(False); v.addItem(self.brzeg)
         self.podpisy = []
+        self.os_kanalu = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=6, glOptions='translucent')
+        self.os_kanalu.setVisible(False); v.addItem(self.os_kanalu)
+        self.zaznaczenie, self.kanal = None, None
         self.znaczniki = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=10, pxMode=True)
         self.znaczniki.setVisible(False); v.addItem(self.znaczniki)      # dodatkowe kropki (np. średnia narzędzia)
         self._kamera()
@@ -289,8 +316,9 @@ class WidokPrzestrzeniMakro(QWidget):
         self._od = self._do = None; self._u = 1.0
         self.combo_kier.currentIndexChanged.connect(lambda *_: self._tryb_kierunkow())
         for s in (self.combo_kier.currentIndexChanged, self.combo_kan.currentIndexChanged, self.chk_srodek.toggled,
-                  self.combo_pca.currentIndexChanged, self.combo_poz.currentIndexChanged, self.spin_ema.valueChanged):
-            s.connect(lambda *_: self._przelicz())
+                  self.combo_pca.currentIndexChanged, self.combo_poz.currentIndexChanged, self.spin_ema.valueChanged,
+                  self.chk_orto.toggled):
+            s.connect(lambda *_: (setattr(self, '_D_tour', None), self._przelicz()))
         for s in (self.combo_mies_waga.currentIndexChanged, self.spin_mies_nasyc.valueChanged, self.chk_mies_jasn.toggled):
             s.connect(lambda *_: self._rysuj(skok=True))
         for s in (self.combo_kolor.currentIndexChanged, self.spin_slad.valueChanged, self.spin_rozmiar.valueChanged,
@@ -507,6 +535,70 @@ class WidokPrzestrzeniMakro(QWidget):
         i = bliskie[np.argmin(d[bliskie] + 3 * g[bliskie])]                 # przy nakładaniu bliższa kamerze
         self.token_wybrany.emit(int(tok[i]))
 
+    def _prostokat(self, x0, y0, x1, y1):
+        """Shift + przeciągnięcie: widoczne cząstki w prostokącie -> sygnał zaznaczono (pusty = wyczyść)."""
+        if self.P is None:
+            return
+        tok = self._widoczne()
+        xy, g = self.widok.na_ekran(self._biezace()[tok])
+        w = (xy[:, 0] >= x0) & (xy[:, 0] <= x1) & (xy[:, 1] >= y0) & (xy[:, 1] <= y1) & np.isfinite(g)
+        self.zaznaczono.emit(tok[w] if (x1 - x0) + (y1 - y0) > 6 else np.zeros(0, int))
+
+    def ustaw_zaznaczenie(self, tokeny):
+        """Zaznaczone patche (np. prostokąt na obrazie): jasne i większe, reszta cząstek blada; None / pusty = brak."""
+        self.zaznaczenie = None if tokeny is None or len(tokeny) == 0 else np.asarray(tokeny, int)
+        self._rysuj(skok=True)
+
+    def podswietl_kanal(self, c):
+        """Kierunek d_c kanału (albo składowej) c jako gruba linia w jego kolorze; None chowa."""
+        self.kanal = None if c is None else int(c)
+        self._rysuj(skok=True)
+
+    def _atlas(self):
+        from atlas_kanalow import OknoAtlasu
+        if getattr(self, '_okno_atlasu', None) is None:
+            self._okno_atlasu = OknoAtlasu(self)
+        self._okno_atlasu.show(); self._okno_atlasu.raise_(); self._okno_atlasu.odswiez(True)
+
+    # ------------------------------------------------------------ Grand Tour
+    def _tour(self, wl):
+        if not wl:
+            self._timer_tour.stop()
+            if getattr(self, '_Q', None) is not None:
+                self._D_tour = self._Q.astype(np.float32); self._Q = None
+                self._przelicz()                                                # wszystkie klatki w zostawionym widoku
+            return
+        if self.P is None:
+            self.btn_tour.setChecked(False); return
+        Q, _ = np.linalg.qr(np.asarray(self.D, np.float64))
+        self._Q, self._Qcel = Q, self._losowa_rama(len(Q))
+        self._F_t = None
+        self._timer_tour.start()
+
+    def _losowa_rama(self, K):
+        A = np.random.default_rng().standard_normal((K, 3))
+        A[np.linalg.norm(self.D, axis=1) == 0] = 0                              # kanały spoza wyboru zostają bez siły
+        return np.linalg.qr(A)[0]
+
+    def _krok_tour(self):
+        """Grand Tour (Asimov 1985; Li i in. 2020): rama rzutu płynie przez kolejne losowe 3-wymiarowe podprzestrzenie
+        przestrzeni sił. Rzut jest liniowy, więc cząstki da się śledzić wzrokiem. Liczona tylko bieżąca klatka."""
+        Q = self._Q
+        Q = np.linalg.qr(Q + .035 * (self._Qcel - Q @ (Q.T @ self._Qcel)))[0]
+        if 3 - float(np.sum((Q.T @ self._Qcel) ** 2)) < .03:
+            self._Qcel = self._losowa_rama(len(Q))
+        self._Q = Q
+        if self._F_t is None or self._F_t[0] != self.t:
+            self._F_t = (self.t, self.sily(self.t))
+        F = self._F_t[1]
+        P = (F @ Q).astype(np.float32)
+        self.s = 100 / max(float(np.percentile(np.linalg.norm(F @ Q, axis=1), 99)), 1e-9)
+        self.D = Q.astype(np.float32)
+        self.P[self.t] = P * self.s
+        self._od, self._u = None, 1.0
+        self.slady.setVisible(False)
+        self._rysuj(tylko_punkty=True)
+
     def rysuj_znaczniki(self, pos=None, kolory=None, rozmiary=None):
         """Dodatkowe kropki [n, 3] z kolorami [n, 4] i rozmiarami w pikselach [n]; None chowa."""
         if pos is None or len(pos) == 0:
@@ -607,6 +699,12 @@ class WidokPrzestrzeniMakro(QWidget):
                 D = D * maska[:, None]                                         # kanały spoza wyboru: siła 0
             self.D = D
             self.kolory_kan = kolory_kanalow(K)
+        if getattr(self, '_D_tour', None) is not None and self._D_tour.shape == D.shape:
+            D = self._D_tour                                                     # widok zostawiony po Grand Tour
+        elif self.chk_orto.isChecked():
+            Q, R = np.linalg.qr(np.asarray(D, np.float64))
+            D = (Q * np.sign(np.where(np.diag(R) == 0, 1, np.diag(R)))).astype(np.float32)
+        self.D = D
         a = self.spin_ema.value()
         dl_d = np.linalg.norm(D, axis=1)                                        # [K]: 0 dla kanałów spoza wyboru
         surowe = np.zeros((T, 600, 3), np.float32)
@@ -708,6 +806,19 @@ class WidokPrzestrzeniMakro(QWidget):
                 c = np.concatenate([m, np.ones((600, 1), np.float32)], 1)
             c[:, 3] = .9
             return c.astype(np.float32)
+        if i == 5:
+            b = self.wzor.baza_rgb() if self.wzor is not None else None
+            if b is None:
+                if getattr(self, '_rgb_z', None) is not self.Z:
+                    self._rgb_baza = baza_pca_rgb(np.concatenate([np.asarray(self.Z[t], np.float32)
+                                                                  for t in range(0, len(self.Z), max(1, len(self.Z) // 20))]))
+                    self._rgb_z = self.Z
+                b = self._rgb_baza
+            c = kolor_pca_rgb(self.Z[self.t], b)
+            return np.concatenate([c, np.full((600, 1), .95, np.float32)], 1)
+        if i == 6:
+            c = kolor_podobienstwa(self.Z[self.t], self.token)
+            return np.concatenate([c, np.full((600, 1), .95, np.float32)], 1)
         i = max(0, i - 2)
         if i == 1 and self.maski is not None:
             m = self.maski[self.t]
@@ -814,8 +925,22 @@ class WidokPrzestrzeniMakro(QWidget):
             import matplotlib
             kol = matplotlib.colormaps['inferno'](A).astype(np.float32); kol[:, 3] = .95
             rozm = (rozm * (.4 + self.spin_wzm.value() * A)).astype(np.float32)[tok]
+        if self.zaznaczenie is not None and len(self.zaznaczenie):      # zaznaczone patche jasne, reszta blada
+            r600 = np.full(600, float(rozm), np.float32) if np.ndim(rozm) == 0 else np.zeros(600, np.float32)
+            if np.ndim(rozm):
+                r600[tok] = rozm
+            kol = kol.copy(); poza = np.ones(600, bool); poza[self.zaznaczenie] = False
+            kol[poza, 3] = .07; r600[self.zaznaczenie] *= 1.5
+            rozm = r600[tok]
         self.punkty.setData(pos=P[tok], color=kol[tok], size=rozm)
         self.punkty.setVisible(self.chk_czastki.isChecked())
+        if self.kanal is not None and self.kanal < len(self.D):         # oś podświetlonego kanału (atlas kanałów)
+            d = self.D[self.kanal]; d = d / max(float(np.linalg.norm(d)), 1e-9) * 90
+            c = self.kolory_kan[self.kanal].copy(); c[3] = 1
+            self.os_kanalu.setData(pos=np.array([-d * .3, d], np.float32), color=np.array([c, c], np.float32))
+            self.os_kanalu.setVisible(True)
+        else:
+            self.os_kanalu.setVisible(False)
         self._rysuj_zdjecie(P, kol)
         if strz is not None:                                 # strzałki źródło -> cel między cząstkami
             import matplotlib
