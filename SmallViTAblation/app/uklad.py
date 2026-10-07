@@ -106,6 +106,10 @@ class PanelOpcji:
         self.btn_opcje.toggled.connect(lambda v: (self.zakladki.setVisible(v),
                                                   self.btn_opcje.setText('Opcje ▾' if v else 'Opcje ▸')))
 
+    def dodaj_strone(self, nazwa):
+        s = QWidget(); lay = QVBoxLayout(s); lay.setContentsMargins(6, 4, 6, 4); lay.setSpacing(2)
+        self.zakladki.addTab(s, nazwa); self._strony[nazwa] = lay
+
     def wiersz(self, strona):
         w = Przeplyw(); self._strony[strona].addLayout(w)
         return w
@@ -223,3 +227,67 @@ class Odpinanie:
         self._zastepca.deleteLater()
         okno.hide(); okno.deleteLater()
         self.przycisk.setText('Odepnij')
+
+
+# ujęcia kamery: (azymut, elewacja); „przód” jak domyślny widok nad obrazem (azymut -90: x w prawo, y w głąb)
+UJECIA = (('Przód', -90, 0), ('Tył', 90, 0), ('Lewo', 180, 0), ('Prawo', 0, 0), ('Góra', -90, 90), ('Dół', -90, -90))
+
+
+def dodaj_nawigacje(wlasciciel, panel, widok, strona='Nawigacja'):
+    """Zakładka „Nawigacja” w PanelOpcji widoku 3D: obrót 360 st. (włącz/wyłącz, prędkość, kierunek), kroki 15 st.,
+    przybliżanie, ujęcia (przód, tył, lewo, prawo, góra, dół) i lustrzane odbicie w osi X, Y, Z. Kontrolki zostają
+    atrybutami właściciela (zapis w ustawieniach): btn_obrot, spin_obrot, combo_obrot, chk_lustro {x, y, z}."""
+    from PyQt6.QtCore import QTimer
+    from PyQt6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox
+    from styl import rola
+    panel.dodaj_strone(strona)
+
+    w = panel.wiersz(strona)
+    wlasciciel.btn_obrot = b = rola(QPushButton('Obrót 360°'), 'narzedzie'); b.setCheckable(True)
+    b.setToolTip('Kamera krąży dookoła sceny bez końca (pełne 360 st. i dalej); kliknij ponownie, żeby zatrzymać.\n'
+                 'Myszą można w tym czasie dalej przybliżać i przechylać.')
+    w.addWidget(b)
+    wlasciciel.spin_obrot = dodaj(w, 'Prędkość:', QDoubleSpinBox(), 'Prędkość obrotu w stopniach na sekundę (360 st. / prędkość = czas okrążenia).')
+    wlasciciel.spin_obrot.setRange(2, 360); wlasciciel.spin_obrot.setValue(30); wlasciciel.spin_obrot.setSuffix(' °/s')
+    wlasciciel.combo_obrot = dodaj(w, 'Kierunek:', QComboBox(), 'W którą stronę krąży kamera.')
+    wlasciciel.combo_obrot.addItems(['w lewo', 'w prawo'])
+    timer = QTimer(widok); timer.setInterval(30)
+    timer.timeout.connect(lambda: widok.orbit((1 if wlasciciel.combo_obrot.currentIndex() == 0 else -1)
+                                              * wlasciciel.spin_obrot.value() * 0.03, 0))
+    b.toggled.connect(lambda v: timer.start() if v else timer.stop())
+
+    w = panel.wiersz(strona)
+    for tekst, opis, fn in (('⟲ 15°', 'Obrót kamery o 15 st. w lewo.', lambda: widok.orbit(15, 0)),
+                            ('⟳ 15°', 'Obrót kamery o 15 st. w prawo.', lambda: widok.orbit(-15, 0)),
+                            ('▲ 15°', 'Kamera 15 st. wyżej.', lambda: widok.orbit(0, 15)),
+                            ('▼ 15°', 'Kamera 15 st. niżej.', lambda: widok.orbit(0, -15)),
+                            ('Bliżej', 'Przybliżenie (odległość kamery x 0,8).',
+                             lambda: widok.setCameraPosition(distance=widok.opts['distance'] * .8)),
+                            ('Dalej', 'Oddalenie (odległość kamery x 1,25).',
+                             lambda: widok.setCameraPosition(distance=widok.opts['distance'] * 1.25))):
+        p = rola(QPushButton(tekst), 'narzedzie'); p.setToolTip(opis); p.clicked.connect(fn); w.addWidget(p)
+
+    w = panel.wiersz(strona)
+    w.addWidget(QLabel('Ujęcie:'))
+    for nazwa, az, el in UJECIA:
+        p = rola(QPushButton(nazwa), 'narzedzie')
+        p.setToolTip(f'Kamera: azymut {az} st., elewacja {el} st. (odległość i środek bez zmian).')
+        p.clicked.connect(lambda _=False, az=az, el=el: widok.setCameraPosition(azimuth=az, elevation=el))
+        w.addWidget(p)
+
+    w = panel.wiersz(strona)
+    w.addWidget(QLabel('Lustrzane odbicie:'))
+    wlasciciel.chk_lustro = {}
+    for os_ in ('x', 'y', 'z'):
+        c = QCheckBox(f'oś {os_.upper()}')
+        c.setToolTip(f'Odbija całą scenę w osi {os_.upper()} względem środka widoku (współrzędna {os_} -> -{os_}).\n'
+                     'Jedno odbicie zmienia układ prawoskrętny w lewoskrętny; dwa odbicia to obrót o 180 st.')
+        wlasciciel.chk_lustro[os_] = c; w.addWidget(c)
+
+    def lustro(*_):
+        widok.lustro = tuple(-1 if wlasciciel.chk_lustro[o].isChecked() else 1 for o in 'xyz')
+        widok.update()
+    for c in wlasciciel.chk_lustro.values():
+        c.toggled.connect(lustro)
+    panel.strona(strona).addStretch(1)
+

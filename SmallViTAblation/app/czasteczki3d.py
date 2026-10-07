@@ -23,7 +23,7 @@ import pyqtgraph.opengl as gl
 from opcje_atencji import OpcjeAtencji
 from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
-from uklad import Odpinanie, PanelOpcji, dodaj
+from uklad import Odpinanie, PanelOpcji, dodaj, dodaj_nawigacje
 from widok_gl import LinieGrube, ObrazPrzezroczysty, Widok3D
 from wspolne import (CZASTECZKI_CO, KOLUMNY, KOMORKA, PCA_SKLADOWE, SZER, WIERSZE, WYNIKI, WYS, kierunki,
                      kolory_kanalow, opisy_czasteczek, pca, tokeny_co)
@@ -169,6 +169,7 @@ class WidokCzasteczek3D(QWidget):
         self.panel.zakoncz()
 
         self.widok = Widok3D()
+        dodaj_nawigacje(self, self.panel, self.widok)       # obrót 360, kroki, ujęcia, lustro
         self.widok.setBackgroundColor(pg.mkColor(12, 12, 16))
         self.widok.setMinimumHeight(500)
         lay.addWidget(self.widok, 1)

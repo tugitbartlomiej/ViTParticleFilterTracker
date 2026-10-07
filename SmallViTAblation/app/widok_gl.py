@@ -12,7 +12,19 @@ class WidokGL(gl.GLViewWidget):
     """GLViewWidget odporny na pierwsze klatki: zaraz po pokazaniu widżetu w zakładce Qt woła paintGL, zanim
     kontekst jest gotowy, i OpenGL zgłasza GL_INVALID_OPERATION (1282) przy glClearColor (tak samo pusty
     GLViewWidget). Taką klatkę pomijamy i prosimy o następną; potem rysowanie działa normalnie.
+    Lustro: self.lustro = (sx, sy, sz) z wartościami ±1 odbija całą scenę względem środka widoku w macierzy widoku
+    (obraz, wektory, napisy); klikanie w obraz liczy się z tej samej macierzy, więc dalej trafia.
     Przy rozłączonej sesji Windows (pulpit zdalny rozłączony) błąd jest w każdej klatce i widok zostaje czarny."""
+
+    lustro = (1, 1, 1)
+
+    def viewMatrix(self):
+        tr = super().viewMatrix()
+        sx, sy, sz = self.lustro
+        if (sx, sy, sz) != (1, 1, 1):                           # odbicie względem środka widoku
+            c = self.opts['center']
+            tr.translate(c.x(), c.y(), c.z()); tr.scale(sx, sy, sz); tr.translate(-c.x(), -c.y(), -c.z())
+        return tr
 
     def paintGL(self):
         from OpenGL import GL

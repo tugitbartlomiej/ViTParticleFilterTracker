@@ -26,7 +26,7 @@ import pyqtgraph.opengl as gl
 
 from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
-from uklad import Odpinanie, PanelOpcji, dodaj
+from uklad import Odpinanie, PanelOpcji, dodaj, dodaj_nawigacje
 from widok_gl import LinieGrube, WidokGL
 from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanalow, opisy_czasteczek, pca, tokeny_co
 
@@ -188,6 +188,7 @@ class WidokPrzestrzeniMakro(QWidget):
         self.panel.zakoncz()
 
         self.widok = WidokGL()
+        dodaj_nawigacje(self, self.panel, self.widok)       # obrót 360, kroki, ujęcia, lustro
         self.widok.setBackgroundColor(pg.mkColor(10, 10, 14))
         self.widok.setMinimumHeight(400)
         lay.addWidget(self.widok, 1)

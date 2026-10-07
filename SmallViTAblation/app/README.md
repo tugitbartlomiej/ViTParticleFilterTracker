@@ -257,6 +257,15 @@ TR_0001 0:20–0:30, 30 klatek (JPG), pewność ViT / IoU z etykietą: bez wycin
 - Wykres przebiegu sekwencji pod klatką schowany (niepotrzebny); klatka zajmuje lewą kolumnę.
 - Makrowektory, „Kierunki kanałów”: także półsfera Fibonacciego (wszystkie kierunki z > 0).
 
+### Nawigacja i lustrzane odbicie (oba widoki 3D, zakładka opcji „Nawigacja”)
+
+- „Obrót 360°”: kamera krąży dookoła sceny bez końca (prędkość w °/s, kierunek w lewo / w prawo); mysz działa dalej.
+- Kroki: obrót o 15° w lewo, w prawo, w górę, w dół; „Bliżej” / „Dalej” (odległość x 0,8 / x 1,25).
+- Ujęcia: przód (jak domyślny widok nad obrazem), tył, lewo, prawo, góra, dół (odległość i środek bez zmian).
+- „Lustrzane odbicie” w osi X, Y, Z: odbicie całej sceny względem środka widoku w macierzy widoku (`WidokGL.lustro`);
+  jedno odbicie zmienia układ prawoskrętny w lewoskrętny. Klik w obraz trafia dalej w ten sam punkt (sprawdzone
+  rzutowaniem punktu na ekran i z powrotem przy lustrze X i Y).
+
 ### Te same kierunki i kolory mikrowektorów w obu widokach 3D
 
 „Kierunki kanałów: jak widok 3D nad obrazem” (domyślne w zakładce filmu): przestrzeń makrowektorów bierze
