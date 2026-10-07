@@ -214,6 +214,14 @@ class ZakladkaFilmu(QWidget):
               'konwersji („Konwertuj na sekwencję”). Klatki bez etykiety danego obszaru: brak tego obszaru.')
         self.spin_wyc_marg = QSpinBox(); self.spin_wyc_marg.setRange(0, 60); self.spin_wyc_marg.setSuffix(' px')
         dodaj(w, 'Margines:', self.spin_wyc_marg, 'Poszerzenie wycinanych obszarów o tyle pikseli (obraz 480 x 320).')
+        self.chk_wyc_zywo = QCheckBox('na żywo'); self.chk_wyc_zywo.setChecked(True)
+        self.chk_wyc_zywo.setToolTip('Zmiana obszarów, trybu albo marginesu od razu przelicza ViT na klatkach wczytanej\n'
+                                     'sekwencji (trzymanych w pamięci, bez ponownego czytania filmu): latent, detekcja,\n'
+                                     'atencja, widok 3D i przestrzeń makrowektorów. Wyłączone: zmiana działa dopiero\n'
+                                     'przy „Konwertuj na sekwencję”.')
+        w.addWidget(self.chk_wyc_zywo)
+        self._timer_wyc = QTimer(self); self._timer_wyc.setSingleShot(True); self._timer_wyc.setInterval(350)
+        self._timer_wyc.timeout.connect(self._wycinanie_na_zywo)
         # klatka 480x320 (3:2) plus pasek tytułu: wysokość płótna idzie za szerokością panelu, bez pustych pasów
         self.fig = Figure(figsize=(6, 4.3), facecolor='#1e1f22'); self.ax = self.fig.add_axes([0, 0, 1, 1 - TYTUL_KLATKI])
         self.canvas = FigureCanvasQTAgg(self.fig); self.canvas.setMinimumHeight(200)
@@ -275,6 +283,20 @@ class ZakladkaFilmu(QWidget):
               '  (środek wykrytego narzędzia, nie zawsze sam czubek).\n'
               'Ręczny klik w patch wyłącza śledzenie.')
         w.addSpacing(16)
+        self.chk_langevin = QCheckBox('Langevin'); self.chk_langevin.setChecked(True)
+        self.chk_langevin.setToolTip('Liniowy model ruchu każdej cząstki po klatkach filmu (dyskretny Langevin z bezwładnością):\n'
+                                     '  v(t+1) = beta v(t) − kappa (z(t) − m(t)),  z(t+1) = z(t) + v(t+1),\n'
+                                     'm = średnia ostatnich klatek; beta i kappa każdej cząstki dopasowane na pierwszych 70 % klatek.\n'
+                                     'W przestrzeni makrowektorów dla wybranej cząstki: pomarańczowa przerywana = tor z modelu\n'
+                                     '(tylko ze stanów do bieżącej klatki), turkusowa = rzeczywisty tor w tych klatkach.\n'
+                                     'Ocena na ostatnich 30 % klatek w opisie pod spodem (błąd / błąd „bez ruchu”).')
+        w.addWidget(self.chk_langevin)
+        self.spin_lang_h = QSpinBox(); self.spin_lang_h.setRange(2, 200); self.spin_lang_h.setValue(10)
+        dodaj(w, 'na', self.spin_lang_h, 'Na ile klatek do przodu tor z modelu Langevina.')
+        self.chk_langevin.toggled.connect(lambda *_: self.idz(self.t))
+        self.spin_lang_h.valueChanged.connect(lambda *_: self.idz(self.t))
+        self.osc, self._opis_lang = None, ''
+        w.addSpacing(12)
         self.chk_widok3d = QCheckBox('widok 3D'); self.chk_widok3d.setChecked(True)
         self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_makro.setChecked(True)
         for c, opis in ((self.chk_widok3d, 'Widok cząsteczek 3D nad obrazem (środkowa kolumna).'),
@@ -296,6 +318,11 @@ class ZakladkaFilmu(QWidget):
         for s in (self.od_min, self.od_s, self.do_min, self.do_s, self.spin_n):
             s.valueChanged.connect(self._opis_zakresu)
         self.btn_konwertuj.clicked.connect(self._konwertuj)
+        for c in self.chk_wyc.values():
+            c.toggled.connect(lambda *_: self._timer_wyc.start() if self.chk_wyc_zywo.isChecked() else None)
+        for s_ in (self.combo_wyc.currentIndexChanged, self.spin_wyc_marg.valueChanged):
+            s_.connect(lambda *_: self._timer_wyc.start() if self.chk_wyc_zywo.isChecked() else None)
+        self.chk_wyc_zywo.toggled.connect(lambda v: self._timer_wyc.start() if v else None)
         self.btn_przerwij.clicked.connect(lambda: setattr(self.watek, 'stop', True) if self.watek else None)
         self.btn_zapisz.clicked.connect(self._zapisz)
         for c in self.chk.values():
@@ -493,16 +520,16 @@ class ZakladkaFilmu(QWidget):
                 czytnik = F.czytaj_klatki_jpg(film, idx, przerwij=lambda: wt.stop)
             else:
                 czytnik = F.czytaj_klatki(mp4, idx, przerwij=lambda: wt.stop)
-            I, Z, ramki, pew, mapy_pew, obrazy, et = [], [], [], [], [], [], []
+            I, Z, ramki, pew, mapy_pew, obrazy, et, oryg = [], [], [], [], [], [], [], []
             t0 = time.perf_counter()
             for k, (i, rgb) in enumerate(czytnik):
-                r480 = D.do_480(rgb)
+                r480 = D.do_480(rgb); r480_oryg = r480
                 skala = (480 / rgb.shape[1], 320 / rgb.shape[0])
                 e_ = F.etykieta_klatki(wiersze.get(i + 1), skala) if wiersze else F.etykieta_klatki(None)
                 if wyc['obszary']:                          # wycinanie obszarów z etykiet przed ViT
                     r480 = F.wytnij(r480, F.maska_wycinania(e_, wyc['obszary'], r480.shape[:2], wyc['margines']), wyc['tryb'])
                 a_ = det.analizuj(r480)
-                I.append(i); obrazy.append(r480)
+                I.append(i); obrazy.append(r480); oryg.append(r480_oryg)
                 Z.append(a_['z'][0].cpu().numpy().astype(np.float16))
                 ramki.append(a_['boxes'][0]); pew.append(float(a_['scores'][0]))
                 mapy_pew.append(torch_sigmoid(a_['mapa'][0, ..., 0]).reshape(-1))     # pewność środka w patchu [600]
@@ -515,23 +542,72 @@ class ZakladkaFilmu(QWidget):
                    for r, e in zip(ramki, et)]
             zm = [np.nan] + [float(np.linalg.norm(Z[t].astype(np.float32) - Z[t - 1]) / max(np.linalg.norm(Z[t - 1].astype(np.float32)), 1e-9))
                              for t in range(1, len(Z))]
-            return dict(film=film, idx=np.array(I), obrazy=obrazy, Z=Z, ramki=np.array(ramki), pewnosc=np.array(pew),
+            return dict(film=film, idx=np.array(I), obrazy=obrazy, obrazy_oryg=oryg, Z=Z, ramki=np.array(ramki), pewnosc=np.array(pew),
                         mapy_pew=np.stack(mapy_pew), etykiety=et, iou=np.array(iou), zmiana=np.array(zm),
                         fps=self.info['fps'], zrodlo=('folder ' + folder['katalog']) if folder else ('JPG' if jpg else 'MP4'),
                         wycinanie=wyc)
         self.btn_graj.setChecked(False)
         self._uruchom(zadanie, self._po_konwersji, f'konwertuję {len(idx)} klatek...')
 
-    def _po_konwersji(self, s):
-        self.sek, self.obwody, self.rysowany, self.t = s, {}, [], 0
+    def _wycinanie_na_zywo(self):
+        """Przelicza ViT na klatkach wczytanej sekwencji z bieżącym wycinaniem (bez ponownego czytania filmu)."""
+        s = self.sek
+        if s is None or 'obrazy_oryg' not in s:
+            return
+        if self.watek:                                         # trwa inne przeliczenie: spróbuj za chwilę
+            self._timer_wyc.start(); return
+        wyc = dict(obszary=[k for k, c in self.chk_wyc.items() if c.isChecked()], tryb=self.combo_wyc.currentIndex(),
+                   margines=self.spin_wyc_marg.value())
+        det = self._detektor()
+        oryg, et = s['obrazy_oryg'], s['etykiety']
+        self.pasek.setRange(0, len(oryg))
+
+        def zadanie(wt):
+            obrazy, Z, ramki, pew, mapy = [], [], [], [], []
+            t0 = time.perf_counter()
+            for k, (r480, e_) in enumerate(zip(oryg, et)):
+                if wt.stop:
+                    raise RuntimeError('przerwano przeliczanie wycinania')
+                if wyc['obszary']:
+                    r480 = F.wytnij(r480, F.maska_wycinania(e_, wyc['obszary'], r480.shape[:2], wyc['margines']), wyc['tryb'])
+                a_ = det.analizuj(r480)
+                obrazy.append(r480); Z.append(a_['z'][0].cpu().numpy().astype(np.float16))
+                ramki.append(a_['boxes'][0]); pew.append(float(a_['scores'][0]))
+                mapy.append(torch_sigmoid(a_['mapa'][0, ..., 0]).reshape(-1))
+                if k % 5 == 0:
+                    wt.postep.emit(k + 1, f'wycinanie na żywo: klatka {k + 1}/{len(oryg)}, '
+                                          f'{(time.perf_counter() - t0) / (k + 1) * 1000:.0f} ms/kl.')
+            Z = np.stack(Z)
+            iou = [float(D.iou(np.asarray(r)[None], e['ramka'])[0]) if e['ramka'] is not None else np.nan
+                   for r, e in zip(ramki, et)]
+            zm = [np.nan] + [float(np.linalg.norm(Z[t].astype(np.float32) - Z[t - 1]) / max(np.linalg.norm(Z[t - 1].astype(np.float32)), 1e-9))
+                             for t in range(1, len(Z))]
+            return dict(obrazy=obrazy, Z=Z, ramki=np.array(ramki), pewnosc=np.array(pew), mapy_pew=np.stack(mapy),
+                        iou=np.array(iou), zmiana=np.array(zm), wycinanie=wyc)
+
+        def gotowe(w):
+            s.update(w)
+            self._po_konwersji(s, zachowaj=True)
+
+        self._uruchom(zadanie, gotowe, 'przeliczam ViT z nowym wycinaniem...')
+
+    def _po_konwersji(self, s, zachowaj=False):
+        if zachowaj:                                           # przeliczenie tej samej sekwencji: obwody, klatka, patch zostają
+            t_stary = self.t
+            self.sek = s
+        else:
+            self.sek, self.obwody, self.rysowany, self.t = s, {}, [], 0
+            t_stary = 0
         T = len(s['idx'])
         maski = self._maski()
         self.makro.ckpt = self.ckpt
         self.w3d.ustaw_baze_pca(s['Z'])            # PCA w 3D: jedna baza dla całej sekwencji (przed makro: wspólna baza)
         self.makro.ustaw_sekwencje(s['Z'], maski, s['mapy_pew'])
-        self.suwak.blockSignals(True); self.suwak.setRange(0, T - 1); self.suwak.setValue(0); self.suwak.blockSignals(False)
+        self._licz_langevin()
+        self.suwak.blockSignals(True); self.suwak.setRange(0, T - 1); self.suwak.setValue(min(t_stary, T - 1))
+        self.suwak.blockSignals(False)
         self._rysuj_os()
-        self.idz(0)
+        self.idz(min(t_stary, T - 1))
         iou = s['iou'][~np.isnan(s['iou'])]
         self._status(f'Sekwencja: {T} klatek {s["film"]} ({s["zrodlo"]}); średnia pewność {s["pewnosc"].mean() * 100:.1f} %'
                      + (f', średnie IoU {iou.mean() * 100:.1f} % na {len(iou)} kl. z etykietą' if len(iou) else '')
@@ -692,6 +768,7 @@ class ZakladkaFilmu(QWidget):
         if self.chk_widok_makro.isChecked():
             self.makro.ustaw_atencje(fn)                    # mapa i strzałki atencji tej klatki
             self.makro.pokaz_klatke(t, self.token)
+            self._tor_langevina(t)
         self._rysuj_klatke()
         self._znacznik_osi()
         i = int(s['idx'][t])
@@ -701,7 +778,42 @@ class ZakladkaFilmu(QWidget):
                                      + ('' if np.isnan(iou) else f', IoU {iou * 100:.1f} %')
                                      + f', patchy narzędzia {int(maska.sum())}'
                                      + (f'; czubek: patch {tok} (wiersz {tok // 30}, kolumna {tok % 30}, {zrodlo_czubka})'
-                                        if tok is not None else ''))
+                                        if tok is not None else '') + self._opis_lang)
+
+    # ------------------------------------------------------------ Langevin po klatkach filmu
+    def _licz_langevin(self):
+        """Parametry oscylatora każdej cząstki (pierwsze 70 % klatek) i ocena prognozy na pozostałych."""
+        import analiza_uczenia as AU
+        Z = self.sek['Z']; T = len(Z)
+        self.osc, self._opis_lang = None, ''
+        if T < 12:
+            self._opis_lang = '; Langevin: za mało klatek (min. 12)'
+            return
+        do = max(4, int(T * .7)); okno = int(np.clip(T // 8, 3, 50))
+        self.osc = AU.oscylator(Z, od=1, do=do, okno=okno)
+        oc = AU.ocena_oscylatora(Z, self.osc, do, hs=(1, 5))
+        self._opis_lang = ('; Langevin (dopasowany na kl. 1-' + str(do) + f', beta {np.median(self.osc["beta"]):.2f}, '
+                           f'kappa {np.median(self.osc["kappa"]):.3f}): błąd prognozy / bez ruchu na kl. {do}-{T}: '
+                           + ', '.join(f'{h} kl. {v:.2f}' for h, v in oc.items()))
+
+    def _tor_langevina(self, t):
+        if not self.chk_langevin.isChecked() or self.osc is None or self.token is None:
+            self.makro.rysuj_przyczyny(None); return
+        import analiza_uczenia as AU
+        Z, h, tok = self.sek['Z'], self.spin_lang_h.value(), self.token
+        tor = AU.prognoza_oscylatora(Z, t, tok, self.osc, h)
+        o = self.makro._biezace()[tok]
+        P = o + self.makro.rzut_delty(tor - tor[0])
+        seg, kol = [], []
+        for a in range(0, h, 2):
+            seg += [P[a], P[a + 1]]; kol += [(1, .55, .1, 1)] * 2
+        kon = min(len(Z) - 1, t + h)
+        if kon > t:
+            pr = np.asarray(Z[t:kon + 1, tok], np.float32)
+            Q = o + self.makro.rzut_delty(pr - pr[0])
+            for a in range(len(Q) - 1):
+                seg += [Q[a], Q[a + 1]]; kol += [(.2, .9, 1, .8)] * 2
+        self.makro.rysuj_przyczyny(np.array(seg), np.array(kol))
 
     # ------------------------------------------------------------ rysunki 2D
     def _rysuj_klatke(self):

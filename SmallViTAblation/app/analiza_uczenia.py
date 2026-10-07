@@ -191,3 +191,29 @@ def prognoza_oscylatora(Z, k, tok, osc, h):
         v = b * v - kk * (z - m); z = z + v; tor.append(z.copy())
     return np.array(tor)
 
+
+def ocena_oscylatora(Z, osc, t0, hs=(1, 5, 20)):
+    """Błąd prognozy oscylatora na h kroków od kroków t0..T−h (tylko stany do chwili prognozy) względem persystencji:
+    {h: błąd / błąd persystencji} dla wszystkich tokenów razem (mniej = lepiej, 1 = jak „bez ruchu”)."""
+    import torch
+    dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    X = torch.from_numpy(np.asarray(Z, np.float32)).to(dev)                        # [T, 600, 768]
+    T = len(X); w = osc['okno']
+    c = torch.cumsum(torch.cat([torch.zeros_like(X[:1]), X]), 0)
+    t = torch.arange(T, device=dev); lo = (t - w + 1).clamp_min(0)
+    M = (c[t + 1] - c[lo]) / (t + 1 - lo).float()[:, None, None]
+    V = torch.cat([torch.zeros_like(X[:1]), X[1:] - X[:-1]])
+    b = torch.from_numpy(osc['beta']).to(dev)[None, :, None]; k = torch.from_numpy(osc['kappa']).to(dev)[None, :, None]
+    wynik = {}
+    for h in hs:
+        ts = torch.arange(max(1, t0), T - h, device=dev)
+        if len(ts) == 0:
+            continue
+        z, v, m = X[ts].clone(), V[ts].clone(), M[ts]
+        for _ in range(h):
+            v = b * v - k * (z - m); z = z + v
+        e = float(((z - X[ts + h]) ** 2).sum()); ep = float(((X[ts] - X[ts + h]) ** 2).sum())
+        wynik[h] = e / max(ep, 1e-30)
+    del X, M, V, c
+    return wynik
+

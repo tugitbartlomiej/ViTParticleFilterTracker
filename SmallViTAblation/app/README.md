@@ -335,6 +335,19 @@ z 1,23 do 0,42 / 0,68 / 0,35: część różnicy narzędzia od tła to jego typo
 Uwaga o OpenGL: przy rozłączonej sesji Windows (pulpit zdalny rozłączony, ekran zablokowany) sterownik
 nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki zamiast zgłaszać błąd.
 
+### Wycinanie na żywo i Langevin po klatkach (zakładka filmu)
+
+- **Wycinanie na żywo** (pole „na żywo” w grupie wycinania, domyślnie włączone): zmiana obszarów (obrys narzędzia,
+  ramka GT, rogówka, źrenica), trybu albo marginesu od razu przelicza ViT na klatkach wczytanej sekwencji, które są
+  w pamięci w wersji oryginalnej (bez ponownego czytania filmu, około 50 ms na klatkę). Klatka, wybrany patch
+  i ręczne obwody zostają. Wyłączenie wszystkich obszarów wraca dokładnie do latentu bez wycinania.
+- **Langevin** (dolny pasek): liniowy model ruchu każdej cząstki po klatkach filmu,
+  v(t+1) = beta v(t) − kappa (z(t) − m(t)), z(t+1) = z(t) + v(t+1), m = średnia ostatnich klatek; beta i kappa
+  każdej cząstki z pierwszych 70 % klatek, ocena prognozy na pozostałych (błąd / błąd „bez ruchu”) w opisie klatki.
+  W przestrzeni makrowektorów dla wybranej cząstki: pomarańczowa przerywana = tor z modelu (tylko ze stanów do
+  bieżącej klatki), turkusowa = rzeczywisty tor. Na zegarze wideo pęd jest bliski zera (beta około 0), a sprężyna
+  silna (kappa 0,4-0,7), inaczej niż na zegarze uczenia (beta 0,75-0,87).
+
 ## Zakładka „Uczenie ViT: ruch cząsteczek po krokach” (`zakladka_uczenia.py`, `analiza_uczenia.py`, `przyczyny_ruchu.py`)
 
 Oś czasu to krok uczenia, nie klatka filmu. Źródło: bieg z gęstą historią latentu
