@@ -1,0 +1,113 @@
+{
+ "czas": "2026-10-08 00:17:08",
+ "gpu": "NVIDIA GeForce RTX 3070",
+ "wyniki": {
+  "IoU: identyczne 1, rozłączne 0": {
+   "ok": true,
+   "s": 0.0
+  },
+  "AP: idealna detekcja, brak detekcji, duplikaty, wiele GT, obraz bez obiektu, zbiór bez GT": {
+   "ok": true,
+   "s": 0.0,
+   "ap_duplikat_nizej": 0.8349834983498359,
+   "ap_fp_wyzej": 0.666666666666666,
+   "ap_obraz_bez_obiektu": 0.5
+  },
+  "protokół obrazu: TP, FP, pominięcia, ramka wybrana bez GT": {
+   "ok": true,
+   "s": 0.0
+  },
+  "błędna adnotacja daje jasny błąd": {
+   "ok": true,
+   "s": 0.0
+  },
+  "AP historyczne z DETECTIONS_FULL400 = RESULT.json": {
+   "ok": true,
+   "s": 3.29,
+   "baseline": 0.437555,
+   "optimized": 0.884748,
+   "random": 0.87366
+  },
+  "zerowa interwencja = pełny forward (każdy tryb), wagi bez zmian": {
+   "ok": true,
+   "s": 0.69,
+   "max_blad": 0.0
+  },
+  "tryby wejścia MLP = prawdziwa sieć z hakiem (gałąź: wejście norm2; wspólne: residual)": {
+   "ok": true,
+   "s": 0.24
+  },
+  "tryby latentu = prawdziwa sieć z hakiem na GELU": {
+   "ok": true,
+   "s": 0.02
+  },
+  "mała perturbacja z jądra fc2 nie zmienia wyjścia końcówki": {
+   "ok": true,
+   "s": 0.05,
+   "zmiana_od_jadra": 9.5367431640625e-07,
+   "zmiana_od_przestrzeni_wierszowej": 0.5299831628799438,
+   "rzad": 192,
+   "tolerancja": 0.0001040428259558894
+  },
+  "korekta: ograniczenia, nośnik, kontrole o tej samej normie, zapis, przerwanie, ponowne wczytanie": {
+   "ok": true,
+   "s": 2.82,
+   "zakresy": {
+    "strata": [
+     0.8553,
+     0.545
+    ]
+   },
+   "dol_gelu": {
+    "strata": [
+     0.8553,
+     0.5942
+    ]
+   },
+   "swobodne": {
+    "strata": [
+     0.8553,
+     0.4974
+    ]
+   }
+  },
+  "brak GPU: model i zerowa interwencja na CPU": {
+   "ok": true,
+   "s": 0.33
+  },
+  "brak checkpointu i brak etykiety: jasny błąd, bez podstawiania": {
+   "ok": true,
+   "s": 0.0
+  },
+  "import historyczny: zgodny checkpoint bez ostrzeżeń, inny checkpoint z ostrzeżeniem": {
+   "ok": true,
+   "s": 0.3,
+   "naruszenia_zakresow_historyczne": 0.024748263880610466
+  },
+  "GLE z sum Grama = rownanie_czastki model 1": {
+   "ok": true,
+   "s": 0.0
+  },
+  "prognozy przyczynowe: zmiana przyszłości nie zmienia prognozy ze startu s": {
+   "ok": true,
+   "s": 0.0
+  },
+  "model z wejściem: krok Adama z gradientów przewiduje swobodną korektę (bez rzutu) prawie dokładnie": {
+   "ok": true,
+   "s": 1.25,
+   "rel_bez": 0.26975821495164026,
+   "rel_z_wejsciem": 4.139281424706207e-12
+  },
+  "obserwator: pełny pomiar = rzut, otwarta pętla bez obserwacji, start nie zna przyszłości": {
+   "ok": true,
+   "s": 0.02
+  },
+  "gałęzie: identyczne gałęzie dają 0 w trybie deterministycznym, stan startowy i paczki zapisane": {
+   "ok": true,
+   "s": 7.85,
+   "odpowiedz_h3": 0.532371461391449,
+   "liniowosc_h1": 0.020241819322109222,
+   "szum_bez_determinizmu_h3": 1.5989760160446167
+  }
+ }
+}

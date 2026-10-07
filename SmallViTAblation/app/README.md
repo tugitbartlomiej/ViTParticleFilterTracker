@@ -384,6 +384,19 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   odtwarza parametry panelu równania. W makro strzałki: biała prawdziwy krok, pomarańczowa przewidziany,
   czerwona niedopasowanie; ślad w kolorze wygładzonego błędu. Patch 255, GLE, kroki 700-1000: mediana błędu
   kroku 0,54 (kroczące) i 0,55 (stałe okno), cos 0,86.
+- Zakładka „Korekta latentu: cel i dynamika” (`zakladka_korekty.py`, silnik `korekta_latentu.py`, modele
+  `dynamika_korekty.py`, gałęzie uczenia `galezie_uczenia.py`; specyfikacja i testy w
+  `experiments/stanowisko_korekcji_latentu_gui/`): korekta z etykietą (oracle) latentu po GELU ostatniego MLP przy
+  zamrożonym ViT, w pięciu trybach osiągalności (swobodne, zakresy z checkpointu, dolny GELU, wejście MLP: gałąź albo
+  wspólny residual), z celami strata / lokalizacja z karą za fałszywe szczyty / najmniejsza znaleziona korekta do progu
+  jakości. Zapis prawdziwej trajektorii (δ i gradient w rzeczywistych krokach), losowe kontrole o tej samej normie,
+  rozkład korekty na część przechodzącą przez fc2 i niewidoczną dla fc2 (jądro W2 wymiaru 576), import historycznych
+  par przed/po J128 z ostrzeżeniem o niezgodnym checkpoincie, ewaluator AP z jawnym protokołem. Porównanie z ruchem
+  uczenia obrazu (101 checkpointów, osobna oś czasu) w 3D w stałej bazie; modele dynamiki (persystencja, stała
+  prędkość, Langevin, GLE, Koopman, GLE z wejściem optymalizatora) dopasowane tylko na części treningowej;
+  kontrolowane gałęzie uczenia od stanu AdamW kroku k (waga obrazu, podmiana obrazu, wzrost zaburzeń; poziom szumu
+  z identycznych gałęzi, tryb deterministyczny); obserwator Kalmana przy pomiarze części tokenów. Pomiary w
+  `outputs/stanowisko_korekcji_latentu_gui/<czas>_<opis>/`, nic nie liczy się przy otwarciu zakładki.
 - Zakładka „Pchnięcie obrazów: SD, DINO i ruch cząstek w kroku” (`zakladka_pchniecia.py`, rachunek `pchniecie.py`,
   stan `stan_uczenia.py`, paczki `paczki_uczenia.py`, kandydaci `kandydaci.py`): dokładne pchnięcie jednego kroku
   AdamW, jakie wywołałby pojedynczy obraz w paczce, na cząstkach sondy gęstej historii. Paczki odtwarzane z ziarna

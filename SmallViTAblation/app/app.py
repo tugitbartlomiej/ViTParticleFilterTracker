@@ -202,6 +202,13 @@ class Okno(QMainWindow):
         except Exception as e:
             import traceback; traceback.print_exc()
             self.zakladki_glowne.addTab(QLabel(f'Zakładka pchnięcia niedostępna: {e}'), 'Pchnięcie obrazów')
+        try:
+            from zakladka_korekty import ZakladkaKorekty
+            self.zakladka_korekty = ZakladkaKorekty(self, getattr(self, 'zakladka_uczenia', None))
+            self.zakladki_glowne.addTab(self.zakladka_korekty, 'Korekta latentu: cel i dynamika')
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            self.zakladki_glowne.addTab(QLabel(f'Zakładka korekty niedostępna: {e}'), 'Korekta latentu')
         self.setCentralWidget(self.zakladki_glowne)
 
     @staticmethod
