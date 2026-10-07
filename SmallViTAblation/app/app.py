@@ -58,6 +58,35 @@ LIMITY = ['Matematyczne z wag ViT (checkpoint)',
 
 
 
+class _StronaBezHfw(QWidget):
+    """Pośrednik między przewijanym polem a zakładką, bez własnego układu. QScrollArea pyta układ swojego widżetu
+    o wysokość zależną od szerokości (heightForWidth); zakładki z układami przepływowymi i zawijanymi napisami
+    zwracały wtedy coraz większą wysokość i strona rosła ponad okno (2700 -> 3800 px). Tu zakładka dostaje
+    dokładnie rozmiar pośrednika, a pośrednik zgłasza tylko jej minimalny rozmiar."""
+
+    def __init__(self, strona):
+        super().__init__()
+        self.strona = strona
+        strona.setParent(self); strona.show()
+        strona.installEventFilter(self)
+
+    def minimumSizeHint(self):
+        return self.strona.minimumSizeHint()
+
+    def sizeHint(self):
+        return self.strona.minimumSizeHint()
+
+    def resizeEvent(self, e):
+        self.strona.setGeometry(0, 0, self.width(), self.height())
+        super().resizeEvent(e)
+
+    def eventFilter(self, obj, ev):
+        from PyQt6.QtCore import QEvent
+        if obj is self.strona and ev.type() == QEvent.Type.LayoutRequest:
+            self.updateGeometry()                  # minimum zakładki się zmieniło: pole przewijane przelicza paski
+        return False
+
+
 class ZakladkiGlowne(QTabWidget):
     """Główne zakładki, każda w przewijanym polu. QTabWidget ma minimalny rozmiar równy największemu minimum ze
     wszystkich zakładek, więc jedna wysoka zakładka (np. detekcja, około 1240 px) podnosiła minimalną wysokość całego
@@ -67,12 +96,12 @@ class ZakladkiGlowne(QTabWidget):
 
     def addTab(self, w, tekst):
         from PyQt6.QtWidgets import QFrame
-        sc = QScrollArea(); sc.setWidget(w); sc.setWidgetResizable(True); sc.setFrameShape(QFrame.Shape.NoFrame)
+        sc = QScrollArea(); sc.setWidget(_StronaBezHfw(w)); sc.setWidgetResizable(True); sc.setFrameShape(QFrame.Shape.NoFrame)
         return super().addTab(sc, tekst)
 
     @staticmethod
     def _wew(sc):
-        return sc.widget() if isinstance(sc, QScrollArea) else sc
+        return sc.widget().strona if isinstance(sc, QScrollArea) else sc
 
     def widget(self, i):
         return self._wew(super().widget(i))

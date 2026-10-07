@@ -384,6 +384,14 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   odtwarza parametry panelu równania. W makro strzałki: biała prawdziwy krok, pomarańczowa przewidziany,
   czerwona niedopasowanie; ślad w kolorze wygładzonego błędu. Patch 255, GLE, kroki 700-1000: mediana błędu
   kroku 0,54 (kroczące) i 0,55 (stałe okno), cos 0,86.
+- Wygląd ścieżek prognozy Langevina (strona „Langevin”, grupa „Wygląd ścieżek prognozy”): każdy rodzaj ścieżki
+  to osobna warstwa z własnym kolorem i grubością (ślad, ślad prognoz z wyprzedzeniem, bieżąca prognoza, stare
+  prognozy, dalszy tor, linia błędu); schematy kolorów (kontrastowe, klasyczne, kolor cząstki, automatycznie),
+  styl prognozy (ciągła z kropką co krok, ciągła, przerywana), kolor wg horyzontu, grubości, zanikanie starych
+  prognoz, „powiększ ruch” (przesunięcia × k wokół bieżącego położenia, sprawdzone: dokładnie × k), linia błędu
+  (przewidziane -> rzeczywiste położenie), legenda w rogu widoku, kamera śledząca cząstkę, „zbliż na cząstkę”.
+- Strony panelu „Opcje” (widok 3D, makro) przewijają się, zamiast przycinać wiersze. Główne zakładki są
+  w przewijanych polach przez pośrednika bez heightForWidth (inaczej strona rosła ponad okno).
 - Ustawienia uczenia są stronami panelu „Opcje” przestrzeni makro: „Uczenie” (porównanie w 3D, środek makro,
   śledzenie patcha, strzałki przyczyn), „Langevin”, „Zaznaczone”, „Krok po kroku”; pod odtwarzaniem został
   tylko opis kroku. „Środek makro”: zero latentu (domyślne, surowy latent, środek = wektor zerowy), średnia

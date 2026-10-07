@@ -286,6 +286,52 @@ class ZakladkaUczenia(QWidget):
         self.spin_krycie.setValue(.15)
         dodaj(w, 'krycie najstarszego', self.spin_krycie, 'Krycie najstarszego odcinka śladu (najnowszy: 1).')
 
+        g = QGroupBox('Wygląd ścieżek prognozy')
+        w = Przeplyw(); g.setLayout(w); op.strona('Langevin').addWidget(g)
+        self.combo_lang_kolory = QComboBox()
+        self.combo_lang_kolory.addItems(['automatycznie', 'kontrastowe (biały, pomarańcz, fiolet, żółty, błękit)',
+                                         'klasyczne (turkus / pomarańcz)', 'kolor cząstki (jasność wg rodzaju)'])
+        dodaj(w, 'Kolory:', self.combo_lang_kolory,
+              'Kolory rodzajów ścieżek:\n'
+              '- kontrastowe: każdy rodzaj ścieżki innym kolorem (biały ślad, pomarańczowa prognoza, fioletowe stare\n'
+              '  prognozy, żółty ślad prognoz z wyprzedzeniem, błękitny dalszy tor, czerwony błąd);\n'
+              '- kolor cząstki: przy kilku cząstkach każda w swoim kolorze, rodzaj ścieżki = jasność;\n'
+              '- automatycznie: jedna cząstka kontrastowe, kilka kolor cząstki.\n'
+              'Legenda w rogu przestrzeni makro pokazuje, co jest czym.')
+        self.combo_lang_styl = QComboBox(); self.combo_lang_styl.addItems(['ciągła + kropka co krok', 'ciągła', 'przerywana'])
+        dodaj(w, 'Prognoza:', self.combo_lang_styl, 'Styl linii prognozy. Kropki co krok pokazują tempo ruchu (gęste = wolno).')
+        self.chk_lang_gradient = QCheckBox('kolor wg horyzontu')
+        self.chk_lang_gradient.setToolTip('Bieżąca prognoza w kolorze odległości w przyszłość: jasnożółta tuż przed cząstką,\n'
+                                          'ciemnofioletowa na końcu (h kroków dalej).')
+        w.addWidget(self.chk_lang_gradient)
+        self.spin_grub_slad = QDoubleSpinBox(); self.spin_grub_slad.setRange(1, 12); self.spin_grub_slad.setValue(2.5)
+        dodaj(w, 'grubość śladu', self.spin_grub_slad, 'Grubość rzeczywistego śladu (px); ślad z wyprzedzeniem i dalszy tor cieńsze.')
+        self.spin_grub_prog = QDoubleSpinBox(); self.spin_grub_prog.setRange(1, 12); self.spin_grub_prog.setValue(3.5)
+        dodaj(w, 'grubość prognozy', self.spin_grub_prog, 'Grubość bieżącej prognozy (px); stare prognozy i linia błędu cieńsze.')
+        self.spin_krycie_stare = QDoubleSpinBox(); self.spin_krycie_stare.setRange(0, 1); self.spin_krycie_stare.setSingleStep(.05)
+        self.spin_krycie_stare.setValue(.25)
+        dodaj(w, 'krycie najstarszej prognozy', self.spin_krycie_stare, 'Zanikanie starych prognoz: najnowsza 0,8, najstarsza tyle.')
+        self.spin_lang_pow = QDoubleSpinBox(); self.spin_lang_pow.setRange(1, 100); self.spin_lang_pow.setValue(1)
+        self.spin_lang_pow.setPrefix('× ')
+        dodaj(w, 'powiększ ruch', self.spin_lang_pow,
+              'Powiększa ścieżki wokół bieżącego położenia cząstki (ślad, prognozy, dalszy tor, błąd): krótkie ruchy\n'
+              'stają się czytelne. Cząstka zostaje na miejscu, powiększone są tylko przesunięcia.')
+        self.chk_lang_blad = QCheckBox('linia błędu'); self.chk_lang_blad.setChecked(True)
+        self.chk_lang_blad.setToolTip('Czerwona linia od miejsca, w które prognoza stawiała cząstkę teraz, do jej\n'
+                                      'rzeczywistego położenia: długość = błąd prognozy w tym kroku.')
+        w.addWidget(self.chk_lang_blad)
+        self.chk_lang_legenda = QCheckBox('legenda w widoku'); self.chk_lang_legenda.setChecked(True)
+        self.chk_lang_legenda.setToolTip('Legenda kolorów ścieżek w lewym górnym rogu przestrzeni makro.')
+        w.addWidget(self.chk_lang_legenda)
+        self.chk_lang_kamera = QCheckBox('kamera śledzi cząstkę')
+        self.chk_lang_kamera.setToolTip('Środek obrotu kamery przesuwa się za prognozowaną cząstką (przy kilku: za ich średnią).')
+        w.addWidget(self.chk_lang_kamera)
+        self.btn_lang_zblizenie = QPushButton('zbliż na cząstkę')
+        self.btn_lang_zblizenie.setToolTip('Ustawia kamerę na prognozowanej cząstce z bliska (odległość obok).')
+        w.addWidget(self.btn_lang_zblizenie)
+        self.spin_lang_odl = QSpinBox(); self.spin_lang_odl.setRange(5, 2000); self.spin_lang_odl.setValue(80)
+        dodaj(w, 'odległość', self.spin_lang_odl, 'Odległość kamery przy „zbliż na cząstkę”.')
+
         g = QGroupBox('Zaznaczone patche: śledzenie wybranych cząstek przez uczenie')
         w = Przeplyw(); g.setLayout(w); op.strona('Zaznaczone').addWidget(g)
         self.etykieta_zazn = QLabel('Brak zaznaczenia. Ctrl + klik na obrazie albo w przestrzeni makro dodaje patch.')
@@ -416,7 +462,15 @@ class ZakladkaUczenia(QWidget):
                    self.chk_slad_caly.toggled, self.spin_wyprz.valueChanged, self.chk_ema.toggled, self.spin_ema.valueChanged,
                    self.combo_zanik.currentIndexChanged, self.spin_krycie.valueChanged):
             sg.connect(lambda *_: self.idz(self.t))
-        self._tory = {}; self.czubek = None; self._opis_lang = ''
+        self._tory = {}; self.czubek = None; self._opis_lang = ''; self._o_lang = []
+        for sg in (self.combo_lang_kolory.currentIndexChanged, self.combo_lang_styl.currentIndexChanged,
+                   self.chk_lang_gradient.toggled, self.spin_grub_slad.valueChanged, self.spin_grub_prog.valueChanged,
+                   self.spin_krycie_stare.valueChanged, self.spin_lang_pow.valueChanged, self.chk_lang_blad.toggled,
+                   self.chk_lang_legenda.toggled, self.chk_lang_kamera.toggled):
+            sg.connect(lambda *_: self.idz(self.t) if self.Z is not None else None)
+        self.btn_lang_zblizenie.clicked.connect(
+            lambda: self.makro.kamera_na(np.mean(self._o_lang, 0), self.spin_lang_odl.value()) if self._o_lang else
+            self._status('Najpierw włącz prognozę Langevina dla jakiejś cząstki.'))
         # „Animuj” w widoku 3D: bez porównania PRZED / PO odtwarza uczenie (sam widok 3D nie miałby czego animować)
         self.w3d.btn_anim.toggled.disconnect()
         self.w3d.btn_anim.toggled.connect(self._animuj_3d)
@@ -888,8 +942,8 @@ class ZakladkaUczenia(QWidget):
 
     def _strzalki_przyczyn(self, k):
         seg, kolory = self._odcinki_przyczyn(k)
-        s2, k2, pkt = self._odcinki_prognozy(k)
-        seg, kolory = seg + s2, kolory + k2
+        warstwy, pkt = self._odcinki_prognozy(k)
+        self.makro.rysuj_warstwy(warstwy)
         s3, k3 = self._odcinki_krokowe(k)
         seg, kolory = seg + s3, kolory + k3
         self.makro.rysuj_przyczyny(np.array(seg) if seg else None, np.array(kolory) if kolory else None)
@@ -955,37 +1009,94 @@ class ZakladkaUczenia(QWidget):
         f = u if i == 0 else np.exp(-4 * (1 - u))
         return (a0 + (1 - a0) * f).astype(np.float32)
 
+    # ------------------------------------------------------------ prognoza Langevina: ścieżki w przestrzeni makro
+    ELEMENTY_LANG = (('slad', 'rzeczywisty ślad cząstki (przeszłe kroki)'),
+                     ('wyprz', 'ślad prognoz z wyprzedzeniem (gdzie model stawiał cząstkę)'),
+                     ('prog', 'bieżąca prognoza na h kroków'),
+                     ('stare', 'poprzednie prognozy (coraz bledsze)'),
+                     ('przysz', 'rzeczywisty dalszy tor (tylko podgląd)'),
+                     ('blad', 'błąd: przewidziane -> rzeczywiste położenie teraz'))
+
+    def _barwy_lang(self, barwa, ile):
+        """Kolory rodzajów ścieżek dla jednej cząstki (RGB 0..1) według schematu „Kolory ścieżek”."""
+        sch = self.combo_lang_kolory.currentIndex()
+        if sch == 0:
+            sch = 1 if (ile == 1 or barwa is None) else 3
+        if sch == 3 and barwa is None:
+            sch = 1
+        if sch == 1:
+            return dict(slad=(1, 1, 1), wyprz=(1, .88, .2), prog=(1, .5, .05), stare=(.85, .35, 1), przysz=(.3, .85, 1),
+                        blad=(1, .15, .15))
+        if sch == 2:
+            return dict(slad=(.2, .9, 1), wyprz=(1, .55, .1), prog=(1, .55, .1), stare=(1, .55, .1), przysz=(.65, .8, 1),
+                        blad=(1, .15, .15))
+        b = np.asarray(barwa, np.float64)
+        jasn = lambda f: tuple(np.clip(b * (1 - f) + f, 0, 1))
+        return dict(slad=jasn(.55), wyprz=jasn(.25), prog=tuple(b), stare=tuple(b * .6), przysz=jasn(.75), blad=(1, .15, .15))
+
     def _odcinki_prognozy(self, k):
-        """Odcinki (prognozy, ślady) i znaczniki [(pozycja, kolor, rozmiar)] dla cząstek z _wpisy."""
+        """Warstwy ścieżek prognozy (dla rysuj_warstwy) i znaczniki [(pozycja, kolor, rozmiar)] dla cząstek z _wpisy."""
+        self._o_lang = []
         if not self.chk_prognoza.isChecked() or self.Z is None:
-            return [], [], []
-        seg, kol, pkt, opisy = [], [], [], []
-        for klucz, maska, nazwa, barwa in self._wpisy():
-            s2, k2, p2, op = self._prognoza_wpisu(k, klucz, maska, nazwa, barwa)
-            seg += s2; kol += k2; pkt += p2; opisy.append(op)
+            self.makro.ustaw_legende(None)
+            return [], []
+        wpisy = self._wpisy()
+        war = {n: dict(nazwa='lang_' + n, seg=[], kol=[], pkt=[], pkt_kol=[], pkt_rozm=[]) for n, _ in self.ELEMENTY_LANG}
+        war['kropki'] = dict(nazwa='lang_kropki', seg=[], kol=[], pkt=[], pkt_kol=[], pkt_rozm=[])
+        pkt, opisy = [], []
+        for klucz, maska, nazwa, barwa in wpisy:
+            p2, op = self._prognoza_wpisu(k, klucz, maska, nazwa, barwa, war, len(wpisy))
+            pkt += p2; opisy.append(op)
+        gs, gp = self.spin_grub_slad.value(), self.spin_grub_prog.value()
+        szer = dict(slad=gs, wyprz=max(1., gs * .8), prog=gp, stare=max(1., gp * .6), przysz=max(1., gs * .7),
+                    blad=max(1., gp * .7), kropki=1)
+        warstwy = [dict(w, szer=szer[n]) for n, w in war.items()]
         model = RC.MODELE[self.panel.combo_model.currentIndex()].split(' (')[0]
         self._opis_lang = (f'; {model}: ' + '; '.join(opisy)) if opisy else ''
-        return seg, kol, pkt
+        self._legenda_lang(wpisy)
+        if self.chk_lang_kamera.isChecked() and self._o_lang:      # kamera śledzi (średnio) prognozowane cząstki
+            self.makro.kamera_na(np.mean(self._o_lang, 0))
+        return warstwy, pkt
 
-    def _prognoza_wpisu(self, k, klucz, maska, nazwa, barwa):
+    def _legenda_lang(self, wpisy):
+        if not self.chk_lang_legenda.isChecked() or not wpisy:
+            self.makro.ustaw_legende(None); return
+        jedna = len(wpisy) == 1
+        b = self._barwy_lang(wpisy[0][3], len(wpisy))
+        hx = lambda c: '#%02x%02x%02x' % tuple(int(255 * v) for v in c[:3])
+        wl = dict(slad=True, wyprz=self.spin_wyprz.value() > 0, prog=True, stare=self.spin_stare.value() > 0,
+                  przysz=self.chk_przyszlosc.isChecked(), blad=self.chk_lang_blad.isChecked())
+        w = [f'<b>Prognoza Langevina</b> ({RC.MODELE[self.panel.combo_model.currentIndex()].split(" (")[0]}, '
+             f'h = {self.spin_h.value()}, nowa co {self.spin_nowa.value()})']
+        if not jedna and self._barwy_lang(wpisy[0][3], len(wpisy))['prog'] != (1, .5, .05):
+            w.append('kolor = cząstka; jasny: ślad, pełny: prognoza, ciemny: stare')
+        for n, opis in self.ELEMENTY_LANG:
+            if wl[n]:
+                w.append(f'<span style="color:{hx(b[n])}">━━</span> {opis}')
+        if self.spin_lang_pow.value() != 1:
+            w.append(f'ruch powiększony × {self.spin_lang_pow.value():g} wokół bieżącego położenia')
+        self.makro.ustaw_legende('<br>'.join(w))
+
+    def _prognoza_wpisu(self, k, klucz, maska, nazwa, barwa, war, ile):
         mdl = self._model(klucz, maska)
         x = mdl['x']
         K = len(x)
         m = self.makro
         o = m.P[m.t][maska].mean(0)                                   # bieżące położenie cząstki (albo średniej)
-        rzut = lambda X: o + m.rzut_delty(np.asarray(X, np.float32) - x[k])
-        seg, kol, pkt = [], [], []
-        if barwa is None:                                             # jedna cząstka: turkus / pomarańcz
-            k_slad, k_prog, k_przysz = (.2, .9, 1), (1, .55, .1), (.65, .8, 1)
-        else:                                                         # kilka cząstek: kolor cząstki z panelu
-            k_prog = barwa; k_slad = tuple(.45 * c + .55 for c in barwa); k_przysz = tuple(.3 * c + .7 for c in barwa)
+        self._o_lang.append(o)
+        pw = self.spin_lang_pow.value()                               # powiększenie ruchu wokół bieżącego położenia
+        rzut = lambda X: o + m.rzut_delty(np.asarray(X, np.float32) - x[k]) * pw
+        b = self._barwy_lang(barwa, ile)
+        pkt = []
 
-        def linia(P, c, a=1., alfy=None, przerywana=False):
+        def linia(n, P, c, a=1., alfy=None, przerywana=False, kolory=None):
+            W = war[n]
             for j in range(len(P) - 1):
                 if przerywana and j % 2:
                     continue
                 al = a if alfy is None else a * alfy[j]
-                seg.extend([P[j], P[j + 1]]); kol.extend([(c[0], c[1], c[2], al)] * 2)
+                cc = c if kolory is None else kolory[j]
+                W['seg'].extend([P[j], P[j + 1]]); W['kol'].extend([(cc[0], cc[1], cc[2], al)] * 2)
 
         ema = self.chk_ema.isChecked()
         a_ema = self.spin_ema.value()
@@ -1000,7 +1111,7 @@ class ZakladkaUczenia(QWidget):
             else:
                 y = x
             P = rzut(y[t0:k + 1][::-1][::co][::-1])
-            linia(P, k_slad, 1., self._zanik(len(P) - 1))
+            linia('slad', P, b['slad'], 1., self._zanik(len(P) - 1))
         w = self.spin_wyprz.value()
         if L > 0 and w > 0 and k - w >= 0:                            # ślad prognoz z wyprzedzeniem w
             ts = np.arange(max(t0, w), k + 1)[::-1][::co][::-1]
@@ -1008,28 +1119,54 @@ class ZakladkaUczenia(QWidget):
             if ema:
                 pred = AU.ema(pred, a_ema)
             P = rzut(pred)
-            linia(P, k_prog, .9, self._zanik(len(P) - 1))
+            linia('wyprz', P, b['wyprz'], .95, self._zanik(len(P) - 1))
         h, N = self.spin_h.value(), self.spin_nowa.value()
         k0 = (k // N) * N
         starty = [k0 - j * N for j in range(self.spin_stare.value() + 1) if k0 - j * N >= 0]
         tory = RC.prognozy(mdl, starty, h)                            # [n, h + 1, 768]
+        styl = self.combo_lang_styl.currentIndex()                    # 0 ciągła + kropki, 1 ciągła, 2 przerywana
+        a_min = self.spin_krycie_stare.value()
+        n_st = len(tory) - 1
         for j, tor in enumerate(tory):
-            linia(rzut(tor), k_prog, 1. if j == 0 else .55 * (1 - j / (len(tory) + 1)), przerywana=True)
+            P = rzut(tor)
+            if j == 0:
+                kol_h = None
+                if self.chk_lang_gradient.isChecked():                # kolor wg horyzontu: blisko jasny, daleko ciemny
+                    u_h = np.linspace(0, 1, len(P) - 1)[:, None]
+                    if ile > 1 and barwa is not None:                 # kilka cząstek: jasność koloru cząstki
+                        bb = np.asarray(b['prog'], np.float64)[None]
+                        kol_h = np.where(u_h < .5, bb + (1 - bb) * (.6 - 1.2 * u_h), bb * (1.3 - .9 * u_h))
+                        kol_h = np.clip(kol_h, 0, 1)
+                    else:
+                        import matplotlib
+                        kol_h = matplotlib.colormaps['plasma'](np.linspace(.95, .2, len(P) - 1))[:, :3]
+                linia('prog', P, b['prog'], 1., przerywana=styl == 2, kolory=kol_h)
+                if styl == 0:                                         # kropka w każdym kroku prognozy
+                    W = war['kropki']
+                    for jj, q in enumerate(P[1:]):
+                        cc = b['prog'] if kol_h is None else kol_h[jj]
+                        W['pkt'].append(q); W['pkt_kol'].append((cc[0], cc[1], cc[2], .95)); W['pkt_rozm'].append(5)
+            else:
+                al = .8 - (.8 - a_min) * (j - 1) / max(n_st - 1, 1)
+                linia('stare', P, b['stare'], al, przerywana=styl == 2)
         opis = f'{nazwa} od kroku {int(self.kroki[k0])}'
         if 0 < k - k0 <= h:                                           # gdzie prognoza stawiała cząstkę teraz
-            pkt.append((rzut(tory[0][k - k0][None])[0], (*k_prog, 1), 11))
+            q = rzut(tory[0][k - k0][None])[0]
+            pkt.append((q, (*b['prog'], 1), 12))
+            if self.chk_lang_blad.isChecked():                        # linia błędu: przewidziane -> rzeczywiste
+                linia('blad', np.array([q, o]), b['blad'], 1.)
             e = float(np.linalg.norm(tory[0][k - k0] - x[k])); ep = float(np.linalg.norm(x[k0] - x[k]))
             opis += f', po {k - k0} kr. błąd / bez ruchu {e / max(ep, 1e-9):.2f}'
         if self.chk_przyszlosc.isChecked():                           # rzeczywisty dalszy tor (podgląd)
             kon = min(K - 1, max(k0 + h, k))
             if kon > k:
-                linia(rzut(x[k:kon + 1]), k_przysz, .45)
+                linia('przysz', rzut(x[k:kon + 1]), b['przysz'], .55)
         if klucz[0] != 'patch':                                       # średnia jako jedna duża kropka
             barwa_sr = {'narzedzie': (1, .3, .25, 1), 'zazn': (1, .9, .1, 1)}.get(klucz[0], (.75, .8, .9, 1))
             pkt.append((o, barwa_sr, m.spin_rozmiar.value() + 12))
         elif barwa is not None:
             pkt.append((o, (*barwa, 1), m.spin_rozmiar.value() + 8))
-        return seg, kol, pkt, opis
+        return pkt, opis
 
     def _odcinki_przyczyn(self, k):
         if self.prz is None or self.token is None or not self.chk_strzalki.isChecked():

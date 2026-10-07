@@ -100,15 +100,19 @@ class PanelOpcji:
         self.zakladki = QTabWidget(); self.zakladki.setObjectName('opcje_widoku'); self.zakladki.setDocumentMode(True)
         self._strony = {}
         for n in strony:
-            s = QWidget(); lay = QVBoxLayout(s); lay.setContentsMargins(6, 4, 6, 4); lay.setSpacing(2)
-            self.zakladki.addTab(s, n); self._strony[n] = lay
+            self.dodaj_strone(n)
         uklad.addWidget(self.zakladki)
         self.btn_opcje.toggled.connect(lambda v: (self.zakladki.setVisible(v),
                                                   self.btn_opcje.setText('Opcje ▾' if v else 'Opcje ▸')))
 
     def dodaj_strone(self, nazwa):
+        """Strona opcji w przewijanym polu: wysoka strona (np. grupy prognozy) dostaje pasek przewijania zamiast
+        przycinać wiersze albo zabierać miejsce widokowi."""
+        from PyQt6.QtWidgets import QFrame, QScrollArea
         s = QWidget(); lay = QVBoxLayout(s); lay.setContentsMargins(6, 4, 6, 4); lay.setSpacing(2)
-        self.zakladki.addTab(s, nazwa); self._strony[nazwa] = lay
+        sc = QScrollArea(); sc.setWidget(s); sc.setWidgetResizable(True); sc.setFrameShape(QFrame.Shape.NoFrame)
+        sc.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.zakladki.addTab(sc, nazwa); self._strony[nazwa] = lay
 
     def wiersz(self, strona):
         w = Przeplyw(); self._strony[strona].addLayout(w)

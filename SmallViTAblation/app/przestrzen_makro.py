@@ -16,7 +16,7 @@ Rysowanie: pyqtgraph.opengl (VBO na karcie).
 import time
 
 import numpy as np
-from PyQt6.QtCore import QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QVector3D
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QLineEdit, QPushButton, QSpinBox,
                              QVBoxLayout, QWidget)
@@ -629,6 +629,55 @@ class WidokPrzestrzeniMakro(QWidget):
         self._od, self._u = None, 1.0
         self.slady.setVisible(False)
         self._rysuj(tylko_punkty=True)
+
+    def rysuj_warstwy(self, warstwy):
+        """Warstwy ścieżek (np. prognoza Langevina), każda z własną grubością linii: lista słowników
+        dict(nazwa, seg [2n, 3], kol [2n, 4], szer, pkt [m, 3], pkt_kol [m, 4], pkt_rozm [m]); seg albo pkt mogą
+        być puste. Elementy GL powstają raz na nazwę; warstwy, których nie ma na liście, są chowane."""
+        if not hasattr(self, '_warstwy'):
+            self._warstwy = {}
+        uzyte = set()
+        for w in warstwy:
+            n = w['nazwa']
+            if w.get('seg') is not None and len(w['seg']):
+                it = self._warstwy.get(('l', n))
+                if it is None:
+                    it = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', antialias=True,
+                                           glOptions='translucent')
+                    self.widok.addItem(it); self._warstwy[('l', n)] = it
+                it.setData(pos=np.ascontiguousarray(w['seg'], np.float32), color=np.ascontiguousarray(w['kol'], np.float32),
+                           width=float(w.get('szer', 2)))
+                it.setVisible(True); uzyte.add(('l', n))
+            if w.get('pkt') is not None and len(w['pkt']):
+                it = self._warstwy.get(('p', n))
+                if it is None:
+                    it = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), pxMode=True, glOptions='translucent')
+                    self.widok.addItem(it); self._warstwy[('p', n)] = it
+                it.setData(pos=np.ascontiguousarray(w['pkt'], np.float32), color=np.ascontiguousarray(w['pkt_kol'], np.float32),
+                           size=np.ascontiguousarray(w['pkt_rozm'], np.float32))
+                it.setVisible(True); uzyte.add(('p', n))
+        for k, it in self._warstwy.items():
+            if k not in uzyte:
+                it.setVisible(False)
+
+    def ustaw_legende(self, html=None):
+        """Legenda w lewym górnym rogu widoku (HTML); None chowa."""
+        if getattr(self, '_legenda', None) is None:
+            self._legenda = QLabel(self.widok)
+            self._legenda.setStyleSheet('QLabel { background: rgba(10, 10, 14, 200); color: #e6e6e6; padding: 5px 7px;'
+                                        ' border: 1px solid #444; border-radius: 4px; font-size: 11px; }')
+            self._legenda.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        if not html:
+            self._legenda.hide(); return
+        self._legenda.setText(html); self._legenda.adjustSize(); self._legenda.move(8, 8); self._legenda.show()
+        self._legenda.raise_()
+
+    def kamera_na(self, pos, odleglosc=None):
+        """Środek obrotu kamery w punkcie pos (np. śledzona cząstka), opcjonalnie z odległością."""
+        self.widok.opts['center'] = QVector3D(*map(float, pos))
+        if odleglosc is not None:
+            self.widok.opts['distance'] = float(odleglosc)
+        self.widok.update()
 
     def rysuj_znaczniki(self, pos=None, kolory=None, rozmiary=None):
         """Dodatkowe kropki [n, 3] z kolorami [n, 4] i rozmiarami w pikselach [n]; None chowa."""
