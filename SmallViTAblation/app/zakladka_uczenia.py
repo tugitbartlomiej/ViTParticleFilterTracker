@@ -24,11 +24,12 @@ from matplotlib.patches import Rectangle
 
 import analiza_uczenia as AU
 import rownanie_czastki as RC
+import rownanie_krokowe as RK
 from wspolne import (ctrl_wcisniety, paleta_zaznaczenia, polacz_zaznaczenie, przelacz_w_zaznaczeniu, rysuj_zaznaczenie,
                      tokeny_w_prostokacie)
 import przyczyny_ruchu as PR
 from styl import rola
-from uklad import Przeplyw, RamaPanelu, dodaj
+from uklad import Przeplyw, RamaPanelu, dodaj, zwijana
 from zakladka_detekcji import PlotnoCiemne
 from zakladka_filmu import KOLOR_VIT, WatekFilmu, prostokat
 
@@ -87,9 +88,13 @@ class ZakladkaUczenia(QWidget):
         # ---------------- widoki: które panele są pokazane (każdy ma też ✕ i „Odepnij” na swoim pasku)
         self.chk_widok_obraz = QCheckBox('obraz i wykresy'); self.chk_widok3d = QCheckBox('widok 3D')
         self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_rown = QCheckBox('równanie')
+        self.chk_widok_ust = QCheckBox('ustawienia')
+        self.chk_widok_ust.setToolTip('Pokazuje albo chowa ustawienia pod paskiem odtwarzania (porównanie, prognoza Langevina,\n'
+                                      'zaznaczone patche, równanie krok po kroku). Każdą z tych grup można też zwinąć\n'
+                                      'polem w jej tytule.')
         self.chk_widok_rown.setToolTip('Czwarty panel: równanie Langevina, GLE i Koopmana wybranych cząstek z ich własnej historii.')
         w.addWidget(rola(QLabel('Widoki:'), 'opis'))
-        for c in (self.chk_widok_obraz, self.chk_widok3d, self.chk_widok_makro, self.chk_widok_rown):
+        for c in (self.chk_widok_obraz, self.chk_widok3d, self.chk_widok_makro, self.chk_widok_rown, self.chk_widok_ust):
             c.setChecked(True); w.addWidget(c)
             if not c.toolTip():
                 c.setToolTip(f'Pokazuje albo chowa panel „{c.text()}” (to samo co ✕ na jego pasku).')
@@ -126,6 +131,11 @@ class ZakladkaUczenia(QWidget):
         self.canvas_z.setToolTip('Każdy zaznaczony patch osobno przez całe uczenie (kolory jak na obrazie i w przestrzeni\n'
                                  'makro); biała przerywana = średnia zaznaczonych. Pionowa linia = bieżący krok, klik: krok.')
         self.zakl_wyk.addTab(self.canvas_z, 'Zaznaczone patche')
+        self.fig_rk = Figure(figsize=(5, 7)); self.canvas_rk = PlotnoCiemne(self.fig_rk)
+        self.canvas_rk.setToolTip('Równanie ruchu krok po kroku dla zaznaczonych patchy (albo wybranego): w każdym kroku\n'
+                                  'uczenia prognoza następnego kroku cząstki w 768 wymiarach i jej niedopasowanie do\n'
+                                  'prawdziwego ruchu. Cienkie linie: każdy krok, grube: wygładzone. Klik: krok.')
+        self.zakl_wyk.addTab(self.canvas_rk, 'Równanie krok po kroku')
         podzial.addWidget(RamaPanelu('Obraz klatki i wykresy uczenia', lewa, self.chk_widok_obraz))
 
         from czasteczki3d import WidokCzasteczek3D
@@ -171,7 +181,10 @@ class ZakladkaUczenia(QWidget):
               'Przy szybkim odtwarzaniu warto zmniejszyć „Przelot” w przestrzeni makro.')
         self.chk_petla = QCheckBox('pętla'); self.chk_petla.setChecked(True); w.addWidget(self.chk_petla)
 
-        w = QHBoxLayout(); lay.addLayout(w)
+        self._grupy_dol = []
+        self._dol = QWidget(); self._dol_lay = QVBoxLayout(self._dol); self._dol_lay.setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(self._dol)                                   # ustawienia pod odtwarzaniem (do schowania)
+        w = QHBoxLayout(); self._dol_lay.addLayout(w)
         self.combo_por = QComboBox(); self.combo_por.addItems(['brak', 'z poprzednim krokiem', 'z krokiem 0', 'ze stanem końcowym'])
         dodaj(w, 'Porównanie w 3D:', self.combo_por, 'Co jest „PRZED” w widoku 3D; „PO” = bieżący krok.')
         self.combo_srodek = QComboBox()
@@ -204,7 +217,7 @@ class ZakladkaUczenia(QWidget):
         self.etykieta_kroku = QLabel(''); self.etykieta_kroku.setWordWrap(True); w.addWidget(self.etykieta_kroku, 1)
 
         g = QGroupBox('Prognoza Langevina i ślad toru w przestrzeni makro')
-        w = Przeplyw(); g.setLayout(w); lay.addWidget(g)
+        w = Przeplyw(); g.setLayout(w); self._dol_lay.addWidget(g); self._grupy_dol.append(g)
         self.chk_prognoza = QCheckBox('Prognoza Langevina'); self.chk_prognoza.setChecked(True)
         self.chk_prognoza.setToolTip(
             'Liniowy model ruchu cząstki z bezwładnością (dyskretny Langevin, oscylator):\n'
@@ -267,7 +280,7 @@ class ZakladkaUczenia(QWidget):
         dodaj(w, 'krycie najstarszego', self.spin_krycie, 'Krycie najstarszego odcinka śladu (najnowszy: 1).')
 
         g = QGroupBox('Zaznaczone patche: śledzenie wybranych cząstek przez uczenie')
-        w = Przeplyw(); g.setLayout(w); lay.addWidget(g)
+        w = Przeplyw(); g.setLayout(w); self._dol_lay.addWidget(g); self._grupy_dol.append(g)
         self.etykieta_zazn = QLabel('Brak zaznaczenia. Ctrl + klik na obrazie albo w przestrzeni makro dodaje patch.')
         w.addWidget(self.etykieta_zazn)
         self.chk_tylko_zazn = QCheckBox('śledź tylko zaznaczone')
@@ -291,6 +304,49 @@ class ZakladkaUczenia(QWidget):
         dodaj(w, 'prognoza najwyżej dla', self.spin_zazn_prog,
               'Dla ilu pierwszych zaznaczonych patchy liczyć prognozę i ślad Langevina (każdy ma osobny model,\n'
               'więc przy wielu cząstkach krok się wydłuża). Ślady przestrzeni makro mają wszystkie zaznaczone.')
+
+        g = QGroupBox('Równanie krok po kroku: prognoza ruchu cząstki w 768 wymiarach i niedopasowanie w każdym kroku')
+        w = Przeplyw(); g.setLayout(w); self._dol_lay.addWidget(g); self._grupy_dol.append(g)
+        self.chk_rk = QCheckBox('licz'); self.chk_rk.setChecked(True)
+        self.chk_rk.setToolTip('Dla zaznaczonych patchy (do 20; bez zaznaczenia: wybrany patch) w każdym kroku t uczenia:\n'
+                               'prognoza kroku cząstki x(t) -> x(t+1) w pełnych 768 wymiarach i jej niedopasowanie do\n'
+                               'prawdziwego kroku. Wykresy w karcie „Równanie krok po kroku” pod obrazem, strzałki i ślad\n'
+                               'w kolorze błędu w przestrzeni makro. Liczy się w tle (około 0,3-0,8 s na cząstkę).')
+        w.addWidget(self.chk_rk)
+        self.combo_rk_model = QComboBox(); self.combo_rk_model.addItems(RK.MODELE); self.combo_rk_model.setCurrentIndex(1)
+        dodaj(w, 'model', self.combo_rk_model,
+              'Langevin: v(t+1) = beta v(t) − kappa (x − m);\n'
+              'GLE z pamięcią: v(t+1) = suma a_l v(t − l) − kappa (x − m) + c (L z panelu równania).\n'
+              'm = średnia ostatnich 50 stanów. Parametry wspólne dla 768 kanałów cząstki.')
+        self.combo_rk_dop = QComboBox(); self.combo_rk_dop.addItems(RK.DOPASOWANIA)
+        dodaj(w, 'dopasowanie', self.combo_rk_dop,
+              'Kroczące (uczciwe): parametry w kroku t z najmniejszych kwadratów na W ostatnich krokach przed t,\n'
+              'więc prognoza z kroku t używa wyłącznie stanów do t. Parametry zmieniają się w czasie uczenia\n'
+              '(wykresy bezwładności i sprężyny).\n'
+              'Stałe okno od..do (z panelu równania): jedne parametry na całe uczenie; dla kroków przed „do” model\n'
+              'zna już późniejszy przebieg, więc to tylko porównanie, nie prognoza.')
+        self.spin_rk_W = QSpinBox(); self.spin_rk_W.setRange(20, 1000); self.spin_rk_W.setValue(100)
+        dodaj(w, 'W', self.spin_rk_W, 'Ile ostatnich kroków bierze dopasowanie kroczące.')
+        self.spin_rk_h = QSpinBox(); self.spin_rk_h.setRange(1, 50); self.spin_rk_h.setValue(10)
+        dodaj(w, 'błąd po h', self.spin_rk_h, 'Horyzont drugiego błędu: prognoza na h kroków z parametrami kroku startu.')
+        self.spin_rk_wygl = QSpinBox(); self.spin_rk_wygl.setRange(1, 300); self.spin_rk_wygl.setValue(25)
+        dodaj(w, 'wygładzanie', self.spin_rk_wygl, 'Średnia z tylu ostatnich kroków na grubych liniach wykresów i w kolorze śladu.')
+        self.chk_rk_strz = QCheckBox('strzałki kroku w makro'); self.chk_rk_strz.setChecked(True)
+        self.chk_rk_strz.setToolTip('Przy każdej z tych cząstek, z bieżącego położenia:\n'
+                                    '- biała: prawdziwy krok x(t+1) − x(t),\n'
+                                    '- pomarańczowa: krok przewidziany przez równanie ze stanów do t,\n'
+                                    '- czerwona: niedopasowanie (od końca przewidzianego do końca prawdziwego; suma = biała).\n'
+                                    'Rzut tych samych wektorów 768 co położenia, powiększony o mnożnik.')
+        w.addWidget(self.chk_rk_strz)
+        self.spin_rk_skala = QDoubleSpinBox(); self.spin_rk_skala.setRange(.5, 200); self.spin_rk_skala.setValue(6)
+        dodaj(w, 'x', self.spin_rk_skala, 'Powiększenie strzałek kroku (jeden krok uczenia jest krótki).')
+        self.chk_rk_slad = QCheckBox('ślad w kolorze błędu'); self.chk_rk_slad.setChecked(True)
+        self.chk_rk_slad.setToolTip('Tor tych cząstek w przestrzeni makro (długość jak „Ślad” wyżej), kolor odcinka = wygładzony\n'
+                                    'błąd kroku / ruch: zielony = równanie trafia (0), żółty = 0,75, czerwony = jak bez ruchu (1,5 i więcej).')
+        w.addWidget(self.chk_rk_slad)
+        for g in self._grupy_dol:
+            zwijana(g)
+        self.chk_widok_ust.toggled.connect(self._dol.setVisible)
         self.timer = QTimer(self); self.timer.timeout.connect(self._nastepny)
 
         # ---------------- sygnały
@@ -330,6 +386,17 @@ class ZakladkaUczenia(QWidget):
         self.spin_zazn_prog.valueChanged.connect(lambda *_: self.idz(self.t) if self.combo_czastka.currentIndex() == 4 else None)
         self.canvas_z.mpl_connect('button_press_event', self._klik_wykresu)
         self._zazn_miary = (None, None)
+        self.canvas_rk.mpl_connect('button_press_event', self._klik_wykresu)
+        self._rk, self._rk_klucz, self._rk_watek, self._rk_brudne = {}, None, None, False
+        self._timer_rk = QTimer(self); self._timer_rk.setSingleShot(True); self._timer_rk.setInterval(300)
+        self._timer_rk.timeout.connect(self._licz_rk)
+        for sg in (self.combo_rk_model.currentIndexChanged, self.combo_rk_dop.currentIndexChanged, self.spin_rk_W.valueChanged,
+                   self.spin_rk_h.valueChanged, self.chk_rk.toggled, self.panel.spin_L.valueChanged,
+                   self.panel.spin_od.valueChanged, self.panel.spin_do.valueChanged):
+            sg.connect(lambda *_: self._sprawdz_rk())
+        self.spin_rk_wygl.valueChanged.connect(lambda *_: (self._rysuj_rk(), self.idz(self.t)) if self.Z is not None else None)
+        for sg in (self.chk_rk_strz.toggled, self.spin_rk_skala.valueChanged, self.chk_rk_slad.toggled):
+            sg.connect(lambda *_: self.idz(self.t) if self.Z is not None else None)
         self.canvas_r.mpl_connect('button_press_event', self._klik_wykresu)
         self.canvas_c.mpl_connect('button_press_event', self._klik_cka)
         self.canvas_p.mpl_connect('button_press_event', self._klik_cka)
@@ -477,6 +544,7 @@ class ZakladkaUczenia(QWidget):
         self.suwak.blockSignals(False)
         self._rysuj_wykresy(); self._rysuj_cka()
         self._zazn_miary = (None, None); self._rysuj_zazn()
+        self._rk, self._rk_klucz = {}, None; self._rysuj_rk()
         self.idz(0)
         a = self.an
         skad = ''
@@ -637,7 +705,8 @@ class ZakladkaUczenia(QWidget):
                  f'prędkość narzędzie / tło {a["v"][k][self.narz].mean():.3f} / {a["v"][k][~self.narz].mean():.3f}')
         if self.token is not None:
             tekst += f'; patch {self.token}: prędkość {a["v"][k][self.token]:.3f}, do stanu końcowego {a["do_konca"][k][self.token]:.2f}'
-        self.etykieta_kroku.setText(tekst + self._opis_lang)
+        self.etykieta_kroku.setText(tekst + self._opis_lang + self._opis_rk(k))
+        self._sprawdz_rk()
 
     # ------------------------------------------------------------ rysunki
     def _rysuj_klatke(self, k, kc):
@@ -794,6 +863,8 @@ class ZakladkaUczenia(QWidget):
         seg, kolory = self._odcinki_przyczyn(k)
         s2, k2, pkt = self._odcinki_prognozy(k)
         seg, kolory = seg + s2, kolory + k2
+        s3, k3 = self._odcinki_krokowe(k)
+        seg, kolory = seg + s3, kolory + k3
         self.makro.rysuj_przyczyny(np.array(seg) if seg else None, np.array(kolory) if kolory else None)
         if pkt:
             self.makro.rysuj_znaczniki(*(np.array(c) for c in zip(*pkt)))
@@ -966,8 +1037,10 @@ class ZakladkaUczenia(QWidget):
         for l in getattr(self, '_linie', []):
             l.set_xdata([x, x])
         self.canvas_r.draw_idle()
-        for l in getattr(self, '_linie_z', []):
+        for l in getattr(self, '_linie_z', []) + getattr(self, '_linie_rk', []):
             l.set_xdata([x, x])
+        if getattr(self, '_linie_rk', None) and self.zakl_wyk.currentWidget() is self.canvas_rk:
+            self.canvas_rk.draw_idle()
         if getattr(self, '_linie_z', None) and self.zakl_wyk.currentWidget() is self.canvas_z:
             self.canvas_z.draw_idle()
         if getattr(self, '_linie_c', None):
@@ -1045,6 +1118,144 @@ class ZakladkaUczenia(QWidget):
         if wl and self.zaznaczenie is None:
             self._status('Najpierw zaznacz patche: Ctrl + klik na obrazie albo w przestrzeni makro, prawy przycisk + przeciągnij.')
         self._zaznacz(self.zaznaczenie)
+
+    # ------------------------------------------------------------ równanie krok po kroku (rownanie_krokowe)
+    def _tokeny_rk(self):
+        if self.zaznaczenie is not None:
+            return [int(t) for t in self.zaznaczenie[:20]]
+        return [] if self.token is None else [int(self.token)]
+
+    def _par_rk(self):
+        pp = self.panel.parametry()
+        return dict(model=self.combo_rk_model.currentIndex(), dopasowanie=self.combo_rk_dop.currentIndex(),
+                    W=self.spin_rk_W.value(), L=pp['L'], okno=50, h=self.spin_rk_h.value(), od=pp['od'], do=pp['do'])
+
+    def _sprawdz_rk(self):
+        """Zleca liczenie (z opóźnieniem 0,3 s), gdy zmieniły się cząstki albo ustawienia."""
+        if self.Z is None or not self.chk_rk.isChecked():
+            return
+        klucz = (tuple(self._tokeny_rk()), tuple(sorted(self._par_rk().items())))
+        if klucz != self._rk_klucz:
+            self._rk_klucz = klucz
+            self._timer_rk.start()
+
+    def _licz_rk(self):
+        if self._rk_watek is not None:
+            self._rk_brudne = True; return
+        tok, par = list(self._rk_klucz[0]), dict(self._rk_klucz[1])
+        kp = self._rk_klucz[1]
+        brak = [t for t in tok if (t, kp) not in self._rk]
+        if not brak:
+            self._rysuj_rk(); self.idz(self.t); return
+        Z = self.Z
+
+        def zadanie(wt):
+            out = {}
+            for i, t in enumerate(brak):
+                out[(t, kp)] = RK.licz(np.asarray(Z[:, t], np.float32), **par)
+                wt.postep.emit(int(100 * (i + 1) / len(brak)), f'równanie krok po kroku: cząstka {t} ({i + 1}/{len(brak)})')
+            return out
+
+        def gotowe(out):
+            self._rk_watek = None
+            self._rk.update(out)
+            if self._rk_brudne:
+                self._rk_brudne = False; self._licz_rk(); return
+            self._rysuj_rk(); self.idz(self.t)
+
+        self._rk_watek = WatekFilmu(zadanie, self)
+        self._rk_watek.postep.connect(lambda k, t: self._status(t, 2000))
+        self._rk_watek.gotowy.connect(gotowe)
+        self._rk_watek.blad.connect(lambda t: (setattr(self, '_rk_watek', None), self._status('Równanie krok po kroku: ' + t[-300:])))
+        self._rk_watek.start()
+
+    def _wyniki_rk(self):
+        """[(patch, wynik, kolor RGB)] dla bieżących cząstek i ustawień (tylko już policzone)."""
+        if self._rk_klucz is None or not self.chk_rk.isChecked():
+            return []
+        tok, kp = self._rk_klucz
+        kol = paleta_zaznaczenia(len(self.zaznaczenie)) if self.zaznaczenie is not None else [(1, .55, .1, 1)]
+        return [(t, self._rk[(t, kp)], tuple(float(c) for c in kol[j][:3])) for j, t in enumerate(tok) if (t, kp) in self._rk]
+
+    def _rysuj_rk(self):
+        f = self.fig_rk; f.clear(); self._linie_rk = []
+        wyn = self._wyniki_rk()
+        if self.Z is None or not wyn:
+            ax = f.add_axes([0, 0, 1, 1]); ax.axis('off')
+            ax.text(.5, .5, 'Zaznacz patche (Ctrl + klik) albo wybierz patch:\nw każdym kroku uczenia prognoza następnego kroku\n'
+                    'cząstki w 768 wymiarach i niedopasowanie do prawdziwego ruchu.' if self.chk_rk.isChecked() else
+                    'Równanie krok po kroku wyłączone („licz”).', ha='center', va='center', color='#c8c8c8', fontsize=9,
+                    transform=ax.transAxes)
+            self.canvas_rk.draw_idle(); return
+        kr = self.kroki.astype(float); n = self.spin_rk_wygl.value()
+        par = self._par_rk()
+        osie = f.subplots(5, 1, sharex=True)
+        f.subplots_adjust(left=.13, right=.97, top=.88, bottom=.06, hspace=.36)
+        cienkie = len(wyn) <= 6
+
+        def rysuj(ax, klucz, tytul, ref=None, ylim=None):
+            for t, r, c in wyn:
+                y = r[klucz]
+                if cienkie:
+                    ax.plot(kr, y, color=c, lw=.4, alpha=.3)
+                ax.plot(kr, RK.wygladz(y, n), color=c, lw=1.3, label=f'patch {t}')
+            if ref is not None:
+                ax.axhline(ref, color='white', lw=.7, ls=':', alpha=.7)
+            if ylim:
+                ax.set_ylim(*ylim)
+            ax.set_title(tytul, fontsize=8)
+
+        rysuj(osie[0], 'blad1', 'błąd kroku / prawdziwy krok (0 = trafia, 1 = jak „bez ruchu”)', 1, (0, 1.6))
+        f.legend(*osie[0].get_legend_handles_labels(), fontsize=6.5, loc='upper center', ncol=5, framealpha=.3,
+                 bbox_to_anchor=(.55, .94))
+        rysuj(osie[1], 'cos', 'cos(przewidziany krok, prawdziwy krok): trafienie w kierunek', 0, (-.2, 1))
+        rysuj(osie[2], 'bladh', f'błąd po h = {min(par["h"], 50)} krokach / „bez ruchu”', 1, (0, 2))
+        rysuj(osie[3], 'bezwladnosc', 'bezwładność: beta (Langevin) albo suma a_l (GLE)')
+        rysuj(osie[4], 'sprezyna', 'sprężyna kappa: przyciąganie do średniej ostatnich 50 stanów')
+        osie[4].set_xlabel('krok uczenia', fontsize=8)
+        b1 = np.nanmedian(np.concatenate([r['blad1'][700:] for _, r, _ in wyn]))
+        c1 = np.nanmedian(np.concatenate([r['cos'][700:] for _, r, _ in wyn]))
+        f.suptitle(f'{RK.MODELE[par["model"]].split(" (")[0]}, {RK.DOPASOWANIA[par["dopasowanie"]].split(":")[0].split(" od")[0]}' + chr(10) +
+                   f'kroki 700-1000: mediana błędu kroku {b1:.2f}, cos {c1:.2f}', fontsize=8, color='white', y=.995)
+        for ax in f.axes:
+            ax.tick_params(labelsize=7)
+        x = float(kr[int(self.idx[min(getattr(self, 't', 0), len(self.idx) - 1)])])
+        self._linie_rk = [ax.axvline(x, color='white', lw=.8, alpha=.7) for ax in osie]
+        self.canvas_rk.draw_idle()
+
+    def _odcinki_krokowe(self, k):
+        """Strzałki kroku (prawdziwy, przewidziany, niedopasowanie) i ślad w kolorze błędu w przestrzeni makro."""
+        wyn = self._wyniki_rk()
+        if not wyn or self.Z is None:
+            return [], []
+        import matplotlib
+        m = self.makro
+        seg, kol = [], []
+        s = self.spin_rk_skala.value()
+        K = len(self.Z)
+        for t, r, c in wyn:
+            o = m.P[m.t][t]
+            if self.chk_rk_strz.isChecked() and k < K - 1 and not np.isnan(r['p'][k, 0]):
+                d = np.asarray(self.Z[k + 1, t], np.float32) - np.asarray(self.Z[k, t], np.float32)
+                R = m.rzut_delty(np.stack([d, r['p'][k]])) * s                       # [2, 3]: prawdziwy, przewidziany
+                seg += [o, o + R[0], o, o + R[1], o + R[1], o + R[0]]
+                kol += [(1, 1, 1, 1)] * 2 + [(1, .6, .1, 1)] * 2 + [(1, .15, .15, 1)] * 2
+            if self.chk_rk_slad.isChecked() and m.t > 0:
+                L = m.t if self.chk_slad_caly.isChecked() else min(m.t, max(1, self.spin_slad.value()))
+                ts = np.arange(m.t - L, m.t + 1)
+                P = m.P[ts, t]
+                b = RK.wygladz(r['blad1'], self.spin_rk_wygl.value())[self.idx[ts[:-1]]]
+                cm = matplotlib.colormaps['RdYlGn_r'](np.clip(np.nan_to_num(b, nan=.75) / 1.5, 0, 1))
+                for j in range(len(ts) - 1):
+                    seg += [P[j], P[j + 1]]; kol += [tuple(cm[j][:3]) + (.95,)] * 2
+        return seg, kol
+
+    def _opis_rk(self, k):
+        wyn = self._wyniki_rk()
+        if not wyn:
+            return ''
+        cz = [f'{t}: {r["blad1"][k]:.2f} (cos {r["cos"][k]:.2f})' for t, r, _ in wyn[:4] if not np.isnan(r['blad1'][k])]
+        return ('; krok po kroku, błąd kroku / ruch: ' + ', '.join(cz) + (' ...' if len(wyn) > 4 else '')) if cz else ''
 
     def _miary_zazn(self):
         """Miary zaznaczonych patchy po krokach (liczone raz na zaznaczenie): cos do stanu końcowego [K, n] i rozrzut

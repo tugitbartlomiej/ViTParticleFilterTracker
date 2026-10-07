@@ -252,7 +252,9 @@ class PanelRownania(QWidget):
                 f'autokorelacja w kroku 1: {g["acf"][1]:.2f}<br>'
                 f'Koopman (r = {m2["r"]}, d = {m2["d"]}): największa |λ| = {abs(lam[i]):.3f}, okres '
                 f'{(2 * np.pi / abs(np.angle(lam[i]))) if abs(np.angle(lam[i])) > 1e-6 else float("inf"):.0f} kroków<br>'
-                f'Błąd prognozy / błąd „bez ruchu” na krokach testowych (mniej = lepiej):<br>' + self._tabela())
+                f'Błąd prognozy / błąd „bez ruchu” na krokach testowych (mniej = lepiej; 1 = tak źle jak '
+                f'założenie, że cząstka stoi). h = na ile kroków uczenia do przodu przewiduje prognoza:<br>'
+                + self._tabela())
 
     def rysuj(self):
         f = self.fig; f.clear()

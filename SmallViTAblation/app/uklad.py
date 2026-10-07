@@ -318,3 +318,17 @@ class RamaPanelu(QWidget):
         if not wl and self.odpinanie.okno is not None:
             self.btn_odepnij.setChecked(False)
         self.setVisible(wl)
+
+
+def zwijana(grupa, rozwinieta=True):
+    """QGroupBox zwijany polem w tytule: odznaczone chowa zawartość (zostaje sam tytuł), zaznaczone pokazuje."""
+    grupa.setCheckable(True); grupa.setChecked(rozwinieta)
+
+    def przelacz(v):
+        for c in grupa.findChildren(QWidget, options=Qt.FindChildOption.FindDirectChildrenOnly):
+            c.setVisible(v)
+
+    grupa.toggled.connect(przelacz)
+    przelacz(rozwinieta)
+    grupa.setToolTip((grupa.toolTip() + '\n' if grupa.toolTip() else '') + 'Pole w tytule zwija i rozwija tę grupę.')
+    return grupa

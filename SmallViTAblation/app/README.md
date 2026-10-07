@@ -376,6 +376,15 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
 - „przy starcie” (obok „Wczytaj historię”): po uruchomieniu programu ostatnio oglądany bieg i klatka
   wczytują się w tle, razem z ostatnio policzonymi równaniami (`cache_uczenia/ostatnie.json`).
   Zmienna środowiskowa `EDYTOR_BEZ_AUTOSTARTU=1` wyłącza to w testach.
+- „Równanie krok po kroku” (grupa pod odtwarzaniem, karta wykresów pod obrazem, `rownanie_krokowe.py`): dla
+  zaznaczonych patchy (albo wybranego) w każdym kroku t prognoza kroku x(t) -> x(t+1) w pełnych 768 wymiarach
+  (Langevin albo GLE) i niedopasowanie: błąd kroku / prawdziwy krok, cos kierunku, błąd po h krokach,
+  parametry (bezwładność, sprężyna) w czasie. Dopasowanie kroczące z W ostatnich kroków przed t (uczciwe,
+  sprawdzone: zmiana przyszłości nie zmienia prognozy z t) albo stałe okno panelu (porównanie). Stałe okno
+  odtwarza parametry panelu równania. W makro strzałki: biała prawdziwy krok, pomarańczowa przewidziany,
+  czerwona niedopasowanie; ślad w kolorze wygładzonego błędu. Patch 255, GLE, kroki 700-1000: mediana błędu
+  kroku 0,54 (kroczące) i 0,55 (stałe okno), cos 0,86.
+- Grupy ustawień pod odtwarzaniem zwijają się polem w tytule; pole „ustawienia” w „Widoki” chowa je wszystkie.
 - Panele zakładki „Uczenie ViT” (obraz i wykresy, widok 3D, makro, równanie) mają pasek z „Odepnij”
   (osobne okno, np. na drugi monitor) i „✕” (chowa panel); pola „Widoki” w górnej grupie pokazują je z powrotem.
 - W zakładce „Uczenie ViT” przyciski „Atlas kanałów” i „Krajobraz i tunele” przełączają główny panel (zamiast
