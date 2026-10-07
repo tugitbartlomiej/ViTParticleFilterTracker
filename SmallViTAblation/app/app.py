@@ -195,6 +195,13 @@ class Okno(QMainWindow):
         except Exception as e:
             import traceback; traceback.print_exc()
             self.zakladki_glowne.addTab(QLabel(f'Zakładka uczenia niedostępna: {e}'), 'Uczenie ViT')
+        try:
+            from zakladka_pchniecia import ZakladkaPchniecia
+            self.zakladka_pchniecia = ZakladkaPchniecia(self, self.zakladka_uczenia)
+            self.zakladki_glowne.addTab(self.zakladka_pchniecia, 'Pchnięcie obrazów: SD, DINO i ruch cząstek w kroku')
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            self.zakladki_glowne.addTab(QLabel(f'Zakładka pchnięcia niedostępna: {e}'), 'Pchnięcie obrazów')
         self.setCentralWidget(self.zakladki_glowne)
 
     @staticmethod

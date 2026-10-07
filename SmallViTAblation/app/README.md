@@ -384,6 +384,16 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   odtwarza parametry panelu równania. W makro strzałki: biała prawdziwy krok, pomarańczowa przewidziany,
   czerwona niedopasowanie; ślad w kolorze wygładzonego błędu. Patch 255, GLE, kroki 700-1000: mediana błędu
   kroku 0,54 (kroczące) i 0,55 (stałe okno), cos 0,86.
+- Zakładka „Pchnięcie obrazów: SD, DINO i ruch cząstek w kroku” (`zakladka_pchniecia.py`, rachunek `pchniecie.py`,
+  stan `stan_uczenia.py`, paczki `paczki_uczenia.py`, kandydaci `kandydaci.py`): dokładne pchnięcie jednego kroku
+  AdamW, jakie wywołałby pojedynczy obraz w paczce, na cząstkach sondy gęstej historii. Paczki odtwarzane z ziarna
+  (zgodne z nagraniem co do jednej), stan AdamW z powtórki uczenia (98 s raz; wagi przypinane co 10 kroków do zapisu),
+  sprawdzian: przewidziany krok sondy = rzeczywisty z gęstej historii w 98 %, suma pchnięć 32 obrazów = pchnięcie
+  paczki w 99 %. Kandydaci z łańcucha „sztuczny latent -> SD -> prawdziwe obrazy”: paczka kroku, baza, klatki
+  odszukane dla SD (MSE latentu), obrazy SD pętli 4.3 (pseudo-etykieta), klatki DINO dla obrazów SD, klatki przez
+  konwerter latent -> DINO. Miary: zmiana straty sondy, zmiana siły tożsamości, kosinus do stanu końcowego (tylko
+  wyjaśnienie). Galeria wg miary, mapa na sondzie, wykres tożsamość wobec straty, rozkład w źródłach, zapis JSON
+  do `experiments/maly_vit_bezwladnosc_a_ped_adamw/wyniki`.
 - „Źródła siły” (przycisk obok „Licz przyczyny ruchu”, okno `okno_zrodel_sily.py`, rachunek `przeplyw_sily.py`):
   skąd pochodzi wektor c (neuron ukrytej warstwy MLP ostatniego bloku) patcha i. Przy wagach atencji i skalach
   LayerNorm z tego przebiegu wszystko między liśćmi (łodyga, położenie sin-cos, wyjścia MLP bloków 0-4, biasy)
