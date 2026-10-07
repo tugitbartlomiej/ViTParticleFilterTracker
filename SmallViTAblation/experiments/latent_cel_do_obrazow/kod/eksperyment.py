@@ -512,7 +512,7 @@ def kontrola_losowa(cele, n=20):
 if __name__ == '__main__':
     etapy = sys.argv[1:] or ['1', '2a', '2b', '2c', '3']
     c = etap1()
-    k = etap2a(c) if '2a' in etapy or '2c' in etapy or '3' in etapy else None
+    k = etap2a(c) if any(e in etapy for e in ('2a', '2c', '2d', '3')) else None
     s = etap2b(c) if '2b' in etapy or '2c' in etapy or '3' in etapy else None
     if '2c' in etapy:
         etap2c(c, k, s)
