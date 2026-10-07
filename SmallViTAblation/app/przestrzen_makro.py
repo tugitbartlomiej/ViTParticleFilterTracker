@@ -28,13 +28,13 @@ from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
 from uklad import Odpinanie, PanelOpcji, dodaj, dodaj_nawigacje
 from widok_gl import LinieGrube, WidokGL
-from wspolne import baza_pca_rgb, kolor_pca_rgb, kolor_podobienstwa
+from wspolne import baza_pca_rgb, ctrl_wcisniety, kolor_pca_rgb, kolor_podobienstwa, polacz_zaznaczenie, przelacz_w_zaznaczeniu
 from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanalow, opisy_czasteczek, pca, tokeny_co
 
 
 class WidokPrzestrzeniMakro(QWidget):
     token_wybrany = pyqtSignal(int)
-    zaznaczono = pyqtSignal(object)                   # tablica patchy z prostokąta Shift + przeciągnij
+    zaznaczono = pyqtSignal(object)                   # nowe zaznaczenie patchy (prostokąt Shift + przeciągnij, Ctrl + klik)
     KIERUNKI = ['sfera Fibonacciego (jak widok 3D)', 'losowe (stałe ziarno)', 'PCA latentu sekwencji (3 składowe)',
                 'półsfera Fibonacciego (z > 0)', 'jak widok 3D nad obrazem (te same kierunki, PCA i kanały)']
     KOLORY = ['kolor najsilniejszego mikrowektora (jak w widoku 3D)', 'mieszanka kolorów mikrowektorów (ważona długością)',
@@ -313,6 +313,8 @@ class WidokPrzestrzeniMakro(QWidget):
         self.os_kanalu = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=6, glOptions='translucent')
         self.os_kanalu.setVisible(False); v.addItem(self.os_kanalu)
         self.zaznaczenie, self.kanal = None, None
+        self.kolory_zazn = None       # [n, 4] osobne kolory zaznaczonych patchy (None = kolory wg „Kolor cząstek”)
+        self.tylko_zaznaczone = False  # rysuj tylko zaznaczone cząstki (i ich ślady)
         self.osadz = None             # funkcja(nazwa, widżet) zakładki: atlas / krajobraz w jej panelu zamiast okna
         self.znaczniki = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=10, pxMode=True)
         self.znaczniki.setVisible(False); v.addItem(self.znaczniki)      # dodatkowe kropki (np. średnia narzędzia)
@@ -476,6 +478,8 @@ class WidokPrzestrzeniMakro(QWidget):
                     mm = ndimage.map_coordinates(m, [rr, cc], order=1)[..., None]
                     K = K * (1 - .7 * mm) + np.array([1, .15, .1]) * .7 * mm
             a = self.spin_zdj_krycie.value()
+            if self.tylko_zaznaczone and self.zaznaczenie is not None:
+                a *= .3                                      # śledzenie zaznaczonych: zdjęcie tylko jako tło do orientacji
             if tryb in (1, 3):
                 if getattr(self, '_twarze_n', None) != (R, C):
                     i = np.arange(R * C).reshape(R, C)
@@ -539,20 +543,28 @@ class WidokPrzestrzeniMakro(QWidget):
         if len(bliskie) == 0:
             return
         i = bliskie[np.argmin(d[bliskie] + 3 * g[bliskie])]                 # przy nakładaniu bliższa kamerze
+        if ctrl_wcisniety():                                                # Ctrl + klik: przełącz w zaznaczeniu
+            self.zaznaczono.emit(przelacz_w_zaznaczeniu(self.zaznaczenie, int(tok[i])))
+            return
         self.token_wybrany.emit(int(tok[i]))
 
     def _prostokat(self, x0, y0, x1, y1):
-        """Shift + przeciągnięcie: widoczne cząstki w prostokącie -> sygnał zaznaczono (pusty = wyczyść)."""
+        """Shift + przeciągnięcie: widoczne cząstki w prostokącie -> sygnał zaznaczono (pusty = wyczyść).
+        Z Ctrl prostokąt dochodzi do dotychczasowego zaznaczenia."""
         if self.P is None:
             return
         tok = self._widoczne()
         xy, g = self.widok.na_ekran(self._biezace()[tok])
         w = (xy[:, 0] >= x0) & (xy[:, 0] <= x1) & (xy[:, 1] >= y0) & (xy[:, 1] <= y1) & np.isfinite(g)
-        self.zaznaczono.emit(tok[w] if (x1 - x0) + (y1 - y0) > 6 else np.zeros(0, int))
+        if (x1 - x0) + (y1 - y0) <= 6:
+            self.zaznaczono.emit(np.zeros(0, int) if not ctrl_wcisniety() else self.zaznaczenie); return
+        self.zaznaczono.emit(polacz_zaznaczenie(self.zaznaczenie, tok[w], ctrl_wcisniety()))
 
-    def ustaw_zaznaczenie(self, tokeny):
-        """Zaznaczone patche (np. prostokąt na obrazie): jasne i większe, reszta cząstek blada; None / pusty = brak."""
+    def ustaw_zaznaczenie(self, tokeny, kolory=None):
+        """Zaznaczone patche (np. prostokąt na obrazie): jasne i większe, reszta cząstek blada; None / pusty = brak.
+        kolory [n, 4]: osobny kolor każdego zaznaczonego patcha (w kolejności tokeny)."""
         self.zaznaczenie = None if tokeny is None or len(tokeny) == 0 else np.asarray(tokeny, int)
+        self.kolory_zazn = None if self.zaznaczenie is None or kolory is None else np.asarray(kolory, np.float32)
         self._rysuj(skok=True)
 
     def podswietl_kanal(self, c):
@@ -914,6 +926,8 @@ class WidokPrzestrzeniMakro(QWidget):
         self.objetosc.setVisible(True)
 
     def _widoczne(self):
+        if self.tylko_zaznaczone and self.zaznaczenie is not None and len(self.zaznaczenie):
+            return np.sort(self.zaznaczenie)                         # śledzenie tylko zaznaczonych: bez innych filtrów
         tok = np.arange(600)
         if self.chk_tylko_maska.isChecked() and self.maski is not None:
             tok = np.flatnonzero(self.maski[self.t])
@@ -947,6 +961,8 @@ class WidokPrzestrzeniMakro(QWidget):
                 r600[tok] = rozm
             kol = kol.copy(); poza = np.ones(600, bool); poza[self.zaznaczenie] = False
             kol[poza, 3] = .07; r600[self.zaznaczenie] *= 1.5
+            if self.kolory_zazn is not None:
+                kol[self.zaznaczenie] = self.kolory_zazn
             rozm = r600[tok]
         self.punkty.setData(pos=P[tok], color=kol[tok], size=rozm)
         self.punkty.setVisible(self.chk_czastki.isChecked())

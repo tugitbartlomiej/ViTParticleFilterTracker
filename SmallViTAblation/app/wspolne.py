@@ -105,11 +105,55 @@ def tokeny_w_prostokacie(x0, y0, x1, y1):
     return t[(cx >= xa) & (cx <= xb) & (cy >= ya) & (cy <= yb)]
 
 
-def rysuj_zaznaczenie(ax, tokeny):
-    """Zaznaczone patche jako żółta półprzezroczysta nakładka na obrazie (matplotlib, extent 0..480 x 0..320)."""
+def rysuj_zaznaczenie(ax, tokeny, kolory=None):
+    """Zaznaczone patche jako półprzezroczysta nakładka na obrazie (matplotlib, extent 0..480 x 0..320):
+    żółta albo, z kolorami [n, 3+] (jak cząstki w przestrzeni makro i krzywe wykresów), każdy patch w swoim kolorze
+    z ramką."""
     if tokeny is None or len(tokeny) == 0:
         return
     m = np.zeros((20, 30, 4), np.float32)
     r, c = np.divmod(np.asarray(tokeny, int), 30)
-    m[r, c] = (1, .9, .1, .38)
+    if kolory is None:
+        m[r, c] = (1, .9, .1, .38)
+    else:
+        from matplotlib.patches import Rectangle
+        k = np.asarray(kolory, np.float32)[:, :3]
+        m[r, c, :3] = k; m[r, c, 3] = .42
+        for rr, cc, kk in zip(r, c, k):
+            ax.add_patch(Rectangle((cc * 16, rr * 16), 16, 16, fill=False, ec=tuple(kk), lw=1.1, zorder=6))
     ax.imshow(m, extent=(0, 480, 320, 0), interpolation='nearest', zorder=5)
+
+
+def ctrl_wcisniety():
+    """Czy wciśnięty jest Ctrl (zaznaczanie: dodaj / przełącz zamiast zastąp)."""
+    from PyQt6.QtCore import Qt
+    from PyQt6.QtWidgets import QApplication
+    return bool(QApplication.keyboardModifiers() & Qt.KeyboardModifier.ControlModifier)
+
+
+def polacz_zaznaczenie(stare, nowe, dodaj):
+    """Nowe zaznaczenie patchy: zastąp (dodaj=False) albo dołącz do starego (Ctrl); kolejność dodawania zostaje,
+    więc kolory już zaznaczonych patchy się nie zmieniają."""
+    nowe = [int(t) for t in np.atleast_1d(np.asarray(nowe, int))]
+    if not dodaj or stare is None:
+        return np.asarray(list(dict.fromkeys(nowe)), int)
+    st = [int(t) for t in stare]
+    return np.asarray(st + [t for t in dict.fromkeys(nowe) if t not in set(st)], int)
+
+
+def przelacz_w_zaznaczeniu(stare, tok):
+    """Ctrl + klik: patch tok dochodzi do zaznaczenia albo z niego wypada."""
+    st = [] if stare is None else [int(t) for t in stare]
+    return np.asarray([t for t in st if t != tok] if tok in st else st + [int(tok)], int)
+
+
+def paleta_zaznaczenia(n):
+    """Osobne kolory RGBA [n, 4] dla n zaznaczonych patchy: tab10, tab20, a dla większej liczby tęcza."""
+    import matplotlib
+    if n <= 10:
+        k = matplotlib.colormaps['tab10'](np.arange(n))
+    elif n <= 20:
+        k = matplotlib.colormaps['tab20'](np.r_[0:20:2, 1:20:2][:n])        # najpierw ciemniejsze, potem jasne
+    else:
+        k = matplotlib.colormaps['hsv'](np.arange(n) / n * .92)
+    return np.asarray(k, np.float32).reshape(n, 4)

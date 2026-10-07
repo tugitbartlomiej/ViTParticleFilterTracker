@@ -20,7 +20,8 @@ from matplotlib.patches import Rectangle
 
 import analiza_uczenia as AU
 import rownanie_czastki as RC
-from wspolne import rysuj_zaznaczenie, tokeny_w_prostokacie
+from wspolne import (ctrl_wcisniety, paleta_zaznaczenia, polacz_zaznaczenie, przelacz_w_zaznaczeniu, rysuj_zaznaczenie,
+                     tokeny_w_prostokacie)
 import przyczyny_ruchu as PR
 from styl import rola
 from uklad import Przeplyw, dodaj
@@ -78,9 +79,10 @@ class ZakladkaUczenia(QWidget):
         self.canvas = PlotnoCiemne(self.fig); self.canvas.setFixedHeight(300)
         self.canvas.setToolTip('Klatka próbna: patche narzędzia (czerwone kropki), ramka ViT z wag najbliższego\n'
                                'checkpointu (zielona) i wybrany patch (biały). Klik wybiera patch.\n'
-                               'Prawy przycisk + przeciągnij: zaznacz prostokąt patchy (żółte); ich cząstki w przestrzeni\n'
+                               'Prawy przycisk + przeciągnij: zaznacz prostokąt patchy; ich cząstki w przestrzeni\n'
                                'makro zostają jasne, reszta blednie. Prawy klik bez przeciągania czyści zaznaczenie.\n'
-                               'W przestrzeni makro to samo: Shift + przeciągnij lewym przyciskiem.')
+                               'Ctrl + klik: dodaj albo usuń jeden patch; Ctrl + prawy przycisk + przeciągnij: dołącz prostokąt.\n'
+                               'W przestrzeni makro to samo: Shift + przeciągnij lewym przyciskiem, Ctrl + klik w cząstkę.')
         ll.addWidget(self.canvas)
         self.zakl_wyk = QTabWidget(); ll.addWidget(self.zakl_wyk, 1)
         self.fig_r = Figure(figsize=(5, 7)); self.canvas_r = PlotnoCiemne(self.fig_r)
@@ -98,6 +100,10 @@ class ZakladkaUczenia(QWidget):
         self.canvas_p.setToolTip('Przyczyny ruchu cząsteczek w przedziałach między checkpointami wag. Klik: krok.')
         ls.addWidget(self.canvas_p, 1)
         self.zakl_wyk.addTab(strona, 'Przyczyny ruchu')
+        self.fig_z = Figure(figsize=(5, 7)); self.canvas_z = PlotnoCiemne(self.fig_z)
+        self.canvas_z.setToolTip('Każdy zaznaczony patch osobno przez całe uczenie (kolory jak na obrazie i w przestrzeni\n'
+                                 'makro); biała przerywana = średnia zaznaczonych. Pionowa linia = bieżący krok, klik: krok.')
+        self.zakl_wyk.addTab(self.canvas_z, 'Zaznaczone patche')
         podzial.addWidget(lewa)
 
         from czasteczki3d import WidokCzasteczek3D
@@ -195,14 +201,18 @@ class ZakladkaUczenia(QWidget):
         w.addWidget(self.chk_prognoza)
         self.combo_czastka = QComboBox()
         self.combo_czastka.addItems(['wybranego patcha', 'średniej cząstek narzędzia (jedna kropka)', 'średniej cząstek tła (jedna kropka)',
-                                     'cząstek z listy (panel równania)'])
+                                     'cząstek z listy (panel równania)', 'zaznaczonych patchy (każdy osobno)',
+                                     'średniej zaznaczonych patchy (jedna kropka)'])
         dodaj(w, 'dla', self.combo_czastka,
               'Której cząstki dotyczą prognoza i ślad:\n'
               '- wybrany patch (kliknięty albo śledzony, np. czubek);\n'
               '- średnia cząstek narzędzia: średni latent wszystkich patchy narzędzia w każdym kroku, rysowany jako\n'
               '  jedna duża czerwona kropka (rzut jest liniowy, więc to dokładnie środek ciężkości czerwonych cząstek);\n'
               '  dla niej osobno dopasowany oscylator (beta, kappa średniej);\n'
-              '- średnia cząstek tła: to samo dla patchy tła (szara kropka).')
+              '- średnia cząstek tła: to samo dla patchy tła (szara kropka);\n'
+              '- cząstki z listy panelu równania (kolory z panelu);\n'
+              '- zaznaczone patche, każdy w swoim kolorze (najwyżej tyle, ile „prognoza najwyżej dla”);\n'
+              '- średnia zaznaczonych patchy jako jedna żółta kropka.')
         self.spin_h = QSpinBox(); self.spin_h.setRange(2, 500); self.spin_h.setValue(30)
         dodaj(w, 'na', self.spin_h, 'Na ile kroków do przodu prognoza.')
         self.spin_nowa = QSpinBox(); self.spin_nowa.setRange(1, 500); self.spin_nowa.setValue(10)
@@ -236,6 +246,31 @@ class ZakladkaUczenia(QWidget):
         self.spin_krycie = QDoubleSpinBox(); self.spin_krycie.setRange(0, 1); self.spin_krycie.setSingleStep(.05)
         self.spin_krycie.setValue(.15)
         dodaj(w, 'krycie najstarszego', self.spin_krycie, 'Krycie najstarszego odcinka śladu (najnowszy: 1).')
+
+        g = QGroupBox('Zaznaczone patche: śledzenie wybranych cząstek przez uczenie')
+        w = Przeplyw(); g.setLayout(w); lay.addWidget(g)
+        self.etykieta_zazn = QLabel('Brak zaznaczenia. Ctrl + klik na obrazie albo w przestrzeni makro dodaje patch.')
+        w.addWidget(self.etykieta_zazn)
+        self.chk_tylko_zazn = QCheckBox('śledź tylko zaznaczone')
+        self.chk_tylko_zazn.setToolTip('Przestrzeń makro rysuje tylko zaznaczone cząstki i ich ślady (reszta znika), a prognoza\n'
+                                       'Langevina przełącza się na „zaznaczonych patchy (każdy osobno)”. Odtwarzaj uczenie i\n'
+                                       'patrz, jak zmieniają się tylko te patche; ich przebiegi są w karcie „Zaznaczone patche”.')
+        w.addWidget(self.chk_tylko_zazn)
+        self.chk_kol_zazn = QCheckBox('osobne kolory'); self.chk_kol_zazn.setChecked(True)
+        self.chk_kol_zazn.setToolTip('Każdy zaznaczony patch w swoim kolorze, tym samym na obrazie, w przestrzeni makro i na\n'
+                                     'wykresach. Wyłączone: żółta nakładka i kolory wg „Kolor cząstek” w makro.')
+        w.addWidget(self.chk_kol_zazn)
+        self.btn_zazn_wybrany = QPushButton('+ wybrany patch')
+        self.btn_zazn_wybrany.setToolTip('Dodaje do zaznaczenia bieżący wybrany (albo śledzony) patch.')
+        self.btn_zazn_narz = QPushButton('patche narzędzia')
+        self.btn_zazn_narz.setToolTip('Zaznacza wszystkie patche w obrysie narzędzia tej klatki (z Ctrl: dołącza).')
+        self.btn_zazn_czysc = QPushButton('wyczyść')
+        for b in (self.btn_zazn_wybrany, self.btn_zazn_narz, self.btn_zazn_czysc):
+            w.addWidget(b)
+        self.spin_zazn_prog = QSpinBox(); self.spin_zazn_prog.setRange(1, 60); self.spin_zazn_prog.setValue(8)
+        dodaj(w, 'prognoza najwyżej dla', self.spin_zazn_prog,
+              'Dla ilu pierwszych zaznaczonych patchy liczyć prognozę i ślad Langevina (każdy ma osobny model,\n'
+              'więc przy wielu cząstkach krok się wydłuża). Ślady przestrzeni makro mają wszystkie zaznaczone.')
         self.timer = QTimer(self); self.timer.timeout.connect(self._nastepny)
 
         # ---------------- sygnały
@@ -265,6 +300,17 @@ class ZakladkaUczenia(QWidget):
         self.canvas.mpl_connect('button_release_event', self._puszczenie_klatki)
         self.makro.zaznaczono.connect(self._zaznacz)               # Shift + przeciągnij w przestrzeni makro
         self.zaznaczenie = None
+        self.chk_tylko_zazn.toggled.connect(self._tylko_zazn)
+        self.chk_kol_zazn.toggled.connect(lambda *_: self._zaznacz(self.zaznaczenie))
+        self.btn_zazn_wybrany.clicked.connect(
+            lambda: self._zaznacz(polacz_zaznaczenie(self.zaznaczenie, [self.token], True)) if self.token is not None else None)
+        self.btn_zazn_narz.clicked.connect(
+            lambda: self._zaznacz(polacz_zaznaczenie(self.zaznaczenie, np.flatnonzero(self.narz), ctrl_wcisniety()))
+            if self.Z is not None else None)
+        self.btn_zazn_czysc.clicked.connect(lambda: self._zaznacz([]))
+        self.spin_zazn_prog.valueChanged.connect(lambda *_: self.idz(self.t) if self.combo_czastka.currentIndex() == 4 else None)
+        self.canvas_z.mpl_connect('button_press_event', self._klik_wykresu)
+        self._zazn_miary = (None, None)
         self.canvas_r.mpl_connect('button_press_event', self._klik_wykresu)
         self.canvas_c.mpl_connect('button_press_event', self._klik_cka)
         self.canvas_p.mpl_connect('button_press_event', self._klik_cka)
@@ -364,6 +410,7 @@ class ZakladkaUczenia(QWidget):
         self.suwak.blockSignals(True); self.suwak.setRange(0, len(self.idx) - 1); self.suwak.setValue(0)
         self.suwak.blockSignals(False)
         self._rysuj_wykresy(); self._rysuj_cka()
+        self._zazn_miary = (None, None); self._rysuj_zazn()
         self.idz(0)
         a = self.an
         self._status(f'Historia: {len(self.Z)} kroków, klatka {self.i_kl}; animacja co {co} krok(ów). '
@@ -383,7 +430,7 @@ class ZakladkaUczenia(QWidget):
         dP = np.linalg.norm(np.diff(m.P, axis=0), axis=-1) / np.maximum(np.diff(self.idx), 1)[:, None]
         self.v_makro = np.concatenate([np.zeros((1, 600), np.float32), dP]).astype(np.float32)   # [len(idx), 600]
         if rysuj:
-            self._rysuj_wykresy(); self.idz(self.t)
+            self._rysuj_wykresy(); self._rysuj_zazn(); self.idz(self.t)
 
     def _ckpt_kroku(self, k):
         """Indeks najbliższego checkpointu wag dla kroku (albo tablicy kroków) k."""
@@ -535,7 +582,7 @@ class ZakladkaUczenia(QWidget):
         if self.token is not None:
             r, c = divmod(self.token, 30)
             ax.add_patch(Rectangle((c * 16, r * 16), 16, 16, fill=False, ec='white', lw=1.5))
-        rysuj_zaznaczenie(ax, self.zaznaczenie)
+        rysuj_zaznaczenie(ax, self.zaznaczenie, self._kolory_zazn())
         ax.set_xlim(0, 480); ax.set_ylim(320, 0); ax.axis('off')
         ax.set_title(f'krok {int(self.kroki[k])}: wagi kroku {int(self.opis["kroki_wag"][kc])}, pewność '
                      f'{self.dety["pewnosc"][kc] * 100:.0f} %', fontsize=9, color='white')
@@ -693,6 +740,18 @@ class ZakladkaUczenia(QWidget):
         if i in (1, 2):
             return [((('narzedzie',) if i == 1 else ('tlo',)), self.narz if i == 1 else ~self.narz,
                      'średnia narzędzia' if i == 1 else 'średnia tła', None)]
+        if i in (4, 5):
+            sel = self.zaznaczenie
+            if sel is None:
+                return []
+            m = np.zeros(600, bool); m[sel] = True
+            if i == 5:
+                return [(('zazn', tuple(sorted(int(t) for t in sel))), m, f'średnia {len(sel)} zaznaczonych', None)]
+            wynik = []
+            for t, c in list(zip(sel, paleta_zaznaczenia(len(sel))))[:self.spin_zazn_prog.value()]:
+                m = np.zeros(600, bool); m[t] = True
+                wynik.append((('patch', int(t)), m, f'patch {t}', tuple(float(x) for x in c[:3])))
+            return wynik
         from matplotlib.colors import to_rgb
         wynik = []
         for t in self.panel.tokeny():
@@ -797,7 +856,8 @@ class ZakladkaUczenia(QWidget):
             if kon > k:
                 linia(rzut(x[k:kon + 1]), k_przysz, .45)
         if klucz[0] != 'patch':                                       # średnia jako jedna duża kropka
-            pkt.append((o, (1, .3, .25, 1) if klucz[0] == 'narzedzie' else (.75, .8, .9, 1), m.spin_rozmiar.value() + 12))
+            barwa_sr = {'narzedzie': (1, .3, .25, 1), 'zazn': (1, .9, .1, 1)}.get(klucz[0], (.75, .8, .9, 1))
+            pkt.append((o, barwa_sr, m.spin_rozmiar.value() + 12))
         elif barwa is not None:
             pkt.append((o, (*barwa, 1), m.spin_rozmiar.value() + 8))
         return seg, kol, pkt, opis
@@ -835,6 +895,10 @@ class ZakladkaUczenia(QWidget):
         for l in getattr(self, '_linie', []):
             l.set_xdata([x, x])
         self.canvas_r.draw_idle()
+        for l in getattr(self, '_linie_z', []):
+            l.set_xdata([x, x])
+        if getattr(self, '_linie_z', None) and self.zakl_wyk.currentWidget() is self.canvas_z:
+            self.canvas_z.draw_idle()
         if getattr(self, '_linie_c', None):
             self._linie_c[0].set_xdata([x, x]); self._linie_c[1].set_ydata([x, x])
             if self.zakl_wyk.currentIndex() == 1:
@@ -860,6 +924,8 @@ class ZakladkaUczenia(QWidget):
         if e.button == 3:
             self._start_zazn = (e.xdata, e.ydata); return
         c = int(np.clip(e.xdata // 16, 0, 29)); r = int(np.clip(e.ydata // 16, 0, 19))
+        if ctrl_wcisniety():                                          # Ctrl + klik: dodaj / usuń patch z zaznaczenia
+            self._zaznacz(przelacz_w_zaznaczeniu(self.zaznaczenie, r * 30 + c)); return
         self._wybierz_token(r * 30 + c)
 
     # ------------------------------------------------------------ zaznaczanie patchy (obraz <-> przestrzeń makro)
@@ -869,12 +935,102 @@ class ZakladkaUczenia(QWidget):
             return
         x1, y1 = (e.xdata, e.ydata) if e.xdata is not None else st
         duzy = abs(x1 - st[0]) + abs(y1 - st[1]) > 6
-        self._zaznacz(tokeny_w_prostokacie(st[0], st[1], x1, y1) if duzy else [])
+        if duzy:
+            self._zaznacz(polacz_zaznaczenie(self.zaznaczenie, tokeny_w_prostokacie(st[0], st[1], x1, y1), ctrl_wcisniety()))
+        elif not ctrl_wcisniety():
+            self._zaznacz([])
+
+    def _kolory_zazn(self):
+        """Osobne kolory zaznaczonych patchy [n, 4] (w kolejności zaznaczania) albo None."""
+        if self.zaznaczenie is None or not self.chk_kol_zazn.isChecked():
+            return None
+        return paleta_zaznaczenia(len(self.zaznaczenie))
 
     def _zaznacz(self, tokeny):
-        """Zaznaczone patche: żółte na obrazie, jasne w przestrzeni makro (reszta blada); pusty = wyczyść."""
-        self.zaznaczenie = np.asarray(tokeny, int) if len(tokeny) else None
-        self.makro.ustaw_zaznaczenie(self.zaznaczenie)
+        """Zaznaczone patche: kolorowe (albo żółte) na obrazie, jasne w przestrzeni makro (reszta blada albo ukryta
+        przy „śledź tylko zaznaczone”), przebiegi w karcie „Zaznaczone patche”; pusty = wyczyść."""
+        self.zaznaczenie = np.asarray(tokeny, int) if tokeny is not None and len(tokeny) else None
+        self.makro.tylko_zaznaczone = self.chk_tylko_zazn.isChecked()
+        self.makro.ustaw_zaznaczenie(self.zaznaczenie, self._kolory_zazn())
+        n = 0 if self.zaznaczenie is None else len(self.zaznaczenie)
+        self.etykieta_zazn.setText('Brak zaznaczenia. Ctrl + klik na obrazie albo w przestrzeni makro dodaje patch.' if not n else
+                                   f'Zaznaczone: {n} patchy' + (f' ({", ".join(str(t) for t in self.zaznaczenie[:12])}'
+                                                                f'{", ..." if n > 12 else ""})'))
+        self._rysuj_zazn()
+        if n and self.zakl_wyk.currentWidget() is not self.canvas_z and self.chk_tylko_zazn.isChecked():
+            self.zakl_wyk.setCurrentWidget(self.canvas_z)
         self.idz(self.t)
-        self._status('Zaznaczenie wyczyszczone.' if self.zaznaczenie is None else
-                     f'Zaznaczono {len(self.zaznaczenie)} patchy (prawy przycisk bez przeciągania na obrazie: wyczyść).')
+        self._status('Zaznaczenie wyczyszczone.' if not n else
+                     f'Zaznaczono {n} patchy (Ctrl + klik: dodaj / usuń; prawy klik bez przeciągania na obrazie: wyczyść).')
+
+    def _tylko_zazn(self, wl):
+        """Śledź tylko zaznaczone: makro rysuje same zaznaczone cząstki, prognoza Langevina przechodzi na nie."""
+        if wl and self.combo_czastka.currentIndex() == 0:
+            self.combo_czastka.blockSignals(True); self.combo_czastka.setCurrentIndex(4); self.combo_czastka.blockSignals(False)
+        elif not wl and self.combo_czastka.currentIndex() == 4:
+            self.combo_czastka.blockSignals(True); self.combo_czastka.setCurrentIndex(0); self.combo_czastka.blockSignals(False)
+        if wl and self.zaznaczenie is None:
+            self._status('Najpierw zaznacz patche: Ctrl + klik na obrazie albo w przestrzeni makro, prawy przycisk + przeciągnij.')
+        self._zaznacz(self.zaznaczenie)
+
+    def _miary_zazn(self):
+        """Miary zaznaczonych patchy po krokach (liczone raz na zaznaczenie): cos do stanu końcowego [K, n] i rozrzut
+        zaznaczonych, czyli średnia odległość od ich wspólnego środka [K]."""
+        sel = self.zaznaczenie
+        klucz = tuple(int(t) for t in sel)
+        if self._zazn_miary[0] != klucz:
+            K = len(self.Z)
+            kon = np.asarray(self.Z[-1][sel], np.float32)
+            nk = np.linalg.norm(kon, axis=-1)
+            cos = np.zeros((K, len(sel)), np.float32); roz = np.zeros(K, np.float32)
+            for a in range(0, K, 100):                                    # paczkami, bez kopii całej historii
+                X = np.asarray(self.Z[a:a + 100][:, sel], np.float32)       # [b, n, 768]
+                cos[a:a + len(X)] = (X * kon).sum(-1) / np.maximum(np.linalg.norm(X, axis=-1) * nk, 1e-12)
+                roz[a:a + len(X)] = np.linalg.norm(X - X.mean(1, keepdims=True), axis=-1).mean(1)
+            self._zazn_miary = (klucz, (cos, roz))
+        return self._zazn_miary[1]
+
+    def _rysuj_zazn(self):
+        """Karta „Zaznaczone patche”: każdy zaznaczony patch osobno przez całe uczenie."""
+        f = self.fig_z; f.clear(); self._linie_z = []
+        sel = self.zaznaczenie
+        if self.an is None or sel is None:
+            ax = f.add_axes([0, 0, 1, 1]); ax.axis('off')
+            ax.text(.5, .5, 'Zaznacz patche, żeby zobaczyć, jak każdy z nich zmienia się podczas uczenia:\n'
+                    'Ctrl + klik na obrazie albo w przestrzeni makro (dodaj / usuń),\n'
+                    'prawy przycisk + przeciągnij na obrazie (prostokąt; z Ctrl dołącza).',
+                    ha='center', va='center', color='#c8c8c8', fontsize=9, transform=ax.transAxes)
+            self.canvas_z.draw_idle(); return
+        a, kr = self.an, self.kroki
+        n = len(sel)
+        kol = paleta_zaznaczenia(n)
+        cos, roz = self._miary_zazn()
+        osie = f.subplots(5, 1, sharex=True)
+        f.subplots_adjust(left=.13, right=.97, top=.97, bottom=.06, hspace=.3)
+        lw, al = (1., .95) if n <= 20 else (.5, .4)
+
+        def rysuj(ax, x, Y, tytul, log=False):
+            for j in range(n):
+                ax.plot(x, Y[:, j], color=kol[j][:3], lw=lw, alpha=al, label=f'patch {sel[j]}' if n <= 10 else None)
+            if n > 1:
+                ax.plot(x, Y.mean(1), color='white', lw=1.4, ls='--', label='średnia')     # NaN tylko w kroku 0
+            if log:
+                ax.set_yscale('log')
+            ax.set_title(tytul, fontsize=8)
+
+        v = a['v'][:, sel].copy(); v[0] = np.nan
+        rysuj(osie[0], kr, v, 'prędkość w latencie ||z_t − z_(t−1)|| (na krok)', log=True)
+        osie[0].legend(fontsize=6.5, loc='upper right', ncol=4, framealpha=.3)
+        vm = self.v_makro[:, sel].copy(); vm[0] = np.nan
+        rysuj(osie[1], kr[self.idx], vm, 'prędkość w przestrzeni makro ||P_t − P_(t−1)|| (na krok)', log=True)
+        rysuj(osie[2], kr, a['do_konca'][:, sel], 'odległość od stanu końcowego ||z_t − z_końcowy||')
+        rysuj(osie[3], kr, cos, 'podobieństwo do stanu końcowego cos(z_t, z_końcowy)')
+        ax = osie[4]
+        ax.plot(kr, roz, color='#ffd030', lw=1.2)
+        ax.set_title(f'rozrzut {n} zaznaczonych: średnia odległość od ich środka (maleje = zbiegają się)', fontsize=8)
+        ax.set_xlabel('krok uczenia', fontsize=8)
+        for ax in f.axes:
+            ax.tick_params(labelsize=7)
+        x = float(kr[int(self.idx[min(getattr(self, 't', 0), len(self.idx) - 1)])])
+        self._linie_z = [ax.axvline(x, color='white', lw=.8, alpha=.7) for ax in osie]
+        self.canvas_z.draw_idle()

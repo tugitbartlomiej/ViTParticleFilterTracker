@@ -357,6 +357,15 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
      „Grand Tour” (Li i in. 2020): rama rzutu płynie przez losowe podprzestrzenie; wyłączenie zostawia widok.
   4. „Atlas kanałów”: mapy 20 x 30 każdego kanału (albo składowej PCA) bieżącej klatki, wg zmienności, z paskiem
      koloru kanału; klik podświetla kierunek kanału w makro (`atlas_kanalow.py`).
+- Zaznaczanie wielu patchy i śledzenie tylko ich (zakładka „Uczenie ViT”, grupa „Zaznaczone patche”):
+  Ctrl + klik na obrazie albo w cząstkę w przestrzeni makro dodaje albo usuwa patch, Ctrl przy prostokącie
+  (prawy przycisk na obrazie, Shift + przeciągnij w makro) dołącza zamiast zastępować; przyciski „+ wybrany
+  patch”, „patche narzędzia”, „wyczyść”. „Osobne kolory”: każdy zaznaczony patch w swoim kolorze na obrazie,
+  w makro i na wykresach. „Śledź tylko zaznaczone”: makro rysuje same zaznaczone cząstki z ich śladami
+  (zdjęcie zostaje blade w tle), prognoza Langevina przechodzi na „zaznaczonych patchy (każdy osobno)”
+  (najwyżej N modeli) albo „średnią zaznaczonych”. Karta „Zaznaczone patche” pod obrazem: przez całe uczenie
+  prędkość w latencie i w makro, odległość i cos do stanu końcowego każdego patcha oraz rozrzut zaznaczonych
+  (średnia odległość od ich środka). W zakładce filmu działa to samo Ctrl + klik i Ctrl przy prostokącie.
 - W zakładce „Uczenie ViT” przyciski „Atlas kanałów” i „Krajobraz i tunele” przełączają główny panel (zamiast
   widoku 3D nad obrazem); ponowny klik wraca do widoku 3D. W zakładce filmu otwierają osobne okna.
 - „Krajobraz i tunele” (przycisk w przestrzeni makro, `krajobraz.py`): okno z trzema obrazami tego, po czym

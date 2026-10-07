@@ -19,7 +19,7 @@ from matplotlib.figure import Figure
 
 import detekcja as D
 import film as F
-from wspolne import rysuj_zaznaczenie, tokeny_w_prostokacie
+from wspolne import ctrl_wcisniety, polacz_zaznaczenie, przelacz_w_zaznaczeniu, rysuj_zaznaczenie, tokeny_w_prostokacie
 import silnik
 from styl import rola
 from uklad import Przeplyw, dodaj
@@ -670,6 +670,8 @@ class ZakladkaFilmu(QWidget):
             self._rysuj_klatke()
         else:
             k = int(np.clip(e.xdata // 16, 0, 29)); r = int(np.clip(e.ydata // 16, 0, 19))
+            if e.button == 1 and ctrl_wcisniety():                     # Ctrl + klik: dodaj / usuń patch z zaznaczenia
+                self._zaznacz(przelacz_w_zaznaczeniu(self.zaznaczenie, r * 30 + k)); return
             self._wybierz_token(r * 30 + k)
 
     def _token_czubka(self, t):
@@ -928,11 +930,14 @@ class ZakladkaFilmu(QWidget):
             return
         x1, y1 = (e.xdata, e.ydata) if e.xdata is not None else st
         duzy = abs(x1 - st[0]) + abs(y1 - st[1]) > 6
-        self._zaznacz(tokeny_w_prostokacie(st[0], st[1], x1, y1) if duzy else [])
+        if duzy:
+            self._zaznacz(polacz_zaznaczenie(self.zaznaczenie, tokeny_w_prostokacie(st[0], st[1], x1, y1), ctrl_wcisniety()))
+        elif not ctrl_wcisniety():
+            self._zaznacz([])
 
     def _zaznacz(self, tokeny):
         """Zaznaczone patche: żółte na obrazie, jasne w przestrzeni makro (reszta blada); pusty = wyczyść."""
-        self.zaznaczenie = np.asarray(tokeny, int) if len(tokeny) else None
+        self.zaznaczenie = np.asarray(tokeny, int) if tokeny is not None and len(tokeny) else None
         self.makro.ustaw_zaznaczenie(self.zaznaczenie)
         self.idz(self.t)
         self._status('Zaznaczenie wyczyszczone.' if self.zaznaczenie is None else
