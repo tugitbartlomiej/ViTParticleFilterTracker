@@ -117,8 +117,12 @@ class ZakladkaUczenia(QWidget):
                         (self.btn_kon, 'Ostatni krok uczenia.')):
             b.setToolTip(opis); w.addWidget(b)
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setRange(0, 0); w.addWidget(self.suwak, 1)
-        self.spin_fps = QDoubleSpinBox(); self.spin_fps.setRange(.5, 60); self.spin_fps.setValue(10)
-        dodaj(w, 'kroków/s', self.spin_fps, 'Szybkość odtwarzania uczenia (pozycji suwaka na sekundę).')
+        self.spin_fps = QDoubleSpinBox(); self.spin_fps.setRange(.5, 10000); self.spin_fps.setDecimals(1)
+        self.spin_fps.setValue(10)
+        dodaj(w, 'kroków/s', self.spin_fps, 'Szybkość odtwarzania uczenia (pozycji suwaka na sekundę), do 10 000.\n'
+              'Ekran odświeża się najwyżej kilkadziesiąt razy na sekundę; przy większej szybkości odtwarzanie\n'
+              'przeskakuje kroki tak, żeby zgadzał się rzeczywisty czas (np. 300 kroków/s: całe uczenie w około 3 s).\n'
+              'Przy szybkim odtwarzaniu warto zmniejszyć „Przelot” w przestrzeni makro.')
         self.chk_petla = QCheckBox('pętla'); self.chk_petla.setChecked(True); w.addWidget(self.chk_petla)
 
         w = QHBoxLayout(); lay.addLayout(w)
@@ -224,7 +228,7 @@ class ZakladkaUczenia(QWidget):
         self.btn_wstecz.clicked.connect(lambda: self.suwak.setValue(self.suwak.value() - 1))
         self.btn_dalej.clicked.connect(lambda: self.suwak.setValue(self.suwak.value() + 1))
         self.btn_graj.toggled.connect(self._graj)
-        self.spin_fps.valueChanged.connect(lambda v: self.timer.setInterval(int(1000 / v)))
+        self.spin_fps.valueChanged.connect(lambda *_: self._start_zegara() if self.timer.isActive() else None)
         self.combo_por.currentIndexChanged.connect(lambda *_: self.idz(self.t))
         self.combo_sledz.currentIndexChanged.connect(lambda *_: self.idz(self.t))
         self.combo_srodek.currentIndexChanged.connect(lambda *_: self._ustaw_makro())
@@ -371,7 +375,7 @@ class ZakladkaUczenia(QWidget):
     def _graj(self, wl):
         if wl and self.Z is not None:
             self.btn_graj.setText('⏸ Pauza')
-            self.timer.setInterval(int(1000 / self.spin_fps.value())); self.timer.start()
+            self._start_zegara()
         else:
             self.btn_graj.setText('▶ Ucz (odtwarzaj)'); self.timer.stop()
             if wl:
@@ -388,12 +392,26 @@ class ZakladkaUczenia(QWidget):
             return
         self.btn_graj.setChecked(wl)
 
+    def _start_zegara(self):
+        import time
+        self._t_start, self._poz_start, self._ostatni = time.perf_counter(), self.t, self.t
+        self.timer.setInterval(max(15, int(1000 / self.spin_fps.value()))); self.timer.start()
+
     def _nastepny(self):
-        t = self.t + 1
+        import time
+        if getattr(self, '_ostatni', None) != self.t:                      # ręczne przesunięcie suwaka: zegar od nowa
+            self._t_start, self._poz_start = time.perf_counter(), self.t
+        cel = self._poz_start + int((time.perf_counter() - self._t_start) * self.spin_fps.value())   # wg zegara
+        t = max(self.t + 1, cel)
         if t >= len(self.idx):
-            if not self.chk_petla.isChecked():
-                self.btn_graj.setChecked(False); return
-            t = 0
+            if not self.chk_petla.isChecked():                              # koniec: pokaż ostatni krok i stop
+                self.btn_graj.setChecked(False); self.suwak.setValue(len(self.idx) - 1); return
+            if self.t < len(self.idx) - 1:                                  # w pętli zawsze też ostatni krok
+                t = len(self.idx) - 1
+            else:
+                self._t_start, self._poz_start = time.perf_counter(), 0
+                t = 0
+        self._ostatni = t
         self.suwak.setValue(t)
 
     def _wybierz_token(self, tok):
