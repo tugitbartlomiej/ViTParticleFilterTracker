@@ -358,6 +358,37 @@ class WidokCzasteczek3D(QWidget):
         i = self.combo_pca.currentIndex()
         return PCA_SKLADOWE[i - 1] if i > 0 else 0
 
+    def _baza_pca(self, kan):
+        """(mu, W, udział wariancji) PCA latentu na kanałach kan: z całej sekwencji (ustaw_baze_pca) albo z przed i po;
+        pamiętana, dopóki nie zmienią się kanały ani dane. None, gdy nie ma z czego liczyć."""
+        zr = self._pca_zrodlo
+        klucz = (self.combo_kan.currentIndex(), 'sekwencja' if zr is not None else getattr(self, '_wersja', 0))
+        if klucz not in self._pca_cache:
+            if zr is not None:
+                X = zr[::max(1, len(zr) // 12000)][:, kan]
+            elif self.przed is not None:
+                X = np.concatenate([self.przed[:, kan]] + ([self.po[:, kan]] if self.po is not None else []))
+            else:
+                return None
+            self._pca_cache = {klucz: pca(X)}
+        return self._pca_cache[klucz]
+
+    def baza_wektorow(self):
+        """Dokładnie te wektory, którymi rysowane są mikrowektory cząsteczek: (kanały, PCA (mu, W) albo None,
+        kierunki [K, 3], kolory [K, 4]). Przestrzeń makrowektorów w trybie „jak widok 3D” używa tych samych
+        kierunków, więc mikrowektor kanału (składowej) c ma w obu widokach ten sam kierunek i kolor."""
+        polsfera = self.combo_ksztalt.currentIndex() == 1
+        kan = self._kanaly()
+        k = self._k_pca()
+        if not k:
+            return kan, None, kierunki(polsfera)[kan], self.kolory[kan]
+        b = self._baza_pca(kan)
+        if b is None:
+            return None
+        mu, W, _ = b
+        k = min(k, W.shape[1])
+        return kan, (mu, W[:, :k]), kierunki(polsfera, k), kolory_kanalow(k)
+
     def _dane(self, polsfera):
         """Przestrzeń wektorów cząsteczki: (przed, po, indeksy wektorów, kolory [n, 4], kierunki [n, 3], opis).
         Bez PCA to 768 kanałów; z PCA k wyników składowych (z − μ) W, liczonych na wybranych kanałach."""
@@ -366,14 +397,7 @@ class WidokCzasteczek3D(QWidget):
         if not k:
             return self.przed, self.po, kan, self.kolory, kierunki(polsfera), ''
         zr = self._pca_zrodlo
-        klucz = (self.combo_kan.currentIndex(), 'sekwencja' if zr is not None else self._wersja)
-        if klucz not in self._pca_cache:
-            if zr is not None:
-                X = zr[::max(1, len(zr) // 12000)][:, kan]
-            else:
-                X = np.concatenate([self.przed[:, kan]] + ([self.po[:, kan]] if self.po is not None else []))
-            self._pca_cache = {klucz: pca(X)}
-        mu, W, udz = self._pca_cache[klucz]
+        mu, W, udz = self._baza_pca(kan)
         k = min(k, W.shape[1])
         W = W[:, :k]
         przed = (self.przed[:, kan] - mu) @ W

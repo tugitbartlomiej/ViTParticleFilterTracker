@@ -257,6 +257,16 @@ TR_0001 0:20–0:30, 30 klatek (JPG), pewność ViT / IoU z etykietą: bez wycin
 - Wykres przebiegu sekwencji pod klatką schowany (niepotrzebny); klatka zajmuje lewą kolumnę.
 - Makrowektory, „Kierunki kanałów”: także półsfera Fibonacciego (wszystkie kierunki z > 0).
 
+### Te same kierunki i kolory mikrowektorów w obu widokach 3D
+
+„Kierunki kanałów: jak widok 3D nad obrazem” (domyślne w zakładce filmu): przestrzeń makrowektorów bierze
+z widoku 3D dokładnie te kanały, bazę PCA, kierunki (sfera albo półsfera) i kolory, którymi rysowane są
+mikrowektory cząsteczek (`WidokCzasteczek3D.baza_wektorow`); zmiany w widoku 3D przeliczają makro od razu,
+a pola „Siły z kanałów” i „PCA wektorów” makro są wtedy wyłączone. Mikrowektor kanału (składowej) ma w obu
+widokach ten sam kierunek i kolor, różni się długością (|cos| = 1,000000 dla 768 kanałów, PCA 8, półsfery, J128).
+Kamera makro w tej samej orientacji (elewacja 38°, azymut −90°: x w prawo, y w głąb, z w górę, układ
+prawoskrętny), przycisk „Kamera jak 3D” kopiuje bieżący kąt widoku 3D.
+
 ### Wygładzanie EMA torów (przestrzeń makrowektorów)
 
 „Wygładzanie EMA α” (Wygląd): wygładzone(t) = α · bieżące(t) + (1 − α) · wygładzone(t − 1), od pierwszej klatki;

@@ -34,7 +34,7 @@ from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanal
 class WidokPrzestrzeniMakro(QWidget):
     token_wybrany = pyqtSignal(int)
     KIERUNKI = ['sfera Fibonacciego (jak widok 3D)', 'losowe (stałe ziarno)', 'PCA latentu sekwencji (3 składowe)',
-                'półsfera Fibonacciego (z > 0)']
+                'półsfera Fibonacciego (z > 0)', 'jak widok 3D nad obrazem (te same kierunki, PCA i kanały)']
     KOLORY = ['wg położenia patcha (kolumna = barwa, wiersz = jasność)', 'narzędzie (czerwone) i tło (szare)',
               'wg pewności ViT w patchu']
 
@@ -48,6 +48,7 @@ class WidokPrzestrzeniMakro(QWidget):
         self.P = None                     # [T, 600, 3] położenia
         self.kolory_kan = kolory_kanalow()
         self._pca, self._opis_pca = None, ''
+        self._wb, self.wzor = None, None             # baza wektorów z widoku 3D (tryb „jak widok 3D”)
         self._poz, self._opis_poz = None, ''
         lay = QVBoxLayout(self); lay.setContentsMargins(4, 4, 4, 4)
 
@@ -61,6 +62,9 @@ class WidokPrzestrzeniMakro(QWidget):
                                 '- losowe: 768 losowych kierunków jednostkowych (projekcja losowa),\n'
                                 '- PCA: kierunek kanału = jego ładunki w 3 głównych składowych latentu sekwencji;\n'
                                 '- półsfera Fibonacciego: jak sfera, ale wszystkie kierunki mają z > 0 (w górę);\n'
+                                '- jak widok 3D nad obrazem: dokładnie te kierunki, kolory, kanały i baza PCA, którymi\n'
+                                '  rysowane są mikrowektory cząsteczek nad obrazem (sfera albo półsfera stamtąd); mikrowektor\n'
+                                '  ma w obu widokach ten sam kierunek, różni się tylko długością. Domyślne w zakładce filmu.\n'
                                 '  największy rozrzut cząstek, ale kierunki zależą od sekwencji.')
         self.combo_kier.addItems(self.KIERUNKI); self.combo_kier.setCurrentIndex(2)
         self.combo_kan = dodaj(w, 'Siły z kanałów:', WaskiCombo(9), 'Które kanały pchają cząstkę (pozostałe mają siłę 0).')
@@ -220,6 +224,7 @@ class WidokPrzestrzeniMakro(QWidget):
 
         self._timer = QTimer(self); self._timer.setInterval(16); self._timer.timeout.connect(self._krok_przelotu)
         self._od = self._do = None; self._u = 1.0
+        self.combo_kier.currentIndexChanged.connect(lambda *_: self._tryb_kierunkow())
         for s in (self.combo_kier.currentIndexChanged, self.combo_kan.currentIndexChanged, self.chk_srodek.toggled,
                   self.combo_pca.currentIndexChanged, self.combo_poz.currentIndexChanged, self.spin_ema.valueChanged):
             s.connect(lambda *_: self._przelicz())
@@ -232,7 +237,26 @@ class WidokPrzestrzeniMakro(QWidget):
             s.connect(lambda *_: self._rysuj(skok=True))
 
     def _kamera(self):
-        self.widok.setCameraPosition(pos=QVector3D(0, 0, 0), distance=420, elevation=25, azimuth=45)
+        # ta sama orientacja co widok 3D nad obrazem: x w prawo, y w głąb, z w górę (układ prawoskrętny)
+        self.widok.setCameraPosition(pos=QVector3D(0, 0, 0), distance=420, elevation=38, azimuth=-90)
+
+    def ustaw_wzor(self, widok3d):
+        """Widok 3D nad obrazem jako wzór kierunków (tryb „jak widok 3D”, domyślny w zakładce filmu) i kamery."""
+        self.wzor = widok3d
+        for s in (widok3d.combo_ksztalt.currentIndexChanged, widok3d.combo_pca.currentIndexChanged,
+                  widok3d.combo_kan.currentIndexChanged):
+            s.connect(lambda *_: self._przelicz() if self.combo_kier.currentIndex() == 4 else None)
+        b = rola(QPushButton('Kamera jak 3D'), 'narzedzie')
+        b.setToolTip('Ustawia kamerę pod tym samym kątem co widok 3D nad obrazem (te same osie x, y, z).')
+        b.clicked.connect(lambda: self.widok.setCameraPosition(elevation=widok3d.widok.opts['elevation'],
+                                                               azimuth=widok3d.widok.opts['azimuth']))
+        self.panel.pasek.addWidget(b)
+        self.combo_kier.setCurrentIndex(4)
+
+    def _tryb_kierunkow(self):
+        jak3d = self.combo_kier.currentIndex() == 4 and self.wzor is not None
+        for w in (self.combo_kan, self.combo_pca):              # w trybie „jak 3D” rządzą opcje widoku 3D
+            w.setEnabled(not jak3d)
 
     # ------------------------------------------------------------ dane
     def ustaw_sekwencje(self, Z, maski=None, pewnosci=None):
@@ -299,9 +323,17 @@ class WidokPrzestrzeniMakro(QWidget):
             self._poz = ('rzut', w['g'], w['U'])
             self._opis_poz = f'; usunięte {int(w["r"])} kierunków położenia (95 % jego wariancji)'
 
+    def _z_na_sily(self, z):
+        """Latent [..., 768] po korekcie położenia -> siły [..., K] w tej samej bazie co widok 3D (tryb „jak 3D”)."""
+        kan, p3 = self._wb
+        zk = z[..., kan]
+        return zk - self.mu[kan] if p3 is None else (zk - p3[0]) @ p3[1]
+
     def sily(self, t):
         """Siły mikrowektorów wszystkich cząstek w klatce t: [600, K] (K = 768 kanałów albo k składowych PCA)."""
         z = self._z(t)
+        if self._wb is not None:
+            return self._z_na_sily(z)
         if self._pca is None:
             return z - self.mu
         mu, W, maska = self._pca
@@ -317,6 +349,8 @@ class WidokPrzestrzeniMakro(QWidget):
         elif p is not None:
             _, M, g = p
             z = z - M[tok] + g
+        if self._wb is not None:
+            return self._z_na_sily(z)
         if self._pca is None:
             return z - self.mu
         mu, W, maska = self._pca
@@ -343,7 +377,19 @@ class WidokPrzestrzeniMakro(QWidget):
         kp = self._k_pca()
         self._opis_pca = ''
         self.mu = np.zeros(768, np.float32)
-        if kp:
+        k = self.combo_kier.currentIndex()
+        wb = self.wzor.baza_wektorow() if (k == 4 and self.wzor is not None) else None
+        self._wb = None
+        if wb is not None:                                  # te same kanały, PCA i kierunki co widok 3D nad obrazem
+            kan, p3, D, kol = wb
+            self._pca = None
+            if p3 is None and self.chk_srodek.isChecked():
+                self.mu = np.mean([self._z(t).mean(0) for t in range(T)], 0)
+            self._wb = (np.asarray(kan), p3)
+            self._opis_pca = ('; kierunki, kanały i PCA jak w widoku 3D nad obrazem ('
+                              + (f'{len(D)} składowych PCA' if p3 is not None else f'{len(D)} kanałów') + ')')
+            self.D, self.kolory_kan = np.asarray(D, np.float32).copy(), np.asarray(kol, np.float32).copy()
+        elif kp:
             X = np.concatenate([self._z(t)[:, maska] for t in range(0, T, krok)])
             mu, W, udz = pca(X, kp)
             self._pca = (mu, W, maska)
@@ -355,20 +401,20 @@ class WidokPrzestrzeniMakro(QWidget):
             K = 768
             if self.chk_srodek.isChecked():
                 self.mu = np.mean([self._z(t).mean(0) for t in range(T)], 0)
-        k = self.combo_kier.currentIndex()
-        if k in (0, 3):
-            D = kierunki(k == 3, K)                                          # 3: półsfera, wszystkie kierunki w górę
-        elif k == 1:
-            D = np.random.default_rng(0).standard_normal((K, 3)).astype(np.float32)
-            D /= np.linalg.norm(D, axis=1, keepdims=True)
-        else:
-            X = np.concatenate([self.sily(t) for t in range(0, T, krok)])
-            _, _, Vt = np.linalg.svd(X - X.mean(0), full_matrices=False)
-            D = Vt[:3].T.astype(np.float32)                                    # ładunki: [K, 3]
-        if not kp:
-            D = D * maska[:, None]                                             # kanały spoza wyboru: siła 0
-        self.D = D
-        self.kolory_kan = kolory_kanalow(K)
+        if wb is None:
+            if k in (0, 3, 4):
+                D = kierunki(k == 3, K)                                      # 3: półsfera; 4 bez widoku 3D: sfera
+            elif k == 1:
+                D = np.random.default_rng(0).standard_normal((K, 3)).astype(np.float32)
+                D /= np.linalg.norm(D, axis=1, keepdims=True)
+            else:
+                X = np.concatenate([self.sily(t) for t in range(0, T, krok)])
+                _, _, Vt = np.linalg.svd(X - X.mean(0), full_matrices=False)
+                D = Vt[:3].T.astype(np.float32)                                # ładunki: [K, 3]
+            if not kp:
+                D = D * maska[:, None]                                         # kanały spoza wyboru: siła 0
+            self.D = D
+            self.kolory_kan = kolory_kanalow(K)
         surowe = np.stack([self.sily(t) @ D for t in range(T)])               # [T, 600, 3]
         r = np.linalg.norm(surowe, axis=-1)
         self.s = 100 / max(float(np.percentile(r, 99)), 1e-9)

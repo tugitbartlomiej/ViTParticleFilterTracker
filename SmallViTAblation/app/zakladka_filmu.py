@@ -233,6 +233,7 @@ class ZakladkaFilmu(QWidget):
         from przestrzen_makro import WidokPrzestrzeniMakro
         self.w3d = WidokCzasteczek3D(self.j128)
         self.makro = WidokPrzestrzeniMakro(self.j128)
+        self.makro.ustaw_wzor(self.w3d)                    # te same kierunki mikrowektorów i orientacja kamery
         podzial.addWidget(self.w3d); podzial.addWidget(self.makro)
         podzial.setStretchFactor(0, 0); podzial.setStretchFactor(1, 1); podzial.setStretchFactor(2, 1)
         podzial.setSizes([480, 700, 700])          # lewa kolumna stała, oba widoki 3D dzielą resztę po równo
@@ -526,8 +527,8 @@ class ZakladkaFilmu(QWidget):
         T = len(s['idx'])
         maski = self._maski()
         self.makro.ckpt = self.ckpt
+        self.w3d.ustaw_baze_pca(s['Z'])            # PCA w 3D: jedna baza dla całej sekwencji (przed makro: wspólna baza)
         self.makro.ustaw_sekwencje(s['Z'], maski, s['mapy_pew'])
-        self.w3d.ustaw_baze_pca(s['Z'])            # PCA w 3D: jedna baza dla całej sekwencji
         self.suwak.blockSignals(True); self.suwak.setRange(0, T - 1); self.suwak.setValue(0); self.suwak.blockSignals(False)
         self._rysuj_os()
         self.idz(0)
