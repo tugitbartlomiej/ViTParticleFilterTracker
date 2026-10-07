@@ -46,6 +46,28 @@ Wnioski:
 Czego to nie dowodzi: nie mówi, ile pędu przypada na które paczki w przeszłości (to wymaga rozwinięcia m_t na
 historię gradientów), ani że inny β1 zmieniłby jakość detekcji.
 
+## 3. Pierwszy pomiar pchnięcia obrazów (zakładka „Pchnięcie obrazów”, `wyniki/PCHNIECIE_k0500_sonda00.json`)
+
+Krok 500 -> 501, klatka sondy 0 (TR_0006 kl. 746), miary na tokenach narzędzia. Sprawdzian silnika: przewidziany krok
+sondy wobec rzeczywistego z gęstej historii 0,983 (kroki 100 i 900: 0,984 i 0,987), suma pchnięć 32 obrazów paczki
+wobec pchnięcia paczki 0,994. Średnie w źródłach (zmiana straty sondy w pierwszym rzędzie, przez latent; ujemna = pomaga):
+
+| źródło | n | zmiana straty | zmiana siły tożsamości | długość |
+|---|---:|---:|---:|---:|
+| paczka tego kroku | 32 | −0,00014 | −0,0060 | 0,063 |
+| baza (losowe) | 48 | +0,00002 | −0,0054 | 0,055 |
+| odszukane dla SD (MSE latentu) | 32 | +0,00009 | +0,0096 | 0,059 |
+| losowa 32 (kontrola tamtego doboru) | 8 | −0,00004 | −0,0021 | 0,084 |
+| obrazy SD (pseudo-etykieta z k1000) | 16 | −0,00053 | −0,0211 | 0,110 |
+| klatki DINO dla obrazów SD | 16 | −0,00024 | −0,0110 | 0,081 |
+| klatki przez konwerter latent -> DINO | 48 | −0,00009 | +0,0037 | 0,104 |
+
+Obraz z jednego kroku i jednej sondy, bez przedziałów niepewności: obrazy SD i klatki DINO dla nich pchają sondę
+w stronę mniejszej straty, a jednocześnie obniżają siłę tożsamości; klatki odszukane przez MSE latentu podnoszą siłę
+tożsamości, ale strat nie zmniejszają. To zgadza się kierunkiem z kampanią 4.3 (ramiona SD: najniższa siła
+tożsamości i najwyższe mAP), ale nie jest jej dowodem. Ograniczenia: pseudo-etykiety SD z wag końcowych mogą
+sprzyjać obrazom SD; zmiana straty liczona tylko przez latent (bez zmiany głowy); potrzebne wiele kroków i sond.
+
 ## Pliki
 
 - `kod/sprawdz_paczki.py` -> `WYNIKI_sprawdz_paczki.json`
