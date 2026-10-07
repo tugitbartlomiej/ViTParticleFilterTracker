@@ -81,6 +81,11 @@ class ZakladkaUczenia(QWidget):
                                       'gradient straty względem latentu i atencję. Około 30 s. Wyniki w zakładce\n'
                                       '„Przyczyny ruchu” pod klatką i jako strzałki w przestrzeni makro.')
         w.addWidget(self.btn_przyczyny)
+        self.btn_zrodla = rola(QPushButton('Źródła siły'), 'narzedzie')
+        self.btn_zrodla.setToolTip('Nowe okno: skąd pochodzi wybrany wektor (siła) wybranego patcha. Sygnał płynie od obrazu\n'
+                                   'przez łodygę, 6 bloków i 3 głowy atencji aż do wektora; rozkład ścisły przy wagach\n'
+                                   'bieżącego kroku (atencja przenosi sygnał między patchami, MLP tworzy nowy).')
+        w.addWidget(self.btn_zrodla)
         self.etykieta_biegu = rola(QLabel('' if self.biegi else 'Brak biegów z gęstą historią w experiments/*/wyniki/*/dane.'),
                                    'opis')
         w.addWidget(self.etykieta_biegu)
@@ -453,6 +458,8 @@ class ZakladkaUczenia(QWidget):
         self.canvas_c.mpl_connect('button_press_event', self._klik_cka)
         self.canvas_p.mpl_connect('button_press_event', self._klik_cka)
         self.btn_przyczyny.clicked.connect(self._licz_przyczyny)
+        self.btn_zrodla.clicked.connect(self._okno_zrodel)
+        self._zrodla = None
         self.combo_zbior_p.currentIndexChanged.connect(lambda *_: self._rysuj_przyczyny())
         self.chk_strzalki.toggled.connect(lambda *_: self.idz(self.t))
         self.spin_strz.valueChanged.connect(lambda *_: self.idz(self.t))
@@ -658,6 +665,25 @@ class ZakladkaUczenia(QWidget):
         k = np.asarray(self.kroki)[np.asarray(k)]
         return np.abs(kw[None, :] - np.atleast_1d(k)[:, None]).argmin(1) if np.ndim(k) else int(np.abs(kw - k).argmin())
 
+    def _dostawca_zrodel(self):
+        """Dla okna „Źródła siły”: wagi checkpointu bieżącego kroku, obraz klatki, wybrany patch."""
+        if self.Z is None:
+            return None
+        k = int(self.idx[self.t]); kc = self._ckpt_kroku(k)
+        return dict(wagi=self.opis['wagi'][kc], rgb=self.rgb, tok=self.token,
+                    opis=f'krok {int(self.kroki[k])}, wagi kroku {int(self.opis["kroki_wag"][kc])}')
+
+    def _okno_zrodel(self):
+        if self.Z is None:
+            self._status('Najpierw wczytaj historię uczenia.'); return
+        from okno_zrodel_sily import OknoZrodelSily
+        if self._zrodla is None:
+            self._zrodla = OknoZrodelSily(self._dostawca_zrodel, self)
+            if self.token is not None:
+                self._zrodla.spin_tok.blockSignals(True); self._zrodla.spin_tok.setValue(int(self.token))
+                self._zrodla.spin_tok.blockSignals(False)
+        self._zrodla.show(); self._zrodla.raise_(); self._zrodla.licz()
+
     def _atencja(self, k_ckpt, blok):
         """Atencja klatki próbnej z wag checkpointu k_ckpt (ładowanie wag tylko przy zmianie checkpointu)."""
         import torch
@@ -787,6 +813,8 @@ class ZakladkaUczenia(QWidget):
         if self.token is not None:
             tekst += f'; patch {self.token}: prędkość {a["v"][k][self.token]:.3f}, do stanu końcowego {a["do_konca"][k][self.token]:.2f}'
         self.etykieta_kroku.setText(tekst + self._opis_lang + self._opis_rk(k))
+        if self._zrodla is not None:
+            self._zrodla.przy_zmianie()
         self._sprawdz_rk()
 
     # ------------------------------------------------------------ rysunki

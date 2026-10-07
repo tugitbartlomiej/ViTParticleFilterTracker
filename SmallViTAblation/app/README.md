@@ -384,6 +384,17 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   odtwarza parametry panelu równania. W makro strzałki: biała prawdziwy krok, pomarańczowa przewidziany,
   czerwona niedopasowanie; ślad w kolorze wygładzonego błędu. Patch 255, GLE, kroki 700-1000: mediana błędu
   kroku 0,54 (kroczące) i 0,55 (stałe okno), cos 0,86.
+- „Źródła siły” (przycisk obok „Licz przyczyny ruchu”, okno `okno_zrodel_sily.py`, rachunek `przeplyw_sily.py`):
+  skąd pochodzi wektor c (neuron ukrytej warstwy MLP ostatniego bloku) patcha i. Przy wagach atencji i skalach
+  LayerNorm z tego przebiegu wszystko między liśćmi (łodyga, położenie sin-cos, wyjścia MLP bloków 0-4, biasy)
+  a wartością przed GELU jest liniowe, więc rozkład jest ścisły (sprawdzone: ręczny przebieg = model co do 3e-6,
+  suma wkładów = wartość przed GELU, stałe zgodne z przebiegiem z wyzerowanymi liśćmi). Atencja tylko przenosi
+  sygnał między patchami, MLP tworzy nowy. Obraz: Integrated Gradients przez łodygę (jedyne przybliżenie, suma
+  pikseli = cel z dokładnością 3e-4). Karty: „Przepływ” (płynna animacja sygnału na obrazie przez 14 etapów,
+  strzałki przeniesień głów z kropkami płynącymi od źródła do celu, wodospad wkładów), „Warstwy × głowy”
+  (mapy 20 x 30: sygnał na wejściu bloku, źródła każdej głowy, nowy sygnał MLP), „Graf przepływu” (rzeka
+  sygnału z głowami i MLP jako węzłami), „Wektor patcha” (768 wartości, klik wybiera wektor). Śledzi krok
+  i patch zakładki (liczy od nowa przy zmianie checkpointu albo patcha, około 0,2-1,5 s).
 - Wygląd ścieżek prognozy Langevina (strona „Langevin”, grupa „Wygląd ścieżek prognozy”): każdy rodzaj ścieżki
   to osobna warstwa z własnym kolorem i grubością (ślad, ślad prognoz z wyprzedzeniem, bieżąca prognoza, stare
   prognozy, dalszy tor, linia błędu); schematy kolorów (kontrastowe, klasyczne, kolor cząstki, automatycznie),
