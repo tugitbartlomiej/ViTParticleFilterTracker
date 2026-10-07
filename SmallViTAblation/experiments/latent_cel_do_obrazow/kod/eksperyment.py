@@ -298,7 +298,7 @@ def etap2c(cele, kon, sd):
 
 
 # ---------------------------------------------------------------------------------------------------- etap 3: uczenie
-def etap3(cele, kon, sd, ramiona=('A', 'E', 'B', 'C', 'D')):
+def etap3(cele, kon, sd, ramiona=('A', 'E', 'B', 'C', 'D'), ziarno=47):
     import galezie_uczenia as GU
     from stan_uczenia import _srodowisko
     from model_snapshot import dekoduj
@@ -342,7 +342,8 @@ def etap3(cele, kon, sd, ramiona=('A', 'E', 'B', 'C', 'D')):
             wiersze[R[k]]['frame_id'] = f"pula/{Pl['man'][j]['film']}/{Pl['man'][j]['frame']}"
         return D.Zbior(wiersze, X), [f"{Pl['man'][j]['film']}/{Pl['man'][j]['frame']}" for j in js]
 
-    wyniki = czytaj('ETAP3_UCZENIE.json') or dict(ramiona={})
+    suf = '' if ziarno == 47 else f'_s{ziarno}'
+    wyniki = czytaj(f'ETAP3_UCZENIE{suf}.json') or dict(ramiona={}, ziarno=ziarno)
     for ramie in ramiona:
         if ramie in wyniki['ramiona']:
             continue
@@ -369,23 +370,23 @@ def etap3(cele, kon, sd, ramiona=('A', 'E', 'B', 'C', 'D')):
 
         t = time.time()
         with GU.deterministycznie(True):
-            u = T.Uczen(47); rng = np.random.default_rng(47)
+            u = T.Uczen(ziarno); rng = np.random.default_rng(ziarno)
             u.kroki(zb, 1000, rng, co_ocena=100, ocena=ocena)
-        torch.save(dict(net=u.net.state_dict(), krok=u.krok), OUT / f'model_ramie{ramie}_k1000.pt')
-        np.save(OUT / f'LATENT_CELOW_ramie{ramie}_k1000.npy', lat_cel['z'].astype(np.float16))
+        torch.save(dict(net=u.net.state_dict(), krok=u.krok), OUT / f'model_ramie{ramie}{suf}_k1000.pt')
+        np.save(OUT / f'LATENT_CELOW_ramie{ramie}{suf}_k1000.npy', lat_cel['z'].astype(np.float16))
         wyniki['ramiona'][ramie] = dict(historia=hist, podmienione=opis_podm, pozycje_bazy=R.tolist(), czas_s=time.time() - t)
-        zapisz('ETAP3_UCZENIE.json', wyniki)
+        zapisz(f'ETAP3_UCZENIE{suf}.json', wyniki)
     # ruch latentu celów względem ramienia A w stronę korekty oracle
-    zA = np.load(OUT / 'LATENT_CELOW_ramieA_k1000.npy').astype(np.float32)
+    zA = np.load(OUT / f'LATENT_CELOW_ramieA{suf}_k1000.npy').astype(np.float32)
     for ramie in wyniki['ramiona']:
         if ramie == 'A':
             continue
-        z = np.load(OUT / f'LATENT_CELOW_ramie{ramie}_k1000.npy').astype(np.float32)
+        z = np.load(OUT / f'LATENT_CELOW_ramie{ramie}{suf}_k1000.npy').astype(np.float32)
         dz = (z - zA).reshape(len(C), -1); df = d_fin.reshape(len(C), -1)
         cos = (dz * df).sum(1) / (np.linalg.norm(dz, axis=1) * np.linalg.norm(df, axis=1) + 1e-12)
         wyniki['ramiona'][ramie]['cos_ruchu_celow_do_korekty'] = cos.tolist()
         wyniki['ramiona'][ramie]['cos_srednio'] = float(cos.mean())
-    zapisz('ETAP3_UCZENIE.json', wyniki)
+    zapisz(f'ETAP3_UCZENIE{suf}.json', wyniki)
     return wyniki
 
 
@@ -512,12 +513,15 @@ def kontrola_losowa(cele, n=20):
 if __name__ == '__main__':
     etapy = sys.argv[1:] or ['1', '2a', '2b', '2c', '3']
     c = etap1()
-    k = etap2a(c) if any(e in etapy for e in ('2a', '2c', '2d', '3')) else None
-    s = etap2b(c) if '2b' in etapy or '2c' in etapy or '3' in etapy else None
+    k = etap2a(c) if any(e in etapy for e in ('2a', '2c', '2d', '3', 's48', 's49')) else None
+    s = etap2b(c) if any(e in etapy for e in ('2b', '2c', '3', 's48', 's49')) else None
     if '2c' in etapy:
         etap2c(c, k, s)
     if '3' in etapy:
         etap3(c, k, s)
+    for z in (48, 49):
+        if f's{z}' in etapy:
+            etap3(c, k, s, ramiona=('A', 'E', 'B', 'C'), ziarno=z)
     if '4' in etapy:
         etap4(c)
     if '2d' in etapy:
