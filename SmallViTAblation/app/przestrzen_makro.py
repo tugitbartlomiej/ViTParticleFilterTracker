@@ -50,6 +50,7 @@ class WidokPrzestrzeniMakro(QWidget):
         self.kolory_kan = kolory_kanalow()
         self._pca, self._opis_pca = None, ''
         self._wb, self.wzor = None, None             # baza wektorów z widoku 3D (tryb „jak widok 3D”)
+        self.odniesienie = None                      # [600, 768] odejmowane od latentu każdej klatki (albo None)
         self._poz, self._opis_poz = None, ''
         lay = QVBoxLayout(self); lay.setContentsMargins(4, 4, 4, 4)
 
@@ -292,6 +293,8 @@ class WidokPrzestrzeniMakro(QWidget):
     def _z(self, t):
         """Latent klatki t [600, 768] float32, z odjętym położeniem patcha, jeśli wybrano."""
         z = self.Z[t].astype(np.float32)
+        if self.odniesienie is not None:                   # np. stan końcowy uczenia (zakładka „Uczenie ViT”)
+            z = z - self.odniesienie
         p = self._poz
         if p is None:
             return z

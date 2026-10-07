@@ -125,6 +125,13 @@ class Okno(QMainWindow):
         except Exception as e:                       # brak OpenGL / cv2: reszta aplikacji działa
             import traceback; traceback.print_exc()
             self.zakladki_glowne.addTab(QLabel(f'Zakładka filmu niedostępna: {e}'), 'Film')
+        try:
+            from zakladka_uczenia import ZakladkaUczenia
+            self.zakladka_uczenia = ZakladkaUczenia(self)
+            self.zakladki_glowne.addTab(self.zakladka_uczenia, 'Uczenie ViT: ruch cząsteczek po krokach')
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            self.zakladki_glowne.addTab(QLabel(f'Zakładka uczenia niedostępna: {e}'), 'Uczenie ViT')
         self.setCentralWidget(self.zakladki_glowne)
 
     @staticmethod

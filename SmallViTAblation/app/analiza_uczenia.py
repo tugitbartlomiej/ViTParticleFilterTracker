@@ -1,0 +1,157 @@
+"""Historia uczenia małego ViT dla zakładki „Uczenie ViT”: odnalezienie biegów z gęstym zapisem latentu,
+wczytanie jednej klatki próbnej (wszystkie kroki), miary ruchu cząsteczek po krokach i detekcja z wag.
+
+Bieg = katalog `experiments/*/wyniki/*/dane` z plikiem LATENT_GESTY.npy [kroki, klatki, 600, 768]
+(latent bloki[-1].mlp.act w trybie eval, ten sam co w aplikacji), obok obrazy.npy, maski.npz,
+LOG.json (strata), OCENY.json (mAP), metadata.json (numery kroków) i katalog ../wagi/kNNNN.pt.
+Pierwsze wczytanie klatki czyta 1,8 GB z dużego pliku (około 20 s) i zapisuje kopię float16 w
+app/cache_uczenia/, następne trwają kilka sekund.
+"""
+import json
+import re
+from pathlib import Path
+
+import numpy as np
+
+APP = Path(__file__).resolve().parent
+EKSPERYMENTY = APP.parent / 'experiments'
+CACHE = APP / 'cache_uczenia'
+
+
+def znajdz_biegi():
+    """Lista biegów z pełnym latentem 600 tokenów co krok (słowniki: nazwa, dane, wagi, ksztalt)."""
+    wynik = []
+    for p in sorted(EKSPERYMENTY.glob('*/wyniki/*/dane/LATENT_GESTY.npy')):
+        try:
+            L = np.load(p, mmap_mode='r')
+        except Exception:
+            continue
+        if L.ndim != 4 or L.shape[2] != 600 or L.shape[3] != 768:
+            continue                                        # np. zapis tylko wybranych tokenów
+        dane = p.parent
+        nazwa = f'{dane.parents[2].name} / {dane.parent.name}'
+        wynik.append(dict(nazwa=nazwa, dane=dane, wagi=dane.parent / 'wagi', ksztalt=tuple(L.shape),
+                          klucz=re.sub(r'\W+', '_', f'{dane.parents[2].name}_{dane.parent.name}')))
+    return wynik
+
+
+def _json(p, domyslnie):
+    try:
+        return json.loads(Path(p).read_text(encoding='utf-8'))
+    except Exception:
+        return domyslnie
+
+
+def opis_biegu(bieg):
+    """Obrazy próbne, maski, opisy klatek, numery kroków, strata, mAP i lista checkpointów wag."""
+    d = bieg['dane']
+    meta = _json(d / 'metadata.json', {})
+    K = bieg['ksztalt'][0]
+    kroki = np.asarray(meta.get('kroki', list(range(K))), np.int64)[:K]
+    m = np.load(d / 'maski.npz')
+    obrazy = np.load(d / 'obrazy.npy', mmap_mode='r')
+    opisy = [f"{o.get('film', '?')} kl. {o.get('annotation_frame_number', '?')} ({o.get('split', '?')})"
+             for o in _json(d / 'images.json', [])] or [f'klatka {i}' for i in range(len(obrazy))]
+    log = _json(d / 'LOG.json', [])
+    oceny = _json(d / 'OCENY.json', [])
+    wagi = sorted(bieg['wagi'].glob('k*.pt'), key=lambda p: int(re.sub(r'\D', '', p.stem) or 0))
+    kroki_wag = np.array([int(re.sub(r'\D', '', p.stem)) for p in wagi], np.int64)
+    return dict(kroki=kroki, obrazy=obrazy, opisy=opisy, narzedzie=m['tool'].astype(bool),
+                tlo=m['background'].astype(bool),
+                strata=(np.array([r['krok'] for r in log]), np.array([r['strata'] for r in log])),
+                mAP=(np.array([r['krok'] for r in oceny]), np.array([r.get('mAP50', np.nan) for r in oceny])),
+                wagi=wagi, kroki_wag=kroki_wag, ziarno=meta.get('seed'))
+
+
+def wczytaj_klatke(bieg, i, postep=None):
+    """Latent klatki próbnej i we wszystkich krokach: [K, 600, 768] float16 (kopia w cache_uczenia)."""
+    CACHE.mkdir(exist_ok=True)
+    plik = CACHE / f"{bieg['klucz']}_klatka{i:02d}.npy"
+    if plik.exists():
+        Z = np.load(plik, mmap_mode='r')
+        if Z.shape == (bieg['ksztalt'][0], 600, 768):
+            return np.ascontiguousarray(Z)
+    L = np.load(bieg['dane'] / 'LATENT_GESTY.npy', mmap_mode='r')
+    K = L.shape[0]
+    Z = np.empty((K, 600, 768), np.float16)
+    for a in range(0, K, 50):
+        Z[a:a + 50] = L[a:a + 50, i]
+        if postep:
+            postep(min(K, a + 50), K)
+    tmp = plik.with_suffix('.tmp.npy')
+    np.save(tmp, Z)
+    tmp.replace(plik)
+    return Z
+
+
+def analiza(Z, narzedzie, tlo, postep=None, cka_maks=250):
+    """Miary ruchu cząsteczek po krokach uczenia, dla klatki [K, 600, 768]:
+    v [K, 600]      prędkość tokenu: ||z_t - z_(t-1)|| (0 w kroku 0),
+    do_konca [K, 600] odległość tokenu od jego stanu końcowego ||z_t - z_K||,
+    wzgl [K]        względna zmiana całej klatki ||dZ|| / ||Z_(t-1)||,
+    rzad [K]        efektywny rząd tokenów (participation ratio widma kowariancji 600 tokenów),
+    separacja [K]   rozdzielenie narzędzie / tło: ||mu_n - mu_t||^2 / (śr. wariancja n + śr. wariancja t),
+    norma [K]       średnia norma tokenu,
+    cka_kroki [M], cka [M, M]  liniowe CKA między krokami (co któryś krok, M <= cka_maks)."""
+    import torch
+    dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    K = len(Z)
+    n_idx = torch.from_numpy(np.flatnonzero(narzedzie)).to(dev)
+    t_idx = torch.from_numpy(np.flatnonzero(tlo)).to(dev)
+    kon = torch.from_numpy(np.asarray(Z[-1], np.float32)).to(dev)
+    co = max(1, int(np.ceil(K / cka_maks)))
+    cka_kroki = np.arange(0, K, co)
+    v = np.zeros((K, 600), np.float32); dk = np.zeros((K, 600), np.float32)
+    wzgl = np.zeros(K, np.float32); rzad = np.zeros(K, np.float32); sep = np.zeros(K, np.float32)
+    norma = np.zeros(K, np.float32)
+    gramy = []
+    poprz = None
+    for a in range(0, K, 40):
+        X = torch.from_numpy(np.asarray(Z[a:a + 40], np.float32)).to(dev)          # [b, 600, 768]
+        if poprz is None:
+            prev = torch.cat([X[:1], X[:-1]])
+        else:
+            prev = torch.cat([poprz[None], X[:-1]])
+        d = X - prev
+        v[a:a + len(X)] = d.norm(dim=-1).cpu().numpy()
+        wzgl[a:a + len(X)] = (d.flatten(1).norm(dim=1) / prev.flatten(1).norm(dim=1).clamp_min(1e-9)).cpu().numpy()
+        dk[a:a + len(X)] = (X - kon).norm(dim=-1).cpu().numpy()
+        norma[a:a + len(X)] = X.norm(dim=-1).mean(1).cpu().numpy()
+        Xc = X - X.mean(1, keepdim=True)
+        G = Xc @ Xc.transpose(1, 2)                                                 # [b, 600, 600]
+        ev = torch.linalg.eigvalsh(G.double()).clamp_min(0)
+        rzad[a:a + len(X)] = (ev.sum(1) ** 2 / (ev ** 2).sum(1).clamp_min(1e-30)).float().cpu().numpy()
+        if len(n_idx) > 1 and len(t_idx) > 1:
+            Xn, Xt = X[:, n_idx], X[:, t_idx]
+            mn, mt = Xn.mean(1), Xt.mean(1)
+            wn = ((Xn - mn[:, None]) ** 2).sum(-1).mean(1); wt = ((Xt - mt[:, None]) ** 2).sum(-1).mean(1)
+            sep[a:a + len(X)] = (((mn - mt) ** 2).sum(-1) / (wn + wt).clamp_min(1e-9)).cpu().numpy()
+        for j in range(len(X)):
+            if (a + j) % co == 0:
+                g = G[j].flatten()
+                gramy.append((g / g.norm().clamp_min(1e-12)).half())
+        poprz = X[-1]
+        if postep:
+            postep(min(K, a + 40), K)
+    V = torch.stack(gramy).float()
+    cka = (V @ V.T).cpu().numpy()
+    return dict(v=v, do_konca=dk, wzgl=wzgl, rzad=rzad, separacja=sep, norma=norma, cka_kroki=cka_kroki, cka=cka)
+
+
+def detekcje(opis, rgb480, postep=None):
+    """Detekcja klatki próbnej z wag każdego zapisanego checkpointu: kroki_wag [n], ramka [n, 4] (najpewniejsza),
+    pewnosc [n], mapy_pew [n, 600] (pewność środka w patchu)."""
+    import torch
+    import detekcja as D
+    det = D.Detektor(opis['wagi'][0])
+    ramki, pew, mapy = [], [], []
+    for k, p in enumerate(opis['wagi']):
+        ck = torch.load(p, map_location='cpu', weights_only=True)
+        det.net.load_state_dict(ck.get('net', ck), strict=True)
+        a = det.analizuj(rgb480)
+        ramki.append(a['boxes'][0]); pew.append(float(a['scores'][0]))
+        mapy.append(a['mapa'][0, ..., 0].detach().float().sigmoid().cpu().numpy().reshape(-1))
+        if postep:
+            postep(k + 1, len(opis['wagi']))
+    return dict(kroki_wag=opis['kroki_wag'], ramka=np.array(ramki, np.float32), pewnosc=np.array(pew, np.float32),
+                mapy_pew=np.array(mapy, np.float32), det=det)
