@@ -236,6 +236,7 @@ class ZakladkaUczenia(QWidget):
         self.chk_widok3d.toggled.connect(lambda v: (self.w3d.setVisible(v), self.idz(self.t)))
         self.chk_widok_makro.toggled.connect(lambda v: (self.makro.setVisible(v), self.idz(self.t)))
         self.w3d.widok.klik.connect(lambda *_: self._wybierz_token(self.w3d.token))
+        self.makro.token_wybrany.connect(self._wybierz_token)     # klik w cząstkę: ten sam patch na obrazie i w 3D
         self.canvas.mpl_connect('button_press_event', self._klik_klatki)
         self.canvas_r.mpl_connect('button_press_event', self._klik_wykresu)
         self.canvas_c.mpl_connect('button_press_event', self._klik_cka)

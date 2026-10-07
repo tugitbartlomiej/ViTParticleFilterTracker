@@ -347,6 +347,7 @@ class ZakladkaFilmu(QWidget):
         self.chk_widok_makro.toggled.connect(lambda v: self._pokaz_widok(self.makro, v))
         self.combo_czubek.currentIndexChanged.connect(lambda *_: self.idz(self.t))
         self.w3d.widok.klik.connect(lambda *_: self._wybierz_token(self.w3d.token))
+        self.makro.token_wybrany.connect(self._wybierz_token)     # klik w cząstkę: ten sam patch na obrazie i w 3D
         self._opis_zakresu()
 
     def showEvent(self, e):

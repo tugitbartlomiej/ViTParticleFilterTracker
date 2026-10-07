@@ -237,6 +237,7 @@ class WidokPrzestrzeniMakro(QWidget):
         self.panel.zakoncz()
 
         self.widok = WidokGL()
+        self.widok.klik_px.connect(self._klik)
         dodaj_nawigacje(self, self.panel, self.widok)       # obrót 360, kroki, ujęcia, lustro
         self.widok.setBackgroundColor(pg.mkColor(10, 10, 14))
         self.widok.setMinimumHeight(400)
@@ -489,6 +490,22 @@ class WidokPrzestrzeniMakro(QWidget):
             it.setData(pos=np.asarray(pos, float), text=tekst); it.setVisible(True)
         for it in self.podpisy[len(pozycje):]:
             it.setVisible(False)
+
+    def _klik(self, px, py):
+        """Klik w widoku: najbliższa na ekranie widoczna cząstka (do 14 px) -> sygnał token_wybrany."""
+        if self.P is None or not self.chk_czastki.isChecked():
+            return
+        tok = self._widoczne()
+        if len(tok) == 0:
+            return
+        xy, g = self.widok.na_ekran(self._biezace()[tok])
+        d = np.hypot(xy[:, 0] - px, xy[:, 1] - py)
+        d[~np.isfinite(g)] = np.inf
+        bliskie = np.flatnonzero(d < max(14, self.spin_rozmiar.value()))
+        if len(bliskie) == 0:
+            return
+        i = bliskie[np.argmin(d[bliskie] + 3 * g[bliskie])]                 # przy nakładaniu bliższa kamerze
+        self.token_wybrany.emit(int(tok[i]))
 
     def rysuj_znaczniki(self, pos=None, kolory=None, rozmiary=None):
         """Dodatkowe kropki [n, 3] z kolorami [n, 4] i rozmiarami w pikselach [n]; None chowa."""

@@ -17,6 +17,29 @@ class WidokGL(gl.GLViewWidget):
     Przy rozłączonej sesji Windows (pulpit zdalny rozłączony) błąd jest w każdej klatce i widok zostaje czarny."""
 
     lustro = (1, 1, 1)
+    klik_px = pyqtSignal(float, float)            # klik bez przeciągania: piksel w widżecie
+
+    def mousePressEvent(self, ev):
+        self._start_px = ev.position().toPoint()
+        super().mousePressEvent(ev)
+
+    def mouseReleaseEvent(self, ev):
+        super().mouseReleaseEvent(ev)
+        p = ev.position().toPoint()
+        if ev.button() == Qt.MouseButton.LeftButton and (p - getattr(self, '_start_px', QPoint())).manhattanLength() < 4:
+            self.klik_px.emit(float(p.x()), float(p.y()))
+
+    def na_ekran(self, P):
+        """Punkty sceny P [n, 3] -> piksele widżetu [n, 2] i głębia [n] (inf za kamerą)."""
+        w, h = self.width(), self.height()
+        m = self.projectionMatrix((0, 0, w, h), (0, 0, w, h)) * self.viewMatrix()
+        M = np.array(m.data(), np.float64).reshape(4, 4).T                 # Qt trzyma macierz kolumnami
+        X = np.concatenate([np.asarray(P, np.float64), np.ones((len(P), 1))], 1) @ M.T
+        wsp = X[:, 3:4]
+        przod = wsp[:, 0] > 1e-9
+        n = X[:, :3] / np.where(przod[:, None], wsp, 1)
+        px = np.stack([(n[:, 0] + 1) / 2 * w, (1 - n[:, 1]) / 2 * h], 1)
+        return px, np.where(przod, n[:, 2], np.inf)
 
     def viewMatrix(self):
         tr = super().viewMatrix()
