@@ -29,7 +29,7 @@ from wspolne import (ctrl_wcisniety, paleta_zaznaczenia, polacz_zaznaczenie, prz
                      tokeny_w_prostokacie)
 import przyczyny_ruchu as PR
 from styl import rola
-from uklad import Przeplyw, RamaPanelu, dodaj, zwijana
+from uklad import Przeplyw, RamaPanelu, dodaj
 from zakladka_detekcji import PlotnoCiemne
 from zakladka_filmu import KOLOR_VIT, WatekFilmu, prostokat
 
@@ -89,14 +89,9 @@ class ZakladkaUczenia(QWidget):
         self.chk_widok_obraz = QCheckBox('obraz'); self.chk_widok_wyk = QCheckBox('wykresy')
         self.chk_widok3d = QCheckBox('widok 3D')
         self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_rown = QCheckBox('równanie')
-        self.chk_widok_ust = QCheckBox('ustawienia')
-        self.chk_widok_ust.setToolTip('Pokazuje albo chowa ustawienia pod paskiem odtwarzania (porównanie, prognoza Langevina,\n'
-                                      'zaznaczone patche, równanie krok po kroku). Każdą z tych grup można też zwinąć\n'
-                                      'polem w jej tytule.')
         self.chk_widok_rown.setToolTip('Czwarty panel: równanie Langevina, GLE i Koopmana wybranych cząstek z ich własnej historii.')
         w.addWidget(rola(QLabel('Widoki:'), 'opis'))
-        for c in (self.chk_widok_obraz, self.chk_widok_wyk, self.chk_widok3d, self.chk_widok_makro, self.chk_widok_rown,
-                  self.chk_widok_ust):
+        for c in (self.chk_widok_obraz, self.chk_widok_wyk, self.chk_widok3d, self.chk_widok_makro, self.chk_widok_rown):
             c.setChecked(True); w.addWidget(c)
             if not c.toolTip():
                 c.setToolTip(f'Pokazuje albo chowa panel „{c.text()}” (to samo co ✕ na jego pasku).')
@@ -188,17 +183,23 @@ class ZakladkaUczenia(QWidget):
               'Przy szybkim odtwarzaniu warto zmniejszyć „Przelot” w przestrzeni makro.')
         self.chk_petla = QCheckBox('pętla'); self.chk_petla.setChecked(True); w.addWidget(self.chk_petla)
 
-        self._grupy_dol = []
-        self._dol = QWidget(); self._dol_lay = QVBoxLayout(self._dol); self._dol_lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(self._dol)                                   # ustawienia pod odtwarzaniem (do schowania)
-        w = QHBoxLayout(); self._dol_lay.addLayout(w)
+        self.etykieta_kroku = QLabel(''); self.etykieta_kroku.setWordWrap(True); lay.addWidget(self.etykieta_kroku)
+
+        # ---------------- ustawienia uczenia: nowe strony panelu „Opcje” przestrzeni makro
+        op = self.makro.panel
+        self._strony_uczenia = ('Uczenie', 'Langevin', 'Zaznaczone', 'Krok po kroku')
+        for n in self._strony_uczenia:
+            op.dodaj_strone(n)
+        w = Przeplyw(); op.strona('Uczenie').addLayout(w)
         self.combo_por = QComboBox(); self.combo_por.addItems(['brak', 'z poprzednim krokiem', 'z krokiem 0', 'ze stanem końcowym'])
         dodaj(w, 'Porównanie w 3D:', self.combo_por, 'Co jest „PRZED” w widoku 3D; „PO” = bieżący krok.')
         self.combo_srodek = QComboBox()
-        self.combo_srodek.addItems(['średnia ze wszystkich kroków', 'stan końcowy (cząstki zbiegają do środka)', 'krok 0'])
+        self.combo_srodek.addItems(['zero latentu (punkt 0, 0, ..., 0)', 'średnia ze wszystkich kroków i tokenów',
+                                    'stan końcowy (cząstki zbiegają do środka)', 'krok 0'])
         dodaj(w, 'Środek makro:', self.combo_srodek,
-              'Względem czego liczone jest położenie cząstki w przestrzeni makrowektorów:\n'
-              '- średnia ze wszystkich kroków (i tokenów): zwykły widok;\n'
+              'Względem czego liczone jest położenie cząstki w przestrzeni makrowektorów (środek układu = 0, 0, 0):\n'
+              '- zero latentu: cząstka = s · z_t · D, środek to wektor zerowy 768 wymiarów (surowy latent);\n'
+              '- średnia ze wszystkich kroków i tokenów: z_t − średnia, chmura wokół środka („Odejmij średni latent”);\n'
               '- stan końcowy: cząstka = s · (z_t − z_końcowy tego patcha) · D, więc na końcu uczenia wszystkie\n'
               '  cząstki są w środku układu; widać, jak każdy patch dochodzi do swojego stanu końcowego;\n'
               '- krok 0: cząstki startują ze środka i rozchodzą się w miarę uczenia.')
@@ -221,10 +222,9 @@ class ZakladkaUczenia(QWidget):
         w.addWidget(self.chk_strzalki)
         self.spin_strz = QDoubleSpinBox(); self.spin_strz.setRange(.1, 100); self.spin_strz.setValue(3)
         dodaj(w, 'x', self.spin_strz, 'Mnożnik długości strzałek przyczyn (ruch w przedziale 10 kroków bywa krótki).')
-        self.etykieta_kroku = QLabel(''); self.etykieta_kroku.setWordWrap(True); w.addWidget(self.etykieta_kroku, 1)
 
         g = QGroupBox('Prognoza Langevina i ślad toru w przestrzeni makro')
-        w = Przeplyw(); g.setLayout(w); self._dol_lay.addWidget(g); self._grupy_dol.append(g)
+        w = Przeplyw(); g.setLayout(w); op.strona('Langevin').addWidget(g)
         self.chk_prognoza = QCheckBox('Prognoza Langevina'); self.chk_prognoza.setChecked(True)
         self.chk_prognoza.setToolTip(
             'Liniowy model ruchu cząstki z bezwładnością (dyskretny Langevin, oscylator):\n'
@@ -287,7 +287,7 @@ class ZakladkaUczenia(QWidget):
         dodaj(w, 'krycie najstarszego', self.spin_krycie, 'Krycie najstarszego odcinka śladu (najnowszy: 1).')
 
         g = QGroupBox('Zaznaczone patche: śledzenie wybranych cząstek przez uczenie')
-        w = Przeplyw(); g.setLayout(w); self._dol_lay.addWidget(g); self._grupy_dol.append(g)
+        w = Przeplyw(); g.setLayout(w); op.strona('Zaznaczone').addWidget(g)
         self.etykieta_zazn = QLabel('Brak zaznaczenia. Ctrl + klik na obrazie albo w przestrzeni makro dodaje patch.')
         w.addWidget(self.etykieta_zazn)
         self.chk_tylko_zazn = QCheckBox('śledź tylko zaznaczone')
@@ -312,8 +312,8 @@ class ZakladkaUczenia(QWidget):
               'Dla ilu pierwszych zaznaczonych patchy liczyć prognozę i ślad Langevina (każdy ma osobny model,\n'
               'więc przy wielu cząstkach krok się wydłuża). Ślady przestrzeni makro mają wszystkie zaznaczone.')
 
-        g = QGroupBox('Równanie krok po kroku: prognoza ruchu cząstki w 768 wymiarach i niedopasowanie w każdym kroku')
-        w = Przeplyw(); g.setLayout(w); self._dol_lay.addWidget(g); self._grupy_dol.append(g)
+        g = QGroupBox('Równanie krok po kroku: prognoza ruchu cząstki w 768 wymiarach i niedopasowanie')
+        w = Przeplyw(); g.setLayout(w); op.strona('Krok po kroku').addWidget(g)
         self.chk_rk = QCheckBox('licz'); self.chk_rk.setChecked(True)
         self.chk_rk.setToolTip('Dla zaznaczonych patchy (do 20; bez zaznaczenia: wybrany patch) w każdym kroku t uczenia:\n'
                                'prognoza kroku cząstki x(t) -> x(t+1) w pełnych 768 wymiarach i jej niedopasowanie do\n'
@@ -348,12 +348,11 @@ class ZakladkaUczenia(QWidget):
         self.spin_rk_skala = QDoubleSpinBox(); self.spin_rk_skala.setRange(.5, 200); self.spin_rk_skala.setValue(6)
         dodaj(w, 'x', self.spin_rk_skala, 'Powiększenie strzałek kroku (jeden krok uczenia jest krótki).')
         self.chk_rk_slad = QCheckBox('ślad w kolorze błędu'); self.chk_rk_slad.setChecked(True)
-        self.chk_rk_slad.setToolTip('Tor tych cząstek w przestrzeni makro (długość jak „Ślad” wyżej), kolor odcinka = wygładzony\n'
+        self.chk_rk_slad.setToolTip('Tor tych cząstek w przestrzeni makro (długość jak „Ślad” na stronie Langevin), kolor odcinka = wygładzony\n'
                                     'błąd kroku / ruch: zielony = równanie trafia (0), żółty = 0,75, czerwony = jak bez ruchu (1,5 i więcej).')
         w.addWidget(self.chk_rk_slad)
-        for g in self._grupy_dol:
-            zwijana(g)
-        self.chk_widok_ust.toggled.connect(self._dol.setVisible)
+        for n in self._strony_uczenia:
+            op.strona(n).addStretch(1)
         self.timer = QTimer(self); self.timer.timeout.connect(self._nastepny)
 
         # ---------------- sygnały
@@ -588,9 +587,9 @@ class ZakladkaUczenia(QWidget):
             return
         i = self.combo_srodek.currentIndex()
         m = self.makro
-        m.odniesienie = None if i == 0 else np.asarray(self.Z[-1 if i == 1 else 0], np.float32)
-        if i and m.chk_srodek.isChecked():
-            m.chk_srodek.blockSignals(True); m.chk_srodek.setChecked(False); m.chk_srodek.blockSignals(False)
+        m.odniesienie = None if i < 2 else np.asarray(self.Z[-1 if i == 2 else 0], np.float32)
+        if m.chk_srodek.isChecked() != (i == 1):                   # tylko „średnia” odejmuje średni latent
+            m.chk_srodek.blockSignals(True); m.chk_srodek.setChecked(i == 1); m.chk_srodek.blockSignals(False)
         maski = np.repeat(self.narz[None], len(self.idx), 0)
         pew = self.dety['mapy_pew'][self._ckpt_kroku(self.idx)]
         m.ustaw_sekwencje(self._Zs, maski, pew)

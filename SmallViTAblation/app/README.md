@@ -384,7 +384,10 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   odtwarza parametry panelu równania. W makro strzałki: biała prawdziwy krok, pomarańczowa przewidziany,
   czerwona niedopasowanie; ślad w kolorze wygładzonego błędu. Patch 255, GLE, kroki 700-1000: mediana błędu
   kroku 0,54 (kroczące) i 0,55 (stałe okno), cos 0,86.
-- Grupy ustawień pod odtwarzaniem zwijają się polem w tytule; pole „ustawienia” w „Widoki” chowa je wszystkie.
+- Ustawienia uczenia są stronami panelu „Opcje” przestrzeni makro: „Uczenie” (porównanie w 3D, środek makro,
+  śledzenie patcha, strzałki przyczyn), „Langevin”, „Zaznaczone”, „Krok po kroku”; pod odtwarzaniem został
+  tylko opis kroku. „Środek makro”: zero latentu (domyślne, surowy latent, środek = wektor zerowy), średnia
+  ze wszystkich kroków i tokenów, stan końcowy (na końcu wszystkie cząstki w 0) albo krok 0 (w kroku 0 w 0).
 - Panele zakładki „Uczenie ViT” (obraz klatki, wykresy uczenia, widok 3D, makro, równanie; obraz i wykresy osobno) mają pasek z „Odepnij”
   (osobne okno, np. na drugi monitor) i „✕” (chowa panel); pola „Widoki” w górnej grupie pokazują je z powrotem.
 - W zakładce „Uczenie ViT” przyciski „Atlas kanałów” i „Krajobraz i tunele” przełączają główny panel (zamiast
