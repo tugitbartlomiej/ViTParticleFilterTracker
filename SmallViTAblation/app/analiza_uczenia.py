@@ -155,3 +155,39 @@ def detekcje(opis, rgb480, postep=None):
             postep(k + 1, len(opis['wagi']))
     return dict(kroki_wag=opis['kroki_wag'], ramka=np.array(ramki, np.float32), pewnosc=np.array(pew, np.float32),
                 mapy_pew=np.array(mapy, np.float32), det=det)
+
+
+def oscylator(Z, od=300, do=700, okno=50):
+    """Liniowy model ruchu każdej cząstki z bezwładnością (dyskretny Langevin, AR(2)):
+    v_(t+1) = beta_i v_t − kappa_i (z_t − m_t), z_(t+1) = z_t + v_(t+1), m_t = średnia ostatnich `okno` kroków.
+    beta_i, kappa_i [600] metodą najmniejszych kwadratów na krokach od..do (experiments/maly_vit_liniowy_ruch_czastek)."""
+    import torch
+    dev = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    K = len(Z); do = min(do, K - 2); od = min(od, max(1, do // 2))
+    beta = np.zeros(600, np.float32); kappa = np.zeros(600, np.float32)
+    for t0 in range(0, 600, 100):
+        x = torch.from_numpy(np.asarray(Z[:, t0:t0 + 100], np.float32)).to(dev)
+        v = torch.cat([torch.zeros_like(x[:1]), x[1:] - x[:-1]])
+        c = torch.cumsum(torch.cat([torch.zeros_like(x[:1]), x]), 0)
+        t = torch.arange(K, device=dev); lo = (t - okno + 1).clamp_min(0)
+        m = (c[t + 1] - c[lo]) / (t + 1 - lo).float()[:, None, None]
+        a1 = v[od:do]; a2 = -(x[od:do] - m[od:do]); y = v[od + 1:do + 1]
+        g11 = (a1 * a1).sum((0, 2)); g12 = (a1 * a2).sum((0, 2)); g22 = (a2 * a2).sum((0, 2))
+        r1 = (a1 * y).sum((0, 2)); r2 = (a2 * y).sum((0, 2))
+        det = (g11 * g22 - g12 ** 2).clamp_min(1e-12)
+        beta[t0:t0 + 100] = ((g22 * r1 - g12 * r2) / det).cpu().numpy()
+        kappa[t0:t0 + 100] = ((g11 * r2 - g12 * r1) / det).cpu().numpy()
+    return dict(beta=beta, kappa=kappa, okno=okno, od=od, do=do)
+
+
+def prognoza_oscylatora(Z, k, tok, osc, h):
+    """Tor cząstki tok przez h kroków od kroku k według oscylatora, tylko ze stanów do k: [h + 1, 768]."""
+    z = np.asarray(Z[k, tok], np.float32)
+    v = z - np.asarray(Z[max(0, k - 1), tok], np.float32)
+    m = np.asarray(Z[max(0, k - osc['okno'] + 1):k + 1, tok], np.float32).mean(0)
+    b, kk = float(osc['beta'][tok]), float(osc['kappa'][tok])
+    tor = [z.copy()]
+    for _ in range(h):
+        v = b * v - kk * (z - m); z = z + v; tor.append(z.copy())
+    return np.array(tor)
+

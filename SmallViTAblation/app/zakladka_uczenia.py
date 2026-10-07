@@ -144,6 +144,16 @@ class ZakladkaUczenia(QWidget):
         w.addWidget(self.chk_strzalki)
         self.spin_strz = QDoubleSpinBox(); self.spin_strz.setRange(.1, 100); self.spin_strz.setValue(3)
         dodaj(w, 'x', self.spin_strz, 'Mnożnik długości strzałek przyczyn (ruch w przedziale 10 kroków bywa krótki).')
+        self.chk_prognoza = QCheckBox('Prognoza liniowa'); self.chk_prognoza.setChecked(True)
+        self.chk_prognoza.setToolTip('Dla wybranej cząstki w przestrzeni makro:\n'
+                                     '- pomarańczowa przerywana: tor z liniowego modelu ruchu tej cząstki (oscylator:\n'
+                                     '  v(t+1) = beta v(t) − kappa (z(t) − m(t)), z(t+1) = z(t) + v(t+1), m = średnia\n'
+                                     '  ostatnich 50 kroków), liczony TYLKO ze stanów do bieżącego kroku;\n'
+                                     '- turkusowa cienka: rzeczywisty tor tej cząstki w tych samych krokach (do porównania).\n'
+                                     'beta i kappa każdej cząstki dopasowane na krokach 300-700 tej historii.')
+        w.addWidget(self.chk_prognoza)
+        self.spin_h = QSpinBox(); self.spin_h.setRange(2, 300); self.spin_h.setValue(30)
+        dodaj(w, 'na', self.spin_h, 'Na ile kroków do przodu prognoza liniowa.')
         self.chk_widok3d = QCheckBox('widok 3D'); self.chk_widok3d.setChecked(True)
         self.chk_widok_makro = QCheckBox('makrowektory'); self.chk_widok_makro.setChecked(True)
         w.addWidget(QLabel('Widoki:')); w.addWidget(self.chk_widok3d); w.addWidget(self.chk_widok_makro)
@@ -175,6 +185,8 @@ class ZakladkaUczenia(QWidget):
         self.combo_zbior_p.currentIndexChanged.connect(lambda *_: self._rysuj_przyczyny())
         self.chk_strzalki.toggled.connect(lambda *_: self.idz(self.t))
         self.spin_strz.valueChanged.connect(lambda *_: self.idz(self.t))
+        self.chk_prognoza.toggled.connect(lambda *_: self.idz(self.t))
+        self.spin_h.valueChanged.connect(lambda *_: self.idz(self.t))
         self.prz = self.P_prz = None; self._delty = (None, None)
         self._zmiana_biegu()
 
@@ -219,7 +231,7 @@ class ZakladkaUczenia(QWidget):
                             lambda k, n: wt.postep.emit(40 + int(30 * k / n), f'miary ruchu: {k}/{n} kroków'))
             rgb = np.ascontiguousarray(o['obrazy'][i])
             d = AU.detekcje(o, rgb, lambda k, n: wt.postep.emit(70 + int(30 * k / n), f'detekcja z wag: {k}/{n}'))
-            return dict(opis=o, Z=Z, an=an, dety=d, i=i, rgb=rgb)
+            return dict(opis=o, Z=Z, an=an, dety=d, i=i, rgb=rgb, osc=AU.oscylator(Z))
 
         self.watek = WatekFilmu(zadanie, self)
         self.pasek.setRange(0, 100)
@@ -232,6 +244,7 @@ class ZakladkaUczenia(QWidget):
     def _po_wczytaniu(self, w):
         if w is not None:
             self.opis, self.Z, self.an, self.dety, self.i_kl, self.rgb = w['opis'], w['Z'], w['an'], w['dety'], w['i'], w['rgb']
+            self.osc = w['osc']
             self.det = self.dety.pop('det'); self._ckpt_det = len(self.opis['wagi']) - 1
             self.narz = self.opis['narzedzie'][self.i_kl]
             self.token = None
@@ -506,8 +519,33 @@ class ZakladkaUczenia(QWidget):
         self.canvas_p.draw_idle()
 
     def _strzalki_przyczyn(self, k):
+        seg, kolory = self._odcinki_przyczyn(k)
+        s2, k2 = self._odcinki_prognozy(k)
+        seg, kolory = seg + s2, kolory + k2
+        self.makro.rysuj_przyczyny(np.array(seg) if seg else None, np.array(kolory) if kolory else None)
+
+    def _odcinki_prognozy(self, k):
+        if not self.chk_prognoza.isChecked() or self.token is None or getattr(self, 'osc', None) is None:
+            return [], []
+        h = self.spin_h.value(); tok = self.token
+        tor = AU.prognoza_oscylatora(self.Z, k, tok, self.osc, h)                       # [h+1, 768]
+        o = self.makro._biezace()[tok]
+        P = o + self.makro.rzut_delty(tor - tor[0])
+        seg, kol = [], []
+        for a in range(0, h, 1):
+            if a % 2 == 0:                                                             # przerywana
+                seg += [P[a], P[a + 1]]; kol += [(1, .55, .1, 1)] * 2
+        kon = min(len(self.Z) - 1, k + h)
+        if kon > k:
+            prawdziwy = np.asarray(self.Z[k:kon + 1, tok], np.float32)
+            Q = o + self.makro.rzut_delty(prawdziwy - prawdziwy[0])
+            for a in range(len(Q) - 1):
+                seg += [Q[a], Q[a + 1]]; kol += [(.2, .9, 1, .8)] * 2
+        return seg, kol
+
+    def _odcinki_przyczyn(self, k):
         if self.prz is None or self.token is None or not self.chk_strzalki.isChecked():
-            self.makro.rysuj_przyczyny(None); return
+            return [], []
         import matplotlib
         kw = self.prz['kroki_wag']
         i = int(np.clip(np.searchsorted(kw, self.kroki[k], 'right') - 1, 0, len(kw) - 2))
@@ -527,7 +565,7 @@ class ZakladkaUczenia(QWidget):
         kolory = [kol[0], kol[0]] + sum(([c, c] for c in kol[1:]), [])
         for a in range(6):                                                          # przerywana żółta: −gradient
             seg += [o + gn * a / 6, o + gn * (a + .5) / 6]; kolory += [(1, .85, .2, 1)] * 2
-        self.makro.rysuj_przyczyny(np.array(seg), np.array(kolory))
+        return seg, [tuple(c) for c in kolory]
 
     def _kursor(self, k):
         x = float(self.kroki[k])

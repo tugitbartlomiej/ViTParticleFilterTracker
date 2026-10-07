@@ -48,6 +48,17 @@ cząstce osobno to najlepszy model z samej historii: na 1 krok usuwa 58 % błęd
 19 % (narzędzie 29 %). Wspólna macierz Koopmana dla wszystkich cząstek jest gorsza od persystencji, zgodnie
 z wcześniejszymi wynikami projektu (EDMD, NNDMD).
 
+## 4. Zgodność na trzech klatkach (2, 3, 6)
+
+- Mody czasowe: 5 modów wyjaśnia 73-75 % wariancji położeń na każdej klatce, R^2 na teście 61-62 %.
+- **Mody są wspólne dla klatek**: cosinusy kątów głównych między przestrzeniami 5 pierwszych modów klatek
+  3-2, 3-6, 2-6 to 0,99 / 0,99 / 0,99 / 0,93-0,98 / 0,62-0,84. Pierwsze 3-4 mody to ten sam „zegar uczenia”
+  dla różnych obrazów; cząstki różnią się tylko współczynnikami przy wspólnych modach.
+- Korelacja kolejnych przyrostów 0,69-0,74 na każdej klatce i w obu oknach.
+- Oscylator (całość, błąd / persystencja, h = 1 / 50): klatka 3: 0,42 / 0,81; klatka 2: 0,39 / 0,81;
+  klatka 6: 0,41 / 0,78. Parametry: beta 0,72-0,77, kappa 0,04-0,05. Wspólny Koopman PCA-32 gorszy od
+  persystencji na każdej klatce (h = 50: 1,44-1,74).
+
 ## Wniosek etapu 1
 
 Ruch każdej cząstki da się zapisać liniowo w przestrzeni stanu (z, v) cząstki: bezwładność plus sprężyna do
