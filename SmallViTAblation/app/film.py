@@ -188,6 +188,35 @@ def czytaj_klatki_jpg(film, indeksy, postep=None, przerwij=lambda: False):
             yield int(i), np.asarray(Image.open(io.BytesIO(z.read(nazwa))).convert('RGB'))
 
 
+OBSZARY_WYCINANIA = (('obrys', 'obrys narzędzia'), ('ramka', 'ramka GT'), ('rogowka', 'rogówka'), ('zrenica', 'źrenica'))
+
+
+def maska_wycinania(et, obszary, ksztalt=(WYS, SZER), margines=0):
+    """Maska bool [H, W] sumy wybranych obszarów z etykiety klatki (et z etykieta_klatki, w pikselach obrazu):
+    obszary ⊂ {'obrys', 'ramka', 'rogowka', 'zrenica'}; margines w pikselach poszerza maskę (dylatacja)."""
+    import cv2
+    m = np.zeros(ksztalt, np.uint8)
+    for o in obszary:
+        if o == 'ramka':
+            if et['ramka'] is not None:
+                x0, y0, x1, y1 = (int(round(v)) for v in et['ramka'])
+                cv2.rectangle(m, (x0, y0), (x1, y1), 1, -1)
+        else:
+            w = [np.round(p).astype(np.int32) for p in et.get(o, [])]
+            if w:
+                cv2.fillPoly(m, w, 1)
+    if margines > 0 and m.any():
+        k = 2 * int(margines) + 1
+        m = cv2.dilate(m, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k)))
+    return m.astype(bool)
+
+
+def wytnij(rgb, maska, tryb):
+    """tryb 0: zostaw tylko maskę (reszta czarna); 1: zamaluj maskę na czarno. Kopia obrazu."""
+    keep = maska if tryb == 0 else ~maska
+    return np.where(keep[..., None], rgb, 0).astype(np.uint8)
+
+
 ROZSZERZENIA_OBRAZOW = ('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff', '.webp')
 
 

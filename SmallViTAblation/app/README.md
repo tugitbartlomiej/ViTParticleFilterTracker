@@ -238,6 +238,16 @@ wypadkowa (ich suma) kończąca się w cząstce; mnożnik „powiększ mikrowekt
 (TR_0001, klatka 21, patch 315: najdłuższy 7,6, mediana 0,04, wypadkowa 90). Do wyboru też łańcuch (koniec do
 początku, od najsilniejszego), oba albo brak; łańcuch i wypadkowa to to samo dodawanie wektorów.
 
+### Wycinanie z obrazu przed analizą ViT (zakładka filmu)
+
+Grupa „Wycinanie z obrazu”: obszary z etykiety klatki (obrys narzędzia, ramka GT, rogówka, źrenica), każdy osobno
+albo kilka razem (suma), tryb „zostaw tylko zaznaczone (reszta czarna)” albo „zamaluj zaznaczone na czarno”,
+margines w px (dylatacja). Zmieniona klatka idzie do ViT (latent, detekcja, atencja, widoki); zmiana wymaga ponownej
+konwersji; ustawienie zapisuje się w JSON sekwencji (`wycinanie`). `film.maska_wycinania`, `film.wytnij`.
+TR_0001 0:20–0:30, 30 klatek (JPG), pewność ViT / IoU z etykietą: bez wycinania 72,7 / 73,3 %; tylko obrys 42,9 /
+64,7 %; obrys + 8 px 52,0 / 61,6 %; tylko ramka 56,9 / 53,4 %; tylko rogówka 45,3 / 17,5 %; obrys + ramka + rogówka
+56,2 / 44,5 %; tylko źrenica 54,1 / 35,3 %; obrys zaczerniony 63,0 / 62,1 %; rogówka zaczerniona 69,8 / 56,4 %.
+
 ### Włączanie cząsteczek i widoków
 
 - „Pokaż cząsteczki” (widok 3D, zakładka Cząsteczki) i „Pokaż cząstki” (makrowektory, Wygląd): bez wektorów

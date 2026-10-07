@@ -200,6 +200,20 @@ class ZakladkaFilmu(QWidget):
         self.spin_prog = QDoubleSpinBox(); self.spin_prog.setRange(1, 100); self.spin_prog.setValue(10); self.spin_prog.setSuffix(' %')
         dodaj(w, 'Pokrycie ≥', self.spin_prog,
               'Patch należy do narzędzia, gdy obrys pokrywa co najmniej tyle procent jego pikseli.')
+        w = grupa('Wycinanie z obrazu (przed analizą ViT)')
+        self.chk_wyc = {}
+        for k, nazwa in F.OBSZARY_WYCINANIA:
+            c = QCheckBox(nazwa); w.addWidget(c); self.chk_wyc[k] = c
+            c.setToolTip(f'Obszar „{nazwa}” z etykiety klatki (annotation.csv) bierze udział w wycinaniu.\n'
+                         'Można zaznaczyć jeden albo kilka (suma obszarów).')
+        self.combo_wyc = QComboBox(); self.combo_wyc.addItems(['zostaw tylko zaznaczone (reszta czarna)',
+                                                               'zamaluj zaznaczone na czarno'])
+        dodaj(w, 'Tryb:', self.combo_wyc,
+              'Jak zmienić klatkę przed ViT: zostawić tylko wybrane obszary na czarnym tle albo je zaczernić.\n'
+              'Tak zmieniona klatka idzie do latentu, detekcji, atencji i widoków 3D. Zmiana wymaga ponownej\n'
+              'konwersji („Konwertuj na sekwencję”). Klatki bez etykiety danego obszaru: brak tego obszaru.')
+        self.spin_wyc_marg = QSpinBox(); self.spin_wyc_marg.setRange(0, 60); self.spin_wyc_marg.setSuffix(' px')
+        dodaj(w, 'Margines:', self.spin_wyc_marg, 'Poszerzenie wycinanych obszarów o tyle pikseli (obraz 480 x 320).')
         # klatka 480x320 (3:2) plus pasek tytułu: wysokość płótna idzie za szerokością panelu, bez pustych pasów
         self.fig = Figure(figsize=(6, 4.3), facecolor='#1e1f22'); self.ax = self.fig.add_axes([0, 0, 1, 1 - TYTUL_KLATKI])
         self.canvas = FigureCanvasQTAgg(self.fig); self.canvas.setMinimumHeight(200)
@@ -468,6 +482,8 @@ class ZakladkaFilmu(QWidget):
         folder = self.folder if self.folder and (self.combo_zrodlo.currentIndex() == 2 or self.mp4 is None) else None
         det = self._detektor()
         self.pasek.setRange(0, len(idx))
+        wyc = dict(obszary=[k for k, c in self.chk_wyc.items() if c.isChecked()], tryb=self.combo_wyc.currentIndex(),
+                   margines=self.spin_wyc_marg.value())
 
         def zadanie(wt):
             if folder:
@@ -480,13 +496,16 @@ class ZakladkaFilmu(QWidget):
             t0 = time.perf_counter()
             for k, (i, rgb) in enumerate(czytnik):
                 r480 = D.do_480(rgb)
+                skala = (480 / rgb.shape[1], 320 / rgb.shape[0])
+                e_ = F.etykieta_klatki(wiersze.get(i + 1), skala) if wiersze else F.etykieta_klatki(None)
+                if wyc['obszary']:                          # wycinanie obszarów z etykiet przed ViT
+                    r480 = F.wytnij(r480, F.maska_wycinania(e_, wyc['obszary'], r480.shape[:2], wyc['margines']), wyc['tryb'])
                 a_ = det.analizuj(r480)
                 I.append(i); obrazy.append(r480)
                 Z.append(a_['z'][0].cpu().numpy().astype(np.float16))
                 ramki.append(a_['boxes'][0]); pew.append(float(a_['scores'][0]))
                 mapy_pew.append(torch_sigmoid(a_['mapa'][0, ..., 0]).reshape(-1))     # pewność środka w patchu [600]
-                skala = (480 / rgb.shape[1], 320 / rgb.shape[0])
-                et.append(F.etykieta_klatki(wiersze.get(i + 1), skala) if wiersze else F.etykieta_klatki(None))
+                et.append(e_)
                 wt.postep.emit(k + 1, f'klatka {k + 1}/{len(idx)} (film kl. {i}), {(time.perf_counter() - t0) / (k + 1) * 1000:.0f} ms/kl.')
             if not I:
                 raise RuntimeError('nie wczytano żadnej klatki')
@@ -497,7 +516,8 @@ class ZakladkaFilmu(QWidget):
                              for t in range(1, len(Z))]
             return dict(film=film, idx=np.array(I), obrazy=obrazy, Z=Z, ramki=np.array(ramki), pewnosc=np.array(pew),
                         mapy_pew=np.stack(mapy_pew), etykiety=et, iou=np.array(iou), zmiana=np.array(zm),
-                        fps=self.info['fps'], zrodlo=('folder ' + folder['katalog']) if folder else ('JPG' if jpg else 'MP4'))
+                        fps=self.info['fps'], zrodlo=('folder ' + folder['katalog']) if folder else ('JPG' if jpg else 'MP4'),
+                        wycinanie=wyc)
         self.btn_graj.setChecked(False)
         self._uruchom(zadanie, self._po_konwersji, f'konwertuję {len(idx)} klatek...')
 
@@ -513,7 +533,15 @@ class ZakladkaFilmu(QWidget):
         self.idz(0)
         iou = s['iou'][~np.isnan(s['iou'])]
         self._status(f'Sekwencja: {T} klatek {s["film"]} ({s["zrodlo"]}); średnia pewność {s["pewnosc"].mean() * 100:.1f} %'
-                     + (f', średnie IoU {iou.mean() * 100:.1f} % na {len(iou)} kl. z etykietą' if len(iou) else ''), 15000)
+                     + (f', średnie IoU {iou.mean() * 100:.1f} % na {len(iou)} kl. z etykietą' if len(iou) else '')
+                     + self._opis_wycinania(s.get('wycinanie')), 15000)
+
+    @staticmethod
+    def _opis_wycinania(w):
+        if not w or not w['obszary']:
+            return ''
+        return (f'; wycinanie: {" + ".join(dict(F.OBSZARY_WYCINANIA)[o] for o in w["obszary"])}, '
+                f'{("zostaw tylko", "zaczernione")[w["tryb"]]}' + (f', margines {w["margines"]} px' if w['margines'] else ''))
 
     # ------------------------------------------------------------ maski i obwody
     def _wielokaty_maski(self, t):
@@ -764,7 +792,7 @@ class ZakladkaFilmu(QWidget):
                             pewnosc=s['pewnosc'], iou=s['iou'], zmiana=s['zmiana'],
                             ramki_gt=np.array([e['ramka'] if e['ramka'] is not None else [np.nan] * 4 for e in s['etykiety']], np.float32),
                             maski=self._maski())
-        meta = dict(film=s['film'], zrodlo=s['zrodlo'], fps=s['fps'], checkpoint=str(self.ckpt),
+        meta = dict(film=s['film'], zrodlo=s['zrodlo'], fps=s['fps'], checkpoint=str(self.ckpt), wycinanie=s.get('wycinanie'),
                     klatki=[int(i) for i in s['idx']], uwaga='współrzędne w pikselach obrazu 480x320 (wejście ViT)',
                     maska_z=self.combo_maska.currentText(), prog_pokrycia=self.spin_prog.value() / 100,
                     obwody_reczne={int(s['idx'][t]): [p.tolist() for p in v] for t, v in self.obwody.items() if v})
