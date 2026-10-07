@@ -58,6 +58,40 @@ LIMITY = ['Matematyczne z wag ViT (checkpoint)',
 
 
 
+class ZakladkiGlowne(QTabWidget):
+    """Główne zakładki, każda w przewijanym polu. QTabWidget ma minimalny rozmiar równy największemu minimum ze
+    wszystkich zakładek, więc jedna wysoka zakładka (np. detekcja, około 1240 px) podnosiła minimalną wysokość całego
+    okna ponad ekran; przy każdej zmianie układu (pokaż / schowaj opcje) Qt powiększał wtedy okno poza ekran i psuł
+    maksymalizację. W przewijanym polu za wysoka zakładka dostaje pasek przewijania, a okno zostaje w ekranie.
+    widget / currentWidget / indexOf / setCurrentWidget działają na samych zakładkach (bez pola)."""
+
+    def addTab(self, w, tekst):
+        from PyQt6.QtWidgets import QFrame
+        sc = QScrollArea(); sc.setWidget(w); sc.setWidgetResizable(True); sc.setFrameShape(QFrame.Shape.NoFrame)
+        return super().addTab(sc, tekst)
+
+    @staticmethod
+    def _wew(sc):
+        return sc.widget() if isinstance(sc, QScrollArea) else sc
+
+    def widget(self, i):
+        return self._wew(super().widget(i))
+
+    def currentWidget(self):
+        return self._wew(super().currentWidget())
+
+    def indexOf(self, w):
+        for i in range(self.count()):
+            if self.widget(i) is w or super().widget(i) is w:
+                return i
+        return -1
+
+    def setCurrentWidget(self, w):
+        i = self.indexOf(w)
+        if i >= 0:
+            self.setCurrentIndex(i)
+
+
 class Okno(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -114,7 +148,7 @@ class Okno(QMainWindow):
         splitter.setStretchFactor(1, 1)
         splitter.setSizes([680, 740])               # obraz dostaje ponad połowę okna
         from zakladka_detekcji import ZakladkaDetekcji
-        self.zakladki_glowne = QTabWidget()
+        self.zakladki_glowne = ZakladkiGlowne()
         self.zakladki_glowne.addTab(splitter, 'Edytor SD')
         self.zakladka_detekcji = ZakladkaDetekcji(self)
         self.zakladki_glowne.addTab(self.zakladka_detekcji, 'Detekcja ViT i auto-szukanie latentu')
