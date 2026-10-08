@@ -27,3 +27,27 @@ zdjęcie celu ZDJECIE_CELU_0055_4019_*.png/jpg).
   i bez prowadzenia: ok. 2 % netto; prowadzenie k1000 przy sztucznym celu: 0,5 %.
 
 Jeden obraz i jedno ziarno na rundę, więc to pokaz metody, nie pomiar istotności.
+
+## Pętla generowania i szukania z losowego szumu, 50 generacji (2026-10-08)
+
+Kod `kod/petla_szum.py`, wyniki `outputs/sd_img2img_sterowanie_latentem/petla_szum/` (wersja 1) i `petla_szum_elita/`
+(wersja 2): obrazy `obrazy/g*.png`, latenty wszystkich obrazów i latentów sterujących 600 x 768 w `LATENTY.npz`,
+wykresy WYKRES_PETLA.png, WYKRES_LATENT_PLASZCZYZNA.png, WYKRES_KANALY.png, pasek PASEK.jpg.
+
+Każda generacja: SD K8000 od nowego szumu z warunkiem c (latent sterujący), latent obrazu z, poprawka
+c <- Π(c + 0,5 (z* − z)); Π rzutuje c do zakresu warunków z uczenia SD (reszta tokenu poza PCA-64 prawdziwych tokenów
+<= percentyl 99, kanały w [min, max] prawdziwych tokenów). Najlepszy obraz = najmniejsza ||z − z*||.
+
+- Wersja 1 (poprawki sumowane od ostatniego obrazu, jedno przycięcie): rzut nie trzymał (latent sterujący doszedł do
+  odległości 8,9 od naturalnych tokenów przy progu 4,4) i przestrzelił cel (113 % przyrostu); obrazy od generacji 5
+  to tekstura. Najlepszy g16: 4,9 % przyrostu, 1,3 % części widocznej dla fc2.
+- Wersja 2 (rzut powtarzany do skutku, krok od najlepszego dotąd, krok maleje bez poprawy): latent sterujący trzyma
+  się progu i stoi na ok. 51 % przyrostu; obrazy wracają do sceny oka. Najlepszy g48: 6,5 % przyrostu, 5,6 % części
+  widocznej dla fc2, odległość od z* mniejsza o 1,3 %. Średnio generacje 40-49: 5,4 % (pierwsze 10: 3,6 %).
+- Pętla z szumu daje mniej niż img2img ze sterowaniem gradientem (12 %): rozrzut między szumami (składowa prostopadła
+  0,25-0,40 ||δ||) jest większy niż postęp wzdłuż δ.
+- Dlaczego: sztuczny przyrost jest rozłożony równo na wszystkie 600 tokenów (norma przyrostu na token 26-31 przy
+  normie tokenu zdjęcia 10, 50 największych tokenów to tylko 10 % energii przyrostu), a narzędzie zajmuje kilka
+  tokenów. Przyrost podnosi ok. 300 kanałów o ok. 2 na każdym tokenie, także na tle; żaden prawdziwy obraz tak nie
+  wygląda (WYKRES_KANALY.png). Wniosek: sztuczny latent trzeba liczyć tylko na tokenach narzędzia (i granicy),
+  dopiero wtedy SD ma szansę go zrealizować.
