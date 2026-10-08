@@ -209,3 +209,25 @@ Sztuczny latent z etapu 8: każdy kanał w zakresie danych (8 celów). Wariant z
   zgodny z przyrostem (cos +0,08 do +0,16), najbardziej przy 60-20 %.
 - SD od szumu nie odtwarza dokładnie zdjęcia nawet z oryginalnego latentu: latent obrazu jest o 0,7 normy od
   oryginału. Precyzyjne porównanie wymaga img2img od zdjęcia (jak w etapach 5-9).
+
+## Etap 11: obrazy SD jako zapytania do wyszukania prawdziwych zdjęć (DINO)
+
+Kod `kod/sd_szukanie_dino.py`, paski `outputs/latent_cel_do_obrazow/sd_szukanie/SZUKANIE_m<cel>.jpg` (górny rząd:
+zdjęcie celu i 11 obrazów SD od 100 % przyrostu do oryginału; dolny: najbliższa klatka puli 35 000 TRAIN, DINOv2
+CLS, te same przekształcenia co pula). 8 celów.
+
+| przyrost | cos najbliższej klatki | najbliższa z filmu celu | wspólne z top 5 dla samego zdjęcia | cos(SD, zdjęcie celu) w DINO |
+|---|---|---|---|---|
+| 100 % | 0,36 | 0/8 | 0 | 0,16 |
+| 70 % | 0,43 | 0/8 | 0 | 0,25 |
+| 50 % | 0,53 | 0/8 | 0 | 0,31 |
+| 30 % | 0,52 | 0/8 | 0 | 0,27 |
+| 10 % | 0,51 | 0/8 | 0 | 0,29 |
+| 0 % | 0,68 | 0/8 | 0 | 0,48 |
+
+- Każdy krok przyrostu prowadzi do innych prawdziwych klatek: 4-7 różnych najbliższych klatek na cel, żadna nie
+  pokrywa się z wynikami dla samego zdjęcia i żadna nie jest z filmu celu.
+- Przy 100-70 % obrazy SD są teksturą, więc dopasowanie jest słabe (cos 0,36-0,43) i zwraca przypadkowe sceny.
+  Od około 50 % dopasowanie rośnie (cos 0,5), a znalezione klatki mają podobny ogólny wygląd.
+- Do sprawdzenia: czy znalezione klatki przesuwają latent celu w stronę przyrostu (pchnięcie jak w etapie 2c) i czy
+  dołożone do uczenia poprawiają cel, z kontrolą losowych klatek.
