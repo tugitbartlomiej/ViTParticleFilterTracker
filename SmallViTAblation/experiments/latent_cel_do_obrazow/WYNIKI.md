@@ -182,3 +182,30 @@ część SD potrafi narysować.
    Najlepiej działa prowadzenie samą częścią widoczną dla fc2.
 4. Następny krok: więcej rund i celów dla celu naturalnego, potem obrazy SD (z etykietą obrazu wyjściowego) jako
    ramię uczenia w porównaniu z oryginałem, deterministycznie, co najmniej 3 ziarna.
+
+## Etap 10: SD bezpośrednio z umiarkowanego sztucznego latentu i 10 kroków do oryginału (zlecenie użytkownika)
+
+Kod `kod/sd_interpolacja.py`, obrazy `outputs/latent_cel_do_obrazow/sd_interpolacja/` (paski `PASEK_m<cel>_<wariant>.jpg`:
+od lewej 100 % przyrostu, potem co 10 % do oryginału). Dla każdego tokenu przyrost δ = z_sztuczny − z_oryginał,
+z_k = z_sztuczny − (k/10) δ. SD od czystego szumu (DDIM 40, to samo ziarno dla wszystkich k), bez img2img i prowadzenia.
+Sztuczny latent z etapu 8: każdy kanał w zakresie danych (8 celów). Wariant z marginesem 0,25 przerwany po 2 celach
+(użytkownik: wystarczy zdjęć).
+
+| przyrost | IoU latentu (bez SD) | pewność latentu | IoU obrazu SD | pewność obrazu SD | cos(latent SD − oryginał, δ) |
+|---|---|---|---|---|---|
+| 100 % | 0,65 | 0,25 | 0,060 | 0,31 | +0,084 |
+| 80 % | 0,52 | 0,22 | 0,048 | 0,34 | +0,106 |
+| 60 % | 0,41 | 0,21 | 0,023 | 0,35 | +0,148 |
+| 50 % | 0,34 | 0,22 | 0,023 | 0,39 | +0,156 |
+| 40 % | 0,10 | 0,26 | 0,027 | 0,37 | +0,155 |
+| 20 % | 0,00 | 0,43 | 0,049 | 0,54 | +0,151 |
+| 0 % (oryginał) | 0,00 | 0,60 | 0,030 | 0,49 | +0,092 |
+
+- Detekcja w samym latencie znika szybko: przy 40 % przyrostu IoU spada do 0,10, przy 20 % do 0.
+  Potrzebny jest prawie cały przyrost.
+- SD z dużym przyrostem (100-70 %) rysuje rozmytą teksturę bez struktury oka, mimo że każdy kanał jest w naturalnym
+  zakresie. Scena wraca przy około 50-40 %, a przy 10-0 % obraz jest rozpoznawalny.
+- Obrazy SD nie przenoszą detekcji z latentu (IoU 0,02-0,09 na wszystkich krokach). Kierunek ich latentu jest lekko
+  zgodny z przyrostem (cos +0,08 do +0,16), najbardziej przy 60-20 %.
+- SD od szumu nie odtwarza dokładnie zdjęcia nawet z oryginalnego latentu: latent obrazu jest o 0,7 normy od
+  oryginału. Precyzyjne porównanie wymaga img2img od zdjęcia (jak w etapach 5-9).
