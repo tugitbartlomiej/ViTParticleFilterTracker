@@ -231,3 +231,22 @@ CLS, te same przekształcenia co pula). 8 celów.
   Od około 50 % dopasowanie rośnie (cos 0,5), a znalezione klatki mają podobny ogólny wygląd.
 - Do sprawdzenia: czy znalezione klatki przesuwają latent celu w stronę przyrostu (pchnięcie jak w etapie 2c) i czy
   dołożone do uczenia poprawiają cel, z kontrolą losowych klatek.
+
+## Etap 12: pchnięcie zdjęć znalezionych przez DINO z kontrolą losowych
+
+Kod `kod/pchniecie_znalezionych.py`, wynik `outputs/latent_cel_do_obrazow/ETAP12_PCHNIECIE_ZNALEZIONYCH.json`.
+Krok 990 -> 991, sondy = 8 celów. Na cel: 4-7 znalezionych zdjęć (najbliższe dla 11 obrazów SD, bez powtórzeń),
+3 × tyle samo losowych z tej samej puli, sam cel z etykietą. δ = przyrost sztucznego latentu (etap 8, minmax).
+
+| dołożone zdjęcie | cos(pchnięcie, δ) | cos z częścią δ widoczną dla fc2 | cos(W2 S, W2 δ) | zmiana straty celu | długość pchnięcia |
+|---|---|---|---|---|---|
+| sam cel z etykietą | −0,010 | −0,010 | −0,066 | −0,191 | 27,8 |
+| znalezione z SD (DINO) | −0,050 | −0,044 | −0,094 | −0,0061 | 3,6 |
+| losowe z puli | −0,046 | −0,033 | −0,082 | −0,0001 | 1,9 |
+
+- Kierunek: znalezione zdjęcia nie pchają latentu w stronę przyrostu lepiej niż losowe (lepsze na 3 z 8 celów,
+  p = 0,38; część widoczna dla fc2: 1 z 8). W jednym kroku nic nie pcha w stronę przyrostu, nawet sam cel.
+- Strata celu: znalezione obniżają ją mocniej niż losowe (−0,0061 wobec −0,0001, lepsze na 6 z 8 celów, p = 0,15,
+  nieistotne przy 8 celach) i pchają latent celu prawie 2 razy mocniej (3,6 wobec 1,9).
+- Po kroku przyrostu: zdjęcia znalezione dla obrazów SD z 20-10 % przyrostu mają lekko dodatni kosinus (+0,02 do
+  +0,05), dla 100-80 % ujemny (−0,11 do −0,15); po 1-8 zdjęć na krok, więc tylko wskazówka.
