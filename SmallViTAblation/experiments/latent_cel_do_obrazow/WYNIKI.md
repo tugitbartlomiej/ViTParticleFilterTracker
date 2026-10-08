@@ -250,3 +250,30 @@ Krok 990 -> 991, sondy = 8 celów. Na cel: 4-7 znalezionych zdjęć (najbliższe
   nieistotne przy 8 celach) i pchają latent celu prawie 2 razy mocniej (3,6 wobec 1,9).
 - Po kroku przyrostu: zdjęcia znalezione dla obrazów SD z 20-10 % przyrostu mają lekko dodatni kosinus (+0,02 do
   +0,05), dla 100-80 % ujemny (−0,11 do −0,15); po 1-8 zdjęć na krok, więc tylko wskazówka.
+
+## Etapy 8, 10 i 11 od nowa na zgodnej parze ViT K8000 i SD K8000 (zlecenie użytkownika 2026-10-08)
+
+Powód: użytkownik wskazał SD uczone na K8000 (`assets/SD_ViT_K8000_A_control_K10500`, teacher
+`assets/MalyViT_K8000_s47_losowe`). Sprawdzenie: dotychczasowe SD (`assets/StableDiffusionModel`) było uczone na
+`MODEL_VIT_K1000.pt` (sha 3df42a6a), identycznym z k1000 gęstej historii, więc etapy 10-11 były spójne; nowe liczenie
+przenosi wszystko na K8000. Kod `kod/k8000_od_nowa.py` (Python 3.13, bo tylko tam jest diffusers), wyniki
+`outputs/latent_cel_do_obrazow/k8000/` (ETAP8_K8000.json, ETAP10_K8000.json, ETAP11_K8000.json, `sd_interpolacja/`,
+`sd_szukanie/`, PODGLAD_SD_K8000.jpg).
+
+- Cele: 8 obrazów manifestu najtrudniejszych dla K8000 (181, 242, 102, 241, 224, 270, 369, 216; IoU 0); 4 wspólne
+  z celami k1000. K8000 na manifeście: IoU średnio 0,61 (k1000: 0,47).
+- Etap 8 (minmax danych K8000, szerokość kanału 2,2): IoU latentu 0 -> 0,86 (7 z 8 powyżej 0,5), pewność 0,68;
+  ||Δz|| = 2,2 ||z||; odległość od podprzestrzeni naturalnych tokenów 18 (prawdziwe tokeny 2,6).
+- Etap 10 (SD K8000 od szumu, DDIM 50, ziarno 0; cele 1-4: 11 kroków, cele 5-8: 6 kroków na prośbę użytkownika):
+  latent obrazu SD z oryginalnego latentu ma cos 0,72 do warunku (jak walidacja modelu). Przy 100 % przyrostu cos do
+  warunku 0,26, cos do przyrostu 0,11, odtworzony ułamek 4,1 %; ale już obraz z oryginału ma cos do przyrostu 0,06
+  i ułamek 1,9 %, więc netto sztuczny przyrost dokłada ok. 2 punkty procentowe. Obrazy 100-70 % są prawie takie same
+  dla wszystkich celów (różowa tkanka z poziomymi kreskami), oko wraca przy 50-30 %.
+- Etap 11 (DINO, pula 35 000 TRAIN): najbliższe zdjęcie to dla 41 z 68 zapytań ta sama klatka 0010/2879, a łącznie
+  tylko 8 różnych klatek na 68 zapytań; zero wspólnych z top-5 zapytania samym zdjęciem celu, zero z filmu celu.
+  Wyszukiwanie oddaje styl obrazów SD K8000, nie kierunek przyrostu.
+
+Wniosek: zgodna para K8000 przenosi kierunek sztucznego latentu do obrazu kilka razy lepiej niż para k1000
+(4 % wobec 0,5 %), ale przy celu 7 razy dalej od naturalnych tokenów niż prawdziwe obrazy SD rysuje jeden wspólny
+obraz zastępczy i wyszukiwanie zwraca prawie zawsze tę samą klatkę. Pchnięcia (etap 12) nie powtórzono: nie ma
+lokalnie stanu AdamW uczenia K8000.
