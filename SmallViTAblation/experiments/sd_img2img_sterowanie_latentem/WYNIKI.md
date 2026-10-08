@@ -71,3 +71,17 @@ Stop po 15 iteracjach bez poprawy albo po 150.
   był ogólny, trzeba optymalizować średnio po kilku szumach albo optymalizować też szum.
 - Na grafikach latentu (latenty_grafika) różnica z* − z prawie się nie zmienia: przyrost na wszystkich 600 tokenach
   (kanały 0-300 o ok. 2) pozostaje nieosiągalny.
+
+## Najbliższe klatki TRAIN dla najlepszego obrazu (g148) i grafika podobieństwa cech (2026-10-08)
+
+Kod `kod/szukanie_najlepszego.py`, `kod/grafika_podobienstwa.py`; wyniki `optymalizacja_warunku/SZUKANIE_TRAIN_g148.jpg/.json`,
+`PODOBIENSTWO_CECH_g148.png`, film `FILM_OPTYMALIZACJA_30fps.mp4` (150 obrazów optymalizacji).
+
+- Najbliższe obrazowi SD g148 (DINO cos 0,65-0,67): 0166/2161, 0078/511, 0010/2879, 0078/1043, 0078/1044; żadna z filmu
+  celu. Najbliższe samemu zdjęciu celu: sąsiednie klatki 0055 (cos 0,92-0,96).
+- Obraz SD jest do zdjęcia celu podobny tylko w 0,44 (DINO) i 0,61 (latent ViT): generacja od szumu nie zachowuje sceny.
+- Postęp latentu znalezionych klatek wzdłuż δ: 0078/511 15,1 % (11,6 % widocznej dla fc2), więcej niż sam obraz SD
+  (11,3 / 7,1 %); pozostałe 4-6 % przy prawie zerowej części widocznej. Sąsiedzi zdjęcia celu: 0,7-7,3 % i część
+  widoczna od −2,8 do 1,4 %.
+- Zastrzeżenie: to położenie latentu innego obrazu wobec osi z0 -> z*, a nie dowód, że dodanie tej klatki do uczenia
+  przesunie latent celu; to mierzy pchnięcie (etap 12 latent_cel_do_obrazow).
