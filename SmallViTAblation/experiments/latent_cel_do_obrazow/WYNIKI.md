@@ -162,3 +162,23 @@ Wnioski z SD:
 
 Czego to nie dowodzi: 4 cele i 2 rundy, jedno ziarno SD. Obrazy SD nie trafiły jeszcze do uczenia. IoU obrazów SD
 oceniane etykietą obrazu wyjściowego (img2img zachowuje układ, ale narzędzie mogło się przesunąć).
+
+### Etap 9: SD z celu w zakresie danych z marginesem 0,25
+
+Warunek i cel SD to latent z korekty w pudle [min − 0,25 szer, max + 0,25 szer] (IoU 0,82 w korekcie, poza 28).
+Runda 2: z prowadzeniem pełnym latentem cos +0,194, α 0,033, IoU 0,032; z prowadzeniem fc2 cos +0,190, α 0,033,
+IoU 0,032; sam warunek cos +0,062, α 0,010. Obraz zmienia latent mocniej (0,62 normy wobec 0,44 przy celu
+naturalnym), ale realizuje 3 % celu zamiast 11 %. Im bliżej rozkładu prawdziwych tokenów leży cel, tym większą jego
+część SD potrafi narysować.
+
+## Najkrócej po etapach 5-9
+
+1. Twoje prowadzenie SD działa kierunkowo i daje naturalne obrazy, ale przy sztucznym celu (8 razy poza naturalną
+   zmiennością) realizuje 0,5 % korekty.
+2. Detekcja w latencie rośnie, gdy latent wychodzi poza naturalne wartości. Lokalizację da się jednak uzyskać
+   w naturalnym rozkładzie tokenów: korekta w podprzestrzeni PCA-256 prawdziwych tokenów daje IoU 0,68 (7 na 8 celów),
+   a tokeny są tak naturalne jak w prawdziwych obrazach. Pewność wymaga wyjścia poza zakres danych.
+3. Taki naturalny cel SD realizuje w 11 %, a dla dwóch z czterech celów pojawia się detekcja (IoU 0,17-0,41).
+   Najlepiej działa prowadzenie samą częścią widoczną dla fc2.
+4. Następny krok: więcej rund i celów dla celu naturalnego, potem obrazy SD (z etykietą obrazu wyjściowego) jako
+   ramię uczenia w porównaniu z oryginałem, deterministycznie, co najmniej 3 ziarna.
