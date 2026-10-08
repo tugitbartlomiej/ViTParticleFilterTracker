@@ -277,3 +277,20 @@ Wniosek: zgodna para K8000 przenosi kierunek sztucznego latentu do obrazu kilka 
 (4 % wobec 0,5 %), ale przy celu 7 razy dalej od naturalnych tokenów niż prawdziwe obrazy SD rysuje jeden wspólny
 obraz zastępczy i wyszukiwanie zwraca prawie zawsze tę samą klatkę. Pchnięcia (etap 12) nie powtórzono: nie ma
 lokalnie stanu AdamW uczenia K8000.
+
+## To samo na najtrudniejszych klatkach zbioru treningowego, 5 obrazów SD i 5 znalezionych na obraz (2026-10-08)
+
+Kod `kod/k8000_trening_trudne.py`, wyniki `outputs/latent_cel_do_obrazow/k8000_trening/` (ETAP0_CELE_TRENING.json,
+ETAP8_TRENING.json, ETAP10_TRENING.json, ETAP11_TRENING.json, `sd/`, siatki `szukanie/SZUKANIE_j*.jpg`).
+Zamówienie „5/5” rozumiane jako 5 obrazów SD na cel (100, 75, 50, 25, 0 % przyrostu) i 5 najbliższych prawdziwych
+klatek na każdy obraz SD.
+
+- K8000 na 35 000 klatkach TRAIN: IoU średnio 0,63, IoU 0 na 2006 klatkach. Cele: 8 klatek z IoU 0 i najniższą
+  pewnością (0,24-0,31), każda z innego filmu.
+- Korekta minmax: IoU latentu 0 -> 0,79 (7 z 8 powyżej 0,5), pewność 0,71, ||Δz|| = 2,7 ||z||, odległość od
+  naturalnych tokenów 19.
+- SD K8000: cos latentu obrazu do warunku 0,21 przy 100 % i 0,7 przy 0 %; ułamek przyrostu w obrazie 4,4 % przy
+  100 %, ok. 2 % już przy samym oryginale.
+- DINO: 200 trafień, 31 różnych klatek; trzy sąsiednie klatki 0010/2877-2879 to 108 z 200 trafień, tylko 1 trafienie
+  z filmu celu. Nawet obraz SD z oryginalnego latentu nie przypomina zdjęcia celu, więc wyszukiwanie oddaje styl
+  generatora, a nie treść celu ani kierunek przyrostu.
