@@ -51,3 +51,23 @@ c <- Π(c + 0,5 (z* − z)); Π rzutuje c do zakresu warunków z uczenia SD (res
   tokenów. Przyrost podnosi ok. 300 kanałów o ok. 2 na każdym tokenie, także na tle; żaden prawdziwy obraz tak nie
   wygląda (WYKRES_KANALY.png). Wniosek: sztuczny latent trzeba liczyć tylko na tokenach narzędzia (i granicy),
   dopiero wtedy SD ma szansę go zrealizować.
+
+## Gradientowy dobór wejścia sterującego SD (2026-10-08)
+
+Kod `kod/optymalizacja_warunku.py`, wyniki `outputs/sd_img2img_sterowanie_latentem/optymalizacja_warunku/`
+(WYKRES_OPTYMALIZACJA.png, `obrazy/g*.png`, `latenty_grafika/` z wierszem na każdy obraz, LATENTY.npz, WYNIK.json,
+NAJLEPSZY_WARUNEK_*.png). Odpowiednik sterowania FastGAN-em użytkownika: parametrem jest warunek SD c (600 x 768),
+zawsze rzutowany do zakresu warunków SD; każda iteracja to pełna generacja od stałego szumu (DDIM 20, różniczkowalnie
+z checkpointem UNet) -> VAE -> ViT K8000; strata = −postęp latentu obrazu wzdłuż δ + 0,1 odejście w bok; Adam lr 0,05.
+Stop po 15 iteracjach bez poprawy albo po 150.
+
+- 150 iteracji bez zatrzymania (poprawa do końca, coraz wolniej): postęp latentu obrazu wzdłuż δ 2,8 % -> 11,3 %,
+  część widoczna dla fc2 0,8 % -> 7,2 %, odległość od z* mniejsza o 1,4 %; obraz naturalny (poza 3,1, zdjęcie 3,1).
+  Warunek SD przesunął się wzdłuż δ tylko o 6 %, ale doszedł do granicy naturalnego zakresu (4,43).
+- Najlepszy warunek z tym samym szumem w 50 krokach DDIM: 8,4 % (5,1 % widocznej). Z 4 innymi szumami: 2,3-3,6 %,
+  czyli tyle co kontrola z warunkiem z0 na tych szumach (1,2-4,2 %, średnio 2,7 %). Wynik dotyczy więc pary
+  warunek + szum: optymalizacja znalazła jeden obraz, nie warunek, który przenosi kierunek dla dowolnego szumu.
+- Dla kuracji danych to wystarcza (potrzebny jest obraz-zapytanie, którego latent idzie w stronę z*), ale żeby warunek
+  był ogólny, trzeba optymalizować średnio po kilku szumach albo optymalizować też szum.
+- Na grafikach latentu (latenty_grafika) różnica z* − z prawie się nie zmienia: przyrost na wszystkich 600 tokenach
+  (kanały 0-300 o ok. 2) pozostaje nieosiągalny.
