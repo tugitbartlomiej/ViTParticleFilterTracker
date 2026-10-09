@@ -1,0 +1,110 @@
+{
+  "rodzina": "vit_k1000_taniec_czasteczek_gpu_20261009",
+  "klasa": "badawcza",
+  "pytanie": "Czy caly ruch czasteczek oracle K1000 i jego statystyki mozna liczyc compute shaderami na GPU z bitowa zgodnoscia z zapisem?",
+  "role": [
+    "wizualizacja_rzeczywistych_trajektorii",
+    "obliczenia_gpu_webgpu"
+  ],
+  "wymagane": [
+    "tag",
+    "ziarno"
+  ],
+  "zrodlo": "vit_k1000_taniec_czasteczek_20261009",
+  "kontrole": [
+    "sha256 projection.npz przed uzyciem",
+    "sha256 kazdej tablicy po przeslaniu do przegladarki",
+    "bitowa zgodnosc w zapisanych stanach",
+    "sedzia numpy niezalezny od WGSL",
+    "jawne oznaczenie odcinkow miedzy zapisami"
+  ],
+  "uwagi": "Refaktor podgladu, nie nowy trening. Dane zrodlowe tylko do odczytu.",
+  "status": "complete",
+  "tag": "webgpu_compute_wspolna_PCA3",
+  "ziarno": 20261009,
+  "source_npz_sha256": "95d61d173ddb404abf7deadde10f112a3e3fc9d12fa3e63abb74a3ca7321f36a",
+  "verification": {
+    "cases_passed": 34,
+    "cases_total": 34,
+    "gpu": "nvidia ampere",
+    "verified_utc": "2026-10-09T00:56:42.489463+00:00",
+    "kin_milestone_900000_ms_per_dispatch_wall": 0.15699999999254943,
+    "timing_scope": "Średni czas ściany na wywołanie (zapis parametrów + dispatch + submit), 200 powtórzeń, bez rysowania. To nie jest izolowany pomiar GPU."
+  },
+  "url": "http://127.0.0.1:8775/",
+  "code": [
+    {
+      "path": "serve.py",
+      "sha256": "7d2e2b89a605d1be9ff6c64bff05af913158de50eac64998697a70428fd08e4a"
+    },
+    {
+      "path": "web/app.js",
+      "sha256": "506e020952089f81edaf109024f9449b06d7c0400326926160c434ced8a96bb7"
+    },
+    {
+      "path": "web/gpu-engine.js",
+      "sha256": "32cdcb70841c671caa5a523150f901b47d39b9958ef76a3d7500e9258da020e0"
+    },
+    {
+      "path": "web/index.html",
+      "sha256": "49f36090621b5588be28315dc94b92848cddc9385db494537b3779b46bd76813"
+    },
+    {
+      "path": "web/selftest.js",
+      "sha256": "3cffe833745b23b8fb9fde502800a3f2857313560dfc8c149f7125c75d93e573"
+    },
+    {
+      "path": "web/shaders.js",
+      "sha256": "c06d1652d92daf5c78675c06c6a7ed86d6bc8da9d11d34dd9f3beaa15d296ac6"
+    }
+  ],
+  "artifacts": [
+    {
+      "filename": "klatki/cala_chmura_krok100_przesuniecia.png",
+      "sha256": "13306b5bbcd72803c6a46287778e223df5269aba6c91775ed6e48a087bffc65a",
+      "bytes": 86392
+    },
+    {
+      "filename": "klatki/cala_chmura_krok300_odcinek_liniowy_przesuniecia.png",
+      "sha256": "9d745276397505b3fbb4cf742dc149609b7c022f0932a1c95d2a6ba7a895ef99",
+      "bytes": 144597
+    },
+    {
+      "filename": "klatki/cala_chmura_krok500_polozenia_naturalne.png",
+      "sha256": "bd07d254cff06ec30c0d9cb7398044e7d52e9cfec288192eb5d732ac868a4e2d",
+      "bytes": 224616
+    },
+    {
+      "filename": "klatki/obraz100_krok500_odcinki_0_100_500.png",
+      "sha256": "b3a1df05f24da7d0fb0d70fa4f4ec7decddad8ef77671b73151b63b55e08b314",
+      "bytes": 85817
+    },
+    {
+      "filename": "klatki/panel_128_trajektorii_krok180_slady.png",
+      "sha256": "d94088709d9af9a3183d79daea42a82a8bcbd10e6fcc0665dcb83a90dc4937d1",
+      "bytes": 55610
+    },
+    {
+      "filename": "README.md",
+      "sha256": "05974bc750ddc097c95d4ce86f3041dca2d04e8af42df14496d22cac66fba88d",
+      "bytes": 3892
+    },
+    {
+      "filename": "URUCHOM_WIZUALIZACJE.ps1",
+      "sha256": "aeb667101b5b912d5ebc098d7aadf140e95731636d10a21f537b526340beea79",
+      "bytes": 1039
+    },
+    {
+      "filename": "WERYFIKACJA_GPU.json",
+      "sha256": "e030f636465c2a95f842255a7f9748f1ea4b00c3442bf7f62bbd6f9226dd2077",
+      "bytes": 19737
+    }
+  ],
+  "limitations": [
+    "Rzut 3D pomija pozostale wymiary",
+    "Odcinki miedzy stanami 0/100/500 nie sa zmierzona trasa",
+    "Norma 768D z eksportu; surowe latenty tylko na Edenie",
+    "Oracle nie mierzy generalizacji"
+  ],
+  "completed_utc": "2026-10-09T00:58:20.421424+00:00"
+}

@@ -19,10 +19,12 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolb
 from matplotlib.colors import to_rgba_array
 from matplotlib.figure import Figure
 
-import detekcja as D
 import silnik
 from styl import rola
 from uklad import Przeplyw, dodaj
+from wygoda import LeniwyModul
+
+D = LeniwyModul('detekcja')            # timm i torchvision dopiero przy pierwszej detekcji
 
 TESTOWE = Path(__file__).resolve().parent / 'zdjeciatestowe'
 
@@ -39,6 +41,34 @@ def _czarny(c):
     return len(a) == 1 and a[0, 3] > 0 and not a[0, :3].any()
 
 
+def _motyw_osi(ax):
+    """Ciemny motyw jednej osi: tło, ramki, podziałki, napisy, czarne linie / słupki / punkty na jasne, legenda."""
+    ax.set_facecolor(TLO_OSI)
+    for s in ax.spines.values():
+        s.set_edgecolor(RAMKA)
+    ax.tick_params(which='both', colors=TEKST)
+    for t in [ax.title, ax._left_title, ax._right_title, ax.xaxis.label, ax.yaxis.label] + ax.texts:
+        if _czarny(t.get_color()):
+            t.set_color(TEKST)
+    for l in ax.lines:
+        if _czarny(l.get_color()):
+            l.set_color(JASNY)
+    for p in ax.patches:
+        if _czarny(p.get_facecolor()):
+            p.set_facecolor(JASNY)
+    for c in ax.collections:
+        if _czarny(c.get_facecolor()):
+            c.set_facecolor(JASNY)
+        if _czarny(c.get_edgecolor()):
+            c.set_edgecolor(JASNY)
+    leg = ax.get_legend()
+    if leg is not None:
+        leg.get_frame().set_facecolor(TLO_OSI); leg.get_frame().set_edgecolor(RAMKA)
+        for t in leg.get_texts():
+            if _czarny(t.get_color()):
+                t.set_color(TEKST)
+
+
 def ciemny_motyw(fig):
     """Przemalowuje figurę na ciemno tuż przed rysowaniem: tło, ramki osi, podziałki, napisy, legendy,
     a czarne linie, słupki i punkty na jasne. Działa po każdym fig.clear()/ax.clear(), bo wołane przy draw."""
@@ -47,38 +77,74 @@ def ciemny_motyw(fig):
         if _czarny(t.get_color()):
             t.set_color(TEKST)
     for ax in fig.axes:
-        ax.set_facecolor(TLO_OSI)
-        for s in ax.spines.values():
-            s.set_edgecolor(RAMKA)
-        ax.tick_params(which='both', colors=TEKST)
-        for t in [ax.title, ax._left_title, ax._right_title, ax.xaxis.label, ax.yaxis.label] + ax.texts:
-            if _czarny(t.get_color()):
-                t.set_color(TEKST)
-        for l in ax.lines:
-            if _czarny(l.get_color()):
-                l.set_color(JASNY)
-        for p in ax.patches:
-            if _czarny(p.get_facecolor()):
-                p.set_facecolor(JASNY)
-        for c in ax.collections:
-            if _czarny(c.get_facecolor()):
-                c.set_facecolor(JASNY)
-            if _czarny(c.get_edgecolor()):
-                c.set_edgecolor(JASNY)
-        leg = ax.get_legend()
-        if leg is not None:
-            leg.get_frame().set_facecolor(TLO_OSI); leg.get_frame().set_edgecolor(RAMKA)
-            for t in leg.get_texts():
-                if _czarny(t.get_color()):
-                    t.set_color(TEKST)
+        _motyw_osi(ax)
 
 
 class PlotnoCiemne(FigureCanvasQTAgg):
-    """Płótno matplotlib w ciemnym motywie aplikacji (motyw nakładany przy każdym rysowaniu)."""
+    """Płótno matplotlib w ciemnym motywie aplikacji (motyw nakładany przy każdym rysowaniu).
+
+    Ruchome elementy (pionowy kursor kroku, ramki, tytuł, a nawet cała oś) można zarejestrować przez
+    `ustaw_animowane`: pełne rysowanie robi się wtedy tylko przy zmianie reszty wykresu, a przy każdym kroku
+    `odswiez_animowane` odtwarza zapamiętane tło i dorysowuje same ruchome elementy (blitting, kilka ms zamiast
+    setek). Niewidoczne płótno nic nie rysuje; po pokazaniu odświeża się raz."""
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self._animowane, self._tlo, self._zalegle = [], None, False
+        self.mpl_connect('draw_event', self._po_rysowaniu)
 
     def draw(self):
         ciemny_motyw(self.figure)
         super().draw()
+
+    def ustaw_animowane(self, artysci):
+        """Rejestruje ruchome elementy (artyści albo osie); wymusza pełne rysowanie z nowym tłem."""
+        nowe = [x for x in artysci if x is not None]
+        for x in self._animowane:
+            if not any(x is y for y in nowe):                       # wyrejestrowany: znów rysowany razem z resztą
+                x.set_animated(False)
+        self._animowane = nowe
+        for x in nowe:
+            x.set_animated(True)
+        self._tlo = None
+
+    def _rysuj_animowane(self):
+        for x in self._animowane:
+            if getattr(x, 'figure', None) is None:                 # usunięty przez fig.clear()
+                continue
+            if hasattr(x, 'spines'):                                # cała oś: motyw jak przy pełnym rysowaniu
+                _motyw_osi(x)
+            self.figure.draw_artist(x)
+
+    def _po_rysowaniu(self, _zdarzenie):
+        if self._animowane:
+            self._tlo = self.copy_from_bbox(self.figure.bbox)       # tło bez ruchomych elementów
+            self._rysuj_animowane()
+        self._zalegle = False
+
+    def odswiez_animowane(self):
+        """Szybkie odświeżenie ruchomych elementów po zmianie ich danych (bez rysowania całego wykresu)."""
+        if not self.isVisible():
+            self._zalegle = True
+            return
+        if self._tlo is None:
+            self.draw_idle()
+            return
+        self.restore_region(self._tlo)
+        self._rysuj_animowane()
+        self.blit(self.figure.bbox)
+
+    def odswiez_pelne(self):
+        """Pełne rysowanie, gdy płótno jest widoczne; niewidoczne odświeży się raz po pokazaniu."""
+        if self.isVisible():
+            self.draw_idle()
+        else:
+            self._zalegle = True
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        if self._zalegle:
+            self.draw_idle()
 
 
 class PanelDetekcji(QWidget):
@@ -466,6 +532,8 @@ class ZakladkaDetekcji(QWidget):
             w1.addWidget(b)
         w1b = Przeplyw(); v.addLayout(w1b)
         self.btn_wykryj = rola(QPushButton('Wykryj'), 'glowny')
+        self.btn_wykryj.setToolTip('Uruchamia ViT na bieżącym zdjęciu: zaznacza wykryte narzędzie, podaje pewność, IoU do etykiety\n'
+                                   'oraz AP@0,5 i mAP@0,5:0,95 (gdy zdjęcie ma etykietę).')
         self.btn_wykryj.clicked.connect(self._wykryj)
         bmap = QPushButton('mAP na zdjęciach testowych')
         bmap.setToolTip(f'AP@0,5 i mAP@0,5:0,95 ViT na wszystkich zdjęciach z etykietą w {TESTOWE.name}/.')

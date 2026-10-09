@@ -50,6 +50,16 @@ def _miniatura(x):
     return np.ascontiguousarray(np.asarray(x)[::5, ::5])
 
 
+# Dymki pól wyboru źródeł obrazów do pchnięcia
+OPISY_ZRODEL = {
+    'baza': 'Kandydaci z bazy uczenia: losowe klatki (ich liczbę ustawia „baza N”, zawsze te same dla danego N).',
+    'odszukane_sd': 'Prawdziwe klatki odszukane dla obrazów SD najmniejszym błędem MSE latentu.',
+    'sd': 'Same obrazy wygenerowane przez SD (pseudo-etykieta) jako kandydaci do pchnięcia.',
+    'dino_sd': 'Prawdziwe klatki odszukane dla obrazów SD przez podobieństwo cech DINO.',
+    'konwerter_sd': 'Prawdziwe klatki odszukane przez konwerter latent -> DINO (pierwszy raz około minuty).',
+}
+
+
 class ZakladkaPchniecia(QWidget):
     def __init__(self, okno, uczenie):
         super().__init__()
@@ -74,6 +84,7 @@ class ZakladkaPchniecia(QWidget):
         for k, opis, wl in (('baza', 'baza', True), ('odszukane_sd', 'odszukane dla SD', True), ('sd', 'obrazy SD', True),
                             ('dino_sd', 'DINO dla SD', True), ('konwerter_sd', 'konwerter -> DINO', False)):
             c = QCheckBox(opis); c.setChecked(wl); w.addWidget(c); self.chk_zr[k] = c
+            c.setToolTip(OPISY_ZRODEL.get(k, ''))
         self.chk_zr['konwerter_sd'].setToolTip('Pierwszy raz około minuty: latent obrazów SD z ViT k1000, konwerter na cechy '
                                                'DINO, najbliższe z 35 000 klatek i odczyt z archiwów ZIP.')
         self.spin_baza = QSpinBox(); self.spin_baza.setRange(4, 1500); self.spin_baza.setValue(48)
@@ -81,6 +92,8 @@ class ZakladkaPchniecia(QWidget):
         self.combo_miara = QComboBox(); self.combo_miara.addItems([m[1] for m in MIARY])
         dodaj(w, 'sortuj / mapa', self.combo_miara, 'Miara do sortowania galerii i mapy na sondzie.')
         self.btn = rola(QPushButton('Licz pchnięcia'), 'glowny'); w.addWidget(self.btn)
+        self.btn.setToolTip('Dla wybranych źródeł obrazów liczy, jak każdy obraz pchnąłby cząstki sondy w jednym kroku AdamW.\n'
+                            'Wymaga wczytanej historii w zakładce „Uczenie ViT”. Wynik na wykresach poniżej.')
         self.btn_zapisz = QPushButton('Zapisz pomiar'); w.addWidget(self.btn_zapisz)
         self.btn_zapisz.setToolTip(f'JSON z miarami wszystkich kandydatów w {WYNIKI}.')
         self.pasek = QProgressBar(); self.pasek.setMaximumWidth(200); w.addWidget(self.pasek)

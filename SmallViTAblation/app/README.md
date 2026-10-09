@@ -14,9 +14,10 @@ Pythona ani torcha, tylko startuje zainstalowany `F:\Python\3.13\pythonw.exe` (t
 
 Z konsoli: `uruchom.bat` albo `python start.py` z tego katalogu (`SmallViTAblation/app/`).
 
-`start.py` od razu pokazuje okienko ładowania z krokami (torch, silnik SD, ViT z timm i torchvision, OpenGL,
-okno). Pierwszy start po włączeniu komputera trwa do minuty (import bibliotek z zimnego dysku), kolejne około
-7 s. Błąd startu pokazuje się w oknie i trafia do `start.log`; bez konsoli (exe) wyjście programu idzie do
+`start.py` od razu pokazuje okienko ładowania z krokami (torch, silnik SD, okno). Aplikacja startuje pusta:
+nie wczytuje żadnej sekwencji, historii ani modelu SD (ciepły start około 3 s do „Gotowe”, potem zero pracy w tle).
+Zakładki poza „Edytor SD” budują się przy pierwszym wejściu na kartę (`ZAKLADKI_LENIWE` w `app.py`), więc timm
+i torchvision ładują się dopiero przy pierwszej detekcji. Model SD ładuje się przy pierwszym GENERUJ. Błąd startu pokazuje się w oknie i trafia do `start.log`; bez konsoli (exe) wyjście programu idzie do
 `wyjscie.log`. `python app.py` też działa, ale bez okienka ładowania.
 
 Wymagania: torch+CUDA, diffusers 0.39.0, timm, PyQt6, opencv-python, PIL.
@@ -290,7 +291,7 @@ Zakładka opcji „Atencja” (ten sam panel co w widoku nad obrazem: mapa, gło
 („Powiększ wg mapy”); strzałki źródło -> cel są liniami między cząstkami w 3D (nadążają za przelotem).
 Atencja liczona z obrazu każdej klatki tylko przy włączonej opcji; około 106 ms na klatkę razem z resztą widoków.
 „Grubość strzałek” (panel atencji, wszystkie widoki): strzałki i łuki grubsze dla silniejszej atencji, w 5 klasach
-od 1 px do ustawionej grubości (`widok_gl.LinieGrube`; OpenGL ma jedną grubość na element linii).
+od 1 px do ustawionej grubości (shader w `czasteczki3d_gpu.py` i `makro_gpu.py`, 5 klas grubości linii).
 „Mapa z patchy”: mapy „z wybranego / do wybranego patcha” liczone ze zbioru (średnia): wybrany patch, wszystkie
 widoczne cząstki, patche narzędzia z maski klatki albo lista numerów (np. `315, 316, 340-345`).
 „Heatmapa całej przestrzeni”: mapa rozlana gradientem po przestrzeni makrowektorów, siatka 48 x 48 x 48, wartość
@@ -373,9 +374,9 @@ nie daje kontekstu OpenGL i widoki 3D są czarne; `WidokGL` pomija wtedy klatki 
   latent float16, miary ruchu, detekcję z wag, oscylator i czubek (`*_wyniki.npz`); następne wczytanie bierze
   je z dysku (kilkanaście sekund, głównie odczyt latentu 0,9 GB). Oceny i rozkłady równań cząstek trafiają do
   `*_rownania.pkl` (na patch i parametry). Zmiana latentu albo wag biegu unieważnia zapis.
-- „przy starcie” (obok „Wczytaj historię”): po uruchomieniu programu ostatnio oglądany bieg i klatka
-  wczytują się w tle, razem z ostatnio policzonymi równaniami (`cache_uczenia/ostatnie.json`).
-  Zmienna środowiskowa `EDYTOR_BEZ_AUTOSTARTU=1` wyłącza to w testach.
+- „Wczytaj ostatni” (obok „Wczytaj historię”): wybiera ostatnio oglądany bieg i klatkę
+  (`cache_uczenia/ostatnie.json`, opis w dymku) i wczytuje je dopiero po kliknięciu. Dawny przełącznik
+  „przy starcie” usunięty: program niczego nie wczytuje sam.
 - „Równanie krok po kroku” (grupa pod odtwarzaniem, karta wykresów pod obrazem, `rownanie_krokowe.py`): dla
   zaznaczonych patchy (albo wybranego) w każdym kroku t prognoza kroku x(t) -> x(t+1) w pełnych 768 wymiarach
   (Langevin albo GLE) i niedopasowanie: błąd kroku / prawdziwy krok, cos kierunku, błąd po h krokach,
@@ -515,10 +516,11 @@ wszystko dotyczy tylko stałych klatek próbnych. Plan dalszych etapów: `PLAN_A
   lista suwaków) i wątki (model SD, generacja, latent ViT).
 - `detekcja.py`: ViT z checkpointu, metryki (IoU, AP, mAP), ogon od latentu, optymalizacja.
 - `zakladka_detekcji.py`: zakładka detekcji i auto-szukania.
-- `czasteczki.py`, `czasteczki3d.py`: widoki cząsteczek 2D (matplotlib) i 3D (pyqtgraph.opengl).
+- `czasteczki.py`, `czasteczki3d.py`: widoki cząsteczek 2D (matplotlib) i 3D nad obrazem; geometria i animacja 3D
+  w `czasteczki3d_gpu.py` (shadery OpenGL, sekcja „Obliczenia na GPU”).
 - `opcje_atencji.py`: wspólny panel opcji atencji (mapy, głowy, rollout, strzałki).
 - `film.py`: filmy, zakres czasu na klatki, etykiety i obrysy, maska patchy.
-- `zakladka_filmu.py`: zakładka filmu; `przestrzen_makro.py`: przestrzeń makrowektorów.
+- `zakladka_filmu.py`: zakładka filmu; `przestrzen_makro.py`: przestrzeń makrowektorów (ruchome warstwy w `makro_gpu.py`).
 - `uklad.py`: układ zawijający kontrolki, `dodaj()` (etykieta i pole zawijają się razem) i `PanelOpcji`
   (pasek przycisków widoku plus zakładki z grupami opcji, chowane przyciskiem „Opcje”).
 - `ustawienia.py`: plik konfiguracyjny `ustawienia.json` (158 list, pól i opcji ze wszystkich zakładek i widoków;
@@ -538,9 +540,144 @@ wszystko dotyczy tylko stałych klatek próbnych. Plan dalszych etapów: `PLAN_A
 - `widok_gl.py`: widoki OpenGL (`WidokGL` odporny na błędy kontekstu, `Widok3D` z kliknięciem w obraz).
 - Wyniki (obrazy PNG, latenty NPZ) zapisują się do `outputs/latent_editor_sd_20261006/`.
 
-## Ścieżki
+## Ruch zbioru: cząsteczki i optymalizacja (2026-10-09)
+
+Nowa główna zakładka działa bez serwera na porcie 8774 i bez przeglądarki.
+Natywny widok OpenGL rysuje pełny zbiór, w tym 900000 cząsteczek znanego pomiaru.
+Shader interpoluje dwa sąsiednie zapisane stany; nie przelicza ani nie interpoluje
+metryk detekcji. Kamera, wspólna baza PCA i skala pozostają wspólne dla wszystkich obrazów i kroków.
+
+1. **Gotowy wynik 1500 obrazów** wczytuje zweryfikowane trajektorie K1000 od 0 do 500 co 5 kroków.
+   **Wybierz zapis ruchu / Wczytaj ruch** otwiera również folder nowego pomiaru.
+2. W **Checkpoint i dane** wybierz checkpoint SmallViT (`.pt` / `.pth`) i kliknij
+   **Sprawdź i wczytaj ViT**. Sprawdzane są wagi i zgodność architektury; pokazywane są krok i skrót SHA256.
+   Wybierz manifest z etykietami lub COCO i, gdy ścieżki są względne, folder zdjęć.
+3. W **Optymalizacja** ustaw liczbę obrazów, budżet kroków, zapis co N kroków,
+   learning rate, Adam/SGD, ograniczenie GELU lub swobodną korektę, regularyzację,
+   docelową pewność i IoU, ziarno i CUDA/CPU. **Oblicz nowy ruch** liczy w tle;
+   **Zatrzymaj obliczenia** zachowuje częściowy wynik. Każdy obraz ma osobną korektę
+   600×768 aktywacji, a wagi detektora pozostają zamrożone. To pomiar z etykietą
+   (oracle), nie uczenie wag ani dowód jakości na nowych obrazach.
+4. Po obliczeniu kliknij **Wczytaj ruch**. W **Animacja** można zmieniać tempo
+   podczas odtwarzania, wyłączyć płynne przejścia, włączyć obrót, zmienić rozmiar
+   i widoczność punktów oraz oglądać cały zbiór lub jeden obraz. Suwak i przyciski
+   **Poprzedni / Następny zapis** wybierają rzeczywiste stany. Pauza zachowuje
+   pozycję między nimi. Kliknięcie cząsteczki pokazuje numer obrazu i patcha.
+
+Ścieżki i ustawienia tej zakładki są objęte menu **Ustawienia** oraz automatycznym
+zapisem ustawień aplikacji. Nie są zapisywane zdjęcia ani pełne trajektorie 768D:
+nowy pomiar zachowuje binarne rzuty 3D, normy ruchu w pełnych 768D, rzeczywiste
+metryki, wspólną bazę PCA, konfigurację i pochodzenie checkpointu w
+`outputs/ruch_czasteczek_gui/<nowy katalog>/`. Rozmiar tego zapisu jest podany
+przed obliczeniem. **Zapisz podgląd PNG** to osobny, dobrowolny eksport widoku.
+Przerwany pomiar zachowuje ukończone stany do oglądania, ale nie zapisuje stanu
+optymalizatora potrzebnego do wznowienia obliczeń.
+
+Zmiana checkpointu w formularzu nie zmienia pochodzenia gotowych trajektorii.
+Przy różnicy SHA256 widok zgłasza niezgodność. Dla innego checkpointu użyj
+**Oblicz nowy ruch**. Checkpointy innych architektur nie są konwertowane po cichu.
+
+### Pliki tej zakładki
+
+- `zakladka_ruchu.py`: formularz, zadania w tle, sterowanie odtwarzaniem i metryki.
+- `ruch_gpu.py`: compute shadery GLSL 4.30; magazyn stanów osi czasu na karcie (cała oś w budżecie VRAM albo
+  pierścień doczytywany w tle), interpolacja, kolory, granice osi, mapa 20 × 30, mediana, wybór punktu, ślady.
+  Zastąpił `ruch_gl.py`. Oś czasu wczytuje się dopiero po kliknięciu.
+- `ruch_zbioru.py`: czytnik zapisów, weryfikacja danych i silnik nowych pomiarów.
+- `ruch_naturalny.py`: rzeczywiste forwardy kolejnych zapisanych modeli i import logów.
+
+### Uczenie naturalne: rzeczywiste checkpointy do K1000
+
+W panelu **Uczenie naturalne** kliknij **Historia prowadząca do K1000**.
+Ustawia to odnaleziony lokalny bieg:
+`experiments/maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/wagi/`.
+Zawiera 101 checkpointów `k0000.pt`–`k1000.pt`, co 10 aktualizacji, z treningu
+na Edenie z 1 października 2026, ziarno 47. Wszystkie SHA256 i zapisane liczniki
+zostały zweryfikowane z manifestem transferu. Ostatni checkpoint jest identyczny
+z `assets/MalyViT_K1000_SD_conditioning/MODEL_VIT_K1000.pt`.
+
+1. W **Checkpoint i dane** wybierz te same 1500 obrazów i etykiety.
+   Domyślny `MANIFEST_1500.jsonl` ma tę samą kolejność co pierwotna baza treningowa.
+2. W **Uczenie naturalne** wybierz folder checkpointów, zakres rzeczywistych kroków,
+   odstęp między checkpointami, liczbę obrazów i wielkość paczki pomiarowej.
+   CUDA/CPU i ziarno wspólnej bazy PCA wybiera się w **Optymalizacja**.
+   **Sprawdź historię** weryfikuje zapisane kroki i pliki, bez obliczania ruchu.
+3. **Oblicz ruch naturalny** przepuszcza każde zdjęcie przez każdy wybrany model,
+   w trybie eval i fp32. Nie uczy wag, nie odtwarza AdamW i nie podmienia aktywacji.
+   Wszystkie 600 tokenów każdego obrazu pochodzą z tego samego miejsca sieci co
+   w trybie sztucznym: post-GELU ostatniego MLP, po 768 współrzędnych na token.
+4. **Wczytaj wynik naturalny** wybiera najnowszy kompletny naturalny pomiar
+   dla wybranej liczby obrazów, a gdy jeszcze go nie ma, ukończone stany częściowego pomiaru.
+   Stan częściowy jest jawnie oznaczony. Ponowne wczytanie dodaje nowo zapisane checkpointy.
+   Inne gotowe zapisy można otworzyć przez **Wczytaj ruch**.
+   Suwak pokazuje rzeczywiste numery kroków treningu, także przy zakresie zaczynającym
+   się po kroku 0. Ruch liczony jest względem pierwszego wybranego checkpointu.
+5. **Wczytaj logi** przyjmuje plik JSON/JSONL z jawnie zapisanymi krokami albo folder
+   zawierający `LOG.json` i `OCENY.json`. Oddzielny wykres pokazuje stratę treningową
+   lub historyczne mAP50 z walidacji. Nie są to nowe pomiary IoU na 1500 obrazach.
+   Logi źródłowe i ich sumy są dołączane do pochodzenia nowego pomiaru.
+
+Domyślny pomiar 1500×600 cząsteczek w 101 stanach zapisuje około 1,45 GB rzutu 3D.
+Do dokładnych norm ruchu w 768D potrzebny jest tymczasowy początkowy latent około
+2,76 GB, usuwany po zakończeniu lub przerwaniu. Nie zapisuje się zdjęć ani pełnych
+trajektorii 768D. Przed uruchomieniem sprawdzane są zasoby. Gotowe dane z tej rodziny
+również trafiają do `outputs/ruch_czasteczek_gui/`, z oznaczeniem osi `training_checkpoint`.
+
+Historyczny gęsty zapis co jeden krok dotyczył tylko 12 sond, a nie całych 1500 obrazów.
+Dla całego zbioru dostępne są rzeczywiste wagi co 10 kroków. Shader wygładza przejścia
+między pomiarami; nie udaje, że ma niezapisane checkpointy. PCA dopasowywane jest raz
+na pierwszym wybranym stanie i nie zmienia orientacji w kolejnych krokach. W tej
+historycznej współrzędnej obserwowany ruch obejmuje zmiany wag oraz zapisanych
+buforów BatchNorm, nie jedynie aktualizacje parametrów.
+
+## Historyczne ścieżki edytora SD
 
 - checkpoint: `assets/StableDiffusionModel/best_checkpoint.pt` (sha256 4c450bdd...),
 - baza SD: `F:/Studia/PhD_projekt/VIT/eden_archiwum/sd_modele/ema_020000`,
 - VAE: `F:/Studia/PhD_projekt/VIT/eden_archiwum/sd_modele/sd-vae-ft-mse`,
 - ViT: `outputs/vit_latent128_jedno_zdjecie_90/MODEL_VIT_K1000.pt`.
+
+## Obliczenia na GPU (2026-10-09)
+
+Animacje cząsteczek liczą compute shadery OpenGL 4.3 (GLSL 4.30, bufory SSBO) w oknie aplikacji, natywnie pod
+Windows; bez przeglądarki i WebGL. Dane trafiają na kartę przy zmianie kroku albo opcji, a w każdej klatce CPU podaje
+tylko parametry (krok, postęp przelotu, kamera).
+
+| Widok | Moduł GPU | Co liczy karta |
+|---|---|---|
+| Przestrzeń makrowektorów | `makro_gpu.py` | przelot 600 cząstek, mikrowektory, łańcuch i wypadkowa wybranej cząstki, ślady z położeń wszystkich kroków, zdjęcie na siatce cząstek, brzeg, strzałki atencji |
+| Cząsteczki 3D nad obrazem | `czasteczki3d_gpu.py` | wartości PRZED/PO, skala (centyl), mikrowektory i przejście PRZED → PO, łuki atencji, mieszanki kolorów, tekstura obrazu |
+| Ruch zbioru (900 000 cząsteczek) | `ruch_gpu.py` | położenia i przejścia między zapisami, kolory, granice osi, mapa ruchu, mediana, wybór punktu, ślady |
+
+Na CPU zostało: dopasowanie baz (PCA, SVD), mapy atencji z ViT (`opcje_atencji.py`), napisy i statyczne elementy
+sceny, wykresy matplotlib (aktualizowane przez blitting zamiast pełnego przerysowania).
+
+Wymagania i pułapki:
+- OpenGL 4.3 lub nowszy (RTX 3070: 4.6 compatibility). Bez niego błąd jest widoczny w opisie pod widokiem.
+- Python 3.13 (`F:\Python\3.13`), bo pod 3.11 `OpenGL_accelerate` nie działa z numpy 2.
+- `QOpenGLWidget.repaint()` nie rysuje synchronicznie; testy wymuszają klatkę przez `grabFramebuffer()`.
+- Po rysowaniu każdy moduł przywraca stan GL (np. `GL_UNPACK_ALIGNMENT`), inaczej psują się napisy QPainter.
+
+Testy (wszystkie porównują bufory odczytane z karty z referencją CPU/numpy):
+`F:\Python\3.13\python.exe -m pytest -q test_*.py` (`conftest.py` ustawia wspólne konteksty OpenGL jak `start.py`).
+Dymki wszystkich kontrolek sprawdza `sprawdz_dymki.py --podsumowanie`.
+
+### Pomiar naturalny na GPU, uzupełnianie i zapis 16-bitowy (2026-10-09)
+
+- **Pomiar na karcie** (`ruch_naturalny.py`): obrazy dekodowane raz na cały pomiar i trzymane na karcie (dawniej
+  każdy z ~101 checkpointów czytał, sprawdzał SHA256 i dekodował od nowa 1500 obrazów). Stan odniesienia (pierwszy
+  checkpoint, 2,8 GB) leży w pamięci karty zamiast w pliku czytanym w każdej paczce. Rzut PCA, normy 768D i metryki
+  detekcji liczy CUDA dla całej paczki naraz. Klatki bitowo równe dawnej ścieżce CPU. Około 500 obrazów/s na
+  RTX 3070 (dawniej około 64), czyli pełny pomiar 101 × 1500 w około 5 minut. Domyślna paczka 32.
+- **Uzupełnij brakujące kroki** (przycisk w „Uczenie naturalne”, `ruch_naturalny.uzupelnij`): dolicza na GPU tylko
+  brakujące checkpointy przerwanego pomiaru w tym samym folderze i zapisuje je na dysk. Sprawdza SHA256 źródeł,
+  wczytuje bazę PCA z pliku i liczy ponownie krok bazowy, który musi zgadzać się bitowo z zapisem. Wynik jest bitowo
+  taki sam jak pomiar bez przerwy (test `test_resume_missing_steps_equals_uninterrupted`).
+- **Zapis 16-bitowy** (`frame_format = 'q16'`, domyślny dla nowych pomiarów; pliki `step_XXXX.q16`): każda wartość
+  jako uint16 w granicach danego kroku, x = lo + q/65535 · span, norma = q/65535 · norm_max; parametry kroku w
+  manifeście (`files[krok].quant`). Połowa miejsca na dysku i w pamięci karty (101 kroków: 1,45 GB -> 0,73 GB),
+  shader zamienia słowa na liczby (`unpackUnorm2x16`). Błąd najwyżej pół kroku kwantyzacji (rozpiętość osi / 131 070).
+  Statystyki, granice i krzywe w manifeście liczy producent z float32 przed kwantyzacją. Dawne pomiary float32
+  (`.bin`) czytają się bez zmian; przycisk „Zapisz kopię 16-bitową” (`ruch_zbioru.konwertuj_q16`) robi obok kopię
+  `_q16`, oryginał zostaje. Bezstratna kompresja (zstd z tasowaniem bajtów) dawała tylko 24 % mniej miejsca i wolniejszy
+  odczyt, dlatego wybrano format 16-bitowy.

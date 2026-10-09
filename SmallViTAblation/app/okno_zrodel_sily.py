@@ -66,6 +66,8 @@ class OknoZrodelSily(QWidget):
         self.spin_kan = QSpinBox(); self.spin_kan.setRange(0, 767)
         dodaj(w, 'nr', self.spin_kan, 'Numer wektora (kanału) latentu. Klik na karcie „Wektor patcha” też wybiera.')
         self.btn = rola(QPushButton('Licz'), 'glowny'); w.addWidget(self.btn)
+        self.btn.setToolTip('Liczy rozkład wybranego wektora wybranego patcha na źródła, przy wagach bieżącego kroku zakładki Uczenie.\n'
+                            'Wynik pojawia się na kartach poniżej.')
         self.etykieta = QLabel(''); self.etykieta.setWordWrap(True); lay.addWidget(self.etykieta)
 
         self.zakl = QTabWidget(); lay.addWidget(self.zakl, 1)
@@ -74,7 +76,10 @@ class OknoZrodelSily(QWidget):
         self.fig = Figure(figsize=(12, 7)); self.canvas = PlotnoCiemne(self.fig); ls.addWidget(self.canvas, 1)
         w2 = QHBoxLayout(); ls.addLayout(w2)
         self.btn_graj = rola(QPushButton('▶ Płyń'), 'glowny'); self.btn_graj.setCheckable(True); w2.addWidget(self.btn_graj)
+        self.btn_graj.setToolTip('Animuje przepływ sygnału przez kolejne etapy sieci: obraz, łodyga, 6 bloków, wektor wynikowy.\n'
+                                 'Szybkość ustawia pole „etapów/s”; ponowny klik zatrzymuje.')
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setRange(0, 1000); w2.addWidget(self.suwak, 1)
+        self.suwak.setToolTip('Pozycja w przepływie przez etapy sieci (od obrazu po wektor wynikowy). Przeciągnij, żeby przejść ręcznie.')
         self.spin_tempo = QDoubleSpinBox(); self.spin_tempo.setRange(.1, 10); self.spin_tempo.setValue(1)
         dodaj(w2, 'etapów/s', self.spin_tempo, 'Szybkość płynięcia przez głębokości sieci.')
         self.spin_strz = QSpinBox(); self.spin_strz.setRange(0, 300); self.spin_strz.setValue(40)

@@ -157,6 +157,8 @@ class ZakladkaKorekty(QWidget):
         self.btn_hist.setToolTip('Para przed/po z maksymalizacji J128 (outputs/vit_latent128_maksymalizacja) dla obrazu '
                                  'manifestu. Tylko końce korekty, bez trajektorii; ostrzeżenie przy niezgodnym checkpointcie.')
         self.btn_licz = rola(QPushButton('Oblicz korektę'), 'glowny'); w.addWidget(self.btn_licz)
+        self.btn_licz.setToolTip('Liczy korektę latentu dla wybranego obrazu i checkpointu przy ustawionej interwencji i celu,\n'
+                                 'w tle (nic nie liczy się samo przy otwarciu zakładki). „Zatrzymaj” przerywa obliczenie.')
         self.btn_stop = QPushButton('Zatrzymaj'); w.addWidget(self.btn_stop); self.btn_stop.setEnabled(False)
         self.btn_stop.setToolTip('Przerywa bieżące obliczenie; częściowe wyniki zostają zapisane ze statusem cancelled.')
         self.btn_por = QPushButton('Porównaj z ruchem uczenia'); w.addWidget(self.btn_por)
@@ -216,6 +218,8 @@ class ZakladkaKorekty(QWidget):
         self.edit_h = QLineEdit('1, 5, 20'); self.edit_h.setMaximumWidth(90)
         dodaj(w, 'horyzonty', self.edit_h, 'Horyzonty prognozy w krokach zapisu tej sekwencji.')
         self.btn_dyn = rola(QPushButton('Oceń modele'), 'glowny'); w.addWidget(self.btn_dyn)
+        self.btn_dyn.setToolTip('Dopasowuje modele dynamiki do wybranej sekwencji i ocenia ich prognozy na podanych horyzontach.\n'
+                                'Wynik na wykresie poniżej; liczy się w tle.')
         self.fig_d = Figure(figsize=(11, 7)); self.can_d = PlotnoCiemne(self.fig_d); self.can_d.setMinimumHeight(560)
         sl.addWidget(self.can_d, 1)
         self.tabs.addTab(self._przew(s), 'Modele dynamiki')
@@ -241,11 +245,16 @@ class ZakladkaKorekty(QWidget):
         self.spin_gp = QSpinBox(); self.spin_gp.setRange(0, 10); self.spin_gp.setValue(2)
         dodaj(w, 'inne przyszłości', self.spin_gp, 'Ile dodatkowych przyszłych sekwencji paczek (oprócz prawdziwej).')
         self.chk_lin = QCheckBox('liniowość (2ε)'); self.chk_lin.setChecked(True); w.addWidget(self.chk_lin)
+        self.chk_lin.setToolTip('Dodatkowa gałąź z interwencją 2ε: sprawdza, czy odpowiedź na 2ε jest równa 2 × odpowiedź na ε (liniowość).')
         self.chk_sup = QCheckBox('superpozycja (sloty p, p+1)'); w.addWidget(self.chk_sup)
+        self.chk_sup.setToolTip('Dodatkowa gałąź z interwencją w dwóch sąsiednich slotach paczki (p i p+1): sprawdza, czy odpowiedź na oba\n'
+                                'razem jest sumą odpowiedzi na każdy osobno (superpozycja). Dotyczy interwencji typu „waga”.')
         self.chk_det = QCheckBox('deterministycznie'); self.chk_det.setChecked(True); w.addWidget(self.chk_det)
         self.chk_det.setToolTip('Atencja MATH i deterministyczne algorytmy: dwie identyczne gałęzie dają różnicę 0. Bez '
                                 'tego (jak w prawdziwym biegu) szum GPU po kilku krokach dorównuje odpowiedzi.')
         self.btn_gal = rola(QPushButton('Licz gałęzie'), 'glowny'); w.addWidget(self.btn_gal)
+        self.btn_gal.setToolTip('Odtwarza uczenie od wybranego kroku w gałęziach (z interwencją, kontrolna bez niej) i mierzy różnice\n'
+                                'po zadanych krokach. Liczy się w tle, przerywa „Zatrzymaj”.')
         self.fig_g = Figure(figsize=(11, 7)); self.can_g = PlotnoCiemne(self.fig_g); self.can_g.setMinimumHeight(560)
         sl.addWidget(self.can_g, 1)
         self.tabs.addTab(self._przew(s), 'Gałęzie uczenia')
@@ -265,6 +274,8 @@ class ZakladkaKorekty(QWidget):
         self.spin_kz = QSpinBox(); self.spin_kz.setRange(0, 10 ** 6)
         dodaj(w, 'ziarno', self.spin_kz, 'Ziarno wyboru mierzonych tokenów.')
         self.btn_kal = rola(QPushButton('Licz obserwator'), 'glowny'); w.addWidget(self.btn_kal)
+        self.btn_kal.setToolTip('Dopasowuje obserwator (filtr Kalmana) do wybranej sekwencji: widzi tylko część tokenów\n'
+                                'i odtwarza resztę. Porównanie z pełnym zapisem na wykresie poniżej.')
         self.fig_k = Figure(figsize=(11, 7)); self.can_k = PlotnoCiemne(self.fig_k); self.can_k.setMinimumHeight(560)
         sl.addWidget(self.can_k, 1)
         self.tabs.addTab(self._przew(s), 'Obserwator (Kalman)')

@@ -1,12 +1,14 @@
-"""Widok „Cząsteczki 3D”: 600 tokenów jako cząsteczki w jednym globalnym układzie 3D, rysowane na GPU.
+"""Widok „Cząsteczki 3D”: 600 tokenów jako cząsteczki w jednym globalnym układzie 3D, liczone i rysowane na GPU.
 
 Układ globalny: x = kolumna obrazu w pikselach wejścia ViT (0..480), y = wiersz liczony od dołu (0..320),
 z = wysokość nad obrazem. Środek tokenu leży w środku jego patcha 16x16 (opcjonalnie podniesiony o atencję).
 Kanał c ma stały kierunek w 3D (spirala Fibonacciego na sferze albo półsferze nad obrazem) i stały kolor
 z koła barw (768 kolorów), te same dla wszystkich tokenów. Wektor ma długość promień zera + skala * wartość.
 
-Rysowanie: pyqtgraph.opengl (OpenGL, bufory VBO na karcie graficznej). Obrót kamery nie przelicza danych,
-a zmiana wartości wysyła na kartę jedną tablicę pozycji (do 600 x 768 x 2 wierzchołków).
+Liczenie i rysowanie: czasteczki3d_gpu.py (OpenGL 4.3, compute shadery GLSL i SSBO, natywnie pod Windows).
+Na kartę idzie latent PRZED i PO tylko przy nowej klatce, a przy zmianie opcji same małe tablice albo liczby;
+mikrowektory, skala (99,5. centyl), przejście PRZED → PO, łuki atencji, mieszanka kolorów i tekstura obrazu
+liczą się w shaderach. Animacja przejścia wysyła na kartę jedną liczbę t na klatkę; obrót kamery nic nie liczy.
 """
 import time
 from pathlib import Path
@@ -24,8 +26,9 @@ from opcje_atencji import OpcjeAtencji
 from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
 from uklad import Odpinanie, PanelOpcji, dodaj, dodaj_nawigacje
-from widok_gl import LinieGrube, ObrazPrzezroczysty, Widok3D
-from wspolne import baza_pca_rgb, kolor_pca_rgb, kolor_podobienstwa
+from czasteczki3d_gpu import CzasteczkiGPU, PlaszczyznaGPU
+from widok_gl import Widok3D
+from wspolne import baza_pca_rgb
 from wspolne import (CZASTECZKI_CO, KOLUMNY, KOMORKA, PCA_SKLADOWE, SZER, WIERSZE, WYNIKI, WYS, kierunki,
                      kolory_kanalow, opisy_czasteczek, pca, tokeny_co)
 
@@ -193,14 +196,17 @@ class WidokCzasteczek3D(QWidget):
         self.suwak.setFixedWidth(80)
         w.addWidget(self.suwak); w.addWidget(QLabel('PO'))
         self.btn_anim = rola(QPushButton('Animuj'), 'narzedzie'); self.btn_anim.setCheckable(True)
-        self.btn_anim.setToolTip('Przesuwa t tam i z powrotem (tryb przejścia). Każda klatka to nowe pozycje na karcie.')
+        self.btn_anim.setToolTip('Przesuwa t tam i z powrotem (tryb przejścia PRZED → PO, przełącza na niego).\n'
+                                 'Na kartę idzie tylko t; położenia wektorów liczy shader.')
         w.addWidget(self.btn_anim)
-        self.btn_kamera = rola(QPushButton('Kamera od nowa'), 'narzedzie'); self.btn_kamera.setToolTip('Widok całego obrazu z ukosa.')
+        self.btn_kamera = rola(QPushButton('Kamera od nowa'), 'narzedzie')
+        self.btn_kamera.setToolTip('Ustawia kamerę od nowa: widok całego obrazu z ukosa (elewacja 38 st.).')
         w.addWidget(self.btn_kamera)
-        self.btn_gora = rola(QPushButton('Z góry'), 'narzedzie'); self.btn_gora.setToolTip('Widok prosto z góry, jak na zdjęciu.')
+        self.btn_gora = rola(QPushButton('Z góry'), 'narzedzie')
+        self.btn_gora.setToolTip('Kamera prosto z góry na środek obrazu, jak na zdjęciu.')
         w.addWidget(self.btn_gora)
         self.btn_png = rola(QPushButton('Zapisz PNG'), 'narzedzie')
-        self.btn_png.setToolTip(f'Zapis bieżącego widoku do {WYNIKI}')
+        self.btn_png.setToolTip(f'Zapisuje bieżący widok (to, co widać, z kamerą) jako PNG do {WYNIKI}')
         w.addWidget(self.btn_png)
         self.btn_odepnij = rola(QPushButton('Odepnij'), 'narzedzie'); w.addWidget(self.btn_odepnij)
         self.odpinanie = Odpinanie(self, 'Cząsteczki 3D', self.btn_odepnij)
@@ -233,31 +239,29 @@ class WidokCzasteczek3D(QWidget):
         self.btn_png.clicked.connect(self.zapisz_png)
         self.btn_okno.clicked.connect(self._osobne)
         self.widok.klik.connect(self._klik)
-        self.combo_pca.currentIndexChanged.connect(lambda *_: (self._legenda(), self._rysuj()))
         self._pca_zrodlo = None                  # latent sekwencji [N, 768] do bazy PCA (zakładka filmu)
         self._pca_cache = {}
+        self._pca_wersja = 0
+        # opcje, które zmieniają zestaw wektorów, widoczne cząsteczki albo mapę: małe tablice na kartę
         for k in (self.combo_tryb.currentIndexChanged, self.combo_kan.currentIndexChanged,
-                  self.combo_ksztalt.currentIndexChanged, self.combo_styl.currentIndexChanged,
-                  self.spin_r0.valueChanged, self.spin_skala.valueChanged, self.spin_wys.valueChanged,
-                  self.spin_maks.valueChanged, self.chk_tylko.toggled, self.combo_patche.currentIndexChanged,
+                  self.combo_ksztalt.currentIndexChanged, self.combo_pca.currentIndexChanged,
+                  self.spin_wys.valueChanged, self.chk_tylko.toggled, self.combo_patche.currentIndexChanged,
                   self.combo_ile.currentIndexChanged, self.chk_czasteczki.toggled, self.chk_zazn.toggled):
             k.connect(lambda *_: self._rysuj())
-        self.suwak.valueChanged.connect(lambda *_: self._rysuj(tylko_pozycje=True))
-        self.spin_gr.valueChanged.connect(self._grubosc)
-        for k in (self.chk_obraz.toggled, self.spin_alfa.valueChanged, self.chk_atencja.toggled, self.opcje.zmiana,
-                  self.spin_krycie.valueChanged):
-            k.connect(lambda *_: (self._podloze(), self._rysuj()))
-        self.chk_siatka.toggled.connect(lambda v: self.siatka.setVisible(v))
-        for k in (self.chk_mies.toggled, self.combo_waga.currentIndexChanged, self.spin_mies_krycie.valueChanged,
+        for k in (self.chk_atencja.toggled, self.opcje.zmiana):
+            k.connect(lambda *_: self._atencja_od_nowa())
+        # opcje, które zmieniają tylko liczby w shaderach (bez żadnego przeliczenia na CPU)
+        for k in (self.combo_styl.currentIndexChanged, self.spin_gr.valueChanged, self.spin_r0.valueChanged,
+                  self.spin_skala.valueChanged, self.spin_maks.valueChanged, self.chk_zero.toggled,
+                  self.suwak.valueChanged, self.chk_obraz.toggled, self.spin_alfa.valueChanged, self.spin_krycie.valueChanged,
+                  self.chk_mies.toggled, self.combo_waga.currentIndexChanged, self.spin_mies_krycie.valueChanged,
                   self.spin_nasyc.valueChanged, self.chk_mies_jasn.toggled, self.chk_mies_gladko.toggled):
-            k.connect(lambda *_: self._rysuj())
-        self.chk_zero.toggled.connect(lambda *_: self._rysuj())
+            k.connect(lambda *_: self._parametry())
+        self.chk_siatka.toggled.connect(lambda v: self.siatka.setVisible(v))
 
     # ------------------------------------------------------------ scena
     def _buduj_scene(self):
         v = self.widok
-        self.podloze = ObrazPrzezroczysty(np.zeros((SZER, WYS, 4), np.uint8))
-        v.addItem(self.podloze)
         lin = []
         for x in range(0, SZER + 1, KOMORKA):
             lin += [(x, 0, .05), (x, WYS, .05)]
@@ -266,21 +270,13 @@ class WidokCzasteczek3D(QWidget):
         self.siatka = gl.GLLinePlotItem(pos=np.array(lin, np.float32), color=(1, 1, 1, .18), mode='lines',
                                         glOptions='translucent')
         v.addItem(self.siatka)
-        self.zera = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), color=(.6, .6, .6, .7), mode='lines',
-                                      glOptions='translucent')
-        v.addItem(self.zera)
-        self.szare = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), color=(.55, .55, .55, .5), mode='lines',
-                                       glOptions='translucent')
-        v.addItem(self.szare)
-        self.linie = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), color=(1, 1, 1, 1), mode='lines',
-                                       glOptions='translucent')
-        v.addItem(self.linie)
-        self.punkty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=2, pxMode=True, glOptions='translucent')
-        v.addItem(self.punkty)
-        self.luki = LinieGrube(v)                         # łuki atencji, grubość według siły
-        self.groty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=6, pxMode=True, glOptions='translucent')
-        self.groty.setVisible(False)
-        v.addItem(self.groty)
+        # mikrowektory, końce, okręgi zera, szare PRZED, łuki i groty atencji: liczone i rysowane na GPU
+        self.gpu = CzasteczkiGPU()
+        self.gpu.po_skali = lambda m: QTimer.singleShot(0, self._etykieta)
+        self.gpu.po_bledzie = lambda b: QTimer.singleShot(0, self._etykieta)
+        v.addItem(self.gpu)
+        self.podloze = PlaszczyznaGPU(self.gpu)          # płaszczyzna obrazu z teksturą policzoną na GPU (głębia 10)
+        v.addItem(self.podloze)
         self.obrys_item = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), color=(1, 1, 0, 1), width=2.5,
                                             mode='lines', glOptions='translucent')
         self.obrys_item.setVisible(False)
@@ -302,6 +298,9 @@ class WidokCzasteczek3D(QWidget):
     def _legenda(self):
         polsfera = self.combo_ksztalt.currentIndex() == 1
         k = self._k_pca()
+        if getattr(self, '_klucz_legendy', None) == (polsfera, k):
+            return
+        self._klucz_legendy = (polsfera, k)
         d = kierunki(polsfera, k or 768)
         kol = kolory_kanalow(k) if k else self.kolory
         self.legenda.setData(pos=np.array([-60, WYS - 60, 0], np.float32) + 40 * d, color=kol,
@@ -317,9 +316,11 @@ class WidokCzasteczek3D(QWidget):
         self._wersja = getattr(self, '_wersja', 0) + 1     # nowe dane = nowa baza PCA (gdy nie z sekwencji)
         self.rgb, self.atencja_fn = rgb480, atencja_fn
         self.opcje.ustaw_zrodlo(atencja_fn)
+        self._at_klucz = None                             # nowa klatka: atencja od nowa
         if self.po is None and self.combo_tryb.currentIndex() != 0:
             self.combo_tryb.blockSignals(True); self.combo_tryb.setCurrentIndex(0); self.combo_tryb.blockSignals(False)
-        self._podloze()
+        self.gpu.ustaw_latent(self.przed, self.po)        # jedyne duże dane na kartę: latent tej klatki
+        self.gpu.ustaw_obraz(rgb480)
         self._rysuj()
 
     def _osobne(self):
@@ -343,6 +344,7 @@ class WidokCzasteczek3D(QWidget):
         w.suwak.setValue(self.suwak.value())
         w.opcje.kopiuj_z(self.opcje)
         w.token = self.token
+        w.zaznaczenie = self.zaznaczenie
         w.setWindowTitle('Cząsteczki 3D: globalny układ, 768 wektorów na token')
         w.resize(1600, 1000)
         w.pokaz(self.przed, self.po, self.rgb, self.atencja_fn)
@@ -355,66 +357,37 @@ class WidokCzasteczek3D(QWidget):
         k = int(np.clip(x // KOMORKA, 0, KOLUMNY - 1))
         r = int(np.clip((WYS - y) // KOMORKA, 0, WIERSZE - 1))
         self.token = r * KOLUMNY + k
-        self.etykieta.setText(f'wybrany patch: token {self.token} (wiersz {r}, kolumna {k})')
-        if self.chk_atencja.isChecked() and self.opcje.potrzebuje_tokenu():
-            self._podloze()
         self._rysuj()
 
-    def _mapa_atencji(self):
-        return self.opcje.mapa(self.token)[0] if self.atencja_fn is not None else None
+    def _atencja_od_nowa(self):
+        """Zmiana opcji atencji: mapa i łuki liczone od nowa (na CPU z macierzy atencji ViT), potem na kartę."""
+        self._at_klucz = None
+        self._rysuj()
 
-    def _podloze(self):
-        """Tekstura płaszczyzny z = 0: obraz (jasność) z wtopioną mapą atencji."""
-        img = np.zeros((WYS, SZER, 3), np.float32)
-        if self.rgb is not None and self.chk_obraz.isChecked():
-            img = np.asarray(self.rgb, np.float32)[:WYS, :SZER, :3] / 255 * self.spin_alfa.value()
-        if self.chk_atencja.isChecked():
-            A = self._mapa_atencji()
-            if A is not None:
-                import matplotlib
-                kol = matplotlib.colormaps['inferno'](A)[..., :3].astype(np.float32)
-                kol = np.repeat(np.repeat(kol, KOMORKA, 0), KOMORKA, 1)
-                a = self.opcje.krycie()
-                img = img * (1 - a) + kol * a
-        if self.chk_mies.isChecked() and self._mies is not None:
-            M = self._mies.reshape(WIERSZE, KOLUMNY, 3)
-            if self.chk_mies_gladko.isChecked():
-                from scipy import ndimage
-                M = ndimage.zoom(M, (KOMORKA, KOMORKA, 1), order=1, mode='nearest')[:WYS, :SZER]
+    def _atencja(self):
+        """(mapa [20, 30] albo None, łuki (src, dst, w) albo None, opis łuków). Liczone tylko, gdy zmieniły się
+        dane, opcje atencji albo (dla opcji „wybrany patch”) wybrany patch."""
+        at = self.chk_atencja.isChecked() and self.atencja_fn is not None
+        mapa = self.atencja_fn is not None and (at or self.spin_wys.value() > 0)
+        klucz = (at, mapa, self.token if self.opcje.potrzebuje_tokenu() else None)
+        if getattr(self, '_at_klucz', None) != klucz:
+            self._at_klucz = klucz
+            A = self.opcje.mapa(self.token)[0] if mapa else None
+            strz = self.opcje.strzalki(self.token) if at else None
+            if strz is not None:
+                opis = f'; łuki: {self.opcje.combo_strz.currentText()} ({len(strz[0])})'
+            elif self.chk_atencja.isChecked() and self.opcje.combo_strz.currentIndex() in (1, 2) and self.token is None:
+                opis = '; łuki: kliknij patch'
             else:
-                M = np.repeat(np.repeat(M, KOMORKA, 0), KOMORKA, 1)
-            a = self.spin_mies_krycie.value()
-            img = img * (1 - a) + M * a
-        alfa = int(round(255 * self.spin_krycie.value())) if (self.chk_obraz.isChecked() or self.chk_atencja.isChecked()
-                                                               or self.chk_mies.isChecked()) else 0
-        rgba = np.concatenate([np.clip(img * 255, 0, 255).astype(np.uint8), np.full((WYS, SZER, 1), alfa, np.uint8)], 2)
-        self.podloze.setData(np.ascontiguousarray(np.flipud(rgba).transpose(1, 0, 2)))   # [x, y, RGBA], y w górę
-
-    def _mieszanka(self):
-        """Kolor każdego z 600 patchy: kolory wektorów ważone ich siłą w tym, co pokazuje widok -> [600, 3] w 0..1."""
-        i = self.combo_waga.currentIndex()
-        if i in (4, 5):                                                 # kolor z pełnego latentu, nie mieszanka
-            L, _ = self._latent()
-            return kolor_pca_rgb(L, self.baza_rgb()) if i == 4 else kolor_podobienstwa(L, self.token)
-        polsfera = self.combo_ksztalt.currentIndex() == 1
-        przed, po, kan, kolory, _, _ = self._dane(polsfera)
-        L, _ = self._latent(przed, po)
-        X = np.asarray(L, np.float32)[:, kan]
-        W = np.abs(X) if i == 0 else X ** 2 if i == 1 else X ** 4 if i == 2 else np.clip(X, 0, None)
-        sila = W.sum(1)
-        C = W @ np.asarray(kolory, np.float32)[kan, :3] / np.maximum(sila, 1e-12)[:, None]
-        g = C.mean(1, keepdims=True)
-        ref = max(float(np.percentile(np.abs(C - g).max(1), 98)), 1e-6)       # różnica od szarości w tej klatce
-        C = np.clip(g + (C - g) * (.45 / ref) * self.spin_nasyc.value(), 0, 1)
-        if self.chk_mies_jasn.isChecked():
-            C = C * np.clip(sila / max(float(np.percentile(sila, 99)), 1e-12), 0, 1)[:, None]
-        return C.astype(np.float32)
+                opis = ''
+            self._at = (A, strz, opis)
+        return self._at
 
     def baza_rgb(self):
         """Baza PCA 3 składowych pełnego latentu do kolorów RGB, z sekwencji (ustaw_baze_pca) albo z przed i po:
         (mu [768], W [768, 3], dolny i górny 1. / 99. centyl wyników [3]); pamiętana do zmiany danych."""
         zr = self._pca_zrodlo
-        klucz = 'sekwencja' if zr is not None else getattr(self, '_wersja', 0)
+        klucz = self._klucz_pca()
         if getattr(self, '_rgb_klucz', None) != klucz:
             if zr is not None:
                 X = zr[::max(1, len(zr) // 12000)]
@@ -425,26 +398,19 @@ class WidokCzasteczek3D(QWidget):
             self._rgb, self._rgb_klucz = baza_pca_rgb(X), klucz
         return self._rgb
 
-    def _odswiez_mieszanke(self):
-        if not self.chk_mies.isChecked():
-            if self._mies is not None:
-                self._mies = None; self._podloze()
-            return
-        self._mies = self._mieszanka()
-        self._podloze()
-
-    # ------------------------------------------------------------ geometria
+    # ------------------------------------------------------------ geometria (CPU: tylko małe tablice)
     def _kanaly(self):
         i = self.combo_kan.currentIndex()
         return self.j128 if i == 4 else np.arange(0, 768, (1, 2, 4, 8)[i])
 
     def _srodki(self):
+        """Środki 600 cząsteczek [600, 3] (te same wzory co shader `srodek`): do ustawienia kamery."""
         t = np.arange(600)
         s = np.stack([(t % KOLUMNY) * KOMORKA + KOMORKA / 2, WYS - ((t // KOLUMNY) * KOMORKA + KOMORKA / 2),
                       np.zeros(600)], 1).astype(np.float32)
         h = self.spin_wys.value()
         if h > 0:
-            A = self._mapa_atencji()
+            A = self._atencja()[0]
             if A is not None:
                 s[:, 2] = h * A.reshape(-1)
         return s
@@ -453,18 +419,22 @@ class WidokCzasteczek3D(QWidget):
         """Latent, z którego liczyć bazę PCA (np. cała sekwencja filmu [T, 600, 768] albo [N, 768]); None = z przed i po."""
         self._pca_zrodlo = None if Z is None else np.asarray(Z).reshape(-1, np.shape(Z)[-1])
         self._pca_cache = {}
-        if self._k_pca():
+        self._pca_wersja += 1                     # nowa sekwencja: nowa baza PCA wektorów i baza PCA RGB
+        if self._k_pca() or (self.chk_mies.isChecked() and self.combo_waga.currentIndex() == 4):
             self._rysuj()
 
     def _k_pca(self):
         i = self.combo_pca.currentIndex()
         return PCA_SKLADOWE[i - 1] if i > 0 else 0
 
+    def _klucz_pca(self):
+        return ('sekwencja', self._pca_wersja) if self._pca_zrodlo is not None else getattr(self, '_wersja', 0)
+
     def _baza_pca(self, kan):
         """(mu, W, udział wariancji) PCA latentu na kanałach kan: z całej sekwencji (ustaw_baze_pca) albo z przed i po;
         pamiętana, dopóki nie zmienią się kanały ani dane. None, gdy nie ma z czego liczyć."""
         zr = self._pca_zrodlo
-        klucz = (self.combo_kan.currentIndex(), 'sekwencja' if zr is not None else getattr(self, '_wersja', 0))
+        klucz = (self.combo_kan.currentIndex(), self._klucz_pca())
         if klucz not in self._pca_cache:
             if zr is not None:
                 X = zr[::max(1, len(zr) // 12000)][:, kan]
@@ -491,112 +461,58 @@ class WidokCzasteczek3D(QWidget):
         k = min(k, W.shape[1])
         return kan, (mu, W[:, :k]), kierunki(polsfera, k), kolory_kanalow(k)
 
-    def _dane(self, polsfera):
-        """Przestrzeń wektorów cząsteczki: (przed, po, indeksy wektorów, kolory [n, 4], kierunki [n, 3], opis).
-        Bez PCA to 768 kanałów; z PCA k wyników składowych (z − μ) W, liczonych na wybranych kanałach."""
-        kan = self._kanaly()
+    def _wektory_na_karte(self):
+        """Przestrzeń wektorów (kanały albo baza PCA, kierunki, kolory) na kartę, tylko gdy się zmieniła.
+        Zwraca (K, opis PCA) albo None."""
+        bw = self.baza_wektorow()
+        if bw is None:
+            return None
+        kan, pc, d, kol = bw
         k = self._k_pca()
-        if not k:
-            return self.przed, self.po, kan, self.kolory, kierunki(polsfera), ''
-        zr = self._pca_zrodlo
-        mu, W, udz = self._baza_pca(kan)
-        k = min(k, W.shape[1])
-        W = W[:, :k]
-        przed = (self.przed[:, kan] - mu) @ W
-        po = None if self.po is None else (self.po[:, kan] - mu) @ W
-        zrodlo = 'sekwencji' if zr is not None else ('przed i po' if self.po is not None else 'klatki')
-        opis = f'; PCA {k} składowych z {len(kan)} kanałów ({zrodlo}) wyjaśnia {100 * float(udz[:k].sum()):.1f} % wariancji'
-        return przed, po, np.arange(k), kolory_kanalow(k), kierunki(polsfera, k), opis
+        klucz = (self.combo_ksztalt.currentIndex(), self.combo_kan.currentIndex(), k, self._klucz_pca() if k else None)
+        self.gpu.ustaw_wektory(klucz, kan, pc, d, kol)
+        if pc is None:
+            return len(kan), ''
+        udz = self._baza_pca(kan)[2]
+        K = pc[1].shape[1]
+        zrodlo = 'sekwencji' if self._pca_zrodlo is not None else ('przed i po' if self.po is not None else 'klatki')
+        return K, f'; PCA {K} składowych z {len(kan)} kanałów ({zrodlo}) wyjaśnia {100 * float(udz[:K].sum()):.1f} % wariancji'
 
-    def _latent(self, przed=None, po=None):
-        przed = self.przed if przed is None else przed
-        po = self.po if po is None else po
-        tryb = self.combo_tryb.currentIndex() if po is not None else 0
-        if tryb == 0:
-            return przed, tryb
-        if tryb == 2:
-            return po - przed, tryb
-        if tryb == 4:
-            t = self.suwak.value() / 100
-            return przed + t * (po - przed), tryb
-        return po, tryb
-
-    def _wektory(self, L, kan, tok, srodki, d, r0, skala):
-        """Pozycje [len(tok)*K*2, 3] odcinków (środek, koniec) i końce [len(tok)*K, 3]."""
-        maks = KOMORKA * self.spin_maks.value() / 100 or None
-        dl = np.clip(r0 + skala * L[np.ix_(tok, kan)], 0, maks)                 # [T, K]
-        konce = srodki[tok, None, :] + dl[..., None] * d[None, kan, :]           # [T, K, 3]
-        odc = np.empty((len(tok), len(kan), 2, 3), np.float32)
-        odc[:, :, 0] = srodki[tok, None, :]
-        odc[:, :, 1] = konce
-        return odc.reshape(-1, 3), konce.reshape(-1, 3)
-
-    def _rysuj(self, tylko_pozycje=False):
-        if self.przed is None:
-            return
-        t0 = time.perf_counter()
-        self._odswiez_mieszanke()
-        if not self.chk_czasteczki.isChecked():                   # cząsteczki wyłączone: sam obraz, atencja i łuki
-            for it in (self.linie, self.punkty, self.szare, self.zera):
-                it.setVisible(False)
-            tekst_at = self._luki(self._srodki())
-            self.etykieta.setText('cząsteczki wyłączone („Pokaż cząsteczki” w zakładce Cząsteczki)' + tekst_at)
-            return
-        polsfera = self.combo_ksztalt.currentIndex() == 1
-        przed, po, kan, kolory, d, opis_pca = self._dane(polsfera)
-        L, tryb = self._latent(przed, po)
+    def _tokeny(self):
+        """Rysowane cząsteczki: wybrany patch, zaznaczone, obrys narzędzia, co n-ty patch."""
         tok = np.arange(600)
         zazn = self.chk_zazn.isChecked() and self.zaznaczenie is not None and len(self.zaznaczenie) > 0
-        if self.chk_tylko.isChecked() and self.token is not None:
+        tylko = self.chk_tylko.isChecked() and self.token is not None
+        if tylko:
             tok = np.array([self.token])
         elif zazn:                                                # tylko zaznaczone: bez innych filtrów
             tok = np.sort(np.asarray(self.zaznaczenie, int))
         elif self.maska_tokenow is not None and self.combo_patche.currentIndex():
             m = self.maska_tokenow if self.combo_patche.currentIndex() == 1 else ~self.maska_tokenow
             tok = tok[m]
-        if not (self.chk_tylko.isChecked() and self.token is not None) and not zazn and self.combo_ile.currentIndex():
+        if not tylko and not zazn and self.combo_ile.currentIndex():
             tok = np.intersect1d(tok, tokeny_co(CZASTECZKI_CO[self.combo_ile.currentIndex()]))
-        if len(tok) == 0:
-            for it in (self.linie, self.punkty, self.szare, self.zera, self.luki, self.groty):
-                it.setVisible(False)
-            self.etykieta.setText('brak patchy do narysowania (obrys nie pokrywa żadnego patcha)')
+        return tok
+
+    def _rysuj(self, tylko_pozycje=False):
+        """Zmiana danych albo opcji: małe tablice (widoczne cząsteczki, mapa i łuki atencji, zestaw wektorów) na
+        kartę, gdy się zmieniły, i parametry. Geometrię liczą shadery przy najbliższym rysowaniu."""
+        if self.przed is None:
             return
-        polowa = KOMORKA / 2
-        r0 = polowa * self.spin_r0.value() / 100
-        if tryb == 2:
-            zakres = np.abs(L[:, kan])
-        else:
-            zakres = np.abs(np.concatenate([przed[:, kan]] + ([po[:, kan]] if po is not None and tryb in (1, 3, 4) else [])))
-        m = max(float(np.percentile(zakres, 99.5)), 1e-6)            # stała skala w czasie animacji
-        skala = (polowa - r0) / m * self.spin_skala.value() / 100 if polowa > r0 else polowa / m
-        srodki = self._srodki()                                       # środki na płaszczyźnie obrazu (z = 0)
-        pos, konce = self._wektory(L, kan, tok, srodki, d, r0, skala)
-        styl = self.combo_styl.currentIndex()
-        kol = kolory[kan]
-        if not tylko_pozycje or not hasattr(self, '_kol_n') or self._kol_n != (len(tok), len(kan), len(kolory)):
-            self._kol_n = (len(tok), len(kan), len(kolory))
-            self._kol_odc = np.ascontiguousarray(np.broadcast_to(kol[None, :, None, :], (len(tok), len(kan), 2, 4)).reshape(-1, 4))
-            self._kol_pkt = np.ascontiguousarray(np.broadcast_to(kol[None], (len(tok), len(kan), 4)).reshape(-1, 4))
-            self.linie.setData(color=self._kol_odc)
-            self.punkty.setData(color=self._kol_pkt)
-        gr = self.spin_gr.value()
-        self.linie.setVisible(styl in (0, 2))
-        self.punkty.setVisible(styl in (1, 2))
-        if styl in (0, 2):
-            self.linie.setData(pos=pos, width=gr)
-        if styl in (1, 2):
-            self.punkty.setData(pos=konce, size=gr + 1.5)
-        if tryb == 3:
-            szare, _ = self._wektory(przed, kan, tok, srodki, d, r0, skala)
-            self.szare.setData(pos=szare, width=gr); self.szare.setVisible(True)
-        else:
-            self.szare.setVisible(False)
-        if self.chk_zero.isChecked() and r0 > 0:
-            th = np.linspace(0, 2 * np.pi, 33)
-            o = srodki[tok, None, :] + r0 * np.stack([np.cos(th), np.sin(th), np.zeros_like(th)], 1)[None]
-            self.zera.setData(pos=np.stack([o[:, :-1], o[:, 1:]], 2).reshape(-1, 3)); self.zera.setVisible(True)
-        else:
-            self.zera.setVisible(False)
+        if tylko_pozycje:                                         # zgodność: animacja to same parametry
+            self._parametry()
+            return
+        t0 = time.perf_counter()
+        g = self.gpu
+        A, strz, self._tekst_at = self._atencja()
+        g.ustaw_mape(A)
+        wek = self._wektory_na_karte()
+        self._K, self._opis_pca = wek if wek is not None else (0, '')
+        tok = self._tokeny() if self.chk_czasteczki.isChecked() else np.arange(0)
+        self._n_tok = len(tok)
+        self._pusto = self.chk_czasteczki.isChecked() and len(tok) == 0
+        g.ustaw_widoczne(tok)
+        g.ustaw_luki(None if self._pusto else strz)
         if self.token is not None:
             r, k = divmod(self.token, KOLUMNY)
             x0, y0 = k * KOMORKA, WYS - (r + 1) * KOMORKA
@@ -604,45 +520,60 @@ class WidokCzasteczek3D(QWidget):
             self.ramka.setData(pos=np.array([(x0, y0, z), (x0 + KOMORKA, y0, z), (x0 + KOMORKA, y0 + KOMORKA, z),
                                              (x0, y0 + KOMORKA, z), (x0, y0, z)], np.float32))
             self.ramka.setVisible(True)
-        tekst_at = self._luki(srodki) if not tylko_pozycje else getattr(self, '_tekst_at', '')
-        self._tekst_at = tekst_at
-        if not tylko_pozycje:
-            self._legenda()
-            if self.chk_tylko.isChecked() and self.token is not None:
-                c = srodki[self.token]
+        self._legenda()
+        if self.chk_tylko.isChecked() and self.token is not None:   # kamera na cząsteczce, gdy ta się przesunęła
+            c = self._srodki()[self.token]
+            if getattr(self, '_klucz_kamery', None) != (self.token, *c.tolist()):
+                self._klucz_kamery = (self.token, *c.tolist())
                 self.widok.setCameraPosition(pos=QVector3D(*map(float, c)), distance=60)
-        ms = (time.perf_counter() - t0) * 1000
-        opis = self.TRYBY[tryb] + (f' t = {self.suwak.value()} %' if tryb == 4 else '')
-        self.etykieta.setText(f'{opis}: {len(tok)} cząsteczek x {len(kan)} wektorów = {len(tok) * len(kan):,} '
-                              f'(przeliczenie {ms:.0f} ms); połowa patcha = wartość {m * self.spin_skala.value() / 100:.3g}'
-                              + ('' if self.token is None else f'; patch: token {self.token}') + opis_pca + tekst_at)
+        else:
+            self._klucz_kamery = None
+        self._ms = (time.perf_counter() - t0) * 1000
+        self._parametry()
 
-    def _luki(self, srodki):
-        """Łuki źródło -> cel nad obrazem: patch u nasady patrzy na patch na końcu (ciągnie z niego)."""
-        strz = self.opcje.strzalki(self.token) if self.chk_atencja.isChecked() and self.atencja_fn is not None else None
-        if strz is None:
-            self.luki.setVisible(False); self.groty.setVisible(False)
-            if self.chk_atencja.isChecked() and self.opcje.combo_strz.currentIndex() in (1, 2) and self.token is None:
-                return '; łuki: kliknij patch'
-            return ''
-        import matplotlib
-        src, dst, wg = strz
-        a, b = srodki[src], srodki[dst]
-        n = 24
-        u = np.linspace(0, 1, n + 1, dtype=np.float32)
-        h = .35 * np.linalg.norm(b - a, axis=1) + 8                                          # wyższy łuk = dalszy cel
-        p = a[:, None] * (1 - u)[None, :, None] + b[:, None] * u[None, :, None]
-        p[..., 2] += 4 * h[:, None] * u * (1 - u)
-        odc = np.stack([p[:, :-1], p[:, 1:]], 2).reshape(-1, 3)
-        kol = matplotlib.colormaps['cool'](wg).astype(np.float32)                           # [E, 4]
-        alfa = .15 + .85 * np.repeat(np.stack([u[:-1], u[1:]], 1)[None], len(src), 0)      # jaśniej przy celu
-        c = np.repeat(np.repeat(kol[:, None, None, :], n, 1), 2, 2).copy()
-        c[..., 3] = alfa * (.35 + .65 * wg[:, None, None])
-        self.luki.setData(pos=odc, color=c.reshape(-1, 4), wagi=np.repeat(wg, n), grubosc_max=self.opcje.spin_grubosc.value())
-        kg = kol.copy(); kg[:, 3] = 1
-        self.groty.setData(pos=b + np.array([0, 0, .5], np.float32), color=kg, size=4 + 8 * wg)
-        self.luki.setVisible(True); self.groty.setVisible(True)
-        return f'; łuki: {self.opcje.combo_strz.currentText()} ({len(src)})'
+    def _parametry(self):
+        """Liczby i przełączniki widoku do shaderów (bez przeliczania czegokolwiek na CPU) i opis pod widokiem."""
+        if self.przed is None:
+            return
+        tryb = self.combo_tryb.currentIndex() if self.po is not None else 0
+        waga = self.combo_waga.currentIndex()
+        if self.chk_mies.isChecked() and waga == 4:
+            self.gpu.ustaw_baze_rgb(self.baza_rgb())
+        dowolny = self.chk_obraz.isChecked() or self.chk_atencja.isChecked() or self.chk_mies.isChecked()
+        self.gpu.ustaw(wtryb=tryb, t=self.suwak.value() / 100, r0=KOMORKA / 2 * self.spin_r0.value() / 100,
+                       proc=self.spin_skala.value() / 100, maks=KOMORKA * self.spin_maks.value() / 100,
+                       h=float(self.spin_wys.value()), styl=self.combo_styl.currentIndex(), gr=self.spin_gr.value(),
+                       szare=tryb == 3, zera=self.chk_zero.isChecked(),
+                       czastki=self.chk_czasteczki.isChecked() and not self._pusto,
+                       grubosc_luk=self.opcje.spin_grubosc.value(), waga=waga, jasn=self.chk_mies_jasn.isChecked(),
+                       nasyc=self.spin_nasyc.value(), tok=-1 if self.token is None else int(self.token),
+                       mies=self.chk_mies.isChecked(), gladko=self.chk_mies_gladko.isChecked(),
+                       obraz=self.chk_obraz.isChecked() and self.rgb is not None, jasnosc=self.spin_alfa.value(),
+                       atencja=self.chk_atencja.isChecked(), kr_at=self.opcje.krycie(),
+                       kr_mies=self.spin_mies_krycie.value(),
+                       alfa=int(round(255 * self.spin_krycie.value())) if dowolny else 0)
+        self._etykieta()
+
+    def _etykieta(self):
+        """Opis stanu pod widokiem; wartość połowy patcha przychodzi z karty (99,5. centyl liczony w shaderze)."""
+        if self.przed is None:
+            return
+        blad = f'; BŁĄD GPU (wymaga OpenGL 4.3): {self.gpu.blad}' if self.gpu.blad else ''
+        if not self.chk_czasteczki.isChecked():
+            self.etykieta.setText('cząsteczki wyłączone („Pokaż cząsteczki” w zakładce Cząsteczki)' + self._tekst_at + blad)
+            return
+        if self._pusto:
+            self.etykieta.setText('brak patchy do narysowania (obrys nie pokrywa żadnego patcha)' + blad)
+            return
+        tryb = self.combo_tryb.currentIndex() if self.po is not None else 0
+        opis = self.TRYBY[tryb] + (f' t = {self.suwak.value()} %' if tryb == 4 else '')
+        m = self.gpu.m
+        pol = '...' if m is None else f'{m * self.spin_skala.value() / 100:.3g}'
+        n, K = self._n_tok, self._K
+        self.etykieta.setText(f'{opis}: {n} cząsteczek x {K} wektorów = {n * K:,} (CPU {self._ms:.1f} ms, '
+                              f'geometria na GPU); połowa patcha = wartość {pol}'
+                              + ('' if self.token is None else f'; patch: token {self.token}') + self._opis_pca
+                              + self._tekst_at + blad)
 
     def ustaw_obrysy(self, obrysy, maska=None):
         """obrysy: lista (wielokąt [n, 2] w pikselach obrazu 480x320, kolor RGBA 0..1), rysowane jako zamknięte
@@ -661,9 +592,6 @@ class WidokCzasteczek3D(QWidget):
         self.maska_tokenow = None if maska is None else np.asarray(maska, bool)
         self.combo_patche.setEnabled(maska is not None)
 
-    def _grubosc(self, v):
-        self.linie.setData(width=v); self.szare.setData(width=v); self.punkty.setData(size=v + 1.5)
-
     # ------------------------------------------------------------ animacja i zapis
     def _animuj(self, wl):
         if wl:
@@ -678,6 +606,7 @@ class WidokCzasteczek3D(QWidget):
             self.timer.stop()
 
     def _klatka(self):
+        """Krok animacji: tylko nowe t (suwak) -> uniform w shaderach; CPU nie liczy żadnych położeń."""
         v = self.suwak.value()
         if v <= 0 or v >= 100:
             self._kierunek_anim *= -1

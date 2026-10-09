@@ -70,6 +70,18 @@ class _StronaBezHfw(QWidget):
         strona.setParent(self); strona.show()
         strona.installEventFilter(self)
 
+    def podmien(self, nowa):
+        """Wstawia w miejsce zakładki-zastępnika prawdziwą zakładkę (leniwe budowanie zakładek)."""
+        stara = self.strona
+        stara.removeEventFilter(self)
+        stara.setParent(None); stara.deleteLater()
+        self.strona = nowa
+        nowa.setParent(self)
+        nowa.setGeometry(0, 0, self.width(), self.height())
+        nowa.show()
+        nowa.installEventFilter(self)
+        self.updateGeometry()
+
     def minimumSizeHint(self):
         return self.strona.minimumSizeHint()
 
@@ -120,6 +132,36 @@ class ZakladkiGlowne(QTabWidget):
         if i >= 0:
             self.setCurrentIndex(i)
 
+    def podmien(self, zastepnik, nowa):
+        """Podmienia zastępnik zakładki na prawdziwą zakładkę; tytuł i miejsce na pasku kart zostają."""
+        i = self.indexOf(zastepnik)
+        if i >= 0:
+            super().widget(i).widget().podmien(nowa)
+
+
+class _Odnosnik:
+    """Leniwy odnośnik do zakładki: pierwsze użycie dowolnego atrybutu buduje zakładkę (np. korekta i pchnięcie
+    czytają dane zakładki uczenia, ale jej budowanie nie ma sensu, dopóki nikt ich nie potrzebuje)."""
+
+    def __init__(self, okno, nazwa):
+        object.__setattr__(self, '_okno', okno)
+        object.__setattr__(self, '_nazwa', nazwa)
+
+    def __getattr__(self, n):
+        return getattr(getattr(self._okno, self._nazwa), n)
+
+
+# Zakładki budowane przy pierwszym pokazaniu: (atrybut okna, tytuł karty, moduł, klasa, czy dostaje odnośnik do uczenia)
+ZAKLADKI_LENIWE = (
+    ('zakladka_detekcji', 'Detekcja ViT i auto-szukanie latentu', 'zakladka_detekcji', 'ZakladkaDetekcji', ()),
+    ('zakladka_filmu', 'Film: sekwencja klatek, cząsteczki 3D i makrowektory', 'zakladka_filmu', 'ZakladkaFilmu', ()),
+    ('zakladka_uczenia', 'Uczenie ViT: ruch cząsteczek po krokach', 'zakladka_uczenia', 'ZakladkaUczenia', ()),
+    ('zakladka_pchniecia', 'Pchnięcie obrazów: SD, DINO i ruch cząstek w kroku', 'zakladka_pchniecia', 'ZakladkaPchniecia',
+     ('zakladka_uczenia',)),
+    ('zakladka_korekty', 'Korekta latentu: cel i dynamika', 'zakladka_korekty', 'ZakladkaKorekty', ('zakladka_uczenia',)),
+    ('zakladka_ruchu', 'Ruch zbioru: cząsteczki i optymalizacja', 'zakladka_ruchu', 'ZakladkaRuchu', ()),
+)
+
 
 class Okno(QMainWindow):
     def __init__(self):
@@ -161,6 +203,80 @@ class Okno(QMainWindow):
         self._odswiez_strone()
         self._aktualizuj_statystyki()
 
+        # Model SD (weryfikacja wag, około minuty) nie ładuje się przy starcie: dopiero przy pierwszym GENERUJ albo
+        # przy włączeniu „Generuj na bieżąco”. Start okna nie czeka na dysk i nie konkuruje z nim o czas procesora.
+        self.watek_modelu = None
+        self._generuj_po_zaladowaniu = False
+        self.statusBar().showMessage('Gotowe. Dane i model SD nie są wczytywane przy starcie: model ładuje się '
+                                     'przy pierwszym GENERUJ, sekwencje po kliknięciu „Wczytaj…” w zakładce.', 12000)
+
+    def __getattr__(self, nazwa):
+        """Zakładki leniwe: pierwsze odczytanie `okno.zakladka_*` buduje zakładkę (dopiero wtedy jest w `__dict__`)."""
+        if nazwa.startswith('zakladka_') and nazwa in self.__dict__.get('_leniwe', {}):
+            return self.zbuduj_zakladke(nazwa)
+        raise AttributeError(nazwa)
+
+    def zakladka_gotowa(self, nazwa):
+        """Zbudowana zakładka albo None (nie buduje jej)."""
+        return self.__dict__.get(nazwa)
+
+    def zbuduj_zakladke(self, nazwa):
+        """Buduje zakładkę leniwą (raz), podmienia zastępnik na karcie, stosuje do niej wygodę pól i zapisane
+        ustawienia. Błąd budowy zostaje w karcie jako komunikat (atrybut = None), reszta aplikacji działa."""
+        if nazwa in self.__dict__:
+            return self.__dict__[nazwa]
+        zastepnik, tytul, modul, klasa, zaleznosci = self._leniwe[nazwa]
+        import importlib
+        import time
+        import ustawienia as U
+        from PyQt6.QtWidgets import QApplication
+        t0 = time.perf_counter()
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            self.statusBar().showMessage(f'Budowanie zakładki „{tytul}”...')
+            QApplication.processEvents()
+            try:
+                argumenty = [_Odnosnik(self, z) for z in zaleznosci]
+                zakladka = getattr(importlib.import_module(modul), klasa)(self, *argumenty)
+            except Exception as e:                   # brak OpenGL / cv2 itp.: reszta aplikacji działa
+                traceback.print_exc()
+                komunikat = QLabel(f'Zakładka „{tytul}” niedostępna: {e}')
+                komunikat.setWordWrap(True); komunikat.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.zakladki_glowne.podmien(zastepnik, komunikat)
+                self.__dict__[nazwa] = None
+                return None
+            self.zakladki_glowne.podmien(zastepnik, zakladka)
+            setattr(self, nazwa, zakladka)           # od teraz zwykły atrybut (widoczny dla ustawień)
+            from wygoda import ulatw
+            ulatw(zakladka)
+            oczekujace = self.__dict__.setdefault('_ustawienia_oczekujace', {})
+            moje = {k: oczekujace.pop(k) for k in [k for k in oczekujace if k.startswith(nazwa + '.')]}
+            if self.__dict__.get('_domyslne') is not None:
+                self._domyslne.update({k: v for k, v in U.stan(self).items() if k.startswith(nazwa + '.')})
+            if moje:
+                try:
+                    U.ustaw(self, moje)
+                except Exception:
+                    traceback.print_exc()
+            self.statusBar().showMessage(f'Zakładka „{tytul}” zbudowana w {time.perf_counter() - t0:.1f} s.', 6000)
+            return zakladka
+        finally:
+            QApplication.restoreOverrideCursor()
+
+    def _po_zmianie_zakladki(self, i):
+        """Pierwsze wejście na kartę leniwej zakładki buduje ją (po chwili, żeby najpierw pojawiła się karta)."""
+        w = self.zakladki_glowne.widget(i)
+        for nazwa, (zastepnik, *_reszta) in self._leniwe.items():
+            if w is zastepnik and nazwa not in self.__dict__:
+                QTimer.singleShot(20, lambda n=nazwa: self.zbuduj_zakladke(n) if n not in self.__dict__ else None)
+                return
+
+    def _zaladuj_model(self, potem_generuj=False):
+        """Uruchamia wczytanie modelu SD w tle (raz). `potem_generuj`: po załadowaniu od razu generuje obraz."""
+        self._generuj_po_zaladowaniu = self._generuj_po_zaladowaniu or potem_generuj
+        if self.trained is not None or self.watek_modelu is not None:
+            return
+        self.etykieta_model.setText('Model SD: ładowanie (weryfikacja wag, około minuty)...')
         self.statusBar().showMessage('Ładowanie modelu SD (weryfikacja wag + checkpoint, może potrwać ~1 min)...')
         self.watek_modelu = WatekModelu(self)
         self.watek_modelu.gotowy.connect(self._model_gotowy)
@@ -176,39 +292,17 @@ class Okno(QMainWindow):
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 1)
         splitter.setSizes([680, 740])               # obraz dostaje ponad połowę okna
-        from zakladka_detekcji import ZakladkaDetekcji
         self.zakladki_glowne = ZakladkiGlowne()
         self.zakladki_glowne.addTab(splitter, 'Edytor SD')
-        self.zakladka_detekcji = ZakladkaDetekcji(self)
-        self.zakladki_glowne.addTab(self.zakladka_detekcji, 'Detekcja ViT i auto-szukanie latentu')
-        try:
-            from zakladka_filmu import ZakladkaFilmu
-            self.zakladka_filmu = ZakladkaFilmu(self)
-            self.zakladki_glowne.addTab(self.zakladka_filmu, 'Film: sekwencja klatek, cząsteczki 3D i makrowektory')
-        except Exception as e:                       # brak OpenGL / cv2: reszta aplikacji działa
-            import traceback; traceback.print_exc()
-            self.zakladki_glowne.addTab(QLabel(f'Zakładka filmu niedostępna: {e}'), 'Film')
-        try:
-            from zakladka_uczenia import ZakladkaUczenia
-            self.zakladka_uczenia = ZakladkaUczenia(self)
-            self.zakladki_glowne.addTab(self.zakladka_uczenia, 'Uczenie ViT: ruch cząsteczek po krokach')
-        except Exception as e:
-            import traceback; traceback.print_exc()
-            self.zakladki_glowne.addTab(QLabel(f'Zakładka uczenia niedostępna: {e}'), 'Uczenie ViT')
-        try:
-            from zakladka_pchniecia import ZakladkaPchniecia
-            self.zakladka_pchniecia = ZakladkaPchniecia(self, self.zakladka_uczenia)
-            self.zakladki_glowne.addTab(self.zakladka_pchniecia, 'Pchnięcie obrazów: SD, DINO i ruch cząstek w kroku')
-        except Exception as e:
-            import traceback; traceback.print_exc()
-            self.zakladki_glowne.addTab(QLabel(f'Zakładka pchnięcia niedostępna: {e}'), 'Pchnięcie obrazów')
-        try:
-            from zakladka_korekty import ZakladkaKorekty
-            self.zakladka_korekty = ZakladkaKorekty(self, getattr(self, 'zakladka_uczenia', None))
-            self.zakladki_glowne.addTab(self.zakladka_korekty, 'Korekta latentu: cel i dynamika')
-        except Exception as e:
-            import traceback; traceback.print_exc()
-            self.zakladki_glowne.addTab(QLabel(f'Zakładka korekty niedostępna: {e}'), 'Korekta latentu')
+        # Pozostałe zakładki to lekkie zastępniki; prawdziwa zakładka (importy, setki kontrolek, wykresy) powstaje
+        # przy pierwszym wejściu na kartę albo przy pierwszym użyciu przez inną zakładkę (`zbuduj_zakladke`).
+        self._leniwe = {}
+        for atrybut, tytul, modul, klasa, zaleznosci in ZAKLADKI_LENIWE:
+            zastepnik = QLabel(f'Budowanie zakładki „{tytul}”...')
+            zastepnik.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.zakladki_glowne.addTab(zastepnik, tytul)
+            self._leniwe[atrybut] = (zastepnik, tytul, modul, klasa, zaleznosci)
+        self.zakladki_glowne.currentChanged.connect(self._po_zmianie_zakladki)
         self.setCentralWidget(self.zakladki_glowne)
 
     @staticmethod
@@ -427,6 +521,9 @@ class Okno(QMainWindow):
         self.spin_lim_min = QDoubleSpinBox()
         self.spin_lim_min.setRange(-1e6, 1e6); self.spin_lim_min.setDecimals(4)
         self.spin_lim_min.setValue(silnik.GELU_MIN)
+        self.spin_lim_min.setToolTip('Wspólny dolny limit wszystkich 768 kanałów (tryb „Ręczne (wspólne min / max)”).\n'
+                                     'Domyślnie minimum GELU (około −0,17): naturalne wartości latentu go nie przekraczają.\n'
+                                     'Obowiązuje po kliknięciu „Zastosuj wspólne”.')
         self.spin_lim_max = QDoubleSpinBox()
         self.spin_lim_max.setRange(-1e6, 1e6); self.spin_lim_max.setDecimals(4)
         self.spin_lim_max.setValue(4.43)
@@ -437,9 +534,13 @@ class Okno(QMainWindow):
         w2.addWidget(self._razem('Wspólne: min', self.spin_lim_min, 'max', self.spin_lim_max, btn_wsp))
         self.spin_lim_kanal = QSpinBox()
         self.spin_lim_kanal.setRange(0, silnik.KANALY - 1)
+        self.spin_lim_kanal.setToolTip('Numer kanału (0–767), którego limit pokazują i zmieniają pola obok.\n'
+                                       '„Ustaw dla kanału” zapisuje wpisane min i max tylko dla niego.')
         self.spin_lim_kanal.valueChanged.connect(self._pokaz_limit_kanalu)
         self.spin_k_min = QDoubleSpinBox(); self.spin_k_min.setRange(-1e6, 1e6); self.spin_k_min.setDecimals(4)
+        self.spin_k_min.setToolTip('Dolny limit (min) kanału wybranego polem „Kanał”; zapisuje go przycisk „Ustaw dla kanału”.')
         self.spin_k_max = QDoubleSpinBox(); self.spin_k_max.setRange(-1e6, 1e6); self.spin_k_max.setDecimals(4)
+        self.spin_k_max.setToolTip('Górny limit (max) kanału wybranego polem „Kanał”; zapisuje go przycisk „Ustaw dla kanału”.')
         btn_k = QPushButton('Ustaw dla kanału')
         btn_k.setToolTip('Nadpisuje limit jednego kanału; pozostałe kanały bez zmian.')
         btn_k.clicked.connect(self._ustaw_limit_kanalu)
@@ -473,11 +574,13 @@ class Okno(QMainWindow):
         lay = QVBoxLayout(panel)
         lay.setContentsMargins(4, 4, 4, 4)
 
-        self.etykieta_model = QLabel('Model: ładowanie...')
+        self.etykieta_model = QLabel('Model SD: nie załadowany (ładuje się przy pierwszym GENERUJ).')
         self.etykieta_model.setWordWrap(True)
         self.etykieta_model.setToolTip('Wytrenowany Stable Diffusion: checkpoint krok 8500 (cross-attention:\n'
                                        'adapter 600x768 + wagi attn2), bazowy UNet ema_020000, VAE sd-vae-ft-mse.\n'
-                                       'Przy starcie weryfikowane są hashe wag bazowych — stąd ~1 min ładowania.')
+                                       'Model nie ładuje się przy starcie programu (szybki start): wczytuje się w tle przy pierwszym\n'
+                                       'GENERUJ OBRAZ albo po włączeniu „Generuj na bieżąco”. Weryfikowane są hashe\n'
+                                       'wag bazowych — stąd ~1 min tylko za pierwszym razem.')
         lay.addWidget(self.etykieta_model)
 
         # obraz zabiera całą wolną wysokość; opcje pod nim są zwięzłe
@@ -487,6 +590,8 @@ class Okno(QMainWindow):
         wiersz_siatka = QHBoxLayout()
         self.chk_siatka = QCheckBox('Siatka patchy 20x30 (kliknij patch = wybór tokena)')
         self.chk_siatka.setChecked(True)
+        self.chk_siatka.setToolTip('Pokazuje albo chowa siatkę 20x30 patchy (600 tokenów) na obrazie.\n'
+                                   'Klik w patch dalej wybiera token (tryb przełącza się na pracę na jednym tokenie), także bez siatki.')
         self.chk_siatka.toggled.connect(self.etykieta_obraz.ustaw_siatke)
         wiersz_siatka.addWidget(self.chk_siatka)
         wiersz_siatka.addStretch(1)
@@ -547,13 +652,12 @@ class Okno(QMainWindow):
               'Zmień ziarno, by dostać inną realizację dla tego samego latentu.')
         wiersz_gen.addStretch(1)
         self.btn_generuj = rola(QPushButton('GENERUJ OBRAZ'), 'glowny')
-        self.btn_generuj.setEnabled(False)
         self.btn_generuj.setMinimumWidth(220)
         self.btn_generuj.setMinimumHeight(34)
         self.btn_generuj.setToolTip('Uruchamia generację z aktualnego latentu efektywnego\n'
                                     '(baza + wektor zgodnie z trybem) w osobnym wątku.\n'
                                     'DDIM odszumia z czystego szumu; VAE dekoduje do RGB 384x576.\n'
-                                    'Przycisk aktywny po załadowaniu modelu.')
+                                    'Pierwsze kliknięcie najpierw wczytuje model SD (około minuty), potem od razu generuje obraz.')
         self.btn_generuj.clicked.connect(lambda: self._generuj())
         wiersz_gen.addWidget(self.btn_generuj)
         gg.addLayout(wiersz_gen)
@@ -562,7 +666,8 @@ class Okno(QMainWindow):
         self.chk_na_biezaco = QCheckBox('Generuj na bieżąco po zmianie')
         self.chk_na_biezaco.setToolTip('Po każdej zmianie suwaka, pola, limitu, trybu albo bazy obraz jest\n'
                                        'generowany automatycznie, gdy suwak przestanie się ruszać\n'
-                                       '(opóźnienie poniżej). Zmiana w trakcie generacji jest liczona zaraz po niej.')
+                                       '(opóźnienie poniżej). Zmiana w trakcie generacji jest liczona zaraz po niej.\n'
+                                       'Włączenie wczytuje model SD, jeśli jeszcze nie jest załadowany.')
         self.chk_na_biezaco.toggled.connect(lambda on: on and self._zaplanuj_na_biezaco())
         wiersz_live.addWidget(self.chk_na_biezaco)
         self.spin_kroki_live = QSpinBox()
@@ -584,6 +689,8 @@ class Okno(QMainWindow):
         self.spin_podglad_co = QSpinBox()
         self.spin_podglad_co.setRange(1, 100)
         self.spin_podglad_co.setValue(2)
+        self.spin_podglad_co.setToolTip('Co ile kroków DDIM odświeżać podgląd (1 = każdy krok). Każdy podgląd to dodatkowy decode VAE,\n'
+                                        'więc rzadszy podgląd skraca generowanie.')
         self.combo_podglad = QComboBox()
         self.combo_podglad.addItems(['bieżący stan (z szumem)', 'przewidywany obraz końcowy'])
         self.combo_podglad.setToolTip('Bieżący stan: zaszumiony obraz po danym kroku.\n'
@@ -875,9 +982,13 @@ class Okno(QMainWindow):
         self._zaplanuj_na_biezaco()
 
     def _zaplanuj_na_biezaco(self):
-        if getattr(self, 'chk_na_biezaco', None) is not None and self.chk_na_biezaco.isChecked() \
-                and self.trained is not None:
-            self.timer_na_biezaco.start(self.spin_opoznienie.value())
+        if getattr(self, 'chk_na_biezaco', None) is None or not self.chk_na_biezaco.isChecked():
+            return
+        if self.trained is None:                       # pierwsza zmiana przy włączonym „na bieżąco”: wczytaj model
+            if self.isVisible():                       # (nie podczas startu, gdy ustawienia dopiero się stosują)
+                self._zaladuj_model()
+            return
+        self.timer_na_biezaco.start(self.spin_opoznienie.value())
 
     # --------------------------------------------------------------- baza
 
@@ -931,10 +1042,18 @@ class Okno(QMainWindow):
         self.etykieta_model.setText(
             f'Model gotowy: checkpoint krok {trained.step}, tryb cross-attention, {nazwa}.')
         self.btn_generuj.setEnabled(True)
+        self.watek_modelu = None
         self.statusBar().showMessage('Model załadowany. Ustaw wektor i kliknij GENERUJ OBRAZ.', 8000)
+        if self._generuj_po_zaladowaniu:
+            self._generuj_po_zaladowaniu = False
+            self._generuj()
+        elif self.chk_na_biezaco.isChecked():
+            self._zaplanuj_na_biezaco()
 
     def _generuj(self, na_biezaco=False):
         if self.trained is None:
+            if not na_biezaco:                          # pierwszy GENERUJ: wczytaj model i wygeneruj zaraz po nim
+                self._zaladuj_model(potem_generuj=True)
             return
         if self.watek_generacji is not None:
             if na_biezaco:
@@ -1111,10 +1230,16 @@ class Okno(QMainWindow):
             self.statusBar().showMessage(f'Wczytano {ok} ustawień z {plik}' + (f', {pom} pominiętych' if pom else ''), 8000)
 
     def _przywroc_ustawienia(self):
+        self.__dict__['_ustawienia_oczekujace'] = {}                # zakładki niezbudowane wystartują z domyślnymi
         ok, _ = __import__('ustawienia').ustaw(self, self._domyslne)
         self.statusBar().showMessage(f'Przywrócono {ok} ustawień domyślnych (zapis do pliku przy zamknięciu albo z menu).', 8000)
 
     def closeEvent(self, e):
+        ruch = self.zakladka_gotowa('zakladka_ruchu')          # niezbudowanej zakładki nie budujemy przy zamknięciu
+        if ruch is not None and not ruch.shutdown():
+            self.statusBar().showMessage('Zatrzymywanie obliczeń ruchu i zapisywanie wyniku. Zamknij okno ponownie po zakończeniu.')
+            e.ignore()
+            return
         import ustawienia as U
         if getattr(self, 'akcja_autozapis', None) is not None and self.akcja_autozapis.isChecked() and not _bez_ustawien():
             try:
@@ -1124,6 +1249,8 @@ class Okno(QMainWindow):
         super().closeEvent(e)
 
     def _blad_krytyczny(self, komunikat):
+        self.watek_modelu = None
+        self._generuj_po_zaladowaniu = False
         self.etykieta_model.setText('Błąd ładowania modelu — szczegóły w oknie dialogowym.')
         QMessageBox.critical(self, 'Błąd', komunikat)
 

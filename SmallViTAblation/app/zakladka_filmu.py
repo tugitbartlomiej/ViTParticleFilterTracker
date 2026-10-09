@@ -17,12 +17,14 @@ from PyQt6.QtWidgets import (QCheckBox, QComboBox, QGroupBox, QDoubleSpinBox, QF
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
-import detekcja as D
 import film as F
 from wspolne import ctrl_wcisniety, polacz_zaznaczenie, przelacz_w_zaznaczeniu, rysuj_zaznaczenie, tokeny_w_prostokacie
 import silnik
 from styl import rola
 from uklad import Przeplyw, dodaj
+from wygoda import LeniwyModul
+
+D = LeniwyModul('detekcja')            # timm i torchvision dopiero przy pierwszej detekcji
 
 KOLOR_GT = (0, 1, 1, 1)           # obrys z etykiety
 KOLOR_RECZNY = (1, 1, 0, 1)       # obwód narysowany
@@ -151,6 +153,7 @@ class ZakladkaFilmu(QWidget):
                                       'wczytuje etykiety i obrysy narzędzia.')
         w.addWidget(self.btn_konwertuj)
         self.btn_przerwij = QPushButton('Przerwij'); self.btn_przerwij.setEnabled(False); w.addWidget(self.btn_przerwij)
+        self.btn_przerwij.setToolTip('Przerywa trwającą konwersję klatek na sekwencję. Aktywny tylko w czasie konwersji.')
         self.pasek = QProgressBar(); self.pasek.setMinimumWidth(160); self.pasek.setMaximumWidth(220)
         self.pasek.setToolTip('Postęp konwersji (klatki wczytane i przeliczone przez ViT).')
         w.addWidget(self.pasek)
@@ -260,6 +263,7 @@ class ZakladkaFilmu(QWidget):
                         (self.btn_dalej, 'Następna klatka.'), (self.btn_kon, 'Ostatnia klatka sekwencji.')):
             b.setToolTip(opis); w.addWidget(b)
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setRange(0, 0); w.addWidget(self.suwak, 1)
+        self.suwak.setToolTip('Pozycja w sekwencji (numer klatki). Przeciągnij, żeby przejść do dowolnej klatki.')
         self.spin_fps = QDoubleSpinBox(); self.spin_fps.setRange(.5, 30); self.spin_fps.setValue(6)
         dodaj(w, 'kl./s', self.spin_fps,
               'Szybkość odtwarzania sekwencji. Przy 768 wektorach x 600 patchy jedna klatka 3D to około 60 ms.')

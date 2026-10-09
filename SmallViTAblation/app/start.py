@@ -1,7 +1,8 @@
 """Start edytora latentu z okienkiem ładowania.
 
-Pierwsze uruchomienie importuje torch, timm i torchvision; na zimnym dysku trwa to około minuty i bez tego
-okienka przez ten czas nic nie widać. Każdy błąd startu trafia do okna z komunikatem i do `start.log`.
+Pierwsze uruchomienie importuje torch; na zimnym dysku trwa to kilkadziesiąt sekund i bez tego okienka przez ten
+czas nic nie widać. Aplikacja startuje pusta: nie wczytuje sekwencji, historii uczenia ani modelu SD (patrz `app.py`).
+Każdy błąd startu trafia do okna z komunikatem i do `start.log`.
 Uruchomienie: python start.py (albo uruchom.bat).
 """
 import sys
@@ -13,8 +14,9 @@ from PyQt6.QtCore import QCoreApplication, Qt
 from PyQt6.QtWidgets import QApplication, QLabel, QMessageBox
 
 LOG = Path(__file__).with_name('start.log')
-KROKI = [('torch', 'biblioteki PyTorch'), ('silnik', 'silnika SD'), ('detekcja', 'ViT, timm i torchvision'),
-         ('pyqtgraph.opengl', 'OpenGL'), ('app', 'okna aplikacji')]
+# Tylko to, co potrzebuje samo okno. Ciężkie biblioteki zakładek (timm i torchvision w `detekcja`, OpenGL, wykresy)
+# ładują się dopiero przy pierwszym wejściu na zakładkę, która ich używa (`Okno.zbuduj_zakladke`).
+KROKI = [('torch', 'biblioteki PyTorch'), ('silnik', 'silnika SD'), ('app', 'okna aplikacji')]
 
 
 def main():
@@ -37,7 +39,7 @@ def main():
     def pokaz(tekst):
         dziennik.append(f'{time.perf_counter() - t0:6.1f} s  {tekst}')
         okienko.setText('Edytor latentu SD\n\n' + tekst + f'\n\n{time.perf_counter() - t0:.0f} s'
-                        '\nPierwszy start po włączeniu komputera trwa do minuty.')
+                        '\nPierwszy start po włączeniu komputera trwa dłużej (zimny dysk).')
         okienko.adjustSize()
         aplikacja.processEvents()
 

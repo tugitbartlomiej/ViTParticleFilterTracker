@@ -11,7 +11,6 @@ w jednym biegu kanał c w kroku t i t+1 to ten sam neuron, a PCA na krok dawała
 które wyglądają jak ruch cząstek, a nim nie są (Vernier i in. 2020).
 """
 import json
-import os
 import time
 
 import numpy as np
@@ -68,12 +67,10 @@ class ZakladkaUczenia(QWidget):
                                     'oscylator, czubek) trafia do app/cache_uczenia i następnym razem wczytuje się w kilka sekund.\n'
                                     'Zmiana danych biegu (latent albo wagi) unieważnia zapis i liczy od nowa.')
         w.addWidget(self.btn_wczytaj)
-        self.chk_auto = QCheckBox('przy starcie')
-        self.chk_auto.setChecked(self._ostatnie().get('auto', True))
-        self.chk_auto.setToolTip('Po uruchomieniu programu wczytuje w tle ostatnio oglądany bieg i klatkę (z zapisanej\n'
-                                 'sekwencji, kilka sekund) razem z ostatnio policzonymi równaniami cząstek.')
-        self.chk_auto.toggled.connect(lambda v: self._zapisz_ostatnie(auto=v))
-        w.addWidget(self.chk_auto)
+        self.btn_ostatni = rola(QPushButton('Wczytaj ostatni'), 'narzedzie')
+        self.btn_ostatni.clicked.connect(self._wczytaj_ostatni)
+        w.addWidget(self.btn_ostatni)
+        self._opisz_ostatni()
         self.pasek = QProgressBar(); self.pasek.setMaximumWidth(220); self.pasek.setTextVisible(False); w.addWidget(self.pasek)
         self.btn_przyczyny = rola(QPushButton('Licz przyczyny ruchu'), 'narzedzie')
         self.btn_przyczyny.setToolTip('Rozkłada ruch cząsteczek tej klatki w każdym przedziale między checkpointami wag\n'
@@ -180,6 +177,7 @@ class ZakladkaUczenia(QWidget):
                         (self.btn_kon, 'Ostatni krok uczenia.')):
             b.setToolTip(opis); w.addWidget(b)
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setRange(0, 0); w.addWidget(self.suwak, 1)
+        self.suwak.setToolTip('Bieżący krok uczenia. Przeciągnij, żeby przejść do dowolnego kroku (krok 0 = wagi losowe).')
         self.spin_fps = QDoubleSpinBox(); self.spin_fps.setRange(.5, 10000); self.spin_fps.setDecimals(1)
         self.spin_fps.setValue(10)
         dodaj(w, 'kroków/s', self.spin_fps, 'Szybkość odtwarzania uczenia (pozycji suwaka na sekundę), do 10 000.\n'
@@ -187,8 +185,10 @@ class ZakladkaUczenia(QWidget):
               'przeskakuje kroki tak, żeby zgadzał się rzeczywisty czas (np. 300 kroków/s: całe uczenie w około 3 s).\n'
               'Przy szybkim odtwarzaniu warto zmniejszyć „Przelot” w przestrzeni makro.')
         self.chk_petla = QCheckBox('pętla'); self.chk_petla.setChecked(True); w.addWidget(self.chk_petla)
+        self.chk_petla.setToolTip('Po ostatnim kroku odtwarzanie wraca do kroku 0 i gra dalej. Wyłączone: zatrzymuje się na ostatnim kroku.')
 
         self.etykieta_kroku = QLabel(''); self.etykieta_kroku.setWordWrap(True); lay.addWidget(self.etykieta_kroku)
+        self._etykieta_wys = (0, 0)           # (szerokość, największa dotąd potrzebna wysokość) napisu kroku
 
         # ---------------- ustawienia uczenia: nowe strony panelu „Opcje” przestrzeni makro
         op = self.makro.panel
@@ -356,6 +356,7 @@ class ZakladkaUczenia(QWidget):
         self.btn_zazn_narz = QPushButton('patche narzędzia')
         self.btn_zazn_narz.setToolTip('Zaznacza wszystkie patche w obrysie narzędzia tej klatki (z Ctrl: dołącza).')
         self.btn_zazn_czysc = QPushButton('wyczyść')
+        self.btn_zazn_czysc.setToolTip('Usuwa zaznaczenie patchy (tak samo działa prawy klik bez przeciągania na obrazie klatki).')
         for b in (self.btn_zazn_wybrany, self.btn_zazn_narz, self.btn_zazn_czysc):
             w.addWidget(b)
         self.spin_zazn_prog = QSpinBox(); self.spin_zazn_prog.setRange(1, 60); self.spin_zazn_prog.setValue(8)
@@ -485,10 +486,10 @@ class ZakladkaUczenia(QWidget):
                                      'Z porównaniem: płynne przejście PRZED -> PO w pętli.')
         self.btn_graj.toggled.connect(lambda v: (self.w3d.btn_anim.blockSignals(True), self.w3d.btn_anim.setChecked(
             v or self.w3d.timer.isActive()), self.w3d.btn_anim.blockSignals(False)))
-        self.prz = self.P_prz = None; self._delty = (None, None)
+        self.prz = self.P_prz = None; self._delty = (None, None); self._art_klatki = None
         self._zmiana_biegu()
-        if self.chk_auto.isChecked() and self.biegi and not os.environ.get('EDYTOR_BEZ_AUTOSTARTU'):
-            QTimer.singleShot(1500, self._autostart)                  # po zbudowaniu okna, w tle
+        # Zakładka startuje pusta: nic nie wczytuje się samo (wczytanie sekwencji trwa i obciąża dysk, procesor
+        # oraz kartę graficzną). Ostatnio oglądany bieg i klatka są tylko podpowiedzią na przycisku „Wczytaj ostatni”.
 
     def _domyslne_makro(self):
         """Domyślne ustawienia przestrzeni makro w tej zakładce (wybrane przez użytkownika 2026-10-07)."""
@@ -511,7 +512,7 @@ class ZakladkaUczenia(QWidget):
         m.spin_zdj_krycie.setValue(.45); m.spin_zdj_gest.setValue(4); m.chk_podpisy.setChecked(False)
         wybierz(m.combo_mikro, 'brak'); m.spin_mikro.setValue(1)
 
-    # ------------------------------------------------------------ ostatnio oglądana klatka i autostart
+    # ------------------------------------------------------------ ostatnio oglądana klatka (przycisk „Wczytaj ostatni”)
     def _ostatnie(self):
         try:
             return json.loads((AU.CACHE / 'ostatnie.json').read_text(encoding='utf-8'))
@@ -526,9 +527,24 @@ class ZakladkaUczenia(QWidget):
         except OSError:
             pass
 
-    def _autostart(self):
-        """Wczytaj w tle ostatnio oglądany bieg i klatkę (domyślnie pierwszy bieg, klatka 0)."""
-        if self.watek is not None or self.Z is not None:
+    def _opisz_ostatni(self):
+        """Dymek przycisku „Wczytaj ostatni”: co było oglądane ostatnio (nic nie jest wczytywane)."""
+        d = self._ostatnie()
+        nazwy = {b['klucz']: b['nazwa'] for b in self.biegi}
+        mozna = bool(self.biegi)
+        if d.get('bieg') in nazwy:
+            co = f'bieg „{nazwy[d["bieg"]]}”, klatka próbna {int(d.get("klatka", 0))}'
+        else:
+            co = 'brak zapisu, więc pierwszy bieg i klatka 0' if mozna else 'brak biegów z gęstą historią'
+        self.btn_ostatni.setEnabled(mozna)
+        self.btn_ostatni.setToolTip(f'Wybiera na listach ostatnio oglądany bieg i klatkę próbną ({co}) i wczytuje ich historię\n'
+                                    'tak, jakbyś kliknął „Wczytaj historię”. Program niczego nie wczytuje sam przy starcie\n'
+                                    '(sekwencja to setki MB i kilkanaście sekund pracy); ten przycisk to skrót do ostatniego widoku.\n'
+                                    'Z zapisanej sekwencji w cache_uczenia trwa to kilka sekund.')
+
+    def _wczytaj_ostatni(self):
+        """Wybierz ostatnio oglądany bieg i klatkę (domyślnie pierwszy bieg, klatka 0) i wczytaj je."""
+        if self.watek is not None:
             return
         d = self._ostatnie()
         klucze = [b['klucz'] for b in self.biegi]
@@ -537,6 +553,7 @@ class ZakladkaUczenia(QWidget):
         if 0 <= d.get('klatka', 0) < self.combo_klatka.count():
             self.combo_klatka.setCurrentIndex(d.get('klatka', 0))
         self._wczytaj()
+
 
     # ------------------------------------------------------------ wczytanie
     def showEvent(self, e):
@@ -614,9 +631,10 @@ class ZakladkaUczenia(QWidget):
             self.det = self.dety.pop('det'); self._ckpt_det = len(self.opis['wagi']) - 1
             self.narz = self.opis['narzedzie'][self.i_kl]
             self.token = None
-            self.prz = self.P_prz = None; self._delty = (None, None); self.fig_p.clear(); self.canvas_p.draw_idle()
+            self.prz = self.P_prz = None; self._delty = (None, None); self.fig_p.clear(); self._linie_p = []; self.canvas_p.ustaw_animowane([]); self.canvas_p.odswiez_pelne()
             self.btn_wczytaj.setEnabled(True)
             self._zapisz_ostatnie(bieg=self._bieg()['klucz'], klatka=int(self.i_kl))
+            self._opisz_ostatni()
             self._z_zapisu = w.get('z_zapisu', False)
         co = self.spin_co.value()
         self.idx = np.arange(0, len(self.Z), co)
@@ -812,30 +830,85 @@ class ZakladkaUczenia(QWidget):
                  f'prędkość narzędzie / tło {a["v"][k][self.narz].mean():.3f} / {a["v"][k][~self.narz].mean():.3f}')
         if self.token is not None:
             tekst += f'; patch {self.token}: prędkość {a["v"][k][self.token]:.3f}, do stanu końcowego {a["do_konca"][k][self.token]:.2f}'
-        self.etykieta_kroku.setText(tekst + self._opis_lang + self._opis_rk(k))
+        self._napis_kroku(tekst + self._opis_lang + self._opis_rk(k))
         if self._zrodla is not None:
             self._zrodla.przy_zmianie()
         self._sprawdz_rk()
 
+    def _napis_kroku(self, tekst):
+        """Napis pod suwakiem. Wysokość napisu tylko rośnie (do zmiany szerokości okna), bo skok wysokości przy każdym
+        kroku przesuwałby układ i wymuszał pełne przerysowanie wszystkich wykresów (zmiana rozmiaru płótna)."""
+        e = self.etykieta_kroku
+        e.setText(tekst)
+        szer, wys = self._etykieta_wys
+        if szer != e.width():
+            szer, wys = e.width(), 0
+            e.setMinimumHeight(0)
+        h = e.heightForWidth(e.width()) if e.hasHeightForWidth() else e.sizeHint().height()
+        if h > wys:
+            wys = h
+            e.setMinimumHeight(h)
+        self._etykieta_wys = (szer, wys)
+
     # ------------------------------------------------------------ rysunki
     def _rysuj_klatke(self, k, kc):
+        """Obraz klatki. Obraz, kropki narzędzia i czubek powstają raz na klatkę, zaznaczenie przy jego zmianie;
+        w każdym kroku zmieniają się tylko ramka ViT, ramka wybranego patcha i tytuł (set_bounds, set_xy, set_text),
+        a płótno odświeża się tylko wtedy, gdy jest widoczne. Wygląd taki sam jak przy rysowaniu od zera."""
         ax = self.ax
-        ax.clear(); ax.imshow(self.rgb, extent=(0, 480, 320, 0))
-        xy = np.stack(np.divmod(np.arange(600), 30), 1)[:, ::-1] * 16 + 8                # środki patchy (x, y)
-        n = self.narz
-        ax.scatter(xy[n, 0], xy[n, 1], s=6, c=KOL_N, alpha=.8)
+        a = self._art_klatki
+        if a is None or a['rgb'] is not self.rgb or a['narz'] is not self.narz or a['czubek'] is not self.czubek:
+            ax.clear()
+            ax.imshow(self.rgb, extent=(0, 480, 320, 0))
+            xy = np.stack(np.divmod(np.arange(600), 30), 1)[:, ::-1] * 16 + 8                # środki patchy (x, y)
+            n = self.narz
+            ax.scatter(xy[n, 0], xy[n, 1], s=6, c=KOL_N, alpha=.8)
+            ramka = Rectangle((0, 0), 1, 1, fill=False, ec=KOLOR_VIT[:3], lw=1.6)
+            ax.add_patch(ramka)
+            czubek = ax.plot(*self.czubek, 'o', ms=7, mfc='none', mec='#ff3030', mew=1.6) if self.czubek is not None else []
+            wybrany = Rectangle((0, 0), 16, 16, fill=False, ec='white', lw=1.5)
+            ax.add_patch(wybrany)
+            ax.set_xlim(0, 480); ax.set_ylim(320, 0); ax.axis('off')
+            tytul = ax.set_title('', fontsize=9, color='white')
+            a = self._art_klatki = dict(rgb=self.rgb, narz=self.narz, czubek=self.czubek, ramka=ramka, wybrany=wybrany,
+                                        tytul=tytul, zazn=None, zazn_artysci=[], ruchome=[ramka, wybrany, tytul, *czubek], tryb=None)
+            przebudowano = True
+        else:
+            przebudowano = False
+        klucz = (None if self.zaznaczenie is None else self.zaznaczenie.tobytes(),
+                 None if self.zaznaczenie is None else self._kolory_zazn_klucz())
+        if klucz != a['zazn']:                                               # zaznaczenie zmienia się rzadko
+            for art in a['zazn_artysci']:
+                art.remove()
+            przed = (list(ax.patches), list(ax.images))
+            rysuj_zaznaczenie(ax, self.zaznaczenie, self._kolory_zazn())
+            a['zazn_artysci'] = [p for p in ax.patches if p not in przed[0]] + [i for i in ax.images if i not in przed[1]]
+            a['zazn'] = klucz
+            przebudowano = True
         x0, y0, x1, y1 = self.dety['ramka'][kc]
-        ax.add_patch(Rectangle((x0, y0), x1 - x0, y1 - y0, fill=False, ec=KOLOR_VIT[:3], lw=1.6))
-        if self.czubek is not None:
-            ax.plot(*self.czubek, 'o', ms=7, mfc='none', mec='#ff3030', mew=1.6)
-        if self.token is not None:
+        a['ramka'].set_bounds(x0, y0, x1 - x0, y1 - y0)
+        if self.token is None:
+            a['wybrany'].set_visible(False)
+        else:
             r, c = divmod(self.token, 30)
-            ax.add_patch(Rectangle((c * 16, r * 16), 16, 16, fill=False, ec='white', lw=1.5))
-        rysuj_zaznaczenie(ax, self.zaznaczenie, self._kolory_zazn())
-        ax.set_xlim(0, 480); ax.set_ylim(320, 0); ax.axis('off')
-        ax.set_title(f'krok {int(self.kroki[k])}: wagi kroku {int(self.opis["kroki_wag"][kc])}, pewność '
-                     f'{self.dety["pewnosc"][kc] * 100:.0f} %', fontsize=9, color='white')
-        self.canvas.draw_idle()
+            a['wybrany'].set_xy((c * 16, r * 16)); a['wybrany'].set_visible(True)
+        a['tytul'].set_text(f'krok {int(self.kroki[k])}: wagi kroku {int(self.opis["kroki_wag"][kc])}, pewność '
+                            f'{self.dety["pewnosc"][kc] * 100:.0f} %')
+        # Bez zaznaczenia: ramki i tytuł rysowane osobno na zapamiętanym tle (blitting). Z zaznaczeniem półprzezroczysta
+        # nakładka leży nad ramkami, więc (żeby warstwy zostały takie same) płótno rysuje się w całości, 30 ms na krok.
+        ruchome = [] if self.zaznaczenie is not None else sorted(a['ruchome'], key=lambda x: x.get_zorder())
+        if przebudowano or a['tryb'] != (self.zaznaczenie is None):
+            a['tryb'] = self.zaznaczenie is None
+            self.canvas.ustaw_animowane(ruchome)
+            self.canvas.odswiez_pelne()
+        elif ruchome:
+            self.canvas.odswiez_animowane()
+        else:
+            self.canvas.odswiez_pelne()
+
+    def _kolory_zazn_klucz(self):
+        kol = self._kolory_zazn()
+        return None if kol is None else np.asarray(kol, np.float32).tobytes()
 
     def _rysuj_wykresy(self):
         if self.an is None:
@@ -875,7 +948,8 @@ class ZakladkaUczenia(QWidget):
         for ax in f.axes:
             ax.tick_params(labelsize=7)
         self._linie = [ax.axvline(0, color='white', lw=.8, alpha=.7) for ax in osie]
-        self.canvas_r.draw_idle()
+        self.canvas_r.ustaw_animowane(self._linie)               # kursor kroku: blitting, bez rysowania całego wykresu
+        self.canvas_r.odswiez_pelne()
 
     def _rysuj_cka(self):
         a = self.an
@@ -886,7 +960,8 @@ class ZakladkaUczenia(QWidget):
         ax.set_title('CKA tokenów między krokami (jasne = podobna geometria)', fontsize=8)
         ax.set_xlabel('krok', fontsize=8); ax.set_ylabel('krok', fontsize=8); ax.tick_params(labelsize=7)
         self._linie_c = [ax.axvline(kr[0], color='cyan', lw=.8), ax.axhline(kr[0], color='cyan', lw=.8)]
-        self.canvas_c.draw_idle()
+        self.canvas_c.ustaw_animowane(self._linie_c)
+        self.canvas_c.odswiez_pelne()
 
     # ------------------------------------------------------------ przyczyny ruchu
     def _licz_przyczyny(self):
@@ -966,7 +1041,8 @@ class ZakladkaUczenia(QWidget):
         for ax in f.axes:
             ax.tick_params(labelsize=7)
         self._linie_p = [ax.axvline(0, color='white', lw=.8, alpha=.7) for ax in osie]
-        self.canvas_p.draw_idle()
+        self.canvas_p.ustaw_animowane(self._linie_p)
+        self.canvas_p.odswiez_pelne()
 
     def _strzalki_przyczyn(self, k):
         seg, kolory = self._odcinki_przyczyn(k)
@@ -1143,7 +1219,13 @@ class ZakladkaUczenia(QWidget):
         w = self.spin_wyprz.value()
         if L > 0 and w > 0 and k - w >= 0:                            # ślad prognoz z wyprzedzeniem w
             ts = np.arange(max(t0, w), k + 1)[::-1][::co][::-1]
-            pred = RC.prognozy(mdl, ts - w, w)[:, -1]
+            # prognoza z kroku t − w na krok t nie zależy od bieżącego kroku k: liczymy ją raz na t i pamiętamy w modelu
+            pam, gotowe = mdl.setdefault('_wyprz', {}).setdefault(w, (np.zeros((K, x.shape[1]), np.float32), np.zeros(K, bool)))
+            brak = ts[~gotowe[ts]]
+            if len(brak):
+                pam[brak] = RC.prognozy(mdl, brak - w, w)[:, -1]
+                gotowe[brak] = True
+            pred = pam[ts]
             if ema:
                 pred = AU.ema(pred, a_ema)
             P = rzut(pred)
@@ -1151,7 +1233,10 @@ class ZakladkaUczenia(QWidget):
         h, N = self.spin_h.value(), self.spin_nowa.value()
         k0 = (k // N) * N
         starty = [k0 - j * N for j in range(self.spin_stare.value() + 1) if k0 - j * N >= 0]
-        tory = RC.prognozy(mdl, starty, h)                            # [n, h + 1, 768]
+        klucz_tor = (tuple(starty), h)                                # prognozy stoją w miejscu między startami (co N kroków)
+        if mdl.get('_tory_kl') != klucz_tor:
+            mdl['_tory_kl'], mdl['_tory'] = klucz_tor, RC.prognozy(mdl, starty, h)
+        tory = mdl['_tory']                                           # [n, h + 1, 768]
         styl = self.combo_lang_styl.currentIndex()                    # 0 ciągła + kropki, 1 ciągła, 2 przerywana
         a_min = self.spin_krycie_stare.value()
         n_st = len(tory) - 1
@@ -1221,24 +1306,19 @@ class ZakladkaUczenia(QWidget):
         return seg, [tuple(c) for c in kolory]
 
     def _kursor(self, k):
+        """Przesuwa pionowe kursory kroku we wszystkich wykresach; każde płótno odświeża tylko same linie
+        (blitting na zapamiętanym tle), a niewidoczne wcale (odświeży się po pokazaniu)."""
         x = float(self.kroki[k])
-        for l in getattr(self, '_linie_p', []):
-            l.set_xdata([x, x])
-        if getattr(self, '_linie_p', None) and self.zakl_wyk.currentIndex() == 2:
-            self.canvas_p.draw_idle()
-        for l in getattr(self, '_linie', []):
-            l.set_xdata([x, x])
-        self.canvas_r.draw_idle()
-        for l in getattr(self, '_linie_z', []) + getattr(self, '_linie_rk', []):
-            l.set_xdata([x, x])
-        if getattr(self, '_linie_rk', None) and self.zakl_wyk.currentWidget() is self.canvas_rk:
-            self.canvas_rk.draw_idle()
-        if getattr(self, '_linie_z', None) and self.zakl_wyk.currentWidget() is self.canvas_z:
-            self.canvas_z.draw_idle()
-        if getattr(self, '_linie_c', None):
-            self._linie_c[0].set_xdata([x, x]); self._linie_c[1].set_ydata([x, x])
-            if self.zakl_wyk.currentIndex() == 1:
-                self.canvas_c.draw_idle()
+        for plotno, linie in ((self.canvas_p, getattr(self, '_linie_p', [])), (self.canvas_r, getattr(self, '_linie', [])),
+                              (self.canvas_z, getattr(self, '_linie_z', [])), (self.canvas_rk, getattr(self, '_linie_rk', []))):
+            if linie:
+                for l in linie:
+                    l.set_xdata([x, x])
+                plotno.odswiez_animowane()
+        lc = getattr(self, '_linie_c', None)
+        if lc:
+            lc[0].set_xdata([x, x]); lc[1].set_ydata([x, x])
+            self.canvas_c.odswiez_animowane()
 
     def _idz_do_kroku(self, x):
         if self.Z is None or x is None:
@@ -1413,7 +1493,8 @@ class ZakladkaUczenia(QWidget):
             ax.tick_params(labelsize=7)
         x = float(kr[int(self.idx[min(getattr(self, 't', 0), len(self.idx) - 1)])])
         self._linie_rk = [ax.axvline(x, color='white', lw=.8, alpha=.7) for ax in osie]
-        self.canvas_rk.draw_idle()
+        self.canvas_rk.ustaw_animowane(self._linie_rk)
+        self.canvas_rk.odswiez_pelne()
 
     def _odcinki_krokowe(self, k):
         """Strzałki kroku (prawdziwy, przewidziany, niedopasowanie) i ślad w kolorze błędu w przestrzeni makro."""
@@ -1509,4 +1590,5 @@ class ZakladkaUczenia(QWidget):
             ax.tick_params(labelsize=7)
         x = float(kr[int(self.idx[min(getattr(self, 't', 0), len(self.idx) - 1)])])
         self._linie_z = [ax.axvline(x, color='white', lw=.8, alpha=.7) for ax in osie]
-        self.canvas_z.draw_idle()
+        self.canvas_z.ustaw_animowane(self._linie_z)
+        self.canvas_z.odswiez_pelne()

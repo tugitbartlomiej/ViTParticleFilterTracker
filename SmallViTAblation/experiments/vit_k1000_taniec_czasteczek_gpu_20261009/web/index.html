@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ruch cząsteczek GPU · K1000</title>
+<script src="/plotly.min.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#0b1420;--panel:#142131;--line:#2b3e50;--text:#f2f6fa;--muted:#aebdca;--cyan:#62d4dd;--amber:#ffb967;--ok:#a9d776;--bad:#f0909d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}main{max-width:1600px;margin:auto;padding:28px 32px}
+h1{font-size:29px;margin:4px 0 8px;letter-spacing:-.6px}h2{font-size:17px;font-weight:600;margin:0 0 12px}.eyebrow{color:var(--cyan);font-size:12px;letter-spacing:1.5px;font-weight:600}.subtitle{color:var(--muted);max-width:1100px}
+.toolbar{display:flex;gap:20px;flex-wrap:wrap;align-items:end;padding:20px 0}.control{display:flex;flex-direction:column;gap:6px}label,.small{font-size:13px;color:var(--muted)}
+select,button{font:inherit;border:1px solid var(--line);border-radius:9px;color:var(--text);background:var(--panel);padding:10px 12px}select{max-width:540px}button{cursor:pointer}button.primary{background:#23757c;border-color:#3aa6ad}button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.checks{display:flex;gap:16px;align-items:center;padding:12px 0;flex-wrap:wrap}.checks label{color:var(--text);cursor:pointer}
+.timeline{display:flex;align-items:center;gap:18px;background:var(--panel);padding:15px 18px;border-radius:12px}.timeline input{flex:1;accent-color:var(--cyan)}.step{min-width:150px;font-variant-numeric:tabular-nums}
+.layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(330px,1fr);gap:18px;margin-top:18px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px;min-width:0}
+.stage{position:relative;height:600px;border-radius:9px;overflow:hidden}.stage canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}.stage svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.legend{position:absolute;left:12px;bottom:12px;pointer-events:none;background:#142131cc;padding:6px 9px;border-radius:6px;font-size:12px;color:var(--muted)}
+.transit{position:absolute;right:12px;top:12px;pointer-events:none;background:#3a2a12e6;color:var(--amber);padding:6px 10px;border-radius:6px;font-size:13px}.transit:empty{display:none}
+.chart-small{height:270px}.footer-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.chip{background:#1b2b3e;border-radius:7px;padding:5px 10px;font-size:13px}
+.note{color:var(--muted);font-size:13px;margin:12px 0 0}.status{color:var(--amber);padding:10px 0}.status:empty{display:none}#point-detail{min-height:26px;color:var(--cyan)}.badge{color:var(--cyan);font-size:13px}.hidden{display:none!important}
+.gpu-row{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:10px}.gpu-row input[type=range]{width:130px;accent-color:var(--cyan)}
+#verify-out{font-size:13px;margin-top:10px;max-height:260px;overflow:auto}#verify-out .ok{color:var(--ok)}#verify-out .bad{color:var(--bad)}
+ul.flow{margin:0;padding-left:18px}ul.flow li{margin:4px 0}code{background:#1b2b3e;padding:1px 5px;border-radius:4px;font-size:13px}
+@media(max-width:1000px){main{padding:20px 14px}.layout,.footer-grid{grid-template-columns:1fr}.stage{height:440px}}
+</style></head><body><main>
+<div class="eyebrow">K1000 · 1500 OBRAZÓW · ZAMROŻONE WAGI · WEBGPU COMPUTE</div>
+<h1>Jak tańczyły cząsteczki w latencie · wersja GPU</h1>
+<div class="subtitle">Ruch 900 000 cząsteczek liczą compute shadery WGSL na karcie graficznej. Serwer wysyła tylko surowe zapisy, a położenia w czasie, przesunięcia, prędkości, granice osi, mapy, mediany i krzywe detekcji powstają na GPU. Te same osie PCA obowiązują wszystkie obrazy i kroki.</div>
+<div id="loading" class="status" role="status">Wczytywanie zapisanych trajektorii do GPU…</div>
+<div class="toolbar">
+<div class="control"><label for="mode">Zakres obserwacji</label><select id="mode"><option value="global" selected>Cały zbiór · 900 000 cząsteczek</option><option value="image">Jeden obraz · 600 cząsteczek</option><option value="exact">Ruch co krok · panel kontrolny</option></select></div>
+<div class="control" id="image-wrap"><label for="image">Obraz źródłowy</label><select id="image"></select></div>
+<div class="control"><label for="color">Kolor cząsteczek</label><select id="color"></select></div>
+<div class="control"><label for="speed">Tempo odtwarzania</label><select id="speed"><option value="25">25 kroków na sekundę</option><option value="60" selected>60 kroków na sekundę</option><option value="150">150 kroków na sekundę</option></select></div>
+</div>
+<div class="timeline"><button class="primary" id="play" aria-label="Odtwarzaj ruch">Odtwórz</button><div class="step">Krok <strong id="step-value">0</strong> / 500</div><input id="step" type="range" min="0" max="500" step="1" value="0" aria-label="Krok optymalizacji"><button id="begin">Od początku</button></div>
+<div class="checks"><label><input id="movement" type="checkbox" checked> Przesunięcia względem startu</label><label id="transit-wrap"><input id="transitions" type="checkbox" checked> Ruch między zapisami (odcinek liniowy liczony na GPU)</label><label id="trail-wrap"><input id="trails" type="checkbox" checked> Ślad ostatnich 40 kroków</label><label id="paths-wrap"><input id="paths" type="checkbox"> Odcinki 0 → 100 → 500</label><span id="phase" class="badge"></span></div>
+<div class="layout"><section class="panel"><h2>Ruch cząsteczek w jednej wspólnej przestrzeni</h2>
+<div class="stage" id="stage"><canvas id="gpu" aria-label="Chmura cząsteczek liczona i rysowana przez WebGPU"></canvas><svg id="axes" aria-hidden="true"></svg><div class="legend" id="legend"></div><div class="transit" id="transit"></div></div>
+<div class="gpu-row"><label><input id="spin" type="checkbox"> Obracaj automatycznie</label><label>Widoczność <input id="opacity" type="range" min="0.01" max="1" step="0.005" value="0.065" aria-label="Widoczność punktów"></label><label>Rozmiar <input id="size" type="range" min="1" max="8" step="0.5" value="1.5" aria-label="Rozmiar punktów"></label><button id="snapshot">Zapisz klatkę PNG</button><span id="gpu-status" class="badge" role="status"></span></div>
+<div id="point-detail">Kliknij cząsteczkę, aby odczytać jej obraz i numer patcha. Obrót: przeciągnij. Przybliżenie: kółko myszy.</div>
+<div class="chips"><span id="counts" class="chip"></span><span id="variance" class="chip"></span><span id="movement-norm" class="chip"></span></div><p id="sampling-note" class="note"></p></section>
+<section class="panel"><h2 id="metric-title">Detekcja podczas ruchu</h2><div id="quality" class="chart-small" role="img" aria-label="Rzeczywiste confidence oraz IoU względem kroków optymalizacji"></div><div class="chips"><span id="conf" class="chip"></span><span id="iou" class="chip"></span></div><h2 style="margin-top:24px" id="heat-title">Ruch w układzie patchy 20 × 30</h2><div id="heat" class="chart-small" role="img" aria-label="Długości ruchów przypisane położeniom tokenów w obrazie"></div><p id="heat-note" class="note"></p></section></div>
+<div class="footer-grid"><section class="panel"><h2>Co liczy GPU</h2><ul class="flow">
+<li><strong>Kinematyka:</strong> kernel <code>kin_milestone</code> wyznacza w każdej klatce położenie 900 000 cząsteczek, przesunięcie od startu i wielkość koloru.</li>
+<li><strong>Panel co krok:</strong> <code>kin_control</code> i <code>kin_trail</code> czytają 128 zapisanych trajektorii i budują ślady ostatnich 40 kroków.</li>
+<li><strong>Granice osi:</strong> <code>stats_*</code> redukują minimum i maksimum po wszystkich zapisanych stanach widoku atomowymi operacjami.</li>
+<li><strong>Mapa i mediana:</strong> <code>heat</code> uśrednia normy po 1500 obrazach, a <code>hist_hi</code> z <code>hist_lo</code> wyznaczają dokładną medianę bez sortowania.</li>
+<li><strong>Detekcja:</strong> <code>curves</code> liczy średnią pewność, IoU i liczbę sukcesów dla 501 kroków.</li></ul>
+<p class="note">Norma ruchu w 768D pochodzi z zapisu eksportu. Surowe latenty 768D są tylko na Edenie, więc GPU nie przelicza rzutu PCA.</p>
+<button id="verify" style="margin-top:12px">Zweryfikuj obliczenia GPU względem numpy</button><div id="verify-out" role="status"></div></section>
+<section class="panel"><h2>Co jest rzeczywistym zapisem</h2><p><strong>Cała chmura:</strong> 900 000 cząsteczek w pełnych stanach 0, 100 i 500. W tych krokach położenia są bitowo równe zapisowi. Pomiędzy nimi GPU prowadzi każdą cząsteczkę po prostym odcinku przemieszczenia. To pomoc wzrokowa, nie zmierzona trasa, i plakietka nad chmurą zawsze to zaznacza.</p><p><strong>Panel kontrolny:</strong> 16 obrazów po 8 cząsteczek, czyli 128 trajektorii zapisanych w każdym kroku od 0 do 500. Tu nic nie jest dopowiadane.</p><p><strong>Detekcja:</strong> pewność i IoU są zapisane w każdym kroku dla wszystkich 1500 obrazów, więc krzywe są rzeczywiste również między stanami chmury.</p><p class="note">PCA 3D jest rzutem 768D. Osie pozostają stałe w czasie wybranego widoku. Mała odległość na ekranie może ukrywać duży ruch poza rzutem.</p></section></div>
+</main>
+<script type="module" src="/app.js"></script>
+</body></html>

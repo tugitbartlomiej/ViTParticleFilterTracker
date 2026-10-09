@@ -1,0 +1,16 @@
+{
+ "rodzina": "vit_k1000_taniec_czasteczek_gpu_20261009",
+ "klasa": "badawcza",
+ "pytanie": "Czy caly ruch czasteczek oracle K1000 i jego statystyki mozna liczyc compute shaderami na GPU z bitowa zgodnoscia z zapisem?",
+ "role": [
+  "wizualizacja_rzeczywistych_trajektorii",
+  "obliczenia_gpu_webgpu"
+ ],
+ "wymagane": [
+  "tag",
+  "ziarno"
+ ],
+ "zrodlo": "vit_k1000_taniec_czasteczek_20261009",
+ "kontrole": ["sha256 projection.npz przed uzyciem", "sha256 kazdej tablicy po przeslaniu do przegladarki", "bitowa zgodnosc w zapisanych stanach", "sedzia numpy niezalezny od WGSL", "jawne oznaczenie odcinkow miedzy zapisami"],
+ "uwagi": "Refaktor podgladu, nie nowy trening. Dane zrodlowe tylko do odczytu."
+}

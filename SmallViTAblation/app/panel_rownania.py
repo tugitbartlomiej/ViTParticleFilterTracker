@@ -11,7 +11,9 @@ import numpy as np
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (QComboBox, QLabel, QLineEdit, QMessageBox, QPushButton, QScrollArea, QSpinBox, QSplitter, QVBoxLayout,
                              QWidget)
+from matplotlib.collections import PolyCollection
 from matplotlib.figure import Figure
+from matplotlib.patches import Rectangle
 
 import analiza_uczenia as AU
 import rownanie_czastki as RC
@@ -77,6 +79,8 @@ class PanelRownania(QWidget):
         dodaj(w, 'dopasuj na krokach', self.spin_od, 'Początek okna dopasowania (indeks kroku).')
         dodaj(w, '–', self.spin_do, 'Koniec okna dopasowania; test na krokach od tego miejsca do końca.')
         self.btn = rola(QPushButton('Licz równania'), 'glowny'); self.btn.clicked.connect(self.licz); w.addWidget(self.btn)
+        self.btn.setToolTip('Dopasowuje do własnej historii każdej wpisanej cząstki modele Langevina, GLE i Koopmana\n'
+                            '(około 2 s na cząstkę) i rysuje wyniki poniżej. Wymaga wczytanej historii uczenia.')
         self.combo_szcz = QComboBox(); self.combo_szcz.setMinimumWidth(110)
         dodaj(w, 'Wykresy dla:', self.combo_szcz, 'Której cząstki dotyczą wykresy rozkładu równania.')
         self.etykieta = QLabel('Wpisz cząstki i „Licz równania” (po wczytaniu historii). Około 2 s na cząstkę.')
@@ -276,6 +280,7 @@ class PanelRownania(QWidget):
 
     def rysuj(self):
         f = self.fig; f.clear()
+        self.canvas.ustaw_animowane([])
         if not self.wyniki:
             self.canvas.draw_idle(); return
         i = max(0, self.combo_szcz.currentIndex())
@@ -300,6 +305,7 @@ class PanelRownania(QWidget):
         ax.axhline(0, color='gray', lw=.6); ax.legend(fontsize=6, framealpha=.3)
         ax.set_title('jądro pamięci K(s)\n(tarcie z opóźnieniem s)', fontsize=7.5); ax.set_xlabel('opóźnienie s (kroków)', fontsize=7)
         self._rysuj_rozklad(rysuj=False)
+        self.canvas.ustaw_animowane([osie[1, 0]])      # zmienia się co krok: rysowana osobno (blitting), reszta stoi
         ax = osie[1, 1]
         y, M, v, u1 = m1['y'], m1['M'], m1['v'], m1['u1']
         od, do = m1['od'], m1['do']
@@ -354,15 +360,26 @@ class PanelRownania(QWidget):
         t = g['t']; w = (t > k - 40) & (t <= k)
         x = t[w] + 1
         dol_p = np.zeros(w.sum()); dol_u = np.zeros(w.sum())
+        # linia najpierw: kolejność w legendzie (linia, potem słupki) taka sama jak przy ax.bar (kontenery na końcu)
+        linia, = ax.plot(x, g['v'][w], 'w.-', lw=.8, ms=3, label='rzeczywisty krok')
+        uchwyty = [linia]
         for nazwa, klucz, kol in (('bezwładność', 'bezwladnosc', '#4cc9f0'), ('pamięć', 'pamiec', '#a06cd5'),
                                   ('sprężyna', 'sprezyna', '#7bd389'), ('szum η', 'szum', '#e71d36')):
             val = g[klucz][w]
             dol = np.where(val >= 0, dol_p, dol_u)
-            ax.bar(x, val, bottom=dol, color=kol, width=.85, label=nazwa)
+            # jeden zbiór prostokątów zamiast 40 łatek ax.bar (add_patch liczył się na dziesiątki ms)
+            xl, xp = x - .425, x + .425
+            wierzch = dol + val
+            kol_p = PolyCollection(np.stack([np.stack([xl, dol], 1), np.stack([xl, wierzch], 1),
+                                             np.stack([xp, wierzch], 1), np.stack([xp, dol], 1)], 1),
+                                   facecolors=kol, edgecolors='none')
+            uchwyty.append(Rectangle((0, 0), 1, 1, facecolor=kol, label=nazwa))      # to samo, co dawał ax.bar w legendzie
+            kol_p.sticky_edges.y.extend(dol.tolist())              # jak ax.bar: brak marginesu poniżej podstawy słupków
+            ax.add_collection(kol_p)
             dol_p = dol_p + np.clip(val, 0, None); dol_u = dol_u + np.clip(val, None, 0)
-        ax.plot(x, g['v'][w], 'w.-', lw=.8, ms=3, label='rzeczywisty krok')
-        ax.legend(fontsize=5, ncol=3, framealpha=.3, loc='upper left')
+        ax.autoscale_view()
+        ax.legend(handles=uchwyty, fontsize=5, ncol=3, framealpha=.3, loc='upper left')
         ax.set_title(f'rozkład kroku v(t) na części GLE\n(1. składowa toru), kroki {max(0, k - 39)}–{k}', fontsize=7.5)
         ax.tick_params(labelsize=6)
         if rysuj:
-            self.canvas.draw_idle()
+            self.canvas.odswiez_animowane()

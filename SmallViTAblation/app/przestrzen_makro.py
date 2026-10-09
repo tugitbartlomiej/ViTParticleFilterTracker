@@ -11,7 +11,9 @@ całej sekwencji (opcjonalnie 0); s dobrane raz na sekwencję (99. percentyl pro
 żeby ruch był porównywalny między klatkami. Kierunki: spirala Fibonacciego na sferze (jak w widoku 3D),
 losowe, albo trzy główne składowe PCA latentu sekwencji (największy rozrzut; kierunek kanału = jego
 ładunki PCA, wciąż stały i liniowy).
-Rysowanie: pyqtgraph.opengl (VBO na karcie).
+Rysowanie: położenia wszystkich klatek leżą na karcie; przelot, ślady, mikrowektory, zdjęcie na siatce cząstek
+i strzałki atencji liczą shadery OpenGL 4.3 (makro_gpu.py). Statyczne elementy (gwiazda, osie, mgła atencji,
+warstwy prognoz) zostają w pyqtgraph.opengl.
 """
 import time
 
@@ -27,7 +29,8 @@ import pyqtgraph.opengl as gl
 from uklad import WaskiCombo, etykieta_statusu
 from styl import rola
 from uklad import Odpinanie, PanelOpcji, dodaj, dodaj_nawigacje
-from widok_gl import LinieGrube, WidokGL
+from makro_gpu import MakroGPU
+from widok_gl import WidokGL
 from wspolne import baza_pca_rgb, ctrl_wcisniety, kolor_pca_rgb, kolor_podobienstwa, polacz_zaznaczenie, przelacz_w_zaznaczeniu
 from wspolne import CZASTECZKI_CO, KOLUMNY, PCA_SKLADOWE, kierunki, kolory_kanalow, opisy_czasteczek, pca, tokeny_co
 
@@ -283,36 +286,14 @@ class WidokPrzestrzeniMakro(QWidget):
         v.addItem(self.siatka)
         self.gwiazda = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', glOptions='translucent')
         v.addItem(self.gwiazda)
-        self.slady = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', glOptions='translucent')
-        v.addItem(self.slady)
-        self.lancuch = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='line_strip', width=2, glOptions='translucent')
-        v.addItem(self.lancuch)
-        self.mikro = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=1.5, glOptions='translucent')
-        self.mikro.setVisible(False)
-        v.addItem(self.mikro)
-        self.wypadkowa = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=4, color=(1, 1, 1, .95),
-                                           glOptions='translucent')
-        self.wypadkowa.setVisible(False)
-        v.addItem(self.wypadkowa)
-        self.luki = LinieGrube(v)                         # strzałki atencji, grubość według siły
-        self.groty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=7, pxMode=True, glOptions='translucent')
-        self.groty.setVisible(False); v.addItem(self.groty)
+        # Wszystkie ruchome warstwy (cząstki, ślady, przelot, mikrowektory, łańcuch, wypadkowa, strzałki atencji,
+        # zdjęcie na siatce cząstek, brzeg) liczą i rysują shadery OpenGL z buforów na karcie (makro_gpu.py).
+        self.gpu = MakroGPU()
+        v.addItem(self.gpu)
         self.objetosc = gl.GLVolumeItem(np.zeros((2, 2, 2, 4), np.uint8), sliceDensity=2, smooth=True, glOptions='additive')
         self.objetosc.setVisible(False); v.addItem(self.objetosc)
-        self.punkty = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=6, pxMode=True, glOptions='translucent')
-        v.addItem(self.punkty)
-        self.wybrany = gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=16, color=(1, 1, 1, 1), pxMode=True)
-        self.wybrany.setVisible(False)
-        v.addItem(self.wybrany)
         self.przyczyny = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=3, glOptions='translucent')
         self.przyczyny.setVisible(False); v.addItem(self.przyczyny)      # strzałki przyczyn ruchu (zakładka uczenia)
-        self.zdj_pow = gl.GLMeshItem(vertexes=np.zeros((3, 3), np.float32), faces=np.array([[0, 1, 2]]), smooth=False,
-                                     glOptions='translucent')
-        self.zdj_pow.setVisible(False); v.addItem(self.zdj_pow)         # zdjęcie zdeformowane do położeń cząstek
-        self.zdj_lin = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=1, glOptions='translucent')
-        self.zdj_lin.setVisible(False); v.addItem(self.zdj_lin)
-        self.brzeg = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=2.5, glOptions='translucent')
-        self.brzeg.setVisible(False); v.addItem(self.brzeg)
         self.podpisy = []
         self.os_kanalu = gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=6, glOptions='translucent')
         self.os_kanalu.setVisible(False); v.addItem(self.os_kanalu)
@@ -455,72 +436,30 @@ class WidokPrzestrzeniMakro(QWidget):
     def ustaw_obraz(self, rgb480):
         """Zdjęcie bieżącej klatki [320, 480, 3] uint8 (do zdeformowanego zdjęcia w przestrzeni); wołać przed pokaz_klatke."""
         self.rgb = None if rgb480 is None else np.asarray(rgb480)[:320, :480, :3]
+        self.gpu.ustaw_obraz(rgb480)                  # tekstura wysyłana tylko przy nowym obrazie
 
-    def _rysuj_zdjecie(self, P, kol):
-        """Zdjęcie rozpięte na siatce 20 x 30 położeń cząstek P [600, 3] (interpolacja dwuliniowa między węzłami)."""
+    def _zdjecie_gpu(self):
+        """Parametry zdjęcia rozpiętego na siatce 20 x 30 położeń cząstek dla shadera: (tryb, kolor, krycie
+        powierzchni, krycie linii, gęstość). Interpolacja dwuliniowa węzłów i kolorów dzieje się na karcie."""
         tryb = self.combo_zdj.currentIndex()
-        if tryb == 0 or (self.rgb is None and self.combo_zdj_kolor.currentIndex() != 1):
-            self.zdj_pow.setVisible(False); self.zdj_lin.setVisible(False)
-        else:
-            from scipy import ndimage
-            n = self.spin_zdj_gest.value()
-            R, C = 19 * n + 1, 29 * n + 1
-            r, c = np.linspace(0, 19, R), np.linspace(0, 29, C)
-            rr, cc = np.meshgrid(r, c, indexing='ij')
-            G = P.reshape(20, 30, 3)
-            V = np.stack([ndimage.map_coordinates(G[..., i], [rr, cc], order=1) for i in range(3)], -1)   # [R, C, 3]
-            k = self.combo_zdj_kolor.currentIndex()
-            if k == 1:
-                K = kol[:, :3].reshape(20, 30, 3)
-                K = np.stack([ndimage.map_coordinates(K[..., i], [rr, cc], order=1) for i in range(3)], -1)
-            else:
-                y = np.clip((8 + rr * 16).round().astype(int), 0, 319); x = np.clip((8 + cc * 16).round().astype(int), 0, 479)
-                K = self.rgb[y, x].astype(np.float32) / 255
-                if k == 2 and self.maski is not None:
-                    m = self.maski[self.t].reshape(20, 30).astype(np.float32)
-                    mm = ndimage.map_coordinates(m, [rr, cc], order=1)[..., None]
-                    K = K * (1 - .7 * mm) + np.array([1, .15, .1]) * .7 * mm
-            a = self.spin_zdj_krycie.value()
-            if self.chk_zazn.isChecked() and self.zaznaczenie is not None:
-                a *= .3                                      # śledzenie zaznaczonych: zdjęcie tylko jako tło do orientacji
-            if tryb in (1, 3):
-                if getattr(self, '_twarze_n', None) != (R, C):
-                    i = np.arange(R * C).reshape(R, C)
-                    q = np.stack([i[:-1, :-1], i[:-1, 1:], i[1:, 1:], i[1:, :-1]], -1).reshape(-1, 4)
-                    self._twarze = np.concatenate([q[:, [0, 1, 2]], q[:, [0, 2, 3]]]).astype(np.int32)
-                    self._twarze_n = (R, C)
-                kv = np.concatenate([K.reshape(-1, 3), np.full((R * C, 1), a)], 1).astype(np.float32)
-                self.zdj_pow.setMeshData(vertexes=V.reshape(-1, 3).astype(np.float32), faces=self._twarze, vertexColors=kv)
-                self.zdj_pow.setVisible(True)
-            else:
-                self.zdj_pow.setVisible(False)
-            if tryb in (2, 3):                                           # linie wierszy i kolumn patchy
-                Vp, Kp = V[::n, ::n], K[::n, ::n]                          # środki patchy [20, 30]
-                seg = np.concatenate([np.stack([Vp[:, :-1], Vp[:, 1:]], 2).reshape(-1, 3),
-                                      np.stack([Vp[:-1], Vp[1:]], 2).reshape(-1, 3)])
-                ks = np.concatenate([np.stack([Kp[:, :-1], Kp[:, 1:]], 2).reshape(-1, 3),
-                                     np.stack([Kp[:-1], Kp[1:]], 2).reshape(-1, 3)])
-                al = min(1., a * 1.6) if tryb == 2 else min(1., a + .25)
-                ks = np.concatenate([np.clip(ks * 1.3, 0, 1), np.full((len(ks), 1), al)], 1)
-                self.zdj_lin.setData(pos=seg.astype(np.float32), color=ks.astype(np.float32))
-                self.zdj_lin.setVisible(True)
-            else:
-                self.zdj_lin.setVisible(False)
-        self._rysuj_podpisy(P)
+        k = self.combo_zdj_kolor.currentIndex()
+        if tryb == 0 or (self.rgb is None and k != 1):
+            return (0, 0, 0., 0., 1)
+        if k == 2 and self.maski is None:
+            k = 0
+        a = self.spin_zdj_krycie.value()
+        if self.chk_zazn.isChecked() and self.zaznaczenie is not None:
+            a *= .3                                      # śledzenie zaznaczonych: zdjęcie tylko jako tło do orientacji
+        al = min(1., a * 1.6) if tryb == 2 else min(1., a + .25)
+        return (tryb, k, a, al, self.spin_zdj_gest.value())
 
-    def _rysuj_podpisy(self, P):
+    def _rysuj_podpisy(self):
+        """Napisy przy rogach, środku obrazu i narzędziu; przesuwane za lecącymi cząstkami (brzeg rysuje GPU)."""
         if not self.chk_podpisy.isChecked():
-            self.brzeg.setVisible(False)
             for it in self.podpisy:
                 it.setVisible(False)
             return
-        G = P.reshape(20, 30, 3)
-        gora, dol, lewa, prawa = G[0], G[-1], G[:, 0], G[:, -1]
-        seg, kol = [], []
-        for L, c in ((gora, (.3, .6, 1, .9)), (lewa, (1, .85, .2, .9)), (dol, (.6, .6, .6, .5)), (prawa, (.6, .6, .6, .5))):
-            seg.append(np.stack([L[:-1], L[1:]], 1).reshape(-1, 3)); kol += [c] * (2 * (len(L) - 1))
-        self.brzeg.setData(pos=np.concatenate(seg).astype(np.float32), color=np.array(kol, np.float32))
-        self.brzeg.setVisible(True)
+        P = self._biezace()
         napisy = [(0, 'lewy górny róg'), (29, 'prawy górny'), (570, 'lewy dolny'), (599, 'prawy dolny'), (315, 'środek obrazu')]
         pozycje = [(P[t], tekst) for t, tekst in napisy]
         if self.maski is not None and self.maski[self.t].any():
@@ -627,8 +566,8 @@ class WidokPrzestrzeniMakro(QWidget):
         self.D = Q.astype(np.float32)
         self.P[self.t] = P * self.s
         self._od, self._u = None, 1.0
-        self.slady.setVisible(False)
-        self._rysuj(tylko_punkty=True)
+        self.gpu.ustaw_wiersz(self.t, self.P[self.t])                         # tylko bieżący krok na kartę
+        self._rysuj(skok=True, bez_sladu=True)
 
     def rysuj_warstwy(self, warstwy):
         """Warstwy ścieżek (np. prognoza Langevina), każda z własną grubością linii: lista słowników
@@ -799,6 +738,7 @@ class WidokPrzestrzeniMakro(QWidget):
         r = np.linalg.norm(surowe, axis=-1)
         self.s = 100 / max(float(np.percentile(r, 99)), 1e-9)
         self.P = surowe * self.s
+        self.gpu.ustaw_P(self.P)                                                # wszystkie kroki na kartę, raz
         self._rysuj(skok=True)
 
     def pokaz_klatke(self, t, token=None):
@@ -987,37 +927,41 @@ class WidokPrzestrzeniMakro(QWidget):
             tok = np.intersect1d(tok, tokeny_co(CZASTECZKI_CO[self.combo_ile.currentIndex()]))
         return tok
 
-    def _rysuj(self, skok=False, tylko_punkty=False):
+    def _rysuj(self, skok=False, tylko_punkty=False, bez_sladu=False):
+        """Przygotowanie danych kroku dla GPU (skok albo nowa klatka) albo sam postęp przelotu (tylko_punkty).
+        W czasie przelotu CPU podaje tylko postęp u; położenia, mikrowektory, zdjęcie i strzałki liczą shadery."""
         if self.P is None:
             return
         if skok:
             self._od, self._u, self._v_od = self.P[self.t], 1.0, None
             self._timer.stop()
-        P = self._biezace()
+        lot = self._od is not None and self._u < 1
+        self.gpu.ustaw_przelot(self._gladkie_u() if lot else 1.0, reszta=lot)
+        if tylko_punkty:
+            self._rysuj_podpisy()
+            if not lot and self.chk_objetosc.isChecked() and getattr(self, '_A_obj', None) is not None:
+                self._rysuj_objetosc(self.P[self.t], *self._A_obj)      # mgła liczona na końcu przelotu
+            return
         tok = self._widoczne()
         kol = self._kolory()
         rozm = self.spin_rozmiar.value()
         A, strz, self._opis_at = self._atencja()
+        self._A_obj = None
         if self.chk_objetosc.isChecked() and A is not None:
-            if not tylko_punkty or self._u >= 1:             # w czasie przelotu mgła stoi, liczona na jego końcu
-                self._rysuj_objetosc(P, A, tok)
+            self._A_obj = (A, tok)
+            self._rysuj_objetosc(self._biezace(), A, tok)
         else:
             self.objetosc.setVisible(False)
         if A is not None and self.chk_atencja.isChecked():   # mapa atencji: kolor inferno, rozmiar według wartości
             import matplotlib
             kol = matplotlib.colormaps['inferno'](A).astype(np.float32); kol[:, 3] = .95
-            rozm = (rozm * (.4 + self.spin_wzm.value() * A)).astype(np.float32)[tok]
+            rozm = (rozm * (.4 + self.spin_wzm.value() * A)).astype(np.float32)
+        r600 = np.broadcast_to(np.asarray(rozm, np.float32), (600,)).copy()
         if self.zaznaczenie is not None and len(self.zaznaczenie):      # zaznaczone patche jasne, reszta blada
-            r600 = np.full(600, float(rozm), np.float32) if np.ndim(rozm) == 0 else np.zeros(600, np.float32)
-            if np.ndim(rozm):
-                r600[tok] = rozm
             kol = kol.copy(); poza = np.ones(600, bool); poza[self.zaznaczenie] = False
             kol[poza, 3] = .07; r600[self.zaznaczenie] *= 1.5
             if self.kolory_zazn is not None:
                 kol[self.zaznaczenie] = self.kolory_zazn
-            rozm = r600[tok]
-        self.punkty.setData(pos=P[tok], color=kol[tok], size=rozm)
-        self.punkty.setVisible(self.chk_czastki.isChecked())
         if self.kanal is not None and self.kanal < len(self.D):         # oś podświetlonego kanału (atlas kanałów)
             d = self.D[self.kanal]; d = d / max(float(np.linalg.norm(d)), 1e-9) * 90
             c = self.kolory_kan[self.kanal].copy(); c[3] = 1
@@ -1025,58 +969,24 @@ class WidokPrzestrzeniMakro(QWidget):
             self.os_kanalu.setVisible(True)
         else:
             self.os_kanalu.setVisible(False)
-        self._rysuj_zdjecie(P, kol)
-        if strz is not None:                                 # strzałki źródło -> cel między cząstkami
-            import matplotlib
-            src, dst, w = strz
-            c = matplotlib.colormaps['cool'](w).astype(np.float32); c[:, 3] = .25 + .75 * w
-            self.luki.setData(pos=np.stack([P[src], P[dst]], 1).reshape(-1, 3).astype(np.float32),
-                              color=np.repeat(c, 2, 0), wagi=w, grubosc_max=self.opcje.spin_grubosc.value())
-            self.groty.setData(pos=P[dst].astype(np.float32), color=c)
-            self.luki.setVisible(True); self.groty.setVisible(True)
-        else:
-            self.luki.setVisible(False); self.groty.setVisible(False)
-        if self.token is not None:
-            self.wybrany.setData(pos=P[self.token][None], size=self.spin_rozmiar.value() + 10, color=(1, 1, 1, .9))
-            self.wybrany.setVisible(True)
-        else:
-            self.wybrany.setVisible(False)
         tryb_m = self.combo_mikro.currentIndex()
-        jest = self.token is not None and self.Z is not None
-        if jest and tryb_m != 3:
-            v = self._v_biezace()                                           # [K, 3]: mikrowektory cząstki
-            kol_v = self.kolory_kan
-            o = np.zeros(3, np.float32)                                     # wspólny początek: zawsze środek układu
-        if jest and tryb_m in (1, 2):
-            kolej = np.argsort(-np.linalg.norm(v, axis=1))                       # od najsilniejszego
-            lan = o + np.concatenate([np.zeros((1, 3), np.float32), np.cumsum(v[kolej], 0)])
-            self.lancuch.setData(pos=lan, color=np.concatenate([kol_v[kolej[:1]], kol_v[kolej]]))
-            self.lancuch.setVisible(True)
-        else:
-            self.lancuch.setVisible(False)
-        if jest and tryb_m in (0, 2):
-            seg = np.stack([np.broadcast_to(o, v.shape), o + v * self.spin_mikro.value()], 1).reshape(-1, 3)
-            dl = np.linalg.norm(v, axis=1)
-            c = np.repeat(kol_v, 2, 0).copy()
-            c[:, 3] = 1                                                         # pełne kolory, jak wektory w 3D
-            self.mikro.setData(pos=np.ascontiguousarray(seg, np.float32), color=c)
-            self.wypadkowa.setData(pos=np.stack([o, o + v.sum(0)]).astype(np.float32))   # = położenie cząstki
-            self.mikro.setVisible(True); self.wypadkowa.setVisible(True)
-        else:
-            self.mikro.setVisible(False); self.wypadkowa.setVisible(False)
-        if tylko_punkty:
-            return
+        mikro = None
+        if self.token is not None and self.Z is not None and tryb_m != 3:
+            v = self.sily_tokenu(self.t, self.token)[:, None] * self.D * self.s        # cel: mikrowektory nowego kroku
+            vo = getattr(self, '_v_od', None)
+            v0 = vo if (lot and vo is not None and vo.shape == v.shape) else v
+            mikro = (v0, v, np.argsort(-np.linalg.norm(v, axis=1)))             # łańcuch od najsilniejszego
         L = self.spin_slad.value()
-        if L > 0 and self.t > 0:
-            t0 = max(0, self.t - L)
-            S = self.P[t0:self.t + 1][:, tok]                                   # [L+1, n, 3]
-            seg = np.stack([S[:-1], S[1:]], 2).transpose(1, 0, 2, 3).reshape(-1, 3)
-            a = np.linspace(.08, .6, len(S) - 1, dtype=np.float32)
-            c = np.repeat(kol[tok][:, None, :], len(S) - 1, 1).copy(); c[..., 3] = a
-            self.slady.setData(pos=seg, color=np.repeat(c, 2, 1).reshape(-1, 4))
-            self.slady.setVisible(self.chk_czastki.isChecked())
-        else:
-            self.slady.setVisible(False)
+        t0 = max(0, self.t - L)
+        maska = self.maski[self.t] if self.maski is not None else np.zeros(600, bool)
+        self.gpu.ustaw_krok(
+            self.t, self._od if lot else self.P[self.t], kol, r600, maska.astype(np.float32), tok,
+            wybrany=self.token, rozm_wybr=self.spin_rozmiar.value() + 10,
+            slad=(self.t - t0, t0, L > 0 and self.t > 0 and not bez_sladu),
+            mikro=mikro, tryb_mikro=tryb_m, mnoz_mikro=self.spin_mikro.value(), kolory_kan=self.kolory_kan,
+            strzalki=strz, grubosc_max=self.opcje.spin_grubosc.value(),
+            zdjecie=self._zdjecie_gpu(), brzeg=self.chk_podpisy.isChecked(), czastki=self.chk_czastki.isChecked())
+        self._rysuj_podpisy()
         if self.chk_gwiazda.isChecked():
             d = self.D / max(float(np.linalg.norm(self.D, axis=1).max()), 1e-9) * 40
             seg = np.stack([np.zeros_like(d), d], 1).reshape(-1, 3)
@@ -1090,4 +1000,5 @@ class WidokPrzestrzeniMakro(QWidget):
                               f'(skala s = {self.s:.3g}); średni przelot od poprzedniej klatki {przes:.1f} jedn.'
                               + ('' if self.token is None else f'; wybrany patch {self.token}, '
                                  f'odległość od środka {float(np.linalg.norm(self.P[self.t, self.token])):.1f}') + self._opis_pca + self._opis_poz
-                              + (f'; atencja: {self._opis_at}' if getattr(self, '_opis_at', '') else ''))
+                              + (f'; atencja: {self._opis_at}' if getattr(self, '_opis_at', '') else '')
+                              + (f'; BŁĄD GPU (OpenGL 4.3): {self.gpu.blad}' if self.gpu.blad else ''))
