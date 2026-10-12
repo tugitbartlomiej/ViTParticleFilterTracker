@@ -1,0 +1,93 @@
+{
+  "status": "complete",
+  "files": [
+    {
+      "path": "CONTROL_OOD.json",
+      "sha256": "4b7a19ebb7b8269037b27a9cdf34d3394ceaaf3d0a94ae8721058e476207f8bf",
+      "bytes": 610687
+    },
+    {
+      "path": "INPUTS_SPLITS.json",
+      "sha256": "131c82448bc8f1399b0d693825bfbc155700dec2040e4fb88e410749a3394361",
+      "bytes": 1013787
+    },
+    {
+      "path": "METRICS_PER_IMAGE.csv",
+      "sha256": "da997fa9a2aa2d38f5b8a7f21ca91ab4f92d3cafdd04463e7b8885367ce2fd5b",
+      "bytes": 2135376
+    },
+    {
+      "path": "METRICS_STRATIFIED.json",
+      "sha256": "b503153169dd97009795d94c3e4cd5089d349bb8be97e87d4444d414d58b0367",
+      "bytes": 204919
+    },
+    {
+      "path": "MODEL.npz",
+      "sha256": "482b6952a9c76fdf56699344a0ca849bfe583e03cdda2c1b308886084220c855",
+      "bytes": 20179
+    },
+    {
+      "path": "MODEL_DIAGNOSTICS.json",
+      "sha256": "377d7f87ab87f380ae3fb64c41ab67061625bbc37cebd45d083b637fce4df4fb",
+      "bytes": 1758
+    },
+    {
+      "path": "PROVENANCE.json",
+      "sha256": "19ba1ba34f9db66a8ffab6f75b6d2ce4a9201e0dcebe6c5d0b77ed68bcad764d",
+      "bytes": 1895
+    },
+    {
+      "path": "SUMMARY_METRICS.json",
+      "sha256": "d22541d990c6637655335f6470ccbb745bd8e48c381cb04bf54cfb7d72d959fb",
+      "bytes": 27965
+    },
+    {
+      "path": "TRAIN_SAMPLING.json",
+      "sha256": "16c9ab990db8901572e981568bce16bad95aef2b0188b0c18b143d70f3541303",
+      "bytes": 125199
+    },
+    {
+      "path": "WYNIKI.md",
+      "sha256": "8d50416823e1d1f5ee2f05522b543934f3ee9ce705af8642b1996cf5badffe5f",
+      "bytes": 2415
+    }
+  ],
+  "provenance": {
+    "status": "complete",
+    "job_id": "1825187",
+    "elapsed_seconds": 860.828145980835,
+    "arguments": {
+      "producer_root": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_replay900k_co5_20261009",
+      "output": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/results/population900k_dmdc_supplement"
+    },
+    "images": 1500,
+    "particles": 900000,
+    "h5_transitions_evaluated": 90000000,
+    "h20_windows_per_particle": 97,
+    "libraries": {
+      "pydmd": "2025.8.1",
+      "deeptime": "0.4.5",
+      "numpy": "2.2.6",
+      "scipy": "1.15.3"
+    },
+    "pydmd_DMDc_source_sha256": "12d7935cf2192f400f87e8f2dabc6096749463d0851d0ded14434d57ba40dafe",
+    "code_hashes": {
+      "population_dmdc_supplement.py": "93b388612055ad0a71f28b23ef465ec3b4b7a9bbf00fe7643f43e59095a767c2",
+      "submit_supplement_once.py": "810ac4836fd5ca6613d7abca4c769d991a74f2d20f96087f1789f359085eae3a",
+      "temporal_core.py": "ace40b2635a0973de5c4aa18f0b50f317993281ae0e220266b07dde4e1d7fd2a",
+      "test_supplement.py": "8135a4c3bfe7d3bc057b4ac0a836c45a343de130523ffc5b745bfc972f49a3ac"
+    },
+    "PCA_basis_sha256": "8eb0de248d837cbcd81945c94e7210bf27165c3e077f1df1f78831ea3783845b",
+    "one_shared_A_B": true,
+    "start_U_is_measured_oracle_amplitude_not_full_vector_control": true,
+    "input_features_do_not_use_future_mean_last_gradient_or_delta": true,
+    "h20_protocols": [
+      "frozen_all_startU_components",
+      "futureU_oracle_teacher_forced"
+    ],
+    "h5_full768_error": "projected prediction preserving start residual, plus known residual increment norm; float32 precision",
+    "h20_full768_error": "triangle bounds from omitted state/increment norms, not exact",
+    "split_rule": "identical to frozen population consumer; panel film split preserved, unlisted films deterministic hash",
+    "prediction_scope": "oracle optimization trajectory forecast, not learned GT-free corrector or mAP claim"
+  }
+}

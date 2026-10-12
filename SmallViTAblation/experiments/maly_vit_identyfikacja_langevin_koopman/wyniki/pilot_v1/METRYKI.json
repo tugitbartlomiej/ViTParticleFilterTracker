@@ -1,0 +1,5130 @@
+{
+  "created": "2026-10-01T14:20:45.433694+02:00",
+  "seconds": 15.848345756530762,
+  "config": {
+    "train_seed": 47,
+    "transfer_seed": 48,
+    "calibration_step": 1000,
+    "train_cutoff": 1800,
+    "validation_origins": [
+      1800,
+      1810,
+      1820,
+      1830,
+      1840,
+      1850,
+      1860,
+      1870,
+      1880,
+      1890,
+      1900,
+      1910,
+      1920,
+      1930,
+      1940,
+      1950,
+      1960,
+      1970,
+      1980,
+      1990,
+      2000
+    ],
+    "refit_cutoff": 2500,
+    "test_origins_s48": [
+      2100,
+      2110,
+      2120,
+      2130,
+      2140,
+      2150,
+      2160,
+      2170,
+      2180,
+      2190,
+      2200,
+      2210,
+      2220,
+      2230,
+      2240,
+      2250,
+      2260,
+      2270,
+      2280,
+      2290,
+      2300,
+      2310,
+      2320,
+      2330,
+      2340,
+      2350,
+      2360,
+      2370,
+      2380,
+      2390,
+      2400,
+      2410,
+      2420,
+      2430,
+      2440,
+      2450,
+      2460,
+      2470,
+      2480,
+      2490,
+      2500
+    ],
+    "test_origins_s47": [
+      2500
+    ],
+    "horizons": [
+      10,
+      50,
+      100,
+      500
+    ],
+    "ridge_grid": [
+      0.001,
+      0.1,
+      10
+    ],
+    "level_grid": [
+      500,
+      1000
+    ],
+    "time_resolution": 10,
+    "primary_origin": 2500
+  },
+  "results": {
+    "10": {
+      "selected_validation": "legacy_gle",
+      "selected_new_validation": "gle_effect",
+      "validation": {
+        "ar": {
+          "mse": 0.6417028559886878,
+          "mae": 0.6273541341683262,
+          "rmse": 0.8010635779940865,
+          "skill_percent": 17.367723303365025,
+          "sign": 0.6341269841269841,
+          "sign_large": 0.7185185185185186,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        },
+        "gle_compact": {
+          "mse": 0.6296030852429321,
+          "mae": 0.621794390021019,
+          "rmse": 0.7934753211303626,
+          "skill_percent": 18.92581455213883,
+          "sign": 0.6460317460317461,
+          "sign_large": 0.7306878306878307,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        },
+        "gle_descriptor": {
+          "mse": 0.6502011918348883,
+          "mae": 0.6317351328774722,
+          "rmse": 0.8063505390553716,
+          "skill_percent": 16.273389948681384,
+          "sign": 0.6259259259259259,
+          "sign_large": 0.6941798941798942,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        },
+        "gle_effect": {
+          "mse": 0.6243220017768366,
+          "mae": 0.6187607929785142,
+          "rmse": 0.7901404949607611,
+          "skill_percent": 19.605861315459016,
+          "sign": 0.6462962962962963,
+          "sign_large": 0.7328042328042328,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        },
+        "gle_descriptor_effect": {
+          "mse": 0.6419372533600434,
+          "mae": 0.6264544164449988,
+          "rmse": 0.8012098684864306,
+          "skill_percent": 17.33753988082598,
+          "sign": 0.6253968253968254,
+          "sign_large": 0.6925925925925925,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        },
+        "gle_descriptor_effect_ped": {
+          "mse": 0.6432462898364235,
+          "mae": 0.626493170233281,
+          "rmse": 0.8020263648013222,
+          "skill_percent": 17.168974845914963,
+          "sign": 0.6367724867724868,
+          "sign_large": 0.7068783068783069,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        },
+        "lifting_quadratic": {
+          "mse": 0.6279545358040083,
+          "mae": 0.6214546443629452,
+          "rmse": 0.7924358244072566,
+          "skill_percent": 19.13809877701633,
+          "sign": 0.6415343915343915,
+          "sign_large": 0.7285714285714285,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        },
+        "legacy_gle": {
+          "mse": 0.6184325399615866,
+          "mae": 0.6195612383192456,
+          "rmse": 0.7864048193911242,
+          "skill_percent": 20.3642491483481,
+          "sign": 0.6484126984126984,
+          "sign_large": 0.7296296296296296,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        },
+        "zero": {
+          "mse": 0.776576516637136,
+          "mae": 0.6862942694356202,
+          "rmse": 0.8812357894667783,
+          "skill_percent": 0.0,
+          "sign": 0.0,
+          "sign_large": 0.0,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        },
+        "drift": {
+          "mse": 0.8730524278092604,
+          "mae": 0.7244094464009402,
+          "rmse": 0.9343727456477209,
+          "skill_percent": -12.42323313997451,
+          "sign": 0.4113756613756614,
+          "sign_large": 0.3486772486772487,
+          "baseline_mse": 0.776576516637136,
+          "positive_fraction": 0.5092592592592593
+        }
+      },
+      "specs": {
+        "ar": {
+          "kind": "ar",
+          "ridge": 0.001,
+          "level": 500
+        },
+        "gle_compact": {
+          "kind": "compact",
+          "ridge": 0.1,
+          "level": 500
+        },
+        "gle_descriptor": {
+          "kind": "compact",
+          "desc": true,
+          "ridge": 0.1,
+          "level": 1000
+        },
+        "gle_effect": {
+          "kind": "compact",
+          "effect": true,
+          "ridge": 0.1,
+          "level": 500
+        },
+        "gle_descriptor_effect": {
+          "kind": "compact",
+          "desc": true,
+          "effect": true,
+          "ridge": 0.1,
+          "level": 1000
+        },
+        "gle_descriptor_effect_ped": {
+          "kind": "compact",
+          "desc": true,
+          "effect": true,
+          "ped": true,
+          "ridge": 0.1,
+          "level": 500
+        },
+        "lifting_quadratic": {
+          "kind": "compact",
+          "lifting": true,
+          "ridge": 0.001,
+          "level": 500
+        },
+        "legacy_gle": {
+          "kind": "legacy_gle",
+          "ridge": 0.001,
+          "level": 500
+        }
+      },
+      "test": {
+        "47": {
+          "ar": {
+            "mse": 0.5811234427536189,
+            "mae": 0.5671998150335268,
+            "rmse": 0.76231453006854,
+            "skill_percent": 27.775098798007537,
+            "sign": 0.6888888888888889,
+            "sign_large": 0.7777777777777778,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.5811234427536189,
+              "mae": 0.5671998150335268,
+              "rmse": 0.76231453006854,
+              "skill_percent": 27.775098798007537,
+              "sign": 0.6888888888888889,
+              "sign_large": 0.7777777777777778,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.9166666666666666,
+            "interval90_width": 2.5982756084988954
+          },
+          "gle_compact": {
+            "mse": 0.5776115743453775,
+            "mae": 0.559625021212785,
+            "rmse": 0.7600076146627595,
+            "skill_percent": 28.211571206722898,
+            "sign": 0.7055555555555556,
+            "sign_large": 0.8111111111111111,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.5776115743453775,
+              "mae": 0.559625021212785,
+              "rmse": 0.7600076146627595,
+              "skill_percent": 28.211571206722898,
+              "sign": 0.7055555555555556,
+              "sign_large": 0.8111111111111111,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.9388888888888889,
+            "interval90_width": 2.598001999903153
+          },
+          "gle_descriptor": {
+            "mse": 0.5533707216936359,
+            "mae": 0.5436934286432137,
+            "rmse": 0.7438889175768354,
+            "skill_percent": 31.224344498965362,
+            "sign": 0.7277777777777777,
+            "sign_large": 0.8111111111111111,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.5533707216936359,
+              "mae": 0.5436934286432137,
+              "rmse": 0.7438889175768354,
+              "skill_percent": 31.224344498965362,
+              "sign": 0.7277777777777777,
+              "sign_large": 0.8111111111111111,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.9444444444444444,
+            "interval90_width": 2.614295321148883
+          },
+          "gle_effect": {
+            "mse": 0.5645400359713417,
+            "mae": 0.5580117157542601,
+            "rmse": 0.7513587931017656,
+            "skill_percent": 29.836166771392037,
+            "sign": 0.6777777777777778,
+            "sign_large": 0.7777777777777778,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.5645400359713417,
+              "mae": 0.5580117157542601,
+              "rmse": 0.7513587931017656,
+              "skill_percent": 29.836166771392037,
+              "sign": 0.6777777777777778,
+              "sign_large": 0.7777777777777778,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.9444444444444444,
+            "interval90_width": 2.5769157504596896,
+            "residual_diagnostics": {
+              "skew": 0.8531413525506627,
+              "excess_kurtosis": 3.0861775912703946,
+              "residual_lag1": null,
+              "residual_lag5": null,
+              "corr_past_state": -0.0044758618885356325,
+              "corr_past_batch_effect": -0.20297291330472883,
+              "variance_first_half": 0.5311318185902398,
+              "variance_second_half": 0.5311318185902398,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "gle_descriptor_effect": {
+            "mse": 0.5433798842620257,
+            "mae": 0.5432833173880518,
+            "rmse": 0.7371430554933185,
+            "skill_percent": 32.46605528420579,
+            "sign": 0.7277777777777777,
+            "sign_large": 0.8222222222222222,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.5433798842620257,
+              "mae": 0.5432833173880518,
+              "rmse": 0.7371430554933185,
+              "skill_percent": 32.46605528420579,
+              "sign": 0.7277777777777777,
+              "sign_large": 0.8222222222222222,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.95,
+            "interval90_width": 2.6137169345017544
+          },
+          "gle_descriptor_effect_ped": {
+            "mse": 0.5550312978662989,
+            "mae": 0.5535084910633334,
+            "rmse": 0.7450042267439151,
+            "skill_percent": 31.017959863300582,
+            "sign": 0.6777777777777778,
+            "sign_large": 0.7777777777777778,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.5550312978662989,
+              "mae": 0.5535084910633334,
+              "rmse": 0.7450042267439151,
+              "skill_percent": 31.017959863300582,
+              "sign": 0.6777777777777778,
+              "sign_large": 0.7777777777777778,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.9444444444444444,
+            "interval90_width": 2.607360578565479
+          },
+          "lifting_quadratic": {
+            "mse": 0.572722286826283,
+            "mae": 0.5606217448513495,
+            "rmse": 0.7567841745347764,
+            "skill_percent": 28.819236088286537,
+            "sign": 0.6944444444444444,
+            "sign_large": 0.8,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.572722286826283,
+              "mae": 0.5606217448513495,
+              "rmse": 0.7567841745347764,
+              "skill_percent": 28.819236088286537,
+              "sign": 0.6944444444444444,
+              "sign_large": 0.8,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.9222222222222223,
+            "interval90_width": 2.5809756122926237
+          },
+          "legacy_gle": {
+            "mse": 0.6066678666877109,
+            "mae": 0.5640673713471057,
+            "rmse": 0.7788888667118762,
+            "skill_percent": 24.600311206993396,
+            "sign": 0.7166666666666667,
+            "sign_large": 0.8,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.6066678666877109,
+              "mae": 0.5640673713471057,
+              "rmse": 0.7788888667118762,
+              "skill_percent": 24.600311206993396,
+              "sign": 0.7166666666666667,
+              "sign_large": 0.8,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.9277777777777778,
+            "interval90_width": 2.5645303182259678,
+            "residual_diagnostics": {
+              "skew": 0.8292022481185544,
+              "excess_kurtosis": 3.03251823096965,
+              "residual_lag1": null,
+              "residual_lag5": null,
+              "corr_past_state": -0.0035886033310477154,
+              "corr_past_batch_effect": -0.164881424057711,
+              "variance_first_half": 0.5707651054278116,
+              "variance_second_half": 0.5707651054278116,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "zero": {
+            "mse": 0.8046026136171267,
+            "mae": 0.6579391294055514,
+            "rmse": 0.896996440136262,
+            "skill_percent": 0.0,
+            "sign": 0.0,
+            "sign_large": 0.0,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.8046026136171267,
+              "mae": 0.6579391294055514,
+              "rmse": 0.896996440136262,
+              "skill_percent": 0.0,
+              "sign": 0.0,
+              "sign_large": 0.0,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.9222222222222223,
+            "interval90_width": 2.8546077251434316
+          },
+          "drift": {
+            "mse": 0.9182333155347623,
+            "mae": 0.7123476099967956,
+            "rmse": 0.9582449141710914,
+            "skill_percent": -14.122586727229702,
+            "sign": 0.3611111111111111,
+            "sign_large": 0.28888888888888886,
+            "baseline_mse": 0.8046026136171267,
+            "positive_fraction": 0.7166666666666667,
+            "primary_t2500": {
+              "mse": 0.9182333155347623,
+              "mae": 0.7123476099967956,
+              "rmse": 0.9582449141710914,
+              "skill_percent": -14.122586727229702,
+              "sign": 0.3611111111111111,
+              "sign_large": 0.28888888888888886,
+              "baseline_mse": 0.8046026136171267,
+              "positive_fraction": 0.7166666666666667
+            },
+            "interval90_coverage": 0.9222222222222223,
+            "interval90_width": 3.037295434474944
+          }
+        },
+        "48": {
+          "ar": {
+            "mse": 0.5354222523616209,
+            "mae": 0.5654478527205028,
+            "rmse": 0.7317255307570052,
+            "skill_percent": 17.44619035331273,
+            "sign": 0.6281842818428184,
+            "sign_large": 0.7073170731707317,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.3997407963651583,
+              "mae": 0.5010893549383364,
+              "rmse": 0.6322505803596848,
+              "skill_percent": 14.088817303403456,
+              "sign": 0.6333333333333333,
+              "sign_large": 0.7444444444444445,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.9180216802168022,
+            "interval90_width": 2.5982756084988954
+          },
+          "gle_compact": {
+            "mse": 0.5277760952384215,
+            "mae": 0.562393999804995,
+            "rmse": 0.7264819992528524,
+            "skill_percent": 18.625109228822858,
+            "sign": 0.632249322493225,
+            "sign_large": 0.7105691056910569,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.3670023499176488,
+              "mae": 0.4738794738980369,
+              "rmse": 0.6058071887305801,
+              "skill_percent": 21.124873366556585,
+              "sign": 0.6555555555555556,
+              "sign_large": 0.7444444444444445,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.9223577235772358,
+            "interval90_width": 2.598001999903153
+          },
+          "gle_descriptor": {
+            "mse": 0.9069812985138648,
+            "mae": 0.7781028335460228,
+            "rmse": 0.9523556575743459,
+            "skill_percent": -39.84245357820668,
+            "sign": 0.5224932249322494,
+            "sign_large": 0.5414634146341464,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.5123071306187482,
+              "mae": 0.5803999460146403,
+              "rmse": 0.7157563346689627,
+              "skill_percent": -10.103626889138372,
+              "sign": 0.55,
+              "sign_large": 0.5888888888888889,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7884823848238482,
+            "interval90_width": 2.614295321148883
+          },
+          "gle_effect": {
+            "mse": 0.5268460014667354,
+            "mae": 0.562062836787181,
+            "rmse": 0.7258415815222599,
+            "skill_percent": 18.768515267407683,
+            "sign": 0.6313008130081301,
+            "sign_large": 0.7092140921409215,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.3553042575168757,
+              "mae": 0.4646379912160297,
+              "rmse": 0.5960740369424554,
+              "skill_percent": 23.638994923782963,
+              "sign": 0.6888888888888889,
+              "sign_large": 0.7555555555555555,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.9220867208672087,
+            "interval90_width": 2.5769157504596896,
+            "residual_diagnostics": {
+              "skew": -0.1425215519905951,
+              "excess_kurtosis": 1.0609629172310848,
+              "residual_lag1": -0.07201604316002794,
+              "residual_lag5": 0.08373779845824982,
+              "corr_past_state": -0.1335045541168031,
+              "corr_past_batch_effect": -0.02745614027179847,
+              "variance_first_half": 0.5214634263724919,
+              "variance_second_half": 0.5295910511764541,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "gle_descriptor_effect": {
+            "mse": 0.8843102242258571,
+            "mae": 0.7665243731859469,
+            "rmse": 0.9403777029608141,
+            "skill_percent": -36.346925435693045,
+            "sign": 0.5247967479674797,
+            "sign_large": 0.5447154471544715,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.49000792824657946,
+              "mae": 0.5629723376358969,
+              "rmse": 0.7000056630103642,
+              "skill_percent": -5.311144194342932,
+              "sign": 0.55,
+              "sign_large": 0.6,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7898373983739837,
+            "interval90_width": 2.6137169345017544
+          },
+          "gle_descriptor_effect_ped": {
+            "mse": 0.816869318552677,
+            "mae": 0.7319387831868336,
+            "rmse": 0.903808231071546,
+            "skill_percent": -25.94858344526032,
+            "sign": 0.5342818428184282,
+            "sign_large": 0.5585365853658537,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.42557998774130107,
+              "mae": 0.5164188453509365,
+              "rmse": 0.6523649191528473,
+              "skill_percent": 8.535529995144097,
+              "sign": 0.5722222222222222,
+              "sign_large": 0.6555555555555556,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7978319783197833,
+            "interval90_width": 2.607360578565479
+          },
+          "lifting_quadratic": {
+            "mse": 0.5224971697337316,
+            "mae": 0.5605430764523063,
+            "rmse": 0.7228396570012824,
+            "skill_percent": 19.439037692443904,
+            "sign": 0.6327913279132791,
+            "sign_large": 0.7146341463414634,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.35787294791626545,
+              "mae": 0.46507170362752337,
+              "rmse": 0.5982248305748145,
+              "skill_percent": 23.086939111117356,
+              "sign": 0.6611111111111111,
+              "sign_large": 0.7444444444444445,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.9204607046070461,
+            "interval90_width": 2.5809756122926237
+          },
+          "legacy_gle": {
+            "mse": 0.5175673360240501,
+            "mae": 0.5562917678936521,
+            "rmse": 0.7194215287465688,
+            "skill_percent": 20.19914161390737,
+            "sign": 0.6353658536585366,
+            "sign_large": 0.7146341463414634,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.368324067854681,
+              "mae": 0.47307642799842026,
+              "rmse": 0.6068970817648418,
+              "skill_percent": 20.84081341522248,
+              "sign": 0.6388888888888888,
+              "sign_large": 0.7,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.9247967479674797,
+            "interval90_width": 2.5645303182259678,
+            "residual_diagnostics": {
+              "skew": -0.1815022370892917,
+              "excess_kurtosis": 1.1013757813055287,
+              "residual_lag1": -0.04471156446394314,
+              "residual_lag5": 0.029334943139030206,
+              "corr_past_state": -0.10645893610100877,
+              "corr_past_batch_effect": -0.016465340745503144,
+              "variance_first_half": 0.5116924948511995,
+              "variance_second_half": 0.5203284045690831,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "zero": {
+            "mse": 0.6485736450602512,
+            "mae": 0.6147017788030914,
+            "rmse": 0.8053407012316285,
+            "skill_percent": 0.0,
+            "sign": 0.0,
+            "sign_large": 0.0,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.46529541768372656,
+              "mae": 0.5318719685077667,
+              "rmse": 0.6821256612118669,
+              "skill_percent": 0.0,
+              "sign": 0.0,
+              "sign_large": 0.0,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.9254742547425474,
+            "interval90_width": 2.8546077251434316
+          },
+          "drift": {
+            "mse": 0.7230081106900194,
+            "mae": 0.6472726101472691,
+            "rmse": 0.8502988361099992,
+            "skill_percent": -11.476640501303969,
+            "sign": 0.40067750677506775,
+            "sign_large": 0.34336043360433605,
+            "baseline_mse": 0.6485736450602512,
+            "positive_fraction": 0.4929539295392954,
+            "primary_t2500": {
+              "mse": 0.52962524744113,
+              "mae": 0.5679852968454361,
+              "rmse": 0.7277535623005428,
+              "skill_percent": -13.825588499805551,
+              "sign": 0.3611111111111111,
+              "sign_large": 0.3333333333333333,
+              "baseline_mse": 0.46529541768372656,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.9247967479674797,
+            "interval90_width": 3.037295434474944
+          }
+        }
+      },
+      "fit_diagnostics": {
+        "ar": {
+          "rank": 2,
+          "features": 2,
+          "condition": 1.5758652771803097,
+          "rows": 27000
+        },
+        "gle_compact": {
+          "rank": 6,
+          "features": 6,
+          "condition": 4.567168809855312,
+          "rows": 27000
+        },
+        "gle_descriptor": {
+          "rank": 30,
+          "features": 36,
+          "condition": 5.029254909945688e+16,
+          "rows": 27000
+        },
+        "gle_effect": {
+          "rank": 9,
+          "features": 9,
+          "condition": 5.441452620902591,
+          "rows": 27000
+        },
+        "gle_descriptor_effect": {
+          "rank": 33,
+          "features": 39,
+          "condition": 5.0609737088783336e+16,
+          "rows": 27000
+        },
+        "gle_descriptor_effect_ped": {
+          "rank": 36,
+          "features": 42,
+          "condition": 5.024878369765582e+16,
+          "rows": 27000
+        },
+        "lifting_quadratic": {
+          "rank": 8,
+          "features": 8,
+          "condition": 4.5791889757279645,
+          "rows": 27000
+        },
+        "legacy_gle": {
+          "rank": 21,
+          "features": 21,
+          "condition": 8.180482547010724,
+          "rows": 27000
+        }
+      }
+    },
+    "50": {
+      "selected_validation": "legacy_gle",
+      "selected_new_validation": "lifting_quadratic",
+      "validation": {
+        "ar": {
+          "mse": 1.022765488871752,
+          "mae": 0.786782485963701,
+          "rmse": 1.011318688085883,
+          "skill_percent": 26.943040498005633,
+          "sign": 0.6849206349206349,
+          "sign_large": 0.7761904761904762,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "gle_compact": {
+          "mse": 0.9818782176957267,
+          "mae": 0.7705756046317965,
+          "rmse": 0.9908976827582788,
+          "skill_percent": 29.863651084650577,
+          "sign": 0.6904761904761905,
+          "sign_large": 0.7952380952380952,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "gle_descriptor": {
+          "mse": 1.2144086123502416,
+          "mae": 0.8656168168956802,
+          "rmse": 1.1020020927159084,
+          "skill_percent": 13.253818420079867,
+          "sign": 0.6904761904761905,
+          "sign_large": 0.7941798941798942,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "gle_effect": {
+          "mse": 0.9835295546374272,
+          "mae": 0.7706695770375038,
+          "rmse": 0.9917305857123835,
+          "skill_percent": 29.74569476192889,
+          "sign": 0.6925925925925925,
+          "sign_large": 0.7952380952380952,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "gle_descriptor_effect": {
+          "mse": 1.2061011621956705,
+          "mae": 0.8625687044144015,
+          "rmse": 1.0982263711073736,
+          "skill_percent": 13.847226250233424,
+          "sign": 0.6886243386243386,
+          "sign_large": 0.7941798941798942,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "gle_descriptor_effect_ped": {
+          "mse": 1.1837392376343514,
+          "mae": 0.8552269366213685,
+          "rmse": 1.0879978114106441,
+          "skill_percent": 15.444556464088343,
+          "sign": 0.6835978835978836,
+          "sign_large": 0.7835978835978836,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "lifting_quadratic": {
+          "mse": 0.9813433612006044,
+          "mae": 0.7702121030169023,
+          "rmse": 0.9906277611699585,
+          "skill_percent": 29.90185631324763,
+          "sign": 0.687037037037037,
+          "sign_large": 0.7851851851851852,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "legacy_gle": {
+          "mse": 0.9664791625339864,
+          "mae": 0.7654989388857276,
+          "rmse": 0.9830967208438783,
+          "skill_percent": 30.963617950526423,
+          "sign": 0.694973544973545,
+          "sign_large": 0.8,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "zero": {
+          "mse": 1.3999562749991417,
+          "mae": 0.9283589201629477,
+          "rmse": 1.1831974792903936,
+          "skill_percent": 0.0,
+          "sign": 0.0,
+          "sign_large": 0.0,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "drift": {
+          "mse": 2.4591541536025185,
+          "mae": 1.2332643491881234,
+          "rmse": 1.5681690449701264,
+          "skill_percent": -75.659354332622,
+          "sign": 0.34523809523809523,
+          "sign_large": 0.24708994708994708,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "legacy_koopman": {
+          "mse": 1.0275676693751659,
+          "mae": 0.794051267701813,
+          "rmse": 1.01369012492732,
+          "skill_percent": 26.600016891542143,
+          "sign": 0.6888888888888889,
+          "sign_large": 0.7894179894179895,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        },
+        "legacy_langevin": {
+          "mse": 1.0338779018156405,
+          "mae": 0.7963484910297769,
+          "rmse": 1.0167978667442417,
+          "skill_percent": 26.14927192520534,
+          "sign": 0.6883597883597884,
+          "sign_large": 0.7862433862433862,
+          "baseline_mse": 1.3999562749991417,
+          "positive_fraction": 0.49656084656084654
+        }
+      },
+      "specs": {
+        "ar": {
+          "kind": "ar",
+          "ridge": 0.1,
+          "level": 500
+        },
+        "gle_compact": {
+          "kind": "compact",
+          "ridge": 0.1,
+          "level": 500
+        },
+        "gle_descriptor": {
+          "kind": "compact",
+          "desc": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "gle_effect": {
+          "kind": "compact",
+          "effect": true,
+          "ridge": 0.1,
+          "level": 500
+        },
+        "gle_descriptor_effect": {
+          "kind": "compact",
+          "desc": true,
+          "effect": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "gle_descriptor_effect_ped": {
+          "kind": "compact",
+          "desc": true,
+          "effect": true,
+          "ped": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "lifting_quadratic": {
+          "kind": "compact",
+          "lifting": true,
+          "ridge": 0.001,
+          "level": 1000
+        },
+        "legacy_gle": {
+          "kind": "legacy_gle",
+          "ridge": 0.001,
+          "level": 500
+        }
+      },
+      "test": {
+        "47": {
+          "ar": {
+            "mse": 0.9040143852904944,
+            "mae": 0.7364115701833622,
+            "rmse": 0.9507967108117773,
+            "skill_percent": -3.322129433773746,
+            "sign": 0.5944444444444444,
+            "sign_large": 0.6333333333333333,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.9040143852904944,
+              "mae": 0.7364115701833622,
+              "rmse": 0.9507967108117773,
+              "skill_percent": -3.322129433773746,
+              "sign": 0.5944444444444444,
+              "sign_large": 0.6333333333333333,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9333333333333333,
+            "interval90_width": 3.135786960797404
+          },
+          "gle_compact": {
+            "mse": 0.8378160410700817,
+            "mae": 0.6929560693379039,
+            "rmse": 0.9153229162815064,
+            "skill_percent": 4.2438496049835965,
+            "sign": 0.6111111111111112,
+            "sign_large": 0.6444444444444445,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.8378160410700817,
+              "mae": 0.6929560693379039,
+              "rmse": 0.9153229162815064,
+              "skill_percent": 4.2438496049835965,
+              "sign": 0.6111111111111112,
+              "sign_large": 0.6444444444444445,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9333333333333333,
+            "interval90_width": 3.181471823515403
+          },
+          "gle_descriptor": {
+            "mse": 0.7704015195991126,
+            "mae": 0.648531040047497,
+            "rmse": 0.8777251959463809,
+            "skill_percent": 11.948828670002708,
+            "sign": 0.6388888888888888,
+            "sign_large": 0.6777777777777778,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.7704015195991126,
+              "mae": 0.648531040047497,
+              "rmse": 0.8777251959463809,
+              "skill_percent": 11.948828670002708,
+              "sign": 0.6388888888888888,
+              "sign_large": 0.6777777777777778,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9444444444444444,
+            "interval90_width": 3.632391349911447
+          },
+          "gle_effect": {
+            "mse": 0.8378738149653452,
+            "mae": 0.69105973313691,
+            "rmse": 0.9153544750343143,
+            "skill_percent": 4.237246477885803,
+            "sign": 0.5944444444444444,
+            "sign_large": 0.6333333333333333,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.8378738149653452,
+              "mae": 0.69105973313691,
+              "rmse": 0.9153544750343143,
+              "skill_percent": 4.237246477885803,
+              "sign": 0.5944444444444444,
+              "sign_large": 0.6333333333333333,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9333333333333333,
+            "interval90_width": 3.1865728914338627
+          },
+          "gle_descriptor_effect": {
+            "mse": 0.7625259054627532,
+            "mae": 0.6443688431625129,
+            "rmse": 0.8732272931274843,
+            "skill_percent": 12.848952867590457,
+            "sign": 0.6555555555555556,
+            "sign_large": 0.7111111111111111,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.7625259054627532,
+              "mae": 0.6443688431625129,
+              "rmse": 0.8732272931274843,
+              "skill_percent": 12.848952867590457,
+              "sign": 0.6555555555555556,
+              "sign_large": 0.7111111111111111,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9444444444444444,
+            "interval90_width": 3.6166177902277634
+          },
+          "gle_descriptor_effect_ped": {
+            "mse": 0.7569700988090029,
+            "mae": 0.6425750619660557,
+            "rmse": 0.8700402857391162,
+            "skill_percent": 13.483940300897013,
+            "sign": 0.6666666666666666,
+            "sign_large": 0.7,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.7569700988090029,
+              "mae": 0.6425750619660557,
+              "rmse": 0.8700402857391162,
+              "skill_percent": 13.483940300897013,
+              "sign": 0.6666666666666666,
+              "sign_large": 0.7,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9444444444444444,
+            "interval90_width": 3.5862507656866427
+          },
+          "lifting_quadratic": {
+            "mse": 0.8485264791152756,
+            "mae": 0.6927440523602685,
+            "rmse": 0.921154970195176,
+            "skill_percent": 3.0197260910172385,
+            "sign": 0.6055555555555555,
+            "sign_large": 0.6444444444444445,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.8485264791152756,
+              "mae": 0.6927440523602685,
+              "rmse": 0.921154970195176,
+              "skill_percent": 3.0197260910172385,
+              "sign": 0.6055555555555555,
+              "sign_large": 0.6444444444444445,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9277777777777778,
+            "interval90_width": 3.206696297155848,
+            "residual_diagnostics": {
+              "skew": -0.10170342372776993,
+              "excess_kurtosis": 1.1984778528252358,
+              "residual_lag1": null,
+              "residual_lag5": null,
+              "corr_past_state": 0.08557239808279252,
+              "corr_past_batch_effect": -0.09193252669509752,
+              "variance_first_half": 0.7051768856992487,
+              "variance_second_half": 0.7051768856992487,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "legacy_gle": {
+            "mse": 0.8526037967427811,
+            "mae": 0.7055394235540683,
+            "rmse": 0.9233654730077258,
+            "skill_percent": 2.553718971543839,
+            "sign": 0.5833333333333334,
+            "sign_large": 0.6333333333333333,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.8526037967427811,
+              "mae": 0.7055394235540683,
+              "rmse": 0.9233654730077258,
+              "skill_percent": 2.553718971543839,
+              "sign": 0.5833333333333334,
+              "sign_large": 0.6333333333333333,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9333333333333333,
+            "interval90_width": 3.249559008232258,
+            "residual_diagnostics": {
+              "skew": 0.03263079924595863,
+              "excess_kurtosis": 1.2352703199086053,
+              "residual_lag1": null,
+              "residual_lag5": null,
+              "corr_past_state": 0.1054841398586268,
+              "corr_past_batch_effect": -0.11334145446572577,
+              "variance_first_half": 0.6779695335447519,
+              "variance_second_half": 0.6779695335447519,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "zero": {
+            "mse": 0.8749474969637935,
+            "mae": 0.6939163605372111,
+            "rmse": 0.9353862822191661,
+            "skill_percent": 0.0,
+            "sign": 0.0,
+            "sign_large": 0.0,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.8749474969637935,
+              "mae": 0.6939163605372111,
+              "rmse": 0.9353862822191661,
+              "skill_percent": 0.0,
+              "sign": 0.0,
+              "sign_large": 0.0,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9388888888888889,
+            "interval90_width": 3.909085988998412
+          },
+          "drift": {
+            "mse": 1.6695207286922842,
+            "mae": 0.9759214030371772,
+            "rmse": 1.2920993493893123,
+            "skill_percent": -90.81381848462746,
+            "sign": 0.4222222222222222,
+            "sign_large": 0.36666666666666664,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 1.6695207286922842,
+              "mae": 0.9759214030371772,
+              "rmse": 1.2920993493893123,
+              "skill_percent": -90.81381848462746,
+              "sign": 0.4222222222222222,
+              "sign_large": 0.36666666666666664,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.95,
+            "interval90_width": 5.172534549236296
+          },
+          "legacy_koopman": {
+            "mse": 0.7766135174886958,
+            "mae": 0.6602753396060502,
+            "rmse": 0.8812567829462056,
+            "skill_percent": 11.23884345247369,
+            "sign": 0.6277777777777778,
+            "sign_large": 0.6888888888888889,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.7766135174886958,
+              "mae": 0.6602753396060502,
+              "rmse": 0.8812567829462056,
+              "skill_percent": 11.23884345247369,
+              "sign": 0.6277777777777778,
+              "sign_large": 0.6888888888888889,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9388888888888889,
+            "interval90_width": 3.3308721579308465
+          },
+          "legacy_langevin": {
+            "mse": 0.7847247740038049,
+            "mae": 0.6624861336149517,
+            "rmse": 0.8858469247018951,
+            "skill_percent": 10.31178708129067,
+            "sign": 0.6222222222222222,
+            "sign_large": 0.6888888888888889,
+            "baseline_mse": 0.8749474969637935,
+            "positive_fraction": 0.5444444444444444,
+            "primary_t2500": {
+              "mse": 0.7847247740038049,
+              "mae": 0.6624861336149517,
+              "rmse": 0.8858469247018951,
+              "skill_percent": 10.31178708129067,
+              "sign": 0.6222222222222222,
+              "sign_large": 0.6888888888888889,
+              "baseline_mse": 0.8749474969637935,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9388888888888889,
+            "interval90_width": 3.3354201170086486
+          }
+        },
+        "48": {
+          "ar": {
+            "mse": 0.8318777883477645,
+            "mae": 0.7144377219834059,
+            "rmse": 0.9120733459255151,
+            "skill_percent": 32.636989142427176,
+            "sign": 0.6963414634146341,
+            "sign_large": 0.7981029810298103,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 0.8754913228454069,
+              "mae": 0.7756988862417031,
+              "rmse": 0.935676932945024,
+              "skill_percent": 19.56621507680608,
+              "sign": 0.6166666666666667,
+              "sign_large": 0.7333333333333333,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.8836043360433604,
+            "interval90_width": 3.135786960797404
+          },
+          "gle_compact": {
+            "mse": 0.8295246999496557,
+            "mae": 0.7138602364197324,
+            "rmse": 0.9107824657675705,
+            "skill_percent": 32.827535303811594,
+            "sign": 0.6917344173441734,
+            "sign_large": 0.789159891598916,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 0.9263076147115653,
+              "mae": 0.7891114013594527,
+              "rmse": 0.9624487595251839,
+              "skill_percent": 14.89758320816268,
+              "sign": 0.6,
+              "sign_large": 0.6888888888888889,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9086720867208672,
+            "interval90_width": 3.181471823515403
+          },
+          "gle_descriptor": {
+            "mse": 1.0620978176120153,
+            "mae": 0.8075398148196911,
+            "rmse": 1.0305813008259053,
+            "skill_percent": 13.994449879826687,
+            "sign": 0.6513550135501355,
+            "sign_large": 0.7384823848238482,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 0.9926305181100386,
+              "mae": 0.8149398423034421,
+              "rmse": 0.9963084452668454,
+              "skill_percent": 8.804316480976016,
+              "sign": 0.6,
+              "sign_large": 0.6,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9126016260162602,
+            "interval90_width": 3.632391349911447
+          },
+          "gle_effect": {
+            "mse": 0.8312105509255987,
+            "mae": 0.7145018716087208,
+            "rmse": 0.9117074919762361,
+            "skill_percent": 32.69102006180441,
+            "sign": 0.6905149051490515,
+            "sign_large": 0.7856368563685637,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 0.939629603949933,
+              "mae": 0.7949353884045622,
+              "rmse": 0.9693449354847494,
+              "skill_percent": 13.67365558125554,
+              "sign": 0.6,
+              "sign_large": 0.6777777777777778,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9059620596205962,
+            "interval90_width": 3.1865728914338627
+          },
+          "gle_descriptor_effect": {
+            "mse": 1.0556004262998235,
+            "mae": 0.8055141992693354,
+            "rmse": 1.027424170583807,
+            "skill_percent": 14.520589473454226,
+            "sign": 0.6520325203252032,
+            "sign_large": 0.7390243902439024,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 1.0037096264802723,
+              "mae": 0.8219252324080336,
+              "rmse": 1.0018530962572667,
+              "skill_percent": 7.786448460427398,
+              "sign": 0.5722222222222222,
+              "sign_large": 0.5888888888888889,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9134146341463415,
+            "interval90_width": 3.6166177902277634
+          },
+          "gle_descriptor_effect_ped": {
+            "mse": 1.0350238807555332,
+            "mae": 0.7972964326923827,
+            "rmse": 1.017361234152124,
+            "skill_percent": 16.18681747031465,
+            "sign": 0.6573170731707317,
+            "sign_large": 0.7420054200542006,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 0.9741949646441787,
+              "mae": 0.8093913171509731,
+              "rmse": 0.9870131532275437,
+              "skill_percent": 10.498041254390877,
+              "sign": 0.5888888888888889,
+              "sign_large": 0.6111111111111112,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9134146341463415,
+            "interval90_width": 3.5862507656866427
+          },
+          "lifting_quadratic": {
+            "mse": 0.8486333597822843,
+            "mae": 0.7232732387691164,
+            "rmse": 0.9212129828559106,
+            "skill_percent": 31.280172364436055,
+            "sign": 0.6814363143631437,
+            "sign_large": 0.7796747967479675,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 0.9083099054569145,
+              "mae": 0.7712010514660357,
+              "rmse": 0.9530529394828571,
+              "skill_percent": 16.551082035077247,
+              "sign": 0.5833333333333334,
+              "sign_large": 0.6666666666666666,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9143631436314363,
+            "interval90_width": 3.206696297155848,
+            "residual_diagnostics": {
+              "skew": -0.2816303939102175,
+              "excess_kurtosis": 0.5907615414894813,
+              "residual_lag1": 0.5876966608554564,
+              "residual_lag5": -0.10263339776094899,
+              "corr_past_state": -0.15211485184404433,
+              "corr_past_batch_effect": -0.025105882483443236,
+              "variance_first_half": 0.7665544728904402,
+              "variance_second_half": 0.9217304383889376,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "legacy_gle": {
+            "mse": 0.8258345264501195,
+            "mae": 0.7120581173435706,
+            "rmse": 0.9087543818051825,
+            "skill_percent": 33.12635467487488,
+            "sign": 0.6941734417344173,
+            "sign_large": 0.791869918699187,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 0.9567292532637763,
+              "mae": 0.797825951088447,
+              "rmse": 0.9781253770676724,
+              "skill_percent": 12.102663979989181,
+              "sign": 0.5944444444444444,
+              "sign_large": 0.6666666666666666,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9252032520325203,
+            "interval90_width": 3.249559008232258,
+            "residual_diagnostics": {
+              "skew": -0.31315633055543435,
+              "excess_kurtosis": 0.6481746827715589,
+              "residual_lag1": 0.5964088525523029,
+              "residual_lag5": -0.08360261653575703,
+              "corr_past_state": -0.09535073069581078,
+              "corr_past_batch_effect": -0.024358613700708364,
+              "variance_first_half": 0.7252197764130102,
+              "variance_second_half": 0.908417096544448,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "zero": {
+            "mse": 1.2349177653395318,
+            "mae": 0.8684105006094548,
+            "rmse": 1.1112685388057792,
+            "skill_percent": 0.0,
+            "sign": 0.0,
+            "sign_large": 0.0,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 1.0884621725577281,
+              "mae": 0.843802805741628,
+              "rmse": 1.0432939051665777,
+              "skill_percent": 0.0,
+              "sign": 0.0,
+              "sign_large": 0.0,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9185636856368564,
+            "interval90_width": 3.909085988998412
+          },
+          "drift": {
+            "mse": 2.137740383398395,
+            "mae": 1.1408839389308278,
+            "rmse": 1.4621013587978073,
+            "skill_percent": -73.10791401649635,
+            "sign": 0.35203252032520327,
+            "sign_large": 0.25853658536585367,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 1.8791129573720016,
+              "mae": 1.0886645479334724,
+              "rmse": 1.370807410751781,
+              "skill_percent": -72.63925240106038,
+              "sign": 0.40555555555555556,
+              "sign_large": 0.25555555555555554,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9193766937669376,
+            "interval90_width": 5.172534549236296
+          },
+          "legacy_koopman": {
+            "mse": 0.901439936195699,
+            "mae": 0.7420761132991865,
+            "rmse": 0.9494419077519692,
+            "skill_percent": 27.004051484525004,
+            "sign": 0.6819783197831978,
+            "sign_large": 0.7647696476964769,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 1.0356708523492268,
+              "mae": 0.8165071343635396,
+              "rmse": 1.017679150002213,
+              "skill_percent": 4.850083130077854,
+              "sign": 0.5833333333333334,
+              "sign_large": 0.6444444444444445,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9226287262872629,
+            "interval90_width": 3.3308721579308465
+          },
+          "legacy_langevin": {
+            "mse": 0.9212505018081425,
+            "mae": 0.7459712256047258,
+            "rmse": 0.959817952430638,
+            "skill_percent": 25.399850284374903,
+            "sign": 0.6754742547425474,
+            "sign_large": 0.7609756097560976,
+            "baseline_mse": 1.2349177653395318,
+            "positive_fraction": 0.49308943089430896,
+            "primary_t2500": {
+              "mse": 1.0442834443900182,
+              "mae": 0.8277540211735224,
+              "rmse": 1.0219018761065164,
+              "skill_percent": 4.058820718031598,
+              "sign": 0.5833333333333334,
+              "sign_large": 0.6555555555555556,
+              "baseline_mse": 1.0884621725577281,
+              "positive_fraction": 0.5444444444444444
+            },
+            "interval90_coverage": 0.9238482384823848,
+            "interval90_width": 3.3354201170086486
+          }
+        }
+      },
+      "fit_diagnostics": {
+        "ar": {
+          "rank": 2,
+          "features": 2,
+          "condition": 1.5789078313630323,
+          "rows": 26280
+        },
+        "gle_compact": {
+          "rank": 6,
+          "features": 6,
+          "condition": 4.572751431149208,
+          "rows": 26280
+        },
+        "gle_descriptor": {
+          "rank": 30,
+          "features": 36,
+          "condition": 4.941145126775464e+16,
+          "rows": 26280
+        },
+        "gle_effect": {
+          "rank": 9,
+          "features": 9,
+          "condition": 5.443157307611937,
+          "rows": 26280
+        },
+        "gle_descriptor_effect": {
+          "rank": 33,
+          "features": 39,
+          "condition": 4.967761724210762e+16,
+          "rows": 26280
+        },
+        "gle_descriptor_effect_ped": {
+          "rank": 36,
+          "features": 42,
+          "condition": 4.9682494821410856e+16,
+          "rows": 26280
+        },
+        "lifting_quadratic": {
+          "rank": 8,
+          "features": 8,
+          "condition": 4.047776013776592,
+          "rows": 26280
+        },
+        "legacy_gle": {
+          "rank": 21,
+          "features": 21,
+          "condition": 8.17611663960352,
+          "rows": 26280
+        }
+      }
+    },
+    "100": {
+      "selected_validation": "legacy_gle",
+      "selected_new_validation": "lifting_quadratic",
+      "validation": {
+        "ar": {
+          "mse": 1.0648207216207966,
+          "mae": 0.800660317054533,
+          "rmse": 1.0319015077132103,
+          "skill_percent": 31.3730248191341,
+          "sign": 0.6907407407407408,
+          "sign_large": 0.7925925925925926,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "gle_compact": {
+          "mse": 1.044387700613579,
+          "mae": 0.7920761376056463,
+          "rmse": 1.0219528857112636,
+          "skill_percent": 32.689919200563864,
+          "sign": 0.6944444444444444,
+          "sign_large": 0.8021164021164021,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "gle_descriptor": {
+          "mse": 1.3249809690770982,
+          "mae": 0.9035020357300139,
+          "rmse": 1.151078176787788,
+          "skill_percent": 14.605872863211033,
+          "sign": 0.7097883597883597,
+          "sign_large": 0.8201058201058201,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "gle_effect": {
+          "mse": 1.059061695052522,
+          "mae": 0.799475051182401,
+          "rmse": 1.0291072320475267,
+          "skill_percent": 31.74419018560568,
+          "sign": 0.6931216931216931,
+          "sign_large": 0.7962962962962963,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "gle_descriptor_effect": {
+          "mse": 1.3166501573137521,
+          "mae": 0.901173745762496,
+          "rmse": 1.1474537713188067,
+          "skill_percent": 15.142788045749356,
+          "sign": 0.7055555555555556,
+          "sign_large": 0.8232804232804233,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "gle_descriptor_effect_ped": {
+          "mse": 1.2903967441086008,
+          "mae": 0.8922681572054723,
+          "rmse": 1.135956312588033,
+          "skill_percent": 16.83480276696977,
+          "sign": 0.7068783068783069,
+          "sign_large": 0.8195767195767196,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "lifting_quadratic": {
+          "mse": 1.0421572333669142,
+          "mae": 0.7954104633149185,
+          "rmse": 1.0208610254911852,
+          "skill_percent": 32.83367130574981,
+          "sign": 0.703968253968254,
+          "sign_large": 0.8095238095238095,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "legacy_gle": {
+          "mse": 1.027136926782936,
+          "mae": 0.7950840774901982,
+          "rmse": 1.0134776400014636,
+          "skill_percent": 33.80171990418304,
+          "sign": 0.696031746031746,
+          "sign_large": 0.8042328042328042,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "zero": {
+          "mse": 1.551606666058746,
+          "mae": 0.9806867403328103,
+          "rmse": 1.245635045291656,
+          "skill_percent": 0.0,
+          "sign": 0.0,
+          "sign_large": 0.0,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "drift": {
+          "mse": 4.507538379203014,
+          "mae": 1.6895784686482143,
+          "rmse": 2.1230964130729,
+          "skill_percent": -190.50779928992344,
+          "sign": 0.3425925925925926,
+          "sign_large": 0.26031746031746034,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "legacy_koopman": {
+          "mse": 1.0409626476083464,
+          "mae": 0.8035358124536675,
+          "rmse": 1.0202757703720826,
+          "skill_percent": 32.910661549778744,
+          "sign": 0.6912698412698413,
+          "sign_large": 0.801058201058201,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        },
+        "legacy_langevin": {
+          "mse": 1.0614193790602826,
+          "mae": 0.8127952656144541,
+          "rmse": 1.03025209490701,
+          "skill_percent": 31.59223904622643,
+          "sign": 0.6936507936507936,
+          "sign_large": 0.8021164021164021,
+          "baseline_mse": 1.551606666058746,
+          "positive_fraction": 0.53994708994709
+        }
+      },
+      "specs": {
+        "ar": {
+          "kind": "ar",
+          "ridge": 0.1,
+          "level": 500
+        },
+        "gle_compact": {
+          "kind": "compact",
+          "ridge": 0.1,
+          "level": 500
+        },
+        "gle_descriptor": {
+          "kind": "compact",
+          "desc": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "gle_effect": {
+          "kind": "compact",
+          "effect": true,
+          "ridge": 0.1,
+          "level": 500
+        },
+        "gle_descriptor_effect": {
+          "kind": "compact",
+          "desc": true,
+          "effect": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "gle_descriptor_effect_ped": {
+          "kind": "compact",
+          "desc": true,
+          "effect": true,
+          "ped": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "lifting_quadratic": {
+          "kind": "compact",
+          "lifting": true,
+          "ridge": 0.1,
+          "level": 1000
+        },
+        "legacy_gle": {
+          "kind": "legacy_gle",
+          "ridge": 0.001,
+          "level": 500
+        }
+      },
+      "test": {
+        "47": {
+          "ar": {
+            "mse": 1.3424209877780031,
+            "mae": 0.9626092855979124,
+            "rmse": 1.1586289258334626,
+            "skill_percent": -37.783704472958576,
+            "sign": 0.42777777777777776,
+            "sign_large": 0.4777777777777778,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 1.3424209877780031,
+              "mae": 0.9626092855979124,
+              "rmse": 1.1586289258334626,
+              "skill_percent": -37.783704472958576,
+              "sign": 0.42777777777777776,
+              "sign_large": 0.4777777777777778,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.8944444444444445,
+            "interval90_width": 3.2556984349467406
+          },
+          "gle_compact": {
+            "mse": 1.2129685380489441,
+            "mae": 0.9043671951414464,
+            "rmse": 1.1013485088966817,
+            "skill_percent": -24.49693509199684,
+            "sign": 0.48333333333333334,
+            "sign_large": 0.5555555555555556,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 1.2129685380489441,
+              "mae": 0.9043671951414464,
+              "rmse": 1.1013485088966817,
+              "skill_percent": -24.49693509199684,
+              "sign": 0.48333333333333334,
+              "sign_large": 0.5555555555555556,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.9111111111111111,
+            "interval90_width": 3.2519042250771033
+          },
+          "gle_descriptor": {
+            "mse": 0.8605432536520349,
+            "mae": 0.7239561815121424,
+            "rmse": 0.9276547060474791,
+            "skill_percent": 11.675369778263622,
+            "sign": 0.6277777777777778,
+            "sign_large": 0.6777777777777778,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 0.8605432536520349,
+              "mae": 0.7239561815121424,
+              "rmse": 0.9276547060474791,
+              "skill_percent": 11.675369778263622,
+              "sign": 0.6277777777777778,
+              "sign_large": 0.6777777777777778,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.95,
+            "interval90_width": 3.7292108692435253
+          },
+          "gle_effect": {
+            "mse": 1.1996125804825932,
+            "mae": 0.9033311552094575,
+            "rmse": 1.0952682687280744,
+            "skill_percent": -23.126103343216275,
+            "sign": 0.48333333333333334,
+            "sign_large": 0.5666666666666667,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 1.1996125804825932,
+              "mae": 0.9033311552094575,
+              "rmse": 1.0952682687280744,
+              "skill_percent": -23.126103343216275,
+              "sign": 0.48333333333333334,
+              "sign_large": 0.5666666666666667,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.9222222222222223,
+            "interval90_width": 3.268853651170713
+          },
+          "gle_descriptor_effect": {
+            "mse": 0.8552348074983027,
+            "mae": 0.7229434007768453,
+            "rmse": 0.9247890610827437,
+            "skill_percent": 12.220219257462473,
+            "sign": 0.6111111111111112,
+            "sign_large": 0.6888888888888889,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 0.8552348074983027,
+              "mae": 0.7229434007768453,
+              "rmse": 0.9247890610827437,
+              "skill_percent": 12.220219257462473,
+              "sign": 0.6111111111111112,
+              "sign_large": 0.6888888888888889,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.9555555555555556,
+            "interval90_width": 3.7360732859320027
+          },
+          "gle_descriptor_effect_ped": {
+            "mse": 0.8421134558728987,
+            "mae": 0.7186688165605517,
+            "rmse": 0.9176673993734868,
+            "skill_percent": 13.566971469399302,
+            "sign": 0.6111111111111112,
+            "sign_large": 0.6555555555555556,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 0.8421134558728987,
+              "mae": 0.7186688165605517,
+              "rmse": 0.9176673993734868,
+              "skill_percent": 13.566971469399302,
+              "sign": 0.6111111111111112,
+              "sign_large": 0.6555555555555556,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.9555555555555556,
+            "interval90_width": 3.710952386563166
+          },
+          "lifting_quadratic": {
+            "mse": 1.1869968208183286,
+            "mae": 0.8890746847098951,
+            "rmse": 1.0894938369804248,
+            "skill_percent": -21.83124419164706,
+            "sign": 0.49444444444444446,
+            "sign_large": 0.5666666666666667,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 1.1869968208183286,
+              "mae": 0.8890746847098951,
+              "rmse": 1.0894938369804248,
+              "skill_percent": -21.83124419164706,
+              "sign": 0.49444444444444446,
+              "sign_large": 0.5666666666666667,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.9166666666666666,
+            "interval90_width": 3.283994483107635,
+            "residual_diagnostics": {
+              "skew": -0.39714253596810106,
+              "excess_kurtosis": 0.41523753767226745,
+              "residual_lag1": null,
+              "residual_lag5": null,
+              "corr_past_state": -0.09049456859408928,
+              "corr_past_batch_effect": -0.01084696714694498,
+              "variance_first_half": 0.5260465062555701,
+              "variance_second_half": 0.5260465062555701,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "legacy_gle": {
+            "mse": 1.337979364601728,
+            "mae": 0.9601549147905157,
+            "rmse": 1.1567105794457522,
+            "skill_percent": -37.32782416367266,
+            "sign": 0.4666666666666667,
+            "sign_large": 0.5333333333333333,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 1.337979364601728,
+              "mae": 0.9601549147905157,
+              "rmse": 1.1567105794457522,
+              "skill_percent": -37.32782416367266,
+              "sign": 0.4666666666666667,
+              "sign_large": 0.5333333333333333,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.8611111111111112,
+            "interval90_width": 3.2841843424895885,
+            "residual_diagnostics": {
+              "skew": -0.42404458241412635,
+              "excess_kurtosis": 0.3921937037840717,
+              "residual_lag1": null,
+              "residual_lag5": null,
+              "corr_past_state": -0.03584987251605159,
+              "corr_past_batch_effect": -0.03665415344503368,
+              "variance_first_half": 0.5243517471571265,
+              "variance_second_half": 0.5243517471571265,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "zero": {
+            "mse": 0.9742959030699211,
+            "mae": 0.7675581574440002,
+            "rmse": 0.987064285175956,
+            "skill_percent": 0.0,
+            "sign": 0.0,
+            "sign_large": 0.0,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 0.9742959030699211,
+              "mae": 0.7675581574440002,
+              "rmse": 0.987064285175956,
+              "skill_percent": 0.0,
+              "sign": 0.0,
+              "sign_large": 0.0,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.9388888888888889,
+            "interval90_width": 4.049527311325072
+          },
+          "drift": {
+            "mse": 3.127852621541721,
+            "mae": 1.3690818190574645,
+            "rmse": 1.7685736121354183,
+            "skill_percent": -221.03723434391247,
+            "sign": 0.4888888888888889,
+            "sign_large": 0.45555555555555555,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 3.127852621541721,
+              "mae": 1.3690818190574645,
+              "rmse": 1.7685736121354183,
+              "skill_percent": -221.03723434391247,
+              "sign": 0.4888888888888889,
+              "sign_large": 0.45555555555555555,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.9444444444444444,
+            "interval90_width": 6.94574921131134
+          },
+          "legacy_koopman": {
+            "mse": 1.2548038809740276,
+            "mae": 0.9090150333979561,
+            "rmse": 1.1201802894954132,
+            "skill_percent": -28.790840341240333,
+            "sign": 0.4722222222222222,
+            "sign_large": 0.5111111111111111,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 1.2548038809740276,
+              "mae": 0.9090150333979561,
+              "rmse": 1.1201802894954132,
+              "skill_percent": -28.790840341240333,
+              "sign": 0.4722222222222222,
+              "sign_large": 0.5111111111111111,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.8722222222222222,
+            "interval90_width": 3.334158897912767
+          },
+          "legacy_langevin": {
+            "mse": 1.2763194674865506,
+            "mae": 0.9191127023874006,
+            "rmse": 1.1297430980035021,
+            "skill_percent": -30.999161903994434,
+            "sign": 0.46111111111111114,
+            "sign_large": 0.5222222222222223,
+            "baseline_mse": 0.9742959030699211,
+            "positive_fraction": 0.3111111111111111,
+            "primary_t2500": {
+              "mse": 1.2763194674865506,
+              "mae": 0.9191127023874006,
+              "rmse": 1.1297430980035021,
+              "skill_percent": -30.999161903994434,
+              "sign": 0.46111111111111114,
+              "sign_large": 0.5222222222222223,
+              "baseline_mse": 0.9742959030699211,
+              "positive_fraction": 0.3111111111111111
+            },
+            "interval90_coverage": 0.8777777777777778,
+            "interval90_width": 3.341377713531272
+          }
+        },
+        "48": {
+          "ar": {
+            "mse": 0.9836794183372112,
+            "mae": 0.7714219768384125,
+            "rmse": 0.9918061394936065,
+            "skill_percent": 36.456537680454645,
+            "sign": 0.7098915989159892,
+            "sign_large": 0.8130081300813008,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 0.8634154887986338,
+              "mae": 0.7255700197488022,
+              "rmse": 0.9292015329295544,
+              "skill_percent": 21.341381498393332,
+              "sign": 0.65,
+              "sign_large": 0.7222222222222222,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.8792682926829268,
+            "interval90_width": 3.2556984349467406
+          },
+          "gle_compact": {
+            "mse": 0.9708844721612162,
+            "mae": 0.7651505617976645,
+            "rmse": 0.9853347005770253,
+            "skill_percent": 37.283062221945286,
+            "sign": 0.7142276422764228,
+            "sign_large": 0.8154471544715447,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 0.986395096153681,
+              "mae": 0.7856511650549294,
+              "rmse": 0.9931742526634896,
+              "skill_percent": 10.137730250628795,
+              "sign": 0.6,
+              "sign_large": 0.7,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.8878048780487805,
+            "interval90_width": 3.2519042250771033
+          },
+          "gle_descriptor": {
+            "mse": 1.3267497178872785,
+            "mae": 0.8935114260744678,
+            "rmse": 1.1518462214580896,
+            "skill_percent": 14.294973408565292,
+            "sign": 0.6482384823848238,
+            "sign_large": 0.7279132791327914,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 1.1245771944013332,
+              "mae": 0.8407884027913011,
+              "rmse": 1.0604608405789122,
+              "skill_percent": -2.450893755800765,
+              "sign": 0.46111111111111114,
+              "sign_large": 0.4777777777777778,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.8959349593495934,
+            "interval90_width": 3.7292108692435253
+          },
+          "gle_effect": {
+            "mse": 0.9759681562379455,
+            "mae": 0.7677369255023925,
+            "rmse": 0.9879110062338335,
+            "skill_percent": 36.95466774550075,
+            "sign": 0.7116531165311654,
+            "sign_large": 0.816260162601626,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 1.0110660151703719,
+              "mae": 0.7996162419785566,
+              "rmse": 1.0055177846116754,
+              "skill_percent": 7.890167597197529,
+              "sign": 0.5777777777777777,
+              "sign_large": 0.7,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.8899728997289973,
+            "interval90_width": 3.268853651170713
+          },
+          "gle_descriptor_effect": {
+            "mse": 1.319701530190311,
+            "mae": 0.8917319386621129,
+            "rmse": 1.1487826296520638,
+            "skill_percent": 14.75027036913441,
+            "sign": 0.6536585365853659,
+            "sign_large": 0.7317073170731707,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 1.1313023897699508,
+              "mae": 0.844766001849425,
+              "rmse": 1.0636269974807666,
+              "skill_percent": -3.063570484110234,
+              "sign": 0.46111111111111114,
+              "sign_large": 0.4777777777777778,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.8974254742547425,
+            "interval90_width": 3.7360732859320027
+          },
+          "gle_descriptor_effect_ped": {
+            "mse": 1.290633381979886,
+            "mae": 0.8808984483078446,
+            "rmse": 1.1360604658115192,
+            "skill_percent": 16.62800690206948,
+            "sign": 0.6586720867208672,
+            "sign_large": 0.7417344173441734,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 1.1111282665522266,
+              "mae": 0.8348341290504067,
+              "rmse": 1.0541006908982777,
+              "skill_percent": -1.2256735707766975,
+              "sign": 0.5055555555555555,
+              "sign_large": 0.5555555555555556,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.8976964769647696,
+            "interval90_width": 3.710952386563166
+          },
+          "lifting_quadratic": {
+            "mse": 0.9967797740602751,
+            "mae": 0.7743517424009705,
+            "rmse": 0.9983885887069599,
+            "skill_percent": 35.610284373998056,
+            "sign": 0.7047425474254743,
+            "sign_large": 0.8013550135501355,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 1.0107092208769082,
+              "mae": 0.7991817416380553,
+              "rmse": 1.0053403507653058,
+              "skill_percent": 7.922672163744238,
+              "sign": 0.5777777777777777,
+              "sign_large": 0.6666666666666666,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.8929539295392954,
+            "interval90_width": 3.283994483107635,
+            "residual_diagnostics": {
+              "skew": -0.17122022879357965,
+              "excess_kurtosis": 0.6569401114703557,
+              "residual_lag1": 0.6301707093629463,
+              "residual_lag5": 0.23467978898877803,
+              "corr_past_state": -0.2545831151672454,
+              "corr_past_batch_effect": -0.03314240109069327,
+              "variance_first_half": 0.7873392252250087,
+              "variance_second_half": 1.1925197439673156,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "legacy_gle": {
+            "mse": 0.9552217105141834,
+            "mae": 0.7595536689479445,
+            "rmse": 0.9773544446689663,
+            "skill_percent": 38.29484114705549,
+            "sign": 0.7154471544715447,
+            "sign_large": 0.8189701897018971,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 1.0131058304845848,
+              "mae": 0.7979354752053724,
+              "rmse": 1.0065315844446139,
+              "skill_percent": 7.704336955176427,
+              "sign": 0.6166666666666667,
+              "sign_large": 0.7111111111111111,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.9058265582655827,
+            "interval90_width": 3.2841843424895885,
+            "residual_diagnostics": {
+              "skew": -0.2276977790422071,
+              "excess_kurtosis": 0.6589498187963896,
+              "residual_lag1": 0.6376303052732691,
+              "residual_lag5": 0.23418344478324524,
+              "corr_past_state": -0.1820967839428947,
+              "corr_past_batch_effect": -0.02527543167377297,
+              "variance_first_half": 0.7278122988697664,
+              "variance_second_half": 1.1548559613746077,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "zero": {
+            "mse": 1.548041895152825,
+            "mae": 0.9658925634089525,
+            "rmse": 1.2442033174496945,
+            "skill_percent": 0.0,
+            "sign": 0.0,
+            "sign_large": 0.0,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 1.0976743620039524,
+              "mae": 0.8274803770913018,
+              "rmse": 1.0476995571269239,
+              "skill_percent": 0.0,
+              "sign": 0.0,
+              "sign_large": 0.0,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.8991869918699187,
+            "interval90_width": 4.049527311325072
+          },
+          "drift": {
+            "mse": 4.201058585592378,
+            "mae": 1.599762443618642,
+            "rmse": 2.0496484053594113,
+            "skill_percent": -171.37886892768125,
+            "sign": 0.3397018970189702,
+            "sign_large": 0.25555555555555554,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 3.3802041509063225,
+              "mae": 1.4733921547730764,
+              "rmse": 1.838533151973693,
+              "skill_percent": -207.94234318594312,
+              "sign": 0.37777777777777777,
+              "sign_large": 0.26666666666666666,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.9116531165311653,
+            "interval90_width": 6.94574921131134
+          },
+          "legacy_koopman": {
+            "mse": 0.9958155387417222,
+            "mae": 0.7749026591363158,
+            "rmse": 0.9979055760650515,
+            "skill_percent": 35.67257179151383,
+            "sign": 0.699728997289973,
+            "sign_large": 0.7978319783197833,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 1.1394212626981213,
+              "mae": 0.8466703525325768,
+              "rmse": 1.0674367722249976,
+              "skill_percent": -3.803213606807243,
+              "sign": 0.5833333333333334,
+              "sign_large": 0.6888888888888889,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.9043360433604336,
+            "interval90_width": 3.334158897912767
+          },
+          "legacy_langevin": {
+            "mse": 1.0376517625526978,
+            "mae": 0.787529323121616,
+            "rmse": 1.0186519339561957,
+            "skill_percent": 32.97004649539803,
+            "sign": 0.6924119241192412,
+            "sign_large": 0.7845528455284553,
+            "baseline_mse": 1.548041895152825,
+            "positive_fraction": 0.4964769647696477,
+            "primary_t2500": {
+              "mse": 0.960083244231754,
+              "mae": 0.7739220118508645,
+              "rmse": 0.9798383765865439,
+              "skill_percent": 12.534784680677735,
+              "sign": 0.6333333333333333,
+              "sign_large": 0.7333333333333333,
+              "baseline_mse": 1.0976743620039524,
+              "positive_fraction": 0.6611111111111111
+            },
+            "interval90_coverage": 0.9055555555555556,
+            "interval90_width": 3.341377713531272
+          }
+        }
+      },
+      "fit_diagnostics": {
+        "ar": {
+          "rank": 2,
+          "features": 2,
+          "condition": 1.5770639211182125,
+          "rows": 25380
+        },
+        "gle_compact": {
+          "rank": 6,
+          "features": 6,
+          "condition": 4.593704462010281,
+          "rows": 25380
+        },
+        "gle_descriptor": {
+          "rank": 30,
+          "features": 36,
+          "condition": 4.835929771819299e+16,
+          "rows": 25380
+        },
+        "gle_effect": {
+          "rank": 9,
+          "features": 9,
+          "condition": 5.439358701031293,
+          "rows": 25380
+        },
+        "gle_descriptor_effect": {
+          "rank": 33,
+          "features": 39,
+          "condition": 4.858173561882999e+16,
+          "rows": 25380
+        },
+        "gle_descriptor_effect_ped": {
+          "rank": 36,
+          "features": 42,
+          "condition": 4.858885474746951e+16,
+          "rows": 25380
+        },
+        "lifting_quadratic": {
+          "rank": 8,
+          "features": 8,
+          "condition": 4.120082274859178,
+          "rows": 25380
+        },
+        "legacy_gle": {
+          "rank": 21,
+          "features": 21,
+          "condition": 8.19713887871323,
+          "rows": 25380
+        }
+      }
+    },
+    "500": {
+      "selected_validation": "legacy_koopman",
+      "selected_new_validation": "gle_descriptor_effect_ped",
+      "validation": {
+        "ar": {
+          "mse": 3.0371353976739104,
+          "mae": 1.442625391479859,
+          "rmse": 1.7427379027478316,
+          "skill_percent": -31.20717190540634,
+          "sign": 0.29259259259259257,
+          "sign_large": 0.21957671957671956,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "gle_compact": {
+          "mse": 2.9253177253738496,
+          "mae": 1.4179421470235132,
+          "rmse": 1.7103560229887371,
+          "skill_percent": -26.376540856565732,
+          "sign": 0.29603174603174603,
+          "sign_large": 0.22645502645502646,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "gle_descriptor": {
+          "mse": 2.818189409405404,
+          "mae": 1.3891756823331802,
+          "rmse": 1.6787463803104399,
+          "skill_percent": -21.748494513958217,
+          "sign": 0.3037037037037037,
+          "sign_large": 0.2402116402116402,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "gle_effect": {
+          "mse": 2.9251015065224557,
+          "mae": 1.4188343746314036,
+          "rmse": 1.710292813094429,
+          "skill_percent": -26.367199994111658,
+          "sign": 0.2984126984126984,
+          "sign_large": 0.2312169312169312,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "gle_descriptor_effect": {
+          "mse": 2.8303055137193325,
+          "mae": 1.3937219188383256,
+          "rmse": 1.6823511862032055,
+          "skill_percent": -22.27192188000815,
+          "sign": 0.3055555555555556,
+          "sign_large": 0.24391534391534392,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "gle_descriptor_effect_ped": {
+          "mse": 2.7716639744384306,
+          "mae": 1.3779268614147013,
+          "rmse": 1.6648315153307347,
+          "skill_percent": -19.73855095057253,
+          "sign": 0.31693121693121695,
+          "sign_large": 0.2661375661375661,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "lifting_quadratic": {
+          "mse": 2.9480371359706874,
+          "mae": 1.4253930784780207,
+          "rmse": 1.716984896838259,
+          "skill_percent": -27.358041257914923,
+          "sign": 0.29947089947089944,
+          "sign_large": 0.23333333333333334,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "legacy_gle": {
+          "mse": 1.816672513510961,
+          "mae": 1.0792640739687844,
+          "rmse": 1.3478399435804538,
+          "skill_percent": 21.517999178233726,
+          "sign": 0.6727513227513228,
+          "sign_large": 0.7529100529100529,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "zero": {
+          "mse": 2.314763250795109,
+          "mae": 1.2285561862446013,
+          "rmse": 1.5214346028650423,
+          "skill_percent": 0.0,
+          "sign": 0.0,
+          "sign_large": 0.0,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "drift": {
+          "mse": 48.84960568615693,
+          "mae": 5.527473905162206,
+          "rmse": 6.989249293461847,
+          "skill_percent": -2010.3499750731462,
+          "sign": 0.37037037037037035,
+          "sign_large": 0.2857142857142857,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "legacy_koopman": {
+          "mse": 1.7704650931191532,
+          "mae": 1.0622210866905695,
+          "rmse": 1.330588250782019,
+          "skill_percent": 23.51420420593735,
+          "sign": 0.678042328042328,
+          "sign_large": 0.774074074074074,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        },
+        "legacy_langevin": {
+          "mse": 2.2649207391557242,
+          "mae": 1.2215775589753988,
+          "rmse": 1.5049653614471412,
+          "skill_percent": 2.153244467755566,
+          "sign": 0.5986772486772487,
+          "sign_large": 0.674074074074074,
+          "baseline_mse": 2.314763250795109,
+          "positive_fraction": 0.29259259259259257
+        }
+      },
+      "specs": {
+        "ar": {
+          "kind": "ar",
+          "ridge": 10,
+          "level": 500
+        },
+        "gle_compact": {
+          "kind": "compact",
+          "ridge": 10,
+          "level": 500
+        },
+        "gle_descriptor": {
+          "kind": "compact",
+          "desc": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "gle_effect": {
+          "kind": "compact",
+          "effect": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "gle_descriptor_effect": {
+          "kind": "compact",
+          "desc": true,
+          "effect": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "gle_descriptor_effect_ped": {
+          "kind": "compact",
+          "desc": true,
+          "effect": true,
+          "ped": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "lifting_quadratic": {
+          "kind": "compact",
+          "lifting": true,
+          "ridge": 10,
+          "level": 500
+        },
+        "legacy_gle": {
+          "kind": "legacy_gle",
+          "ridge": 0.001,
+          "level": 500
+        }
+      },
+      "test": {
+        "47": {
+          "ar": {
+            "mse": 1.7892350915013477,
+            "mae": 1.0370636993571531,
+            "rmse": 1.337622925753498,
+            "skill_percent": 2.3736085158997833,
+            "sign": 0.5833333333333334,
+            "sign_large": 0.6,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 1.7892350915013477,
+              "mae": 1.0370636993571531,
+              "rmse": 1.337622925753498,
+              "skill_percent": 2.3736085158997833,
+              "sign": 0.5833333333333334,
+              "sign_large": 0.6,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7944444444444444,
+            "interval90_width": 4.262086457677015
+          },
+          "gle_compact": {
+            "mse": 1.7501542901217013,
+            "mae": 1.0207261207515277,
+            "rmse": 1.3229339704315184,
+            "skill_percent": 4.505982083310811,
+            "sign": 0.5666666666666667,
+            "sign_large": 0.5555555555555556,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 1.7501542901217013,
+              "mae": 1.0207261207515277,
+              "rmse": 1.3229339704315184,
+              "skill_percent": 4.505982083310811,
+              "sign": 0.5666666666666667,
+              "sign_large": 0.5555555555555556,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7833333333333333,
+            "interval90_width": 4.080621687538871
+          },
+          "gle_descriptor": {
+            "mse": 1.7450809495732382,
+            "mae": 1.0324147184793104,
+            "rmse": 1.3210151208722927,
+            "skill_percent": 4.782799776451863,
+            "sign": 0.5666666666666667,
+            "sign_large": 0.6222222222222222,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 1.7450809495732382,
+              "mae": 1.0324147184793104,
+              "rmse": 1.3210151208722927,
+              "skill_percent": 4.782799776451863,
+              "sign": 0.5666666666666667,
+              "sign_large": 0.6222222222222222,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7222222222222222,
+            "interval90_width": 4.036819391063508
+          },
+          "gle_effect": {
+            "mse": 1.7398695639067063,
+            "mae": 1.0156977007063626,
+            "rmse": 1.3190411532271107,
+            "skill_percent": 5.06714965292816,
+            "sign": 0.5944444444444444,
+            "sign_large": 0.6,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 1.7398695639067063,
+              "mae": 1.0156977007063626,
+              "rmse": 1.3190411532271107,
+              "skill_percent": 5.06714965292816,
+              "sign": 0.5944444444444444,
+              "sign_large": 0.6,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7833333333333333,
+            "interval90_width": 4.0767255316925946
+          },
+          "gle_descriptor_effect": {
+            "mse": 1.727615207932678,
+            "mae": 1.0253032670389253,
+            "rmse": 1.3143877692418924,
+            "skill_percent": 5.735786524286491,
+            "sign": 0.5777777777777777,
+            "sign_large": 0.6444444444444445,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 1.727615207932678,
+              "mae": 1.0253032670389253,
+              "rmse": 1.3143877692418924,
+              "skill_percent": 5.735786524286491,
+              "sign": 0.5777777777777777,
+              "sign_large": 0.6444444444444445,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7277777777777777,
+            "interval90_width": 4.03803125706381
+          },
+          "gle_descriptor_effect_ped": {
+            "mse": 1.7178764383279974,
+            "mae": 1.0229889482800008,
+            "rmse": 1.31067785451956,
+            "skill_percent": 6.267164954385485,
+            "sign": 0.5833333333333334,
+            "sign_large": 0.6333333333333333,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 1.7178764383279974,
+              "mae": 1.0229889482800008,
+              "rmse": 1.31067785451956,
+              "skill_percent": 6.267164954385485,
+              "sign": 0.5833333333333334,
+              "sign_large": 0.6333333333333333,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7277777777777777,
+            "interval90_width": 4.007928433620504,
+            "residual_diagnostics": {
+              "skew": -0.3225954970833147,
+              "excess_kurtosis": 1.0450687000408756,
+              "residual_lag1": null,
+              "residual_lag5": null,
+              "corr_past_state": 0.009722982167321165,
+              "corr_past_batch_effect": -0.17092483957918245,
+              "variance_first_half": 1.705717787445788,
+              "variance_second_half": 1.705717787445788,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "lifting_quadratic": {
+            "mse": 1.7525048204008884,
+            "mae": 1.0220104481206023,
+            "rmse": 1.3238220501264089,
+            "skill_percent": 4.377729630449179,
+            "sign": 0.5722222222222222,
+            "sign_large": 0.5666666666666667,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 1.7525048204008884,
+              "mae": 1.0220104481206023,
+              "rmse": 1.3238220501264089,
+              "skill_percent": 4.377729630449179,
+              "sign": 0.5722222222222222,
+              "sign_large": 0.5666666666666667,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.7888888888888889,
+            "interval90_width": 4.09385108128125
+          },
+          "legacy_gle": {
+            "mse": 2.4710690887190805,
+            "mae": 1.1975330333381085,
+            "rmse": 1.5719634501854935,
+            "skill_percent": -34.82943598938799,
+            "sign": 0.5166666666666667,
+            "sign_large": 0.45555555555555555,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 2.4710690887190805,
+              "mae": 1.1975330333381085,
+              "rmse": 1.5719634501854935,
+              "skill_percent": -34.82943598938799,
+              "sign": 0.5166666666666667,
+              "sign_large": 0.45555555555555555,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.8333333333333334,
+            "interval90_width": 3.765089499405531,
+            "residual_diagnostics": {
+              "skew": -0.3254065822887766,
+              "excess_kurtosis": 0.45034503991924213,
+              "residual_lag1": null,
+              "residual_lag5": null,
+              "corr_past_state": 0.3090243988953546,
+              "corr_past_batch_effect": -0.13844126094066236,
+              "variance_first_half": 1.885940256723809,
+              "variance_second_half": 1.885940256723809,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "zero": {
+            "mse": 1.8327370952686999,
+            "mae": 1.055497666200002,
+            "rmse": 1.3537862073712748,
+            "skill_percent": 0.0,
+            "sign": 0.0,
+            "sign_large": 0.0,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 1.8327370952686999,
+              "mae": 1.055497666200002,
+              "rmse": 1.3537862073712748,
+              "skill_percent": 0.0,
+              "sign": 0.0,
+              "sign_large": 0.0,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.9111111111111111,
+            "interval90_width": 4.435714578628539
+          },
+          "drift": {
+            "mse": 40.538651639215395,
+            "mae": 5.116533937719133,
+            "rmse": 6.366997066059902,
+            "skill_percent": -2111.918542155768,
+            "sign": 0.5333333333333333,
+            "sign_large": 0.6111111111111112,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 40.538651639215395,
+              "mae": 5.116533937719133,
+              "rmse": 6.366997066059902,
+              "skill_percent": -2111.918542155768,
+              "sign": 0.5333333333333333,
+              "sign_large": 0.6111111111111112,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.9111111111111111,
+            "interval90_width": 23.22786610126495
+          },
+          "legacy_koopman": {
+            "mse": 2.0238527017051955,
+            "mae": 1.083399083190301,
+            "rmse": 1.4226217704313384,
+            "skill_percent": -10.427878986564409,
+            "sign": 0.5388888888888889,
+            "sign_large": 0.5,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 2.0238527017051955,
+              "mae": 1.083399083190301,
+              "rmse": 1.4226217704313384,
+              "skill_percent": -10.427878986564409,
+              "sign": 0.5388888888888889,
+              "sign_large": 0.5,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.8555555555555555,
+            "interval90_width": 3.719916053588256
+          },
+          "legacy_langevin": {
+            "mse": 2.275765753756618,
+            "mae": 1.1478092920985234,
+            "rmse": 1.5085641364412115,
+            "skill_percent": -24.173061135261452,
+            "sign": 0.5444444444444444,
+            "sign_large": 0.5,
+            "baseline_mse": 1.8327370952686999,
+            "positive_fraction": 0.4777777777777778,
+            "primary_t2500": {
+              "mse": 2.275765753756618,
+              "mae": 1.1478092920985234,
+              "rmse": 1.5085641364412115,
+              "skill_percent": -24.173061135261452,
+              "sign": 0.5444444444444444,
+              "sign_large": 0.5,
+              "baseline_mse": 1.8327370952686999,
+              "positive_fraction": 0.4777777777777778
+            },
+            "interval90_coverage": 0.8722222222222222,
+            "interval90_width": 4.184514190651351
+          }
+        },
+        "48": {
+          "ar": {
+            "mse": 1.9763393160979221,
+            "mae": 1.0962365372272702,
+            "rmse": 1.405823358782291,
+            "skill_percent": 6.231033338565972,
+            "sign": 0.5975609756097561,
+            "sign_large": 0.6634146341463415,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 1.2855107941086001,
+              "mae": 0.8900306735362319,
+              "rmse": 1.1338036841131713,
+              "skill_percent": -2.3001949521971543,
+              "sign": 0.42777777777777776,
+              "sign_large": 0.4111111111111111,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.7800813008130081,
+            "interval90_width": 4.262086457677015
+          },
+          "gle_compact": {
+            "mse": 1.8641745013403261,
+            "mae": 1.0623245266684154,
+            "rmse": 1.3653477583899005,
+            "skill_percent": 11.552780818830044,
+            "sign": 0.656910569105691,
+            "sign_large": 0.7490514905149052,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 1.205225537993424,
+              "mae": 0.8574999808643529,
+              "rmse": 1.0978276449395068,
+              "skill_percent": 4.0888586364697606,
+              "sign": 0.6055555555555555,
+              "sign_large": 0.6555555555555556,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.7691056910569106,
+            "interval90_width": 4.080621687538871
+          },
+          "gle_descriptor": {
+            "mse": 1.8139932457930192,
+            "mae": 1.0529769642652342,
+            "rmse": 1.346845665172153,
+            "skill_percent": 13.933669788713377,
+            "sign": 0.6151761517615176,
+            "sign_large": 0.6907859078590786,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 1.3219128299526912,
+              "mae": 0.905742590651668,
+              "rmse": 1.1497446803324167,
+              "skill_percent": -5.197047612302308,
+              "sign": 0.45555555555555555,
+              "sign_large": 0.4222222222222222,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.7429539295392954,
+            "interval90_width": 4.036819391063508
+          },
+          "gle_effect": {
+            "mse": 1.860155206195193,
+            "mae": 1.0612019342196635,
+            "rmse": 1.3638750698635096,
+            "skill_percent": 11.743479424781267,
+            "sign": 0.6546070460704607,
+            "sign_large": 0.7506775067750677,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 1.2087636818665008,
+              "mae": 0.858669371052182,
+              "rmse": 1.0994378935922215,
+              "skill_percent": 3.807295222421836,
+              "sign": 0.5833333333333334,
+              "sign_large": 0.6333333333333333,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.7697831978319783,
+            "interval90_width": 4.0767255316925946
+          },
+          "gle_descriptor_effect": {
+            "mse": 1.8061887390350142,
+            "mae": 1.051012544005626,
+            "rmse": 1.3439452142981925,
+            "skill_percent": 14.30396072410054,
+            "sign": 0.6219512195121951,
+            "sign_large": 0.6991869918699187,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 1.3349941185611334,
+              "mae": 0.9109513071434331,
+              "rmse": 1.1554194556788169,
+              "skill_percent": -6.238048886661529,
+              "sign": 0.4666666666666667,
+              "sign_large": 0.45555555555555555,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.7429539295392954,
+            "interval90_width": 4.03803125706381
+          },
+          "gle_descriptor_effect_ped": {
+            "mse": 1.7811654678543365,
+            "mae": 1.0431331097746745,
+            "rmse": 1.3346031124848827,
+            "skill_percent": 15.49120942273683,
+            "sign": 0.631029810298103,
+            "sign_large": 0.7138211382113822,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 1.3070971589660425,
+              "mae": 0.8990405039652533,
+              "rmse": 1.1432834989476768,
+              "skill_percent": -4.018025205623288,
+              "sign": 0.5222222222222223,
+              "sign_large": 0.5333333333333333,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.7440379403794037,
+            "interval90_width": 4.007928433620504,
+            "residual_diagnostics": {
+              "skew": -0.4066134465752315,
+              "excess_kurtosis": 0.9587961601508468,
+              "residual_lag1": 0.7069473612203665,
+              "residual_lag5": 0.4372207906054395,
+              "corr_past_state": -0.3563459436902255,
+              "corr_past_batch_effect": -0.10424502845000069,
+              "variance_first_half": 1.5970257496067066,
+              "variance_second_half": 1.7839090915144094,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "lifting_quadratic": {
+            "mse": 1.866700165000275,
+            "mae": 1.0628364001191817,
+            "rmse": 1.3662723612077772,
+            "skill_percent": 11.43294872846039,
+            "sign": 0.6577235772357723,
+            "sign_large": 0.7482384823848238,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 1.205676705433551,
+              "mae": 0.8578437459599892,
+              "rmse": 1.0980331076217835,
+              "skill_percent": 4.052954996226044,
+              "sign": 0.6111111111111112,
+              "sign_large": 0.6666666666666666,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.7714092140921409,
+            "interval90_width": 4.09385108128125
+          },
+          "legacy_gle": {
+            "mse": 1.6305371819015777,
+            "mae": 0.9777828871066524,
+            "rmse": 1.2769248928192989,
+            "skill_percent": 22.637886417282516,
+            "sign": 0.670189701897019,
+            "sign_large": 0.7598915989159891,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 0.9856782636734474,
+              "mae": 0.782917027360041,
+              "rmse": 0.992813307562629,
+              "skill_percent": 21.560301946855308,
+              "sign": 0.6555555555555556,
+              "sign_large": 0.7444444444444445,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.8474254742547426,
+            "interval90_width": 3.765089499405531,
+            "residual_diagnostics": {
+              "skew": -0.546845184756739,
+              "excess_kurtosis": 1.2876307641326923,
+              "residual_lag1": 0.7533952617003841,
+              "residual_lag5": 0.5082126328984088,
+              "corr_past_state": -0.0013983925942321898,
+              "corr_past_batch_effect": -0.021179428880792005,
+              "variance_first_half": 1.3067994193848116,
+              "variance_second_half": 1.531188823616419,
+              "warning": "H-step overlap induces residual autocorrelation; not a whiteness test of one-step noise"
+            }
+          },
+          "zero": {
+            "mse": 2.1076688657919966,
+            "mae": 1.1307801230712151,
+            "rmse": 1.4517812733989912,
+            "skill_percent": 0.0,
+            "sign": 0.0,
+            "sign_large": 0.0,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 1.2566063971914168,
+              "mae": 0.8762085066901313,
+              "rmse": 1.1209845659916182,
+              "skill_percent": 0.0,
+              "sign": 0.0,
+              "sign_large": 0.0,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.8665311653116531,
+            "interval90_width": 4.435714578628539
+          },
+          "drift": {
+            "mse": 40.41476238154862,
+            "mae": 4.99095641311995,
+            "rmse": 6.357260603557842,
+            "skill_percent": -1817.510052811925,
+            "sign": 0.37737127371273715,
+            "sign_large": 0.3056910569105691,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 40.46458717196346,
+              "mae": 4.936561480495665,
+              "rmse": 6.361178127671278,
+              "skill_percent": -3120.148111803664,
+              "sign": 0.36666666666666664,
+              "sign_large": 0.2777777777777778,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.9313008130081301,
+            "interval90_width": 23.22786610126495
+          },
+          "legacy_koopman": {
+            "mse": 1.667235157711216,
+            "mae": 0.9902965178382168,
+            "rmse": 1.2912146055986262,
+            "skill_percent": 20.896722214249685,
+            "sign": 0.6718157181571816,
+            "sign_large": 0.7544715447154472,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 1.2228563842626063,
+              "mae": 0.8539198193623612,
+              "rmse": 1.1058283701653735,
+              "skill_percent": 2.6858062321060583,
+              "sign": 0.6277777777777778,
+              "sign_large": 0.6888888888888889,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.8474254742547426,
+            "interval90_width": 3.719916053588256
+          },
+          "legacy_langevin": {
+            "mse": 2.1886198941369304,
+            "mae": 1.1242346578349143,
+            "rmse": 1.479398490649808,
+            "skill_percent": -3.8407849382220194,
+            "sign": 0.6281842818428184,
+            "sign_large": 0.6878048780487804,
+            "baseline_mse": 2.1076688657919966,
+            "positive_fraction": 0.4596205962059621,
+            "primary_t2500": {
+              "mse": 0.9075092571928887,
+              "mae": 0.8029500333743367,
+              "rmse": 0.9526328029166793,
+              "skill_percent": 27.780945630929388,
+              "sign": 0.7444444444444445,
+              "sign_large": 0.8222222222222222,
+              "baseline_mse": 1.2566063971914168,
+              "positive_fraction": 0.7277777777777777
+            },
+            "interval90_coverage": 0.9143631436314363,
+            "interval90_width": 4.184514190651351
+          }
+        }
+      },
+      "fit_diagnostics": {
+        "ar": {
+          "rank": 2,
+          "features": 2,
+          "condition": 1.5774201247281334,
+          "rows": 18180
+        },
+        "gle_compact": {
+          "rank": 6,
+          "features": 6,
+          "condition": 4.5700960345149335,
+          "rows": 18180
+        },
+        "gle_descriptor": {
+          "rank": 30,
+          "features": 36,
+          "condition": 4.033234038840868e+16,
+          "rows": 18180
+        },
+        "gle_effect": {
+          "rank": 9,
+          "features": 9,
+          "condition": 5.643903526029622,
+          "rows": 18180
+        },
+        "gle_descriptor_effect": {
+          "rank": 33,
+          "features": 39,
+          "condition": 4.050793835816943e+16,
+          "rows": 18180
+        },
+        "gle_descriptor_effect_ped": {
+          "rank": 36,
+          "features": 42,
+          "condition": 4.05216433091174e+16,
+          "rows": 18180
+        },
+        "lifting_quadratic": {
+          "rank": 8,
+          "features": 8,
+          "condition": 4.699207576549642,
+          "rows": 18180
+        },
+        "legacy_gle": {
+          "rank": 21,
+          "features": 21,
+          "condition": 7.975133434940667,
+          "rows": 18180
+        }
+      }
+    }
+  },
+  "causal_checks": {
+    "ar": {
+      "prefix_invariance": true,
+      "future_suffix_invariance": true,
+      "completed_input_alignment": true
+    },
+    "gle_compact": {
+      "prefix_invariance": true,
+      "future_suffix_invariance": true,
+      "completed_input_alignment": true
+    },
+    "gle_descriptor": {
+      "prefix_invariance": true,
+      "future_suffix_invariance": true,
+      "completed_input_alignment": true
+    },
+    "gle_effect": {
+      "prefix_invariance": true,
+      "future_suffix_invariance": true,
+      "completed_input_alignment": true
+    },
+    "gle_descriptor_effect": {
+      "prefix_invariance": true,
+      "future_suffix_invariance": true,
+      "completed_input_alignment": true
+    },
+    "gle_descriptor_effect_ped": {
+      "prefix_invariance": true,
+      "future_suffix_invariance": true,
+      "completed_input_alignment": true
+    },
+    "lifting_quadratic": {
+      "prefix_invariance": true,
+      "future_suffix_invariance": true,
+      "completed_input_alignment": true
+    },
+    "legacy_gle": {
+      "prefix_invariance": true,
+      "future_suffix_invariance": true,
+      "completed_input_alignment": true
+    }
+  },
+  "validation_trials": [
+    {
+      "H": 10,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.6417028559886878
+    },
+    {
+      "H": 10,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 0.6728973688491504
+    },
+    {
+      "H": 10,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.6455574585661196
+    },
+    {
+      "H": 10,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.6771908326273355
+    },
+    {
+      "H": 10,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 0.7531270772342569
+    },
+    {
+      "H": 10,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 0.760141711028317
+    },
+    {
+      "H": 10,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.6306961945359276
+    },
+    {
+      "H": 10,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 0.6358043288394847
+    },
+    {
+      "H": 10,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.6296030852429321
+    },
+    {
+      "H": 10,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.6368094895195632
+    },
+    {
+      "H": 10,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 0.7234424078635218
+    },
+    {
+      "H": 10,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 0.7280359848026249
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.8105862848254481
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 0.7988588618091119
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.6515554060164281
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.6502011918348883
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 0.7210612928424375
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 0.7253545399040197
+    },
+    {
+      "H": 10,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.625285734444422
+    },
+    {
+      "H": 10,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 0.629926987184104
+    },
+    {
+      "H": 10,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.6243220017768366
+    },
+    {
+      "H": 10,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.6315640033617308
+    },
+    {
+      "H": 10,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 0.7229239050526127
+    },
+    {
+      "H": 10,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 0.7275059562105126
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.7838430704810839
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 0.7725585953779395
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.6428948620402641
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.6419372533600434
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 0.7204620004033029
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 0.7247375828827792
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.7820748955765626
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 0.7696761962589596
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.6432462898364235
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.6436439677198926
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 0.709887622292032
+    },
+    {
+      "H": 10,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 0.7135146740499713
+    },
+    {
+      "H": 10,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.6279545358040083
+    },
+    {
+      "H": 10,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 0.6312174387773206
+    },
+    {
+      "H": 10,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.6279839635682023
+    },
+    {
+      "H": 10,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.6346258010866507
+    },
+    {
+      "H": 10,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 0.724422117940772
+    },
+    {
+      "H": 10,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 0.7288871373184054
+    },
+    {
+      "H": 50,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 1.0260123358162034
+    },
+    {
+      "H": 50,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 1.0981213008720347
+    },
+    {
+      "H": 50,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.022765488871752
+    },
+    {
+      "H": 50,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.1019459175539914
+    },
+    {
+      "H": 50,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.314473250474523
+    },
+    {
+      "H": 50,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.3401236899832194
+    },
+    {
+      "H": 50,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.9914885473417946
+    },
+    {
+      "H": 50,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 0.9998949832017373
+    },
+    {
+      "H": 50,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.9818782176957267
+    },
+    {
+      "H": 50,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.9984943986787738
+    },
+    {
+      "H": 50,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.2145550760576063
+    },
+    {
+      "H": 50,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.2306789644015597
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 4.127527253840704
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 4.023047718598958
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.5862123792485407
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.5965642078319964
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.2144086123502416
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.229903664543893
+    },
+    {
+      "H": 50,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.9997636910424248
+    },
+    {
+      "H": 50,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 1.0022259036502124
+    },
+    {
+      "H": 50,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.9835295546374272
+    },
+    {
+      "H": 50,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.997616641264732
+    },
+    {
+      "H": 50,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.2073098740816421
+    },
+    {
+      "H": 50,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.223123923512003
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 4.4181370833576015
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 4.30628632427346
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.6075038027807105
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.616430572447072
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.2061011621956705
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.2212549470327676
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 4.389359642828665
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 4.2773640601637375
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.6176279948566772
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.634659683734494
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.1837392376343514
+    },
+    {
+      "H": 50,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.196908207768182
+    },
+    {
+      "H": 50,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 0.9922340480219092
+    },
+    {
+      "H": 50,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 0.9813433612006044
+    },
+    {
+      "H": 50,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 0.9860722513657203
+    },
+    {
+      "H": 50,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 0.9880597714356376
+    },
+    {
+      "H": 50,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.2225558030745105
+    },
+    {
+      "H": 50,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.2356973156726425
+    },
+    {
+      "H": 100,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 1.0690428832967664
+    },
+    {
+      "H": 100,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 1.124786877601362
+    },
+    {
+      "H": 100,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.0648207216207966
+    },
+    {
+      "H": 100,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.1345087603972637
+    },
+    {
+      "H": 100,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.4372347546047124
+    },
+    {
+      "H": 100,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.4664572106989104
+    },
+    {
+      "H": 100,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 1.0637928829968661
+    },
+    {
+      "H": 100,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 1.0618053001100207
+    },
+    {
+      "H": 100,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.044387700613579
+    },
+    {
+      "H": 100,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.0544421582920036
+    },
+    {
+      "H": 100,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.3218975188359225
+    },
+    {
+      "H": 100,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.3399253881570132
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 2.8210668210001506
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 2.694922069752282
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.5654471051904737
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.5559011791659914
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.3249809690770982
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.3432242141087407
+    },
+    {
+      "H": 100,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 1.0835908444224145
+    },
+    {
+      "H": 100,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 1.0724695274396732
+    },
+    {
+      "H": 100,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.059061695052522
+    },
+    {
+      "H": 100,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.0631742529439079
+    },
+    {
+      "H": 100,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.3147819324220162
+    },
+    {
+      "H": 100,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.3324125864176013
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 2.8006217172238173
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 2.6747255575597717
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.5648462534157332
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.5540711250951333
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.3166501573137521
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.3344517698235712
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 2.6647753472131592
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 2.5324471730699996
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.5606703786372322
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.5504407142406378
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.2903967441086008
+    },
+    {
+      "H": 100,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.305926328156921
+    },
+    {
+      "H": 100,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 1.0658696061914048
+    },
+    {
+      "H": 100,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 1.0425415153104858
+    },
+    {
+      "H": 100,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 1.0487043852532838
+    },
+    {
+      "H": 100,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 1.0421572333669142
+    },
+    {
+      "H": 100,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 1.3295258850639624
+    },
+    {
+      "H": 100,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 1.3438302423224235
+    },
+    {
+      "H": 500,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 3.1720078336915196
+    },
+    {
+      "H": 500,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 3.4117755130614573
+    },
+    {
+      "H": 500,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 3.1114167812950986
+    },
+    {
+      "H": 500,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 3.3559579994531075
+    },
+    {
+      "H": 500,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 3.0371353976739104
+    },
+    {
+      "H": 500,
+      "family": "ar",
+      "spec": {
+        "kind": "ar",
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 3.0891261139789212
+    },
+    {
+      "H": 500,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 3.0484296745220933
+    },
+    {
+      "H": 500,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 2.977639629324006
+    },
+    {
+      "H": 500,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 2.9552159338202895
+    },
+    {
+      "H": 500,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 2.9576454864416792
+    },
+    {
+      "H": 500,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 2.9253177253738496
+    },
+    {
+      "H": 500,
+      "family": "gle_compact",
+      "spec": {
+        "kind": "compact",
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 2.9625624552438357
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 4.7324673815622535
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 4.035760614280758
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 4.172557437279248
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 4.10086699369458
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 2.818189409405404
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 2.855171992918569
+    },
+    {
+      "H": 500,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 3.0876954525715887
+    },
+    {
+      "H": 500,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 2.9909626940511593
+    },
+    {
+      "H": 500,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 2.9887481687007007
+    },
+    {
+      "H": 500,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 2.9714823791004394
+    },
+    {
+      "H": 500,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 2.9251015065224557
+    },
+    {
+      "H": 500,
+      "family": "gle_effect",
+      "spec": {
+        "kind": "compact",
+        "effect": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 2.961599752838755
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 6.8476930972866095
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 5.8465479542809655
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 4.911477969514974
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 4.783274540554653
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 2.8303055137193325
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 2.866635835655422
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 6.426869313679454
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 5.519236948002822
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 4.855368838115909
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 4.6951267799185
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 2.7716639744384306
+    },
+    {
+      "H": 500,
+      "family": "gle_descriptor_effect_ped",
+      "spec": {
+        "kind": "compact",
+        "desc": true,
+        "effect": true,
+        "ped": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 2.8037228587816676
+    },
+    {
+      "H": 500,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.001,
+        "level": 500
+      },
+      "mse": 3.0618606924950633
+    },
+    {
+      "H": 500,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.001,
+        "level": 1000
+      },
+      "mse": 3.016263736831576
+    },
+    {
+      "H": 500,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.1,
+        "level": 500
+      },
+      "mse": 2.9735027434877406
+    },
+    {
+      "H": 500,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 0.1,
+        "level": 1000
+      },
+      "mse": 3.0070958502207312
+    },
+    {
+      "H": 500,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 10,
+        "level": 500
+      },
+      "mse": 2.9480371359706874
+    },
+    {
+      "H": 500,
+      "family": "lifting_quadratic",
+      "spec": {
+        "kind": "compact",
+        "lifting": true,
+        "ridge": 10,
+        "level": 1000
+      },
+      "mse": 3.0172667036625525
+    }
+  ],
+  "code_sha256": {
+    "dane.py": "97f9a01ad4040980310444aa4eef58875b14b38301f5254c866252c9b238a886",
+    "pilot.py": "915e975a80fb375ebec1d2c50944163420ab66bf99b3f9e0e9bbcb0be6e5b62d"
+  },
+  "primary_replications": 2,
+  "confirmatory": false,
+  "intervals": "validation pooled residual quantiles, empirical only, not guaranteed calibration"
+}

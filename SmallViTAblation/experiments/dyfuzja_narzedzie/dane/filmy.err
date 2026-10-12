@@ -1,0 +1,48 @@
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "F:\Python\Lib\concurrent\futures\process.py", line 261, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Python\Lib\concurrent\futures\process.py", line 210, in _process_chunk
+    return [fn(*args) for args in chunk]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Python\Lib\concurrent\futures\process.py", line 210, in <listcomp>
+    return [fn(*args) for args in chunk]
+            ^^^^^^^^^
+  File "F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\experiments\dyfuzja_narzedzie\kod\przygotuj_filmy.py", line 56, in film
+    bgr = cv2.imdecode(np.frombuffer(z.read(f'{v}/{r["filename"]}'), np.uint8), cv2.IMREAD_COLOR)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Python\Lib\zipfile.py", line 1518, in read
+    with self.open(name, "r", pwd) as fp:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Python\Lib\zipfile.py", line 1555, in open
+    zinfo = self.getinfo(name)
+            ^^^^^^^^^^^^^^^^^^
+  File "F:\Python\Lib\zipfile.py", line 1484, in getinfo
+    raise KeyError(
+KeyError: "There is no item named 'TR_0019_S1_P03/TR_0019_S1_P03_008565.jpg' in the archive"
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\experiments\dyfuzja_narzedzie\kod\przygotuj_filmy.py", line 142, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\SmallViTAblation\experiments\dyfuzja_narzedzie\kod\przygotuj_filmy.py", line 108, in main
+    for k, (v, okna, sha, nk) in enumerate(ex.map(film, [(v, a.co_ktora) for v in train])):
+  File "F:\Python\Lib\concurrent\futures\process.py", line 620, in _chain_from_iterable_of_lists
+    for element in iterable:
+  File "F:\Python\Lib\concurrent\futures\_base.py", line 619, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\Python\Lib\concurrent\futures\_base.py", line 317, in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "F:\Python\Lib\concurrent\futures\_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "F:\Python\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+KeyError: "There is no item named 'TR_0019_S1_P03/TR_0019_S1_P03_008565.jpg' in the archive"

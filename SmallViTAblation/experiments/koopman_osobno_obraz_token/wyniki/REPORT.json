@@ -1,0 +1,64 @@
+{
+  "state": "completed",
+  "images": 72,
+  "tokens_per_image": 576,
+  "operators": 41472,
+  "dimension": 384,
+  "checkpoint_count": 73,
+  "final_pairs_per_operator": 72,
+  "final_pairs_total": 2985984,
+  "test_transitions_per_operator": 24,
+  "rmse_one_step": {
+    "koopman": 0.010330740372598181,
+    "last_increment": 0.0038589105775753765,
+    "persistence": 0.00822556303379725,
+    "scalar_velocity": 0.003717951332479013
+  },
+  "rmse_rollout100_updates": {
+    "koopman": 0.23218073114765897,
+    "last_increment": 0.11696864490492655,
+    "persistence": 0.13622287674768213,
+    "scalar_velocity": 0.07107640750989164
+  },
+  "rmse_foreground_one_step": {
+    "koopman": 0.011157070855053687,
+    "last_increment": 0.004526541158772228,
+    "persistence": 0.009191175628732205,
+    "scalar_velocity": 0.004370100460024098
+  },
+  "candidate_count": 0,
+  "candidate_foreground_count": 0,
+  "foreground_units": 1458,
+  "candidates_also_beating_alpha": 0,
+  "rank_min_max": [
+    71,
+    71
+  ],
+  "max_solver_residual": 1.0453312360759256e-12,
+  "fit48_rmse": 0.00444989369563286,
+  "fit72_rmse": 0.004484722440725312,
+  "example": {
+    "image_index": 66,
+    "token_index": 299,
+    "rmse": {
+      "koopman": 0.008462905919310083,
+      "last_increment": 0.004828868259760048,
+      "persistence": 0.007077161821852401,
+      "scalar_velocity": 0.004607695029128819
+    },
+    "cosine": 0.519964642478934,
+    "candidate": false
+  },
+  "pca": false,
+  "shared_operator_between_images": false,
+  "shared_operator_between_tokens": false,
+  "all_history_forecast_unverified": true,
+  "prior_dataset_exposure": true,
+  "limitations": [
+    "fixed local spatial token is not pure semantic identity",
+    "72 pairs do not uniquely identify arbitrary 384x384 map",
+    "all final matrices refitted after test; only prefix48 models have held-out errors",
+    "many dependent exploratory comparisons, not independent success certificates",
+    "one-step supplies observed current state; rollout never supplies future intermediate states"
+  ]
+}

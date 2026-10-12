@@ -1,0 +1,138 @@
+{
+  "device": "cpu",
+  "seed": 20261008,
+  "no_image_forward": true,
+  "no_training": true,
+  "checkpoint_sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+  "checkpoint_keys": [
+    "net",
+    "krok"
+  ],
+  "krok": 1000,
+  "fc2_shape": [
+    192,
+    768
+  ],
+  "fc1_input_dim": 192,
+  "fc2_numerical_rank": 192,
+  "rank_tolerance": 1.9379486507901807e-13,
+  "singular_max": 1.1364251069741944,
+  "singular_min": 0.292024687189817,
+  "condition": 3.891537793979433,
+  "nullity": 576,
+  "null_test_relative_residual": 1.0383720758741089e-16,
+  "row_projection_preserves_fc2_relative_error": 2.875572243815293e-15,
+  "synthetic_adam_first_step_null_energy_fraction": 0.2688410450088181,
+  "synthetic_adam_warning": "Synthetic gradient in row(W), not measured oracle update. Coordinatewise Adam preconditioning may leave row(W).",
+  "head_shapes": {
+    "glowa.0.weight": [
+      192,
+      192
+    ],
+    "glowa.0.bias": [
+      192
+    ],
+    "glowa.2.weight": [
+      5,
+      192
+    ],
+    "glowa.2.bias": [
+      5
+    ]
+  },
+  "layernorm_keys": [
+    "norm.weight",
+    "norm.bias"
+  ],
+  "natural_gelu_upper_bound_min": 7.017050376904635,
+  "natural_gelu_upper_bound_max": 10.236837400197503,
+  "bound_derivation": "fc1(LN2(h)): |preactivation-(W1 beta+b1)| <= sqrt(192)*||center(W1 gamma)||. Exact necessary upper bound in frozen eval; not a sufficiency condition.",
+  "historical_latent": {
+    "keys": [
+      "before",
+      "after",
+      "delta",
+      "channels0",
+      "channels1",
+      "grid_shape",
+      "token_row",
+      "token_col"
+    ],
+    "sha256": "2e00434405969a0742b30f15e16cb6156f99e0a6aae2ee9e0f93ce90249a66df",
+    "arrays": {
+      "before": {
+        "shape": [
+          600,
+          768
+        ],
+        "maximum": 4.021473407745361,
+        "upper_violations": 0,
+        "lower_violations": 0,
+        "max_upper_excess": -5.482316810279473
+      },
+      "after": {
+        "shape": [
+          600,
+          768
+        ],
+        "maximum": 51.3531608581543,
+        "upper_violations": 15661,
+        "lower_violations": 0,
+        "max_upper_excess": 42.89127974899866
+      }
+    },
+    "delta_null_energy_fraction": 0.7464704573638056,
+    "minimum_possible_natural_preimage_rmse_lower_bound": 2.5034933583970327
+  },
+  "bytes_full_snapshot": 2764800000,
+  "bytes_501_states": 1385164800000,
+  "bytes_endpoints_3_and_milestones_3": 16588800000,
+  "bytes_panel_256_501_4fields": 1576009728,
+  "evidence": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "75c3f2d3a7b399d1d14a0a4c442fa0cf6e6444838dee19e3e2d2f09e721e4132",
+      "bytes": 1216
+    },
+    {
+      "path": "experiments/vit_k1000_1500_pelne_latenty_90_20261008/PLAN.md",
+      "sha256": "3ea2f1e619347d840aaa1e17eb814b2ecf0831865651133f4024b99fc73beb7a",
+      "bytes": 8040
+    },
+    {
+      "path": "experiments/vit_k1000_1500_pelne_latenty_90_20261008/pelne_latenty.py",
+      "sha256": "87718c33f67081fab788231af6ec43a999cd48d2feba12885d3ca53b6ac91de7",
+      "bytes": 19361
+    },
+    {
+      "path": "experiments/vit_k1000_1500_pelne_latenty_90_20261008/model_snapshot.py",
+      "sha256": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+      "bytes": 6193
+    },
+    {
+      "path": "experiments/vit_k1000_1500_pelne_latenty_90_20261008/test_pelne_latenty.py",
+      "sha256": "78dd9fc66b750c389b9cc2fa154b862d5aa50fb3306827a1c51931cf602fe283",
+      "bytes": 6746
+    },
+    {
+      "path": "experiments/maly_vit_ruch_czastek_gesta_historia/WYNIKI.md",
+      "sha256": "40a38ee5a6277e963420318c90968416e79a84b86e4bb484d58dea4f1e7a22ab",
+      "bytes": 5117
+    },
+    {
+      "path": "experiments/maly_vit_odpowiedz_latentu_na_paczke/WYNIKI.md",
+      "sha256": "bac62cb1fc0344067cbd613be9cd670cd3ef066834b6ed422277992bcaf0a96c",
+      "bytes": 12786
+    },
+    {
+      "path": "outputs/vit_dmdc_paczki_20261008/full_v2/REPORT.md",
+      "sha256": "a08e70370757927aada01c91acf11b2ef86a49f62f56c41c073c5d9bab301892",
+      "bytes": 7593
+    },
+    {
+      "path": "outputs/vit_k8000_podmiana_8z256_dino_m0011_eden_20261008/results/latent_comparison/compatible_k8000_target/DIRECTION_TO_COMPATIBLE_K8000_TARGET.md",
+      "sha256": "7de577b22d0b5952f7259f13fa925d83b56afdd47c5762f05175fa2802974d1f",
+      "bytes": 1064
+    }
+  ]
+}

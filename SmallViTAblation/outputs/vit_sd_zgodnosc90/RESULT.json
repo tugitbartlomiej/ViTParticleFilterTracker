@@ -1,0 +1,415 @@
+{
+  "status": "complete",
+  "certificate": {
+    "target_sha256": "2e00434405969a0742b30f15e16cb6156f99e0a6aae2ee9e0f93ce90249a66df",
+    "checkpoint_sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+    "target_mean_square": 14.545352021767485,
+    "mse90_max": 0.14545352021767485,
+    "mse_lower_bound": 6.26027425890453,
+    "agreement_upper": 34.395359237805565,
+    "threshold90_excluded": true,
+    "formula": "S=100*max(0,1-sqrt(MSE768/mean(target^2)))",
+    "proof": "LayerNorm q has sum(q)=0 and norm(q)<=sqrt(192). Center W*gamma; apply Cauchy-Schwarz. GELU(h)<=max(0,h). Upper bound includes 0.01 numeric safety. Sum squared positive excess over all 600x768 coordinates.",
+    "diagnostic_sha256": "328a93bf0e2753869d72fa32ea7b038d09586d05bd876d5f50a209fef14d3e54",
+    "bounds_sha256": "d82b719df6bf20f40deff60c9920eb1bbb2498c5d2b8a20706726b0c6bae66f1"
+  },
+  "baselines": [
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent128_jedno_zdjecie_90\\ZDJECIE_ZRODLOWE.jpg",
+      "image_sha256": "37ca461eccb85bab7a50098ac33e2066563e404bed789eca5183df57d63d0e37",
+      "agreement_score": 0.776997591901385,
+      "mse768": 14.320196091522003,
+      "mse128": 85.92117654913206,
+      "mse640": 0.0,
+      "cosine768": 0.12702268135879213,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent128_jedno_zdjecie_90\\WEJSCIE_VIT.png",
+      "image_sha256": "5726d9044de66de85bb6d499b2d351c484a66bc6bfd22a8df7d733459af34a8b",
+      "agreement_score": 0.776997591901385,
+      "mse768": 14.320196091522003,
+      "mse128": 85.92117654913206,
+      "mse640": 0.0,
+      "cosine768": 0.12702268135879213,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_pelny_zbior\\NAJBLIZSZE_ZDJECIE.jpg",
+      "image_sha256": "befe408c56778a00b9c125e5755f2359a3266e4fd9ce8913778aec8a92bd6ac2",
+      "agreement_score": 1.1545063717321669,
+      "mse768": 14.211436718101346,
+      "mse128": 84.91318900971113,
+      "mse640": 0.0710862597793969,
+      "cosine768": 0.1654639824569824,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_pelny_zbior\\NAJBLIZSZE_TRAIN.jpg",
+      "image_sha256": "befe408c56778a00b9c125e5755f2359a3266e4fd9ce8913778aec8a92bd6ac2",
+      "agreement_score": 1.1545063717321669,
+      "mse768": 14.211436718101346,
+      "mse128": 84.91318900971113,
+      "mse640": 0.0710862597793969,
+      "cosine768": 0.1654639824569824,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_cztery_szumy\\OBRAZ_2026100511_kontrola.png",
+      "image_sha256": "dd0e51a37dca3e22e6056a9d32932b2c1067db2418933d70c4ca96d4e52420ad",
+      "agreement_score": 0.7137505857260473,
+      "mse768": 14.338457949530865,
+      "mse128": 85.56190373235225,
+      "mse640": 0.09376879296658926,
+      "cosine768": 0.12194060259738597,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_cztery_szumy\\OBRAZ_2026100511_prowadzony.png",
+      "image_sha256": "dea0e414dadc985375d94b4af5b1c391d7b41f7b5b35a3546237c4bbac969f84",
+      "agreement_score": 0.7789000725500816,
+      "mse768": 14.319646952026037,
+      "mse128": 85.4246208112338,
+      "mse640": 0.09865218018448856,
+      "cosine768": 0.12983316096576905,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_cztery_szumy\\OBRAZ_2026100523_kontrola.png",
+      "image_sha256": "db885814dc20b6a4f5580a60a75bde131f481d9c26831cb02da7731f5fdcc179",
+      "agreement_score": 0.7336988787242649,
+      "mse768": 14.33269684911483,
+      "mse128": 85.78201067189403,
+      "mse640": 0.04283408455899285,
+      "cosine768": 0.12716752694696742,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_cztery_szumy\\OBRAZ_2026100523_prowadzony.png",
+      "image_sha256": "4946bf66891b8b0fd05298f66a3931fe028349b7e2fe64d77d15d33c2b3bbe33",
+      "agreement_score": 0.8904147360116799,
+      "mse768": 14.287477317519807,
+      "mse128": 85.5036236309024,
+      "mse640": 0.04424805484328039,
+      "cosine768": 0.14158463442408356,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_cztery_szumy\\OBRAZ_2026100537_kontrola.png",
+      "image_sha256": "a147a7892c7772ca9c8ff8eae07589837fb0342368ea75004cf217f06ccbbe6d",
+      "agreement_score": 0.9091209587962723,
+      "mse768": 14.282084508925772,
+      "mse128": 85.42370261280041,
+      "mse640": 0.0537608881508446,
+      "cosine768": 0.14055979853493933,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_cztery_szumy\\OBRAZ_2026100537_prowadzony.png",
+      "image_sha256": "dc58862c7a7b4ec36f715720bf7899ae016b771b20304a876a7e51f3d828a1ae",
+      "agreement_score": 0.917137534615442,
+      "mse768": 14.279773725469225,
+      "mse128": 85.40456992796273,
+      "mse640": 0.05481448497052019,
+      "cosine768": 0.14131778626043104,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_cztery_szumy\\OBRAZ_2026100549_kontrola.png",
+      "image_sha256": "4d494262e268206e206f17a11e9af42a44a2fcea7b6fd628205234382b5edeea",
+      "agreement_score": 0.7149411757209956,
+      "mse768": 14.338114072663247,
+      "mse128": 85.64011461703699,
+      "mse640": 0.07771396378850075,
+      "cosine768": 0.127828556360593,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_cztery_szumy\\OBRAZ_2026100549_prowadzony.png",
+      "image_sha256": "616b33393a9040dff4da3652269205adc17fd60602cf76819233e56478e0deda",
+      "agreement_score": 0.7862158305096845,
+      "mse768": 14.317535400970804,
+      "mse128": 85.50804712092977,
+      "mse640": 0.07943305697899822,
+      "cosine768": 0.13435787519645725,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_najblizszego\\OBRAZ_s20_eta0.000.png",
+      "image_sha256": "698651a31fba5196dc001cf3a12de37b8a5e098a15ae7953f71628f92aaf26f2",
+      "agreement_score": 1.0886804994957977,
+      "mse768": 14.230371151499,
+      "mse128": 84.99320512993259,
+      "mse640": 0.0778043558122859,
+      "cosine768": 0.1636937674734133,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_najblizszego\\OBRAZ_s20_eta0.006.png",
+      "image_sha256": "e5b064a89c9d93c6575e852ccb75e5caf16763c74087ac89ce2acaf0e72b95ab",
+      "agreement_score": 1.1422458056314033,
+      "mse768": 14.2149624441421,
+      "mse128": 84.92433104631965,
+      "mse640": 0.07308872370658419,
+      "cosine768": 0.16651154749021826,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_najblizszego\\OBRAZ_s20_eta0.018.png",
+      "image_sha256": "4977f2abf2a367d025cfb68f371e07eb8dd9c1d5ca9297a740ec47a9cd505ca8",
+      "agreement_score": 1.162365699346346,
+      "mse768": 14.209176870079185,
+      "mse128": 84.89289067118172,
+      "mse640": 0.07243410985867556,
+      "cosine768": 0.16769594241037852,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_najblizszego\\OBRAZ_s35_eta0.000.png",
+      "image_sha256": "2bd6e3da7ae335ce2fb761031f55db4ec05785824a12af09bccebf65a851f184",
+      "agreement_score": 1.015689476590631,
+      "mse768": 14.251381337173276,
+      "mse128": 85.07545978214861,
+      "mse640": 0.08656564817820474,
+      "cosine768": 0.1593913151203284,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_najblizszego\\OBRAZ_s35_eta0.006.png",
+      "image_sha256": "4ec32e779d0f317fec67812e8d1041b3c6da7c92b3f5d93f9a5cd7c02087ec8e",
+      "agreement_score": 1.1265650391294235,
+      "mse768": 14.219472341964467,
+      "mse128": 84.93852188871625,
+      "mse640": 0.07566243261411744,
+      "cosine768": 0.16635662136394322,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_najblizszego\\OBRAZ_s35_eta0.018.png",
+      "image_sha256": "7eb9e939e1c0e09171c83fcaba0cc26d48bef123808d16339de55fa0f0c0774e",
+      "agreement_score": 1.1656361846878571,
+      "mse768": 14.208236537256603,
+      "mse128": 84.88776116391699,
+      "mse640": 0.0723316119245227,
+      "cosine768": 0.16796903972283778,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_najblizszego\\OBRAZ_SD.png",
+      "image_sha256": "7eb9e939e1c0e09171c83fcaba0cc26d48bef123808d16339de55fa0f0c0774e",
+      "agreement_score": 1.1656361846878571,
+      "mse768": 14.208236537256603,
+      "mse128": 84.88776116391699,
+      "mse640": 0.0723316119245227,
+      "cosine768": 0.16796903972283778,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_najblizszego\\REKONSTRUKCJA_VAE.png",
+      "image_sha256": "66c318dd9305e89c41140952e0b0fbd55bb188ab6f6875dc341f3974bbe2f316",
+      "agreement_score": 1.141234761132115,
+      "mse768": 14.215253206019037,
+      "mse128": 84.94080747914761,
+      "mse640": 0.07014235139332092,
+      "cosine768": 0.16468391124854148,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_szumu\\OBRAZ_SD.png",
+      "image_sha256": "1e640ec311129b76637cd7c6d976b561018a88feee9ba560c7b13555433bc179",
+      "agreement_score": 0.7422653783751176,
+      "mse768": 14.33022318497549,
+      "mse128": 85.76304239792988,
+      "mse640": 0.043659342384607766,
+      "cosine768": 0.13149031028175412,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_szumu\\OBRAZ_SD_BEZ_PROWADZENIA.png",
+      "image_sha256": "f826215825cdeab938a347726fd9e164474072587e6cf19253c078792c9b64be",
+      "agreement_score": 0.8509078716979257,
+      "mse768": 14.29887007891443,
+      "mse128": 85.49727886174209,
+      "mse640": 0.05918832234889387,
+      "cosine768": 0.13926222224901358,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_szumu\\OBRAZ_SD_PO_DDIM.png",
+      "image_sha256": "c76b183f11535a51d57e051bf06182dae2f3e5f5f14138105bf55151d8430d2d",
+      "agreement_score": 0.6847372548339004,
+      "mse768": 14.346839114292816,
+      "mse128": 85.87086413558083,
+      "mse640": 0.04203411003522165,
+      "cosine768": 0.12282023257639212,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_sd_od_szumu\\OBRAZ_SD_W_TRAKCIE.png",
+      "image_sha256": "1e640ec311129b76637cd7c6d976b561018a88feee9ba560c7b13555433bc179",
+      "agreement_score": 0.7422653783751176,
+      "mse768": 14.33022318497549,
+      "mse128": 85.76304239792988,
+      "mse640": 0.043659342384607766,
+      "cosine768": 0.13149031028175412,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_obraz_najblizszy\\NAJBLIZSZE_TRAIN.png",
+      "image_sha256": "658d9a78cebfc2f00b0ef0cbbebe33f9385927d8e4b59e339cab05946aceed8c",
+      "agreement_score": 0.6990094523071977,
+      "mse768": 14.342715957335615,
+      "mse128": 85.85820297337865,
+      "mse640": 0.03961855412701187,
+      "cosine768": 0.12136779289702684,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_obraz_najblizszy\\NAJBLIZSZE_ZDJECIE.png",
+      "image_sha256": "658d9a78cebfc2f00b0ef0cbbebe33f9385927d8e4b59e339cab05946aceed8c",
+      "agreement_score": 0.6990094523071977,
+      "mse768": 14.342715957335615,
+      "mse128": 85.85820297337865,
+      "mse640": 0.03961855412701187,
+      "cosine768": 0.12136779289702684,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_obraz_najblizszy\\OBRAZ_ZAPYTANIA.png",
+      "image_sha256": "78a5f281154b9388883efd87dffe365f6bc471cb4de507131bc56dfc6bb665e9",
+      "agreement_score": 0.7422653783751176,
+      "mse768": 14.33022318497549,
+      "mse128": 85.76304239792988,
+      "mse640": 0.043659342384607766,
+      "cosine768": 0.13149031028175412,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent128_obraz_sd\\OBRAZ_SD.png",
+      "image_sha256": "8f5944d88f60df60ae4b0c354d1ff134711c41c5ba84148932c6072863002c4a",
+      "agreement_score": 0.6892109458749185,
+      "mse768": 14.34554662654706,
+      "mse128": 85.89349333045818,
+      "mse640": 0.035957285764835124,
+      "cosine768": 0.11834283400419472,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent128_obraz_sd\\OBRAZ_zrodlowy.png",
+      "image_sha256": "5c2eb46f4b11d4d00509cbc847b5262e9c18cb9807581e656fe5549a342d2ce9",
+      "agreement_score": 0.6866733020644111,
+      "mse768": 14.346279766481967,
+      "mse128": 85.90821850080327,
+      "mse640": 0.03389201961770988,
+      "cosine768": 0.11803281184263799,
+      "success90": false
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_latent768_najblizsze_zdjecie\\NAJBLIZSZE_ZDJECIE.jpg",
+      "image_sha256": "361278609563a270c359ac7ec230e2e1aaa11ed22d26d9a5576dc34962be0bab",
+      "agreement_score": 1.097012433321054,
+      "mse768": 14.227973821900456,
+      "mse128": 84.9345032943395,
+      "mse640": 0.08666792741264663,
+      "cosine768": 0.16664333901743705,
+      "success90": false
+    }
+  ],
+  "best_available": {
+    "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_zgodnosc90\\OBRAZ_nowy_prowadzony.png",
+    "image_sha256": "8b542cb98b2b93a0216ecaff585b0d073214830f4ff01b161a4afad958a63612",
+    "agreement_score": 1.1877960998098014,
+    "mse768": 14.201865918647929,
+    "mse128": 84.84775994463949,
+    "mse640": 0.07268711344961673,
+    "cosine768": 0.16942292349750107,
+    "success90": false,
+    "guided": true,
+    "seed": 2026100591,
+    "new_local_sd_generation": true
+  },
+  "variants": [
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_zgodnosc90\\OBRAZ_nowy_kontrola.png",
+      "image_sha256": "f55da54becfe57aca6abc88b72da2da6c9973660bd9bf7eaff2e4c5f449d32bd",
+      "agreement_score": 1.0960311667850497,
+      "mse768": 14.228256149142316,
+      "mse128": 84.97527990287196,
+      "mse640": 0.07885139839638382,
+      "cosine768": 0.16437205142073683,
+      "success90": false,
+      "guided": false,
+      "seed": 2026100591,
+      "new_local_sd_generation": true
+    },
+    {
+      "image": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_zgodnosc90\\OBRAZ_nowy_prowadzony.png",
+      "image_sha256": "8b542cb98b2b93a0216ecaff585b0d073214830f4ff01b161a4afad958a63612",
+      "agreement_score": 1.1877960998098014,
+      "mse768": 14.201865918647929,
+      "mse128": 84.84775994463949,
+      "mse640": 0.07268711344961673,
+      "cosine768": 0.16942292349750107,
+      "success90": false,
+      "guided": true,
+      "seed": 2026100591,
+      "new_local_sd_generation": true
+    }
+  ],
+  "history": [
+    {
+      "step": 29,
+      "raw_mse": 14.21799373626709,
+      "accepted": true
+    },
+    {
+      "step": 30,
+      "raw_mse": 14.217174530029297,
+      "accepted": true
+    },
+    {
+      "step": 31,
+      "raw_mse": 14.216078758239746,
+      "accepted": true
+    },
+    {
+      "step": 32,
+      "raw_mse": 14.214759826660156,
+      "accepted": true
+    },
+    {
+      "step": 33,
+      "raw_mse": 14.213369369506836,
+      "accepted": true
+    },
+    {
+      "step": 34,
+      "raw_mse": 14.211854934692383,
+      "accepted": true
+    },
+    {
+      "step": 35,
+      "raw_mse": 14.20999813079834,
+      "accepted": true
+    },
+    {
+      "step": 36,
+      "raw_mse": 14.207965850830078,
+      "accepted": true
+    },
+    {
+      "step": 37,
+      "raw_mse": 14.205368041992188,
+      "accepted": true
+    }
+  ],
+  "new_images_generated": 2,
+  "success90": false,
+  "weights_vit_unchanged": true,
+  "target_unchanged": true,
+  "threshold90_search_stopped": true,
+  "best_effort_generation_executed": true,
+  "pid": 29212,
+  "directional_cosine_is_distinct": true,
+  "limitation": "Best among evaluated images, not a global optimum. Cosine is directional similarity, not coordinate agreement. No guarantee of 90."
+}

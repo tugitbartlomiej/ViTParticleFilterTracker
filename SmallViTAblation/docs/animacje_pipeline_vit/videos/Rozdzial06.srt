@@ -1,0 +1,67 @@
+1
+00:00:00,100 --> 00:00:04,436
+Nowy pomiar zachowuje osobno wszystkie tokeny pełnej klatki.
+
+2
+00:00:04,436 --> 00:00:08,700
+Ten sam obraz trafia do sieci przy kolejnych checkpointach.
+
+3
+00:00:08,700 --> 00:00:11,518
+Maska i indeksy siatki pozostają stałe.
+
+4
+00:00:11,518 --> 00:00:18,817
+Dzięki temu różnica reprezentacji tego samego tokena opisuje zmianę odpowiedzi sieci podczas uczenia.
+
+5
+00:00:19,517 --> 00:00:26,011
+W lokalnym pomiarze dostępne były dwa stany krótkiej próby: krok sześćdziesiąt i sto dwadzieścia.
+
+6
+00:00:26,011 --> 00:00:29,425
+Pokazujemy rzeczywiste końce przemieszczeń tokenów.
+
+7
+00:00:29,425 --> 00:00:34,714
+Płynny ruch pomiędzy końcami służy wizualizacji i nie jest nagraną trajektorią.
+
+8
+00:00:34,714 --> 00:00:39,400
+Z dwóch punktów nie wyznaczymy wiarygodnie pamięci ani przyspieszenia.
+
+9
+00:00:40,100 --> 00:00:42,624
+Cała sieć może zmieniać się wspólnie.
+
+10
+00:00:42,624 --> 00:00:48,355
+Dlatego obok surowych przemieszczeń badamy ruch po odjęciu referencyjnej zmiany tła.
+
+11
+00:00:48,355 --> 00:00:52,517
+Przy nierównych odstępach dzielimy przez liczbę aktualizacji.
+
+12
+00:00:52,517 --> 00:00:58,317
+Na odłożonych obrazach referencja pochodzi wyłącznie z filmów użytych do dopasowania.
+
+13
+00:00:59,017 --> 00:01:04,084
+Docelowo potrzebujemy gęstej historii tych samych sześciuset tokenów.
+
+14
+00:01:04,084 --> 00:01:09,151
+Sto jeden stanów daje zapis co dziesięć aktualizacji do kroku tysiąc.
+
+15
+00:01:09,151 --> 00:01:13,044
+Zapis co każdą aktualizację daje tysiąc jeden stanów.
+
+16
+00:01:13,044 --> 00:01:16,569
+Osobny eksperyment gęstej historii ma taki plan.
+
+17
+00:01:16,569 --> 00:01:22,150
+Ten film nie deklaruje jego ukończenia ani nie zastępuje brakujących danych.

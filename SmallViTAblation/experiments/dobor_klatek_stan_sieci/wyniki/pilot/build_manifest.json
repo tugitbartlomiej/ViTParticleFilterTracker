@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "tasks": 5,
+  "training_seed": 42,
+  "selection_seed": 42,
+  "epochs": 10,
+  "budgets": {
+    "koopman_langevin": 1500,
+    "placebo": 1500,
+    "random": 1500,
+    "random_large": 3000,
+    "readout_loss": 1500
+  },
+  "shared_l0": 500,
+  "added": {
+    "koopman_langevin": 1000,
+    "placebo": 1000,
+    "random": 1000,
+    "random_large": 2500,
+    "readout_loss": 1000
+  },
+  "checkpoint_interval_epochs": 2,
+  "l0_sha256": "94d0234f57c6205ade54e6376d983af5e19fc80754093172ea294bcbbe7fa4cc",
+  "initialization": "coco_pretrained",
+  "primary_checkpoint_rule": "last_epoch",
+  "primary_metric": "mAP_0.5:0.95",
+  "evaluation_set": "val",
+  "test_evaluated": false,
+  "source_protocol_sha256": "da4d8655f109abddbf09c28c03e63ae90077c76d32ea1990d9996472712c02c1",
+  "source_profiles_sha256": "cfd0dca767465538a2c7b2988e867ab512f8d959352a9df7f3ef1c924e4c0e74",
+  "protocol_sha256": "926d68d0ba7f8baeb43c4f7c88ebee2aff73429abac2506f2a10c782602b37a0",
+  "profiles_sha256": "44a2fce81d2c5340a14e2a293a4a7956ec630ff10a14fc2847a3208a0b37fb23",
+  "queue_sha256": "2d03fd58e96649e5bad920b1b815c3ad1287bfd8dbed02b7eafa165add01fd33",
+  "code_sha256": "6b36bef82b576c88e31d81296b8f0ee0d1476a4649927fc2c35b2e931f328bbe",
+  "runs": {
+    "koopman_langevin": "stan_koopman_langevin_b1500_sel42_s42",
+    "placebo": "stan_placebo_b1500_sel42_s42",
+    "random": "stan_random_b1500_sel42_s42",
+    "random_large": "stan_random_large_b3000_sel42_s42",
+    "readout_loss": "stan_readout_loss_b1500_sel42_s42"
+  }
+}

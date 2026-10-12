@@ -1,0 +1,19 @@
+{
+  "rodzina": "maly_vit_kregoslup_trajektorii_wag",
+  "klasa": "badawcza",
+  "status": "zakonczone_pomiar_z_zapisanych_wag",
+  "created": "2026-10-05",
+  "pytanie": "Czy trajektoria wag małego ViT ma niskowymiarowy, trwały dryf (kręgosłup), który dałoby się przedłużać, i jak wygląda to samo dla latentu sond?",
+  "werdykt": "K1 spełnione, ale nierozstrzygające (pierwszy kierunek 0,886 wobec 0,81 dla błądzenia losowego). K2 niespełnione: mediana cosinusa sąsiednich okien 100 kroków 0,051 przy progu 0,5. Wagi błądzą losowo z pamięcią pędu i słabym trwałym dryfem (okna odległe: 0,10 dla 100 kroków, 0,16 dla 200; głowa 0,17 i 0,25). Latent sond drga wokół wolno płynącego środka: sąsiednie okna 100 kroków −0,36, trwały dryf 2-5 procent energii.",
+  "confirmatory": false,
+  "primary_replications": 1,
+  "training_new_vit": false,
+  "slurm": {},
+  "code_or_results_executed": true,
+  "plan": "PLAN.md",
+  "poprawka": "AMENDMENT_BLADZENIE_LOSOWE.md",
+  "raport": "WYNIKI.md",
+  "metryki": ["wyniki/KREGOSLUP.json", "wyniki/POROWNANIE_Z_BLADZENIEM.json", "wyniki/DRYF_OKNA.json"],
+  "dane": ["../maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/wagi", "../maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/dane/LATENT_SOND.npz", "wyniki/GRAMY_WAG.npz"],
+  "zastrzezenie": "Jedno ziarno, kroki 0-1000, zapis co 10 kroków."
+}

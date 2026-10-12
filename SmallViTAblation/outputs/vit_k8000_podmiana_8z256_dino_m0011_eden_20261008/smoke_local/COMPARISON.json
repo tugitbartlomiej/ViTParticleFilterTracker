@@ -1,0 +1,130 @@
+{
+  "state": "complete",
+  "design": "248 shared original images + 8 DINO replacements versus 256 original images",
+  "control": {
+    "probe_before": {
+      "step": 0,
+      "top_confidence": 0.8479677438735962,
+      "top_confidence_iou": 0.04959684982895851,
+      "best_iou": 0.3954974412918091,
+      "best_iou_confidence": 0.0059110685251653194,
+      "best_confidence_times_iou": 0.042056530714035034,
+      "top_box": [
+        218.1846923828125,
+        205.92779541015625,
+        348.9599609375,
+        247.5077362060547
+      ],
+      "best_iou_box": [
+        273.284423828125,
+        191.8916015625,
+        433.1698303222656,
+        228.08087158203125
+      ]
+    },
+    "probe_after": {
+      "step": 1,
+      "top_confidence": 0.8479677438735962,
+      "top_confidence_iou": 0.04841854050755501,
+      "best_iou": 0.39336591958999634,
+      "best_iou_confidence": 0.0059110685251653194,
+      "best_confidence_times_iou": 0.04105735942721367,
+      "top_box": [
+        218.1846923828125,
+        206.1306915283203,
+        349.5008239746094,
+        247.75193786621094
+      ],
+      "best_iou_box": [
+        274.0837707519531,
+        192.0794219970703,
+        433.61822509765625,
+        228.19078063964844
+      ]
+    },
+    "guard_ap50_before": 0.6627295989656765,
+    "guard_ap50_after": 0.6695380780419233,
+    "guard_ap50_gain": 0.006808479076246821
+  },
+  "combined_8": {
+    "removed_ids": [
+      "TR_0108_S1_P03/1022",
+      "TR_0112_S1_P03/501",
+      "TR_0094_S1_P03/2179",
+      "TR_0130_S1_P03/643",
+      "TR_0094_S1_P03/4105",
+      "TR_0003_S1_P03/6941",
+      "TR_0066_S1_P03/345",
+      "TR_0084_S1_P03/567"
+    ],
+    "inserted_ids": [
+      "TR_0126_S1_P03/1226",
+      "TR_0122_S1_P03/1480",
+      "TR_0122_S1_P03/1743",
+      "TR_0122_S1_P03/915",
+      "TR_0007_S1_P03/1165",
+      "TR_0007_S1_P03/1397",
+      "TR_0079_S1_P03/829",
+      "TR_0122_S1_P03/822"
+    ],
+    "probe_before": {
+      "step": 0,
+      "top_confidence": 0.8479677438735962,
+      "top_confidence_iou": 0.04959684982895851,
+      "best_iou": 0.3954974412918091,
+      "best_iou_confidence": 0.0059110685251653194,
+      "best_confidence_times_iou": 0.042056530714035034,
+      "top_box": [
+        218.1846923828125,
+        205.92779541015625,
+        348.9599609375,
+        247.5077362060547
+      ],
+      "best_iou_box": [
+        273.284423828125,
+        191.8916015625,
+        433.1698303222656,
+        228.08087158203125
+      ]
+    },
+    "probe_after": {
+      "step": 1,
+      "top_confidence": 0.851952850818634,
+      "top_confidence_iou": 0.04814911633729935,
+      "best_iou": 0.39566731452941895,
+      "best_iou_confidence": 0.0059110685251653194,
+      "best_confidence_times_iou": 0.04102077707648277,
+      "top_box": [
+        218.1846923828125,
+        206.1306915283203,
+        348.9599609375,
+        247.75193786621094
+      ],
+      "best_iou_box": [
+        274.0837707519531,
+        191.95469665527344,
+        433.1698303222656,
+        228.08087158203125
+      ]
+    },
+    "guard_ap50_before": 0.6627295989656765,
+    "guard_ap50_after": 0.6695803427690172,
+    "guard_ap50_gain": 0.00685074380334072
+  },
+  "effect_vs_control": {
+    "best_iou_difference_in_differences": 0.0023013949394226074,
+    "top_confidence_difference_in_differences": 0.003985106945037842,
+    "top_confidence_iou_difference_in_differences": -0.000269424170255661,
+    "guard_ap50_difference_in_differences": 4.226472709389917e-05
+  },
+  "checkpoints": {
+    "control": {
+      "path": "..\\..\\outputs\\vit_k8000_podmiana_8z256_dino_m0011_eden_20261008\\smoke_local\\control_256_original\\checkpoint_step1.pt",
+      "sha256": "ae976efba6b3bd9b477156071e83e4ff28648e02eacf66602b4db2bce82e21cf"
+    },
+    "combined_8": {
+      "path": "..\\..\\outputs\\vit_k8000_podmiana_8z256_dino_m0011_eden_20261008\\smoke_local\\combined_8_replacements\\checkpoint_step1.pt",
+      "sha256": "dff1d045f1f46e008b377d83edf56d63c05ab2c21ea499329c4ebc8e078f9588"
+    }
+  }
+}

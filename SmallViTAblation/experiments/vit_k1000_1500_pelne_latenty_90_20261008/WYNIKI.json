@@ -1,0 +1,58 @@
+{
+  "rodzina": "vit_k1000_1500_pelne_latenty_90_20261008",
+  "tag": "vit_k1000_1500_pelne_latenty_90_20261008",
+  "klasa": "badawcza",
+  "status": "complete",
+  "ziarno": 20261008,
+  "checkpoint_sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+  "manifest_sha256": "33caf6f005b3db0d091d6e9ba9a58cec141a859c66fcd7bd777d31e6fe1a80d7",
+  "pytanie": "Czy dla kazdej z dokladnych 1500 bazowych klatek K1000 istnieje pelny syntetyczny latent 600x768, ktory przy zamrozonym modelu osiaga jednoczesnie confidence >= 0.90 i IoU >= 0.90, oraz czy wspolne reguly A/B przenosza te korekty na naturalne latenty?",
+  "role": [
+    "BIEG",
+    "LATENT",
+    "TRAJEKTORIE",
+    "MANIFEST",
+    "RAPORT",
+    "MODEL"
+  ],
+  "kontrole": [
+    "smoke_1824869",
+    "fresh_load",
+    "frozen_weights_buffers",
+    "video_group_holdout"
+  ],
+  "wynik": {
+    "oracle": {
+      "count": 1500,
+      "both90": 1283,
+      "budget_exhausted": 217,
+      "AP50": 0.9750872937191527,
+      "AP75": 0.9403277569136225,
+      "mAP50_95": 0.8611310387769585
+    },
+    "baseline": {
+      "both90": 0,
+      "AP50": 0.626887827062123,
+      "AP75": 0.13109693084564492,
+      "mAP50_95": 0.24549623827449926
+    },
+    "mean_A_in_sample": {
+      "both90": 0,
+      "AP50": 0.6310228942518586,
+      "AP75": 0.11597954931809372,
+      "mAP50_95": 0.23941124887643364
+    },
+    "regime_B_in_sample": {
+      "both90": 0,
+      "AP50": 0.6229919801774797,
+      "AP75": 0.13113901787224835,
+      "mAP50_95": 0.24448114390528236
+    },
+    "mean_A_video_holdout_mAP50_95": 0.23909582029140494,
+    "regime_B_video_holdout_mAP50_95": 0.24289682963821774
+  },
+  "remote_root": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_1500_pelne_latenty_90_20261008",
+  "local_results": "outputs/vit_k1000_1500_pelne_latenty_90_20261008/eden_results",
+  "local_results_tree_sha256": "d179b873f883386aed86a23726f6da06ddcca1803c81d2a3477a91c8332e4131",
+  "uwagi": "Oracle jest dopasowaniem per-image na zbiorze uczacym i nie mierzy generalizacji ani osiagalnosci latentu z naturalnego obrazu. Wspolne reguly A i B nie pomogly wszystkim i obnizyly mAP50:95 wzgledem baseline."
+}

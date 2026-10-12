@@ -1,0 +1,56 @@
+{
+ "opis": "Mały ViT od zera, 35 000 klatek TRAIN Cataract-LMM Object Tracking, 21 epok, zapis co epokę i gęste kroki (README eksperymentu).",
+ "przepis": "trening.Uczen(47) + numpy default_rng(47), paczka 32, AdamW 5e-4 wd 0.05, rozgrzewka 300, stały lr, bf16, odbicie 0.5, jasność/kontrast ±20 %",
+ "klatki": 512,
+ "epoki": 2,
+ "krokow": 32,
+ "konce_epok": [
+  16,
+  32
+ ],
+ "kroki_zapisu": [
+  0,
+  5,
+  10,
+  15,
+  16,
+  20,
+  25,
+  30,
+  32
+ ],
+ "walidacja": 200,
+ "walidacja_usuniete_wspolne": 0,
+ "proba": true,
+ "manifest": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/wejscia/MANIFEST_35000.jsonl",
+ "manifest_sha256": "1c224daa64646802ec27b1cf14a5c0edb9f369866a5785503a509fe4df97daa8",
+ "kod_sha256": {
+  "dane.py": "7197fb666430a9583ac9326391209bb5c675e7631411932b14b25bd10546321a",
+  "model.py": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+  "obserwator_gesty.py": "ffe04ac0162a97c3ace67b8108901aee7164355a50655095918a192584c3200a",
+  "trening.py": "6e2ea34909ed4383d8480ec93d01bbb9595bec9affc21b45debedceb15080284",
+  "trening35000.py": "b8a243832558b2c11caa795372d9e5394b2bb54dd8001ad5f55ca6c719bff493"
+ },
+ "gpu": "NVIDIA H100 PCIe",
+ "torch": "2.9.1+cu128",
+ "start": "2026-10-09 21:37:07",
+ "obserwator": {
+  "sondy": 16,
+  "pelne": 4,
+  "gesto_do": 20,
+  "co_pozniej": 2,
+  "pelne_do": 10,
+  "pelne_co": 4,
+  "sondy_plik": "",
+  "zapisane_stany": 27,
+  "porcje_pca32": 4,
+  "porcje_pelne": 5,
+  "wylaczony": false
+ },
+ "koniec": "2026-10-09 21:37:53",
+ "czas_s": 17,
+ "ostatni_krok": 32,
+ "pominiete_geste_kroki": [],
+ "plikow_wag": 9,
+ "wolna_kwota_gb": 92.0
+}

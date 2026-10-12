@@ -1,0 +1,32 @@
+# Tezy, dowody i testy obalenia
+
+Data: 2026-10-08. Oznaczenia CPU, REPO, LIT, WNIOSEK i HIPOTEZA zgodne z raportem. R1–R24 odsyłają do bibliografii. Testy poza opisanymi pomiarami CPU są propozycjami.
+
+| ID | Teza do oceny | Dowód za lub przeciw | Status | Minimalny test obalenia lub decyzja |
+|---|---|---|---|---|
+| C01 | Historyczny pełny cel K1000 da się uzyskać zwykłym obrazem | CPU: granice norm2/fc1 7,017–10,237; maksimum after 51,353; 15 661 naruszeń; konieczny RMSE ≥2,50349 | Obalona dla tego celu i zamrożonych wag | Forward poniżej wyprowadzonej granicy wymagałby błędu założeń, hashów lub dowodu. Sprawdzić aparat zamiast zwiększać budżet SD |
+| C02 | Każdy nowy oracle pełnych 768D będzie nieosiągalny | Brak ukończonego wyniku nowej rodziny 1500 w migawce; ograniczenia mogą zmienić cele | Nieudowodniona | Jeden nowy osiągalny cel obala uniwersalne twierdzenie negatywne |
+| C03 | Ruch wszystkich 768 współrzędnych identyfikuje użyteczną korektę | CPU: ranga fc2 192, kernel 576; 74,647 procent energii historycznej delty w kernelu; lokalna ranga Jacobianu głowy ≤5 | Surowa odległość jest nieidentyfikowalnym wskaźnikiem zastępczym | Rozkład row/null, perturbacje o dopasowanej normie, wyjścia głowy i użyteczność |
+| C04 | Adam nie rusza kernelu, bo gradient detekcji należy do rowspace | CPU: syntetyczny pierwszy kierunek Adam ma 26,884 procent energii null; skalowanie współrzędnych zmienia podprzestrzeń | Obalona jako ogólna reguła | Oddzielić gradient, aktualizację i clamp. Kontrola SGD zachowującym rowspace |
+| C05 | Wysokie confidence i IoU oracle dowodzą semantyki | REPO: końcówka działa osobno na tokenach. LIT: R2, R11–R13 | Nie wynika z kryteriów | Geometria stałej komórki kontra ranking; FP/AP na nowych obrazach i specyficzność perturbacji |
+| C06 | Średnia delta per pozycja generalizuje | Możliwy wspólny bias, ale pozycja nie zapewnia zgodności semantycznej; przeciwne ruchy się znoszą | Hipoteza | Podział po filmach; świeże filmy dla detektora; kontrole zero, stały adapter i korektor z kontekstem |
+| C07 | Reżim oracle da się przypisać z naturalnego z0 i kontekstu | Plan rozdziela opisowy klaster oracle od przypisania bez GT | Hipoteza | Klasteryzacja tylko train; przypisanie holdout bez GT/delty; regresja bez klastrów |
+| C08 | Klastry opisują semantykę | Fazy LR, przełączenie celu i clamp mogą tworzyć podobne tory | Nieustalona | Zmiana schedule/optimizera; niezależne etykiety; kontrola przypisania z samego k/LR/fazy |
+| C09 | Trajektoria oracle opisuje trajektorię uczenia | Optymalizacja z przy stałych wagach i aktualizacja wag AdamW mają różne operatory przejścia | Transfer nieuzasadniony | Porównanie rzeczywistych trajektorii uczenia ze zgodnego pełnego stanu |
+| C10 | DMDc daje samodzielną prognozę H10 ze znanego schedule | REPO: zapisane przyszłe siły. LIT: R3, R15 | Nie | H10 bez przyszłych pomiarów albo gradienty ponownie liczone na własnych przewidywanych stanach |
+| C11 | 95–97 procent oznacza skuteczność detekcji | REPO: skill = 1−SSE/SSE_no-change; pooled representation lub kilka sond | Błędna interpretacja | SSE i baseline oraz RMSE, błąd widocznego ruchu, FP/AP |
+| C12 | 98,5 procent H10 przewiduje przyszłość ze znanych paczek | REPO: siły policzono w prawdziwych przyszłych stanach | Błędna interpretacja | Prognoza z bieżącego stanu/schedule bez przyszłych gradientów |
+| C13 | Około 99 procent wariancji POD zapewnia prognozę ruchu | REPO: 98,98 procent wariancji stanu kontra skill około 0,5003 dla projekcji przyrostu H1 | Obalona lokalnie | Rekonstrukcja odłożonych przyrostów zamiast wariancji stanów |
+| C14 | Dopasowanie z przez SD odtwarza głowę | WNIOSEK: nowy obraz zmienia residual r; oracle tail używał starego r | Nie | z, stan po bloku i wyjście zwykłego pełnego forwardu bez cache |
+| C15 | DINO cosine przewiduje użyteczność treningową | REPO: osobny K8000, 8 podmian, cosine efektu do celu 0,0214 i guard AP −0,0052. LIT: R18, R21 | Brak gwarancji; lokalny kontrprzykład | Podobieństwo kontra przewidywana/rzeczywista użyteczność AdamW; random/DINO/gradient |
+| C16 | Niezależne delty oracle są wspólnie osiągalne przez wagi | Jedna Delta_theta musi spełnić ograniczenia wszystkich sond | Hipoteza | Reszta projekcji JVP/VJP, zgodność sond i rzeczywiste krótkie aktualizacje |
+| C17 | Aktualizacje AdamW per przykład można sumować | Mianownik zależy od pełnej paczki i momentów; clipping oraz BN | Nie w ogólności | Aktualizacja paczki kontra suma wirtualnych aktualizacji per przykład |
+| C18 | Użyteczny ruch H1 ma trwały efekt | REPO: efekty przejściowe i feedback. LIT: R15, R16 | Nieustalona | Sparowane kontynuacje 1/5/10/25/50, wspólne przyszłe paczki/RNG, własne gradienty |
+| C19 | Cele z etykiet i inwersja są z zasady bezużyteczne | LIT: R8 LabelEnc, R9 DeepInversion, R7/R23 distillation | Fałszywe uogólnienie | Strata pomocnicza i transfer do studenta na nowych danych |
+| C20 | Porażka w 500 krokach dowodzi braku rozwiązania | Budżet optymalizacji nie jest dowodem nieistnienia | Nie | Niezależne granice analityczne lub inna optymalizacja; etykieta budget_exhausted |
+| C21 | Wszystkie 900 000 cząsteczek mają pełną trajektorię | Pierwsza migawka: 0/25/100/500 i panel 256. Końcowy odczyt: 0/100/500 i panel 128 | Nie dla gęstej dynamiki całości | Zakres twierdzenia zgodny z próbkowaniem; rzadkie milestone nie identyfikują częstotliwości |
+| C22 | Implementacja zachowuje kontrakt FP32 milestone | REPO: pierwsza migawka writer/test float16 przy PLAN FP32; końcowy writer już float32 | Niespójność pierwszej wersji; dtype writer poprawiony równolegle | Dtype względem planu, hash kodu i błąd kwantyzacji |
+| C23 | GroupKFold 1500 daje niezależny test detektora | K1000 trenowano na tych 1500; holdout korektora nie cofa historii detektora | Nie | Nowe filmy nieużyte przez K1000, generator i selector |
+| C24 | SD→DINO poprawia koszt uczenia | Brak porównania całego łańcucha z kosztem selekcji. LIT: R18, R24 | Hipoteza | Czas do tego samego AP przy równym budżecie kontra retrieval, gradient i random; koszt wszystkich etapów |
+
+Migawki i hashe: evidence/CPU_AUDIT.json. Bibliografia: [BIBLIOGRAFIA.md](F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/outputs/research_k1000_czasteczki_cel_sztuczny_20261008/BIBLIOGRAFIA.md). Porządek decyzji: bramki G0–G7 w [RAPORT.md](F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/outputs/research_k1000_czasteczki_cel_sztuczny_20261008/RAPORT.md).

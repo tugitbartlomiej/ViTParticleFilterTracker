@@ -1,0 +1,393 @@
+{
+  "schema_version": 2,
+  "status": "failed",
+  "steps": [],
+  "files": {},
+  "stats": {},
+  "point_count": 2400,
+  "image_count": 4,
+  "tokens_per_image": 600,
+  "time_axis": "training_checkpoint",
+  "baseline_step": 0,
+  "checkpoint_sha256": null,
+  "checkpoint_step": null,
+  "config": {
+    "checkpoint_dir": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\wagi",
+    "manifest": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_k1000_1500_pelne_latenty_90_20261008\\provenance\\MANIFEST_1500.jsonl",
+    "image_root": "",
+    "max_images": 4,
+    "start_step": 0,
+    "end_step": 10,
+    "checkpoint_stride": 10,
+    "batch_size": 4,
+    "device": "cuda",
+    "seed": 42,
+    "logs": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\dane",
+    "reference_checkpoint": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\assets\\MalyViT_K1000_SD_conditioning\\MODEL_VIT_K1000.pt"
+  },
+  "interpolation": false,
+  "full_latent_states_persisted": false,
+  "norm": "L2(z(step)-z(first selected checkpoint)) in full 768D",
+  "coordinates": "(z-mean) @ fixed_components; image-major then token-major",
+  "partial_policy": "Only complete selected-image frames listed; .part is an unpublished prefix",
+  "precision": "fp32, autocast disabled, TF32 disabled",
+  "inference_only": true,
+  "metric_columns": [
+    "confidence",
+    "iou",
+    "delta_l2",
+    "training_step",
+    "both90"
+  ],
+  "completed_images": 0,
+  "checkpoint_audits": [
+    {
+      "step": 0,
+      "weights_sha256_before": "611ee5b9411a8101fb6bed7b9fe29be53d681efcb88fe0481bd3890fa22cb722",
+      "weights_sha256_after": "611ee5b9411a8101fb6bed7b9fe29be53d681efcb88fe0481bd3890fa22cb722",
+      "weights_unchanged": true,
+      "all_parameters_frozen": true,
+      "eval": true
+    }
+  ],
+  "curves": {
+    "steps": [],
+    "confidence": [],
+    "iou": [],
+    "both90": [],
+    "real_step": [],
+    "label": "Full detector evaluation at saved training steps"
+  },
+  "checkpoints": [
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\wagi\\k0000.pt",
+      "step": 0,
+      "sha256": "25183e8e82cb44226764cff6da128093d5016161c7752205f2584cde364d9a9a",
+      "size_bytes": 11730541
+    },
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\wagi\\k0010.pt",
+      "step": 10,
+      "sha256": "429dc039c92e5921cf92207d69a9f1074e3e7c308501956d252228605c40474b",
+      "size_bytes": 11730541
+    }
+  ],
+  "reference_verification": {
+    "enabled": true,
+    "final_checkpoint": {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\wagi\\k1000.pt",
+      "step": 1000,
+      "sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+      "size_bytes": 11730541
+    },
+    "matches": true,
+    "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\assets\\MalyViT_K1000_SD_conditioning\\MODEL_VIT_K1000.pt",
+    "sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+    "step": 1000,
+    "checkpoint": {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\wagi\\k1000.pt",
+      "step": 1000,
+      "sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+      "size_bytes": 11730541
+    }
+  },
+  "training_logs": {
+    "series": {
+      "loss": {
+        "steps": [
+          50,
+          100,
+          150,
+          200,
+          250,
+          300,
+          350,
+          400,
+          450,
+          500,
+          550,
+          600,
+          650,
+          700,
+          750,
+          800,
+          850,
+          900,
+          950,
+          1000
+        ],
+        "values": [
+          3.374697208404541,
+          2.7919583320617676,
+          2.514981269836426,
+          2.6502480506896973,
+          2.0078580379486084,
+          2.136775493621826,
+          1.5031518936157227,
+          1.7817350625991821,
+          1.566049337387085,
+          1.3603236675262451,
+          1.9483919143676758,
+          1.5080158710479736,
+          1.3414218425750732,
+          1.1335277557373047,
+          1.3008790016174316,
+          0.9793845415115356,
+          1.0202878713607788,
+          1.0549136400222778,
+          1.0004044771194458,
+          0.8857511281967163
+        ]
+      },
+      "map50": {
+        "steps": [
+          0,
+          100,
+          200,
+          300,
+          400,
+          500,
+          600,
+          700,
+          800,
+          900,
+          1000
+        ],
+        "values": [
+          1.1433013971143072e-05,
+          0.024817735679946894,
+          0.05071965179384754,
+          0.09683056501649276,
+          0.1090123150346817,
+          0.24174225287973064,
+          0.25599315534181233,
+          0.3131398598051391,
+          0.31942459690953984,
+          0.34681446366667834,
+          0.30818196109253
+        ]
+      }
+    },
+    "files": [
+      {
+        "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\dane\\LOG.json",
+        "sha256": "bc308227c8b5119d9f2bef845d9d77ff0b3cad2c962fd43a241fc7af8042df44"
+      },
+      {
+        "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\dane\\OCENY.json",
+        "sha256": "ae78d8a20a314b822cc6fcc6c55689d22077a9277d54384ace6a14d4e98059c2"
+      }
+    ],
+    "warnings": []
+  },
+  "download_audit_sources": [
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\pobranie_wag_2026-10-01\\MANIFEST_LOKALNY_20261001_163035.json",
+      "sha256": "3bb54a558a839fcbaf25d3bb50fb5caa10c49b5f51fa7c2a33e02565ebc6cc8a"
+    },
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\pobranie_wag_2026-10-01\\MANIFEST_ZDALNY_2026-10-01.json",
+      "sha256": "30edfd1701bfa2b1f9210c9a8fb43128524c55d71120ea26cfb1a6fc77207060"
+    },
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_ruch_czastek_gesta_historia\\wyniki\\pelny\\pobranie_wag_2026-10-01\\WERYFIKACJA_STRUKTURY_2026-10-01.json",
+      "sha256": "e8bff2b0388e3c8f161a60daa73adede6f2561bb052e047c96cbe346587b4895"
+    }
+  ],
+  "image_names": [
+    "TR_0001_S1_P03_00000076.jpg",
+    "TR_0001_S1_P03_00000236.jpg",
+    "TR_0001_S1_P03_00000396.jpg",
+    "TR_0001_S1_P03_00000551.jpg"
+  ],
+  "images": [
+    {
+      "annotation_id": 0,
+      "bbox_xywh_source": [
+        336.0,
+        273.0,
+        180.0,
+        17.0
+      ],
+      "bbox_xyxy_480": [
+        224.0,
+        182.0,
+        344.0,
+        193.33333333333331
+      ],
+      "bbox_xyxy_480_campaign_legacy": [
+        224.0,
+        182.0,
+        344.0,
+        193.33333333333331
+      ],
+      "frame_id": "cataract_lmm/tracking/TR_0001_S1_P03/00000076",
+      "image_id": 0,
+      "image_name": "TR_0001_S1_P03_00000076.jpg",
+      "image_sha256": "aa520ac1caf1817717f39e5b40fa9ab8d08916a9b624b336ea8d88a07771594a",
+      "index": 0,
+      "resize_scale_xy": [
+        0.6666666666666666,
+        0.6666666666666666
+      ],
+      "source_dimensions_verified_from_bytes": true,
+      "source_height": 480,
+      "source_width": 720
+    },
+    {
+      "annotation_id": 1,
+      "bbox_xywh_source": [
+        295.0,
+        247.0,
+        224.0,
+        30.0
+      ],
+      "bbox_xyxy_480": [
+        196.66666666666666,
+        164.66666666666666,
+        346.0,
+        184.66666666666666
+      ],
+      "bbox_xyxy_480_campaign_legacy": [
+        196.66666666666666,
+        164.66666666666666,
+        346.0,
+        184.66666666666666
+      ],
+      "frame_id": "cataract_lmm/tracking/TR_0001_S1_P03/00000236",
+      "image_id": 1,
+      "image_name": "TR_0001_S1_P03_00000236.jpg",
+      "image_sha256": "319d87bf1286674ac392ad0c507fabaf2e79271e35581c08af9c7e30300dd4aa",
+      "index": 1,
+      "resize_scale_xy": [
+        0.6666666666666666,
+        0.6666666666666666
+      ],
+      "source_dimensions_verified_from_bytes": true,
+      "source_height": 480,
+      "source_width": 720
+    },
+    {
+      "annotation_id": 2,
+      "bbox_xywh_source": [
+        295.0,
+        217.0,
+        234.0,
+        38.0
+      ],
+      "bbox_xyxy_480": [
+        196.66666666666666,
+        144.66666666666666,
+        352.66666666666663,
+        170.0
+      ],
+      "bbox_xyxy_480_campaign_legacy": [
+        196.66666666666666,
+        144.66666666666666,
+        352.66666666666663,
+        170.0
+      ],
+      "frame_id": "cataract_lmm/tracking/TR_0001_S1_P03/00000396",
+      "image_id": 2,
+      "image_name": "TR_0001_S1_P03_00000396.jpg",
+      "image_sha256": "1674581cbe4fb0609ba8412fb3a64995d2796834ff67c4d5d76babb041af5b97",
+      "index": 2,
+      "resize_scale_xy": [
+        0.6666666666666666,
+        0.6666666666666666
+      ],
+      "source_dimensions_verified_from_bytes": true,
+      "source_height": 480,
+      "source_width": 720
+    },
+    {
+      "annotation_id": 3,
+      "bbox_xywh_source": [
+        349.0,
+        213.0,
+        229.0,
+        47.0
+      ],
+      "bbox_xyxy_480": [
+        232.66666666666666,
+        142.0,
+        385.3333333333333,
+        173.33333333333331
+      ],
+      "bbox_xyxy_480_campaign_legacy": [
+        232.66666666666666,
+        142.0,
+        385.3333333333333,
+        173.33333333333331
+      ],
+      "frame_id": "cataract_lmm/tracking/TR_0001_S1_P03/00000551",
+      "image_id": 3,
+      "image_name": "TR_0001_S1_P03_00000551.jpg",
+      "image_sha256": "cfc8ac3b43c0f4fdcc39fb7deb69044c96bcfb3d2234f6fe68aadc23915eaba0",
+      "index": 3,
+      "resize_scale_xy": [
+        0.6666666666666666,
+        0.6666666666666666
+      ],
+      "source_dimensions_verified_from_bytes": true,
+      "source_height": 480,
+      "source_width": 720
+    }
+  ],
+  "resolved_image_paths": [
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\koopman_fastgan_petla\\local_inputs\\data\\images\\TR_0001_S1_P03_00000076.jpg",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\koopman_fastgan_petla\\local_inputs\\data\\images\\TR_0001_S1_P03_00000236.jpg",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\koopman_fastgan_petla\\local_inputs\\data\\images\\TR_0001_S1_P03_00000396.jpg",
+    "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\koopman_fastgan_petla\\local_inputs\\data\\images\\TR_0001_S1_P03_00000551.jpg"
+  ],
+  "device": "cuda:0",
+  "estimates": {
+    "baseline_temporary_bytes": 7372800,
+    "frame_count": 2,
+    "disk_bytes": 74597504,
+    "ram_bytes": 363003904,
+    "cuda_bytes": 268435456,
+    "batch_size": 4,
+    "full_latent_states_persisted": false,
+    "baseline_policy": "private .tmp float32 memmap, deleted on every exit"
+  },
+  "manifest_sha256": "33caf6f005b3db0d091d6e9ba9a58cec141a859c66fcd7bd777d31e6fe1a80d7",
+  "backend_sha256": "fb3026c6ebbf8d94e1af395a5ed7a3a64b06853b4c1bd77e9b210eeb5ddf8591",
+  "source_hashes": {
+    "model_snapshot": "1422336d4472db56ce5c89294e3ab8bf0b17ad7502af0876d9c7e564b2473c37",
+    "pelne_latenty": "aa888560aa4c15091f54b3a5061e85ac575ba3bc01e7df7919fc5b0de65deded",
+    "dane": "efba98869408a06afa86d9c8f4a474fdc7f9cba7f6b43fb11e416ceb2df1bd76"
+  },
+  "metric_steps": [
+    0,
+    10
+  ],
+  "observed_checkpoints_per_image": [
+    1,
+    1,
+    1,
+    1
+  ],
+  "current_step": 0,
+  "current_frame_completed_images": 4,
+  "pca_basis_sha256": "284d68b9961d7a5760129eaf830478699bae8e3cf5fcf3fd712d35fc70f35fb4",
+  "pca_file": {
+    "name": "initial_pca.npz",
+    "sha256": "7e49f5d0bdbc1854025dea11402de5143fb40578958e9df36d9947ff82d028e5"
+  },
+  "pca_fit": "uniform reservoir of first selected checkpoint tokens; no future states",
+  "pca_seed": 42,
+  "pca_sample_count": 2400,
+  "error": "OSError: [Errno 9] Bad file descriptor",
+  "metrics_file": {
+    "name": "metrics.npy",
+    "sha256": "a0a7c1e5ba328986cf568d35bdd613648d3b343ffac62c25cf1822a216cd675e",
+    "shape": [
+      4,
+      2,
+      5
+    ],
+    "dtype": "float64",
+    "unobserved_values": "NaN; see observed_checkpoints_per_image"
+  }
+}

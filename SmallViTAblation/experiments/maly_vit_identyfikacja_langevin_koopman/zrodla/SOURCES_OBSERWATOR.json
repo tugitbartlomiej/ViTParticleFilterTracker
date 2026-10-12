@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-01",
+  "scope": "EDMD fixed dictionary, learned Koopman AE, augmented memory observer, EKF/UKF and nonlinear identification. Only these two new literature files edited.",
+  "tools_used": ["paper-search CLI crossref,arxiv", "web search/open", "Undermind orientation/list_workspaces/lookup_papers_by_metadata/get_paper_info"],
+  "undermind": {
+    "callable": true,
+    "workspace_id": "40294fa6-c9a3-4469-9a61-d3eddeaee893",
+    "operations": "Metadata and abstracts only; no deep search, no PDF-reading agents, no manual PDF downloads, no remote files/folders created.",
+    "metadata_caution": "Undermind returned preprint/conference years 2014/2017/1967 for EDMD/Lusch/Bryson; bibliography uses journal years 2015/2018/1968 verified from primary publisher/institution records."
+  },
+  "sources": [
+    {
+      "id": 1, "title": "A Data-Driven Approximation of the Koopman Operator: Extending Dynamic Mode Decomposition",
+      "authors": ["Matthew O. Williams", "Ioannis G. Kevrekidis", "Clarence W. Rowley"], "year": 2015, "preprint_year": 2014,
+      "doi": "10.1007/s00332-015-9258-5", "url": "https://doi.org/10.1007/s00332-015-9258-5",
+      "content_url": "https://arxiv.org/abs/1408.4408", "primary_metadata_url": "https://pure.johnshopkins.edu/en/publications/a-datadriven-approximation-of-the-koopman-operator-extending-dyna/", "undermind_cite_key": "Wil14",
+      "verification": "Author abstract plus institutional metadata; paper-search Crossref confirms DOI and journal year. No full PDF audited.",
+      "supports": "Snapshot pairs and dictionary of observables; classical EDMD is not an autoencoder.",
+      "limits": "Not a proof of closure or observability for selected ViT features; no learned encoder/decoder required by classical EDMD."
+    },
+    {
+      "id": 2, "title": "Deep learning for universal linear embeddings of nonlinear dynamics",
+      "authors": ["Bethany Lusch", "J. Nathan Kutz", "Steven L. Brunton"], "year": 2018, "preprint_year": 2017,
+      "doi": "10.1038/s41467-018-07210-0", "url": "https://www.nature.com/articles/s41467-018-07210-0", "undermind_cite_key": "Lus17",
+      "verification": "Publisher full HTML read: architecture, reconstruction/linearity/prediction losses, continuous-spectrum auxiliary network. Abstract also in Undermind.",
+      "supports": "Jointly learned encoder, decoder and latent dynamics; dynamical losses beyond reconstruction; parameterized latent operator in continuous-spectrum case.",
+      "limits": "Examples do not establish exact global fixed-matrix linearization for ViT/AdamW. Learned AE and fixed-dictionary EDMD remain distinct."
+    },
+    {
+      "id": 3, "title": "Data-driven parameterization of the generalized Langevin equation",
+      "authors": ["Huan Lei", "Nathan A. Baker", "Xiantao Li"], "year": 2016,
+      "doi": "10.1073/pnas.1609587113", "url": "https://doi.org/10.1073/pnas.1609587113", "content_url": "https://arxiv.org/abs/1606.02596",
+      "verification": "Author abstract and article indexed equations verified in preceding literature operation; no new PDF downloaded or full proof audited.",
+      "supports": "Rational memory-kernel approximation and extended stochastic state; specified equilibrium-statistics/FDT setting.",
+      "limits": "State-space approximation is a design hypothesis for AdamW; no automatic thermal equilibrium, FDT or whiteness."
+    },
+    {
+      "id": 4, "title": "Estimation using sampled data containing sequentially correlated noise",
+      "authors": ["Arthur E. Bryson Jr.", "L. J. Henrikson"], "year": 1968, "conference_report_year": 1967,
+      "doi": "10.2514/3.29327", "url": "https://doi.org/10.2514/3.29327", "content_url": "https://ntrs.nasa.gov/citations/19680049568", "author_report_url": "https://ntrs.nasa.gov/api/citations/19670025416/downloads/19670025416.pdf", "undermind_cite_key": "Bry67",
+      "verification": "NASA indexed author abstract and journal-year metadata; Undermind DOI and abstract. Publisher open failed, NASA direct open later returned 403. No PDF downloaded.",
+      "supports": "Filtering/prediction/smoothing with sequentially correlated measurement noise; augmentation can be ill-conditioned.",
+      "limits": "Not an unqualified endorsement of augmentation; measurement noise result cannot be automatically called GLE process memory."
+    },
+    {
+      "id": 5, "title": "Unscented filtering and nonlinear estimation",
+      "authors": ["Simon J. Julier", "Jeffrey K. Uhlmann"], "year": 2004,
+      "doi": "10.1109/JPROC.2003.823141", "url": "https://doi.org/10.1109/JPROC.2003.823141", "archived_content_url": "https://www.cs.ubc.ca/~murphyk/Papers/Julier_Uhlmann_mar04.pdf", "undermind_cite_key": "Jul04",
+      "verification": "Publisher search-indexed abstract and introduction; paper-search Crossref and Undermind confirm DOI/authors. Direct IEEE open restricted; abstract unavailable in Undermind. No full PDF audited.",
+      "supports": "EKF limitations from linearization; UT propagates means/covariances through nonlinear maps.",
+      "limits": "No exact universal nonlinear posterior or guarantee of stable long rollouts; use as candidate local approximation."
+    },
+    {
+      "id": 6, "title": "Bayesian Filtering and Smoothing", "authors": ["Simo Särkkä", "Lennart Svensson"], "year": 2023, "edition": 2,
+      "doi": "10.1017/9781108917407", "url": "https://doi.org/10.1017/9781108917407", "primary_metadata_url": "https://research.aalto.fi/en/publications/bayesian-filtering-and-smoothing-3/", "ekf_chapter_doi": "10.1017/9781108917407.008",
+      "verification": "Institutional book description, bibliographic DOI and publisher table of contents/chapter metadata; chapter summaries unavailable. Chapters and proofs not fully read.",
+      "supports": "Methodological reference covering nonlinear filtering, smoothing and parameter estimation.",
+      "limits": "No attribution of a specific unexamined theorem to this book. Causal filtering-versus-future-smoothing rule in synthesis is a protocol requirement."
+    },
+    {
+      "id": 7, "title": "System identification of nonlinear state-space models",
+      "authors": ["Thomas B. Schön", "Adrian Wills", "Brett Ninness"], "year": 2011,
+      "doi": "10.1016/j.automatica.2010.10.013", "url": "https://www.sciencedirect.com/science/article/pii/S0005109810004279", "undermind_cite_key": "Sch11b",
+      "verification": "Publisher abstract, introduction and exposed conclusion checked; Undermind metadata confirms DOI, no abstract there. No full PDF audited.",
+      "supports": "ML/EM nonlinear state-space identification, particle smoothing for latent-state estimation, possibly non-Gaussian setting.",
+      "limits": "Training smoothing is distinct from causal forecast initialization; no future measurements allowed in the test filter."
+    }
+  ],
+  "project_inferences": [
+    "Augment Koopman drift with identified finite memory state; check observation availability and conditioning rather than assuming observability.",
+    "H-step residual r_(tau,H) may be incorporated only once tau+H <= current time; correcting from an unfinished H-step label leaks the future.",
+    "Overlapping H-step errors can be autocorrelated even without physical GLE memory.",
+    "Marginal rollout propagates posterior state/memory and future input distribution conditional on past and known policy; actual future batches are oracle only.",
+    "Historical image features must be built with causally available extractor/checkpoint and jointly modelled dependencies.",
+    "Gaussian process need not be white; FDT is not automatic for AdamW."
+  ]
+}

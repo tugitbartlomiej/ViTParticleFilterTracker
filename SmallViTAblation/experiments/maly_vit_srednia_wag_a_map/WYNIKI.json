@@ -1,0 +1,18 @@
+{
+  "rodzina": "maly_vit_srednia_wag_a_map",
+  "klasa": "badawcza",
+  "status": "zakonczone_ocena_zapisanych_wag",
+  "created": "2026-10-05",
+  "pytanie": "Czy mAP drga razem z wagami i czy uśrednienie zapisanych wag z ostatnich 50-200 kroków wygładza je i podnosi?",
+  "werdykt": "Tak. mAP surowych wag zmienia się o 0,041 między zapisami co 10 kroków (odchylenie wokół trendu 0,034, rozstęp w oknie 100 kroków 0,09-0,15). Wagi uśrednione z 100 kroków są lepsze od średniego mAP okna o 0,062-0,093 (5 z 5) i od końca okna w 4 z 5 chwil; w kroku 1000: 0,310 wobec 0,419. Na ziarnie 48 w krokach 1400-3000 średnia z 5 zapisów co 100 kroków jest lepsza od końca okna w 9 z 9 chwil, średnio o 0,054. K0 i K2 spełnione.",
+  "confirmatory": false,
+  "primary_replications": 2,
+  "training_new_vit": false,
+  "slurm": {"zrodlo_wag_s47": 1818732},
+  "code_or_results_executed": true,
+  "plan": "PLAN.md",
+  "raport": "WYNIKI.md",
+  "metryki": ["wyniki/SREDNIA_WAG.json", "wyniki/POZNA_FAZA_S48.json"],
+  "dane": ["../maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/wagi", "../maly_vit_rownanie_latentu/nagranie_s48_sily/wagi", "../maly_vit_od_zera/cache/wal3000.npy"],
+  "zastrzezenie": "Dwa ziarna, baza 1500 klatek bez dokładania, walidacja; uśrednianie po fakcie z zapisów. Nie mierzono, czy zysk z doboru klatek utrzymuje się na wagach uśrednionych."
+}

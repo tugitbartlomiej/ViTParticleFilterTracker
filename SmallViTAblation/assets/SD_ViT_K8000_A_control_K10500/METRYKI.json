@@ -1,0 +1,108 @@
+{
+  "source_best": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/outputs/vit_sd_k8000_ulepszenia_20261007/eden_kopia/wyniki/porownanie/A_control/BEST.json",
+  "source_local_test": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/outputs/vit_sd_k8000_ulepszenia_20261007/TEST_LOKALNY.json",
+  "checkpoint_step": 10500,
+  "criterion": "minimum validation film_mean.full_relative_mse",
+  "baseline_full_relative_mse": 0.6237350612878799,
+  "improvement_relative_percent": 16.63318067601045,
+  "validation": {
+    "films": 25,
+    "frame_count": 50,
+    "generation_count": 100,
+    "seeds": [
+      20261007,
+      20261008
+    ],
+    "film_mean": {
+      "condition_image_mean_absolute_change": 0.09279871551319957,
+      "condition_image_mse": 0.0181528429989703,
+      "cosine": 0.7133797606825829,
+      "full_mse": 0.1277739866450429,
+      "full_relative_mse": 0.5199880816042424,
+      "image_std": 0.2111798532307148,
+      "natural_detector_confidence": 0.6456742985546589,
+      "psnr": 10.066999887573974,
+      "reference_layout_iou_not_generated_ground_truth": 0.1717784491996281,
+      "relative_gain_vs_wrong_condition": 0.22836848727259743,
+      "roi_latent_mse": 0.1562227164953947,
+      "roi_relative_mse": 0.9762661969661712,
+      "ssim": 0.23910078182816505,
+      "vae_reconstruction_cosine": 0.9875790727138519,
+      "vae_reconstruction_full_mse": 0.006142714053858071,
+      "vae_reconstruction_full_relative_mse": 0.026226554522290824,
+      "vae_reconstruction_image_std": 0.2398577430844307,
+      "vae_reconstruction_psnr": 30.449869174511367,
+      "vae_reconstruction_roi_latent_mse": 0.007393554681912064,
+      "vae_reconstruction_roi_relative_mse": 0.04780212027952075,
+      "vae_reconstruction_ssim": 0.9443611764907837,
+      "wrong_condition_mse": 0.7113783085346221
+    }
+  },
+  "train_diagnostic": {
+    "films": 3,
+    "film_mean": {
+      "condition_image_mean_absolute_change": null,
+      "condition_image_mse": null,
+      "cosine": 0.7031145493189493,
+      "full_mse": 0.13328350273271403,
+      "full_relative_mse": 0.5386930480599403,
+      "image_std": 0.21009385958313942,
+      "natural_detector_confidence": 0.6740534330407778,
+      "psnr": 10.046904044232459,
+      "reference_layout_iou_not_generated_ground_truth": 0.2644871538504958,
+      "relative_gain_vs_wrong_condition": null,
+      "roi_latent_mse": 0.1598480138927698,
+      "roi_relative_mse": 1.0183990920583408,
+      "ssim": 0.195870457837979,
+      "vae_reconstruction_cosine": 0.9874449868996938,
+      "vae_reconstruction_full_mse": 0.006699963744419317,
+      "vae_reconstruction_full_relative_mse": 0.026730389955143135,
+      "vae_reconstruction_image_std": 0.23537355164686838,
+      "vae_reconstruction_psnr": 27.436199578840327,
+      "vae_reconstruction_roi_latent_mse": 0.007593376794829965,
+      "vae_reconstruction_roi_relative_mse": 0.047611068934202194,
+      "vae_reconstruction_ssim": 0.9091815054416656,
+      "wrong_condition_mse": null
+    },
+    "train_film_coverage": 0.9830508474576272
+  },
+  "local_test": {
+    "films": 2,
+    "frame_count": 2,
+    "generation_count": 4,
+    "seeds": [
+      20261007,
+      20261008
+    ],
+    "film_mean": {
+      "clipped_fraction": 0.0024342477845493704,
+      "condition_image_mse": 0.030225890688598156,
+      "cosine": 0.7356857508420944,
+      "full_mse": 0.13600269332528114,
+      "full_relative_mse": 0.4949198439717293,
+      "image_std": 0.20980415120720863,
+      "natural_detector_confidence": 0.7684940099716187,
+      "psnr": 9.833051392003243,
+      "reference_layout_iou_not_generated_ground_truth": 0.10030726343393326,
+      "relative_gain_vs_wrong_condition": 0.40998973175606584,
+      "roi_latent_mse": 0.19895664975047112,
+      "roi_relative_mse": 1.091135174036026,
+      "ssim": 0.2482605315744877,
+      "wrong_condition_mse": 0.8309992551803589
+    },
+    "all_values_finite": true,
+    "fresh_strict_load": true,
+    "natural_forward_without_activation_override": true,
+    "artificial_test": {
+      "state": "not_run",
+      "reason": "No verified artificial K8000 target. Old K1000/K6402 targets were not substituted."
+    }
+  },
+  "interpretation": [
+    "Cosine is not percentage value agreement.",
+    "ROI denotes spatial tokens overlapping the source tool box, not J128.",
+    "Generated-image IoU is source-layout agreement, not detection accuracy against independently labeled generated images.",
+    "Local test reuses validation films; it is not an independent generalization estimate.",
+    "Visual inspection found artifacts and incorrect tool geometry; quality threshold was not met."
+  ]
+}

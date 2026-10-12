@@ -1,0 +1,58 @@
+{
+  "created_at_utc": "2026-10-01T15:44:19.085437+00:00",
+  "status": "passed",
+  "hardware_before": {
+    "free_disk_bytes": 1354047488,
+    "ram_available_bytes": 16755527680,
+    "gpu_free_bytes": 7442792448,
+    "gpu_total_bytes": 8589279232,
+    "gpu_name": "NVIDIA GeForce RTX 3070"
+  },
+  "gpu_peak_allocated_bytes": 223358976,
+  "process_peak_working_set_bytes": 1437884416,
+  "versions": {
+    "python": "3.13.6",
+    "torch": "2.10.0+cu126",
+    "timm": "1.0.24",
+    "numpy": "2.2.6"
+  },
+  "recorded_versions": {
+    "python": "3.11.15",
+    "torch": "2.9.1+cu128",
+    "numpy": "2.3.5"
+  },
+  "model_sha256": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+  "input_normalization": "RGB uint8 /255 then model ImageNet mean/std",
+  "measurement": "last block mlp.act GELU, eval, no_grad, fp32, autocast off, TF32 off",
+  "training_performed": false,
+  "results": [
+    {
+      "step": 0,
+      "checkpoint_sha256": "25183e8e82cb44226764cff6da128093d5016161c7752205f2584cde364d9a9a",
+      "shape": [
+        12,
+        600,
+        768
+      ],
+      "repeated_forward_max_abs_error": 0.0,
+      "reference_relative_l2_error": 8.681203244288595e-06,
+      "reference_max_abs_error": 2.104043960571289e-05,
+      "buffers_unchanged": true,
+      "passed": true
+    },
+    {
+      "step": 1000,
+      "checkpoint_sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+      "shape": [
+        12,
+        600,
+        768
+      ],
+      "repeated_forward_max_abs_error": 0.0,
+      "reference_relative_l2_error": 6.3145724143868016e-06,
+      "reference_max_abs_error": 9.465217590332031e-05,
+      "buffers_unchanged": true,
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "status": "complete",
+  "elapsed_seconds": 18.010210752487183,
+  "job_id": "1825150",
+  "libraries": {
+    "pydmd": {
+      "version": "2025.8.1",
+      "source": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/.venv/lib/python3.11/site-packages/pydmd/dmdc.py",
+      "sha256": "12d7935cf2192f400f87e8f2dabc6096749463d0851d0ded14434d57ba40dafe"
+    },
+    "deeptime": {
+      "version": "0.4.5",
+      "source": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/.venv/lib/python3.11/site-packages/deeptime/decomposition/_vamp.py",
+      "sha256": "4872c21c506e97d02f43e9490c810954b942f1f70fb039b4128ccd3c635fcd5b"
+    },
+    "numpy": {
+      "version": "2.2.6"
+    },
+    "scipy": {
+      "version": "1.15.3"
+    },
+    "scikit-learn": {
+      "version": "1.6.1"
+    }
+  },
+  "source_hashes": {
+    "temporal_core.py": "ace40b2635a0973de5c4aa18f0b50f317993281ae0e220266b07dde4e1d7fd2a",
+    "analiza_temporalna.py": "21b104c72974e3055798d630fc30c074e9cdeb913202b9e0875453f6d7fbff17",
+    "test_pipeline.py": "699beec9199f3e410051319f40567f3d769d98558febf7a1425e7fd830685e07"
+  },
+  "arguments": {
+    "old_root": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_1500_pelne_latenty_90_20261008",
+    "panel_manifest": null,
+    "output": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/results/smoke128_v2",
+    "rank": 16,
+    "max_windows": 80
+  },
+  "train_only_fit_images": [
+    0,
+    100,
+    400,
+    600,
+    700,
+    899,
+    999,
+    1099,
+    1299
+  ],
+  "video_disjoint": true,
+  "input_panel_images": 16,
+  "input_trajectories": 128,
+  "transitions": 64000,
+  "max_adam_alignment_abs": 9.49977486897069e-07,
+  "analytical_rank": 16,
+  "metric_dimensions": 768,
+  "max_windows_per_trajectory_phase_horizon": 80,
+  "scope": "Selected full768 control trajectories, not all900000. Displacement PCA fitted only train. Residual outside basis held at rollout start. Phases and future controls are oracle information. No detection evaluation/corrector export.",
+  "knownB_interpretation": "B=I after projecting analytically clamped Adam update from pre-step g,m,v,lr and true current state; teacher-forced integration upper baseline, not identified causality or deployable predictor."
+}

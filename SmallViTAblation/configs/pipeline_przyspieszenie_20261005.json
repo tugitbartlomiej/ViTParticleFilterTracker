@@ -1,0 +1,115 @@
+{
+  "schema": "research_recommendation_v1",
+  "status": "proposed_not_launched_not_wired_to_training_loader",
+  "date": "2026-10-05",
+  "objective": "Minimize complete wall-clock time to fixed detector quality, including selection and preparation",
+  "decision": {
+    "operational_default": "R0_random_real_frames",
+    "first_candidate": "R1_loss_diversity",
+    "empirically_proven_global_optimum": false,
+    "change_existing_background_runs": false
+  },
+  "model": {
+    "family": "SmallViT_existing_detector",
+    "reference_checkpoint": "original_k1000_with_authentic_AdamW",
+    "use_one_image_Lorentz_checkpoint_for_general_training": false,
+    "input_width": 480,
+    "input_height": 320,
+    "batch_size": 32,
+    "optimizer": "resume_AdamW_with_moments_step_scheduler_and_RNG",
+    "learning_rate": "inherit_reference_recipe_do_not_reset_per_round",
+    "precision": "inherit_verified_training_recipe; fixed_float32_for_latent_diagnostics"
+  },
+  "data": {
+    "allowed_candidates": "training_split_only_with_verified_GT",
+    "split_group": "patient_if_verified_else_film_with_disclosed_limitation",
+    "roles": ["train", "selection_control", "validation", "locked_test"],
+    "historical_400_images_role": "development_diagnostics",
+    "working_set_size_initial": 1500,
+    "refresh_interval_updates": 256,
+    "replacement_fraction_initial": 0.25,
+    "candidate_pool_max": 2048,
+    "log_unique_images_exposures_and_source_coverage": true,
+    "cache_key": ["encoder_hash", "preprocessing_hash", "manifest_hash", "split", "feature_layer"],
+    "dense_600x768_cache_scope": "probes_and_shortlist_only"
+  },
+  "profiles": {
+    "R0_random_real_frames": {
+      "sampler": "random_without_exact_duplicates_with_renewed_pool",
+      "require_original_random_sampler_control_for_film_balancing": true,
+      "sd": false,
+      "cav_intervention": false,
+      "latent_target_objective": false,
+      "langevin": false
+    },
+    "R1_loss_diversity": {
+      "batch_random": 16,
+      "batch_hard_valid_labels": 8,
+      "batch_underrepresented_diverse": 8,
+      "max_per_film_when_feasible": 2,
+      "log_cap_relaxation": true,
+      "selection_score": "detector_loss_localization_error_coverage_not_confidence_alone",
+      "sd": false,
+      "langevin": false,
+      "target_total_extra_cost_fraction": 0.1
+    },
+    "R2_real_anchor_retrieval": {
+      "base": "R1_loss_diversity",
+      "query": "real_training_anchor",
+      "index": "existing_immutable_encoder_cache",
+      "rerank_current_detector_on_shortlist": true,
+      "sd": false
+    },
+    "R3_local_batch_control": {
+      "base": "R2_real_anchor_retrieval",
+      "requires_prior_gate": true,
+      "candidate_batches_max": 4,
+      "control_probe_images_initial": 64,
+      "control_probe_min_films_when_available": 16,
+      "forecast_horizon_updates": 1,
+      "longer_horizons_require_validation": [5, 10],
+      "objective": "predicted_control_detection_loss_reduction_per_measured_cost",
+      "latent_distance_weight_initial": 0,
+      "cav_used": false,
+      "future_actual_gradients_allowed": false,
+      "preserve_AdamW_BN_clipping_decay_semantics": true,
+      "compare_exact_virtual_optimizer_step": true,
+      "compare_equal_wall_time_random_training": true
+    },
+    "R4_sd_queries": {
+      "base": "R3_local_batch_control",
+      "enabled_by_default": false,
+      "requires_natural_latent_inversion_and_same_noise_unguided_control": true,
+      "requires_additional_gain_over_same_anchors_without_SD": true,
+      "train_on": "retrieved_real_images_with_their_own_GT",
+      "state_for_functional_inversion": "post_residual_or_residual_plus_MLP",
+      "automatic_transfer_source_bbox_to_synthetic": false
+    }
+  },
+  "evaluation": {
+    "primary_quality": "AP50_95",
+    "secondary_quality": "AP50",
+    "quality_threshold": null,
+    "threshold_rule": "set_on_separate_baseline_calibration_and_lock_before_comparison",
+    "validation_interval_updates_initial": 100,
+    "early_stop_patience_evaluations_initial": 5,
+    "early_stop_min_updates_initial": 500,
+    "early_stop_min_delta_AP_initial": 0.002,
+    "save": ["best", "last", "full_restart_state"],
+    "pilot_paired_seeds": 3,
+    "confirmation_paired_seeds_min": 5,
+    "budgets": ["same_optimizer_updates", "same_complete_wall_time"],
+    "proposed_min_time_reduction": 0.2,
+    "proposed_max_final_AP50_95_loss": 0.005,
+    "never_reached_threshold": "report_censored_at_budget_do_not_drop_from_statistics",
+    "independent_final_test_used_once": true
+  },
+  "timing": {
+    "clock": "perf_counter_with_validated_CUDA_timing_boundaries",
+    "stages": ["preparation", "feature_extraction", "index_build", "selection", "generation", "forecast", "training", "evaluation", "io"],
+    "report_cold_and_amortized_cost": true,
+    "amortization_count": "actual_number_of_compatible_reuses",
+    "benchmark_gpu_concurrency": 1,
+    "do_not_stop_other_running_jobs": true
+  }
+}

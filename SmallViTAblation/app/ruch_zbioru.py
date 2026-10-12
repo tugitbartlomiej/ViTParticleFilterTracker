@@ -35,6 +35,26 @@ EXPERIMENT = ROOT / 'experiments/vit_k1000_1500_pelne_latenty_90_20261008'
 DEFAULT_CHECKPOINT = ROOT / 'assets/MalyViT_K1000_SD_conditioning/MODEL_VIT_K1000.pt'
 DEFAULT_MANIFEST = ROOT / 'outputs/vit_k1000_1500_pelne_latenty_90_20261008/provenance/MANIFEST_1500.jsonl'
 DEFAULT_TIMELINE = ROOT / 'outputs/vit_k1000_taniec_czasteczek_20261009/data/dense'
+OSIE_SZKLA_ROOT = ROOT / 'outputs/ruch_czasteczek_gui'
+
+
+def osie_szkla(root=None):
+    """Osie czasu „układu szkła” (foldery z „szklo” w nazwie i manifest.json): lista (opis, ścieżka), najnowsze pierwsze.
+    Układ względem klatki z gęstego zapisu (eksport_osi_szkla.py) i symulacje szkła koloidalnego (model_szkla.py)."""
+    root = Path(root) if root is not None else OSIE_SZKLA_ROOT
+    out = []
+    if not root.is_dir():
+        return out
+    for p in sorted(root.glob('*szklo*'), reverse=True):
+        if not (p / 'manifest.json').is_file():
+            continue
+        try:
+            u = json.loads((p / 'manifest.json').read_text(encoding='utf-8')).get('uklad') or {}
+        except (OSError, ValueError):
+            u = {}
+        opis = u.get('nazwa') or u.get('model') or '' if isinstance(u, dict) else ''
+        out.append((f'{p.name} — {opis}' if opis else p.name, p))
+    return out
 OUTPUT_ROOT = ROOT / 'outputs/ruch_czasteczek_gui'
 _COCO = ROOT / 'experiments/maly_vit_od_zera/eden/wejscia/pretrain/train/_annotations.coco.json'
 _IMAGE_ROOT = ROOT / 'experiments/koopman_fastgan_petla/local_inputs/data/images'

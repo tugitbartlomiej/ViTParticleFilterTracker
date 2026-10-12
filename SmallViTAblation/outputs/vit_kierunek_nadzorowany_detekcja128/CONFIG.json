@@ -1,0 +1,38 @@
+{
+  "seeds": [
+    101,
+    202,
+    303
+  ],
+  "learning_rates": [
+    0.01,
+    0.05
+  ],
+  "steps": 200,
+  "batch": 8,
+  "validate_every": 50,
+  "regularization": 0.001,
+  "delta_norm_limit": 5.0,
+  "scales": [
+    -2.0,
+    -1.0,
+    -0.5,
+    -0.25,
+    0.0,
+    0.25,
+    0.5,
+    1.0,
+    2.0
+  ],
+  "random_seeds": [
+    11,
+    22,
+    33
+  ],
+  "bootstrap_resamples": 1000,
+  "bootstrap_seed": 991,
+  "checkpoint_step": 1000,
+  "intervention": "postGELU768 final MLP: native delta[128] broadcast all 600 tokens; residual unchanged",
+  "selection": "checkpoint and LR: validation detection loss; signed scale and final candidate: validation AP50:95, AP50, then loss; exact tie prefers zero scale",
+  "test_used_for_selection": false
+}

@@ -1,0 +1,18 @@
+{
+  "rodzina": "maly_vit_gesta_historia_paczka",
+  "klasa": "badawcza",
+  "status": "ramiona_128_320_zakonczone",
+  "created": "2026-10-03",
+  "pytanie": "Czy większa paczka zmniejsza losowe pchnięcia latentu tak, że prognoza z historii na 10 kroków przekracza 85 procent?",
+  "werdykt": "Nie. Paczka 32/128/320: prognoza na 10 kroków 0,20/0,24/0,24, krok względny bez zmian, autokorelacja przyrostów spada 0,71/0,50/0,31. Drgania pochodzą z optymalizatora AdamW, nie z losowania paczki.",
+  "confirmatory": false,
+  "primary_replications": 1,
+  "training_new_vit": true,
+  "slurm": {"proba_320": 1820332, "pelny_320": 1820333, "pelny_128": 1820334},
+  "code_or_results_executed": true,
+  "plan": "PLAN.md",
+  "raport": "WYNIKI.md",
+  "metryki": ["wyniki/porownanie/POROWNANIE.json", "wyniki/porownanie_p128/POROWNANIE.json"],
+  "dane": ["wyniki/pelny_p320/dane/LATENT_GESTY.npy", "wyniki/pelny_p128/dane/LATENT_GESTY.npy"],
+  "nastepne_ramie_przygotowane": "--beta1 (pamięć pędu AdamW), nieuruchomione, czeka na zgodę"
+}

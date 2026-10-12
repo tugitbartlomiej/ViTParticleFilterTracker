@@ -1,0 +1,121 @@
+{
+  "sympy_version": "1.14.0",
+  "python_version": "3.13.6",
+  "matrix_elimination": {
+    "dimensions": {
+      "x": 2,
+      "h": 2,
+      "u": 2
+    },
+    "all_entries_independent_symbolic": true,
+    "checks": [
+      {
+        "k": 0,
+        "split_elimination_exact": true,
+        "max_input_index_in_memory": -1,
+        "current_input_index_in_direct_term": 0
+      },
+      {
+        "k": 1,
+        "split_elimination_exact": true,
+        "max_input_index_in_memory": 0,
+        "current_input_index_in_direct_term": 1
+      },
+      {
+        "k": 2,
+        "split_elimination_exact": true,
+        "max_input_index_in_memory": 1,
+        "current_input_index_in_direct_term": 2
+      },
+      {
+        "k": 3,
+        "split_elimination_exact": true,
+        "max_input_index_in_memory": 2,
+        "current_input_index_in_direct_term": 3
+      }
+    ],
+    "changing_u_t_preserves_memory_t": true,
+    "changing_u_t_changes_x_next_by": "D*delta_u_t; generally nonzero"
+  },
+  "joint_block_ridge": {
+    "Z_shape": [
+      10,
+      6
+    ],
+    "Y_shape": [
+      10,
+      2
+    ],
+    "feature_rank": 6,
+    "blocks": [
+      {
+        "name": "drift",
+        "columns_halfopen": [
+          0,
+          2
+        ],
+        "penalty": 1
+      },
+      {
+        "name": "recent_input",
+        "columns_halfopen": [
+          2,
+          3
+        ],
+        "penalty": 4
+      },
+      {
+        "name": "state_memory",
+        "columns_halfopen": [
+          3,
+          5
+        ],
+        "penalty": 9
+      },
+      {
+        "name": "older_input_memory",
+        "columns_halfopen": [
+          5,
+          6
+        ],
+        "penalty": 16
+      }
+    ],
+    "normal_equation_residual_zero": true,
+    "objective_gradient_zero": true,
+    "column_scaling_identity_exact": true,
+    "independent_block_fits_differ": true,
+    "largest_used_input_index": "t-1",
+    "target_index": "t+1",
+    "claim": "algebraic identity for exact synthetic design; no forecast validity or Koopman closure claim"
+  },
+  "symbolic_block_ridge": {
+    "symbolic_generic_two_blocks": true,
+    "normal_equation_residual_zero": true,
+    "condition": "det(Gram+Lambda) != 0; positive penalties suffice for Gram=Z.T*Z",
+    "determinant": "g11*g22 + g11*l2 - g12**2 + g22*l1 + l1*l2"
+  },
+  "lean_version": {
+    "command": [
+      "C:\\Users\\bartl\\.elan\\toolchains\\leanprover--lean4---v4.28.0\\bin\\lean.exe",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout": "Lean (version 4.28.0, x86_64-w64-windows-gnu, commit 7e01a1bf5c70fc6167d49c345d3bf80596e9a79b, Release)\n",
+    "stderr": ""
+  },
+  "lean": {
+    "command": [
+      "C:\\Users\\bartl\\.elan\\toolchains\\leanprover--lean4---v4.28.0\\bin\\lean.exe",
+      "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_identyfikacja_langevin_koopman\\matematyka\\ControlledMemory.lean"
+    ],
+    "exit_code": 0,
+    "stdout": "'ControlledMemory.memory_add' depends on axioms: [propext]\n'ControlledMemory.memory_prefix' does not depend on any axioms\n'ControlledMemory.hidden_representation' depends on axioms: [propext]\n'ControlledMemory.propagated_power' depends on axioms: [propext]\n'ControlledMemory.controlled_elimination' depends on axioms: [propext]\n'ControlledMemory.input_memory_causal' does not depend on any axioms\n'ControlledMemory.kernel_three' depends on axioms: [propext]\n",
+    "stderr": ""
+  },
+  "source_sha256": {
+    "ControlledMemory.lean": "389fabcf3e4a0fb2b9d58e46a7cbcc6f3c13f2e769a226b2cf823077c65fcafe",
+    "controlled_verify.py": "4ae3b098942372c1df4d8a0db9cbe41a85363fbdb435bf93985d302cb5161d75"
+  },
+  "all_checks_passed": true
+}

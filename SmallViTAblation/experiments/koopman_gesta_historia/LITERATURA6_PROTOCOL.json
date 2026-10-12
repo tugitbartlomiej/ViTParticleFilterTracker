@@ -1,0 +1,56 @@
+{
+  "created": "2026-09-24",
+  "purpose": "Diagnostic literature-informed audit; historical holdout already inspected, not independent confirmatory study",
+  "full_state": [
+    576,
+    384
+  ],
+  "compression": false,
+  "window_intervals": 4,
+  "lag_optimizer_updates": 5,
+  "calibration_origins": [
+    105,
+    145,
+    185
+  ],
+  "evaluation_origins": [
+    210,
+    230,
+    250,
+    270,
+    290,
+    310,
+    330,
+    350
+  ],
+  "horizons_snapshots": [
+    1,
+    4,
+    20
+  ],
+  "relative_ridges": [
+    0.00001,
+    0.001,
+    0.1
+  ],
+  "inner_groups": "first six sorted original fit groups train, last two internal validation",
+  "outer_groups": "unchanged original four holdout groups",
+  "method": "Full-state affine residual with delay: state [z, z-z_previous], baseline z+last_increment, learn residual acceleration. Block RMS scaling invertible, no PCA.",
+  "selection": "mean normalized one-step squared error on internal validation groups and calibration origins only; tie larger ridge; no final holdout tuning",
+  "baselines": [
+    "persistence",
+    "last_increment",
+    "past_mean_increment",
+    "previous_K"
+  ],
+  "sources": [
+    "Lu20e",
+    "Tu13",
+    "Wil14",
+    "Dog20",
+    "Oua23",
+    "Has22"
+  ],
+  "no_detector_training": true,
+  "no_generator_training": true
+}

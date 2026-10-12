@@ -1,0 +1,72 @@
+{
+  "1": {
+    "langevin": {
+      "kind": "langevin",
+      "L": 2,
+      "dt": 1,
+      "ridge": 1,
+      "parameter_count": 49280
+    },
+    "koopman_stan": {
+      "kind": "koopman",
+      "dt": 1,
+      "ridge": 0.01,
+      "prior": "zero",
+      "native_vs_scaled_error": 1.5543122344752192e-15,
+      "spectral_radius": 0.9993572609756689,
+      "parameter_count": 16512
+    },
+    "koopman_przyrost": {
+      "kind": "koopman",
+      "dt": 1,
+      "ridge": 10,
+      "prior": "identity",
+      "native_vs_scaled_error": 1.3322676295501878e-15,
+      "spectral_radius": 1.0008356579344195,
+      "parameter_count": 16512
+    },
+    "velocity": {
+      "kind": "velocity",
+      "dt": 1
+    },
+    "persistence": {
+      "kind": "persistence",
+      "dt": 1
+    }
+  },
+  "10": {
+    "langevin": {
+      "kind": "langevin",
+      "L": 2,
+      "dt": 10,
+      "ridge": 10,
+      "parameter_count": 49280
+    },
+    "koopman_stan": {
+      "kind": "koopman",
+      "dt": 10,
+      "ridge": 1,
+      "prior": "zero",
+      "native_vs_scaled_error": 8.881784197001252e-16,
+      "spectral_radius": 0.8607938726019007,
+      "parameter_count": 16512
+    },
+    "koopman_przyrost": {
+      "kind": "koopman",
+      "dt": 10,
+      "ridge": 10,
+      "prior": "identity",
+      "native_vs_scaled_error": 9.992007221626409e-16,
+      "spectral_radius": 1.00599782581998,
+      "parameter_count": 16512
+    },
+    "velocity": {
+      "kind": "velocity",
+      "dt": 10
+    },
+    "persistence": {
+      "kind": "persistence",
+      "dt": 10
+    }
+  }
+}

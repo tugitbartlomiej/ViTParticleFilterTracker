@@ -1,0 +1,13 @@
+# Protokół joint controlled Koopman-GLE bez KF
+
+Utworzono 2026-10-01 16:24 Europe/Warsaw przed estymacją etapu.
+
+H=1/3/5/10/20/50. Train s47: początki1000..1750 co5, wszystkie cele<=1800; walidacja1800..2000 co5. Po wyborze refit s47 początki1000..2450 co5, wszystkie cele<=2500. Ocena s48 początki2100..2950 co5 oraz s47 2500..2950 co5. s48 eksploracyjne. Ziarno jest jednostką replikacji; sond nie nazywamy niezależnymi biegami. Rzut LDA stały, cel przyrost s; nie prognoza768 współrzędnych.
+
+Stały lifting ψ=(z,z²), z standaryzowanego s minus średnia500 stanów w chwili początku; tę referencję zamrażamy dla etykiet każdego okna. Estymować cały przyrost ψ, nie tylko późniejszą resztę s. Macierze dryfu,20 opóźnień przyrostów liftingu oraz3 rozłącznych okien pamięci historycznych wejść są dopasowywane JOINT przez ridge. To marginalny finite-lag model projekcji, nie semigrupa ani bezpośrednia identyfikacja przyczynowego B dla paczki celu.
+
+Ramiona: operator sam; operator+pamięć; operator+pamięć+PCA4 rzeczywistych obrazów paczek; operator+pamięć+3 proste obrazowe deskryptory; operator+pamięć+obrazy+osobne historyczne pomiary wpływu N/P. PCA oraz normalizacja tylko z train. Wykonane wejście q[t] pochodzi z paczkiźródłowej t−1, q[t+1] nie wchodzi do marginalnej prognozy w t. Kolejne okna wejścia: ostatnia paczka, poprzednie4, poprzednie15 (disjoint). Ridge0.001/0.1/10, wybór osobno H wyłącznie po MSE walidacji; bez KF, bez test-selection. Nie nakładamy kary wiążącejH ani nie sugerujemy identyfikowalności przyczynowej samego ridge.
+
+Dodatkowa kontrolowana identyfikacja one-step na ukończonych historycznych przejściach dopuszcza u_t w równaniu s_t→s_(t+1). W prognozie wszystkie przyszłe wejścia zastępuje średnia ostatnich20 wykonanych paczek, a nie rzeczywiste q przyszłości. Raport oddziela tę identyfikację i założenie polityki wejść od marginalnej prognozy. Wszystkie bloki fit wspólnie. Rollout z zamrożoną referencją i historią liftingu modelowaną dalej. Ten wariant jest jawną aproksymacją, nie dokładną marginalizacją nieliniowego dekodera.
+
+Porównania na identycznych celach z zapisanymi dawnym GLE/direct, Langevin i EDMD bezKF. Raport znak wszystkich180 sond, balanced accuracy, MAE/RMSE i redukcjaMSE, kontrola większości historycznych znaków, kalibracja90, krzywe vsH. Oddzielnie diagnostyka rangi, uwarunkowania, reszt: rozkład, autokorelacje, korelacja z wejściem i amplitudą predykcji. Nie narzucaćFDT. Kontrola prefiksowa: obcięcie wszystkich danych po t nie zmienia prognozy. Dane predykcji mogą obejmować tylko historię do t, przyszłe prawdziwe reszty wyłącznie do oceny.

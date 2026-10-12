@@ -1,0 +1,73 @@
+WEBVTT
+
+00:00:00.100 --> 00:00:05.576
+Ten cykl pokazuje twój rzeczywisty pipeline małego transformera wizyjnego.
+
+00:00:05.576 --> 00:00:09.053
+Najpierw wyjaśnimy, czym są cząstki w latencie.
+
+00:00:09.053 --> 00:00:14.381
+Następnie pokażemy maski, odczyt tożsamości i ruch cech podczas uczenia.
+
+00:00:14.381 --> 00:00:19.265
+Na końcu połączymy to z prognozą i dobieraniem prawdziwych klatek.
+
+00:00:19.265 --> 00:00:22.817
+Schematy i zmierzone dane będą oznaczone osobno.
+
+00:00:23.517 --> 00:00:31.373
+Do tego małego modelu trafia pełna klatka zmniejszona do czterystu osiemdziesięciu na trzysta dwadzieścia pikseli.
+
+00:00:31.373 --> 00:00:34.680
+Pokazujemy rzeczywisty obraz ze zbioru Cataract.
+
+00:00:34.680 --> 00:00:38.264
+Rozmiar wejścia nie jest rozmiarem badanego latentu.
+
+00:00:38.264 --> 00:00:42.192
+Najpierw obraz przechodzi przez konwolucyjną część sieci.
+
+00:00:42.892 --> 00:00:48.960
+Cztery konwolucje, każda z krokiem dwa, zmniejszają rozdzielczość szesnastokrotnie.
+
+00:00:48.960 --> 00:00:52.836
+Otrzymujemy trzydzieści kolumn i dwadzieścia wierszy.
+
+00:00:52.836 --> 00:00:54.298
+To sześćset tokenów.
+
+00:00:54.298 --> 00:00:58.246
+W naszej interpretacji każdy token jest jedną cząstką.
+
+00:00:58.246 --> 00:01:04.900
+Linie pokazują przypisanie miejsca, ale konwolucyjne pola widzenia nakładają się na siebie.
+
+00:01:05.600 --> 00:01:11.179
+Każdy token ma sto dziewięćdziesiąt dwie cechy w głównym strumieniu transformera.
+
+00:01:11.179 --> 00:01:17.860
+Wewnątrz ostatniego bloku warstwa MLP rozszerza go do siedmiuset sześćdziesięciu ośmiu aktywacji.
+
+00:01:17.860 --> 00:01:19.995
+Odczytujemy je po funkcji GELU.
+
+00:01:19.995 --> 00:01:25.299
+To sześćset wektorów, każdy o siedmiuset sześćdziesięciu ośmiu współrzędnych.
+
+00:01:25.299 --> 00:01:28.192
+Nie siedemset sześćdziesiąt osiem cząstek.
+
+00:01:28.892 --> 00:01:34.481
+Ten model ma około dwóch przecinek dziewięćdziesięciu trzech miliona parametrów.
+
+00:01:34.481 --> 00:01:39.232
+Zawiera sześć bloków transformera i trzy głowy uwagi w każdym bloku.
+
+00:01:39.232 --> 00:01:44.263
+Na końcu gęsta głowa przewiduje położenie środka narzędzia i jego ramkę.
+
+00:01:44.263 --> 00:01:48.664
+Odczyt latentu wykonujemy wcześniej, wewnątrz ostatniego bloku.
+
+00:01:48.664 --> 00:01:50.900
+Nie zmieniamy przez to dekodera.

@@ -530,6 +530,17 @@ class ZakladkaDetekcji(QWidget):
         b2.clicked.connect(self._wybierz_checkpoint)
         for b in (b1, bsd, b2):
             w1.addWidget(b)
+        import historie_checkpointow as HC
+        self.combo_hist = QComboBox(); self.combo_hist.addItem('— historia uczenia —', '')
+        for h in HC.HISTORIE:
+            self.combo_hist.addItem(h.nazwa, h.klucz)
+        self.combo_hist.setToolTip('Checkpoint z zapisanej historii uczenia małego ViT (K1000 co 10 kroków albo bieg '
+                                   '35 000 klatek co epokę). Krok wybierasz w polu obok.')
+        self.combo_hkrok = QComboBox(); self.combo_hkrok.setMinimumWidth(170)
+        self.combo_hkrok.setToolTip('Krok albo epoka wybranej historii: detekcja i auto-szukanie użyją tego modelu.')
+        self.combo_hist.currentIndexChanged.connect(lambda _: self._kroki_historii())
+        self.combo_hkrok.activated.connect(lambda _: self._checkpoint_z_historii())
+        w1.addWidget(self.combo_hist); w1.addWidget(self.combo_hkrok)
         w1b = Przeplyw(); v.addLayout(w1b)
         self.btn_wykryj = rola(QPushButton('Wykryj'), 'glowny')
         self.btn_wykryj.setToolTip('Uruchamia ViT na bieżącym zdjęciu: zaznacza wykryte narzędzie, podaje pewność, IoU do etykiety\n'
@@ -742,6 +753,31 @@ class ZakladkaDetekcji(QWidget):
         if not s:
             return
         self.ckpt, self.det = Path(s), None
+        self._opis_info(self.opis_gt)
+        if self.rgb480 is not None:
+            self._wykryj()
+
+    def _kroki_historii(self):
+        import historie_checkpointow as HC
+        self.combo_hkrok.clear()
+        klucz = self.combo_hist.currentData()
+        if not klucz:
+            return
+        h = HC.historia(klucz)
+        kroki = h.kroki()
+        if not kroki:
+            self.combo_hkrok.addItem(f'brak wag w {h.wagi.name}', None); return
+        for k in (kroki if not h.na_epoke else [k for k in kroki if k % h.na_epoke == 0]):
+            self.combo_hkrok.addItem(h.opis_kroku(k), k)
+        self.combo_hkrok.setCurrentIndex(self.combo_hkrok.count() - 1)
+        self._checkpoint_z_historii()
+
+    def _checkpoint_z_historii(self):
+        import historie_checkpointow as HC
+        krok, klucz = self.combo_hkrok.currentData(), self.combo_hist.currentData()
+        if krok is None or not klucz:
+            return
+        self.ckpt, self.det = HC.historia(klucz).sciezka(krok), None
         self._opis_info(self.opis_gt)
         if self.rgb480 is not None:
             self._wykryj()

@@ -1,0 +1,596 @@
+{
+  "coupled_observer_bg100_res10": {
+    "config": {
+      "id": "coupled_observer_bg100_res10",
+      "family": "coupled_observer",
+      "kind": "coupled",
+      "tau_bg": 100,
+      "tau_res": 10,
+      "ratio_bg": 0.01,
+      "ratio_res": 0.1
+    },
+    "fit_end": 500,
+    "channels": 128,
+    "transformation": "none; native coordinates",
+    "future_measurements": false,
+    "beta": {
+      "__array__": "model__coupled_observer_bg100_res10__beta"
+    },
+    "driver_dt": 1
+  },
+  "damped_velocity_t10": {
+    "config": {
+      "id": "damped_velocity_t10",
+      "family": "damped_velocity",
+      "kind": "velocity",
+      "tau": 10
+    },
+    "fit_end": 500,
+    "channels": 128,
+    "transformation": "none; native coordinates",
+    "future_measurements": false,
+    "driver_dt": 1
+  },
+  "kalman_q1.0_tNone": {
+    "config": {
+      "id": "kalman_q1.0_tNone",
+      "family": "kalman_velocity",
+      "kind": "kalman",
+      "ratio": 1.0,
+      "tau": null
+    },
+    "fit_end": 500,
+    "channels": 128,
+    "transformation": "none; native coordinates",
+    "future_measurements": false,
+    "driver_dt": 1
+  },
+  "linear_00__dt1": {
+    "config": {
+      "family": "koopman__dt1",
+      "coupled": false,
+      "ridge": 0.1,
+      "L": 0,
+      "id": "linear_00__dt1",
+      "dt": 1
+    },
+    "D": 128,
+    "end": 500,
+    "first_target": 5,
+    "fg": {
+      "B": {
+        "__array__": "model__linear_00__dt1__fg__B"
+      },
+      "b": {
+        "__array__": "model__linear_00__dt1__fg__b"
+      },
+      "center_x": {
+        "__array__": "model__linear_00__dt1__fg__center_x"
+      },
+      "center_y": {
+        "__array__": "model__linear_00__dt1__fg__center_y"
+      },
+      "scale_x": {
+        "__array__": "model__linear_00__dt1__fg__scale_x"
+      },
+      "scale_y": {
+        "__array__": "model__linear_00__dt1__fg__scale_y"
+      },
+      "gamma": 0.09999999999999996,
+      "rows": 78368,
+      "features": 128,
+      "gram_diagonal": {
+        "__array__": "model__linear_00__dt1__fg__gram_diagonal"
+      },
+      "gram_trace": 127.99999999999994
+    },
+    "bg": null,
+    "layout_fg": [
+      [
+        "own",
+        "level",
+        0
+      ]
+    ],
+    "layout_bg": null,
+    "driver_dt": 1
+  },
+  "linear_00__dt10": {
+    "config": {
+      "family": "koopman__dt10",
+      "coupled": false,
+      "ridge": 0.1,
+      "L": 0,
+      "id": "linear_00__dt10",
+      "dt": 10
+    },
+    "D": 128,
+    "end": 50,
+    "first_target": 5,
+    "fg": {
+      "B": {
+        "__array__": "model__linear_00__dt10__fg__B"
+      },
+      "b": {
+        "__array__": "model__linear_00__dt10__fg__b"
+      },
+      "center_x": {
+        "__array__": "model__linear_00__dt10__fg__center_x"
+      },
+      "center_y": {
+        "__array__": "model__linear_00__dt10__fg__center_y"
+      },
+      "scale_x": {
+        "__array__": "model__linear_00__dt10__fg__scale_x"
+      },
+      "scale_y": {
+        "__array__": "model__linear_00__dt10__fg__scale_y"
+      },
+      "gamma": 0.1,
+      "rows": 7268,
+      "features": 128,
+      "gram_diagonal": {
+        "__array__": "model__linear_00__dt10__fg__gram_diagonal"
+      },
+      "gram_trace": 128.0
+    },
+    "bg": null,
+    "layout_fg": [
+      [
+        "own",
+        "level",
+        0
+      ]
+    ],
+    "layout_bg": null,
+    "driver_dt": 10
+  },
+  "linear_04__dt10": {
+    "config": {
+      "family": "finite_gle__dt10",
+      "coupled": false,
+      "ridge": 10.0,
+      "L": 1,
+      "id": "linear_04__dt10",
+      "dt": 10
+    },
+    "D": 128,
+    "end": 50,
+    "first_target": 5,
+    "fg": {
+      "B": {
+        "__array__": "model__linear_04__dt10__fg__B"
+      },
+      "b": {
+        "__array__": "model__linear_04__dt10__fg__b"
+      },
+      "center_x": {
+        "__array__": "model__linear_04__dt10__fg__center_x"
+      },
+      "center_y": {
+        "__array__": "model__linear_04__dt10__fg__center_y"
+      },
+      "scale_x": {
+        "__array__": "model__linear_04__dt10__fg__scale_x"
+      },
+      "scale_y": {
+        "__array__": "model__linear_04__dt10__fg__scale_y"
+      },
+      "gamma": 10.0,
+      "rows": 7268,
+      "features": 256,
+      "gram_diagonal": {
+        "__array__": "model__linear_04__dt10__fg__gram_diagonal"
+      },
+      "gram_trace": 256.0
+    },
+    "bg": null,
+    "layout_fg": [
+      [
+        "own",
+        "level",
+        0
+      ],
+      [
+        "own",
+        "lag",
+        0
+      ]
+    ],
+    "layout_bg": null,
+    "driver_dt": 10
+  },
+  "linear_07__dt1": {
+    "config": {
+      "family": "finite_gle__dt1",
+      "coupled": false,
+      "ridge": 1.0,
+      "L": 4,
+      "id": "linear_07__dt1",
+      "dt": 1
+    },
+    "D": 128,
+    "end": 500,
+    "first_target": 5,
+    "fg": {
+      "B": {
+        "__array__": "model__linear_07__dt1__fg__B"
+      },
+      "b": {
+        "__array__": "model__linear_07__dt1__fg__b"
+      },
+      "center_x": {
+        "__array__": "model__linear_07__dt1__fg__center_x"
+      },
+      "center_y": {
+        "__array__": "model__linear_07__dt1__fg__center_y"
+      },
+      "scale_x": {
+        "__array__": "model__linear_07__dt1__fg__scale_x"
+      },
+      "scale_y": {
+        "__array__": "model__linear_07__dt1__fg__scale_y"
+      },
+      "gamma": 1.0,
+      "rows": 78368,
+      "features": 640,
+      "gram_diagonal": {
+        "__array__": "model__linear_07__dt1__fg__gram_diagonal"
+      },
+      "gram_trace": 640.0
+    },
+    "bg": null,
+    "layout_fg": [
+      [
+        "own",
+        "level",
+        0
+      ],
+      [
+        "own",
+        "lag",
+        0
+      ],
+      [
+        "own",
+        "lag",
+        1
+      ],
+      [
+        "own",
+        "lag",
+        2
+      ],
+      [
+        "own",
+        "lag",
+        3
+      ]
+    ],
+    "layout_bg": null,
+    "driver_dt": 1
+  },
+  "linear_09__dt1": {
+    "config": {
+      "family": "exp_gle__dt1",
+      "coupled": false,
+      "ridge": 1.0,
+      "bank": [
+        2,
+        10,
+        50
+      ],
+      "L": 0,
+      "id": "linear_09__dt1",
+      "dt": 1
+    },
+    "D": 128,
+    "end": 500,
+    "first_target": 5,
+    "fg": {
+      "B": {
+        "__array__": "model__linear_09__dt1__fg__B"
+      },
+      "b": {
+        "__array__": "model__linear_09__dt1__fg__b"
+      },
+      "center_x": {
+        "__array__": "model__linear_09__dt1__fg__center_x"
+      },
+      "center_y": {
+        "__array__": "model__linear_09__dt1__fg__center_y"
+      },
+      "scale_x": {
+        "__array__": "model__linear_09__dt1__fg__scale_x"
+      },
+      "scale_y": {
+        "__array__": "model__linear_09__dt1__fg__scale_y"
+      },
+      "gamma": 0.9999999999999998,
+      "rows": 78368,
+      "features": 512,
+      "gram_diagonal": {
+        "__array__": "model__linear_09__dt1__fg__gram_diagonal"
+      },
+      "gram_trace": 511.9999999999999
+    },
+    "bg": null,
+    "layout_fg": [
+      [
+        "own",
+        "level",
+        0
+      ],
+      [
+        "own",
+        "ema",
+        0
+      ],
+      [
+        "own",
+        "ema",
+        1
+      ],
+      [
+        "own",
+        "ema",
+        2
+      ]
+    ],
+    "layout_bg": null,
+    "driver_dt": 1
+  },
+  "linear_11__dt10": {
+    "config": {
+      "family": "exp_gle__dt10",
+      "coupled": false,
+      "ridge": 1.0,
+      "bank": [
+        10,
+        50,
+        200
+      ],
+      "L": 0,
+      "id": "linear_11__dt10",
+      "dt": 10
+    },
+    "D": 128,
+    "end": 50,
+    "first_target": 5,
+    "fg": {
+      "B": {
+        "__array__": "model__linear_11__dt10__fg__B"
+      },
+      "b": {
+        "__array__": "model__linear_11__dt10__fg__b"
+      },
+      "center_x": {
+        "__array__": "model__linear_11__dt10__fg__center_x"
+      },
+      "center_y": {
+        "__array__": "model__linear_11__dt10__fg__center_y"
+      },
+      "scale_x": {
+        "__array__": "model__linear_11__dt10__fg__scale_x"
+      },
+      "scale_y": {
+        "__array__": "model__linear_11__dt10__fg__scale_y"
+      },
+      "gamma": 1.0,
+      "rows": 7268,
+      "features": 512,
+      "gram_diagonal": {
+        "__array__": "model__linear_11__dt10__fg__gram_diagonal"
+      },
+      "gram_trace": 512.0
+    },
+    "bg": null,
+    "layout_fg": [
+      [
+        "own",
+        "level",
+        0
+      ],
+      [
+        "own",
+        "ema",
+        0
+      ],
+      [
+        "own",
+        "ema",
+        1
+      ],
+      [
+        "own",
+        "ema",
+        2
+      ]
+    ],
+    "layout_bg": null,
+    "driver_dt": 10
+  },
+  "linear_26__dt10": {
+    "config": {
+      "family": "stable_koopman__dt10",
+      "coupled": false,
+      "ridge": 0.1,
+      "L": 0,
+      "rho": 0.995,
+      "id": "linear_26__dt10",
+      "dt": 10
+    },
+    "D": 128,
+    "end": 50,
+    "first_target": 5,
+    "fg": {
+      "B": {
+        "__array__": "model__linear_26__dt10__fg__B"
+      },
+      "b": {
+        "__array__": "model__linear_26__dt10__fg__b"
+      },
+      "center_x": {
+        "__array__": "model__linear_26__dt10__fg__center_x"
+      },
+      "center_y": {
+        "__array__": "model__linear_26__dt10__fg__center_y"
+      },
+      "scale_x": {
+        "__array__": "model__linear_26__dt10__fg__scale_x"
+      },
+      "scale_y": {
+        "__array__": "model__linear_26__dt10__fg__scale_y"
+      },
+      "gamma": 0.1,
+      "rows": 7268,
+      "features": 128,
+      "gram_diagonal": {
+        "__array__": "model__linear_26__dt10__fg__gram_diagonal"
+      },
+      "gram_trace": 128.0
+    },
+    "bg": null,
+    "layout_fg": [
+      [
+        "own",
+        "level",
+        0
+      ]
+    ],
+    "layout_bg": null,
+    "stabilization": {
+      "original_radius": 0.9966469032413188,
+      "clipped_radius": 0.995,
+      "imag_error": 9.608975205907036e-15,
+      "actual_radius": 0.9949999999999958,
+      "eigenvector_condition": 358.81047344835775
+    },
+    "driver_dt": 10
+  },
+  "linear_27__dt1": {
+    "config": {
+      "family": "stable_koopman__dt1",
+      "coupled": false,
+      "ridge": 0.1,
+      "L": 0,
+      "rho": 1.0,
+      "id": "linear_27__dt1",
+      "dt": 1
+    },
+    "D": 128,
+    "end": 500,
+    "first_target": 5,
+    "fg": {
+      "B": {
+        "__array__": "model__linear_27__dt1__fg__B"
+      },
+      "b": {
+        "__array__": "model__linear_27__dt1__fg__b"
+      },
+      "center_x": {
+        "__array__": "model__linear_27__dt1__fg__center_x"
+      },
+      "center_y": {
+        "__array__": "model__linear_27__dt1__fg__center_y"
+      },
+      "scale_x": {
+        "__array__": "model__linear_27__dt1__fg__scale_x"
+      },
+      "scale_y": {
+        "__array__": "model__linear_27__dt1__fg__scale_y"
+      },
+      "gamma": 0.09999999999999996,
+      "rows": 78368,
+      "features": 128,
+      "gram_diagonal": {
+        "__array__": "model__linear_27__dt1__fg__gram_diagonal"
+      },
+      "gram_trace": 127.99999999999994
+    },
+    "bg": null,
+    "layout_fg": [
+      [
+        "own",
+        "level",
+        0
+      ]
+    ],
+    "layout_bg": null,
+    "stabilization": {
+      "original_radius": 1.0007856106004673,
+      "clipped_radius": 1.0,
+      "imag_error": 1.0833620028274611e-14,
+      "actual_radius": 0.9999999999999983,
+      "eigenvector_condition": 239.81103664369408
+    },
+    "driver_dt": 1
+  },
+  "ols_w128_t50": {
+    "config": {
+      "id": "ols_w128_t50",
+      "family": "ols_trend",
+      "kind": "ols",
+      "window": 128,
+      "tau": 50
+    },
+    "fit_end": 500,
+    "channels": 128,
+    "transformation": "none; native coordinates",
+    "future_measurements": false,
+    "driver_dt": 1
+  },
+  "persistence": {
+    "config": {
+      "id": "persistence",
+      "family": "persistence",
+      "kind": "persistence"
+    },
+    "fit_end": 500,
+    "channels": 128,
+    "transformation": "none; native coordinates",
+    "future_measurements": false,
+    "driver_dt": 1
+  },
+  "reversion_w200_t200": {
+    "config": {
+      "id": "reversion_w200_t200",
+      "family": "reversion",
+      "kind": "reversion",
+      "window": 200,
+      "tau": 200
+    },
+    "fit_end": 500,
+    "channels": 128,
+    "transformation": "none; native coordinates",
+    "future_measurements": false,
+    "driver_dt": 1
+  },
+  "reversion_w50_t50": {
+    "config": {
+      "id": "reversion_w50_t50",
+      "family": "reversion",
+      "kind": "reversion",
+      "window": 50,
+      "tau": 50
+    },
+    "fit_end": 500,
+    "channels": 128,
+    "transformation": "none; native coordinates",
+    "future_measurements": false,
+    "driver_dt": 1
+  },
+  "velocity": {
+    "config": {
+      "id": "velocity",
+      "family": "velocity",
+      "kind": "velocity",
+      "tau": null
+    },
+    "fit_end": 500,
+    "channels": 128,
+    "transformation": "none; native coordinates",
+    "future_measurements": false,
+    "driver_dt": 1
+  }
+}

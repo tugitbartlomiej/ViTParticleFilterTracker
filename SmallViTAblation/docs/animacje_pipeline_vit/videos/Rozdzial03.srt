@@ -1,0 +1,67 @@
+1
+00:00:00,100 --> 00:00:02,441
+W zbiorze mamy obrys cystotomu.
+
+2
+00:00:02,441 --> 00:00:05,461
+Najpierw tworzymy z niego maskę pikseli.
+
+3
+00:00:05,461 --> 00:00:11,653
+Potem dopasowujemy maskę do rozmiaru wejściowej klatki i nakładamy siatkę tokenów.
+
+4
+00:00:11,653 --> 00:00:16,184
+Maska nie identyfikuje automatycznie semantycznych neuronów.
+
+5
+00:00:16,184 --> 00:00:19,733
+Wskazuje miejsca obrazu przecinające narzędzie.
+
+6
+00:00:20,433 --> 00:00:25,503
+Zgodnie z twoim pomysłem wystarczy choć jeden piksel maski w danym polu.
+
+7
+00:00:25,503 --> 00:00:29,446
+Wtedy zachowujemy cały token jako związany z narzędziem.
+
+8
+00:00:29,446 --> 00:00:32,122
+Nie wymagamy już jednej czwartej pola.
+
+9
+00:00:32,122 --> 00:00:39,233
+Przy zmniejszaniu maski zachowujemy także cienkie fragmenty, które zwykłe próbkowanie mogłoby zgubić.
+
+10
+00:00:39,933 --> 00:00:44,288
+Zielone pola przekraczają stary próg dwudziestu pięciu procent.
+
+11
+00:00:44,288 --> 00:00:47,814
+Pomarańczowe to dodatkowe pola wybrane nową regułą.
+
+12
+00:00:47,814 --> 00:00:54,381
+W dwunastu pełnych klatkach nowy próg wybrał od siedmiu do trzydziestu jeden tokenów narzędzia.
+
+13
+00:00:54,381 --> 00:00:59,358
+Nadal zapisujemy wszystkie sześćset tokenów, także te leżące poza maską.
+
+14
+00:01:00,058 --> 00:01:05,096
+Token z jednym pikselem narzędzia może w większości opisywać otoczenie.
+
+15
+00:01:05,096 --> 00:01:09,353
+Dlatego oprócz etykiety zapisujemy dokładny udział pokrycia.
+
+16
+00:01:09,353 --> 00:01:12,120
+Osobno wybieramy tło oddalone od maski.
+
+17
+00:01:12,120 --> 00:01:20,067
+Dzięki temu możemy sprawdzić, czy efekt pochodzi z narzędzia, z jego brzegu, czy ze wspólnej zmiany całej sceny.

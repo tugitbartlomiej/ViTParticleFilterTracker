@@ -1,0 +1,47 @@
+{
+  "checked_on": "2026-10-08",
+  "checkpoint_sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+  "historical_model_source": {
+    "path": "experiments/maly_vit_ruch_czastek_gesta_historia/kod/model.py",
+    "sha256": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+    "timm_version_used_for_reference_test": "1.0.24"
+  },
+  "self_contained_model_source": {
+    "path": "experiments/vit_k1000_1500_pelne_latenty_90_20261008/model_snapshot.py",
+    "sha256": "1422336d4472db56ce5c89294e3ab8bf0b17ad7502af0876d9c7e564b2473c37",
+    "external_timm_required": false
+  },
+  "equivalence": {
+    "embedded_block_vs_timm_block": {
+      "status": "exact",
+      "rtol": 0.0,
+      "atol": 0.0
+    },
+    "full_k1000_random_480x320_forward": {
+      "state_dict_keys_equal": true,
+      "output_equal": true,
+      "latent_equal": true,
+      "output_max_abs": 0.0,
+      "latent_max_abs": 0.0
+    }
+  },
+  "eden_environments_after_cleanup": {
+    "runtime": {
+      "python": "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/bin/python",
+      "torch": "2.9.1+cu128",
+      "numpy": "2.3.5",
+      "cv2": "5.0.0",
+      "pytest_present": false,
+      "timm_present": false
+    },
+    "tests": {
+      "python": "/home2/faculty/bpiotrowski/venvs/nndmd_expanded_20261002/bin/python",
+      "torch": "2.9.1+cu128",
+      "numpy": "1.26.4",
+      "cv2": "5.0.0",
+      "pytest": "7.4.4",
+      "timm_present": false
+    }
+  },
+  "dependency_scope": "Both environments are already protected by ZACHOWAJ_MAPA.json; no package installation and no dependency outside that map."
+}

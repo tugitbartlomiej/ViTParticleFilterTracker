@@ -19,6 +19,7 @@ import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
 from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
+from PyQt6.QtGui import QImage
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit,
                              QProgressBar, QPushButton, QSlider, QSpinBox, QSplitter, QVBoxLayout, QWidget)
 
@@ -26,32 +27,128 @@ import ruch_zbioru as R
 import ruch_naturalny as N
 from ruch_gpu import ChmuraRuchuGPU
 from styl import rola
-from uklad import PanelOpcji, dodaj as _dodaj
+from uklad import Odpinanie, PanelOpcji, dodaj, dodaj_nawigacje, pole_wyboru, przycisk, staly_napis
+from zakladka_ruchu_atencja import AtencjaRuchu
+from zakladka_ruchu_fizyka import FizykaRuchu
+from zakladka_ruchu_koopman import KoopmanRuchu
 from widok_gl import WidokGL
 
 KOLOR_NIEZAPISANY = '#e6a35c'
 
 
-def dodaj(row, label, widget, opis):
-    """Etykieta + kontrolka z tym samym, konkretnym opisem w dymku (obie)."""
-    _dodaj(row, label, widget, opis)
+def okno_wyboru_zdjec(rodzic, zrodlo, wybrane):
+    """Okno z listą zdjęć źródła (pola wyboru, filtr nazwy i filmu, losowanie, podgląd). Zwraca indeksy albo None."""
+    from PyQt6.QtGui import QImage, QPixmap
+    from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QListWidget, QListWidgetItem, QSpinBox, QVBoxLayout
+    import zbiory_zdjec as Z
+    d = QDialog(rodzic); d.setWindowTitle(f'Wybór zdjęć: {Z.ZRODLA[zrodlo]}'); d.resize(820, 620)
+    lay = QVBoxLayout(d)
+    gora = QHBoxLayout(); lay.addLayout(gora)
+    filtr = QLineEdit(); filtr.setPlaceholderText('filtr: fragment nazwy albo filmu, np. TR_0005')
+    filtr.setToolTip('Pokazuje tylko zdjęcia, których nazwa albo film zawiera wpisany tekst. Zaznaczenia ukrytych zostają.')
+    gora.addWidget(filtr, 1)
+    n_los = QSpinBox(); n_los.setRange(1, 5000); n_los.setValue(100)
+    n_los.setToolTip('Ile zdjęć wylosować przyciskiem „Losuj” (spośród widocznych po filtrze).')
+    b_los = QPushButton('Losuj'); b_los.setToolTip('Zastępuje zaznaczenie losowymi widocznymi zdjęciami (ziarno 2026).')
+    b_zazn = QPushButton('Zaznacz widoczne'); b_zazn.setToolTip('Zaznacza wszystkie zdjęcia widoczne po filtrze.')
+    b_odzn = QPushButton('Odznacz widoczne'); b_odzn.setToolTip('Odznacza wszystkie zdjęcia widoczne po filtrze.')
+    for w in (QLabel('losowych'), n_los, b_los, b_zazn, b_odzn):
+        gora.addWidget(w)
+    srodek = QHBoxLayout(); lay.addLayout(srodek, 1)
+    lista = QListWidget(); lista.setToolTip('Zaznacz pola zdjęć, dla których liczyć trajektorie cząsteczek.')
+    srodek.addWidget(lista, 2)
+    podglad = QLabel('Podgląd: kliknij zdjęcie.'); podglad.setMinimumSize(320, 214)
+    podglad.setAlignment(Qt.AlignmentFlag.AlignCenter); podglad.setToolTip('Podgląd zaznaczonego wiersza listy.')
+    srodek.addWidget(podglad, 1)
+    licznik = QLabel(); lay.addWidget(licznik)
+    przyciski = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+    lay.addWidget(przyciski)
+    wybrane = set(wybrane)
+    opisy = Z.opisy(zrodlo)
+    lista.setUpdatesEnabled(False)
+    for i, nazwa, film in opisy:
+        it = QListWidgetItem(f'{i:5d}  {nazwa}')
+        it.setFlags(it.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+        it.setCheckState(Qt.CheckState.Checked if i in wybrane else Qt.CheckState.Unchecked)
+        it.setData(Qt.ItemDataRole.UserRole, i)
+        lista.addItem(it)
+    lista.setUpdatesEnabled(True)
+
+    def policz():
+        n = sum(lista.item(r).checkState() == Qt.CheckState.Checked for r in range(lista.count()))
+        licznik.setText(f'Zaznaczone: {n} z {lista.count()} zdjęć ({n * 600:,} cząsteczek).')
+
+    def filtruj(t):
+        t = t.strip().lower()
+        for r, (i, nazwa, film) in enumerate(opisy):
+            lista.item(r).setHidden(bool(t) and t not in nazwa.lower() and t not in film.lower())
+
+    def widoczne():
+        return [r for r in range(lista.count()) if not lista.item(r).isHidden()]
+
+    def ustaw(wiersze, stan):
+        lista.blockSignals(True)
+        for r in wiersze:
+            lista.item(r).setCheckState(stan)
+        lista.blockSignals(False); policz()
+
+    def losuj():
+        import numpy as np
+        w = widoczne()
+        los = set(np.random.default_rng(2026).choice(w, min(n_los.value(), len(w)), replace=False).tolist()) if w else set()
+        ustaw(range(lista.count()), Qt.CheckState.Unchecked)
+        ustaw(sorted(los), Qt.CheckState.Checked)
+
+    def pokaz(it):
+        if it is None:
+            return
+        try:
+            i = it.data(Qt.ItemDataRole.UserRole)
+            r = Z.wiersze(zrodlo)[i]
+            if zrodlo == '1500':
+                raw = (R._IMAGE_ROOT / r['image_name']).read_bytes()
+            else:
+                raw = Z._wypakuj(r).read_bytes()
+            img = QImage.fromData(raw)
+            podglad.setPixmap(QPixmap.fromImage(img).scaled(podglad.width(), podglad.height(),
+                                                            Qt.AspectRatioMode.KeepAspectRatio,
+                                                            Qt.TransformationMode.SmoothTransformation))
+        except Exception as e:                       # brak pliku albo zipu: tylko komunikat w podglądzie
+            podglad.setText(f'Podgląd niedostępny: {e}')
+
+    filtr.textChanged.connect(filtruj)
+    b_los.clicked.connect(losuj)
+    b_zazn.clicked.connect(lambda: ustaw(widoczne(), Qt.CheckState.Checked))
+    b_odzn.clicked.connect(lambda: ustaw(widoczne(), Qt.CheckState.Unchecked))
+    lista.itemChanged.connect(lambda _: policz())
+    lista.currentItemChanged.connect(lambda a, _b: pokaz(a))
+    przyciski.accepted.connect(d.accept); przyciski.rejected.connect(d.reject)
+    policz()
+    if d.exec() != QDialog.DialogCode.Accepted:
+        return None
+    return [lista.item(r).data(Qt.ItemDataRole.UserRole) for r in range(lista.count())
+            if lista.item(r).checkState() == Qt.CheckState.Checked]
 
 
-def przycisk(row, tekst, opis, glowny=False):
-    b = QPushButton(tekst)
-    if glowny:
-        rola(b, 'glowny')
-    b.setToolTip(opis)
-    row.addWidget(b)
-    return b
-
-
-def pole_wyboru(row, tekst, opis, zaznaczone=False):
-    c = QCheckBox(tekst)
-    c.setChecked(zaznaczone)
-    c.setToolTip(opis)
-    row.addWidget(c)
-    return c
+def _napis_na_klatce(a, tekst):
+    """Tekst (wiele linii) na półprzezroczystym pasku u góry klatki; czcionka Segoe UI, gdy jest w systemie."""
+    if not tekst:
+        return a
+    from PIL import Image, ImageDraw, ImageFont
+    im = Image.fromarray(a).convert('RGBA')
+    try:
+        font = ImageFont.truetype('segoeui.ttf', max(14, im.width // 70))
+    except OSError:
+        font = ImageFont.load_default()
+    d = ImageDraw.Draw(im, 'RGBA')
+    linie = str(tekst).split('\n')
+    wys = sum(d.textbbox((0, 0), l, font=font)[3] + 6 for l in linie) + 12
+    d.rectangle((0, 0, im.width, wys), fill=(10, 14, 18, 190))
+    y = 8
+    for l in linie:
+        d.text((12, y), l, font=font, fill=(240, 240, 240, 255))
+        y += d.textbbox((0, 0), l, font=font)[3] + 6
+    return np.asarray(im.convert('RGB'))
 
 
 class ZadanieRuchu(QThread):
@@ -72,7 +169,10 @@ class ZadanieRuchu(QThread):
             self.blad.emit(str(error))
 
 
-class ZakladkaRuchu(QWidget):
+class ZakladkaRuchu(KoopmanRuchu, FizykaRuchu, AtencjaRuchu, QWidget):
+    """Strony opcji Koopman, Fizyka ruchu i Atencja z ich obsługą są w klasach bazowych
+    (zakladka_ruchu_koopman.py, zakladka_ruchu_fizyka.py, zakladka_ruchu_atencja.py)."""
+
     def __init__(self, okno=None):
         super().__init__()
         self.okno = okno
@@ -103,6 +203,22 @@ class ZakladkaRuchu(QWidget):
         lay.addWidget(self.info)
         self.opcje = PanelOpcji(lay, ['Checkpoint i dane', 'Optymalizacja', 'Uczenie naturalne', 'Animacja'])
         self.opcje.zakladki.setMinimumHeight(190)
+        self._strona_checkpointu()
+        self._strona_optymalizacji()
+        self._strona_uczenia_naturalnego()
+        self._strona_animacji()
+        self._strona_koopmana()
+        self._strona_atencji()
+        self._strona_fizyki()
+        self._strona_wygladu()
+        self._odtwarzanie_i_widok(lay)
+        self.opcje.zakoncz()                 # wiersze opcji dociśnięte do góry strony (bez pustych przerw)
+        self._polacz_sygnaly()
+        self._estimate()
+        self._estimate_natural()
+
+    def _strona_checkpointu(self):
+        """Strona „Checkpoint i dane”: model ViT, manifest obrazów, zapis ruchu i osie szkła."""
         row = self.opcje.wiersz('Checkpoint i dane')
         self.edit_checkpoint = QLineEdit(str(R.DEFAULT_CHECKPOINT)); self.edit_checkpoint.setMinimumWidth(300)
         dodaj(row, 'ViT', self.edit_checkpoint, 'Ścieżka checkpointu detektora SmallViT (klucz net, wczytanie strict=True). '
@@ -112,6 +228,24 @@ class ZakladkaRuchu(QWidget):
                                             'Wczytuje checkpoint w tle na wybranym urządzeniu, sprawdza zgodność '
                                             'architektury i liczy SHA256 (do porównania z pochodzeniem zapisu ruchu).')
         self.model_status = QLabel('Model zostanie wczytany po kliknięciu.'); row.addWidget(self.model_status)
+        row = self.opcje.wiersz('Checkpoint i dane')
+        import historie_checkpointow as HC
+        self.combo_model = QComboBox()
+        self.combo_model.addItem('własny plik (pole „ViT” wyżej)', ('', None))
+        for klucz, nazwa, plik, krok, opis in HC.MODELE:
+            self.combo_model.addItem(nazwa, ('model', klucz))
+        for h in HC.HISTORIE:
+            self.combo_model.addItem(f'historia: {h.nazwa}', ('historia', h.klucz))
+        dodaj(row, 'model', self.combo_model,
+              'Gotowe modele z folderu assets zgodne z detektorem (MalyViT 600 × 768) albo checkpoint z zapisanej historii '
+              'uczenia. Wybór wpisuje ścieżkę do pola „ViT”; „Sprawdź i wczytaj ViT” ładuje go i liczy SHA256. '
+              + ' '.join(f'{n}: {o}' for _, n, _, _, o in HC.MODELE))
+        self.combo_model_krok = QComboBox(); self.combo_model_krok.setMinimumWidth(190); self.combo_model_krok.setEnabled(False)
+        dodaj(row, 'krok', self.combo_model_krok, 'Krok albo epoka checkpointu, gdy wybrano historię uczenia '
+              '(K1000: co 10 kroków; 35 000 klatek: końce epok i siatka co 10/100 kroków).')
+        self.model_opis = rola(QLabel(''), 'opis'); row.addWidget(self.model_opis)
+        self.combo_model.currentIndexChanged.connect(lambda _: self._wybor_modelu())
+        self.combo_model_krok.currentIndexChanged.connect(lambda _: self._wybor_kroku_modelu())
         row = self.opcje.wiersz('Checkpoint i dane')
         self.edit_manifest = QLineEdit(str(R.DEFAULT_MANIFEST)); self.edit_manifest.setMinimumWidth(300)
         dodaj(row, 'manifest obrazów', self.edit_manifest,
@@ -139,7 +273,20 @@ class ZakladkaRuchu(QWidget):
         self.btn_history = przycisk(row, 'Gotowy wynik 1500 obrazów',
                                     'Wstawia domyślny zapis optymalizacji 1500 obrazów (101 stanów, 900 000 cząsteczek) '
                                     'i od razu go wczytuje.')
+        self.combo_szklo = QComboBox(); self.combo_szklo.setMinimumWidth(260)
+        self._wypelnij_osie_szkla()
+        dodaj(row, 'oś szkła', self.combo_szklo,
+              'Osie czasu „układu szkła” z outputs/ruch_czasteczek_gui (foldery ze „szklo” w nazwie): ruch tokenów względem '
+              'klatki, czyli minus średnie przesunięcie 6 sąsiadów w latencie (z gęstego zapisu biegu 35 000, co 2 kroki do '
+              '2188 i co 50 dalej), oraz symulacje szkła koloidalnego (dynamika browna miękkich kul: stała temperatura i '
+              'stygnięcie własne jak tokeny). „Odśwież” czyta listę z dysku na nowo.')
+        self.btn_szklo_odswiez = przycisk(row, 'Odśwież', 'Czyta na nowo listę osi szkła z dysku (po eksporcie albo symulacji '
+                                          'uruchomionej, gdy aplikacja była otwarta).')
+        self.btn_szklo = przycisk(row, 'Wczytaj oś szkła',
+                                  'Wstawia wybraną oś szkła do pola „zapis ruchu” i od razu ją wczytuje (jak „Wczytaj ruch”).')
 
+    def _strona_optymalizacji(self):
+        """Strona „Optymalizacja”: nowy ruch z korekty latentów (cele, lr, urządzenie)."""
         row = self.opcje.wiersz('Optymalizacja')
         self.spin_images = self._int(row, 'obrazy', 1, 100000, 1500, 'Liczba pierwszych obrazów manifestu w nowym przebiegu.')
         self.spin_steps = self._int(row, 'kroki', 1, 20000, 500, 'Liczba kroków optymalizacji latentu każdego obrazu.')
@@ -182,6 +329,8 @@ class ZakladkaRuchu(QWidget):
                       'Zapisujemy rzut 3D i metryki, nie pełne 768D w każdym kroku.')
         note.setWordWrap(True); self.opcje._strony['Optymalizacja'].addWidget(rola(note, 'opis'))
 
+    def _strona_uczenia_naturalnego(self):
+        """Strona „Uczenie naturalne”: pomiar historii checkpointów treningu."""
         row = self.opcje.wiersz('Uczenie naturalne')
         self.edit_checkpoint_dir = QLineEdit(str(R.ROOT / 'experiments/maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/wagi'))
         self.edit_checkpoint_dir.setMinimumWidth(330)
@@ -193,6 +342,13 @@ class ZakladkaRuchu(QWidget):
         self.btn_default_natural = przycisk(row, 'Historia prowadząca do K1000',
                                             'Ustawia lokalną historię 101 checkpointów k0000–k1000, jej logi, checkpoint '
                                             'K1000 i manifest 1500 obrazów, a potem sprawdza historię.')
+        self.btn_natural_35k = przycisk(row, 'Historia 35 000 · epoki',
+                                        'Ustawia historię małego ViT uczonego od zera na 35 000 klatkach (21 epok, potem do 60) '
+                                        '(experiments/maly_vit_od_zera_35000_21epok_20261009, bieg na Edenie): ten sam '
+                                        'manifest 1500 obrazów, checkpoint co 1094 kroki = koniec każdej epoki (zmień '
+                                        '„checkpoint co” na 100 albo 10, jeśli pobrano gęste kroki). Tylko wczytuje kolejne '
+                                        'zapisane modele i mierzy cząsteczki, bez uczenia. Wagi leżą w '
+                                        'assets/MalyViT_35000_od_zera_s47 (skrypt pobierz_z_edena.sh obok).')
         row = self.opcje.wiersz('Uczenie naturalne')
         self.edit_training_logs = QLineEdit(str(R.ROOT / 'experiments/maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/dane'))
         self.edit_training_logs.setMinimumWidth(330)
@@ -227,19 +383,48 @@ class ZakladkaRuchu(QWidget):
                                            'Gdy nic nie jest przerwane, tylko to zgłasza.')
         self.natural_cost = QLabel(); self.natural_cost.setWordWrap(True)
         self.opcje._strony['Uczenie naturalne'].addWidget(self.natural_cost)
+        self._wiersze_trajektorii()
         note = QLabel('Te same obrazy i etykiety wybierz w „Checkpoint i dane”. Urządzenie CUDA/CPU i ziarno PCA '
                       'są w „Optymalizacja”. Każdy zapisany model wykonuje naturalny forward w trybie eval. '
                       'Nie trenujemy ponownie ani nie podmieniamy aktywacji. Brakujące kroki nie są rekonstruowane; '
                       'płynne przejścia służą tylko animacji.')
         note.setWordWrap(True); self.opcje._strony['Uczenie naturalne'].addWidget(rola(note, 'opis'))
 
+    def _strona_animacji(self):
+        """Strona „Animacja”: tempo, film, wygładzanie, układ, cecha, kolor i kadr."""
         row = self.opcje.wiersz('Animacja')
         self.spin_tempo = self._float(row, 'tempo (kroki/s)', 1, 1000, 50, 1,
                                       'Szybkość odtwarzania w krokach osi czasu na sekundę. Animacja nie przeskakuje '
                                       'stanów, których jeszcze nie ma na karcie.')
+        self.spin_fps = self._int(row, 'film: kl./s', 5, 60, 30, 'Liczba klatek na sekundę nagrywanego filmu MP4.')
+        self.btn_film = przycisk(row, 'Nagraj film…',
+                                 'Nagrywa odtwarzanie zakresu „od–do” do pliku MP4 z bieżącymi ustawieniami widoku '
+                                 '(układ, kolory, kamera, wygładzanie, atencja) i tempem z pola „tempo (kroki/s)”. Klatki '
+                                 'renderuje karta w rozdzielczości widoku; każda klatka czeka, aż jej stany są na karcie, '
+                                 'więc film nie przeskakuje zapisów. Kodowanie H.264 przez ffmpeg (gdy jest w systemie), '
+                                 'inaczej mp4v.')
         self.chk_smooth = pole_wyboru(row, 'Płynne przejścia GPU',
                                       'Włączone: między zapisami karta liczy liniowe przejście (stan NIEZAPISANY, '
                                       'oznaczony nad widokiem). Wyłączone: widać tylko zapisane stany.', True)
+        self.combo_wyg = QComboBox()
+        self.combo_wyg.addItem('bez wygładzania', 0)
+        self.combo_wyg.addItem('średnia ruchoma (wyśrodkowana)', 1)
+        self.combo_wyg.addItem('EMA (wygładzanie wykładnicze)', 2)
+        dodaj(row, 'wygładzanie ruchu', self.combo_wyg,
+              'Wygładza tory cząsteczek w czasie, po zapisanych stanach (liczy karta, we wszystkich układach, także w '
+              'śladach, siatce zdjęcia, przestrzeni fazowej i Koopmanie):\n'
+              '- średnia ruchoma: położenie w zapisie k = średnia z „okna” zapisów wokół k (wyśrodkowana, więc ruch się\n'
+              '  nie opóźnia; na brzegach osi okno jest przycięte);\n'
+              '- EMA: wygładzone(k) = α · stan(k) + (1 − α) · wygładzone(k − 1), od pierwszego zapisu (jak w Uczenie ViT);\n'
+              '  α = 1 bez wygładzania, 0,3 pamięć około 3 zapisów; opóźnia ruch.\n'
+              'Wygładzony stan nie jest zapisem: napis nad widokiem to zaznacza. Mapa ruchu, mediany i skale kolorów\n'
+              'liczą się dalej z zapisanych stanów.')
+        self.spin_wyg_okno = self._int(row, 'okno (zapisy)', 3, 41, 5,
+                                       'Długość okna średniej ruchomej w zapisach (nieparzysta: tyle samo zapisów przed '
+                                       'i po bieżącym; parzysta jest zaokrąglana w górę do nieparzystej).')
+        self.spin_wyg_alfa = self._float(row, 'α EMA', .02, 1, .3, 2,
+                                         'Współczynnik EMA: waga bieżącego zapisu. Mniejszy = mocniejsze wygładzenie '
+                                         'i większe opóźnienie (pamięć około 1/α zapisów).')
         self.chk_movement = pole_wyboru(row, 'Ruch względem kroku 0',
                                         'Włączone: położenie minus położenie w pierwszym kroku (przesunięcie). '
                                         'Wyłączone: bezwzględne współrzędne we wspólnej bazie PCA.', True)
@@ -252,14 +437,84 @@ class ZakladkaRuchu(QWidget):
               '600 cząsteczek obrazu o numerze z pola „nr obrazu” (te same indeksy co w zapisie).')
         self.spin_image = self._int(row, 'nr obrazu', 0, 1499, 0, 'Numer obrazu (kolejność manifestu) w widoku „Jeden obraz”.')
         row = self.opcje.wiersz('Animacja')
+        self.combo_uklad = QComboBox()
+        self.combo_uklad.addItem('PCA 3D: wspólna baza cech', 0)
+        self.combo_uklad.addItem('Siatka zdjęcia + cecha na osi Z', 1)
+        self.combo_uklad.addItem('Przestrzeń fazowa: cecha, jej prędkość, norma 768D', 2)
+        self.combo_uklad.addItem('Koopman: niezmienniki (X, Y) i mod najbardziej dynamiczny (Z)', 3)
+        self.combo_uklad.addItem('Fizyka ruchu: temperatura, rodzaj dyfuzji, zmiana 768D (strona „Fizyka ruchu”)', 4)
+        dodaj(row, 'układ', self.combo_uklad,
+              'W jakiej przestrzeni oglądać cząsteczki (liczy karta, w każdej klatce):\n'
+              '- PCA 3D: położenie w trzech głównych składowych wspólnej bazy (dotychczasowy widok);\n'
+              '- siatka zdjęcia + cecha na Z: X i Y to kolumna i wiersz patcha na zdjęciu (stałe), a Z to wybrana\n'
+              '  cecha, czyli rzut wszystkich 768 cech. Ruch cząsteczki widać jako wznoszenie i opadanie nad swoim\n'
+              '  miejscem na obrazie, więc od razu wiadomo, które części zdjęcia się zmieniają;\n'
+              '- przestrzeń fazowa: X = cecha, Y = jej prędkość między zapisami, Z = norma zmiany w 768D. Drgania\n'
+              '  dają pętle, hamowanie spiralę do Y = 0, a stały dryf poziomą smugę (ślad wyłączony);\n'
+              '- Koopman: X, Y = funkcje własne operatora Koopmana o wartości własnej bliskiej 1 (niezmienniki: prawie\n'
+              '  stałe wzdłuż toru, grupują cząsteczki o podobnym losie), Z = funkcja własna modu najbardziej dynamicznego.\n'
+              '  Operator dopasowuje karta (Hankel-DMD) do wszystkich cząsteczek; opcje na stronie „Koopman”.')
+        self.combo_cecha = QComboBox()
+        for nazwa, opis in (('PC1', 0), ('PC2', 1), ('PC3', 2), ('norma zmiany 768D', 3), ('odległość od środka PCA', 4)):
+            self.combo_cecha.addItem(nazwa, opis)
+        dodaj(row, 'cecha', self.combo_cecha,
+              'Która liczba z 768 cech cząsteczki trafia na oś Z siatki (i na oś X przestrzeni fazowej):\n'
+              '- PC1, PC2, PC3: rzut całego wektora 768 cech na daną oś wspólnej bazy PCA (PC1 = największy rozrzut);\n'
+              '  przy „Ruch względem pierwszego kroku” liczona jest zmiana od pierwszego zapisu;\n'
+              '- norma zmiany 768D: długość zmiany całego wektora cech od pierwszego zapisu (zapis producenta);\n'
+              '- odległość od środka PCA: długość położenia w trzech składowych.')
+        self.chk_bez_poz = pole_wyboru(row, 'Bez położenia patcha',
+                                       'Od cechy odejmowana jest ta sama cecha średniej tego patcha po wszystkich obrazach '
+                                       'w tym samym kroku (liczy karta). Usuwa to, co w latencie wynika z samego miejsca '
+                                       'patcha na obrazie (kodowanie pozycji ViT, typowy układ sceny), bo w siatce zdjęcia '
+                                       'położenie pokazują już osie X i Y. Zostaje to, czym obraz różni się od innych w tym '
+                                       'miejscu. Działa w siatce zdjęcia i w przestrzeni fazowej. Przy „Ruch względem '
+                                       'pierwszego kroku” od zmiany odejmowana jest średnia zmiana patcha.', True)
+        self.combo_mozaika = QComboBox()
+        self.combo_mozaika.addItem('Wszystkie obrazy na jednej siatce', False)
+        self.combo_mozaika.addItem('Mozaika: każdy obraz w osobnym kaflu', True)
+        dodaj(row, 'obrazy na siatce', self.combo_mozaika,
+              'Tylko dla siatki zdjęcia. Jedna siatka: 1500 obrazów nakłada się na ten sam układ 20 × 30, więc nad każdym '
+              'patchem stoi słup 1500 cząsteczek (rozrzut i ruch tego miejsca w całym zbiorze). Mozaika: każdy obraz '
+              'dostaje własny kafel 30 × 20 obok pozostałych (krajobraz całego zbioru).')
         self.combo_color = QComboBox()
         self.combo_color.addItem('Norma zmiany 768D (zapis)', 0)
         self.combo_color.addItem('Prędkość w PCA między zapisami', 1)
         self.combo_color.addItem('|Δ| w PCA od pierwszego kroku', 2)
+        self.combo_color.addItem('Położenie patcha (kolumna = barwa, wiersz = jasność)', 3)
+        self.combo_color.addItem('Narzędzie (czerwone) i tło (szare) wg ramki GT', 4)
+        self.combo_color.addItem('Pewność ViT obrazu w tym kroku', 5)
+        self.combo_color.addItem('Numer obrazu (osobna barwa)', 6)
+        self.combo_color.addItem('Klaster Koopmana (po „Osie pod klastry”; szare = outliery)', 7)
+        self.combo_color.addItem('Temperatura: energia drgań własnych (inferno, okno ze strony „Fizyka ruchu”)', 8)
+        self.combo_color.addItem('Reżim ruchu: balistyczny (żółty) / dyfuzyjny (niebieski) / uwięziony (fiolet)', 9)
+        self.combo_color.addItem('Wykładnik MSD α (viridis: 0 uwięzienie … 1 dyfuzja)', 10)
+        self.combo_color.addItem('Obszar oka z segmentacji: narzędzie / źrenica / rogówka / tło', 11)
+        self.combo_color.addItem('Przyspieszenie chwilowe |v₁ − v₀| w PCA (zmiana prędkości wokół zapisu, inferno)', 12)
+        self.combo_color.addItem('Prędkość chwilowa w PCA (różnica centralna wokół zapisu, inferno)', 13)
+        self.combo_color.addItem('Prędkość chwilowa względem średniej tej cząsteczki (niebieski wolniej, czerwony zryw)', 14)
+        self.combo_color.addItem('Energia cząsteczki: kinetyczna / potencjalna / całkowita (strona „Fizyka ruchu”)', 15)
+        self.combo_color.addItem('Udział energii ruchu w paśmie okresów (strona „Fizyka ruchu”, inferno)', 16)
+        self.combo_color.addItem('Zakresy właściwości: do 3 zakresów z kolorami (okres, temperatura, energia…)', 17)
         dodaj(row, 'kolor', self.combo_color,
               'Co koduje kolor punktu (liczy karta): zapisana norma zmiany w pełnych 768D; prędkość w rzucie PCA '
-              'między sąsiednimi zapisami; długość przesunięcia w rzucie PCA od pierwszego kroku. Skala: maksimum '
-              'po wszystkich zapisanych krokach na karcie.')
+              'między sąsiednimi zapisami; długość przesunięcia w rzucie PCA od pierwszego kroku (skala: maksimum po '
+              'zapisanych krokach); położenie patcha na zdjęciu (jak w przestrzeni makrowektorów); patche w ramce GT '
+              'narzędzia; pewność detekcji ViT obrazu w bieżącym zapisanym kroku (viridis, z metrics.npy pomiaru); '
+              'numer obrazu (cząsteczki jednego obrazu mają wspólną barwę); klaster Koopmana z przycisku „Osie pod klastry” '
+              '(najbliższy środek klastra, szare = outliery; tylko w układzie Koopmana i tylko dla osi, dla których '
+              'dobrano klastry); przyspieszenie chwilowe: |v₁ − v₀|, gdzie v₀ i v₁ to prędkości w rzucie PCA na '
+              'odcinkach do i od zapisu najbliższego bieżącej chwili (na krok treningu, nierówne odstępy uwzględnione; '
+              'z wygładzaniem, gdy włączone); skala: pierwiastek z ułamka 2 × maksymalnej prędkości. Prędkość chwilowa: '
+              '|x(k+1) − x(k−1)| / odstęp kroków wokół zapisu k najbliższego bieżącej chwili. Prędkość względna: ta sama '
+              'prędkość podzielona przez średnią prędkość tej cząsteczki po wszystkich odcinkach osi (log2: biały = typowo, '
+              'czerwony = 2–4 razy szybciej niż zwykle, niebieski = wolniej).')
+        self.spin_moc = self._float(row, 'moc koloru', 0, 3, 1, 2,
+                                    'Siła kolorowania punktów (liczy shader, dla każdego trybu koloru): 0 = same '
+                                    'odcienie szarości (tylko jasność barwy), 1 = barwy bez zmian, powyżej 1 = barwy '
+                                    'mocniej nasycone (np. klastry wyraźniej odcinają się od szarych outlierów). '
+                                    'Działa też na kolorach śladów i siatki zdjęcia.')
+        self.spin_moc.setSingleStep(0.1)
         self.combo_kadr = QComboBox()
         self.combo_kadr.addItem('Cały zbiór · wszystkie zapisane kroki', 0)
         self.combo_kadr.addItem('Widoczne cząsteczki · wszystkie zapisane kroki', 1)
@@ -278,6 +533,51 @@ class ZakladkaRuchu(QWidget):
         self.btn_png = przycisk(row, 'Zapisz podgląd PNG', 'Zapisuje bieżący obraz widoku 3D do pliku PNG.')
         self.image_name = QLabel(); self.opcje._strony['Animacja'].addWidget(self.image_name)
 
+    def _strona_wygladu(self):
+        """Strona „Wygląd”: które cząstki rysować i zdjęcie rozpięte na cząsteczkach."""
+        self.opcje.dodaj_strone('Wygląd')
+        row = self.opcje.wiersz('Wygląd')
+        self.combo_co = QComboBox()
+        for tekst, n in (('wszystkie', 1), ('co 2. patch', 2), ('co 3. patch', 3), ('co 5. patch', 5)):
+            self.combo_co.addItem(tekst, n)
+        dodaj(row, 'cząstek', self.combo_co,
+              'Ile cząsteczek rysować: co n-ty patch w wierszach i kolumnach siatki 20 × 30 każdego obrazu (równo po '
+              'zdjęciu, jak w przestrzeni makrowektorów). Granice osi i statystyki liczą się dalej ze wszystkich.')
+        self.chk_tylko_narz = pole_wyboru(row, 'Tylko cząstki narzędzia',
+                                          'Rysuje tylko patche, których środek leży w ramce GT narzędzia danego obrazu '
+                                          '(z manifestu pomiaru). Bez ramek w zapisie opcja nic nie ukrywa.')
+        self.chk_tylko_zazn = pole_wyboru(row, 'Tylko zaznaczone patche',
+                                          'Rysuje tylko zaznaczone patche (Ctrl + klik na cząsteczce dodaje albo usuwa jej '
+                                          'patch; ten sam numer patcha we wszystkich obrazach). Bez zaznaczenia: wszystkie.')
+        self.btn_clear_sel = przycisk(row, 'Wyczyść zaznaczenie', 'Usuwa wszystkie zaznaczone patche.')
+        self.sel_label = rola(QLabel('Zaznaczone patche: brak (Ctrl + klik na cząsteczce).'), 'opis')
+        row.addWidget(self.sel_label)
+        row = self.opcje.wiersz('Wygląd')
+        self.combo_zdj = QComboBox(); self.combo_zdj.addItems(['brak', 'powierzchnia', 'siatka linii', 'powierzchnia i siatka'])
+        dodaj(row, 'zdjęcie w przestrzeni', self.combo_zdj,
+              'Tylko w widoku „Jeden obraz”: zdjęcie tego obrazu rozpięte na jego 600 cząsteczkach (siatka 20 × 30, '
+              'w każdym węźle położenie cząsteczki tego patcha, między węzłami interpolacja liczona w shaderze). '
+              'Gładka siatka = podobne sąsiednie patche; rozdarcia i zawinięcia = skok latentu. W układzie „siatka '
+              'zdjęcia” zdjęcie leży na terenie wybranej cechy.')
+        self.combo_zdj_kolor = QComboBox(); self.combo_zdj_kolor.addItems(['kolory zdjęcia', 'kolory cząstek',
+                                                                            'zdjęcie, narzędzie na czerwono'])
+        dodaj(row, 'kolor zdjęcia', self.combo_zdj_kolor, 'Barwy zdjęcia, barwy cząsteczek (jak „kolor”) albo zdjęcie '
+              'z patchami w ramce GT na czerwono.')
+        self.spin_zdj_krycie = self._float(row, 'krycie zdjęcia', .02, 1, .45, 2, 'Krycie zdjęcia w przestrzeni (0–1).')
+        self.spin_zdj_gest = self._int(row, 'gęstość', 1, 8, 4, 'Ile punktów siatki zdjęcia na bok patcha (1 = tylko '
+                                       'środki patchy, 4 = gładsze zdjęcie).')
+        self.chk_brzeg = pole_wyboru(row, 'Brzeg obrazu', 'Ramka wokół brzegu obrazu na cząsteczkach brzegowych '
+                                     '(niebieska: góra, żółta: lewa strona, szara: dół i prawa); tylko widok jednego obrazu.')
+        note = QLabel('Z przestrzeni makrowektorów nie da się tu przenieść opcji, które potrzebują pełnych latentów 768D '
+                      'każdej cząsteczki: kierunków i sił kanałów, PCA wektorów, mikrowektorów, atencji, Grand Tour, atlasu '
+                      'kanałów ani krajobrazu. Zapis ruchu zbioru trzyma tylko rzut PCA i normę zmiany 768D (pełne latenty '
+                      '900 000 cząsteczek w 101 krokach to około 280 GB).')
+        note.setWordWrap(True); self.opcje._strony['Wygląd'].addWidget(rola(note, 'opis'))
+        self.zaznaczone = set()
+        self._zdj_cache = {}
+
+    def _odtwarzanie_i_widok(self, lay):
+        """Pasek odtwarzania, widok 3D na karcie, prawy panel (pomiary, wykresy, mapa) i paski stanu."""
         controls = QHBoxLayout()
         self.btn_play = rola(QPushButton('Odtwórz'), 'glowny'); self.btn_play.setEnabled(False)
         self.btn_play.setToolTip('Odtwarza albo zatrzymuje animację. Pauza zachowuje pozycję między zapisami.')
@@ -287,10 +587,22 @@ class ZakladkaRuchu(QWidget):
         self.step_label = QLabel('Krok —'); self.step_label.setMinimumWidth(165)
         self.suwak = QSlider(Qt.Orientation.Horizontal); self.suwak.setEnabled(False)
         self.suwak.setToolTip('Wybór zapisanego stanu osi czasu (tylko rzeczywiste zapisy, bez stanów pośrednich).')
-        for widget in (self.btn_play, self.btn_begin, self.btn_prev, self.btn_next, self.step_label, self.suwak):
+        self.chk_petla = QCheckBox('Pętla')
+        self.chk_petla.setToolTip('Po dojściu do ostatniego zapisu odtwarzanie wraca do pierwszego i gra dalej, aż do pauzy.')
+        self.combo_zak_od = QComboBox(); self.combo_zak_do = QComboBox()
+        for c, opis in ((self.combo_zak_od, 'Pierwszy zapisany checkpoint zakresu odtwarzania: animacja, pętla, suwak i „Od '
+                         'początku” zaczynają się tutaj.'),
+                        (self.combo_zak_do, 'Ostatni zapisany checkpoint zakresu odtwarzania (maks. krok w liczniku): animacja '
+                         'zatrzymuje się albo, z pętlą, wraca do „od”.')):
+            c.setMinimumWidth(110); c.setMaxVisibleItems(25); c.setEnabled(False); c.setToolTip(opis)
+        self.lbl_zak_od = QLabel('od'); self.lbl_zak_do = QLabel('do')
+        self.lbl_zak_od.setToolTip(self.combo_zak_od.toolTip()); self.lbl_zak_do.setToolTip(self.combo_zak_do.toolTip())
+        for widget in (self.btn_play, self.btn_begin, self.btn_prev, self.btn_next, self.chk_petla, self.lbl_zak_od,
+                       self.combo_zak_od, self.lbl_zak_do, self.combo_zak_do, self.step_label, self.suwak):
             controls.addWidget(widget)
         lay.addLayout(controls)
-        self.frame_label = rola(QLabel('Wczytaj gotowy wynik lub oblicz nowe trajektorie.'), 'opis'); lay.addWidget(self.frame_label)
+        self.frame_label = staly_napis(rola(QLabel('Wczytaj gotowy wynik lub oblicz nowe trajektorie.'), 'opis'), 1)
+        lay.addWidget(self.frame_label)
         split = QSplitter(Qt.Orientation.Horizontal)
         self.view = WidokGL(); self.view.setMinimumHeight(480); self.view.setBackgroundColor('#10171c')
         self.view.setCameraPosition(distance=3.8, elevation=18, azimuth=35)
@@ -301,10 +613,27 @@ class ZakladkaRuchu(QWidget):
         self.cloud.wybrano.connect(self._picked, Qt.ConnectionType.QueuedConnection)
         grid = gl.GLGridItem(); grid.setSize(2.5, 2.5); grid.setSpacing(.5, .5); grid.translate(0, 0, -1.2)
         self.view.addItem(grid)
+        dodaj_nawigacje(self, self.opcje, self.view)       # obrót 360°, kroki 15°, ujęcia, lustro (jak w Uczenie ViT)
+        self.btn_odepnij = rola(QPushButton('Odepnij'), 'narzedzie'); self.opcje.pasek.addWidget(self.btn_odepnij)
+        self.odpinanie = Odpinanie(self.view, 'Ruch zbioru: cząsteczki', self.btn_odepnij)
+        b = rola(QPushButton('Kamera od nowa'), 'narzedzie'); b.setToolTip('Przywraca domyślną odległość i kąty kamery.')
+        b.clicked.connect(lambda: self.view.setCameraPosition(distance=3.8, elevation=18, azimuth=35))
+        self.opcje.pasek.addWidget(b)
         self.view.klik_px.connect(self._pick)
         split.addWidget(self.view)
         right = QWidget(); rl = QVBoxLayout(right)
-        self.metrics = QLabel('Pomiary pojawią się po wczytaniu.'); self.metrics.setWordWrap(True); rl.addWidget(self.metrics)
+        from PyQt6.QtWidgets import QSizePolicy
+        from PyQt6.QtWidgets import QScrollArea, QFrame
+        right.setMinimumWidth(300)
+        self.panel_boczny = QScrollArea(); self.panel_boczny.setWidget(right); self.panel_boczny.setWidgetResizable(True)
+        self.panel_boczny.setFrameShape(QFrame.Shape.NoFrame)        # wysoki panel przewija się, okno się nie rozciąga
+        self.panel_boczny.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.panel_boczny.setMinimumWidth(320)
+        self._split = split
+        self.metrics = staly_napis(QLabel('Pomiary pojawią się po wczytaniu.'), 8); rl.addWidget(self.metrics)
+        self.tab_koop.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.tab_koop.setFixedHeight(220)
+        self.tab_koop.setVisible(False); rl.addWidget(self.tab_koop)
         self.curve = pg.PlotWidget(title='Rzeczywiste metryki detekcji'); self.curve.setMinimumWidth(280)
         self.curve.setMinimumHeight(140)
         self.curve.addLegend(); self.curve.setYRange(0, 1); self.curve.setLabel('bottom', 'krok optymalizacji')
@@ -323,18 +652,30 @@ class ZakladkaRuchu(QWidget):
         self.log_line = self.log_curve.plot(pen='#b69ee8', symbol='o', symbolSize=4)
         self.log_cursor = pg.InfiniteLine(angle=90, pen='#ffffff'); self.log_curve.addItem(self.log_cursor)
         ll.addWidget(self.log_curve)
-        self.log_label = QLabel(); self.log_label.setWordWrap(True); ll.addWidget(self.log_label)
+        self.log_label = staly_napis(QLabel(), 2); ll.addWidget(self.log_label)
         self.log_box.hide(); rl.addWidget(self.log_box)
         self.heat = pg.ImageView(); self.heat.ui.roiBtn.hide(); self.heat.ui.menuBtn.hide()
         self.heat.setMinimumHeight(150)
-        self.heat_label = QLabel('Ruch 768D per patch (mapa 20 × 30, liczona na karcie)')
+        self.heat_label = staly_napis(QLabel('Ruch 768D per patch (mapa 20 × 30, liczona na karcie)'), 2)
         rl.addWidget(self.heat_label); rl.addWidget(self.heat, 1)
-        split.addWidget(right); split.setStretchFactor(0, 3); split.setStretchFactor(1, 1)
+        self._panel_fizyki(rl)
+        split.addWidget(self.panel_boczny); split.setStretchFactor(0, 3); split.setStretchFactor(1, 1)
+        split.setCollapsible(0, False)
+        self.btn_panel = rola(QPushButton('Ukryj panel boczny'), 'narzedzie')
+        self.btn_panel.setCheckable(True)
+        self.btn_panel.setToolTip('Chowa albo pokazuje prawy panel (pomiary, tabela modów Koopmana, wykresy metryk, '
+                                  'mapa ruchu). Ukryty panel nie odświeża mapy ruchu, a widok cząsteczek zajmuje całą '
+                                  'szerokość. Szerokość panelu zmienia się przeciągnięciem granicy.')
+        self.btn_panel.toggled.connect(self._panel_boczny)
+        self.opcje.pasek.addWidget(self.btn_panel)
         lay.addWidget(split, 1)
-        self.gpu_status = rola(QLabel('GPU: oczekuje na dane.'), 'status'); lay.addWidget(self.gpu_status)
+        self.gpu_status = staly_napis(rola(QLabel('GPU: oczekuje na dane.'), 'status'), 1); lay.addWidget(self.gpu_status)
         self.pasek = QProgressBar(); self.pasek.setRange(0, 100); lay.addWidget(self.pasek)
-        self.status = QLabel('Nic nie wczytuje się ani nie liczy przy otwieraniu zakładki.'); self.status.setWordWrap(True)
+        self.status = staly_napis(QLabel('Nic nie wczytuje się ani nie liczy przy otwieraniu zakładki.'), 2)
         lay.addWidget(self.status)
+
+    def _polacz_sygnaly(self):
+        """Połączenia przycisków i pól z obsługą (po zbudowaniu wszystkich stron)."""
         self.btn_checkpoint.clicked.connect(lambda: self._choose_file(self.edit_checkpoint, 'Checkpoint (*.pt *.pth);;Wszystkie (*)'))
         self.btn_manifest.clicked.connect(lambda: self._choose_file(self.edit_manifest, 'Manifest (*.json *.jsonl);;Wszystkie (*)'))
         self.btn_image_root.clicked.connect(lambda: self._choose_dir(self.edit_image_root))
@@ -345,9 +686,12 @@ class ZakladkaRuchu(QWidget):
         self.btn_open.clicked.connect(self._load_timeline)
         self.btn_q16.clicked.connect(self._convert_q16)
         self.btn_history.clicked.connect(self._history)
+        self.btn_szklo.clicked.connect(self._os_szkla)
+        self.btn_szklo_odswiez.clicked.connect(self._wypelnij_osie_szkla)
         self.btn_checkpoint_dir.clicked.connect(lambda: self._choose_dir(self.edit_checkpoint_dir))
         self.btn_scan_natural.clicked.connect(self._scan_natural)
         self.btn_default_natural.clicked.connect(self._default_natural)
+        self.btn_natural_35k.clicked.connect(self._natural_35k)
         self.btn_logs_file.clicked.connect(lambda: self._choose_file(self.edit_training_logs, 'Logi (*.json *.jsonl);;Wszystkie (*)'))
         self.btn_logs_dir.clicked.connect(lambda: self._choose_dir(self.edit_training_logs))
         self.btn_load_logs.clicked.connect(self._load_logs)
@@ -356,16 +700,53 @@ class ZakladkaRuchu(QWidget):
         self.btn_resume_natural.clicked.connect(self._resume_natural)
         self.combo_log_metric.currentIndexChanged.connect(self._plot_logs)
         self.btn_play.clicked.connect(self._toggle_play)
-        self.btn_begin.clicked.connect(lambda: self._seek_index(0))
+        self.btn_begin.clicked.connect(lambda: self._seek_index(self._zakres_idx()[0]))
+        self.btn_film.clicked.connect(self._nagraj_film_dialog)
+        self.combo_zak_od.currentIndexChanged.connect(lambda _: self._zmiana_zakresu())
+        self.combo_zak_do.currentIndexChanged.connect(lambda _: self._zmiana_zakresu())
         self.btn_prev.clicked.connect(lambda: self._seek_index(self.suwak.value() - 1))
         self.btn_next.clicked.connect(lambda: self._seek_index(self.suwak.value() + 1))
         self.suwak.valueChanged.connect(self._seek_index)
         for widget in (self.chk_movement, self.chk_smooth):
             widget.toggled.connect(self._display_options)
-        for widget in (self.combo_scope, self.combo_color, self.combo_kadr):
+        for widget in (self.combo_scope, self.combo_color, self.combo_kadr, self.combo_uklad, self.combo_cecha,
+                       self.combo_mozaika):
             widget.currentIndexChanged.connect(self._display_options)
-        for widget in (self.spin_image, self.spin_opacity, self.spin_size, self.spin_trail):
+        for widget in (self.spin_image, self.spin_opacity, self.spin_size, self.spin_trail, self.spin_zdj_krycie,
+                       self.spin_zdj_gest):
             widget.valueChanged.connect(self._display_options)
+        self.combo_wyg.currentIndexChanged.connect(self._display_options)
+        self.chk_att.toggled.connect(lambda _: self._atencja_odswiez())
+        self.combo_att_gdzie.currentIndexChanged.connect(lambda _: self._atencja_odswiez())
+        for widget in (self.spin_att_wzm, self.spin_att_krycie):
+            widget.valueChanged.connect(lambda _: self._atencja_odswiez())
+        self.opcje_att.zmiana.connect(lambda: self._atencja_odswiez(sila=True))
+        self.btn_att_zbior.clicked.connect(self._atencja_zbioru)
+        for widget in (self.spin_wyg_okno, self.spin_wyg_alfa, self.spin_moc):
+            widget.valueChanged.connect(self._display_options)
+        for widget in (self.combo_kxy, self.combo_kz, self.combo_kczesc):
+            widget.currentIndexChanged.connect(self._display_options)
+        self.spin_kd.valueChanged.connect(self._display_options)
+        self.btn_koop.clicked.connect(lambda: (self.cloud.przelicz_koopmana(), self._budz()))
+        self.btn_koop_auto.clicked.connect(lambda: self._osie_koopmana(None))
+        for widget in (self.combo_ksort, self.combo_kre, self.combo_kim):
+            widget.currentIndexChanged.connect(lambda _: self._tabela_koopmana())
+        for widget in self.combo_kkomb.values():
+            widget.currentIndexChanged.connect(lambda _: self._z_tabeli_koopmana())
+        self.btn_kustaw.clicked.connect(lambda: self._przypisz_koopmana('ustaw'))
+        self.btn_kdodaj.clicked.connect(lambda: self._przypisz_koopmana('dodaj'))
+        self.btn_kczysc.clicked.connect(lambda: self._przypisz_koopmana('czysc'))
+        self.tab_koop.itemChanged.connect(lambda _: self._z_tabeli_koopmana())
+        self.spin_kd.valueChanged.connect(lambda _: setattr(self, '_osie_reczne', None))   # nowe dopasowanie: nowe mody
+        self.cloud.koopman_gotowy.connect(self._koopman_opis, Qt.ConnectionType.QueuedConnection)
+        self.cloud.fizyka_gotowa.connect(self._fizyka_gotowa, Qt.ConnectionType.QueuedConnection)
+        self.btn_kklastry.clicked.connect(self._klastry_koopmana)
+        self.cloud.probka_koopmana.connect(self._klastry_probka, Qt.ConnectionType.QueuedConnection)
+        for widget in (self.combo_co, self.combo_zdj, self.combo_zdj_kolor):
+            widget.currentIndexChanged.connect(self._display_options)
+        for widget in (self.chk_tylko_narz, self.chk_tylko_zazn, self.chk_brzeg, self.chk_bez_poz):
+            widget.toggled.connect(self._display_options)
+        self.btn_clear_sel.clicked.connect(lambda: self._zaznacz(None))
         self.chk_spin.toggled.connect(lambda _: self._budz())
         self.spin_vram.valueChanged.connect(self._vram_changed)
         self.btn_camera.clicked.connect(lambda: self.view.setCameraPosition(distance=3.8, elevation=18, azimuth=35))
@@ -375,8 +756,6 @@ class ZakladkaRuchu(QWidget):
             widget.valueChanged.connect(self._estimate)
         for widget in (self.spin_natural_images, self.spin_natural_start, self.spin_natural_end, self.spin_natural_stride):
             widget.valueChanged.connect(self._estimate_natural)
-        self._estimate()
-        self._estimate_natural()
 
     @staticmethod
     def _int(row, label, lo, hi, value, opis):
@@ -391,6 +770,19 @@ class ZakladkaRuchu(QWidget):
     def _set_text(label, text):
         if label.text() != text:
             label.setText(text)
+
+    def _panel_boczny(self, ukryj):
+        """Chowanie prawego panelu; po pokazaniu wraca poprzednia szerokość."""
+        if ukryj:
+            self._szer_panelu = self._split.sizes()
+            self.panel_boczny.hide()
+        else:
+            self.panel_boczny.show()
+            if getattr(self, '_szer_panelu', None):
+                self._split.setSizes(self._szer_panelu)
+        self.btn_panel.setText('Pokaż panel boczny' if ukryj else 'Ukryj panel boczny')
+        if not ukryj and self.timeline:
+            self._last_stats = None; self._render(); self._apply_heat(force=True)
 
     def _mark_unsaved(self, unsaved):
         """Wyróżnienie stanu niezapisanego; styl zmieniany tylko przy zmianie (setStyleSheet przelicza wygląd)."""
@@ -464,7 +856,7 @@ class ZakladkaRuchu(QWidget):
             button.setEnabled(True)
 
     def _natural_buttons(self):
-        return (self.btn_scan_natural, self.btn_default_natural, self.btn_load_logs,
+        return (self.btn_scan_natural, self.btn_default_natural, self.btn_natural_35k, self.btn_traj, self.btn_load_logs,
                 self.btn_compute_natural, self.btn_latest_natural, self.btn_resume_natural)
 
     def _error(self, message):
@@ -499,6 +891,51 @@ class ZakladkaRuchu(QWidget):
             self.watek.requestInterruption()
             self.status.setText('Kończenie bieżącego kroku i zachowanie częściowego zapisu…')
 
+    def _wybor_modelu(self):
+        """Model z assets albo historia: ścieżka do pola „ViT”, lista kroków historii."""
+        import historie_checkpointow as HC
+        rodzaj, klucz = self.combo_model.currentData()
+        self.combo_model_krok.blockSignals(True); self.combo_model_krok.clear()
+        self.combo_model_krok.setEnabled(rodzaj == 'historia')
+        if rodzaj == 'model':
+            _, nazwa, plik, krok, opis = next(m for m in HC.MODELE if m[0] == klucz)
+            self.edit_checkpoint.setText(str(plik))
+            self._set_text(self.model_opis, opis if plik.is_file() else f'Brak pliku {plik}.')
+        elif rodzaj == 'historia':
+            h = HC.historia(klucz)
+            kroki = h.kroki()
+            if not kroki:
+                self._set_text(self.model_opis, f'Brak lokalnych wag w {h.wagi}.')
+            else:
+                koniec = [k for k in kroki if h.na_epoke and k % h.na_epoke == 0] if h.na_epoke else []
+                for k in kroki:
+                    self.combo_model_krok.addItem(h.opis_kroku(k), k)
+                ostatni = koniec[-1] if koniec else kroki[-1]
+                self.combo_model_krok.setCurrentIndex(kroki.index(ostatni))
+                self._set_text(self.model_opis, f'{len(kroki)} checkpointów; {h.opis}')
+        else:
+            self._set_text(self.model_opis, '')
+        self.combo_model_krok.blockSignals(False)
+        if rodzaj == 'historia':
+            self._wybor_kroku_modelu()
+
+    def _wybor_kroku_modelu(self):
+        import historie_checkpointow as HC
+        rodzaj, klucz = self.combo_model.currentData()
+        krok = self.combo_model_krok.currentData()
+        if rodzaj == 'historia' and krok is not None:
+            self.edit_checkpoint.setText(str(HC.historia(klucz).sciezka(krok)))
+
+    def _krok_modelu(self, path, krok):
+        """Krok z pliku, a gdy go brak (sam state_dict), z listy modeli assets."""
+        if krok is not None:
+            return krok
+        import historie_checkpointow as HC
+        for _, _, plik, k, _ in HC.MODELE:
+            if Path(path).resolve() == Path(plik).resolve():
+                return k
+        return None
+
     def _load_model(self):
         path, device = self.edit_checkpoint.text().strip(), self.combo_device.currentText()
         def load(progress, cancel):
@@ -508,12 +945,14 @@ class ZakladkaRuchu(QWidget):
             model = Detektor(path, device)
             with open(path, 'rb') as stream:
                 digest = hashlib.file_digest(stream, 'sha256').hexdigest()
-            result = {'path': str(Path(path).resolve()), 'step': model.krok, 'sha256': digest, 'device': str(model.dev)}
+            result = {'path': str(Path(path).resolve()), 'step': self._krok_modelu(path, model.krok), 'sha256': digest,
+                      'device': str(model.dev)}
             del model
             return result
         def loaded(result):
             self._active_checkpoint = result
-            self.model_status.setText(f'ViT k{result["step"]} · {result["device"]} · SHA {result["sha256"][:12]}')
+            krok = f'k{result["step"]}' if result['step'] is not None else 'krok nieznany'
+            self.model_status.setText(f'ViT {krok} · {Path(result["path"]).name} · {result["device"]} · SHA {result["sha256"][:12]}')
             self.status.setText('Checkpoint wczytany i sprawdzony. Obliczenia użyją osobnej zamrożonej kopii.')
             self._provenance()
         self._job(load, loaded)
@@ -568,6 +1007,170 @@ class ZakladkaRuchu(QWidget):
         self.edit_checkpoint.setText(str(R.DEFAULT_CHECKPOINT))
         self.edit_manifest.setText(str(R.DEFAULT_MANIFEST))
         self.spin_natural_start.setValue(0); self.spin_natural_end.setValue(1000); self.spin_natural_stride.setValue(10)
+        self._scan_natural()
+
+    # ------------------------------------------------------------------ historie checkpointów i wybrane zdjęcia
+    def _wiersze_trajektorii(self):
+        """Na górze strony „Uczenie naturalne”: historia checkpointów z zakresem epok i wybór zdjęć do trajektorii."""
+        from uklad import Przeplyw
+        import historie_checkpointow as HC
+        import zbiory_zdjec as Z
+        lay = self.opcje._strony['Uczenie naturalne']
+
+        def wiersz(n):
+            w = Przeplyw(); lay.insertLayout(n, w)
+            return w
+        row = wiersz(0)
+        self.combo_hist = QComboBox()
+        for h in HC.HISTORIE:
+            self.combo_hist.addItem(h.nazwa, h.klucz)
+        self.combo_hist.addItem('własny folder (pola niżej)', '')
+        dodaj(row, 'historia', self.combo_hist,
+              'Która historia uczenia: wypełnia folder checkpointów, logi, checkpoint referencyjny i zakres kroków. '
+              + ' '.join(f'{h.nazwa}: {h.opis}' for h in HC.HISTORIE))
+        self.spin_ep_od = self._int(row, 'od epoki', 0, 1000, 0, 'Pierwsza epoka (0 = stan przed uczeniem). Tylko dla '
+                                    'historii z epokami; ustawia „od kroku”.')
+        self.spin_ep_do = self._int(row, 'do epoki', 0, 1000, 21, 'Ostatnia epoka w pomiarze (włącznie). Tylko dla '
+                                    'historii z epokami; ustawia „do kroku” i checkpoint co epokę.')
+        self.hist_label = rola(QLabel(), 'opis')
+        row.addWidget(self.hist_label)
+        row = wiersz(1)
+        self.combo_zrodlo = QComboBox()
+        for k, opis in Z.ZRODLA.items():
+            self.combo_zrodlo.addItem(opis, k)
+        dodaj(row, 'zdjęcia z', self.combo_zrodlo,
+              'Skąd brać zdjęcia: manifest 1500 obrazów pomiaru (ten sam co w dotychczasowych pomiarach) albo pula '
+              '35 000 klatek, na których uczył się bieg 35 000 (to dane uczące tego modelu). Klatki puli są '
+              'wypakowywane z lokalnych zipów Cataract-LMM z kontrolą SHA-256.')
+        self.edit_wybor = QLineEdit(); self.edit_wybor.setMinimumWidth(220)
+        self.edit_wybor.setPlaceholderText('np. 0-9, 25, 100-120')
+        dodaj(row, 'wybrane', self.edit_wybor, 'Numery zdjęć źródła (od 0): pojedyncze i zakresy po przecinku. Wypełnia '
+              'je też okno „Wybierz zdjęcia…” i „Losuj”.')
+        self.btn_wybierz_zdj = przycisk(row, 'Wybierz zdjęcia…', 'Okno z listą zdjęć źródła: pola wyboru, filtr nazwy '
+                                        'i filmu, losowanie i podgląd zdjęcia.')
+        self.spin_los = self._int(row, 'losuj', 1, 35000, 100, 'Ile losowych zdjęć wybrać przyciskiem „Losuj” (ziarno 2026).')
+        self.btn_losuj = przycisk(row, 'Losuj', 'Wybiera losowe zdjęcia ze źródła (ziarno 2026, zawsze to samo dla tej liczby).')
+        self.btn_traj = przycisk(row, 'Policz trajektorie wybranych',
+                                 'Buduje manifest wybranych zdjęć, mierzy naturalnym forwardem każdy checkpoint z '
+                                 'zakresu historii (bez uczenia, zapis 16-bitowy) i od razu wczytuje oś czasu: '
+                                 'liczba cząsteczek = 600 × liczba zdjęć.', glowny=True)
+        self.wybor_label = rola(QLabel('Wybrane: brak.'), 'opis')
+        row.addWidget(self.wybor_label)
+        self.combo_hist.currentIndexChanged.connect(lambda _: self._ustaw_historie())
+        for w in (self.spin_ep_od, self.spin_ep_do):
+            w.valueChanged.connect(lambda _: self._ustaw_historie(tylko_zakres=True))
+        self.edit_wybor.textChanged.connect(lambda _: self._opis_wyboru())
+        self.combo_zrodlo.currentIndexChanged.connect(lambda _: self._opis_wyboru())
+        self.btn_wybierz_zdj.clicked.connect(self._okno_zdjec)
+        self.btn_losuj.clicked.connect(lambda: self.edit_wybor.setText(
+            Z.zwiez(Z.losowe(self.combo_zrodlo.currentData(), self.spin_los.value()))))
+        self.btn_traj.clicked.connect(self._trajektorie_wybranych)
+        self._opis_wyboru()
+
+    def _ustaw_historie(self, tylko_zakres=False):
+        import historie_checkpointow as HC
+        klucz = self.combo_hist.currentData()
+        if not klucz:
+            self.hist_label.setText('Własny folder: ustaw pola checkpointów i zakresu niżej.'); return
+        h = HC.historia(klucz)
+        kroki = h.kroki()
+        for w in (self.spin_ep_od, self.spin_ep_do):
+            w.setEnabled(bool(h.na_epoke))
+        if not tylko_zakres:
+            self.edit_checkpoint_dir.setText(str(h.wagi)); self.edit_training_logs.setText(str(h.dane))
+        if not kroki:
+            self.hist_label.setText(f'Brak lokalnych wag w {h.wagi}.'); return
+        if h.na_epoke:
+            epoki = h.epoki()
+            od, do = min(self.spin_ep_od.value(), epoki[-1]), min(self.spin_ep_do.value(), epoki[-1])
+            start, koniec, co = od * h.na_epoke, max(od, do) * h.na_epoke, h.na_epoke
+            self.hist_label.setText(f'epoki {od}–{max(od, do)} z {epoki[-1]} pobranych ({len(kroki)} plików)')
+        else:
+            start, koniec, co = kroki[0], kroki[-1], (kroki[1] - kroki[0]) if len(kroki) > 1 else 1
+            self.hist_label.setText(f'kroki {start}–{koniec} co {co} ({len(kroki)} plików)')
+        self.spin_natural_start.setValue(start); self.spin_natural_end.setValue(koniec)
+        self.spin_natural_stride.setValue(co)
+        ref = R.DEFAULT_CHECKPOINT if klucz == 'k1000' and koniec == 1000 else h.sciezka(koniec)
+        self.edit_checkpoint.setText(str(ref))
+
+    def _opis_wyboru(self):
+        import zbiory_zdjec as Z
+        zr = self.combo_zrodlo.currentData()
+        try:
+            idx = Z.parsuj(self.edit_wybor.text(), len(Z.wiersze(zr)))
+        except Exception as e:
+            self.wybor_label.setText(f'Zły wybór: {e}'); return []
+        self.wybor_label.setText(f'Wybrane: {len(idx)} zdjęć = {len(idx) * 600:,} cząsteczek.' if idx else
+                                 'Wybrane: brak (wpisz numery, „Losuj” albo „Wybierz zdjęcia…”).')
+        return idx
+
+    def _okno_zdjec(self):
+        import zbiory_zdjec as Z
+        zr = self.combo_zrodlo.currentData()
+        try:
+            teraz = Z.parsuj(self.edit_wybor.text(), len(Z.wiersze(zr)))
+        except ValueError:
+            teraz = []
+        wynik = okno_wyboru_zdjec(self, zr, teraz)
+        if wynik is not None:
+            self.edit_wybor.setText(Z.zwiez(wynik))
+
+    def _po_zadaniu(self, funkcja, proby=100):
+        """Wywołaj funkcję, gdy wątek tła się zwolni (zadanie zgłasza wynik przed swoim końcem)."""
+        if self.watek is None:
+            funkcja()
+        elif proby > 0:
+            QTimer.singleShot(100, lambda: self._po_zadaniu(funkcja, proby - 1))
+
+    def _trajektorie_wybranych(self):
+        """Manifest wybranych zdjęć + pomiar naturalny checkpointów historii, potem wczytanie osi czasu."""
+        import dataclasses
+        import zbiory_zdjec as Z
+        idx = self._opis_wyboru()
+        if not idx:
+            self._error('Nie wybrano zdjęć: wpisz numery, użyj „Losuj” albo „Wybierz zdjęcia…”.'); return
+        if self.combo_hist.currentData():
+            self._ustaw_historie(tylko_zakres=True)
+        zr = self.combo_zrodlo.currentData()
+        try:
+            baza = self._natural_config()
+        except Exception as e:
+            self._error(str(e)); return
+
+        def licz(progress, cancel):
+            manifest, katalog = Z.zbuduj(zr, idx, postep=lambda a, n: progress(
+                {'phase': 'validate', 'message': f'Przygotowanie zdjęć {a}/{n}', 'fraction': a / n}))
+            config = dataclasses.replace(baza, manifest=str(manifest), image_root=str(katalog),
+                                         max_images=len(idx), frame_format='q16').validate()
+            return manifest, katalog, N.run(config, progress=progress, cancel=cancel)
+
+        def gotowe(wynik):
+            manifest, katalog, path = wynik
+            self.edit_manifest.setText(str(manifest)); self.edit_image_root.setText(str(katalog))
+            self.spin_natural_images.setValue(len(idx))
+            self.edit_timeline.setText(str(path))
+            self.status.setText(f'Trajektorie {len(idx)} zdjęć ({len(idx) * 600:,} cząsteczek) zapisane w {path}. '
+                                'Wczytuję oś czasu.')
+            self.pasek.setValue(100)
+            self._po_zadaniu(self._load_timeline)
+        self.status.setText(f'Trajektorie {len(idx)} wybranych zdjęć: przygotowanie i pomiar w tle…')
+        self._job(licz, gotowe)
+
+    def _natural_35k(self):
+        family = R.ROOT / 'assets/MalyViT_35000_od_zera_s47'
+        wagi = family / 'wagi'
+        self.edit_checkpoint_dir.setText(str(wagi))
+        self.edit_training_logs.setText(str(family / 'dane'))
+        self.edit_manifest.setText(str(R.DEFAULT_MANIFEST))
+        kroki = sorted(int(p.stem[1:]) for p in wagi.glob('k*.pt') if p.stem[1:].isdigit()) if wagi.is_dir() else []
+        epoki = [k for k in kroki if k and k % 1094 == 0]
+        koniec = epoki[-1] if epoki else 21 * 1094
+        self.edit_checkpoint.setText(str(wagi / f'k{koniec:05d}.pt') if epoki else '')
+        self.spin_natural_start.setValue(0); self.spin_natural_end.setValue(koniec); self.spin_natural_stride.setValue(1094)
+        if not kroki:
+            self.status.setText(f'Brak lokalnych wag w {wagi}. Pobierz je skryptem pobierz_z_edena.sh z folderu '
+                                'assets/MalyViT_35000_od_zera_s47 (806 plików, 8,8 GB), potem kliknij „Sprawdź historię”.')
+            return
         self._scan_natural()
 
     def _compute_natural(self):
@@ -681,6 +1284,29 @@ class ZakladkaRuchu(QWidget):
     def _history(self):
         self.edit_timeline.setText(str(R.DEFAULT_TIMELINE)); self._load_timeline()
 
+    def _wypelnij_osie_szkla(self):
+        """Lista osi układu szkła z dysku (bez wczytywania czegokolwiek); pusta lista daje jeden wpis z podpowiedzią."""
+        biezacy = self.combo_szklo.currentData()
+        self.combo_szklo.blockSignals(True)
+        self.combo_szklo.clear()
+        for opis, p in R.osie_szkla():
+            self.combo_szklo.addItem(opis, str(p))
+        if self.combo_szklo.count() == 0:
+            self.combo_szklo.addItem('brak osi szkła (eksport_osi_szkla.py / model_szkla.py)', '')
+        if biezacy:
+            i = self.combo_szklo.findData(biezacy)
+            if i >= 0:
+                self.combo_szklo.setCurrentIndex(i)
+        self.combo_szklo.blockSignals(False)
+
+    def _os_szkla(self):
+        """Wybrana oś układu szkła do pola „zapis ruchu” i wczytanie."""
+        p = self.combo_szklo.currentData()
+        if not p:
+            self._error('Brak osi szkła: uruchom outputs/porownanie_szklo_20261010/eksport_osi_szkla.py (układ względem klatki) '
+                        'albo model_szkla.py (symulacja szkła koloidalnego).'); return
+        self.edit_timeline.setText(p); self._load_timeline()
+
     def _load_timeline(self):
         """Tylko po kliknięciu. Wątek tła: manifest + pierwsze dwa stany (SHA256); resztę doczytuje strumień karty."""
         path = self.edit_timeline.text().strip()
@@ -726,6 +1352,10 @@ class ZakladkaRuchu(QWidget):
         if len(steps) > 1:
             gotowe[steps[1]] = second
         self.cloud.ustaw_os(timeline, gotowe=gotowe, budzet=self._vram_budget())
+        self._zdj_cache = {}
+        self._dane_pomocnicze(timeline)
+        self._obszary_oka(timeline)
+        self.cloud.wyczysc_atencje(); self._att_klucz = self._att_zbior = None; self._att_obrazy = None
         bounds = []
         for movement in (False, True):
             try:
@@ -738,6 +1368,7 @@ class ZakladkaRuchu(QWidget):
         self.cloud.setVisible(True)
         self.suwak.blockSignals(True); self.suwak.setRange(0, len(steps) - 1); self.suwak.setValue(0)
         self.suwak.blockSignals(False); self.suwak.setEnabled(True)
+        self._wypelnij_zakres(timeline)
         self.spin_image.setMaximum(max(timeline.image_count - 1, 0))
         self.btn_play.setEnabled(len(steps) > 1)
         curves = timeline.curves()                      # rzeczywiste metryki producenta: ustawiane raz
@@ -795,6 +1426,22 @@ class ZakladkaRuchu(QWidget):
         fraction = 0.0 if a == b else (self._visual_step - a) / (b - a)
         s = fraction if self.chk_smooth.isChecked() else 0.0
         first, count = self._scope()
+        self.cloud.ustaw_uklad(self.combo_uklad.currentData(), self.combo_cecha.currentData(),
+                               bool(self.combo_mozaika.currentData()))
+        self.tab_koop.setVisible(self.combo_uklad.currentData() == 3)
+        self.cloud.ustaw_bez_polozenia(self.chk_bez_poz.isChecked())
+        self.cloud.ustaw_wygladzanie(self.combo_wyg.currentData(), self.spin_wyg_okno.value(), self.spin_wyg_alfa.value())
+        self.cloud.ustaw_moc_koloru(self.spin_moc.value())
+        self._ustaw_fizyke()
+        self.cloud.ustaw_koopmana(self.spin_kd.value(), self.combo_kxy.currentData(), self.combo_kz.currentData(),
+                                  self.combo_kczesc.currentData(), osie=self._osie_reczne)
+        self.cloud.ustaw_wyglad(self.combo_co.currentData(), self.chk_tylko_narz.isChecked(),
+                                self.chk_tylko_zazn.isChecked())
+        jeden = self.combo_scope.currentIndex() == 1
+        tryb = self.combo_zdj.currentIndex() if jeden else 0
+        self.cloud.ustaw_zdjecie(self._zdjecie_obrazu(self.spin_image.value()) if tryb else None, tryb,
+                                 self.combo_zdj_kolor.currentIndex(), self.spin_zdj_krycie.value(),
+                                 self.spin_zdj_gest.value(), self.chk_brzeg.isChecked() and jeden)
         self.cloud.ustaw_klatke(a, b, s, self.chk_movement.isChecked(), self.combo_color.currentData(),
                                 self.combo_kadr.currentData(), first, count, self.spin_size.value(),
                                 self.spin_opacity.value(), self.spin_trail.value())
@@ -811,7 +1458,10 @@ class ZakladkaRuchu(QWidget):
         etykiety = not self._playing or now - self._last_label_time > .05     # w ruchu napisy do 20 razy/s
         if etykiety:
             self._last_label_time = now
-            self._set_text(self.step_label, f'Krok {self._visual_step:.2f} / {steps[-1]}')
+            i0, i1 = self._zakres_idx()
+            pelny = i0 == 0 and i1 == len(steps) - 1
+            self._set_text(self.step_label, f'Krok {self._visual_step:.2f} / {steps[i1]}'
+                           + ('' if pelny else f'  (zakres {steps[i0]}–{steps[i1]} z {steps[-1]})'))
         if 0 < s < 1:
             if etykiety:
                 self._set_text(self.frame_label, f'STAN NIEZAPISANY · liniowe przejście na GPU między zapisami '
@@ -820,8 +1470,18 @@ class ZakladkaRuchu(QWidget):
         else:
             shown = b if s >= 1 else a
             extra = ' (płynne przejścia wyłączone)' if not self.chk_smooth.isChecked() and fraction > 0 else ''
-            self._set_text(self.frame_label, f'Zapisany stan {shown}: położenia i normy bitowo z pliku{extra}.')
-            self._mark_unsaved(False)
+            wyg = self.combo_wyg.currentData()
+            if wyg:
+                opis = (f'średnia ruchoma z {self.spin_wyg_okno.value() | 1} zapisów' if wyg == 1
+                        else f'EMA α = {self.spin_wyg_alfa.value():.2f}')
+                self._set_text(self.frame_label, f'STAN WYGŁADZONY w zapisie {shown}: {opis} z zapisanych stanów '
+                               f'(nie jest to zapis z pliku){extra}.')
+                self._mark_unsaved(True)
+            else:
+                self._set_text(self.frame_label, f'Zapisany stan {shown}: położenia i normy bitowo z pliku{extra}.')
+                self._mark_unsaved(False)
+        if self.chk_att.isChecked():
+            self._atencja_odswiez()
         if a != self._last_stats and (not self._playing or now - self._last_stats_time > .1):
             self._show_stats(a, first, count)
             self._last_stats_time = now
@@ -846,6 +1506,8 @@ class ZakladkaRuchu(QWidget):
                                 if self.timeline.metadata.get('time_axis') == 'training_checkpoint'
                                 else 'Korekta z etykietą, przy zamrożonym detektorze.') + gpu)
         self.cursor.setValue(a); self.log_cursor.setValue(a)
+        for kursor in getattr(self, '_fz_kursory', ()):
+            kursor.setValue(a)
         self._last_stats = a
         self.cloud.zadaj_statystyki(a, first, count)
         self._budz()
@@ -865,7 +1527,7 @@ class ZakladkaRuchu(QWidget):
             self._apply_heat()
 
     def _apply_heat(self, force=False):
-        if self._pending_heat is None:
+        if self._pending_heat is None or self.panel_boczny.isHidden():
             return
         now = time.perf_counter()
         if not force and self._playing and now - getattr(self, '_last_heat_time', 0.0) < .2:
@@ -890,6 +1552,82 @@ class ZakladkaRuchu(QWidget):
             self._render()
             self._budz()
 
+    # ------------------------------------------------------------------ heatmapy atencji (liczy karta)
+
+
+    # ------------------------------------------------------------------ osie Koopmana pod klastry
+
+
+    # ------------------------------------------------------------------ fizyka ruchu i obszary oka
+    WLASCIWOSCI = {0: 'temperatura (energia drgań własnych, log)', 1: 'wykładnik MSD α',
+                   2: 'VACF: cos kolejnych przesunięć', 3: 'prostoliniowość: netto / droga',
+                   4: 'tempo powrotu κ (Ornstein-Uhlenbeck)', 5: 'ruch w rozgrzewce (log)',
+                   6: 'zmiana 768D na końcu okna (log)', 8: 'okres dominujący ruchu (zapisy)',
+                   9: 'udział energii ruchu w paśmie okresów', 10: 'energia kinetyczna ½⟨|Δx|²⟩ (log)',
+                   11: 'energia potencjalna ½κ⟨|x − x̄|²⟩ (log)', 12: 'energia całkowita (log)'}
+    WL_LOG = (0, 5, 6, 10, 11, 12)
+    OBSZARY = ('tło', 'rogówka', 'źrenica', 'narzędzie')
+    KOLORY_OBSZAROW = ('#8a8f99', '#4cd964', '#4a8cff', '#ff4433')
+
+
+    def _zaznacz(self, patche):
+        self.zaznaczone = set() if not patche else set(int(p) for p in patche)
+        self.cloud.ustaw_zaznaczenie(self.zaznaczone)
+        lista = ', '.join(str(p) for p in sorted(self.zaznaczone)[:20]) + (' …' if len(self.zaznaczone) > 20 else '')
+        self.sel_label.setText(f'Zaznaczone patche ({len(self.zaznaczone)}): {lista}' if self.zaznaczone
+                               else 'Zaznaczone patche: brak (Ctrl + klik na cząsteczce).')
+        self._display_options()
+
+    def _zdjecie_obrazu(self, i):
+        """Zdjęcie obrazu i (320 × 480, jak wejście ViT) z manifestu pomiaru; SHA256 sprawdzane; None, gdy brak."""
+        if not self.timeline:
+            return None
+        if i in self._zdj_cache:
+            return self._zdj_cache[i]
+        rgb = None
+        try:
+            m = self.timeline.metadata
+            sciezki, obrazy = m.get('resolved_image_paths') or [], m.get('images') or []
+            if i < len(sciezki):
+                import hashlib
+                raw = Path(sciezki[i]).read_bytes()
+                if i >= len(obrazy) or hashlib.sha256(raw).hexdigest() == obrazy[i].get('image_sha256'):
+                    rgb = R._private_module('dane').decode_resize(raw)
+        except Exception as e:                             # brak pliku albo dekodera: bez zdjęcia, z komunikatem
+            self._set_text(self.status, f'Zdjęcie obrazu {i} niedostępne: {e}')
+        if len(self._zdj_cache) > 32:
+            self._zdj_cache.clear()
+        self._zdj_cache[i] = rgb
+        return rgb
+
+    def _dane_pomocnicze(self, timeline):
+        """Maska patchy w ramce GT (z manifestu) i pewność ViT obrazów w zapisanych krokach (metrics.npy)."""
+        maska = pewnosci = None
+        m = getattr(timeline, 'metadata', None) or {}
+        obrazy = m.get('images') or []
+        tpi = timeline.count // max(timeline.image_count, 1) if timeline.image_count else 0
+        if tpi == 600 and len(obrazy) == timeline.image_count and all('bbox_xyxy_480' in r for r in obrazy):
+            b = np.asarray([r['bbox_xyxy_480'] for r in obrazy], np.float32)               # [obrazy, 4]
+            t = np.arange(600); x, y = (t % 30) * 16 + 8, (t // 30) * 16 + 8
+            maska = ((x[None] >= b[:, :1]) & (x[None] <= b[:, 2:3]) & (y[None] >= b[:, 1:2]) & (y[None] <= b[:, 3:4]))
+            maska = maska.reshape(-1).astype(np.uint32)
+        root = getattr(timeline, 'root', None)                  # atrapy osi czasu w testach nie mają folderu
+        sciezka = Path(root) / 'metrics.npy' if root is not None else None
+        kroki = m.get('metric_steps')
+        if sciezka is not None and sciezka.is_file() and kroki:
+            try:
+                metr = np.load(sciezka, mmap_mode='r')
+                idx = [kroki.index(s) for s in timeline.steps]
+                pewnosci = np.nan_to_num(np.asarray(metr[:, idx, 0], np.float32).T, nan=0.0)   # [T, obrazy]
+            except (ValueError, IndexError, OSError):
+                pewnosci = None
+        self.cloud.ustaw_dane_pomocnicze(maska, pewnosci)
+        self.chk_tylko_narz.setEnabled(maska is not None)
+        for indeks, jest in ((4, maska is not None), (5, pewnosci is not None)):
+            item = self.combo_color.model().item(indeks)
+            if item is not None:
+                item.setEnabled(jest)
+
     def _vram_changed(self, *_):
         self.cloud.ustaw_budzet(self._vram_budget())
         self._budz()
@@ -904,15 +1642,143 @@ class ZakladkaRuchu(QWidget):
             return
         if self._playing:
             self._pause(); self._render(); self._apply_heat(force=True); return
-        if self._visual_step >= self.timeline.steps[-1]:
-            self._seek_index(0)
+        i0, i1 = self._zakres_idx()
+        if self._visual_step >= self.timeline.steps[i1] or self._visual_step < self.timeline.steps[i0]:
+            self._seek_index(i0)
         self._playing = True; self._last_tick = time.perf_counter(); self.btn_play.setText('Pauza')
         self._budz()
+
+    # ------------------------------------------------------------------ nagrywanie filmu z odtwarzania
+    def _nagraj_film_dialog(self):
+        if not self.timeline:
+            self._error('Najpierw wczytaj oś czasu.'); return
+        domyslna = Path(self.timeline.root) / f'film_{time.strftime("%Y%m%d_%H%M%S")}.mp4'
+        sciezka, _ = QFileDialog.getSaveFileName(self, 'Zapisz film', str(domyslna), 'Film MP4 (*.mp4)')
+        if not sciezka:
+            return
+        i0, i1 = self._zakres_idx()
+        od, do = self.timeline.steps[i0], self.timeline.steps[i1]
+        sek = (do - od) / max(self.spin_tempo.value(), 1e-6)
+        self.status.setText(f'Nagrywam {sciezka}: kroki {od}–{do}, {sek:.1f} s przy {self.spin_fps.value()} kl./s…')
+        try:
+            n = self.nagraj_film(sciezka, fps=self.spin_fps.value(), postep=lambda f, nn: self.pasek.setValue(int(100 * f / nn)))
+            self.status.setText(f'Film zapisany: {sciezka} ({n} klatek, {sek:.1f} s).')
+        except Exception as e:                                   # brak ffmpeg/kodeka albo przerwanie: komunikat
+            self._error(f'nagrywanie filmu: {e}')
+
+    def nagraj_film(self, sciezka, fps=30, sekundy=None, tempo=None, od=None, do=None, napis=None, klatka=None,
+                    postep=None, limit_czekania=60.0):
+        """Nagrywa odtwarzanie do MP4 z bieżącymi ustawieniami widoku. tempo: kroki treningu na sekundę filmu
+        (domyślnie „tempo (kroki/s)”), sekundy: długość filmu zamiast tempa; od/do: kroki (domyślnie zakres
+        „od–do”); napis(krok) -> tekst nad widokiem; klatka(obraz uint8 [H, W, 3], krok) -> obraz (dowolne złożenie).
+        Klatki są renderowane deterministycznie (nie z zegara) i każda czeka na stany na karcie. Zwraca liczbę klatek."""
+        import subprocess
+        import shutil
+        from PyQt6.QtWidgets import QApplication
+        if not self.timeline:
+            raise ValueError('brak osi czasu')
+        self._pause()
+        steps = self.timeline.steps
+        i0, i1 = self._zakres_idx()
+        od = steps[i0] if od is None else float(od); do = steps[i1] if do is None else float(do)
+        if sekundy is None:
+            sekundy = (do - od) / max(float(tempo if tempo is not None else self.spin_tempo.value()), 1e-6)
+        n = max(1, int(round(sekundy * fps)))
+        self.cloud.wczytaj_teraz([s for s in steps if od <= s <= do] or steps[:1])
+        pisarz = None
+        proc = None
+        try:
+            for f in range(n + 1):
+                krok = od + (do - od) * f / n
+                self._visual_step = float(krok); self._last_index = None
+                t0 = time.perf_counter()
+                while True:                                      # czekaj na stany pary na karcie
+                    self.cloud.pompuj()
+                    gotowe = self._render()
+                    QApplication.processEvents()
+                    if gotowe or time.perf_counter() - t0 > limit_czekania:
+                        break
+                    time.sleep(.01)
+                img = self.view.grabFramebuffer().convertToFormat(QImage.Format.Format_RGB888)
+                w, h = img.width(), img.height()
+                buf = img.constBits(); buf.setsize(img.sizeInBytes())
+                a = np.frombuffer(buf, np.uint8).reshape(h, img.bytesPerLine())[:, :w * 3].reshape(h, w, 3).copy()
+                if klatka is not None:
+                    a = np.ascontiguousarray(klatka(a, krok))
+                if napis is not None:
+                    a = _napis_na_klatce(a, napis(krok))
+                a = a[:a.shape[0] // 2 * 2, :a.shape[1] // 2 * 2]        # parzyste wymiary (yuv420p)
+                if pisarz is None and proc is None:
+                    H, W = a.shape[:2]
+                    ffmpeg = shutil.which('ffmpeg')
+                    if ffmpeg:
+                        proc = subprocess.Popen([ffmpeg, '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24',
+                                                 '-s', f'{W}x{H}', '-r', str(fps), '-i', '-', '-c:v', 'libx264',
+                                                 '-pix_fmt', 'yuv420p', '-crf', '18', '-movflags', '+faststart', str(sciezka)],
+                                                stdin=subprocess.PIPE)
+                    else:
+                        import cv2
+                        pisarz = cv2.VideoWriter(str(sciezka), cv2.VideoWriter_fourcc(*'mp4v'), fps, (W, H))
+                        if not pisarz.isOpened():
+                            raise RuntimeError('nie można otworzyć kodeka mp4v')
+                if proc is not None:
+                    proc.stdin.write(a.tobytes())
+                else:
+                    import cv2
+                    pisarz.write(np.ascontiguousarray(a[:, :, ::-1]))
+                if postep is not None:
+                    postep(f, n)
+        finally:
+            if proc is not None:
+                proc.stdin.close(); proc.wait()
+                if proc.returncode:
+                    raise RuntimeError(f'ffmpeg zakończył się kodem {proc.returncode}')
+            if pisarz is not None:
+                pisarz.release()
+        return n + 1
+
+    def _zakres_idx(self):
+        """Indeksy (pierwszy, ostatni) zapisów zakresu odtwarzania; cała oś, gdy zakres nie jest ustawiony."""
+        if not self.timeline:
+            return 0, 0
+        n = len(self.timeline.steps)
+        i0, i1 = self.combo_zak_od.currentIndex(), self.combo_zak_do.currentIndex()
+        if i0 < 0 or i1 < 0 or self.combo_zak_od.count() != n:
+            return 0, n - 1
+        return min(i0, i1), max(i0, i1)
+
+    def _wypelnij_zakres(self, timeline):
+        """Listy „od” i „do”: kroki zapisanych checkpointów osi (z numerem epoki dla historii 35 000)."""
+        import historie_checkpointow as HC
+        na_epoke = None
+        sciezka = str(((getattr(timeline, 'metadata', None) or {}).get('config') or {}).get('checkpoint_dir', ''))
+        if 'MalyViT_35000_od_zera' in sciezka or 'od_zera_35000' in sciezka:
+            na_epoke = HC.historia('35k').na_epoke
+        for c in (self.combo_zak_od, self.combo_zak_do):
+            c.blockSignals(True); c.clear()
+            for k in timeline.steps:
+                c.addItem(f'{k} (epoka {k // na_epoke})' if na_epoke and k and k % na_epoke == 0 else str(k), k)
+            c.setEnabled(len(timeline.steps) > 1)
+        self.combo_zak_od.setCurrentIndex(0); self.combo_zak_do.setCurrentIndex(len(timeline.steps) - 1)
+        for c in (self.combo_zak_od, self.combo_zak_do):
+            c.blockSignals(False)
+
+    def _zmiana_zakresu(self):
+        if not self.timeline:
+            return
+        i0, i1 = self._zakres_idx()
+        steps = self.timeline.steps
+        self.suwak.blockSignals(True); self.suwak.setRange(i0, i1); self.suwak.blockSignals(False)
+        if not steps[i0] <= self._visual_step <= steps[i1]:
+            self._seek_index(i0)
+        else:
+            self._last_index = None; self._render(); self._budz()
 
     def _seek_index(self, index):
         self._pause()
         if self.timeline:
-            index = max(0, min(int(index), len(self.timeline.steps) - 1))
+            i0, i1 = self._zakres_idx()
+            index = max(i0, min(int(index), i1))
             self._visual_step = float(self.timeline.steps[index]); self._render()
             self._budz()
 
@@ -933,9 +1799,14 @@ class ZakladkaRuchu(QWidget):
                 break
             remaining -= gap
             self._visual_step = float(b)
-        if self._visual_step >= steps[-1]:
-            self._visual_step = float(steps[-1])
-            self._pause()
+        i0, i1 = self._zakres_idx()
+        if self._visual_step >= steps[i1]:
+            if self.chk_petla.isChecked() and i1 > i0:
+                self._visual_step = float(steps[i0])               # pętla: od początku zakresu, bez pauzy
+                self._last_stats = None
+            else:
+                self._visual_step = float(steps[i1])
+                self._pause()
 
     def _budz(self):
         """Włącza zegar klatek, gdy jest coś do zrobienia; _tick sam go wyłącza w bezczynności."""
@@ -998,6 +1869,10 @@ class ZakladkaRuchu(QWidget):
             return
         tpi = self.cloud.tpi or 600
         image, token = divmod(index, tpi)
+        from wspolne import ctrl_wcisniety
+        if ctrl_wcisniety():                               # Ctrl + klik: patch do zaznaczenia albo z niego
+            self._zaznacz(self.zaznaczone ^ {int(token)})
+            return
         name = self.timeline.image_names[image] if image < len(self.timeline.image_names) else f'obraz {image}'
         patch = f'({token // 30}, {token % 30})' if tpi == 600 else ''
         self.image_name.setText(f'Obraz {image} · patch {token} {patch} · {name}')

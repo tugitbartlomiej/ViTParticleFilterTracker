@@ -1,0 +1,114 @@
+{
+  "policy": "controlled",
+  "step": 466,
+  "forecast_origin_step": 465,
+  "checkpoint_step_before": 1465,
+  "current": {
+    "mse128": 85.75092038194404,
+    "gain128": 0.001981539057378412,
+    "cosine128": 0.1473386392613185,
+    "mse640": 0.08145310225092703,
+    "gain640": 0.0,
+    "cosine640": 0.7216187309532467,
+    "mse768": 14.359697648866444,
+    "gain768": -0.002758450868408646,
+    "cosine768": 0.11477426795642257,
+    "value_agreement128": 0.004343935651892505
+  },
+  "candidate_predictions": [
+    {
+      "arm": "2026100511",
+      "predicted": {
+        "mse128": 85.76203665985584,
+        "gain128": 0.0018521614306016287,
+        "cosine128": 0.14524668239215524,
+        "mse640": 0.08103168876555482,
+        "gain640": 0.0,
+        "cosine640": 0.7229106837842297,
+        "mse768": 14.361199183947265,
+        "gain768": -0.0028633052343143284,
+        "cosine768": 0.1142374611480387,
+        "value_agreement128": 0.004279402053935288
+      },
+      "alignment_dot128": -426.3715443312164,
+      "alignment_cosine128": -0.16723169360094092,
+      "coordinate_toward_fraction128": 0.41389322916666665,
+      "new_norm128": 0.8761252760887146,
+      "momentum_norm128": 0.906794548034668,
+      "force_sha256": "5f0cb8477c83daa23d3472f0c0413d04dd6a7dcc627b63ab86672dd20632f075"
+    },
+    {
+      "arm": "2026100523",
+      "predicted": {
+        "mse128": 85.90273629931085,
+        "gain128": 0.0002146182182534151,
+        "cosine128": 0.12365690742177117,
+        "mse640": 0.07647707254057949,
+        "gain640": 0.0,
+        "cosine640": 0.7311302918649497,
+        "mse768": 14.380853610335631,
+        "gain768": -0.004235802249212162,
+        "cosine768": 0.1076549928982288,
+        "value_agreement128": 0.0034629562155222837
+      },
+      "alignment_dot128": -5805.8944664156015,
+      "alignment_cosine128": -0.3276653782669539,
+      "coordinate_toward_fraction128": 0.4832421875,
+      "new_norm128": 6.49156379699707,
+      "momentum_norm128": 0.9049035906791687,
+      "force_sha256": "2bd0db1ad0a312fe04915441e82ebe732476b083a5dc816537460d0a19ff10d4"
+    },
+    {
+      "arm": "2026100537",
+      "predicted": {
+        "mse128": 85.89311783963626,
+        "gain128": 0.00032656337613989894,
+        "cosine128": 0.12368416763054359,
+        "mse640": 0.07262041726198204,
+        "gain640": 0.0,
+        "cosine640": 0.7448094483490639,
+        "mse768": 14.376036654324365,
+        "gain768": -0.003899427245652065,
+        "cosine768": 0.10944640867942597,
+        "value_agreement128": 0.00351874849937861
+      },
+      "alignment_dot128": -5422.302591956593,
+      "alignment_cosine128": -0.24211492471497637,
+      "coordinate_toward_fraction128": 0.45424479166666665,
+      "new_norm128": 8.158953666687012,
+      "momentum_norm128": 0.9036529660224915,
+      "force_sha256": "ef2d349213e7e42e748b22f8eb0d02974ffda0dafa289b43801de14b75f0cdc5"
+    },
+    {
+      "arm": "2026100549",
+      "predicted": {
+        "mse128": 85.83756698597381,
+        "gain128": 0.0009730961157222717,
+        "cosine128": 0.134446903395575,
+        "mse640": 0.0772371990277593,
+        "gain640": 0.0,
+        "cosine640": 0.725776397566041,
+        "mse768": 14.370625496852103,
+        "gain768": -0.003521558294858451,
+        "cosine768": 0.11178373181547137,
+        "value_agreement128": 0.003841034723567782
+      },
+      "alignment_dot128": -3298.8917836815176,
+      "alignment_cosine128": -0.17075363796361145,
+      "coordinate_toward_fraction128": 0.5050130208333333,
+      "new_norm128": 7.0742340087890625,
+      "momentum_norm128": 0.9048410058021545,
+      "force_sha256": "3e96846831609ad937e1cfda57cd3adb36b66d26c8e5a8a2c23b7998e9d7b8a5"
+    }
+  ],
+  "selected_arm": "2026100511",
+  "selection": "argmin current one-step Langevin MSE128",
+  "selected_force_sha256": "5f0cb8477c83daa23d3472f0c0413d04dd6a7dcc627b63ab86672dd20632f075",
+  "future_information_used": false,
+  "forecast_horizon": 1,
+  "coefficients": {
+    "nowa": 1,
+    "ped": 1
+  },
+  "omitted_terms": "weight decay, BN buffer evolution, nonlinear interaction; evaluated by actual next state"
+}

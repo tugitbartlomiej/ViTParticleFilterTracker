@@ -1,0 +1,160 @@
+{
+  "rodzina": "dobor_klatek_stan_sieci",
+  "klasa": "badawcza",
+  "pytanie": "Czy zadaniowy zysk z historii latentu Koopmana i rozszerzonego Langevina daje lepsze klatki do uczenia detektora?",
+  "data": "2026-09-22",
+  "status": "complete_exploratory_pilot",
+  "particle": "one_raw_vit_patch",
+  "eden_root": "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-22_dobor_klatek_stan_sieci",
+  "jobs": {
+    "extract": 1809371,
+    "fit_and_selection": 1809379,
+    "five_trainings": 1809380,
+    "checkpoint_diagnostics": 1809382,
+    "cancelled_before_code_started": 1809362
+  },
+  "tests": {
+    "passed": 81,
+    "failed": 0,
+    "scope": "unit_and_synthetic_integration",
+    "date": "2026-09-22"
+  },
+  "cancelled_reason": "Slurm implicit get-user-env failed; resubmitted using env assignments and --export=ALL",
+  "training_budgets": [
+    1500,
+    3000
+  ],
+  "arms": [
+    "random",
+    "readout_loss",
+    "koopman_langevin",
+    "placebo",
+    "random_large"
+  ],
+  "output_root": "SmallViTAblation/experiments/dobor_klatek_stan_sieci/wyniki",
+  "artifacts": [
+    "WYNIKI_PILOT.md",
+    "AUDYT_WAG.md",
+    "wyniki/WYNIKI_PILOT_Z_CZASEM.json",
+    "wyniki/DIAGNOSTYKA.json",
+    "wyniki/raport_koncowy/WYNIKI_PILOT.md",
+    "wyniki/raport_koncowy/WYKRES_UCZENIA.png",
+    "wyniki/raport_koncowy/WYKRES_PATCHY.png",
+    "wyniki/mapy_patchy/MAPY_PATCHY.png",
+    "wyniki/selection/BIEG_selekcja.json",
+    "wyniki/selection/GLE_fold*.pt",
+    "wyniki/selection/SCORES.npz"
+  ],
+  "test_used": false,
+  "pilot_training_seeds": [
+    42
+  ],
+  "selection_seed": 42,
+  "epochs": 10,
+  "job_states": {
+    "extract": "COMPLETED",
+    "fit_and_selection": "COMPLETED",
+    "five_trainings": "COMPLETED",
+    "checkpoint_diagnostics": "COMPLETED"
+  },
+  "result": {
+    "metric": "mAP_0.5:0.95",
+    "checkpoint_rule": "last_epoch",
+    "evaluation_set": "val",
+    "n_images": 12043,
+    "rows": [
+      {
+        "strategy": "koopman_langevin",
+        "run_id": "stan_koopman_langevin_b1500_sel42_s42",
+        "ap": 0.6731666577290885,
+        "ap50": 0.9046003115007341,
+        "n_images": 12043,
+        "budget": 1500,
+        "best_epoch_ap_training_log": 0.6885991096496582,
+        "training_seconds": 1073.0615753643215,
+        "evaluation_seconds": 441.5811612093821,
+        "total_seconds": 1623.2225658260286
+      },
+      {
+        "strategy": "placebo",
+        "run_id": "stan_placebo_b1500_sel42_s42",
+        "ap": 0.6521960032274894,
+        "ap50": 0.8948711989275423,
+        "n_images": 12043,
+        "budget": 1500,
+        "best_epoch_ap_training_log": 0.6809130907058716,
+        "training_seconds": 1058.8089075060561,
+        "evaluation_seconds": 452.0006466181949,
+        "total_seconds": 1610.1411719415337
+      },
+      {
+        "strategy": "random",
+        "run_id": "stan_random_b1500_sel42_s42",
+        "ap": 0.655465916799198,
+        "ap50": 0.8882852636387114,
+        "n_images": 12043,
+        "budget": 1500,
+        "best_epoch_ap_training_log": 0.6852047443389893,
+        "training_seconds": 1088.8057454619557,
+        "evaluation_seconds": 424.29824126232415,
+        "total_seconds": 1618.582998374477
+      },
+      {
+        "strategy": "random_large",
+        "run_id": "stan_random_large_b3000_sel42_s42",
+        "ap": 0.671221992997501,
+        "ap50": 0.8906706587415826,
+        "n_images": 12043,
+        "budget": 3000,
+        "best_epoch_ap_training_log": 0.6950748562812805,
+        "training_seconds": 1223.0334781911224,
+        "evaluation_seconds": 400.28907145466655,
+        "total_seconds": 1728.3768330113962
+      },
+      {
+        "strategy": "readout_loss",
+        "run_id": "stan_readout_loss_b1500_sel42_s42",
+        "ap": 0.6459725899810161,
+        "ap50": 0.8854749734877869,
+        "n_images": 12043,
+        "budget": 1500,
+        "best_epoch_ap_training_log": 0.675645112991333,
+        "training_seconds": 1059.5257852245122,
+        "evaluation_seconds": 453.4110435433686,
+        "total_seconds": 1615.7444123374298
+      }
+    ],
+    "deltas": {
+      "koopman_langevin_minus_readout_loss": 0.027194067748072315,
+      "koopman_langevin_minus_placebo": 0.020970654501599073,
+      "koopman_langevin_minus_random": 0.01770074092989049,
+      "koopman_langevin_minus_random_large": 0.0019446647315874976
+    },
+    "practical_gate_met": true,
+    "statistical_significance_tested": false,
+    "training_curve_weights": "ema"
+  },
+  "checkpoint_diagnostics": {
+    "status": "complete",
+    "checkpoints": 25,
+    "val_probe_frames": 192,
+    "elapsed_seconds": 169.40969460830092,
+    "final_patch_auroc": {
+      "koopman_langevin": 0.9154411171079316,
+      "placebo": 0.9088333046573968,
+      "random": 0.903741924798896,
+      "random_large": 0.9134191196730662,
+      "readout_loss": 0.9006561301327587
+    },
+    "langevin_fitted_on_training_clock": false
+  },
+  "verified_metadata_files": 34,
+  "limitations": [
+    "single_seed_exploratory",
+    "static_labelled_subset_selection",
+    "no_adaptive_epoch_reranking",
+    "no_tracking_identity_evaluation",
+    "no_individual_GLE_term_ablation",
+    "selector_overhead_exceeds_training_time_saved"
+  ]
+}

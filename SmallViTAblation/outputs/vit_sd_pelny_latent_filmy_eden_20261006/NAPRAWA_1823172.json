@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-10-06T04:26:51.762130+02:00",
+  "old_job": 1823167,
+  "new_job": 1823172,
+  "checkpoint_step": 2500,
+  "last_reported_step": 2650,
+  "best_validation_mse": 0.16412127244166186,
+  "policy": "Whole films with inconsistent MP4/CSV frame counts are rejected before yielding samples; all other errors still abort.",
+  "verified_tests": [
+    "synthetic film rejection and unexpected error propagation",
+    "actual TR_0007 preflight yielded no samples",
+    "checkpoint load with optimizer and four rank states",
+    "bash syntax validation"
+  ],
+  "limits": [
+    "118 films remain manifest candidates, not a claim all are usable",
+    "Rejected films are reported as RuntimeWarning JSON in SLURM log",
+    "Cursor replay costs time and excludes invalid films; training data policy amended and documented"
+  ],
+  "dane_sha256": "50c2e296fcef1f638b01ac629bd681d9d60adf05911371385764228d6d20aaa6"
+}

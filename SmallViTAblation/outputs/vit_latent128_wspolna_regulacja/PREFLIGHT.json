@@ -1,0 +1,53 @@
+{
+  "status": "pass",
+  "models": [
+    {
+      "kind": "shift",
+      "parameters": 128,
+      "forward_error": 1.1920928955078125e-06,
+      "gradient_max_error": 9.313225746154785e-10,
+      "unchanged640": true,
+      "min_gelu": -0.16997122764587402
+    },
+    {
+      "kind": "affine",
+      "parameters": 256,
+      "forward_error": 9.5367431640625e-07,
+      "gradient_max_error": 9.313225746154785e-09,
+      "unchanged640": true,
+      "min_gelu": -0.16997122764587402
+    },
+    {
+      "kind": "adapter",
+      "parameters": 4368,
+      "forward_error": 1.1920928955078125e-06,
+      "gradient_max_error": 3.4924596548080444e-09,
+      "unchanged640": true,
+      "min_gelu": -0.16997122764587402
+    }
+  ],
+  "provenance": {
+    "checkpoint_step": 1000,
+    "checkpoint_sha": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+    "channels_sha": "5212a7bfff03d4d5a0756b37eae958ddc15a4f7fbd3935a9f8e1388b68b587a6",
+    "manifest_sha": "140c843927780c12e49a434cabf61e643487bb44fb395186cf19f7a5d9e4e3fa",
+    "splits": {
+      "train": {
+        "images": 240,
+        "films": 69
+      },
+      "val": {
+        "images": 75,
+        "films": 23
+      },
+      "test": {
+        "images": 85,
+        "films": 24
+      }
+    },
+    "torch": "2.6.0+cu124",
+    "device": "NVIDIA GeForce RTX 3070",
+    "weights_hash": "c9e860c84bf4fa2f37ad6fe6f6925e2c5f2071f687b53a74f35754683715e3ad"
+  },
+  "no_test_labels_in_training": true
+}

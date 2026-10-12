@@ -1,0 +1,159 @@
+{
+  "configs": [
+    {
+      "name": "affine001",
+      "kind": "affine",
+      "lr": 0.001,
+      "width": 64,
+      "distill": 0,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "affine003",
+      "kind": "affine",
+      "lr": 0.003,
+      "width": 64,
+      "distill": 0,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "local128_001",
+      "kind": "local",
+      "lr": 0.001,
+      "width": 128,
+      "distill": 0,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "local128_003",
+      "kind": "local",
+      "lr": 0.003,
+      "width": 128,
+      "distill": 0,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "local128_distill",
+      "kind": "local",
+      "lr": 0.001,
+      "width": 128,
+      "distill": 0.3,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "spatial64_focal",
+      "kind": "spatial",
+      "lr": 0.001,
+      "width": 64,
+      "distill": 0,
+      "strong": false,
+      "coords": false
+    },
+    {
+      "name": "spatial64_strong",
+      "kind": "spatial",
+      "lr": 0.001,
+      "width": 64,
+      "distill": 0,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "spatial64_distill001",
+      "kind": "spatial",
+      "lr": 0.001,
+      "width": 64,
+      "distill": 0.3,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "spatial64_distill003",
+      "kind": "spatial",
+      "lr": 0.003,
+      "width": 64,
+      "distill": 0.3,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "spatial128_distill001",
+      "kind": "spatial",
+      "lr": 0.001,
+      "width": 128,
+      "distill": 0.3,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "spatial128_distill003",
+      "kind": "spatial",
+      "lr": 0.003,
+      "width": 128,
+      "distill": 0.3,
+      "strong": true,
+      "coords": false
+    },
+    {
+      "name": "spatial64_coordinates",
+      "kind": "spatial",
+      "lr": 0.001,
+      "width": 64,
+      "distill": 0.3,
+      "strong": true,
+      "coords": true
+    }
+  ],
+  "seed": 20261005,
+  "epochs": 160,
+  "batch": 16,
+  "patience_checks": 6,
+  "minimum_epochs": 60,
+  "sources": {
+    "dane.py": "87ea3ec072cbd06825ea4a1ccb99f841578ad9ab20a392596f0698a79bbbf4d4",
+    "dane_bazowe.py": "68d7bbc0984697e53fc9c5c9599df796fb3a809a5d102eaaff78dfce7e923109",
+    "inferencja.py": "8d84031c3298ee740392ad6609d432857a1291bd8c21add410391c8d2ced79d4",
+    "metryki_source.py": "529eef1d1990faa2528380dbac63f872fefff91c828a65e1ba802d65282d49e4",
+    "model_snapshot.py": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+    "PLAN.md": "33cfcfc33a1a02f9006788b71c95d56be01561dab2a867f70b04808503a67d94",
+    "README.md": "860c1967981a399b33e39d5c30a247b9eb17862237f2eeeea44af2314a18bf08",
+    "regulator.py": "16c6536c86ba91d7a425aa5578364d4a4840d6942f389110994352f8fb5d5acc",
+    "szukaj.py": "e45e32b3482052fe558badc0e338aeecefe2e9810cacf4cbb206fe4a27a02a05",
+    "uruchom_w_tle.ps1": "d01799b4143a8892eaba5e2edffb4448f9594f194f85ea79a52902f75cf6a0a6",
+    "WYNIKI.json": "7b69dca3102ec3bf5219acc2c8cb88af52fc46c5148a164a6dac62e0315f2cf6",
+    "__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  "provenance": {
+    "checkpoint_step": 1000,
+    "checkpoint_sha": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+    "channels_sha": "5212a7bfff03d4d5a0756b37eae958ddc15a4f7fbd3935a9f8e1388b68b587a6",
+    "manifest_sha": "140c843927780c12e49a434cabf61e643487bb44fb395186cf19f7a5d9e4e3fa",
+    "splits": {
+      "train": {
+        "images": 240,
+        "films": 69
+      },
+      "val": {
+        "images": 75,
+        "films": 23
+      },
+      "test": {
+        "images": 85,
+        "films": 24
+      }
+    },
+    "torch": "2.6.0+cu124",
+    "device": "NVIDIA GeForce RTX 3070",
+    "weights_hash": "c9e860c84bf4fa2f37ad6fe6f6925e2c5f2071f687b53a74f35754683715e3ad",
+    "augmented_train": 720,
+    "seed": 20261005,
+    "historical_benchmark_reused": true,
+    "test_labels_in_gradient": false,
+    "augmentation": "full frozen forwards: horizontal flip and deterministic brightness/contrast"
+  }
+}

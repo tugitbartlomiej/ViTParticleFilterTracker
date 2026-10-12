@@ -1,0 +1,1 @@
+trenuj.py: dokładna wersja zakończonego biegu, SHA256 zgodny z RUN_CONFIG.json. Kod aktualny dodatkowo zapisuje changed_parameters w checkpointach. sprawdz.py: końcowa wykonana wersja niezależnej weryfikacji. Dane i model bez zmian.

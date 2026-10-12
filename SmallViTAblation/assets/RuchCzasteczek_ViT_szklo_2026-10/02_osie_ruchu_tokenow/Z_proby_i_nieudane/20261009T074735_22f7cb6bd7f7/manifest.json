@@ -1,0 +1,120 @@
+{
+  "schema_version": 2,
+  "status": "cancelled",
+  "steps": [],
+  "files": {},
+  "stats": {},
+  "curves": {
+    "steps": [],
+    "confidence": [],
+    "iou": []
+  },
+  "point_count": 600,
+  "image_count": 1,
+  "tokens_per_image": 600,
+  "time_axis": "latent_optimization",
+  "interpolation": false,
+  "full_latent_states_persisted": false,
+  "config": {
+    "checkpoint": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\assets\\MalyViT_K1000_SD_conditioning\\MODEL_VIT_K1000.pt",
+    "manifest": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_k1000_1500_pelne_latenty_90_20261008\\provenance\\MANIFEST_1500.jsonl",
+    "image_root": "",
+    "max_images": 1,
+    "steps": 2,
+    "save_every": 1,
+    "lr": 0.05,
+    "target_confidence": 0.999,
+    "target_iou": 0.999,
+    "device": "cuda",
+    "seed": 42,
+    "constraint": "gelu",
+    "regularization": 0.0,
+    "optimizer": "adam"
+  },
+  "norm": "L2(z(step)-z(0)) in full 768D, NOT PCA length",
+  "coordinates": "(z-mean) @ fixed_components, image-major then token-major",
+  "held_state_policy": "first success frozen; real_step stops; active=false",
+  "success_count_targets": {
+    "confidence": 0.999,
+    "iou": 0.999
+  },
+  "both90_targets": {
+    "confidence": 0.9,
+    "iou": 0.9
+  },
+  "partial_policy": "Only complete dataset frames listed; .part files are image prefixes",
+  "metric_columns": [
+    "confidence",
+    "iou",
+    "loss",
+    "delta_l2",
+    "real_step",
+    "active",
+    "success"
+  ],
+  "completed_images": 0,
+  "image_names": [
+    "TR_0001_S1_P03_00000076.jpg"
+  ],
+  "images": [
+    {
+      "annotation_id": 0,
+      "bbox_xywh_source": [
+        336.0,
+        273.0,
+        180.0,
+        17.0
+      ],
+      "bbox_xyxy_480": [
+        224.0,
+        182.0,
+        344.0,
+        193.33333333333331
+      ],
+      "bbox_xyxy_480_campaign_legacy": [
+        224.0,
+        182.0,
+        344.0,
+        193.33333333333331
+      ],
+      "frame_id": "cataract_lmm/tracking/TR_0001_S1_P03/00000076",
+      "image_id": 0,
+      "image_name": "TR_0001_S1_P03_00000076.jpg",
+      "image_sha256": "aa520ac1caf1817717f39e5b40fa9ab8d08916a9b624b336ea8d88a07771594a",
+      "index": 0,
+      "resize_scale_xy": [
+        0.6666666666666666,
+        0.6666666666666666
+      ],
+      "source_dimensions_verified_from_bytes": true,
+      "source_height": 480,
+      "source_width": 720
+    }
+  ],
+  "estimates": {
+    "disk_bytes": 67143625,
+    "ram_bytes": 536899880,
+    "cuda_bytes": 268435456,
+    "frame_count": 3,
+    "full_latent_states_persisted": false
+  },
+  "device": "cuda:0",
+  "checkpoint_sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+  "manifest_sha256": "33caf6f005b3db0d091d6e9ba9a58cec141a859c66fcd7bd777d31e6fe1a80d7",
+  "source_hashes": {
+    "model_snapshot": "1422336d4472db56ce5c89294e3ab8bf0b17ad7502af0876d9c7e564b2473c37",
+    "pelne_latenty": "aa888560aa4c15091f54b3a5061e85ac575ba3bc01e7df7919fc5b0de65deded",
+    "dane": "efba98869408a06afa86d9c8f4a474fdc7f9cba7f6b43fb11e416ceb2df1bd76"
+  },
+  "backend_sha256": "8b7a05b006d773839451fbce6b17f2603f57739be218b7faf5fa4b50b3d11d8e",
+  "weights_sha256_before": "443ef243f956ead49a7b9119cf3d454d93251476115006d1416a88d45415246e",
+  "checkpoint_step": 1000,
+  "freeze": {
+    "all_parameters_frozen": true,
+    "parameter_count": 89,
+    "eval": true,
+    "flags_sha256": "2504a41cf4866b8a795cce2240cdd58e0e77d0784157fd47894778df0d4c8fa1"
+  },
+  "weights_sha256_after": "443ef243f956ead49a7b9119cf3d454d93251476115006d1416a88d45415246e",
+  "weights_unchanged": true
+}

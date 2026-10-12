@@ -1,0 +1,73 @@
+WEBVTT
+
+00:00:00.100 --> 00:00:06.490
+Operator Koopmana opisuje, jak obserwowane wielkości zmieniają się pod działaniem dynamiki.
+
+00:00:06.490 --> 00:00:12.669
+Zamiast modelować bezpośrednio wszystkie szczegóły układu, szukamy wygodnych obserwacji.
+
+00:00:12.669 --> 00:00:17.865
+W naszej pętli używamy ograniczonego modelu liniowego historii przyrostów.
+
+00:00:17.865 --> 00:00:22.358
+To przybliżenie, nie dowód znalezienia dokładnych niezmienników.
+
+00:00:23.058 --> 00:00:28.477
+Stanem w dotychczasowej wersji była jedna liczba na sondę: siła odczytu LDA.
+
+00:00:28.477 --> 00:00:34.109
+Liczymy jej kolejne przyrosty i układamy cztery poprzednie zmiany jako wejście.
+
+00:00:34.109 --> 00:00:36.034
+Następna zmiana jest celem.
+
+00:00:36.034 --> 00:00:44.233
+Wszystkie współczynniki dopasowujemy wyłącznie na dostępnej przeszłości, z regularyzacją stabilizującą rozwiązanie.
+
+00:00:44.933 --> 00:00:49.950
+Każdy wiersz macierzy wejściowej zawiera historię przed danym krokiem.
+
+00:00:49.950 --> 00:00:53.606
+Odpowiadający mu cel jest zmianą w następnym kroku.
+
+00:00:53.606 --> 00:00:58.981
+Regresja dobiera współczynniki tak, aby odtworzyć cele z przeszłych danych.
+
+00:00:58.981 --> 00:01:02.636
+W starej pętli współczynniki były wspólne dla sond.
+
+00:01:02.636 --> 00:01:06.650
+Osobne dopasowanie na jednym obrazie to odrębny wariant.
+
+00:01:07.350 --> 00:01:13.681
+Tutaj pokazujemy obliczony przykład dla jednej sondy, na stu pomiarach bez uśredniania.
+
+00:01:13.681 --> 00:01:16.446
+Dopasowanie kończy się w kroku tysiąc.
+
+00:01:16.446 --> 00:01:22.558
+Potem przewidujemy pięćset aktualizacji, korzystając z własnych poprzednich prognoz.
+
+00:01:22.558 --> 00:01:26.269
+Szara linia pokazuje rzeczywisty późniejszy odczyt.
+
+00:01:26.269 --> 00:01:29.908
+Błąd porównujemy z utrzymaniem ostatniej wartości.
+
+00:01:29.908 --> 00:01:33.692
+Ten jeden przykład nie jest dowodem przewagi metody.
+
+00:01:34.392 --> 00:01:40.413
+Koopman w tej wersji nie wybierał cząstek narzędzia i nie odkrywał kierunku LDA.
+
+00:01:40.413 --> 00:01:47.187
+Maska wskazywała tokeny, LDA definiowała odczyt, a model dynamiki przewidywał jego zmianę.
+
+00:01:47.187 --> 00:01:48.993
+To trzy osobne operacje.
+
+00:01:48.993 --> 00:01:51.025
+Każda wymaga własnej oceny.
+
+00:01:51.025 --> 00:01:55.692
+Dobra prognoza nie dowodzi jeszcze użyteczności doboru klatek.

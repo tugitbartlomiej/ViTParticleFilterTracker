@@ -1,0 +1,320 @@
+
+const el=id=>document.getElementById(id), FMT=new Intl.NumberFormat('pl-PL',{maximumFractionDigits:3});
+const C={text:'#f2f6fa',muted:'#aebdca',panel:'#142131',grid:'#2b3e50',blue:'#62d4dd',orange:'#ffb967'};
+const palette=['#62d4dd','#ffb967','#d88fe5','#a9d776','#8da6ff','#f0909d','#dfd889','#b5cedd'];
+const CONFIG={responsive:true,displaylogo:false,modeBarButtonsToRemove:['sendDataToCloud']};
+let META=null, busy=false, pendingDraw=false, playing=false, timer=null, sequence=0, lastCamera=null, playSession=0, lastPanelTime=0;
+const frameCache=new Map();
+let gpuCloud=null;
+const availableSteps=()=>spaceView()==='raw'?[0,100,500]:el('mode').value!=='exact'?(META?.global_steps||[0,100,500]):[0,100,500];
+const actualStep=()=>el('mode').value==='exact'?Number(el('step').value):availableSteps()[Number(el('step').value)];
+function setupTimeline(){const exact=el('mode').value==='exact',dense=spaceView()!=='raw'&&el('mode').value!=='exact'&&META?.dense_ready,steps=availableSteps();el('step').max=exact?500:steps.length-1;el('speed').disabled=!(exact||dense);const stride=dense?steps[1]-steps[0]:1;el('speed').replaceChildren(...(dense?[stride,2*stride,4*stride]:[1,5,10]).map(v=>{const o=document.createElement('option');o.value=v;o.textContent=v===1?'Każdy krok':`Co ${v} rzeczywistych kroków`;return o;}));el('speed').value=dense?stride:1;el('mode').options[0].textContent=META?.dense_ready?`Cały zbiór · 0–500 co ${META.global_steps[1]-META.global_steps[0]} kroków`:'Cały zbiór · dostępne stany 0, 100, 500';}
+
+async function api(path){const r=await fetch(path);if(!r.ok)throw new Error(await r.text());return r.json()}
+async function loadFrame(o){if(spaceView()==='raw')return rawFrame(o);const query=new URLSearchParams({...o,movement:o.movement?1:0,trails:o.trails?1:0,geometry:o.mode==='global'?0:1}).toString();if(o.mode!=='global')return api('/api/frame?'+query);if(!frameCache.has(query))frameCache.set(query,api('/api/frame?'+query).catch(e=>{frameCache.delete(query);throw e;}));return frameCache.get(query);}
+function stop(){playing=false;playSession++;clearTimeout(timer);if(gpuCloud)gpuCloud.pauseTransition();el('play').textContent='Odtwórz';}
+const playbackRate=()=>Number(el('tempo').value);
+function updateTempo(){el('tempo-value').value=playbackRate();el('duration-note').textContent=`Całość: około ${FMT.format(500/playbackRate())} s, plus ewentualne wczytywanie`;}
+function displayGlobalProgress(step,from,to,alpha){el('step-value').textContent=FMT.format(step);el('frame-kind').textContent=alpha>0&&alpha<1?`Interpolacja widoku między zapisami ${from} i ${to}. Metryki pozostają pomiarami zapisanego kroku.`:`Zapisany stan ${step}.`;}
+async function waitForView(){while(busy||pendingDraw)await new Promise(requestAnimationFrame);}
+function opts(){return {mode:el('mode').value,image:Number(el('image').value||0),step:actualStep(),movement:el('movement').checked,trails:el('trails').checked}}
+function selectImages(){const mode=el('mode').value,old=Number(el('image').value||0);const ids=mode==='exact'?[-1,...META.control_images]:Array.from({length:1500},(_,i)=>i);el('image').replaceChildren(...ids.map(i=>{const o=document.createElement('option');o.value=i;const r=META.images[i]||{};o.textContent=i<0?'Wszystkie 16 obrazów · 128 trajektorii':`${String(i).padStart(4,'0')} · ${r.frame_id||r.image_name||'obraz'}`;return o}));el('image').value=ids.includes(old)?old:ids[0];el('image-wrap').classList.remove('hidden');el('trail-wrap').classList.toggle('hidden',mode!=='exact');setupTimeline();}
+function commonLayout(){return {paper_bgcolor:C.panel,plot_bgcolor:C.panel,font:{family:'system-ui,sans-serif',color:C.text,size:12},margin:{l:48,r:25,t:20,b:42},showlegend:true,legend:{orientation:'h',y:1.14},uirevision:'same-view'}}
+async function drawCurves(){const o=opts();const d=await api(`/api/curves?mode=${o.mode}&image=${o.image}`);const x=Array.from({length:501},(_,i)=>i);const layout=commonLayout();layout.xaxis={title:'Rzeczywisty krok optymalizacji',range:[0,500],gridcolor:C.grid};layout.yaxis={title:'Wartość',range:[0,1.02],tickformat:'.0%',gridcolor:C.grid};layout.shapes=[{type:'line',x0:0,x1:500,y0:.9,y1:.9,line:{color:C.muted,dash:'dot',width:1}},{type:'line',x0:o.step,x1:o.step,y0:0,y1:1,line:{color:C.muted,width:1}}];await Plotly.react('quality',[{x,y:d.confidence,type:'scatter',mode:'lines',name:'Pewność',line:{color:C.blue,width:2}},{x,y:d.iou,type:'scatter',mode:'lines',name:'IoU',line:{color:C.orange,width:2,dash:'dash'}}],layout,CONFIG);el('metric-title').textContent=o.mode==='global'?'Detekcja · średnia z 1500 obrazów':o.image<0?'Detekcja · średnia panelu 16 obrazów':'Detekcja tego obrazu';}
+async function draw(panelOnly=false,provided=null){if(busy){pendingDraw={panelOnly,provided};return;}busy=true;const ticket=++sequence;try{const o=opts(),viewRequested=spaceView(),axesRequested=channelAxes().join(','),patchRequested=selectedPatch;let d=provided||await loadFrame(o);if(ticket!==sequence||o.mode!==el('mode').value||o.image!==Number(el('image').value||0)||o.movement!==el('movement').checked||viewRequested!==spaceView()||axesRequested!==channelAxes().join(',')||patchRequested!==selectedPatch)return;d=transformSpace(d,o);if(!panelOnly){el('step-value').textContent=d.step;el('frame-kind').textContent=`Zapisany stan ${d.step}. Metryki dotyczą tego kroku.`;}
+el('cloud').classList.toggle('hidden',o.mode==='global');el('gpu-controls').classList.toggle('hidden',o.mode!=='global');
+if(o.mode==='global'){if(!gpuCloud){gpuCloud=new ParticleCloudGPU(el('gpu-cloud'),el('gpu-status'),el('point-detail'));gpuCloud.onSelect=chooseParticle;}gpuCloud.colorMode=colorMode;gpuCloud.showAxes=el('show-axes').checked;if(gpuCloud.spaceView!==spaceCode())gpuCloud.setSpace(spaceCode());gpuCloud.setSelection(selectedImage(),selectedPatch,el('focus-image').checked);if(!panelOnly)await gpuCloud.show(d,o.movement);el('point-detail').textContent='Kliknij cząsteczkę, aby odczytać jej obraz i numer patcha. Obrót: przeciągnij. Przybliżenie: kółko myszy.';}else{if(gpuCloud)gpuCloud.hide();
+const traces=[];if(o.mode==='exact'){
+const unique=[...new Set(d.tokens)];for(let u=0;u<unique.length;u++){const t=unique[u],ids=d.tokens.map((v,j)=>v===t?j:-1).filter(j=>j>=0),color=palette[u%palette.length];
+if(d.lines.length){const points=[];for(const j of ids)points.push(...d.lines[j],null);traces.push({x:points.map(p=>p?.[0]??null),y:points.map(p=>p?.[1]??null),z:points.map(p=>p?.[2]??null),type:'scatter3d',mode:'lines',line:{color,width:3},opacity:.6,showlegend:false,hoverinfo:'skip'});}
+traces.push({x:ids.map(j=>d.xyz[j][0]),y:ids.map(j=>d.xyz[j][1]),z:ids.map(j=>d.xyz[j][2]),type:'scatter3d',mode:'markers',name:`Patch ${t}`,marker:{size:o.image<0?4:6,color:colorMode===0?ids.map(j=>d.norm[j]):ids.map(j=>identityColor(colorMode===1?d.images[j]:t)),cmin:0,cmax:d.norm_scale,colorscale:[[0,'#53728b'],[.45,'#62d4dd'],[1,'#ffb967']],showscale:false},customdata:ids.map(j=>[d.images[j],d.tokens[j],d.norm[j]]),hovertemplate:'Obraz %{customdata[0]} · patch %{customdata[1]}<br>Ruch 768D: %{customdata[2]:.4f}<extra></extra>'});}}
+
+else traces.push({x:d.xyz.map(p=>p[0]),y:d.xyz.map(p=>p[1]),z:d.xyz.map(p=>p[2]),type:'scatter3d',mode:'markers',marker:{size:o.mode==='global'?2:4,color:colorMode?d.tokens.map((t,j)=>identityColor(colorMode===1?d.images[j]:t)):d.norm,showscale:colorMode===0,cmin:0,cmax:d.norm_scale,colorscale:[[0,'#53728b'],[.45,'#62d4dd'],[1,'#ffb967']],colorbar:{title:'Ruch 768D',thickness:12},opacity:.7},showlegend:false,customdata:d.tokens.map((t,j)=>[d.images[j],t,d.norm[j]]),hovertemplate:'Obraz %{customdata[0]} · patch %{customdata[1]}<br>Ruch 768D: %{customdata[2]:.4f}<extra></extra>'});
+const selectedIndex=d.tokens.findIndex((t,j)=>t===selectedPatch&&d.images[j]===selectedImage());if(selectedIndex>=0)traces.push({x:[d.xyz[selectedIndex][0]],y:[d.xyz[selectedIndex][1]],z:[d.xyz[selectedIndex][2]],type:'scatter3d',mode:'markers',marker:{size:9,color:'#ffffff',line:{color:'#142131',width:2}},showlegend:false,customdata:[[selectedImage(),selectedPatch]],hovertemplate:'Wybrany obraz %{customdata[0]} · patch %{customdata[1]}<extra></extra>'});
+const axis=(i)=>({title:spaceNames()[i],visible:el('show-axes').checked&&(spaceCode()===0||spaceCode()===4||i<2||spaceView()==='raw'),range:d.bounds[i],gridcolor:C.grid,zerolinecolor:C.grid,backgroundcolor:C.panel,showbackground:true});const layout=commonLayout();layout.margin={l:0,r:0,t:0,b:0};layout.scene={xaxis:axis(0),yaxis:axis(1),zaxis:axis(2),aspectmode:'cube',camera:lastCamera||{eye:spaceCode()>=1&&spaceCode()<=3?{x:0,y:0,z:2.5}:{x:1.6,y:1.4,z:1.1}}};layout.legend={orientation:'h',y:1.04};await Plotly.react('cloud',traces,layout,CONFIG);
+if(!el('cloud').dataset.eventsAttached){el('cloud').on('plotly_relayout',event=>{if(event['scene.camera'])lastCamera=event['scene.camera'];});el('cloud').on('plotly_hover',event=>{const v=event.points[0].customdata;if(v)el('point-detail').textContent=`Obraz ${v[0]} · patch ${v[1]} · ruch 768D: ${FMT.format(v[2])}`;});el('cloud').on('plotly_click',event=>{const v=event.points[0].customdata;if(v)chooseParticle(v[0],v[1]);});el('cloud').dataset.eventsAttached='true';}
+} 
+el('counts').textContent=`${FMT.format(d.count)} / ${FMT.format(d.total)} cząsteczek`;el('movement-norm').textContent=`Mediana ruchu 768D: ${FMT.format(d.norm_median)} · zapis ${d.step}`;el('conf').textContent=`Pewność: ${(100*d.confidence).toFixed(2)}% · zapis ${d.step}`;el('iou').textContent=`IoU: ${(100*d.iou).toFixed(2)}% · zapis ${d.step}`;
+el('sampling-note').textContent=spaceView()==='raw'?'600 cząsteczek w oryginalnych kanałach 768D. Rzeczywiste pełne stany: 0, 100, 500.':o.mode==='exact'?'Kolory rozróżniają numery patchy. Rzeczywiste stany bez interpolacji. Ślad: ostatnie 40 zmierzonych kroków.':o.mode==='global'?(META.dense_ready?`Wszystkie 900 000 cząsteczek. ${META.global_steps.length} obliczonych stanów. Płynne przejścia interpolują wyłącznie widok; metryki i mapa pokazują zapis ${d.step}.`:'Wszystkie 900 000 cząsteczek. Dostępne stany 0, 100, 500; interpolacja jest wyłącznie podglądem.'):(META.dense_ready?'Wszystkie 600 cząsteczek tego obrazu. Rzeczywiste stany 0–500 co 5 kroków.':(META.dense_ready?'Wszystkie 600 cząsteczek tego obrazu. Rzeczywiste stany 0–500 co 5 kroków.':'Wszystkie 600 cząsteczek tego obrazu. Dostępne rzeczywiste stany 0, 100, 500.'));
+const r=META.images[o.image]||{},first=r.first_success_step;el('phase').textContent=o.mode==='exact'&&o.image<0?`${d.selected_both90} / 16 osiąga oba progi w tym kroku`:o.mode==='global'?`${d.both90} / 1500 osiąga oba progi w tym kroku`:first!=null&&d.step>=first?'Po pierwszym sukcesie · minimalizacja przesunięcia':'Dążenie do poprawnej detekcji';
+if(d.heatmap){const hl=commonLayout();hl.margin={l:35,r:30,t:5,b:28};hl.xaxis={title:'Kolumna patcha',dtick:5};hl.yaxis={title:'Wiersz',autorange:'reversed',dtick:5};await Plotly.react('heat',[{z:d.heatmap,type:'heatmap',zmin:0,zmax:d.heat_scale,colorscale:[[0,'#142131'],[.4,'#2e8a96'],[1,'#ffb967']],colorbar:{thickness:10,title:'L2'},hovertemplate:'Wiersz %{y} · kolumna %{x}<br>Ruch 768D: %{z:.4f}<extra></extra>'}],hl,CONFIG);el('heat-note').textContent=o.mode==='global'?'Średnia norma ruchu per pozycja patcha dla wszystkich 1500 obrazów.':'Norma ruchu wszystkich 600 cząsteczek w ich oryginalnej siatce.';el('heat-title').textContent='Ruch w układzie patchy 20 × 30';}
+else{const hl=commonLayout();hl.margin={l:48,r:20,t:5,b:40};hl.xaxis={title:'Numer śledzonego patcha'};hl.yaxis={title:'Norma ruchu 768D',range:[0,d.norm_scale*1.05],gridcolor:C.grid};await Plotly.react('heat',[{x:d.bar_tokens.map(String),y:d.bar_norm,type:'bar',marker:{color:palette},hovertemplate:'Patch %{x}<br>Ruch 768D: %{y:.4f}<extra></extra>'}],hl,CONFIG);el('heat-title').textContent=o.image<0?'Średni ruch panelu według patcha':'Ile poruszyło się 8 śledzonych cząsteczek';el('heat-note').textContent=o.image<0?'Średnia normy ruchu dla każdego z 8 numerów patchy w panelu 16 obrazów. Trajektorie na lewym wykresie pozostają osobne.':'Normy w pełnych 768 wymiarach. Nie wyliczamy z nich brakujących pozycji pozostałych 592 cząsteczek.';}
+await updateInspection(d.step,d);await Plotly.relayout('quality',{'shapes[1].x0':d.step,'shapes[1].x1':d.step});el('loading').textContent='';
+}catch(e){el('loading').textContent=`Nie udało się wczytać tego widoku: ${e.message}`;stop();}finally{busy=false;if(pendingDraw){const next=pendingDraw;pendingDraw=false;draw(next.panelOnly,next.provided);}}}
+async function tick(session){if(!playing||session!==playSession)return;const old=actualStep(),max=Number(el('step').max);let step=Number(el('step').value)+(el('mode').value==='exact'?Number(el('speed').value):1);step=Math.min(step,max);if(Number(el('step').value)>=max){stop();return}el('step').value=step;await draw();if(playing&&session===playSession)timer=setTimeout(()=>tick(session),Math.max(16,(actualStep()-old)*1000/playbackRate()));}
+async function playGlobal(session){const active=()=>playing&&session===playSession&&el('mode').value==='global';try{
+  await waitForView();if(!active())return;
+  const steps=availableSteps();let index=Number(el('step').value);
+  if(!gpuCloud||gpuCloud.meta?.step!==steps[index]||gpuCloud.movement!==el('movement').checked)await draw();
+  await waitForView();if(!active())return;gpuCloud.frames=[];
+  while(active()&&index<steps.length-1){
+    const jump=META.dense_ready?Math.max(1,Math.round(Number(el('speed').value)/(steps[1]-steps[0]))):1;
+    const target=Math.min(index+jump,steps.length-1),future=Math.min(target+jump,steps.length-1);
+    const o={...opts(),step:steps[target]};el('loading').textContent=gpuCloud.cache.has(o.step)?'':'Wczytywanie następnego zapisanego stanu…';
+    const d=await loadFrame(o);if(!active())break;
+    if(future!==target){gpuCloud.prefetch(steps[future]);void loadFrame({...o,step:steps[future]}).catch(()=>{});}
+    const complete=await gpuCloud.transitionTo(d,playbackRate,()=>el('smooth').checked,displayGlobalProgress,active);
+    if(!complete||!active())break;index=target;el('step').value=index;el('loading').textContent='';
+    if(performance.now()-lastPanelTime>250||index===steps.length-1){lastPanelTime=performance.now();void draw(true,d);}
+  }
+  if(active())stop();
+}catch(e){if(active()){el('loading').textContent=`Animacja: ${e.message}`;stop();}}}
+el('play').onclick=()=>{if(!META)return;if(playing){stop();return;}const atEnd=Number(el('step').value)>=Number(el('step').max);if(atEnd)el('step').value=0;playing=true;const session=++playSession;el('play').textContent='Pauza';if(el('mode').value==='global')void playGlobal(session);else void tick(session);};
+el('begin').onclick=()=>{stop();el('step').value=0;draw()};el('step').oninput=()=>{stop();draw()};el('mode').onchange=async()=>{stop();if(spaceView()==='raw'&&el('mode').value!=='image'){el('space-view').value='pca';labelSpace();el('raw-axes').classList.add('hidden');el('profile-panel').classList.add('hidden');el('space-note').textContent='PCA wspólna dla całej chmury.';}selectImages();setupTimeline();el('smooth').disabled=el('mode').value!=='global';el('step').value=0;lastCamera=null;await drawCurves();await draw()};el('image').onchange=async()=>{stop();lastCamera=null;await drawSelectedCurve();await drawCurves();await draw()};el('movement').onchange=()=>{stop();lastCamera=null;draw()};el('trails').onchange=()=>{stop();draw()};
+el('tempo').oninput=updateTempo;el('smooth').onchange=()=>{if(gpuCloud?.meta){gpuCloud.viewBlend=el('smooth').checked?gpuCloud.blend:0;displayGlobalProgress(gpuCloud.meta.step+(gpuCloud.targetMeta.step-gpuCloud.meta.step)*gpuCloud.viewBlend,gpuCloud.meta.step,gpuCloud.targetMeta.step,gpuCloud.viewBlend);gpuCloud.requestDraw();}};el('speed').onchange=()=>{if(!playing)draw();};
+el('spin').onchange=()=>{if(gpuCloud){gpuCloud.spinning=el('spin').checked;gpuCloud.frames=[];gpuCloud.requestDraw();}};el('opacity').oninput=()=>{if(gpuCloud){gpuCloud.opacity=Number(el('opacity').value);gpuCloud.requestDraw();}};
+// These views change the display; they do not fit a new PCA or infer missing states.
+function spaceView(){return el('space-view').value;}
+function spaceCode(){return ({pca:0,pc12:1,pc13:2,pc23:3,grid:4})[spaceView()]??0;}
+function channelAxes(){return ['axis-x','axis-y','axis-z'].map(id=>Number(el(id).value));}
+function validAxes(){const a=channelAxes();return a.every(x=>Number.isInteger(x)&&x>=0&&x<768)&&new Set(a).size===3;}
+function spaceNames(){const prefix=el('movement').checked?'Δ ':'';const v=spaceView();if(v==='grid')return ['Kolumna patcha','Wiersz patcha','Ruch L2 w 768D'];if(v==='raw')return channelAxes().map(i=>prefix+'z['+i+']');const ids=v==='pc13'?[0,2]:v==='pc23'?[1,2]:v==='pc12'?[0,1]:[0,1,2];return [...ids.map(i=>prefix+'PC'+(i+1)),...(ids.length===2?['Płaszczyzna 2D']:[])];}
+function transformSpace(frame,o){const v=spaceView();if(o.mode==='global'||v==='pca'||v==='raw')return frame;const d={...frame},ids=v==='pc13'?[0,2]:v==='pc23'?[1,2]:[0,1];if(v==='grid'){d.xyz=d.tokens.map((t,j)=>[t%30,Math.floor(t/30),d.norm[j]]);d.bounds=[[-.5,29.5],[-.5,19.5],[0,d.norm_scale]];d.lines=[];}else{d.xyz=d.xyz.map(p=>[p[ids[0]],p[ids[1]],0]);d.lines=d.lines.map(line=>line.map(p=>[p[ids[0]],p[ids[1]],0]));d.bounds=[d.bounds[ids[0]],d.bounds[ids[1]],[-.01,.01]];}return d;}
+async function rawFrame(o){if(!validAxes())throw new Error('Wybierz trzy różne kanały w zakresie 0–767.');el('loading').textContent='Odczyt pełnego latentu 768D z Edena (bez nowych obliczeń)…';return api('/api/raw?'+new URLSearchParams({image:o.image,step:o.step,patch:selectedPatch,axes:channelAxes().join(','),movement:o.movement?1:0}));}
+async function updateRawInspection(d){const id=selectedImage();if(d.image!==id)return;const r=META.images[id];el('source-name').textContent=`Obraz ${id} · ${r?.frame_id||r?.image_name||''}`;loadPreview();paintPreview();el('selected-metrics').textContent=`Pewność ${(100*d.confidence).toFixed(2)}% · IoU ${(100*d.iou).toFixed(2)}% · zapis ${d.step}`;el('selection-detail').textContent=`Zdjęcie ${id} · patch ${selectedPatch} · wiersz ${Math.floor(selectedPatch/30)}, kolumna ${selectedPatch%30} · indeks ${id*600+selectedPatch}. Ruch 768D: ${FMT.format(d.norm[selectedPatch])} · rzeczywisty zapis ${d.step}.`;el('selection-detail').dataset.particle=String(id*600+selectedPatch);el('profile-panel').classList.remove('hidden');const x=Array.from({length:768},(_,i)=>i),layout=commonLayout();layout.xaxis={title:'Oryginalny kanał latentu 0–767',gridcolor:C.grid};layout.yaxis={title:'Wartość aktywacji',gridcolor:C.grid};layout.legend={orientation:'h',y:1.14};await Plotly.react('latent-profile',[{x,y:d.profile.before,type:'scatter',mode:'lines',name:'Start 0',line:{color:C.muted}},{x,y:d.profile.current,type:'scatter',mode:'lines',name:'Stan '+d.step,line:{color:C.blue}},{x,y:d.profile.delta,type:'scatter',mode:'lines',name:'Zmiana od startu',line:{color:C.orange}}],layout,CONFIG);el('latent-profile').dataset.channelCount='768';el('latent-profile').dataset.patch=String(selectedPatch);el('latent-profile').dataset.image=String(id);el('raw-provenance').textContent=`Oryginalny pełny latent · SHA256 ${d.source_sha256} · rzeczywiste stany 0, 100, 500. Brak pełnych 768D dla pośrednich kroków w tym zapisie.`;await Plotly.relayout('selected-quality',{'shapes[0].x0':d.step,'shapes[0].x1':d.step});}
+async function changeSpace(){if(!META)return;stop();const oldStep=actualStep(),v=spaceView();if(v==='raw'&&!validAxes()){el('space-note').textContent='Wybierz trzy różne kanały 0–767.';return;}if(v==='raw'){el('mode').value='image';selectImages();}setupTimeline();const steps=availableSteps();el('step').value=el('mode').value==='exact'?oldStep:Math.max(0,steps.findLastIndex(s=>s<=oldStep));el('raw-axes').classList.toggle('hidden',v!=='raw');el('profile-panel').classList.toggle('hidden',v!=='raw');el('trails').disabled=v==='grid';el('smooth').disabled=el('mode').value!=='global';lastCamera=null;const notes={pca:'Stała wspólna baza PCA. Osie i liczby dotyczą projekcji, nie surowych kanałów.',pc12:'Rzut na płaszczyznę PC1–PC2. Trzecia współrzędna jest wyzerowana wyłącznie w podglądzie.',pc13:'Rzut na płaszczyznę PC1–PC3. Trzecia współrzędna jest wyzerowana wyłącznie w podglądzie.',pc23:'Rzut na płaszczyznę PC2–PC3. Trzecia współrzędna jest wyzerowana wyłącznie w podglądzie.',grid:'Bez PCA: X = kolumna patcha, Y = wiersz, Z = norma ruchu w pełnych 768D. Osie mają niezależne skale. To mapa przestrzenna ruchu, nie odległości między latentami.',raw:'Bez PCA: trzy wybrane oryginalne kanały 768D, dla 600 cząsteczek jednego zdjęcia. Pełny źródłowy zapis ma stany 0, 100, 500; osie są stałe między nimi.'};el('space-note').textContent=notes[v];if(gpuCloud)gpuCloud.setSpace(spaceCode());await drawCurves();await draw();}
+function labelSpace(){const v=spaceView();el('variance').textContent=v==='raw'?'3 wybrane kanały z 768 · profil pokazuje wszystkie':v==='grid'?'Norma ruchu w pełnych 768D · bez PCA':v==='pca'?`PCA 3D: ${(100*(META.pca_variance||[]).reduce((a,b)=>a+b,0)).toFixed(2)}% wariancji próbki`:'Płaszczyzna wybranych osi wspólnej PCA';el('cloud-title').textContent=v==='raw'?'Oryginalne kanały latentu':v==='grid'?'Położenie patcha i jego ruch w 768D':v==='pca'?'Ruch cząsteczek w jednej wspólnej przestrzeni':'Ruch cząsteczek na płaszczyźnie PCA';}
+el('space-view').onchange=()=>{if(META)labelSpace();void changeSpace();};el('apply-axes').onclick=changeSpace;el('show-axes').onchange=()=>{if(gpuCloud){gpuCloud.showAxes=el('show-axes').checked;gpuCloud.requestDraw();}if(el('mode').value!=='global')void draw();};
+
+// Stable identities: image-major, row-major patch; no new latent or metric inference.
+let colorMode=0,selectedPatch=0,previewImage=null,previewIndex=-1,previewPending=null,inspectionTicket=0;
+const selectedImage=()=>Math.max(0,Number(el('image').value));
+function identityColor(id){const h=((id*.61803398875)%1+1)%1;return '#'+[0,2/3,1/3].map(shift=>Math.round(255*(.25+.75*Math.max(0,Math.min(1,Math.abs(((h+shift)%1)*6-3)-1)))) .toString(16).padStart(2,'0')).join('');}
+function updateColor(){for(const [i,name] of ['motion','image','patch'].entries())el('color-'+name).setAttribute('aria-pressed',String(colorMode===i));el('color-note').textContent=colorMode===0?'Kolor: długość ruchu 768D.':colorMode===1?'Stały kolor dla każdego numeru zdjęcia; kolory mogą być wizualnie podobne.':'Stały kolor dla numeru patcha 0–599, taki sam na każdym zdjęciu. Numer patcha oznacza pozycję, nie rodzaj obiektu.';if(gpuCloud){gpuCloud.colorMode=colorMode;gpuCloud.showAxes=el('show-axes').checked;if(gpuCloud.spaceView!==spaceCode())gpuCloud.setSpace(spaceCode());gpuCloud.requestDraw();}paintPreview();if(el('mode').value!=='global')void draw();}
+for(const [i,name] of ['motion','image','patch'].entries())el('color-'+name).onclick=()=>{colorMode=i;updateColor();};
+function paintPreview(){const canvas=el('source-preview'),ctx=canvas.getContext('2d');ctx.clearRect(0,0,480,320);if(!previewImage||previewIndex!==selectedImage()){ctx.fillStyle=C.muted;ctx.fillText('Wczytywanie oryginalnego zdjęcia…',12,24);return;}ctx.drawImage(previewImage,0,0,480,320);const w=16,h=16;if(el('show-grid').checked){for(let token=0;token<600;token++){ctx.strokeStyle=colorMode?identityColor(colorMode===1?selectedImage():token):'#62d4dd88';ctx.lineWidth=.5;ctx.strokeRect(token%30*w,Math.floor(token/30)*h,w,h);}}const r=META.images[selectedImage()],b=r?.bbox_xyxy_480;if(b){ctx.strokeStyle='#a9d776';ctx.lineWidth=2;ctx.strokeRect(b[0],b[1],b[2]-b[0],b[3]-b[1]);}const x=selectedPatch%30*w,y=Math.floor(selectedPatch/30)*h;ctx.fillStyle='#ffffff33';ctx.fillRect(x,y,w,h);ctx.strokeStyle='#111';ctx.lineWidth=4;ctx.strokeRect(x,y,w,h);ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.strokeRect(x,y,w,h);canvas.dataset.image=String(selectedImage());canvas.dataset.patch=String(selectedPatch);canvas.dataset.row=String(Math.floor(selectedPatch/30));canvas.dataset.column=String(selectedPatch%30);}
+function loadPreview(){const id=selectedImage();if(previewIndex===id&&previewImage)return;if(previewPending===id)return;previewPending=id;const image=new Image();image.onload=()=>{if(selectedImage()!==id)return;previewImage=image;previewIndex=id;previewPending=null;paintPreview();};image.onerror=()=>{if(selectedImage()!==id)return;previewPending=null;el('selection-detail').textContent='Brak zgodnego zdjęcia źródłowego. Nie podstawiono innego obrazu.';};image.src='/api/image?image='+id;}
+async function drawSelectedCurve(){const id=selectedImage(),d=await api('/api/curves?mode=image&image='+id);if(id!==selectedImage())return;const layout=commonLayout();layout.xaxis={title:'Zapisany krok optymalizacji',range:[0,500],gridcolor:C.grid};layout.yaxis={range:[0,1.02],tickformat:'.0%',gridcolor:C.grid};layout.shapes=[{type:'line',x0:actualStep(),x1:actualStep(),y0:0,y1:1,line:{color:'#fff',width:1}}];const x=d.confidence.map((_,i)=>i);await Plotly.react('selected-quality',[{x,y:d.confidence,type:'scatter',mode:'lines',name:'Pewność',line:{color:C.blue}},{x,y:d.iou,type:'scatter',mode:'lines',name:'IoU',line:{color:C.orange}}],layout,CONFIG);}
+async function updateInspection(requestedStep,frame=null){if(spaceView()==='raw'){await updateRawInspection(frame||await rawFrame(opts()));return;}el('profile-panel').classList.add('hidden');const steps=META.global_steps||[0,100,500],step=steps.filter(s=>s<=requestedStep).at(-1)??steps[0];const id=selectedImage(),ticket=++inspectionTicket,r=META.images[id];el('source-name').textContent=`Obraz ${id} · ${r?.frame_id||r?.image_name||''}`;loadPreview();paintPreview();const d=await api(`/api/frame?mode=image&image=${id}&step=${step}&movement=${el('movement').checked?1:0}&trails=0&geometry=0`);if(ticket!==inspectionTicket||id!==selectedImage())return;el('selected-metrics').textContent=`Zdjęcie ${id} · pewność ${(100*d.confidence).toFixed(2)}% · IoU ${(100*d.iou).toFixed(2)}% · zapis ${step}`;el('selection-detail').textContent=`Zdjęcie ${id} · patch ${selectedPatch} · wiersz ${Math.floor(selectedPatch/30)}, kolumna ${selectedPatch%30} · indeks cząsteczki ${id*600+selectedPatch}. Ruch 768D: ${FMT.format(d.heatmap[Math.floor(selectedPatch/30)][selectedPatch%30])} · zapis ${step}.`;el('selection-detail').dataset.particle=String(id*600+selectedPatch);await Plotly.relayout('selected-quality',{'shapes[0].x0':step,'shapes[0].x1':step});}
+function chooseParticle(image,patch){if(!Number.isInteger(image)||image<0||image>=1500||!Number.isInteger(patch)||patch<0||patch>=600)return;stop();selectedPatch=patch;el('patch-select').value=patch;const changed=image!==selectedImage();if(el('mode').value==='exact'&&!META.control_images.includes(image)){el('mode').value='image';selectImages();}el('image').value=image;el('focus-image').checked=true;if(gpuCloud)gpuCloud.setSelection(image,patch,true);if(changed)void drawSelectedCurve();paintPreview();void drawCurves();void draw();}
+el('patch-select').oninput=el('patch-select').onchange=()=>{const patch=Number(el('patch-select').value);if(!Number.isInteger(patch)||patch<0||patch>599){el('patch-select').value=selectedPatch;return;}chooseParticle(selectedImage(),patch);};
+el('source-preview').onclick=event=>{const rect=el('source-preview').getBoundingClientRect(),column=Math.min(29,Math.max(0,Math.floor((event.clientX-rect.left)/rect.width*30))),row=Math.min(19,Math.max(0,Math.floor((event.clientY-rect.top)/rect.height*20)));chooseParticle(selectedImage(),row*30+column);};
+el('show-grid').onchange=paintPreview;
+el('focus-image').onchange=()=>{if(gpuCloud)gpuCloud.setSelection(selectedImage(),selectedPatch,el('focus-image').checked);};
+el('image-search').oninput=()=>{const query=el('image-search').value.trim().toLowerCase();for(const option of el('image').options){option.hidden=!!query&&!option.textContent.toLowerCase().includes(query);}};
+for(const [name,delta] of [['prev-image',-1],['next-image',1]])el(name).onclick=()=>{const ids=[...el('image').options].filter(o=>!o.hidden&&Number(o.value)>=0).map(o=>Number(o.value)),index=ids.indexOf(selectedImage());if(!ids.length)return;chooseParticle(ids[Math.max(0,Math.min(ids.length-1,index+delta))],selectedPatch);};
+el('only-image').onclick=async()=>{stop();const id=selectedImage(),step=actualStep();el('mode').value='image';selectImages();el('image').value=id;el('step').value=Math.max(0,availableSteps().indexOf(step));el('smooth').disabled=true;await drawCurves();await draw();};
+updateColor();
+
+// BEGIN TERRAIN VIEWS
+'use strict';
+function parseTrajectoryImages(value,maximum=24,total=1500){
+ const result=[],seen=new Set();
+ if(typeof value!=='string'||!value.trim())throw Error('Podaj numery zdjęć, np. 12, 40-45');
+ for(const raw of value.split(',')){
+  const token=raw.trim();let numbers;
+  if(/^\d+$/.test(token))numbers=[Number(token)];
+  else if(/^\d+-\d+$/.test(token)){const [a,b]=token.split('-').map(Number);if(a>b)throw Error('Zakres zdjęć musi rosnąć');numbers=Array.from({length:b-a+1},(_,i)=>a+i);}
+  else throw Error('Niepoprawna lista zdjęć');
+  for(const image of numbers){if(image<0||image>=total)throw Error('Numer zdjęcia musi należeć do 0..1499');if(!seen.has(image)){seen.add(image);result.push(image);}if(result.length>maximum)throw Error(`Pełne ślady można wczytać dla najwyżej ${maximum} zdjęć`);}
+ }
+ return result;
+}
+function trajectoryInterval(steps,step){let a=Math.max(0,steps.findLastIndex(s=>s<=step)),b=Math.min(a+1,steps.length-1);return {a,b,u:b===a?0:(step-steps[a])/(steps[b]-steps[a])};}
+function trajectoryPlan(scope,selectedCount,tail){
+ if(scope==='selected'){if(!Number.isInteger(selectedCount)||selectedCount<1||selectedCount>24)throw Error('Wybierz od 1 do 24 zdjęć');return {scope,particles:selectedCount*600,segments:selectedCount*600*100,tail:100,fullHistory:true,sampling:false};}
+ if(scope==='global'){if(!Number.isInteger(tail)||tail<1||tail>10)throw Error('Ogon musi mieć od 1 do 10 przedziałów');return {scope,particles:900000,segments:900000*tail,tail,fullHistory:false,sampling:false};}
+ throw Error('Nieznany zakres trajektorii');
+}
+
+// Landscape derived exclusively from recorded projected trajectories, not a loss landscape.
+let terrainData=null,terrainTicket=0,terrainCamera=null;
+let terrainStep=0,terrainPlaying=false,terrainLastTime=0,terrainMarkerState=null,terrainBusy=false;
+function terrainBracket(steps,step){let a=Math.max(0,steps.findLastIndex(s=>s<=step)),b=Math.min(a+1,steps.length-1);return {a,b,u:b===a?0:(step-steps[a])/(steps[b]-steps[a])};}
+function terrainPause(){terrainPlaying=false;el('terrain-play').textContent='Odtwórz';}
+async function terrainMove(step){
+ terrainStep=Math.max(0,Math.min(500,step));el('terrain-time').value=terrainStep;el('terrain-time-label').textContent=`Krok ${terrainStep.toFixed(1)} / 500`;
+ if(typeof trajectoryActive!=='undefined'&&trajectoryActive){await trajectoryGPU.setStep(terrainStep);return;}
+ if(typeof globalDensityData!=='undefined'&&el('terrain-scope')?.value==='global'){await moveGlobalDensity();return;}
+ const s=terrainMarkerState,d=terrainData;if(!s||!d||terrainBusy)return;
+ const {a,b,u}=terrainBracket(d.steps,terrainStep),current={x:[],y:[],z:[],text:[]};
+ for(const p of s.selected){const pos=d.frames[a].xyz[p].map((v,j)=>v+(d.frames[b].xyz[p][j]-v)*u),x=s.ribbon?terrainStep:pos[s.ids[0]],y=s.ribbon?p:pos[s.ids[1]],z=s.ribbon?d.frames[a].norm[p]+(d.frames[b].norm[p]-d.frames[a].norm[p])*u:s.field.sample(x,y);
+  current.x.push(x);current.y.push(y);current.z.push(z);current.text.push(`Obraz ${d.image} · patch ${p} · krok ${terrainStep.toFixed(1)}<br>${u===0?'Rzeczywisty zapis':'Interpolacja widoku między '+d.steps[a]+' i '+d.steps[b]}`);
+ }
+ terrainBusy=true;try{await Plotly.restyle('terrain-plot',{x:[current.x],y:[current.y],z:[current.z],text:[current.text]},[s.trace]);el('terrain-plot').dataset.step=String(terrainStep);el('terrain-status').textContent=`Obraz ${d.image} · 600 cząsteczek × ${d.steps.length} rzeczywistych stanów · ${s.selected.length} śladów · krok ${terrainStep.toFixed(1)} · ${u===0?'rzeczywisty zapis':'interpolacja między '+d.steps[a]+' i '+d.steps[b]}.`;}finally{terrainBusy=false;}
+}
+async function terrainTick(now){
+ if(!terrainPlaying)return;const dt=Math.min((now-terrainLastTime)/1000,.2);terrainLastTime=now;
+ await terrainMove(terrainStep+dt*Number(el('terrain-speed').value));
+ if(terrainStep>=500){terrainPause();return;}requestAnimationFrame(terrainTick);
+}
+const terrainColors=['#aebdca','#62d4dd','#ffb967','#d88fe5','#a9d776','#8da6ff','#f0909d'];
+const terrainFamilies=['Niewielkie przemieszczenie','+PC1','−PC1','+PC2','−PC2','+PC3','−PC3'];
+function terrainQuantile(a,q){const s=a.slice().sort((x,y)=>x-y);return s[Math.floor((s.length-1)*q)]||0;}
+function terrainDynamics(frames){
+ const T=frames.length,N=600,velocity=Array.from({length:T},()=>new Float32Array(N)),turn=Array.from({length:T},()=>new Float32Array(N));
+ for(let t=1;t<T;t++)for(let p=0;p<N;p++){
+  const d=frames[t].xyz[p].map((v,j)=>v-frames[t-1].xyz[p][j]);const len=Math.hypot(...d);velocity[t][p]=len/(frames[t].step-frames[t-1].step);
+  if(t>1){const prev=frames[t-1].xyz[p].map((v,j)=>v-frames[t-2].xyz[p][j]);const norm=Math.hypot(...prev);if(len>1e-8&&norm>1e-8)turn[t][p]=Math.acos(Math.max(-1,Math.min(1,d.reduce((s,v,j)=>s+v*prev[j],0)/(len*norm))))*180/Math.PI;}
+ }
+ const final=frames[T-1].xyz.map((v,p)=>v.map((x,j)=>x-frames[0].xyz[p][j])),cut=terrainQuantile(final.map(v=>Math.hypot(...v)),.1);
+ const families=final.map(v=>{if(Math.hypot(...v)<=cut)return 0;let j=0;for(let k=1;k<3;k++)if(Math.abs(v[k])>Math.abs(v[j]))j=k;return 1+j*2+(v[j]<0?1:0);});
+ return {velocity,turn,families,cut};
+}
+async function buildTerrain(){
+ if(typeof closeTrajectories==='function')closeTrajectories();
+ if(el('terrain-scope')?.value==='global'){await buildGlobalDensity();return;}
+ if(!META)return;stop();terrainPause();terrainMarkerState=null;const ticket=++terrainTicket,image=selectedImage(),button=el('terrain-build');button.disabled=true;el('terrain-status').textContent='Odczyt zapisanych trajektorii…';
+ try{
+  const steps=META.global_steps||[0,100,500],frames=new Array(steps.length);
+  for(let start=0;start<steps.length;start+=4){const ids=steps.slice(start,start+4);const batch=await Promise.all(ids.map(step=>api('/api/frame?'+new URLSearchParams({mode:'image',image,step,movement:0,trails:0}))));batch.forEach((f,j)=>{if(f.step!==ids[j]||f.xyz.length!==600||f.norm.length!==600)throw Error('Niezgodny zapis trajektorii');frames[start+j]=f;});if(ticket!==terrainTicket)return;el('terrain-status').textContent=`Wczytano ${Math.min(start+4,steps.length)} / ${steps.length} zapisów obrazu ${image}.`;}
+  terrainData={image,steps,frames,...terrainDynamics(frames)};terrainCamera=null;if(typeof loadToolMask==='function')await loadToolMask(image);await renderTerrain();
+ }catch(e){el('terrain-status').textContent='Nie udało się odczytać trajektorii: '+e.message;}finally{button.disabled=false;}
+}
+function terrainField(data,ids,kind){
+ const G=64,points=[];let lo=[Infinity,Infinity],hi=[-Infinity,-Infinity];
+ for(let t=0;t<data.frames.length;t++)for(let p=0;p<600;p++){const a=data.frames[t].xyz[p];const x=a[ids[0]],y=a[ids[1]];lo[0]=Math.min(lo[0],x);lo[1]=Math.min(lo[1],y);hi[0]=Math.max(hi[0],x);hi[1]=Math.max(hi[1],y);points.push([x,y,data.velocity[t][p]]);}
+ const span=lo.map((v,j)=>Math.max(hi[j]-v,.01));lo=lo.map((v,j)=>v-span[j]*.035);hi=hi.map((v,j)=>v+span[j]*.035);const dx=(hi[0]-lo[0])/(G-1),dy=(hi[1]-lo[1])/(G-1),count=new Float64Array(G*G),sum=new Float64Array(G*G);
+ for(const [x,y,v] of points){const ix=Math.max(0,Math.min(G-1,Math.round((x-lo[0])/dx))),iy=Math.max(0,Math.min(G-1,Math.round((y-lo[1])/dy)));count[iy*G+ix]++;sum[iy*G+ix]+=v;}
+ const c=new Float64Array(G*G),s=new Float64Array(G*G);
+ for(let y=0;y<G;y++)for(let x=0;x<G;x++){const n=count[y*G+x];if(!n)continue;for(let a=-3;a<=3;a++)for(let b=-3;b<=3;b++){if(x+b<0||x+b>=G||y+a<0||y+a>=G)continue;const w=Math.exp(-(a*a+b*b)/3.125),i=(y+a)*G+x+b;c[i]+=n*w;s[i]+=sum[y*G+x]*w;}}
+ const maximum=Math.max(...c),z=Array.from({length:G},(_,y)=>Array.from({length:G},(_,x)=>{const i=y*G+x;return kind==='speed'?(c[i]>.01?s[i]/c[i]:null):-Math.log((c[i]+.02)/(maximum+.02));}));
+ const sample=(x,y)=>{const fx=Math.max(0,Math.min(G-1,(x-lo[0])/dx)),fy=Math.max(0,Math.min(G-1,(y-lo[1])/dy)),a=Math.min(G-2,Math.floor(fx)),b=Math.min(G-2,Math.floor(fy)),u=fx-a,v=fy-b;const zs=[z[b][a],z[b][a+1],z[b+1][a],z[b+1][a+1]];if(zs.some(k=>k===null))return null;return zs[0]*(1-u)*(1-v)+zs[1]*u*(1-v)+zs[2]*(1-u)*v+zs[3]*u*v;};
+ return {x:Array.from({length:G},(_,i)=>lo[0]+i*dx),y:Array.from({length:G},(_,i)=>lo[1]+i*dy),z,sample};
+}
+async function renderTerrain(){
+ if(typeof closeTrajectories==='function'&&trajectoryActive)closeTrajectories();
+ if(el('terrain-scope')?.value==='global'){await renderGlobalDensity();return;}
+ const d=terrainData;if(!d)return;terrainPause();const kind=el('terrain-kind').value,ids=el('terrain-plane').value.split(',').map(Number),chosen=selectedPatch,limit=Number(el('terrain-tracks').value),filter=Number(el('terrain-family').value);let selected=[chosen];
+ for(let p=0;p<600&&selected.length<limit;p+=Math.max(1,Math.floor(600/limit)))if(p!==chosen&&(filter<0||d.families[p]===filter))selected.push(p);
+ const maskSet=typeof toolPatchSet==='function'?toolPatchSet(d.image):new Set(),maskMode=el('tool-mode')?.value||'off';
+ if(maskMode==='only')selected=[...maskSet];else if(maskMode==='highlight')selected=[...new Set([...selected,...maskSet])];
+ const labels=ids.map(i=>'PC'+(i+1)),ribbon=kind==='ribbon',field=ribbon?null:terrainField(d,ids,kind),traces=[];
+ const ztitle=ribbon?'Ruch L2 w pełnych 768D':kind==='speed'?'Prędkość rzutu PCA / krok':'U = −ln(gęstości względnej)';
+ if(ribbon){traces.push({type:'surface',name:'Ruch 768D',x:d.steps,y:Array.from({length:600},(_,i)=>i),z:Array.from({length:600},(_,p)=>d.frames.map(f=>f.norm[p])),colorscale:[[0,'#1d3b6e'],[.35,'#2f6f8f'],[.7,'#6fa8a0'],[1,'#d8d2b0']],opacity:.8,showscale:false,hovertemplate:'Krok %{x}<br>Patch %{y}<br>Ruch 768D %{z:.3f}<extra></extra>'});}
+ else traces.push({type:'surface',name:'Krajobraz ruchu',x:field.x,y:field.y,z:field.z,colorscale:[[0,'#1d3b6e'],[.35,'#2f6f8f'],[.7,'#6fa8a0'],[1,'#d8d2b0']],opacity:.72,showscale:false,contours:{z:{show:true,color:'#f0e6c0',width:1,project:{z:false}}},hovertemplate:ztitle+' %{z:.3f}<extra></extra>'});
+ const bundles=new Map(),events={x:[],y:[],z:[],text:[]},current={x:[],y:[],z:[],text:[],color:[]};let bad=0;
+ let index=d.steps.findLastIndex(s=>s<=actualStep());index=Math.max(0,index);
+ for(const p of selected){const xs=[],ys=[],zs=[],texts=[],v=d.velocity.slice(1).map(a=>a[p]),median=terrainQuantile(v,.5),group=d.families[p];
+  for(let t=0;t<d.frames.length;t++){const pos=d.frames[t].xyz[p],x=ribbon?d.steps[t]:pos[ids[0]],y=ribbon?p:pos[ids[1]],z=ribbon?d.frames[t].norm[p]:field.sample(x,y);xs.push(x);ys.push(y);zs.push(z);texts.push(`Obraz ${d.image} · patch ${p} · krok ${d.steps[t]}<br>${terrainFamilies[group]}<br>Prędkość rzutu ${d.velocity[t][p].toFixed(4)} · zwrot ${d.turn[t][p].toFixed(1)}°`);
+   if(t>1&&z!==null&&(d.turn[t][p]>90||(median>1e-8&&d.velocity[t][p]>3*median))){bad++;if(el('terrain-events').checked){events.x.push(x);events.y.push(y);events.z.push(z);events.text.push(texts[t]);}}
+  }
+  const tool=maskMode!=='off'&&maskSet.has(p),bundleGroup=tool?7:group;
+  if(p===chosen)traces.push({type:'scatter3d',mode:'lines',name:`Wybrany patch ${p}${tool?' · narzędzie':''}`,x:xs,y:ys,z:zs,text:texts,hovertemplate:'%{text}<extra></extra>',line:{width:7,color:tool?'#ffdc55':'#fff5dd'}});
+  else {if(!bundles.has(bundleGroup))bundles.set(bundleGroup,{x:[],y:[],z:[],text:[]});const bundle=bundles.get(bundleGroup);for(const [key,values] of [['x',xs],['y',ys],['z',zs],['text',texts]]){bundle[key].push(...values);bundle[key].push(null);}}
+
+  if(zs[index]!==null){current.x.push(xs[index]);current.y.push(ys[index]);current.z.push(zs[index]);current.text.push(texts[index]);current.color.push(tool?'#ffdc55':p===chosen?'#fff5dd':terrainColors[group]);}
+ }
+ for(const [group,bundle] of bundles)traces.push({type:'scatter3d',mode:'lines',name:group===7?'Patche narzędzia':terrainFamilies[group],...bundle,hovertemplate:'%{text}<extra></extra>',line:{width:group===7?4:2.5,color:group===7?'#ffdc55':terrainColors[group]},opacity:.72});
+ const markerTrace=traces.length;
+ traces.push({type:'scatter3d',mode:'markers',name:'Bieżące położenia',...current,marker:{size:5,color:current.color},hovertemplate:'%{text}<extra></extra>'});
+ if(events.x.length)traces.push({type:'scatter3d',mode:'markers',name:'Zwroty / skoki prędkości',...events,marker:{size:3,color:'#ff556d',symbol:'diamond'},hovertemplate:'%{text}<extra></extra>'});
+ const axis={gridcolor:C.grid,color:C.text,zerolinecolor:'#70838c',showbackground:false},layout={...commonLayout(),height:660,uirevision:`terrain-${d.image}-${kind}-${ids}`,legend:{orientation:'h',y:1.13},margin:{l:0,r:0,t:55,b:0},scene:{xaxis:{...axis,title:ribbon?'Krok optymalizacji':labels[0]},yaxis:{...axis,title:ribbon?'Numer patcha':labels[1]},zaxis:{...axis,title:ztitle},aspectmode:'manual',aspectratio:{x:1,y:1,z:.55},camera:terrainCamera||{eye:{x:1.5,y:-1.5,z:.9}}}};
+ await Plotly.react('terrain-plot',traces,layout,CONFIG);const plot=el('terrain-plot');plot.dataset.image=String(d.image);plot.dataset.frames=String(d.steps.length);plot.dataset.tracks=String(selected.length);plot.dataset.kind=kind;plot.dataset.events=String(bad);plot.dataset.step=String(d.steps[index]);plot.dataset.families=JSON.stringify(d.families.reduce((s,k)=>(s[k]=(s[k]||0)+1,s),{}));
+ plot.removeAllListeners?.('plotly_click');plot.on('plotly_click',event=>{const text=event.points?.[0]?.text,match=typeof text==='string'&&text.match(/patch (\d+)/);if(match){chooseParticle(d.image,Number(match[1]));void renderTerrain();}});
+ el('terrain-status').textContent=`Obraz ${d.image} · 600 cząsteczek × ${d.steps.length} stanów · ${selected.length} śladów · znacznik kroku ${d.steps[index]} · ${bad} zdarzeń na pokazanych śladach.`;
+ el('terrain-note').textContent=ribbon?'Powierzchnia pokazuje zmierzoną normę ruchu 768D. Patch jest numerem przestrzennym, nie reżimem.':kind==='speed'?'Wysokość: wygładzona średnia prędkość rzutu PCA w danym miejscu. Brak danych pozostawia przerwy w powierzchni.':'Dolina oznacza wysoką gęstość zapisanych położeń w rzucie; to empiryczna mapa odwiedzin, nie zmierzony potencjał fizyczny ani funkcja błędu. Ślady są podniesione na powierzchnię przez interpolację jej wysokości.';
+ el('terrain-note').textContent+=' Kolory rodzin: dominująca oś końcowego przesunięcia w PCA; szary: norma do 10. percentyla. Czerwone zdarzenia: zwrot >90° lub prędkość >3× mediana danej trajektorii. To opisowe podziały i anomalie rzutu, nie dowód reżimów Koopmana ani matematycznych osobliwości. Kliknij ślad, by wskazać odpowiadający patch.';
+ terrainMarkerState={selected,ids,ribbon,field,trace:markerTrace};await terrainMove(terrainStep);
+}
+el('terrain-build').onclick=buildTerrain;for(const id of ['terrain-kind','terrain-tracks','terrain-family','terrain-events'])el(id).onchange=()=>void renderTerrain();
+el('terrain-plane').onchange=()=>{if(typeof trajectoryActive!=='undefined'&&trajectoryActive)trajectoryGPU.draw();else void renderTerrain();};
+el('terrain-update').onclick=()=>{terrainStep=actualStep();void renderTerrain();};
+el('terrain-play').onclick=()=>{if(terrainPlaying){terrainPause();return;}if(!terrainData&&!(typeof globalDensityData!=='undefined'&&globalDensityData)&&!(typeof trajectoryActive!=='undefined'&&trajectoryActive))return;stop();if(terrainStep>=500)terrainStep=0;terrainPlaying=true;terrainLastTime=performance.now();el('terrain-play').textContent='Pauza';requestAnimationFrame(terrainTick);};
+el('terrain-reset').onclick=()=>{terrainPause();void terrainMove(0);};
+el('terrain-time').oninput=()=>{terrainPause();void terrainMove(Number(el('terrain-time').value));};
+let terrainDebounce;for(const id of ['step','patch-select'])el(id).addEventListener('input',()=>{clearTimeout(terrainDebounce);terrainDebounce=setTimeout(()=>{if(terrainData)void renderTerrain();},150);});
+
+let toolMask=null,toolMaskTicket=0,toolPreview=null;
+function toolPatchSet(image){return new Set(toolMask&&toolMask.image===image?(el('tool-region').value==='contour'?toolMask.contour_patches:toolMask.tool_patches):[]);}
+async function loadToolMask(image){
+ const ticket=++toolMaskTicket;toolMask=null;toolPreview=null;el('tool-status').textContent='Odczyt maski z archiwum adnotacji…';
+ try{const data=await api('/api/tool-mask?image='+image);if(ticket!==toolMaskTicket)return;toolMask=data;el('tool-status').textContent=data.mask_available?`Obraz ${image}: ${data.tool_patches.length} patchy narzędzia, ${data.contour_patches.length} patchy obrysu. ${data.instances.map(x=>x.category).join(', ')}.`:'Dla tej klatki brak maski narzędzia. Nie użyto ramki zastępczej.';
+  const img=new Image();img.onload=()=>{if(ticket!==toolMaskTicket)return;toolPreview=img;paintToolPreview();};img.src='/api/image?image='+image;
+ }catch(e){if(ticket!==toolMaskTicket)return;el('tool-status').textContent='Brak zgodnej maski: '+e.message;}
+ syncToolCloud();paintToolPreview();
+}
+function paintToolPreview(){
+ const canvas=el('tool-preview'),ctx=canvas.getContext('2d');ctx.clearRect(0,0,480,320);ctx.fillStyle='#0c1723';ctx.fillRect(0,0,480,320);
+ if(!toolMask||!toolPreview)return;
+ const maskOnly=el('tool-preview-mode').value==='mask';if(!maskOnly)ctx.drawImage(toolPreview,0,0,480,320);
+ ctx.fillStyle=maskOnly?'#ffdc55':'#ffdc5588';ctx.strokeStyle='#ffdc55';ctx.lineWidth=1;
+ for(const polygon of toolMask.polygons){ctx.beginPath();polygon.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fill();ctx.stroke();}
+ for(const p of toolPatchSet(toolMask.image)){const x=p%30*16,y=Math.floor(p/30)*16;ctx.fillStyle='#ffdc5522';ctx.fillRect(x,y,16,16);ctx.strokeStyle='#ffdc55';ctx.lineWidth=1;ctx.strokeRect(x,y,16,16);}
+ const x=selectedPatch%30*16,y=Math.floor(selectedPatch/30)*16;ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.strokeRect(x,y,16,16);
+ canvas.dataset.image=toolMask.image;canvas.dataset.toolCount=toolPatchSet(toolMask.image).size;
+}
+function syncToolCloud(){if(gpuCloud){gpuCloud.toolImage=toolMask?.image??-1;gpuCloud.toolPatches=el('tool-mode').value==='off'?[]:[...toolPatchSet(toolMask?.image)];gpuCloud.requestDraw();}}
+for(const id of ['tool-mode','tool-region'])el(id).onchange=()=>{syncToolCloud();paintToolPreview();if(terrainData)void renderTerrain();};
+el('tool-preview-mode').onchange=paintToolPreview;
+el('tool-load').onclick=async()=>{await loadToolMask(terrainData?.image??selectedImage());if(terrainData)await renderTerrain();};
+el('tool-preview').onclick=e=>{if(!toolMask)return;const r=e.currentTarget.getBoundingClientRect(),p=Math.min(19,Math.floor((e.clientY-r.top)/r.height*20))*30+Math.min(29,Math.floor((e.clientX-r.left)/r.width*30));chooseParticle(toolMask.image,p);paintToolPreview();if(terrainData)void renderTerrain();};
+el('tool-mosaic-build').onclick=async()=>{
+ const host=el('tool-mosaic');host.replaceChildren();const start=Math.floor((terrainData?.image??selectedImage())/8)*8;
+ for(let image=start;image<Math.min(1500,start+8);image++){
+  const button=document.createElement('button'),canvas=document.createElement('canvas'),label=document.createElement('div');canvas.width=240;canvas.height=160;canvas.style.width='100%';label.textContent='Obraz '+image;button.append(canvas,label);host.append(button);
+  button.onclick=async()=>{chooseParticle(image,selectedPatch);await buildTerrain();paintToolPreview();};
+  try{const mask=await api('/api/tool-mask?image='+image),img=new Image();img.onload=()=>{const c=canvas.getContext('2d');c.drawImage(img,0,0,240,160);c.scale(.5,.5);c.fillStyle='#ffdc5588';c.strokeStyle='#ffdc55';for(const poly of mask.polygons){c.beginPath();poly.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();}for(const p of mask.tool_patches)c.strokeRect(p%30*16,Math.floor(p/30)*16,16,16);};img.src='/api/image?image='+image;if(!mask.mask_available)label.textContent+=' · brak maski';}catch(e){label.textContent+=' · brak adnotacji';}
+ }
+};
+
+let globalDensityData=null,globalDensityTicket=0;
+const globalDensityCache=new Map();
+const globalPlane=()=>({'0,1':0,'0,2':1,'1,2':2}[el('terrain-plane').value]);
+function globalDensityZ(data,step,whole){
+ if(whole)return data.whole;
+ const {a,b,u}=terrainBracket(data.steps,step);
+ return data.fields[a].map((row,y)=>row.map((z,x)=>z+(data.fields[b][y][x]-z)*u));
+}
+async function buildGlobalDensity(){
+ terrainPause();stop();const plane=globalPlane(),ticket=++globalDensityTicket;
+ el('terrain-status').textContent='Wczytywanie gęstości wszystkich 1500 zdjęć…';
+ try{const data=globalDensityCache.get(plane)||await api('/api/raw?terrain=global&plane='+plane);if(ticket!==globalDensityTicket)return;
+  if(data.point_count!==900000||data.image_count!==1500||data.steps.length!==101||data.sampling!==false)throw Error('Niepełna populacja gęstości');
+  globalDensityCache.set(plane,data);globalDensityData=data;await renderGlobalDensity();
+ }catch(e){el('terrain-status').textContent='Nie można wczytać wspólnej gęstości: '+e.message;}
+}
+async function renderGlobalDensity(){
+ terrainPause();if(!globalDensityData||globalDensityData.plane!==globalPlane()){await buildGlobalDensity();return;}
+ const d=globalDensityData,ids=el('terrain-plane').value.split(',').map(Number),axis={gridcolor:C.grid,color:C.text,showbackground:false};
+ const z=globalDensityZ(d,terrainStep,el('terrain-density-time').value==='whole');
+ el('terrain-plot').removeAllListeners?.('plotly_click');
+ await Plotly.react('terrain-plot',[{type:'surface',x:d.x,y:d.y,z,colorscale:[[0,'#1d3b6e'],[.35,'#2f6f8f'],[.7,'#6fa8a0'],[1,'#d8d2b0']],cmin:0,cmax:d.zmax,showscale:true,colorbar:{title:'−ln gęstości'},contours:{z:{show:true,color:'#f0e6c0',width:1}},hovertemplate:'PC '+(ids[0]+1)+': %{x:.3f}<br>PC '+(ids[1]+1)+': %{y:.3f}<br>−ln gęstości: %{z:.3f}<extra>Wszystkie 1500 zdjęć</extra>'}],{...commonLayout(),height:660,uirevision:'global-density-'+d.plane,margin:{l:0,r:30,t:20,b:0},scene:{xaxis:{...axis,title:'PC'+(ids[0]+1),range:[d.x[0],d.x.at(-1)]},yaxis:{...axis,title:'PC'+(ids[1]+1),range:[d.y[0],d.y.at(-1)]},zaxis:{...axis,title:'U = −ln gęstości względnej',range:[0,d.zmax]},aspectmode:'manual',aspectratio:{x:1,y:1,z:.55},camera:{eye:{x:1.5,y:-1.5,z:.9}}}},CONFIG);
+ el('terrain-note').textContent='Wspólna mapa gęstości wszystkich 1500 zdjęć, bez próbkowania cząsteczek. Te same osie PCA i ta sama siatka 64×64 we wszystkich krokach. Studnie są empiryczną gęstością położeń, nie funkcją błędu. Mapa całego ruchu sumuje odwiedziny od 0 do 500; pojedyncza cząsteczka występuje w niej 101 razy. Zaznaczenie maski po prawej dotyczy wybranego zdjęcia i nie filtruje tej globalnej mapy.';
+ await moveGlobalDensity();
+}
+async function moveGlobalDensity(){
+ const d=globalDensityData;if(!d||terrainBusy||d.plane!==globalPlane())return;
+ const whole=el('terrain-density-time').value==='whole';terrainBusy=true;
+ try{if(!whole)await Plotly.restyle('terrain-plot',{z:[globalDensityZ(d,terrainStep,false)]},[0]);
+ const {a,b,u}=terrainBracket(d.steps,terrainStep);
+ el('terrain-status').textContent=whole?`Wszystkie 1500 zdjęć · 900 000 cząsteczek · 101 rzeczywistych stanów · ${d.whole_observation_count.toLocaleString('pl-PL')} położeń w całym ruchu 0–500.`:`Wszystkie 1500 zdjęć · 900 000 cząsteczek · krok ${terrainStep.toFixed(1)} · ${u===0?'rzeczywista gęstość zapisu':'interpolacja powierzchni między '+d.steps[a]+' i '+d.steps[b]}.`;
+ Object.assign(el('terrain-plot').dataset,{scope:'global',pointCount:'900000',imageCount:'1500',step:String(terrainStep),sampling:'false',densityTime:whole?'whole':'current'});
+ }finally{terrainBusy=false;}
+}
+el('terrain-scope').onchange=()=>{
+ if(typeof closeTrajectories==='function')closeTrajectories();
+ terrainPause();const global=el('terrain-scope').value==='global';el('terrain-build').textContent=global?'Wczytaj studnie wszystkich 1500 zdjęć':'Wczytaj trajektorie wybranego zdjęcia';
+ el('terrain-density-time').disabled=!global;
+ for(const id of ['terrain-kind','terrain-tracks','terrain-family','terrain-events'])el(id).disabled=global;
+ if(global){el('terrain-kind').value='density';void buildGlobalDensity();}else{++globalDensityTicket;el('terrain-plot').dataset.scope='image';if(terrainData)void renderTerrain();else{Plotly.purge('terrain-plot');el('terrain-note').textContent='';el('terrain-status').textContent='Wczytaj trajektorie wybranego zdjęcia.';}}
+};
+el('terrain-density-time').onchange=()=>{if(el('terrain-scope').value==='global')void renderGlobalDensity();};
+
+let trajectoryGPU=null,trajectoryActive=false,trajectoryTicket=0;
+function showTrajectoryHost(show){el('terrain-traj-plot').classList.toggle('hidden',!show);el('terrain-plot').classList.toggle('hidden',show);}
+function trajectorySelectedDefault(){if(!el('trajectory-images').value.trim())el('trajectory-images').value=String(selectedImage());}
+async function buildTrajectories(){
+ terrainPause();stop();const ticket=++trajectoryTicket,scope=el('trajectory-scope').value;trajectorySelectedDefault();
+ try{
+  if(!trajectoryGPU)trajectoryGPU=new ParticleTrajectoriesGPU(el('terrain-traj-plot'),el('terrain-status'));
+  trajectoryActive=true;showTrajectoryHost(true);trajectoryGPU.setColor(el('trajectory-color').value);
+  if(scope==='selected'){
+   const images=parseTrajectoryImages(el('trajectory-images').value),plan=trajectoryPlan(scope,images.length,10);await trajectoryGPU.selected(images.join(','));if(ticket!==trajectoryTicket)return;
+   Object.assign(el('terrain-traj-plot').dataset,{plan:JSON.stringify(plan),scope:'selected'});
+  }else{
+   const tail=Number(el('trajectory-tail').value),plan=trajectoryPlan(scope,0,tail),meta=await api('/api/frame?mode=global&image=0&step=0&movement=0&trails=0&geometry=0');if(ticket!==trajectoryTicket)return;
+   meta.steps=META.global_steps;await trajectoryGPU.global(meta,terrainStep,tail);if(ticket!==trajectoryTicket)return;
+   Object.assign(el('terrain-traj-plot').dataset,{plan:JSON.stringify(plan),scope:'global'});
+  }
+  el('terrain-note').textContent=scope==='selected'?'Pełne trajektorie wszystkich 600 patchy każdego wybranego zdjęcia. Ciemniejsza linia pokazuje całą drogę 0–500, a jaśniejsza część — drogę przebytą do bieżącego kroku.':'Każdy widoczny odcinek jest rzeczywistym ruchem jednej z 900 000 cząsteczek między zapisami co 5 kroków. Regulowany ogon zachowuje poprzednie przedziały. Nie zastosowano próbkowania cząsteczek.';
+ }catch(error){trajectoryActive=false;showTrajectoryHost(false);el('terrain-status').textContent='Nie można wczytać trajektorii: '+error.message;}
+}
+function closeTrajectories(){trajectoryActive=false;++trajectoryTicket;showTrajectoryHost(false);}
+el('trajectory-build').onclick=()=>void buildTrajectories();
+el('trajectory-scope').onchange=()=>{const selected=el('trajectory-scope').value==='selected';el('trajectory-images-wrap').classList.toggle('hidden',!selected);el('trajectory-tail-wrap').classList.toggle('hidden',selected);el('trajectory-build').textContent=selected?'Wczytaj pełne trajektorie wybranych zdjęć':'Wczytaj trajektorie wszystkich 1500 zdjęć';};
+el('trajectory-color').onchange=()=>{trajectoryGPU?.setColor(el('trajectory-color').value);};
+el('trajectory-tail').onchange=()=>{if(trajectoryActive&&el('trajectory-scope').value==='global')void buildTrajectories();};
+
+// END TERRAIN VIEWS
+async function init(){try{META=await api('/api/meta');if(!META.ready){el('loading').textContent='Trwa lokalne przygotowanie rzeczywistych projekcji. Widok pojawi się po weryfikacji danych.';setTimeout(init,4000);return;}selectImages();const variance=META.pca_variance||[];el('variance').textContent=variance.length?`PCA 3D: ${(100*variance.reduce((a,b)=>a+b,0)).toFixed(2)}% wariancji próbki`:'Jedna wspólna PCA 3D';await drawSelectedCurve();await drawCurves();await draw();await waitForView();el('play').disabled=false;}catch(e){el('loading').textContent=`Przygotowanie podglądu: ${e.message}`;setTimeout(init,5000);}}init();

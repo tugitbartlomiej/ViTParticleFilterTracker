@@ -1,0 +1,43 @@
+{
+  "updated": "2026-10-02T19:09:31.260043+00:00",
+  "job_id": 1819918,
+  "scheduler_state": "RUNNING",
+  "node": "hopper-2",
+  "phase": "inner_LRG_0",
+  "actual_training_steps": 223,
+  "actual_preflight_optimizer_steps": 2,
+  "synthetic_proof_job": 1819912,
+  "synthetic_proof_steps": 2,
+  "world_size": 11,
+  "devices": {
+    "fullH200": 4,
+    "MIG4g71gb": 4,
+    "MIG3g71gb": 3
+  },
+  "scratch": "/dev/shm/bpiotrowski_nndmd_expanded_1819918",
+  "cache_mode": "full101",
+  "memory_mb": 393216,
+  "time_limit_hours": 24,
+  "remote_run": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper",
+  "stdout": "slurm-1819918.out",
+  "stderr": "slurm-1819918.err",
+  "pre_fit_guards": [
+    "parallel_source_preflight",
+    "actual_dataset1vs11_batch32_tail28_all600",
+    "seed_reset"
+  ],
+  "target_runtime_CPU_repeat": "INTERRUPTED redundant Gloo1vs11 on slow login by root decision; no PASS claim",
+  "evidence": [
+    "19 local CPUtests PASS",
+    "exact GPU1vs11 synthetic PASS",
+    "final SHA22/22 PASS",
+    "bash-n/scratch4tests PASS",
+    "Astra final audit PASS"
+  ],
+  "epoch": 1,
+  "origin": 54,
+  "latest_rmse_full768": 0.10097466721237897,
+  "actual_dataset_guard": "PASS",
+  "optimizer_median_seconds": 0.16199721721932292,
+  "actual_dataset_guard_path": "run1819918/DATASET_GPU_PREFLIGHT.json"
+}

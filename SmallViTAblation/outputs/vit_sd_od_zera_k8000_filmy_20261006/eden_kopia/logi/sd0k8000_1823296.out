@@ -1,0 +1,41 @@
+Tue Oct  6 17:33:59 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.71.05              Driver Version: 595.71.05      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H100 PCIe               On  |   00000000:02:00.0 Off |                    0 |
+| N/A   26C    P0             46W /  350W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA H100 PCIe               On  |   00000000:61:00.0 Off |                    0 |
+| N/A   31C    P0             48W /  350W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA H100 PCIe               On  |   00000000:62:00.0 Off |                    0 |
+| N/A   29C    P0             48W /  350W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA H100 PCIe               On  |   00000000:82:00.0 Off |                    0 |
+| N/A   25C    P0             49W /  350W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+[W1006 17:34:15.420256562 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [localhost]:42159 (errno: 97 - Address family not supported by protocol).
+[W1006 17:34:15.741593688 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:33089 (errno: 97 - Address family not supported by protocol).
+[W1006 17:34:47.384313970 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:33089 (errno: 97 - Address family not supported by protocol).
+[W1006 17:34:47.385595769 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:33089 (errno: 97 - Address family not supported by protocol).
+[W1006 17:34:47.385728436 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:33089 (errno: 97 - Address family not supported by protocol).
+[W1006 17:34:47.385851329 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:33089 (errno: 97 - Address family not supported by protocol).
+/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4876: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  warnings.warn(  # warn only once
+mode=smoke segment=1/10 rc=0 time_signal=0

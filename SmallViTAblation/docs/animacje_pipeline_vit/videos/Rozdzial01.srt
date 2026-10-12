@@ -1,0 +1,95 @@
+1
+00:00:00,100 --> 00:00:05,576
+Ten cykl pokazuje twój rzeczywisty pipeline małego transformera wizyjnego.
+
+2
+00:00:05,576 --> 00:00:09,053
+Najpierw wyjaśnimy, czym są cząstki w latencie.
+
+3
+00:00:09,053 --> 00:00:14,381
+Następnie pokażemy maski, odczyt tożsamości i ruch cech podczas uczenia.
+
+4
+00:00:14,381 --> 00:00:19,265
+Na końcu połączymy to z prognozą i dobieraniem prawdziwych klatek.
+
+5
+00:00:19,265 --> 00:00:22,817
+Schematy i zmierzone dane będą oznaczone osobno.
+
+6
+00:00:23,517 --> 00:00:31,373
+Do tego małego modelu trafia pełna klatka zmniejszona do czterystu osiemdziesięciu na trzysta dwadzieścia pikseli.
+
+7
+00:00:31,373 --> 00:00:34,680
+Pokazujemy rzeczywisty obraz ze zbioru Cataract.
+
+8
+00:00:34,680 --> 00:00:38,264
+Rozmiar wejścia nie jest rozmiarem badanego latentu.
+
+9
+00:00:38,264 --> 00:00:42,192
+Najpierw obraz przechodzi przez konwolucyjną część sieci.
+
+10
+00:00:42,892 --> 00:00:48,960
+Cztery konwolucje, każda z krokiem dwa, zmniejszają rozdzielczość szesnastokrotnie.
+
+11
+00:00:48,960 --> 00:00:52,836
+Otrzymujemy trzydzieści kolumn i dwadzieścia wierszy.
+
+12
+00:00:52,836 --> 00:00:54,298
+To sześćset tokenów.
+
+13
+00:00:54,298 --> 00:00:58,246
+W naszej interpretacji każdy token jest jedną cząstką.
+
+14
+00:00:58,246 --> 00:01:04,900
+Linie pokazują przypisanie miejsca, ale konwolucyjne pola widzenia nakładają się na siebie.
+
+15
+00:01:05,600 --> 00:01:11,179
+Każdy token ma sto dziewięćdziesiąt dwie cechy w głównym strumieniu transformera.
+
+16
+00:01:11,179 --> 00:01:17,860
+Wewnątrz ostatniego bloku warstwa MLP rozszerza go do siedmiuset sześćdziesięciu ośmiu aktywacji.
+
+17
+00:01:17,860 --> 00:01:19,995
+Odczytujemy je po funkcji GELU.
+
+18
+00:01:19,995 --> 00:01:25,299
+To sześćset wektorów, każdy o siedmiuset sześćdziesięciu ośmiu współrzędnych.
+
+19
+00:01:25,299 --> 00:01:28,192
+Nie siedemset sześćdziesiąt osiem cząstek.
+
+20
+00:01:28,892 --> 00:01:34,481
+Ten model ma około dwóch przecinek dziewięćdziesięciu trzech miliona parametrów.
+
+21
+00:01:34,481 --> 00:01:39,232
+Zawiera sześć bloków transformera i trzy głowy uwagi w każdym bloku.
+
+22
+00:01:39,232 --> 00:01:44,263
+Na końcu gęsta głowa przewiduje położenie środka narzędzia i jego ramkę.
+
+23
+00:01:44,263 --> 00:01:48,664
+Odczyt latentu wykonujemy wcześniej, wewnątrz ostatniego bloku.
+
+24
+00:01:48,664 --> 00:01:50,900
+Nie zmieniamy przez to dekodera.

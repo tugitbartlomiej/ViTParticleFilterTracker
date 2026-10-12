@@ -1,0 +1,75 @@
+1
+00:00:00,100 --> 00:00:06,470
+Każde miejsce siatki dostaje stały wektor pozycji, obliczany z sinusów i cosinusów.
+
+2
+00:00:06,470 --> 00:00:10,615
+Dodajemy go do cech obrazu przed blokami transformera.
+
+3
+00:00:10,615 --> 00:00:12,764
+Nie jest uczonym parametrem.
+
+4
+00:00:12,764 --> 00:00:15,374
+Ten sam adres dostaje ten sam kod.
+
+5
+00:00:15,374 --> 00:00:19,442
+Treść tokena może jednak zmieniać się wraz z obrazem.
+
+6
+00:00:20,142 --> 00:00:23,661
+Z tokenów powstają zapytania, klucze i wartości.
+
+7
+00:00:23,661 --> 00:00:27,473
+Podobieństwo zapytania do kluczy określa wagi uwagi.
+
+8
+00:00:27,473 --> 00:00:31,945
+Token otrzymuje ważoną mieszaninę informacji z innych miejsc.
+
+9
+00:00:31,945 --> 00:00:39,716
+Dlatego token leżący na cystotomie może również zawierać informację o oku, drugim narzędziu i oświetleniu.
+
+10
+00:00:39,716 --> 00:00:44,775
+Pokazane połączenia ilustrują mechanizm, nie są zmierzoną mapą uwagi.
+
+11
+00:00:45,475 --> 00:00:49,231
+Gdy przychodzi nowa klatka, tokeny są liczone od nowa.
+
+12
+00:00:49,231 --> 00:00:54,101
+Sieć nie przechowuje poprzednich cząstek jako swojego stanu czasowego.
+
+13
+00:00:54,101 --> 00:01:00,083
+Przy zamrożonych wagach identyczny obraz w trybie oceny daje identyczną reprezentację.
+
+14
+00:01:00,083 --> 00:01:07,108
+Podobne obrazy często dają podobne cechy, ale duża zmiana lokalnej treści może mocno przesunąć token.
+
+15
+00:01:07,808 --> 00:01:10,036
+Trzeba rozdzielić dwie sytuacje.
+
+16
+00:01:10,036 --> 00:01:14,769
+W pierwszej oglądamy kolejne klatki jednego filmu przy stałej sieci.
+
+17
+00:01:14,769 --> 00:01:20,407
+W drugiej przepuszczamy ten sam obraz przez sieć po kolejnych aktualizacjach wag.
+
+18
+00:01:20,407 --> 00:01:25,140
+Nasz eksperyment przewidywania latentu dotyczy tej drugiej sytuacji.
+
+19
+00:01:25,140 --> 00:01:29,317
+Nie mylmy ruchu narzędzia w filmie z uczeniem reprezentacji.

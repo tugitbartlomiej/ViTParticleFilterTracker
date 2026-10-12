@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Odtwarzacz punktów</title>
+<style>
+  :root {
+    --tlo: #0E1A24; --panel: #16293A; --panel2: #1B3247; --linia: #24425A;
+    --tekst: #EAF2F5; --przygaszony: #7C93A3; --morski: #2BB3C0;
+    --akcent: #F08A2E; --czerwony: #E0565B; --zielony: #5BC27A;
+    --szer-menu: 400px; --ruch: .32s cubic-bezier(.2,.8,.2,1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; color: var(--tekst);
+    font-family: "Segoe UI", system-ui, sans-serif; font-size: 14px; overflow: hidden; }
+  button { background: var(--panel); color: var(--tekst); border: 1px solid var(--linia); border-radius: 6px;
+    padding: 6px 11px; font: inherit; cursor: pointer; transition: border-color .15s, background .15s; }
+  button:hover { border-color: var(--morski); background: var(--panel2); }
+  button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--morski); outline-offset: 1px; }
+  button.akcent { border-color: var(--akcent); color: var(--akcent); }
+  button.akcent:hover { background: rgba(240,138,46,.12); }
+  button.maly { padding: 3px 8px; font-size: 12px; }
+  button.ikona { width: 34px; height: 34px; padding: 0; font-size: 18px; line-height: 1; }
+  button:disabled { opacity: .4; cursor: default; border-color: var(--linia); }
+
+  /* ---------- scena z filmem: zawsze całe wolne miejsce, menu ją zwęża ---------- */
+  #scena { position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: #000; transition: right var(--ruch); }
+  body.menu #scena { right: var(--szer-menu); }
+  video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+  #pusto { position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    text-align: center; color: var(--przygaszony); padding: 24px; line-height: 1.6; }
+  #pusto.widoczne { display: flex; }
+  #upuszczanie { position: absolute; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center;
+    background: rgba(43,179,192,.15); border: 3px dashed var(--morski); font-size: 22px; }
+  #upuszczanie.widoczne { display: flex; }
+
+  /* krótki znacznik po każdym przejściu (widoczny także w pełnym ekranie) */
+  #znacznik { position: absolute; left: 16px; bottom: 16px; z-index: 6; padding: 6px 12px; border-radius: 6px;
+    background: rgba(14,26,36,.88); border: 1px solid var(--linia); font-family: Consolas, monospace;
+    opacity: 0; transition: opacity .4s, bottom var(--ruch); pointer-events: none; }
+  #znacznik.blysk { opacity: 1; }
+  #znacznik .stan { color: var(--akcent); }
+  body:not(.cisza) #znacznik { bottom: 92px; }
+  #cyfry { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6;
+    padding: 10px 24px; border-radius: 10px; background: rgba(14,26,36,.92); border: 1px solid var(--akcent);
+    color: var(--akcent); font: 40px Consolas, monospace; display: none; }
+
+  /* ---------- dolny pasek: nakładka, chowa się po chwili bez ruchu myszy ---------- */
+  #dol { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 30px 14px 10px;
+    background: linear-gradient(to top, rgba(14,26,36,.96) 50%, rgba(14,26,36,0));
+    transition: opacity .35s, transform .35s, right var(--ruch); }
+  body.menu #dol { right: var(--szer-menu); }
+  body.cisza #dol { opacity: 0; transform: translateY(14px); pointer-events: none; }
+  body.cisza #scena, body.cisza video { cursor: none; }
+
+  #os { position: relative; height: 30px; cursor: pointer; margin: 0 0 6px; touch-action: none; }
+  #os .tor, #os .bufor, #os .postep { position: absolute; left: 0; top: 18px; height: 4px; border-radius: 2px; }
+  #os .tor { right: 0; background: var(--linia); }
+  #os .postep { background: var(--morski); }
+  #os:hover .tor, #os:hover .postep { height: 6px; top: 17px; }
+  #os .glowica { position: absolute; top: 13px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%;
+    background: var(--tekst); box-shadow: 0 0 0 3px rgba(43,179,192,.35); pointer-events: none; }
+  #os .pkt { position: absolute; top: 0; width: 18px; margin-left: -9px; text-align: center;
+    font: 10px Consolas, monospace; color: var(--akcent); cursor: pointer; }
+  #os .pkt span { display: block; height: 12px; line-height: 12px; }
+  #os .pkt span.bez { visibility: hidden; }
+  #os .pkt i { display: block; width: 8px; height: 8px; margin: 3px auto 0; background: var(--akcent);
+    transform: rotate(45deg); border-radius: 1px; transition: transform .15s; }
+  #os .pkt:hover i { transform: rotate(45deg) scale(1.4); }
+  #os .pkt.biezacy { color: var(--tekst); }
+  #os .pkt.biezacy i { background: var(--tekst); }
+  #os .pkt.cel i { animation: puls 0.9s ease-in-out infinite; }
+  @keyframes puls { 50% { transform: rotate(45deg) scale(1.6); background: var(--tekst); } }
+  #dymek { position: absolute; bottom: 36px; transform: translateX(-50%); padding: 4px 9px; border-radius: 5px;
+    background: var(--tlo); border: 1px solid var(--linia); font-size: 12px; white-space: nowrap;
+    pointer-events: none; display: none; max-width: 340px; overflow: hidden; text-overflow: ellipsis; }
+  #dymek b { font-family: Consolas, monospace; font-weight: normal; color: var(--akcent); }
+
+  #pasek { display: flex; align-items: center; gap: 8px; }
+  #czas { font-family: Consolas, monospace; white-space: nowrap; margin-left: 6px; }
+  #opisPunktu { color: var(--przygaszony); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #opisPunktu b { color: var(--akcent); font-weight: normal; }
+
+  /* uchwyt menu w prawym górnym rogu */
+  #uchwyt { position: absolute; top: 14px; right: 14px; z-index: 6; background: rgba(22,41,58,.88);
+    transition: opacity .3s; }
+  body.cisza #uchwyt, body.menu #uchwyt { opacity: 0; pointer-events: none; }
+
+  /* ---------- menu boczne ---------- */
+  #menu { position: absolute; top: 0; right: 0; bottom: 0; width: var(--szer-menu); z-index: 8;
+    background: var(--tlo); border-left: 1px solid var(--linia); display: flex; flex-direction: column;
+    transform: translateX(100%); transition: transform var(--ruch), visibility 0s linear .32s; visibility: hidden;
+    box-shadow: -10px 0 30px rgba(0,0,0,.45); }
+  body.menu #menu { transform: none; visibility: visible; transition: transform var(--ruch); }
+  #menu header { display: flex; align-items: center; gap: 10px; padding: 14px 14px 10px; }
+  #menu header h2 { font-size: 16px; margin: 0; }
+  #menu header .licznik { color: var(--przygaszony); font-size: 12px; }
+  #menu header .odstep { flex: 1; }
+  .narzedzia { display: flex; gap: 6px; padding: 0 14px 10px; align-items: center; flex-wrap: wrap; }
+  .narzedzia .czasDodania { font-family: Consolas, monospace; }
+  #status { padding: 0 14px 8px; font-size: 12px; min-height: 18px; color: var(--przygaszony); }
+  #status.zmiany { color: var(--akcent); }
+  #status.ok { color: var(--zielony); }
+
+  details.wiecej { position: relative; }
+  details.wiecej summary { list-style: none; cursor: pointer; padding: 6px 11px; border: 1px solid var(--linia);
+    border-radius: 6px; background: var(--panel); user-select: none; }
+  details.wiecej summary::-webkit-details-marker { display: none; }
+  details.wiecej[open] summary { border-color: var(--morski); }
+  details.wiecej .lista-opcji { position: absolute; right: 0; top: 38px; z-index: 3; min-width: 200px; padding: 6px;
+    background: var(--panel); border: 1px solid var(--linia); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  details.wiecej .lista-opcji button { display: block; width: 100%; text-align: left; border: 0; background: none; }
+  details.wiecej .lista-opcji button:hover { background: var(--panel2); }
+  #zestawy { border-bottom: 1px solid var(--linia); margin-bottom: 4px; padding-bottom: 4px; }
+  #zestawy button.aktywny { color: var(--akcent); }
+  #zestawy .tytul { font-size: 11px; color: var(--przygaszony); padding: 4px 11px 2px; }
+
+  #szkic { margin: 0 14px 10px; padding: 9px 10px; border: 1px solid var(--akcent); border-radius: 6px;
+    font-size: 12px; display: none; background: rgba(240,138,46,.07); }
+  #szkic.widoczne { display: block; }
+  #szkic .przyciski { margin-top: 7px; display: flex; gap: 6px; }
+
+  #lista { flex: 1; overflow-y: auto; padding: 2px 10px 10px; scrollbar-width: thin; scrollbar-color: var(--linia) transparent; }
+  .karta { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; align-items: center;
+    padding: 8px; margin-bottom: 6px; border-radius: 8px; border: 1px solid transparent; border-left: 3px solid transparent;
+    background: rgba(22,41,58,.45); transition: background .15s, border-color .15s; }
+  .karta:hover { background: var(--panel); }
+  .karta.biezacy { border-left-color: var(--akcent); background: var(--panel); }
+  .karta.cel { border-color: var(--morski); }
+  .mini { position: relative; width: 112px; height: 63px; border-radius: 5px; overflow: hidden; background: #000;
+    cursor: pointer; border: 1px solid var(--linia); }
+  .mini canvas { width: 100%; height: 100%; display: block; }
+  .mini .nr { position: absolute; left: 4px; top: 4px; min-width: 20px; padding: 1px 5px; border-radius: 4px;
+    background: rgba(14,26,36,.9); color: var(--akcent); font: 12px Consolas, monospace; text-align: center; }
+  .mini:hover { border-color: var(--morski); }
+  .pola { display: grid; grid-template-columns: 92px minmax(0, 1fr); grid-template-rows: auto auto; gap: 6px; min-width: 0; }
+  .pola .opis { grid-column: 1 / 3; }
+  .pola input { background: #0A141C; color: var(--tekst); border: 1px solid var(--linia); border-radius: 5px;
+    padding: 5px 7px; font: inherit; width: 100%; min-width: 0; }
+  .pola input:hover { border-color: #31587a; }
+  .pola input.czas { font-family: Consolas, monospace; }
+  .pola input.blad { border-color: var(--czerwony); color: var(--czerwony); }
+  .akcje { display: flex; gap: 3px; justify-content: flex-end; opacity: .0; transition: opacity .15s; }
+  .karta:hover .akcje, .karta.biezacy .akcje, .karta:focus-within .akcje { opacity: 1; }
+  .akcje button { width: 26px; height: 27px; padding: 0; font-size: 13px; }
+  .akcje .usun:hover { border-color: var(--czerwony); color: var(--czerwony); }
+  .pusta-lista { color: var(--przygaszony); padding: 20px 8px; text-align: center; line-height: 1.6; }
+
+  details#skroty { border-top: 1px solid var(--linia); padding: 0 14px; }
+  details#skroty summary { cursor: pointer; padding: 10px 0; color: var(--przygaszony); font-size: 13px; user-select: none; }
+  details#skroty .siatka { display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; padding-bottom: 12px;
+    font-size: 12px; color: var(--przygaszony); }
+  kbd { display: inline-block; min-width: 20px; padding: 1px 6px; border: 1px solid var(--linia); border-bottom-width: 2px;
+    border-radius: 4px; background: var(--panel); color: var(--tekst); font: 11px Consolas, monospace; text-align: center; }
+
+  #toast { position: absolute; left: 50%; top: 18px; transform: translate(-50%, -8px); z-index: 30; opacity: 0;
+    padding: 8px 14px; border-radius: 7px; background: var(--panel); border: 1px solid var(--linia);
+    transition: opacity .25s, transform .25s; pointer-events: none; }
+  #toast.widoczny { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 900px) { :root { --szer-menu: 100vw; } }
+</style>
+</head>
+<body>
+<div id="scena">
+  <video id="film" preload="auto" playsinline></video>
+  <div id="pusto">Nie udało się wczytać filmu.<br>Przeciągnij plik wideo tutaj albo otwórz go z menu (&#9776;, potem &bdquo;&hellip;&rdquo;).</div>
+  <div id="znacznik"></div>
+  <div id="cyfry"></div>
+  <button id="uchwyt" class="ikona" title="Menu z punktami (E)">&#9776;</button>
+</div>
+
+<div id="dol">
+  <div id="os"><div class="tor"></div><div class="postep"></div><div class="glowica"></div><div id="dymek"></div></div>
+  <div id="pasek">
+    <button id="bWstecz" title="Poprzedni punkt (strzałka w lewo)">&larr;</button>
+    <button id="bNaprzod" class="akcent" title="Odtwórz do następnego punktu (strzałka w prawo, spacja)">Dalej &rarr;</button>
+    <span id="czas">0:00.00 / 0:00.00</span>
+    <span id="opisPunktu"></span>
+    <button id="bMenu" title="Menu z punktami (E)">&#9776; Punkty</button>
+    <button id="bPelny" title="Pełny ekran (F)">Pełny ekran</button>
+  </div>
+</div>
+
+<aside id="menu" aria-label="Punkty zatrzymania">
+  <header>
+    <h2>Punkty</h2><span class="licznik" id="licznik"></span>
+    <span class="odstep"></span>
+    <button id="bZamknij" class="ikona" title="Zamknij menu (E, Esc)">&times;</button>
+  </header>
+  <div class="narzedzia">
+    <button id="bDodaj" class="akcent" title="Dodaj punkt w bieżącym miejscu (M)">+ Dodaj w <span class="czasDodania" id="czasDodania">0:00.00</span></button>
+    <button id="bZapisz" title="Zapisz punkty.js (Ctrl+S)">Zapisz</button>
+    <button id="bCofnij" title="Cofnij ostatnią zmianę (Ctrl+Z)" disabled>Cofnij</button>
+    <details class="wiecej">
+      <summary title="Więcej">&hellip;</summary>
+      <div class="lista-opcji">
+        <div id="zestawy"></div>
+        <button id="bWczytaj">Wczytaj plik punktów&hellip;</button>
+        <button id="bFilm">Otwórz inny film&hellip;</button>
+        <button id="bPrzywroc">Przywróć stan z pliku</button>
+      </div>
+    </details>
+  </div>
+  <div id="status"></div>
+  <div id="szkic">
+    <div id="szkicTekst"></div>
+    <div class="przyciski"><button id="bSzkicTak" class="maly akcent">Wczytaj szkic</button><button id="bSzkicNie" class="maly">Odrzuć</button></div>
+  </div>
+  <div id="lista"></div>
+  <details id="skroty">
+    <summary>Skróty klawiszowe</summary>
+    <div class="siatka">
+      <span><kbd>&rarr;</kbd> <kbd>spacja</kbd> <kbd>PgDn</kbd></span><span>odtwórz do następnego punktu i zatrzymaj</span>
+      <span><kbd>&larr;</kbd> <kbd>PgUp</kbd></span><span>wróć do poprzedniego punktu</span>
+      <span><kbd>1</kbd>&hellip;<kbd>9</kbd></span><span>skok do punktu (też klawiatura numeryczna); <kbd>1</kbd><kbd>2</kbd> to punkt 12, <kbd>Enter</kbd> od razu</span>
+      <span><kbd>0</kbd> <kbd>Home</kbd></span><span>początek filmu</span>
+      <span><kbd>spacja</kbd></span><span>w trakcie odtwarzania: pauza</span>
+      <span><kbd>,</kbd> <kbd>.</kbd></span><span>klatka wstecz / naprzód</span>
+      <span><kbd>M</kbd></span><span>dodaj punkt w bieżącym miejscu</span>
+      <span><kbd>E</kbd></span><span>otwórz / zamknij to menu</span>
+      <span><kbd>F</kbd></span><span>pełny ekran</span>
+      <span><kbd>Esc</kbd></span><span>zamknij menu, wyjdź z pełnego ekranu</span>
+      <span><kbd>Ctrl</kbd>+<kbd>S</kbd></span><span>zapisz punkty.js</span>
+      <span><kbd>Ctrl</kbd>+<kbd>Z</kbd></span><span>cofnij zmianę punktów</span>
+    </div>
+  </details>
+  <input type="file" id="plikKonfig" accept=".js,.json" hidden>
+  <input type="file" id="plikFilm" accept="video/*" hidden>
+</aside>
+
+<div id="upuszczanie">Upuść film albo plik punktów</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const KLATKA = 1 / 30;           // długość klatki filmu (30 kl./s)
+const EPS = 0.05;                // tolerancja „stoję na punkcie”
+const v = document.getElementById("film");
+const $ = id => document.getElementById(id);
+const body = document.body;
+
+let punkty = [];                 // [{t: sekundy, opis}]
+let nazwaFilmu = "final.mp4";
+let cel = null;                  // czas, na którym odtwarzanie ma się zatrzymać
+let uchwytPliku = null;          // uchwyt punkty.js po pierwszym zapisie (Chrome, Edge)
+let zapisaneJSON = "";           // stan ostatnio wczytany z pliku albo zapisany
+let zPliku = null;               // konfiguracja z pliku, do „Przywróć stan z pliku”
+const historia = [];             // stany do cofania
+
+// ---------- czas ----------
+function czytajCzas(s) {
+  s = String(s).trim().replace(",", ".");
+  if (!/^\d+(:\d{1,2}){0,2}(\.\d+)?$/.test(s)) return null;
+  let t = 0;
+  for (const c of s.split(":").map(Number)) t = t * 60 + c;
+  return t;
+}
+function piszCzas(t) {
+  if (!isFinite(t)) t = 0;
+  const setne = Math.round(t * 100);
+  const h = Math.floor(setne / 360000), m = Math.floor(setne / 6000) % 60;
+  const s = Math.floor(setne / 100) % 60, c = setne % 100;
+  const ss = String(s).padStart(2, "0") + "." + String(c).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
+}
+const zaokr = t => Math.round(t * 100) / 100;
+
+// ---------- komunikaty ----------
+let zegarToastu = null;
+function toast(tekst) {
+  const e = $("toast"); e.textContent = tekst; e.classList.add("widoczny");
+  clearTimeout(zegarToastu); zegarToastu = setTimeout(() => e.classList.remove("widoczny"), 1800);
+}
+
+// ---------- konfiguracja ----------
+function zKonfigu(k) {
+  const lista = [];
+  for (const p of (k && k.punkty) || []) {
+    const t = typeof p.czas === "number" ? p.czas : czytajCzas(p.czas);
+    if (t !== null) lista.push({ t, opis: p.opis || "" });
+  }
+  return lista.sort((a, b) => a.t - b.t);
+}
+function doKonfigu() {
+  return { film: nazwaFilmu, punkty: punkty.map(p => ({ czas: piszCzas(p.t), opis: p.opis })) };
+}
+function tekstPliku() {
+  const k = doKonfigu();
+  const wiersze = k.punkty.map(p => `    { "czas": ${JSON.stringify(p.czas)}, "opis": ${JSON.stringify(p.opis)} }`);
+  return [
+    "// Konfiguracja odtwarzacza punktów (odtwarzacz.html).",
+    "// Czas: \"m:ss.cc\" (minuty:sekundy.setne), np. \"1:05.40\". Działa też \"65.4\" i \"0:01:05.40\".",
+    "// \"film\" to ścieżka względem odtwarzacz.html.",
+    "// Plik można edytować ręcznie albo zapisać z menu odtwarzacza (Ctrl+S).",
+    "window.KONFIG_PUNKTOW = {",
+    "  \"film\": " + JSON.stringify(k.film) + ",",
+    "  \"punkty\": [",
+    wiersze.join(",\n"),
+    "  ]",
+    "};",
+    ""
+  ].join("\n");
+}
+const kluczSzkicu = () => "odtwarzacz_punktow:" + nazwaFilmu;
+function pokazStatus() {
+  const czyste = JSON.stringify(doKonfigu()) === zapisaneJSON;
+  const s = $("status");
+  if (!czyste) { s.className = "zmiany"; s.textContent = "Niezapisane zmiany (Ctrl+S zapisuje " + PLIK_PUNKTOW + ")"; }
+  else if (!s.classList.contains("ok")) { s.className = ""; s.textContent = "Wszystko zapisane w " + PLIK_PUNKTOW; }
+}
+function zapiszSzkic() {
+  const j = JSON.stringify(doKonfigu());
+  try {
+    if (j === zapisaneJSON) localStorage.removeItem(kluczSzkicu());
+    else localStorage.setItem(kluczSzkicu(), JSON.stringify({ kiedy: Date.now(), konfig: doKonfigu() }));
+  } catch (e) {}
+  if (j !== zapisaneJSON) $("status").classList.remove("ok");
+  pokazStatus();
+}
+function sprawdzSzkic() {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(kluczSzkicu()) || "null"); } catch (e) {}
+  if (!s || JSON.stringify(s.konfig) === zapisaneJSON) { $("szkic").classList.remove("widoczne"); return; }
+  $("szkicTekst").textContent = "Masz niezapisany szkic z " + new Date(s.kiedy).toLocaleString("pl-PL") +
+    " (" + s.konfig.punkty.length + " punktów). Wczytać go?";
+  $("szkic").classList.add("widoczne");
+  $("bSzkicTak").onclick = () => { zmien(() => { punkty = zKonfigu(s.konfig); }); $("szkic").classList.remove("widoczne"); };
+  $("bSzkicNie").onclick = () => { try { localStorage.removeItem(kluczSzkicu()); } catch (e) {} $("szkic").classList.remove("widoczne"); };
+}
+function przyjmijKonfig(k, ladujFilm) {
+  zPliku = k;
+  punkty = zKonfigu(k);
+  if (ladujFilm && k && k.film) { nazwaFilmu = k.film; zaladujFilm(k.film); }
+  zapisaneJSON = JSON.stringify(doKonfigu());
+  historia.length = 0; $("bCofnij").disabled = true;
+  odswiez(true); zapiszSzkic(); sprawdzSzkic();
+}
+
+async function zapiszPlik() {
+  const tekst = tekstPliku();
+  try {
+    if (window.showSaveFilePicker) {
+      if (!uchwytPliku) uchwytPliku = await showSaveFilePicker({
+        suggestedName: PLIK_PUNKTOW,
+        types: [{ description: "Punkty odtwarzacza", accept: { "text/javascript": [".js"] } }]
+      });
+      const w = await uchwytPliku.createWritable();
+      await w.write(tekst); await w.close();
+    } else {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([tekst], { type: "text/javascript" }));
+      a.download = PLIK_PUNKTOW; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+  } catch (e) { if (e.name !== "AbortError") toast("Nie udało się zapisać: " + e.message); return; }
+  zapisaneJSON = JSON.stringify(doKonfigu());
+  zPliku = doKonfigu();
+  zapiszSzkic();
+  $("status").className = "ok";
+  $("status").textContent = "Zapisano " + (uchwytPliku ? uchwytPliku.name : PLIK_PUNKTOW) + " o " + new Date().toLocaleTimeString("pl-PL");
+  toast("Zapisano punkty");
+}
+function wczytajPlikKonfigu(plik) {
+  plik.text().then(tekst => {
+    let k = null;
+    try {
+      if (/\.json$/i.test(plik.name)) k = JSON.parse(tekst);
+      else { const okno = {}; new Function("window", tekst)(okno); k = okno.KONFIG_PUNKTOW; }
+      if (!k || !Array.isArray(k.punkty)) throw new Error("brak listy \"punkty\"");
+    } catch (e) { toast("Błędny plik punktów: " + e.message); return; }
+    przyjmijKonfig(k, false);
+    toast("Wczytano " + punkty.length + " punktów z " + plik.name);
+  });
+}
+
+// ---------- zmiany z cofaniem ----------
+function zmien(fn) {
+  historia.push(JSON.stringify(punkty));
+  if (historia.length > 100) historia.shift();
+  fn();
+  punkty.sort((a, b) => a.t - b.t);
+  $("bCofnij").disabled = false;
+  odswiez(true); zapiszSzkic(); planujMiniatury();
+}
+function cofnij() {
+  if (!historia.length) return;
+  punkty = JSON.parse(historia.pop());
+  $("bCofnij").disabled = !historia.length;
+  odswiez(true); zapiszSzkic(); planujMiniatury();
+  toast("Cofnięto zmianę");
+}
+
+// ---------- film ----------
+function zaladujFilm(zrodlo) {
+  $("pusto").classList.remove("widoczne");
+  v.src = zrodlo; v.load();
+  podglad.src = zrodlo; miniatury.clear(); planujMiniatury();
+}
+v.addEventListener("error", () => $("pusto").classList.add("widoczne"));
+v.addEventListener("loadedmetadata", () => { $("pusto").classList.remove("widoczne"); odswiez(true); });
+function otworzPlikFilmu(plik) {
+  nazwaFilmu = plik.name;
+  zaladujFilm(URL.createObjectURL(plik));
+  sprawdzSzkic(); odswiez(true);
+  toast("Otwarto " + plik.name);
+}
+
+// ---------- miniatury punktów (drugi, niewidoczny odtwarzacz) ----------
+const podglad = document.createElement("video");
+podglad.muted = true; podglad.preload = "auto";
+const miniatury = new Map();     // "12.34" -> canvas 160x90
+let kolejkaMin = [], pracujeMin = false;
+function planujMiniatury() {
+  kolejkaMin = punkty.map(p => p.t.toFixed(2)).filter(k => !miniatury.has(k));
+  if (!pracujeMin) nastepnaMiniatura();
+}
+function nastepnaMiniatura() {
+  const k = kolejkaMin.shift();
+  if (k === undefined) { pracujeMin = false; return; }
+  if (podglad.readyState < 1) { pracujeMin = false; podglad.addEventListener("loadedmetadata", planujMiniatury, { once: true }); return; }
+  pracujeMin = true;
+  podglad.addEventListener("seeked", () => {
+    const c = document.createElement("canvas"); c.width = 160; c.height = 90;
+    try { c.getContext("2d").drawImage(podglad, 0, 0, 160, 90); } catch (e) {}
+    miniatury.set(k, c);
+    rysujMiniatury();
+    nastepnaMiniatura();
+  }, { once: true });
+  podglad.currentTime = Number(k);
+}
+function rysujMiniatury() {
+  wierszeDom.forEach((w, i) => {
+    const p = punkty[i]; if (!p) return;
+    const zrodlo = miniatury.get(p.t.toFixed(2)), cel = w.querySelector("canvas");
+    if (zrodlo && cel.dataset.k !== p.t.toFixed(2)) {
+      cel.getContext("2d").drawImage(zrodlo, 0, 0); cel.dataset.k = p.t.toFixed(2);
+    }
+  });
+}
+
+// ---------- nawigacja ----------
+function indeksBiezacego() {        // ostatni punkt, który już minęliśmy (lub na którym stoimy)
+  let i = -1;
+  for (let k = 0; k < punkty.length; k++) if (punkty[k].t <= v.currentTime + EPS) i = k;
+  return i;
+}
+function stanNa(t) {                 // zatrzymaj obraz dokładnie na czasie t
+  cel = null;
+  v.pause();
+  v.currentTime = Math.max(0, Math.min(t, v.duration || t));
+  odswiez();
+}
+function naprzod() {
+  if (cel !== null && !v.paused) { stanNa(cel); blysk(); return; }   // w trakcie dojazdu: skok od razu
+  const nast = punkty.find(p => p.t > v.currentTime + EPS);
+  cel = nast ? nast.t : null;
+  if (v.ended || v.currentTime >= (v.duration || 0) - EPS) { cel = null; return; }
+  v.play();
+  if (cel !== null) requestAnimationFrame(pilnuj);
+  odswiez();
+}
+function wstecz() {
+  const odniesienie = (cel !== null && !v.paused) ? v.currentTime - 0.3 : v.currentTime;
+  let poprz = null;
+  for (const p of punkty) if (p.t < odniesienie - EPS) poprz = p;
+  stanNa(poprz ? poprz.t : 0); blysk();
+}
+function skokDo(n) {                  // n = 0 to początek filmu, 1..N to punkty
+  if (n === 0) { stanNa(0); blysk(); return; }
+  const p = punkty[n - 1];
+  if (!p) { toast("Nie ma punktu " + n); return; }
+  stanNa(p.t); blysk();
+}
+function pilnuj() {
+  if (cel === null) return;
+  if (v.paused || v.ended) { if (v.ended) cel = null; odswiez(); return; }
+  if (v.currentTime >= cel - KLATKA * 0.6) { stanNa(cel); blysk(); return; }
+  requestAnimationFrame(pilnuj);
+}
+v.addEventListener("ended", () => { cel = null; odswiez(); });
+v.addEventListener("timeupdate", () => odswiez());
+v.addEventListener("seeked", () => odswiez());
+v.addEventListener("play", () => odswiez());
+v.addEventListener("pause", () => odswiez());
+
+// ---------- widok ----------
+let wierszeDom = [], ostatniBiezacy = null;
+function odswiez(przebuduj) {
+  const d = v.duration || 0, t = v.currentTime || 0;
+  const os = $("os");
+  if (przebuduj) { budujZnaczniki(); budujListe(); }
+  const proc = d ? 100 * t / d : 0;
+  os.querySelector(".postep").style.width = proc + "%";
+  os.querySelector(".glowica").style.left = proc + "%";
+  const i = indeksBiezacego();
+  const iCelu = cel !== null && !v.paused ? punkty.findIndex(p => p.t === cel) : -1;
+  os.querySelectorAll(".pkt").forEach((e, k) => { e.classList.toggle("biezacy", k === i); e.classList.toggle("cel", k === iCelu); });
+  wierszeDom.forEach((w, k) => { w.classList.toggle("biezacy", k === i); w.classList.toggle("cel", k === iCelu); });
+  if (i !== ostatniBiezacy && i >= 0 && body.classList.contains("menu") && wierszeDom[i] && !$("lista").contains(document.activeElement))
+    wierszeDom[i].scrollIntoView({ block: "nearest", behavior: "smooth" });
+  ostatniBiezacy = i;
+  $("czas").textContent = piszCzas(t) + " / " + piszCzas(d);
+  $("czasDodania").textContent = piszCzas(t);
+  $("licznik").textContent = punkty.length === 1 ? "1 punkt" : punkty.length + (punkty.length % 10 >= 2 && punkty.length % 10 <= 4 && (punkty.length % 100 < 10 || punkty.length % 100 >= 20) ? " punkty" : " punktów");
+  $("opisPunktu").innerHTML = i >= 0
+    ? `<b>${i + 1} / ${punkty.length}</b> &nbsp;${escapuj(punkty[i].opis)}`
+    : `<b>start</b> &nbsp;przed punktem 1`;
+  const naPunkcie = i >= 0 && Math.abs(punkty[i].t - t) < EPS;
+  const stan = !v.paused ? (iCelu >= 0 ? "jedzie do " + (iCelu + 1) : "odtwarza") : naPunkcie ? "czeka" : "pauza";
+  $("znacznik").innerHTML = `<span class="stan">${stan}</span> &nbsp;${i + 1} / ${punkty.length} &nbsp;${piszCzas(t)}`;
+  $("bNaprzod").innerHTML = !v.paused && iCelu >= 0 ? "Skocz &rarr;" : "Dalej &rarr;";
+}
+const escapuj = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function budujZnaczniki() {
+  const os = $("os"), d = v.duration || 0, szer = os.clientWidth || 1;
+  os.querySelectorAll(".pkt").forEach(e => e.remove());
+  let ostatniX = -1e9;
+  punkty.forEach((p, i) => {
+    const e = document.createElement("div");
+    const x = d ? szer * p.t / d : 0;
+    const etykieta = x - ostatniX >= 18;       // numer tylko gdy się mieści
+    if (etykieta) ostatniX = x;
+    e.className = "pkt";
+    e.innerHTML = `<span class="${etykieta ? "" : "bez"}">${i + 1}</span><i></i>`;
+    e.style.left = (d ? 100 * p.t / d : 0) + "%";
+    e.dataset.i = i;
+    os.appendChild(e);
+  });
+}
+let zegarBlysku = null;
+function blysk() {
+  const z = $("znacznik"); z.classList.add("blysk");
+  clearTimeout(zegarBlysku); zegarBlysku = setTimeout(() => z.classList.remove("blysk"), 1600);
+}
+function budujListe() {
+  const lista = $("lista"); lista.innerHTML = ""; wierszeDom = [];
+  if (!punkty.length) {
+    lista.innerHTML = `<div class="pusta-lista">Brak punktów.<br>Ustaw film w wybranym miejscu i naciśnij <kbd>M</kbd><br>albo „+ Dodaj”.</div>`;
+    return;
+  }
+  punkty.forEach((p, i) => {
+    const w = document.createElement("div"); w.className = "karta";
+    w.innerHTML = `
+      <div class="mini" title="Skocz do punktu ${i + 1}"><canvas width="160" height="90"></canvas><span class="nr">${i + 1}</span></div>
+      <div class="pola">
+        <input class="czas" value="${piszCzas(p.t)}" title="Czas: m:ss.cc (Enter zatwierdza)" spellcheck="false">
+        <div class="akcje">
+          <button class="graj" title="Odtwórz od poprzedniego punktu do tego">&#9654;&#xFE0E;</button>
+          <button class="tu" title="Przestaw punkt na bieżący czas filmu">&#9678;</button>
+          <button data-d="-1" title="Klatka wcześniej">&lsaquo;</button>
+          <button data-d="1" title="Klatka później">&rsaquo;</button>
+          <button class="usun" title="Usuń punkt (Ctrl+Z cofa)">&times;</button>
+        </div>
+        <input class="opis" placeholder="opis punktu" spellcheck="false">
+      </div>`;
+    const wCzas = w.querySelector(".czas"), wOpis = w.querySelector(".opis");
+    wOpis.value = p.opis;
+    const zatwierdz = () => {
+      const t = czytajCzas(wCzas.value);
+      if (t === null) { wCzas.classList.add("blad"); return; }
+      wCzas.classList.remove("blad");
+      if (Math.abs(t - p.t) > 0.0001) { zmien(() => { p.t = t; }); stanNa(t); }
+      else wCzas.value = piszCzas(p.t);
+    };
+    wCzas.addEventListener("change", zatwierdz);
+    wCzas.addEventListener("keydown", e => {
+      if (e.key === "Enter") { zatwierdz(); wCzas.blur(); }
+      if (e.key === "Escape") { wCzas.value = piszCzas(p.t); wCzas.classList.remove("blad"); wCzas.blur(); }
+    });
+    let opisPrzed = null;
+    wOpis.addEventListener("focus", () => { opisPrzed = p.opis; });
+    wOpis.addEventListener("input", () => { p.opis = wOpis.value; zapiszSzkic(); odswiez(); });
+    wOpis.addEventListener("blur", () => {
+      if (opisPrzed !== null && opisPrzed !== p.opis) { historia.push(JSON.stringify(punkty.map(q => q === p ? { ...q, opis: opisPrzed } : q))); $("bCofnij").disabled = false; }
+      opisPrzed = null;
+    });
+    wOpis.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === "Escape") wOpis.blur(); });
+    w.querySelector(".mini").onclick = () => stanNa(p.t);
+    w.querySelector(".graj").onclick = () => { stanNa(i > 0 ? punkty[i - 1].t : 0); setTimeout(naprzod, 80); };
+    w.querySelector(".tu").onclick = () => zmien(() => { p.t = zaokr(v.currentTime); });
+    w.querySelectorAll("[data-d]").forEach(b => b.onclick = () => {
+      let t = 0; zmien(() => { p.t = t = Math.max(0, zaokr(p.t + Number(b.dataset.d) * KLATKA)); }); stanNa(t);
+    });
+    w.querySelector(".usun").onclick = () => { zmien(() => { punkty.splice(punkty.indexOf(p), 1); }); toast("Usunięto punkt " + (i + 1) + " (Ctrl+Z cofa)"); };
+    lista.appendChild(w); wierszeDom.push(w);
+  });
+  rysujMiniatury();
+}
+function dodajPunkt() {
+  const t = zaokr(v.currentTime);
+  if (punkty.some(p => Math.abs(p.t - t) < 0.01)) { toast("Punkt w tym miejscu już jest"); return; }
+  zmien(() => { punkty.push({ t, opis: "" }); });
+  const i = punkty.findIndex(p => p.t === t);
+  toast("Dodano punkt " + (i + 1) + " w " + piszCzas(t));
+  if (body.classList.contains("menu") && wierszeDom[i]) {
+    wierszeDom[i].scrollIntoView({ block: "nearest", behavior: "smooth" });
+    wierszeDom[i].querySelector(".opis").focus();
+  }
+}
+
+// ---------- oś czasu: przewijanie, dymek ----------
+const os = $("os"), dymek = $("dymek");
+function xNaCzas(x) { const r = os.getBoundingClientRect(); return Math.max(0, Math.min(1, (x - r.left) / r.width)) * (v.duration || 0); }
+function punktPod(x) {
+  const r = os.getBoundingClientRect(), d = v.duration || 0;
+  let najlepszy = -1, odl = 8;
+  punkty.forEach((p, i) => { const px = r.left + r.width * p.t / (d || 1); if (Math.abs(px - x) < odl) { odl = Math.abs(px - x); najlepszy = i; } });
+  return najlepszy;
+}
+os.addEventListener("pointermove", e => {
+  const r = os.getBoundingClientRect(), i = punktPod(e.clientX);
+  const x = i >= 0 ? r.width * punkty[i].t / (v.duration || 1) : e.clientX - r.left;
+  dymek.innerHTML = i >= 0 ? `<b>${i + 1}</b> &nbsp;${piszCzas(punkty[i].t)} &nbsp;${escapuj(punkty[i].opis)}` : piszCzas(xNaCzas(e.clientX));
+  dymek.style.left = Math.max(60, Math.min(r.width - 60, x)) + "px";
+  dymek.style.display = "block";
+});
+os.addEventListener("pointerleave", () => { dymek.style.display = "none"; });
+os.addEventListener("pointerdown", e => {
+  const i = punktPod(e.clientX);
+  if (i >= 0) { stanNa(punkty[i].t); blysk(); return; }
+  os.setPointerCapture(e.pointerId);
+  stanNa(xNaCzas(e.clientX));
+  const ruch = ev => stanNa(xNaCzas(ev.clientX));
+  os.addEventListener("pointermove", ruch);
+  os.addEventListener("pointerup", () => os.removeEventListener("pointermove", ruch), { once: true });
+});
+addEventListener("resize", () => budujZnaczniki());
+
+// ---------- cyfry (skok do punktu) ----------
+let bufor = "", zegarCyfr = null;
+function pokazCyfry(s) { const e = $("cyfry"); e.textContent = s; e.style.display = s ? "block" : "none"; }
+function cyfra(c) {
+  bufor += c; pokazCyfry(bufor);
+  clearTimeout(zegarCyfr);
+  // jeśli dopisanie kolejnej cyfry nie da istniejącego punktu, skacz od razu
+  if (Number(bufor) * 10 > punkty.length || bufor === "0") return zatwierdzCyfry();
+  zegarCyfr = setTimeout(zatwierdzCyfry, 650);
+}
+function zatwierdzCyfry() {
+  clearTimeout(zegarCyfr);
+  if (bufor !== "") skokDo(Number(bufor));
+  bufor = ""; setTimeout(() => { if (!bufor) pokazCyfry(""); }, 250);
+}
+
+// ---------- pełny ekran, menu, chowanie paska ----------
+function pelnyEkran(wlacz) {
+  const teraz = wlacz === undefined ? !document.fullscreenElement : wlacz;
+  if (teraz && !document.fullscreenElement) {
+    menu(false);
+    document.documentElement.requestFullscreen().catch(() => {});
+    uspij();
+  }
+  if (!teraz && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+document.addEventListener("fullscreenchange", () => {
+  $("bPelny").textContent = document.fullscreenElement ? "Zamknij pełny ekran" : "Pełny ekran";
+});
+function menu(otworz) {
+  const teraz = otworz === undefined ? !body.classList.contains("menu") : otworz;
+  body.classList.toggle("menu", teraz);
+  try { localStorage.setItem("odtwarzacz_punktow:menu", teraz ? "1" : "0"); } catch (e) {}
+  if (teraz) { obudz(); const i = indeksBiezacego(); if (wierszeDom[i]) wierszeDom[i].scrollIntoView({ block: "nearest" }); }
+  else { zamknijWiecej(); if ($("menu").contains(document.activeElement)) document.activeElement.blur(); zaplanujSen(); }
+  setTimeout(budujZnaczniki, 340);          // szerokość osi zmienia się z menu
+}
+function zamknijWiecej() { document.querySelectorAll("details.wiecej[open]").forEach(d => d.open = false); }
+let zegarSnu = null, myszNadPaskiem = false;
+function uspij() {
+  clearTimeout(zegarSnu);
+  if (body.classList.contains("menu") || myszNadPaskiem) return;
+  body.classList.add("cisza"); dymek.style.display = "none";
+}
+function zaplanujSen() { clearTimeout(zegarSnu); zegarSnu = setTimeout(uspij, 2000); }
+function obudz() { body.classList.remove("cisza"); zaplanujSen(); }
+addEventListener("mousemove", obudz);
+addEventListener("mousedown", obudz);
+$("dol").addEventListener("mouseenter", () => { myszNadPaskiem = true; obudz(); });
+$("dol").addEventListener("mouseleave", () => { myszNadPaskiem = false; zaplanujSen(); });
+document.addEventListener("click", e => { if (!e.target.closest("details.wiecej")) zamknijWiecej(); });
+
+// ---------- klawiatura ----------
+document.addEventListener("keydown", e => {
+  const wPolu = e.target.tagName === "INPUT";
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); zapiszPlik(); return; }
+  if (wPolu) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); cofnij(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (/^[0-9]$/.test(k)) { e.preventDefault(); cyfra(k); return; }
+  if (k === "Enter" && bufor) { e.preventDefault(); zatwierdzCyfry(); return; }
+  if (["ArrowRight", "ArrowLeft", "PageDown", "PageUp", " "].includes(k)) {
+    uspij();
+    if (document.activeElement && document.activeElement.tagName === "BUTTON") document.activeElement.blur();
+  }
+  switch (k) {
+    case "ArrowRight": case "PageDown": e.preventDefault(); naprzod(); break;
+    case "ArrowLeft": case "PageUp": e.preventDefault(); wstecz(); break;
+    case " ":
+      e.preventDefault();
+      if (!v.paused) { cel = null; v.pause(); odswiez(); blysk(); } else naprzod();
+      break;
+    case "Escape": if (document.querySelector("details.wiecej[open]")) zamknijWiecej(); else if (body.classList.contains("menu")) menu(false); break;
+    case "Home": e.preventDefault(); stanNa(0); blysk(); break;
+    case "End": e.preventDefault(); stanNa(v.duration || 0); break;
+    case ",": stanNa(Math.max(0, v.currentTime - KLATKA)); break;
+    case ".": stanNa(v.currentTime + KLATKA); break;
+    case "m": case "M": dodajPunkt(); break;
+    case "e": case "E": menu(); break;
+    case "f": case "F": pelnyEkran(); break;
+  }
+});
+
+// ---------- przyciski i pliki ----------
+const klik = (id, fn) => $(id).addEventListener("click", e => { e.currentTarget.blur(); fn(); });
+klik("bNaprzod", naprzod);
+klik("bWstecz", wstecz);
+klik("bMenu", () => menu());
+klik("uchwyt", () => menu(true));
+klik("bZamknij", () => menu(false));
+klik("bPelny", () => pelnyEkran());
+klik("bDodaj", dodajPunkt);
+klik("bZapisz", zapiszPlik);
+klik("bCofnij", cofnij);
+klik("bWczytaj", () => { zamknijWiecej(); $("plikKonfig").click(); });
+klik("bFilm", () => { zamknijWiecej(); $("plikFilm").click(); });
+klik("bPrzywroc", () => { zamknijWiecej(); if (zPliku) { zmien(() => { punkty = zKonfigu(zPliku); }); toast("Przywrócono stan z pliku"); } });
+v.addEventListener("click", () => { if (body.classList.contains("menu")) return; naprzod(); });
+$("plikKonfig").onchange = e => { if (e.target.files[0]) wczytajPlikKonfigu(e.target.files[0]); e.target.value = ""; };
+$("plikFilm").onchange = e => { if (e.target.files[0]) otworzPlikFilmu(e.target.files[0]); e.target.value = ""; };
+let licznikPrzeciagania = 0;
+addEventListener("dragenter", e => { e.preventDefault(); licznikPrzeciagania++; $("upuszczanie").classList.add("widoczne"); });
+addEventListener("dragleave", () => { if (--licznikPrzeciagania <= 0) { licznikPrzeciagania = 0; $("upuszczanie").classList.remove("widoczne"); } });
+addEventListener("dragover", e => e.preventDefault());
+addEventListener("drop", e => {
+  e.preventDefault(); licznikPrzeciagania = 0; $("upuszczanie").classList.remove("widoczne");
+  for (const plik of e.dataTransfer.files) {
+    if (/\.(js|json)$/i.test(plik.name)) wczytajPlikKonfigu(plik);
+    else if (plik.type.startsWith("video/") || /\.(mp4|webm|mov|mkv)$/i.test(plik.name)) otworzPlikFilmu(plik);
+  }
+});
+
+// ---------- zestawy (film + plik punktów); wybór przez ?punkty=plik.js ----------
+const ZESTAWY = [
+  ["Pipeline: kroki 1-7", "punkty.js"],
+  ["Modele w ruchu", "punkty_modele.js"],
+];
+const PLIK_PUNKTOW = new URLSearchParams(location.search).get("punkty") || "punkty.js";
+(() => {
+  const z = $("zestawy");
+  z.innerHTML = `<div class="tytul">Pokaz</div>`;
+  for (const [nazwa, plik] of ZESTAWY) {
+    const b = document.createElement("button");
+    b.textContent = nazwa; b.title = plik;
+    if (plik === PLIK_PUNKTOW) b.className = "aktywny";
+    b.onclick = () => { location.search = "?punkty=" + encodeURIComponent(plik); };
+    z.appendChild(b);
+  }
+})();
+
+// ---------- start ----------
+try { if (localStorage.getItem("odtwarzacz_punktow:menu") === "1") body.classList.add("menu"); } catch (e) {}
+function start() {
+  if (window.KONFIG_PUNKTOW) przyjmijKonfig(window.KONFIG_PUNKTOW, true);
+  else { toast("Nie znaleziono " + PLIK_PUNKTOW); zaladujFilm(nazwaFilmu); zapisaneJSON = JSON.stringify(doKonfigu()); odswiez(true); }
+  zaplanujSen();
+}
+const skrypt = document.createElement("script");
+skrypt.src = PLIK_PUNKTOW;
+skrypt.onload = start; skrypt.onerror = start;
+document.head.appendChild(skrypt);
+</script>
+</body>
+</html>

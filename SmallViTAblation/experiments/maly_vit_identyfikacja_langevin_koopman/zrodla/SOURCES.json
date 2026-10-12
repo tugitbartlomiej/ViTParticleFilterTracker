@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-01",
+  "scope": "Pierwotne źródła dla identyfikacji ViT z opóźnionego stanu i historycznych paczek; bez pobierania PDF i bez zmian wiki.",
+  "search_tools": ["paper-search CLI: arxiv,crossref", "web search/open"],
+  "search_queries": ["Dynamic mode decomposition with control", "Koopman invariant subspaces finite linear representations", "Generalizing Koopman Theory to Allow for Inputs and Control", "Mori Langevin", "persistency of excitation", "Kalman Mathematical Description", "Decoupled Weight Decay Regularization"],
+  "interpretation": "Sprawdzenie abstraktu lub metadanych nie jest sprawdzeniem pełnego dowodu. Wnioski o ViT/AdamW są oznaczonymi w syntezie zastosowaniami lub granicami, nie twierdzeniami cytowanych autorów o tym eksperymencie.",
+  "sources": [
+    {
+      "id": 1, "title": "Dynamic Mode Decomposition with Control", "authors": ["Joshua L. Proctor", "Steven L. Brunton", "J. Nathan Kutz"], "year": 2016,
+      "doi": "10.1137/15M1013857", "url": "https://epubs.siam.org/doi/abs/10.1137/15M1013857", "primary_content_url": "https://arxiv.org/abs/1409.6358",
+      "verified_scope": "Abstrakt autora i metadane wydawcy; bez pełnego PDF.",
+      "supports": "Regresyjne oddzielenie dynamiki stanu od obserwowanego wejścia; historyczne snapshoty stanu i actuation.",
+      "does_not_support": "Prognoza nieznanych przyszłych wejść ani automatyczna identyfikowalność ViT."
+    },
+    {
+      "id": 2, "title": "Generalizing Koopman Theory to Allow for Inputs and Control", "authors": ["Joshua L. Proctor", "Steven L. Brunton", "J. Nathan Kutz"], "year": 2018,
+      "doi": "10.1137/16M1062296", "url": "https://doi.org/10.1137/16M1062296", "primary_content_url": "https://arxiv.org/abs/1602.07647",
+      "verified_scope": "Abstrakt preprintu autora; tytuł, rok i DOI z wydawcy (SIAM 17(1), 909-930). Preprint 2016.",
+      "supports": "Koopman z wejściami i nieliniowymi charakterystykami wejście-wyjście.",
+      "does_not_support": "Dokładny skończony autonomiczny model dla dowolnej sieci i polityki."
+    },
+    {
+      "id": 3, "title": "Koopman Invariant Subspaces and Finite Linear Representations of Nonlinear Dynamical Systems for Control", "authors": ["Steven L. Brunton", "Bingni W. Brunton", "Joshua L. Proctor", "J. Nathan Kutz"], "year": 2016,
+      "doi": "10.1371/journal.pone.0150171", "url": "https://journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0150171", "primary_content_url": "https://arxiv.org/abs/1510.03007",
+      "verified_scope": "Abstrakt i wskazane fragmenty tekstu wydawcy; paper-search potwierdził autorów i DOI.",
+      "supports": "Restrykcyjność dokładnych skończonych reprezentacji z jawnym stanem, zwłaszcza globalnych.",
+      "does_not_support": "Zakaz lokalnych przybliżeń lub dowód niemożliwości dowolnego częściowego liftingu."
+    },
+    {
+      "id": 4, "title": "Chaos as an intermittently forced linear system", "authors": ["Steven L. Brunton", "Bingni W. Brunton", "Joshua L. Proctor", "Eurika Kaiser", "J. Nathan Kutz"], "year": 2017,
+      "doi": "10.1038/s41467-017-00030-8", "url": "https://www.nature.com/articles/s41467-017-00030-8",
+      "verified_scope": "Pełny HTML wydawcy: abstrakt, HAVOK equations (4)-(6), prediction i uwagi o online forcing.",
+      "supports": "Opóźnienia, liniowy model z wymuszeniem; kolejność wymuszenia jest istotna; przykłady z ciężkimi ogonami.",
+      "does_not_support": "Autonomiczna prognoza przyszłości przy niedostępnym forcing; rekonstruowana trajektoria wymaga forcing online."
+    },
+    {
+      "id": 5, "title": "Transport, Collective Motion, and Brownian Motion", "authors": ["Hazime Mori"], "year": 1965,
+      "doi": "10.1143/PTP.33.423", "url": "https://academic.oup.com/ptp/article/33/3/423/1925580",
+      "verified_scope": "Metadane i abstrakt wydawcy; bez pełnego dowodu.",
+      "supports": "Uogólniona postać Langevina w redukcji statystyczno-mechanicznej.",
+      "does_not_support": "Bezpośrednie przeniesienie równowagowych założeń na trening AdamW."
+    },
+    {
+      "id": 6, "title": "Data-Driven Learning for the Mori-Zwanzig Formalism: A Generalization of the Koopman Learning Framework", "authors": ["Yen Ting Lin", "Yifeng Tian", "Marian Anghel", "Daniel Livescu"], "year": 2021,
+      "doi": "10.1137/21M1401759", "url": "https://doi.org/10.1137/21M1401759", "primary_content_url": "https://arxiv.org/abs/2101.05873", "metadata_url": "https://laro.lanl.gov/esploro/outputs/journalArticle/Data-Driven-Learning-for-the-Mori--Zwanzig-Formalism/9916361778603761",
+      "verified_scope": "Abstrakt preprintu i metadane instytucji autorów: SIAM 20(4), 2558-2601.",
+      "supports": "Uczenie operatora Markowa i jądra pamięci z szeregu zredukowanych obserwabli, przykład Lorenz-96.",
+      "does_not_support": "Poprawność skończonej pamięci i relacji FDT w niestacjonarnym AdamW."
+    },
+    {
+      "id": 7, "title": "Data-driven parameterization of the generalized Langevin equation", "authors": ["Huan Lei", "Nathan A. Baker", "Xiantao Li"], "year": 2016,
+      "doi": "10.1073/pnas.1609587113", "url": "https://doi.org/10.1073/pnas.1609587113", "primary_content_url": "https://arxiv.org/abs/1606.02596", "article_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5167214/",
+      "verified_scope": "Abstrakt autorów i zaindeksowany fragment pełnego artykułu (równania 1-2); ponowne open PMC napotkało CAPTCHA. DOI na arXiv.",
+      "supports": "Racjonalna aproksymacja jądra pamięci, stan pomocniczy, stacjonarny gaussowski szum z kowariancją powiązaną z jądrem i beta w określonym GLE.",
+      "does_not_support": "Gaussowskość implikująca białość; uniwersalna FDT dla AdamW."
+    },
+    {
+      "id": 8, "title": "Decoupled Weight Decay Regularization", "authors": ["Ilya Loshchilov", "Frank Hutter"], "year": 2019,
+      "doi": null, "repository_doi": "10.48550/arXiv.1711.05101", "url": "https://arxiv.org/abs/1711.05101", "venue_url": "https://openreview.net/forum?id=Bkg6RiCqY7",
+      "verified_scope": "Abstrakt autorów na arXiv; preprint 2017, ICLR 2019 potwierdzone repozytorium autorów. OpenReview napotkało challenge. DOI wydawniczy nieustalony.",
+      "supports": "Odłączenie weight decay od adaptacyjnych aktualizacji Adam; różnica wobec L2 regularization.",
+      "does_not_support": "Równowaga termiczna, białe fluktuacje lub FDT."
+    },
+    {
+      "id": 9, "title": "Mathematical Description of Linear Dynamical Systems", "authors": ["Rudolf E. Kalman"], "year": 1963,
+      "doi": "10.1137/0301010", "url": "https://epubs.siam.org/doi/10.1137/0301010", "primary_content_url": "https://people.duke.edu/~hpgavin/SystemID/References/Kalman-JSIAM-1963.pdf",
+      "verified_scope": "Metadane wydawcy i zaindeksowany abstrakt oryginalnej pracy; nie pobierano PDF.",
+      "supports": "Rozróżnienie obserwowalności i sterowalności, minimalna realizacja liniowego systemu z wejścia-wyjścia.",
+      "does_not_support": "Automatyczna obserwowalność optymalizatora z embeddingu ViT."
+    },
+    {
+      "id": 10, "title": "A note on persistency of excitation", "authors": ["Jan C. Willems", "Paolo Rapisarda", "Ivan Markovsky", "Bart L. M. De Moor"], "year": 2005,
+      "doi": "10.1016/j.sysconle.2004.09.003", "url": "https://doi.org/10.1016/j.sysconle.2004.09.003", "primary_content_url": "https://researchportal.vub.be/en/publications/a-note-on-persistency-of-excitation/",
+      "verified_scope": "Abstrakt instytucji autora i metadane DOI: Systems & Control Letters 54, 325-329.",
+      "supports": "Dostatecznie wysokie persistent excitation i sterowalność LTI jako warunki bogactwa okien trajektorii.",
+      "does_not_support": "Uniwersalne warunki identyfikowalności nieliniowego treningu lub dowód PE konkretnego datasetu."
+    },
+    {
+      "id": 11, "title": "System Identification: Theory for the User", "authors": ["Lennart Ljung"], "year": 1999,
+      "doi": null, "url": "https://www.rt.isy.liu.se/en/books/sysid/", "edition": 2, "publisher": "Prentice Hall",
+      "verified_scope": "Wyłącznie metadane na stronie autora; DOI nieustalony, treść rozdziałów nie była audytowana.",
+      "supports": "Bibliograficzne odniesienie metodologiczne do system identification.",
+      "does_not_support": "Przypisywanie konkretnego twierdzenia nieprzeczytanemu rozdziałowi."
+    }
+  ]
+}

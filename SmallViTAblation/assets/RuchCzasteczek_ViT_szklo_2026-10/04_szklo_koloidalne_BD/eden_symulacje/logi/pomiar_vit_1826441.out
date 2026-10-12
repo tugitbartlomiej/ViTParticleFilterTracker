@@ -1,0 +1,12 @@
+pomiar 3000+1000 (pelny), węzeł dgx-2, GPU NVIDIA A100-SXM4-40GB, start Sat Oct 10 04:12:15 PM CEST 2026
+checkpointów na dysku 806, wybranych 341 (0..22974) [0 s]
+klatki: 3000 z 117 archiwów w 8 s
+zdjęcia: 3000 TRAIN + 1000 VALID = 4000, cząsteczek 2400000 [14 s]
+krok 0 (1/341): pewność 0.014 (train 0.014 / val 0.014), IoU 0.008 (train 0.010 / val 0.004), norma 0.00 [20 s]
+Traceback (most recent call last):
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/pomiar_eden.py", line 166, in <module>
+    norma = (lat - z0.float()).norm(dim=2).reshape(-1)
+             ~~~~^~~~~~~~~~~~
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.87 GiB. GPU 0 has a total capacity of 39.49 GiB of which 6.10 GiB is free. Including non-PyTorch memory, this process has 33.39 GiB memory in use. Of the allocated memory 25.89 GiB is allocated by PyTorch, and 6.96 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+49M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_koloidalne/wyniki/pomiar_pelny_3000tr_1000val
+      /mnt/evafs  138.8G    200G    220G       -  116461  200000  220000       -

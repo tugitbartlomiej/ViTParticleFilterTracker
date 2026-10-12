@@ -1,0 +1,32 @@
+[
+  {
+    "start": 0,
+    "end": 22.958333333333307,
+    "title": "Idea operatora Koopmana",
+    "text": "Operator Koopmana opisuje, jak obserwowane wielkości zmieniają się pod działaniem dynamiki. Zamiast modelować bezpośrednio wszystkie szczegóły układu, szukamy wygodnych obserwacji. W naszej pętli używamy ograniczonego modelu liniowego historii przyrostów. To przybliżenie, nie dowód znalezienia dokładnych niezmienników."
+  },
+  {
+    "start": 22.958333333333307,
+    "end": 44.833333333333066,
+    "title": "Cztery poprzednie zmiany",
+    "text": "Stanem w dotychczasowej wersji była jedna liczba na sondę: siła odczytu LDA. Liczymy jej kolejne przyrosty i układamy cztery poprzednie zmiany jako wejście. Następna zmiana jest celem. Wszystkie współczynniki dopasowujemy wyłącznie na dostępnej przeszłości, z regularyzacją stabilizującą rozwiązanie."
+  },
+  {
+    "start": 44.833333333333066,
+    "end": 67.24999999999918,
+    "title": "Jak powstają współczynniki?",
+    "text": "Każdy wiersz macierzy wejściowej zawiera historię przed danym krokiem. Odpowiadający mu cel jest zmianą w następnym kroku. Regresja dobiera współczynniki tak, aby odtworzyć cele z przeszłych danych. W starej pętli współczynniki były wspólne dla sond. Osobne dopasowanie na jednym obrazie to odrębny wariant."
+  },
+  {
+    "start": 67.24999999999918,
+    "end": 94.29166666666858,
+    "title": "Prognoza składana w czasie",
+    "text": "Tutaj pokazujemy obliczony przykład dla jednej sondy, na stu pomiarach bez uśredniania. Dopasowanie kończy się w kroku tysiąc. Potem przewidujemy pięćset aktualizacji, korzystając z własnych poprzednich prognoz. Szara linia pokazuje rzeczywisty późniejszy odczyt. Błąd porównujemy z utrzymaniem ostatniej wartości. Ten jeden przykład nie jest dowodem przewagi metody."
+  },
+  {
+    "start": 94.29166666666858,
+    "end": 116.29166666667108,
+    "title": "Co właściwie zostało przewidziane?",
+    "text": "Koopman w tej wersji nie wybierał cząstek narzędzia i nie odkrywał kierunku LDA. Maska wskazywała tokeny, LDA definiowała odczyt, a model dynamiki przewidywał jego zmianę. To trzy osobne operacje. Każda wymaga własnej oceny. Dobra prognoza nie dowodzi jeszcze użyteczności doboru klatek."
+  }
+]

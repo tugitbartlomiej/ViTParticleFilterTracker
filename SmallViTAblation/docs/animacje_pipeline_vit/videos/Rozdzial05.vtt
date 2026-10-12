@@ -1,0 +1,49 @@
+WEBVTT
+
+00:00:00.100 --> 00:00:05.094
+W poprzedniej pętli maska wybierała tokeny, ale potem je uśrednialiśmy.
+
+00:00:05.094 --> 00:00:09.737
+Otrzymywaliśmy jeden wektor narzędzia na obraz i drugi wektor tła.
+
+00:00:09.737 --> 00:00:16.630
+Ten zabieg ułatwiał obliczenia, lecz usuwał informację o osobnych częściach i różnicach ich ruchu.
+
+00:00:16.630 --> 00:00:20.358
+Sondy były wycinkami o stu dwudziestu jeden tokenach.
+
+00:00:21.058 --> 00:00:26.251
+LDA bierze różnicę średnich narzędzia i tła oraz uwzględnia rozrzut cech.
+
+00:00:26.251 --> 00:00:31.443
+Szuka takiej kombinacji współrzędnych, która dobrze rozdziela obie grupy.
+
+00:00:31.443 --> 00:00:35.355
+W kodzie użyto stabilizowanego oszacowania kowariancji.
+
+00:00:35.355 --> 00:00:40.192
+To coś więcej niż samo odejmowanie dwóch obrazów lub dwóch średnich.
+
+00:00:40.892 --> 00:00:45.362
+Na końcu rozgrzewki zamrażamy kierunek oraz skalowanie cech.
+
+00:00:45.362 --> 00:00:48.491
+Rzut wektora na tę oś daje siłę aktywacji.
+
+00:00:48.491 --> 00:00:53.930
+Dla każdego obrazu zapisujemy, jak ta liczba zmienia się podczas uczenia.
+
+00:00:53.930 --> 00:00:58.103
+Dwuklasowe LDA daje jeden kierunek z konstrukcji metody.
+
+00:00:58.103 --> 00:01:02.275
+Nie oznacza to, że całe narzędzie ma tylko jeden wymiar.
+
+00:01:02.975 --> 00:01:09.404
+Jeżeli z kierunku da się odczytać narzędzie, reprezentacja zawiera odpowiednią informację.
+
+00:01:09.404 --> 00:01:18.691
+Żeby wykazać, że detektor jej używa, trzeba wykonać interwencję: usunąć lub podmienić składową, a potem sprawdzić zmianę detekcji.
+
+00:01:18.691 --> 00:01:23.192
+Porównaniem powinna być równie silna zmiana w losowym kierunku.

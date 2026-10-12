@@ -1,0 +1,79 @@
+1
+00:00:00,100 --> 00:00:05,570
+W dotychczasowej pętli wybieraliśmy sondy o dużej przewidywanej zmianie odczytu.
+
+2
+00:00:05,570 --> 00:00:13,227
+FastGAN odtwarzał obraz kotwicy, a potem zmienialiśmy jego wejście tak, aby przesunąć odczyt w zadanym kierunku.
+
+3
+00:00:13,227 --> 00:00:19,243
+Wygenerowany obraz służył do wyszukiwania podobnych prawdziwych klatek przez cechy DINO.
+
+4
+00:00:19,243 --> 00:00:22,525
+Detektor uczono na wybranych prawdziwych danych.
+
+5
+00:00:23,225 --> 00:00:29,256
+Duży ruch lub zaskoczenie modelu nie oznacza automatycznie dobrej klatki treningowej.
+
+6
+00:00:29,256 --> 00:00:33,229
+Może pochodzić z refleksu, rozmycia albo innego obiektu.
+
+7
+00:00:33,229 --> 00:00:38,267
+Kandydatów trzeba powiązać z brakami detektora i zadbać o różnorodność.
+
+8
+00:00:38,267 --> 00:00:43,233
+Sąsiednie niemal identyczne klatki nie powinny zużywać całego budżetu.
+
+9
+00:00:43,933 --> 00:00:50,629
+Ostatecznym testem jest uczenie detektora na jednakowej liczbie klatek i przy porównywalnym koszcie.
+
+10
+00:00:50,629 --> 00:00:57,123
+Potrzebujemy losowego doboru oraz wariantów rozdzielających wpływ odczytu, ruchu i różnorodności.
+
+11
+00:00:57,123 --> 00:00:59,801
+Wynik mierzymy na odłożonych operacjach.
+
+12
+00:00:59,801 --> 00:01:07,233
+Wcześniejsze ramię current też korzystało z prognozy do wyboru kotwic, więc nie usuwało całego wpływu prognozy.
+
+13
+00:01:07,933 --> 00:01:15,118
+Mamy rzeczywisty model, maski, zapisane kierunki odczytu i pierwszy pomiar ruchu pojedynczych tokenów.
+
+14
+00:01:15,118 --> 00:01:21,105
+Nie mamy jeszcze dowodu, że dominujące kierunki ruchu są pełną tożsamością cystotomu.
+
+15
+00:01:21,105 --> 00:01:25,683
+Nie wolno także utożsamiać poprawnej prognozy z poprawą detekcji.
+
+16
+00:01:25,683 --> 00:01:29,275
+Każdy z tych kroków ma w tym cyklu własną kontrolę.
+
+17
+00:01:29,975 --> 00:01:36,690
+Najważniejsza zmiana w twoim pomyśle polega na zachowaniu pojedynczych cząstek i całej ich historii.
+
+18
+00:01:36,690 --> 00:01:41,324
+Maska od jednego piksela wskazuje kandydatów związanych z narzędziem.
+
+19
+00:01:41,324 --> 00:01:49,852
+Kierunki wyznaczamy z danych, ich znaczenie sprawdzamy na innych obrazach, a dopiero później używamy dynamiki do wyboru klatek.
+
+20
+00:01:49,852 --> 00:01:54,150
+Kod, źródła, napisy i wszystkie rozdziały są dołączone do filmu.

@@ -56,6 +56,13 @@ def _plotno(figsize=(9, 6)):
     return f, c
 
 
+def _naglowek(tekst):
+    """Pogrubiony nagłówek na początku wiersza opcji (grupa parametrów)."""
+    e = QLabel(f'<b>{tekst}:</b>')
+    e.setToolTip(f'Grupa opcji: {tekst.lower()}.')
+    return e
+
+
 class ZakladkaKorekty(QWidget):
     def __init__(self, okno, uczenie=None):
         super().__init__()
@@ -70,9 +77,10 @@ class ZakladkaKorekty(QWidget):
 
         # ------------------------------------------------------------ obraz i model
         w = Przeplyw(); lay.addLayout(w)
-        self.btn_ust = rola(QPushButton('Ustawienia ▾'), 'narzedzie'); self.btn_ust.setCheckable(True); self.btn_ust.setChecked(True)
-        self.btn_ust.setToolTip('Pokaż albo schowaj wiersze ustawień (więcej miejsca na wykresy).')
+        self.btn_ust = rola(QPushButton('Opcje ▾'), 'narzedzie'); self.btn_ust.setCheckable(True); self.btn_ust.setChecked(True)
+        self.btn_ust.setToolTip('Pokaż albo schowaj wiersze opcji: interwencja, optymalizacja, ocena (więcej miejsca na wykresy).')
         w.addWidget(self.btn_ust)
+        w.addWidget(_naglowek('Obraz'))
         self.combo_ckpt = QComboBox(); self.combo_ckpt.addItems([o for o, _ in self.ckpty])
         if self.ckpty:
             self.combo_ckpt.setCurrentIndex(len(self.ckpty) - 1)
@@ -91,6 +99,7 @@ class ZakladkaKorekty(QWidget):
 
         self.ust = QWidget(); ul = QVBoxLayout(self.ust); ul.setContentsMargins(0, 0, 0, 0); lay.addWidget(self.ust)
         w = Przeplyw(); ul.addLayout(w)
+        w.addWidget(_naglowek('Interwencja'))
         self.combo_tryb = QComboBox(); self.combo_tryb.addItems(list(KL.TRYBY.values()))
         self.combo_tryb.setCurrentIndex(1)
         dodaj(w, 'interwencja', self.combo_tryb, 'Poziom kontroli osiągalności. Swobodne: diagnostyka. Zakresy: każdy kanał '
@@ -112,6 +121,7 @@ class ZakladkaKorekty(QWidget):
                                         'promieni normy i bisekcja do progu jakości (najmniejsza znaleziona, nie '
                                         'najmniejsza możliwa).')
         w = Przeplyw(); ul.addLayout(w)
+        w.addWidget(_naglowek('Optymalizacja'))
         self.combo_norma = QComboBox(); self.combo_norma.addItems(list(KL.NORMY.values()))
         dodaj(w, 'norma', self.combo_norma, 'Ograniczenie normy korekty (rzut po każdym kroku).')
         self.spin_rho = QDoubleSpinBox(); self.spin_rho.setRange(0, 1e5); self.spin_rho.setValue(50); self.spin_rho.setDecimals(2)
@@ -137,6 +147,7 @@ class ZakladkaKorekty(QWidget):
         dodaj(w, 'zapis co', self.spin_co, 'Co ile kroków zapisać stan korekty i gradient (rzeczywisty interwał zapisu; '
                                            'modele z wejściem optymalizatora wymagają zapisu co 1).')
         w = Przeplyw(); ul.addLayout(w)
+        w.addWidget(_naglowek('Ocena'))
         self.spin_tau = QDoubleSpinBox(); self.spin_tau.setRange(0.01, 1); self.spin_tau.setValue(0.5)
         dodaj(w, 'τ detekcji', self.spin_tau, 'Protokół obrazu: detekcja = szczyt z pewnością >= τ; dopasowanie przy '
                                               'IoU >= 0,5; reszta to fałszywe detekcje.')
@@ -281,7 +292,7 @@ class ZakladkaKorekty(QWidget):
         self.tabs.addTab(self._przew(s), 'Obserwator (Kalman)')
 
         # ------------------------------------------------------------ sygnały
-        self.btn_ust.toggled.connect(lambda v: (self.ust.setVisible(v), self.btn_ust.setText('Ustawienia ' + ('▾' if v else '▸'))))
+        self.btn_ust.toggled.connect(lambda v: (self.ust.setVisible(v), self.btn_ust.setText('Opcje ' + ('▾' if v else '▸'))))
         self.combo_zr.currentIndexChanged.connect(self._zmiana_zrodla)
         self.spin_obr.valueChanged.connect(lambda *_: self._wczytaj_obraz())
         self.chk_z_ucz.toggled.connect(lambda *_: self._wczytaj_obraz())

@@ -197,7 +197,7 @@ detekcji: do trafienia wystarcza zmiana w patchu środka, reszta zmienia jedynie
    `Dataset/Cataract-LMM/3_Object_Tracking/videos_mp4/`; „Plik MP4…” otwiera dowolny film.
    „Folder zdjęć…” (źródło „folder zdjęć”): sekwencja z plików PNG / JPG / BMP / TIF w kolejności nazw, np.
    `app/narzedzie_czarne_tlo/<sekwencja>`; zakres ustawia się na cały folder. Gdy folder ma `MANIFEST.json`
-   (z `wytnij_narzedzie.py`), etykiety i obrysy są brane z annotation.csv dla właściwych numerów klatek.
+   (z `narzedzia/wytnij_narzedzie.py`), etykiety i obrysy są brane z annotation.csv dla właściwych numerów klatek.
    TR_0001 0:20–0:33, 400 klatek samego narzędzia na czarnym tle: konwersja 16 s, średnia pewność ViT 45,1 %,
    średnie IoU 65,0 % (na pełnych klatkach tego filmu 0:20–0:30: 71,0 % i 72,5 %).
 2. Zakres: od min:s do min:s, liczba klatek (domyślnie 100, równo rozłożone), opcjonalnie tylko klatki
@@ -506,13 +506,29 @@ Oś czasu to krok uczenia, nie klatka filmu. Źródło: bieg z gęstą historią
 
 Zastrzeżenia: łodyga zawiera biegnące statystyki BatchNorm (zmieniają się też bez gradientu);
 gradient liczony na jednej klatce próbnej, a uczenie szło po paczkach 32 obrazów z AdamW;
-wszystko dotyczy tylko stałych klatek próbnych. Plan dalszych etapów: `PLAN_ANIMACJA_UCZENIA.md`.
+wszystko dotyczy tylko stałych klatek próbnych. Plan dalszych etapów: `docs/PLAN_ANIMACJA_UCZENIA.md`.
 
 ## Pliki
 
+Struktura katalogu (porządek z 2026-10-12): moduły aplikacji leżą płasko w `app/` pod dotychczasowymi nazwami, bo
+skrypty w `experiments/` dopisują `app/` do `sys.path` i importują je wprost (`import ruch_zbioru`, `import app`).
+
+- `start.py`, `uruchom.bat`, `Edytor latentu.exe`, `uruchamiacz/`: start aplikacji (exe szuka `start.py` obok siebie).
+- `app.py`: samo okno: pasek zakładek, leniwe budowanie zakładek (`ZAKLADKI_LENIWE`: krótki tytuł karty, pełny
+  opis w dymku karty), menu „Ustawienia”, zamykanie.
+- `edytor_sd.py`: zakładka „Edytor SD” (`EdytorSD`, klasa bazowa okna: inne zakładki czytają `okno.baza`,
+  `okno.wektor`, `okno.efektywny_latent()`, a ścieżki kontrolek w `ustawienia.json` się nie zmieniły).
+- `zakladki_glowne.py`: główne zakładki w przewijanych polach i podmiana zastępnika na zbudowaną zakładkę.
+- `zakladka_*.py`: zakładki; `zakladka_ruchu.py` ma części w klasach bazowych `zakladka_ruchu_koopman.py`,
+  `zakladka_ruchu_fizyka.py` i `zakladka_ruchu_atencja.py` (strony opcji Koopman, Fizyka ruchu, Atencja z obsługą).
+- `testy/`: testy pytest (`conftest.py` w `app/` dopisuje katalog aplikacji do ścieżki i ustawia konteksty OpenGL).
+- `narzedzia/`: skrypty pomocnicze uruchamiane ręcznie (`sprawdz_dymki.py`, `wytnij_klatki.py`, `wytnij_narzedzie.py`).
+- `docs/`: plany (`PLAN_ANIMACJA_UCZENIA.md`); `zasoby/`: luźne pliki wejściowe (klatka TR_0140 kl. 1655).
+- `zdjeciatestowe/`, `narzedzie_czarne_tlo/`: dane wejściowe zakładek detekcji i filmu.
+
 - `silnik.py`: ładowanie modeli, DDIM z postępem, latent z ViT, zakresy kanałów.
 - `start.py`: start z okienkiem ładowania; `Edytor latentu.exe` i `uruchamiacz/`: uruchamiacz exe.
-- `app.py`: okno główne i logika zakładki „Edytor SD”; `widzety_edytora.py`: jej widżety (obraz z siatką,
+- `app.py`: okno główne; `edytor_sd.py`: zakładka „Edytor SD”; `widzety_edytora.py`: jej widżety (obraz z siatką,
   lista suwaków) i wątki (model SD, generacja, latent ViT).
 - `detekcja.py`: ViT z checkpointu, metryki (IoU, AP, mAP), ogon od latentu, optymalizacja.
 - `zakladka_detekcji.py`: zakładka detekcji i auto-szukania.
@@ -521,8 +537,9 @@ wszystko dotyczy tylko stałych klatek próbnych. Plan dalszych etapów: `PLAN_A
 - `opcje_atencji.py`: wspólny panel opcji atencji (mapy, głowy, rollout, strzałki).
 - `film.py`: filmy, zakres czasu na klatki, etykiety i obrysy, maska patchy.
 - `zakladka_filmu.py`: zakładka filmu; `przestrzen_makro.py`: przestrzeń makrowektorów (ruchome warstwy w `makro_gpu.py`).
-- `uklad.py`: układ zawijający kontrolki, `dodaj()` (etykieta i pole zawijają się razem) i `PanelOpcji`
-  (pasek przycisków widoku plus zakładki z grupami opcji, chowane przyciskiem „Opcje”).
+- `uklad.py`: układ zawijający kontrolki, `dodaj()` (etykieta i pole zawijają się razem), `przycisk()`,
+  `pole_wyboru()`, `staly_napis()` i `PanelOpcji` (pasek przycisków widoku plus zakładki z grupami opcji, chowane
+  przyciskiem „Opcje”; `zakoncz()` dociska wiersze każdej strony do góry).
 - `ustawienia.py`: plik konfiguracyjny `ustawienia.json` (158 list, pól i opcji ze wszystkich zakładek i widoków;
   bez danych i bez przycisków przełączanych), wczytywany przy starcie i zapisywany przy zamknięciu; menu
   „Ustawienia”: zapisz, zapisz jako, wczytaj, przywróć domyślne, zapis przy zamknięciu.
@@ -536,7 +553,7 @@ wszystko dotyczy tylko stałych klatek próbnych. Plan dalszych etapów: `PLAN_A
 - `styl.py`: hierarchia przycisków (rola „glowny”: główna akcja zakładki, „narzedzie”: małe przyciski widoku).
 - `wspolne.py`: siatka patchy (16 px, 20 x 30, wejście 480 x 320), kolory i kierunki 768 kanałów, katalog wyników.
 - `polozenie.py`: latent samego położenia patcha (średnia z 3000 klatek walidacji) i jego kierunki.
-- `wytnij_narzedzie.py`: sekwencja klatek z samym narzędziem na czarnym tle (`narzedzie_czarne_tlo/`).
+- `narzedzia/wytnij_narzedzie.py`: sekwencja klatek z samym narzędziem na czarnym tle (`narzedzie_czarne_tlo/`).
 - `widok_gl.py`: widoki OpenGL (`WidokGL` odporny na błędy kontekstu, `Widok3D` z kliknięciem w obraz).
 - Wyniki (obrazy PNG, latenty NPZ) zapisują się do `outputs/latent_editor_sd_20261006/`.
 
@@ -579,7 +596,9 @@ Przy różnicy SHA256 widok zgłasza niezgodność. Dla innego checkpointu użyj
 
 ### Pliki tej zakładki
 
-- `zakladka_ruchu.py`: formularz, zadania w tle, sterowanie odtwarzaniem i metryki.
+- `zakladka_ruchu.py`: formularz (`_build` woła po jednej metodzie na stronę opcji), zadania w tle, sterowanie
+  odtwarzaniem i metryki; strony Koopman, Fizyka ruchu i Atencja z obsługą w `zakladka_ruchu_koopman.py`,
+  `zakladka_ruchu_fizyka.py`, `zakladka_ruchu_atencja.py`.
 - `ruch_gpu.py`: compute shadery GLSL 4.30; magazyn stanów osi czasu na karcie (cała oś w budżecie VRAM albo
   pierścień doczytywany w tle), interpolacja, kolory, granice osi, mapa 20 × 30, mediana, wybór punktu, ślady.
   Zastąpił `ruch_gl.py`. Oś czasu wczytuje się dopiero po kliknięciu.
@@ -659,8 +678,9 @@ Wymagania i pułapki:
 - Po rysowaniu każdy moduł przywraca stan GL (np. `GL_UNPACK_ALIGNMENT`), inaczej psują się napisy QPainter.
 
 Testy (wszystkie porównują bufory odczytane z karty z referencją CPU/numpy):
-`F:\Python\3.13\python.exe -m pytest -q test_*.py` (`conftest.py` ustawia wspólne konteksty OpenGL jak `start.py`).
-Dymki wszystkich kontrolek sprawdza `sprawdz_dymki.py --podsumowanie`.
+`F:\Python\3.13\python.exe -m pytest -q testy` z katalogu `app` (`conftest.py` ustawia wspólne konteksty OpenGL jak `start.py`).
+Testy OpenGL wymagają zwykłej platformy Qt (pod `QT_QPA_PLATFORM=offscreen` nie mają kontekstu i padają).
+Dymki wszystkich kontrolek sprawdza `narzedzia/sprawdz_dymki.py --podsumowanie`.
 
 ### Pomiar naturalny na GPU, uzupełnianie i zapis 16-bitowy (2026-10-09)
 
@@ -681,3 +701,119 @@ Dymki wszystkich kontrolek sprawdza `sprawdz_dymki.py --podsumowanie`.
   (`.bin`) czytają się bez zmian; przycisk „Zapisz kopię 16-bitową” (`ruch_zbioru.konwertuj_q16`) robi obok kopię
   `_q16`, oryginał zostaje. Bezstratna kompresja (zstd z tasowaniem bajtów) dawała tylko 24 % mniej miejsca i wolniejszy
   odczyt, dlatego wybrano format 16-bitowy.
+
+### Układy widoku i wygląd w „Ruch zbioru” (2026-10-09)
+
+Wszystko liczą shadery (`ruch_gpu.py`); CPU podaje tylko parametry.
+
+- **Układ** (strona „Animacja”): PCA 3D (dotychczasowy); **siatka zdjęcia + cecha na osi Z** (X, Y = kolumna i wiersz
+  patcha, nałożone dla wszystkich obrazów albo mozaika kafli obrazów); **przestrzeń fazowa** (X = cecha, Y = jej
+  prędkość między zapisami, Z = norma zmiany 768D). **Cecha**: PC1, PC2, PC3 (rzut wszystkich 768 cech na oś PCA),
+  norma zmiany 768D, odległość od środka PCA. **Bez położenia patcha** (domyślnie włączone): od cechy odejmowana jest
+  średnia tego patcha po wszystkich obrazach w tym samym kroku, bo położenie na obrazie (kodowanie pozycji, typowy
+  układ sceny) pokazują już osie X i Y. Granice osi z maksymalnych odchyleń od średnich, liczonych przy wysyłaniu stanu.
+- **Wygląd**: kolory położenia patcha, narzędzia i tła wg ramki GT, pewności ViT obrazu w kroku (metrics.npy) i numeru
+  obrazu; co n-ty patch; tylko cząstki narzędzia; zaznaczone patche (Ctrl + klik, wspólne dla wszystkich obrazów);
+  zdjęcie w przestrzeni rozpięte na 600 cząsteczkach jednego obrazu (powierzchnia, siatka linii, brzeg; w siatce
+  zdjęcia leży na terenie cechy). **Nawigacja** jak w „Uczenie ViT” (obrót 360°, kroki, ujęcia, lustro), „Odepnij”.
+- Nie przeniesiono opcji wymagających pełnych latentów 768D każdej cząsteczki (kierunki i siły kanałów, PCA wektorów,
+  mikrowektory, atencja, Grand Tour, atlas, krajobraz): zapis trzyma rzut PCA i normę zmiany (pełne latenty
+  900 000 cząsteczek × 101 kroków ≈ 280 GB).
+- **Układ Koopmana** (strona „Koopman”): jeden liniowy operator dla wszystkich cząsteczek, Hankel-DMD na stanie
+  (PC1, PC2, PC3, norma 768D) standaryzowanym i zanurzonym z d opóźnieniami (1–4). Macierze Grama sumuje karta
+  (kernele `kstat`, `kgram`), rozkład własny 4d × 4d na CPU, współrzędne cząsteczek to rzuty na lewe wektory własne
+  (funkcje własne Koopmana), liczone w shaderze w każdej klatce. X, Y = niezmienniki (λ bliskie 1): dwa najbliższe
+  (domyślnie), część rzeczywista i urojona zespolonego, albo λ ≈ +1 i λ ≈ −1. Z = mod najbardziej dynamiczny
+  (największe |λ − 1|, |arg λ| albo |ln |λ||) jako część rzeczywista, urojona albo moduł. Widmo z okresami na stronie.
+  Na pomiarze naturalnym (d = 3): trzy rzeczywiste niezmienniki λ ≈ 0,98, najbliższy zespolony |λ| = 0,64
+  (okres ≈ 270 kroków), mod λ = −0,40 zmieniający znak co zapis. Dopasowanie około 0,8 s na RTX 3070.
+- **Ręczny wybór osi Koopmana** (strona „Koopman” i tabela modów w prawej kolumnie, widoczna w układzie
+  Koopmana): każda oś X, Y, Z to lista składowych Re ψ_j albo Im ψ_j wybranych modów. Tabela pokazuje Re λ, Im λ,
+  |λ|, |λ − 1|, arg λ i okres, z polami wyboru X/Y/Z Re/Im w każdym wierszu. Sortowanie: bliskość do 1
+  (niezmienniki najpierw), |λ| malejąco, |arg λ| rosnąco lub malejąco, Re λ, Im λ, |λ − 1| malejąco
+  (najbardziej dynamiczne). Filtry: znak Re λ (> 0, < 0) i Im λ (> 0, < 0, = 0) zawężają listę. Szybkie przypisanie: zakres pozycji „od–do” z bieżącej listy, część Re, Im albo obie,
+  „Ustaw” zastępuje oś, „Dodaj” dopisuje. Łączenie składowych osi: suma albo moduł √Σ². Osie ręczne zostają do
+  „Automatycznie” albo zmiany d. Mody zdegenerowane (wariancja funkcji własnej poniżej 1e-8 śladu) są pomijane,
+  bo dają NaN i wybuch skali; ich liczba jest w opisie. Do 126 zestawów wag w buforze KG, zakres osi liczy karta.
+- **Osie pod klastry** (strona „Koopman”, `klastry_koopmana.py`): przycisk sam dobiera X, Y i opcjonalnie Z tak,
+  żeby cząsteczki tworzyły klastry z jak najmniejszą liczbą outlierów. Karta zwraca próbkę stanów Hankela cząsteczek
+  widoku (kernel `kprobka`), potem na karcie przez torch: każda para składowych Re ψ, Im ψ, |ψ| dostaje mieszaninę
+  Gaussów z wariancją każdej osi w każdym klastrze, k = 1..k max wybrane przez BIC. Outlier to punkt dalej niż próg
+  w σ swojego klastra albo punkt z klastra mniejszego niż 2 procent próbki. Wynik to sylwetka w σ klastra minus kara
+  razy udział outlierów. Klastry są istotne, gdy wynik przewyższa o 0,15 gaussowski układ zerowy o tej samej
+  kowariancji, podzielony na tyle samo klastrów. Tryb „cały ruch” ocenia tę samą próbkę cząsteczek w 8 zapisach i
+  bieżącym osobno i uśrednia, więc nie myli dryfu całej chmury w czasie z klastrami. Model mieszaniny idzie do
+  shadera: kolor „Klaster Koopmana”, szare punkty to outliery. Około 1-6 s na RTX 3070.
+- **Moc koloru** (obok pola „kolor”): 0 = odcienie szarości, 1 = barwy trybu, do 3 = mocniej nasycone; liczy shader.
+- **Trajektorie wybranych zdjęć** (strona „Uczenie naturalne”, na górze; `historie_checkpointow.py`,
+  `zbiory_zdjec.py`): pole „historia” wybiera zapisaną historię uczenia (K1000 co 10 kroków albo bieg 35 000 klatek
+  co epokę) i wypełnia folder wag, logi, checkpoint referencyjny i zakres; dla historii z epokami „od epoki / do
+  epoki” ustawia kroki 1094 · e. Zdjęcia: z manifestu 1500 albo z puli 35 000 klatek uczących (wypakowywane z
+  lokalnych zipów z kontrolą SHA-256), wpisane numerami („0-9, 25”), wylosowane (ziarno 2026) albo zaznaczone w
+  oknie „Wybierz zdjęcia…” z filtrem nazwy i filmu i podglądem. „Policz trajektorie wybranych” zapisuje manifest
+  podzbioru w `outputs/zbiory_zdjec/`, mierzy naturalnym forwardem każdy checkpoint zakresu (q16) i od razu wczytuje
+  oś czasu: 600 cząsteczek na zdjęcie. Przykład: 5 zdjęć × 22 epoki w 9 s.
+- **Checkpoint z historii w detekcji** (zakładka „Detekcja ViT i auto-szukanie latentu”): obok „Checkpoint ViT…”
+  lista historii i kroków albo epok; wybrany model służy detekcji i auto-szukaniu latentu.
+- **Fizyka ruchu** (układ „Fizyka ruchu”, strona „Fizyka ruchu”, panel boczny; kernele `ruchk` i `wlasc`): karta
+  liczy dla każdej cząsteczki właściwości ruchu w oknie zapisów (cała oś albo ±W wokół bieżącego kroku), w rzucie
+  PCA3 osi czasu: temperatura (energia drgań własnych na zapis po odjęciu pola kolektywnego, czyli średniego ruchu
+  populacji), wykładnik MSD α = log(MSD(τ)/MSD(1))/log τ, VACF (cos kolejnych przesunięć), prostoliniowość
+  (netto/droga), tempo powrotu κ (Ornstein-Uhlenbeck), ruch w rozgrzewce (od kroku 0 do zadanego kroku), zmiana
+  768D na końcu okna oraz reżim: balistyczny (VACF i prostoliniowość > próg), dyfuzyjny (α ≥ próg), uwięziony.
+  Układ 4 kładzie wybrane trzy właściwości na osiach (temperatura, ruch rozgrzewki i zmiana 768D w skali log).
+  Kolory 8-10: temperatura (inferno), reżim, α (viridis). Panel boczny: histogram wybranej właściwości osobno
+  dla obszarów oka z AUC względem tła, temperatura i cos kolejnych kroków w czasie dla obszarów oraz energia pola
+  kolektywnego, mapa ruchu w rozgrzewce na siatce 20 × 30 z udziałem wariancji tłumaczonym przez położenie patcha.
+  Zgodność z numpy: test `test_fizyka_ruchu_zgodna_z_numpy`.
+- **Obszary oka** (`obszary_oka.py`, kolor 11, filtr „pokaż” na stronie „Fizyka ruchu”): klasy patchy z wielokątów
+  segmentacji `annotation.csv` Cataract-LMM (narzędzie ≥ 25 % pokrycia, źrenica i rogówka ≥ 50 %, reszta tło),
+  przeskalowanych do 480 × 320 jak obraz ViT. Liczone raz w tle po wczytaniu osi i zapisywane obok niej
+  (`obszary_oka.npz`, 1500 zdjęć w ~40 s, potem 0,03 s). Na historii K1000: tło 83,3 %, rogówka 8,6 %, źrenica
+  6,4 %, narzędzie 1,7 % patchy; mediana temperatury rośnie w tej kolejności (0,138 / 0,193 / 0,222 / 0,246),
+  AUC temperatury narzędzie vs tło 0,88, źrenica vs tło 0,84.
+- **Kolory ruchu chwilowego, częstotliwości i energii.** 12: przyspieszenie chwilowe |v₁ − v₀| wokół bieżącego
+  zapisu; 13: prędkość chwilowa (różnica centralna); 14: prędkość względem średniej prędkości tej cząsteczki (log2,
+  niebieski wolniej, czerwony zryw). Do właściwości fizyki doszły: okres dominujący ruchu i udział energii w paśmie
+  okresów (z DFT przyrostów cząsteczki, najwyżej 128 przyrostów ze środka okna, bez średniego dryfu), energia
+  kinetyczna ½⟨|Δx|²⟩ i potencjalna ½κ⟨|x − x̄|²⟩ (sprężyna OU). Kolor 15: wybrana energia (log); 16: udział energii
+  w paśmie okresów ustawionym na stronie „Fizyka ruchu”; 17: do 3 zakresów dowolnej właściwości z własnymi kolorami
+  (np. okres 2–3 / 3–6 / >6 zapisów, temperatura albo energia; przycisk „Zakresy z tercyli”). Widmo zakłada równe
+  odstępy zapisów w oknie: dla historii 35 000 (co 10, potem co 100 kroków i końce epok) wybierz okno w jednej części.
+  Na historii K1000: okres dominujący mediana 4,3 zapisu dla tła i 3,4 dla narzędzia i źrenicy (szybsze drgania).
+- **Wygładzanie ruchu** (strona „Animacja”): średnia ruchoma wyśrodkowana z n zapisów (bez opóźnienia) albo EMA α
+  (przyczynowa od pierwszego zapisu, jak w Uczenie ViT). Liczy shader `stan_g()` z zapisów na karcie, we wszystkich
+  układach, śladach, średnich patchy i Koopmanie; napis nad widokiem oznacza STAN WYGŁADZONY. Statystyki, mapa ruchu
+  i skale kolorów dalej z zapisanych stanów. Bez wygładzania stan jest bitowo równy zapisowi.
+- **Heatmapy atencji** (strona „Atencja”, `atencja_zbioru.py`): mapy ViT z wag checkpointu bieżącego kroku (pomiary
+  naturalne), te same definicje co panel atencji Uczenie ViT (zgodność do 1e-4, test `test_atencja_zbioru.py`).
+  Jeden obraz: liczone przy każdym kroku (~0,13 s, pierwsze ~5 s z wczytaniem modelu). Cały zbiór: przycisk, 1500 map
+  wsadowo na CUDA (~8 s z jednorazowym dekodowaniem zdjęć do pamięci karty). Nakładanie: kolor inferno i rozmiar
+  cząsteczek, plama na zdjęciu w przestrzeni albo oba. Wartości w górnych 16 bitach bufora MASK (bit 0 = narzędzie).
+
+
+### Układ szkła: ruch względem klatki i symulowane szkło koloidalne (2026-10-10)
+
+Porównanie ruchu tokenów z dynamiką szklistą (Weeks i Weitz 2000–2002, Hunter i Weeks 2012) pokazało, że 89 %
+przesunięcia względem populacji to wspólny przepływ sąsiedztw, a grzechotanie w klatce to 11 %. Żeby zobaczyć samo
+grzechotanie, oś czasu trzeba przenieść do **układu względem klatki** (jak w szkłach 2D, Vivek i in. 2017):
+`z_i^CR(t) = z_i(t) − średnia_{j∈N6(i)} [z_j(t) − z_j(300)]`, gdzie N6 to 6 najbliższych tokenów w latencie (PCA32)
+w obrębie zdjęcia w kroku 300 (koniec rozgrzewki; od tego kroku lr jest stały).
+
+- **Oś szkła** (strona „Checkpoint i dane”, pole obok „Gotowy wynik 1500 obrazów”): lista folderów
+  `outputs/ruch_czasteczek_gui/*szklo*` z opisem z manifestu (`uklad.nazwa`); **Odśwież** czyta listę na nowo,
+  **Wczytaj oś szkła** wstawia folder do „zapis ruchu” i wczytuje. Lista powstaje z dysku bez wczytywania czegokolwiek.
+- `20261010T_natural_szklo_klatka_35k`: 60 000 cząsteczek biegu 35 000 w układzie klatki, kroki co 2 w 300–2188
+  (gęsty zapis co 1 krok) i co 50 dalej, 1362 stany (654 MB, q16). Pewność i IoU w `stats`/`metrics.npy` są
+  interpolowane liniowo między 22 checkpointami pomiaru (oznaczone `interpolated_metrics`), obszary oka skopiowane,
+  baza ekranu PCA3 z kroków 300, 2188, 10 000. Norma (4. kolumna) = |z^CR(t) − z^CR(300)| w PCA32.
+  Producent: `outputs/porownanie_szklo_20261010/eksport_osi_szkla.py`.
+- `20261010T_szklo_BD_phi_*` i `20261010T_szklo_BD_stygnace_*`: symulowane szkło koloidalne (dynamika browna
+  2048 polidyspersyjnych miękkich kul harmonicznych w pudle periodycznym 3D, `model_szkla.py`): stała temperatura
+  i stygnięcie własne T ∝ (1 + t/t0)^−0,79, potem t^−0,30, czyli taki sam zanik energii drgań jak tokenów przy
+  stałym lr. Bez zdjęć (`image_count` 0): obszary oka niedostępne, pozostałe kolorowania i fizyka ruchu działają.
+- Te same odciski palca (`outputs/porownanie_szklo_20261010/odciski.py`: MSD i wykładniki, rozmiar klatki
+  względem odstępu sąsiadów, antykorelacja kolejnych przesunięć, α₂ i ogony, Fs(q,τ), ucieczki z klatki, trwałość
+  sąsiedztwa, starzenie) liczone są dla danych ViT w czterech stopniach układu szkła (`uklad_szkla_analiza.py`:
+  populacja → klatka → jednakowe cząstki → czas termiczny → bez pędu) i dla symulacji; karta zgodności z literaturą
+  w `UKLAD_SZKLA.json`, `MODEL_SZKLA.json` i README tego katalogu.

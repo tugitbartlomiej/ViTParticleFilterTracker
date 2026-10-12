@@ -1,0 +1,34 @@
+{
+  "seed": 20261001,
+  "count": 400,
+  "source_split": "train",
+  "source_category": "cystotome",
+  "source_image_policy": "unmodified native JPEG bytes",
+  "native_size_wh": null,
+  "model_input_wh": [
+    480,
+    320
+  ],
+  "grid_hw": [
+    20,
+    30
+  ],
+  "patch_wh": [
+    16,
+    16
+  ],
+  "token_index": "row-major:30*row+column",
+  "mask_policy": "fillPoly rounded source polygons native; INTER_AREA to480x320; binary>0",
+  "comparison_indices": "same original mask token indices for both members of each pair",
+  "original_count": 400,
+  "synthetic_count": 400,
+  "synthetic_status": "all400_local_LaMa_complete",
+  "prospective_model": null,
+  "inpaint_mask": "native tool mask; any proposed dilation separately stored; no implicit change",
+  "synthetic_output": "PNG at same native size as source; exact pixels outside edit",
+  "inference_preprocessing": "to be frozen after model choice; no original JPEG mutation",
+  "budget": "small local dataset, no training/forward/Eden/commit",
+  "native_size_policy": "preserve each source size; see manifest",
+  "model_metadata": "model_lama/MODEL.json",
+  "inpaint_protocol": "INPAINT_CONFIG.json"
+}

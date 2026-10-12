@@ -1,0 +1,14 @@
+scratch skip: cannot mkdir own directory under /raid
+/home2/faculty/bpiotrowski/venvs/nndmd_expanded_20261002/lib/python3.11/site-packages/pykoopman/__init__.py:3: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import DistributionNotFound
+Traceback (most recent call last):
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_1500_expandedstate_eden/train.py", line 298, in <module>
+    p=argparse.ArgumentParser();p.add_argument('--config',required=True);a=p.parse_args();main(a.config)
+                                                                                          ^^^^^^^^^^^^^^
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_1500_expandedstate_eden/train.py", line 246, in main
+    duration=train_epoch(model,norm,80,'inner_train',epoch)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_1500_expandedstate_eden/train.py", line 231, in train_epoch
+    record=dict(phase=phase,epoch=epoch,origin=origin,batch=batch_index,image_indices=ids.tolist(),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: dict() got multiple values for keyword argument 'origin'

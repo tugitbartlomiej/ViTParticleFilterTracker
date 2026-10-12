@@ -1,0 +1,160 @@
+{
+  "checkpoint_sha256": "6df4710b6c84eb7ea3bd7b3781347172a7a7f787772539ecdc11b53c209777b7",
+  "checkpoint_step": 7500,
+  "signature": {
+    "version": 2,
+    "teacher_sha256": "0844a20aabaa2ed340cc68f75ec8a23094382285e0d7eeb01930153bdea1490b",
+    "manifest_sha256": "5be5b519e318a35120d2e3e9107e506bed7890245ba4664b2c24dfbb206f8db7",
+    "initialization": "random_vae_unet_adapter",
+    "architecture": "vae64-128-256-256_unet128-256-384-512",
+    "vae_steps": 30000,
+    "sd_steps": 100000,
+    "batch_size": 4,
+    "world_size": 4,
+    "smoke": false,
+    "eval_every": 500,
+    "workers": 2
+  },
+  "best_validation": {
+    "psnr": 30.449869174511374,
+    "ssim": 0.9445555698871613,
+    "latent_relative_mse": 0.5354590320587158,
+    "cosine": 0.6952378666400909,
+    "image_std": 0.2169872623682022,
+    "wrong_condition_mse": 0.6253188824653626,
+    "condition_image_mse": 0.016319087170995773
+  },
+  "fresh_strict_load": true,
+  "seed": 20261006,
+  "ddim_steps": 50,
+  "start": "Gaussian noise only",
+  "image_or_latent_saved": false,
+  "vae_scale": 0.20979850021188728,
+  "full_relative_mse_definition": "mean((actual-target)^2)/mean(target^2)",
+  "artificial_test": {
+    "state": "blocked",
+    "reason": "No verified artificial K8000 target found. Existing targets use K1000 or K6402; neither was substituted."
+  },
+  "device": "cuda",
+  "code_sha256": {
+    "dane.py": "cb05d2fe3569dee0c0b6b9c823146c97ed4fae476d850eb38f6ae7305b577cf0",
+    "deploy.py": "874015ac7b0837eb4192620477efdd2c3c7629f3678f42fd6c8d164140b926f0",
+    "model.py": "0a534016eba87d1743596519603c0bcb886610c8ee8f79e8fd6d06787a51b40c",
+    "model_snapshot.py": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+    "run.py": "24bd14fd9509aaa1bbac702bec104c8123f68d0b2dbc43fe956443eacdf16c9c",
+    "__init__.py": "86bb177cda1cdb1737a09ce76b3aaa7ed8f4fe147e59d02b5703400d91785e28"
+  },
+  "reference": {
+    "film": "TR_0127_S1_P03",
+    "frame": 709,
+    "split": "val",
+    "has_label": true,
+    "detection": {
+      "confidence": 0.9489238262176514,
+      "bbox_xyxy": [
+        267.20159912109375,
+        94.677001953125,
+        389.2676086425781,
+        122.687744140625
+      ],
+      "iou": 0.7469501786995351
+    }
+  },
+  "wrong_condition_film": "TR_0129_S1_P03",
+  "sampler_timesteps": [
+    980,
+    960,
+    940,
+    920,
+    900,
+    880,
+    860,
+    840,
+    820,
+    800,
+    780,
+    760,
+    740,
+    720,
+    700,
+    680,
+    660,
+    640,
+    620,
+    600,
+    580,
+    560,
+    540,
+    520,
+    500,
+    480,
+    460,
+    440,
+    420,
+    400,
+    380,
+    360,
+    340,
+    320,
+    300,
+    280,
+    260,
+    240,
+    220,
+    200,
+    180,
+    160,
+    140,
+    120,
+    100,
+    80,
+    60,
+    40,
+    20,
+    0
+  ],
+  "natural": {
+    "full_mse": 0.1263629049062729,
+    "full_relative_mse": 0.38387196275169433,
+    "full_cosine": 0.7878963947296143,
+    "spatial_std": 0.2263026386499405,
+    "clipped_fraction": 0.004185052588582039,
+    "detection": {
+      "confidence": 0.5252344012260437,
+      "bbox_xyxy": [
+        290.04766845703125,
+        79.44820404052734,
+        342.0231018066406,
+        170.50436401367188
+      ]
+    },
+    "reference_layout_iou_not_generated_ground_truth": 0.18462398111553302
+  },
+  "wrong_condition": {
+    "full_mse": 0.28578224778175354,
+    "full_relative_mse": 0.8681645333885235,
+    "full_cosine": 0.48847246170043945,
+    "spatial_std": 0.20534415543079376,
+    "clipped_fraction": 0.006359712686389685,
+    "detection": {
+      "confidence": 0.7752504348754883,
+      "bbox_xyxy": [
+        188.25694274902344,
+        166.07229614257812,
+        234.84146118164062,
+        303.3526306152344
+      ]
+    }
+  },
+  "condition_image_mse": 0.03856326639652252,
+  "relative_gain_vs_wrong_condition": 0.5578350093922775,
+  "all_values_finite": true,
+  "iou_note": "Generated reference-layout IoU is a diagnostic, not independently labelled detection accuracy.",
+  "visual_assessment": {
+    "reviewed": true,
+    "scope": "one held-out frame and one paired alternate-condition generation, same seed",
+    "observation_pl": "Scena operacyjna i oko rozpoznawalne, obraz niejednolity. Widoczne zniekształcenia narzędzia, drobnych struktur i układu względem referencji. Inny warunek wyraźnie zmienia układ obrazu.",
+    "quality_target_met": false,
+    "images_viewed_in_ram_preview": true
+  }
+}

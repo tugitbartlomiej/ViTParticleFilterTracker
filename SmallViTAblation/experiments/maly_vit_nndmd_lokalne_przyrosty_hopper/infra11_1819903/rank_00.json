@@ -1,0 +1,19 @@
+{
+  "rank": 0,
+  "local_rank": 0,
+  "world_size": 11,
+  "torch": "2.9.1+cu128",
+  "cuda_runtime": "12.8",
+  "nccl": [
+    2,
+    27,
+    5
+  ],
+  "CUDA_VISIBLE_DEVICES": "0,1,2,3,4,5,6,7,8,9,10",
+  "cuda_device_count": 8,
+  "status": "FAIL",
+  "actual_fit_steps": 0,
+  "scope": "infrastructure attempt:4fullH200+7MIG, not11full GPUs",
+  "time": "2026-10-02T18:42:40.058546+00:00",
+  "error": "Traceback (most recent call last):\n  File \"/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11.py\", line 19, in main\n    assert row['cuda_device_count']>=world,f'CUDA sees {row[\"cuda_device_count\"]}, requested11 devices; rank{rank}'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: CUDA sees 8, requested11 devices; rank0\n"
+}

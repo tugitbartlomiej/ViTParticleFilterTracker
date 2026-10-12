@@ -1,0 +1,63 @@
+1
+00:00:00,100 --> 00:00:04,086
+Zbieramy osobne wektory ruchu tokenów wskazanych maską.
+
+2
+00:00:04,086 --> 00:00:09,738
+Rozkład SVD szuka kierunków, wzdłuż których te wektory mają najwięcej energii.
+
+3
+00:00:09,738 --> 00:00:14,521
+Każdy obraz i przedział dostają równy łączny udział w dopasowaniu.
+
+4
+00:00:14,521 --> 00:00:18,942
+Nie zastępujemy wcześniej wszystkich tokenów jednym wektorem.
+
+5
+00:00:19,642 --> 00:00:28,054
+Na danych uczących naszego krótkiego pomiaru szesnaście osi opisuje dziewięćdziesiąt procent energii skorygowanego ruchu.
+
+6
+00:00:28,054 --> 00:00:31,530
+To liczba opisująca ruch w tym konkretnym zbiorze.
+
+7
+00:00:31,530 --> 00:00:35,632
+Nie wolno nazywać jej liczbą wymiarów tożsamości cystotomu.
+
+8
+00:00:35,632 --> 00:00:39,525
+SVD może przechwycić także kontekst i zmiany nieswoiste.
+
+9
+00:00:40,225 --> 00:00:44,914
+Kierunki wyznaczamy na ośmiu filmach, a oceniamy na czterech innych.
+
+10
+00:00:44,914 --> 00:00:49,948
+Nie dzielimy losowo tokenów tego samego obrazu między dopasowanie i test.
+
+11
+00:00:49,948 --> 00:00:52,638
+Porównujemy rzut ruchu narzędzia i tła.
+
+12
+00:00:52,638 --> 00:00:58,775
+Taka ocena sprawdza przenoszenie między obrazami, nie prognozę przyszłych kroków uczenia.
+
+13
+00:00:59,475 --> 00:01:05,124
+Średni podpisany kierunek ruchu daje wstępny sygnał rozróżniający narzędzie od tła.
+
+14
+00:01:05,124 --> 00:01:11,658
+Natomiast szesnaście głównych osi wypada prawie tak samo jak losowa podprzestrzeń tej wielkości.
+
+15
+00:01:11,658 --> 00:01:15,129
+To nie jest przekonujący dowód odkrycia tożsamości.
+
+16
+00:01:15,129 --> 00:01:20,233
+Wynik pochodzi z jednego krótkiego przebiegu i czterech odłożonych obrazów.

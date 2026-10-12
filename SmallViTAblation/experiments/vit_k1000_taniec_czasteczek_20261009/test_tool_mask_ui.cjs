@@ -1,0 +1,10 @@
+const vm=require('vm'),fs=require('fs'),assert=require('node:assert/strict');
+const controls=new Map(),ctx=vm.createContext({Set,el:id=>{if(!controls.has(id))controls.set(id,{value:'tool'});return controls.get(id);}});
+vm.runInContext(fs.readFileSync(__dirname+'/tool-mask-inline.js','utf8'),ctx);
+assert.equal(ctx.toolPatchSet(undefined).size,0);
+assert.equal(ctx.toolPatchSet(0).size,0);
+vm.runInContext('toolMask={image:0,tool_patches:[1,2,3],contour_patches:[1,3]}',ctx);
+assert.deepEqual([...ctx.toolPatchSet(0)],[1,2,3]);
+assert.equal(ctx.toolPatchSet(1).size,0);
+controls.get('tool-region').value='contour';assert.deepEqual([...ctx.toolPatchSet(0)],[1,3]);
+console.log('PASS: unloaded mask, image identity guard, whole tool versus contour.');

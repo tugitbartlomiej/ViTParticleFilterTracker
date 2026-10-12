@@ -25,7 +25,7 @@ set "SSH_HOST=eden-cluster"
 set "BASE_ROOT=/mnt/evafs/faculty/home/bpiotrowski"
 set "REMOTE_ROOT=%BASE_ROOT%"
 set "LOCAL_ROOT=F:\Studia\PhD_projekt\VIT\ViTParticleFilterTracker\Eden\EdenBackup"
-set "DEPTH=8"
+set "DEPTH=20"
 
 rem --- argumenty --------------------------------------------------------------
 set "WHAT=all"

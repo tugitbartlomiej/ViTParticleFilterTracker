@@ -1,0 +1,5 @@
+{
+  "error": "type Tensor doesn't define __round__ method",
+  "traceback": "Traceback (most recent call last):\n  File \"F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\vit_wyuczenie_latentu_jedno_zdjecie\\trenuj.py\", line 160, in <module>\n    try:main()\n        ^^^^^^\n  File \"F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\vit_wyuczenie_latentu_jedno_zdjecie\\trenuj.py\", line 80, in main\n    targets=tuple(t.to(device) for t in cele([torch.tensor(g)[None]],20,30))\n                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\vit_wyuczenie_latentu_jedno_zdjecie\\model_snapshot.py\", line 80, in cele\n    ix, iy = min(max(int(round(cx)), 0), w - 1), min(max(int(round(cy)), 0), h - 1)\n                         ^^^^^^^^^\nTypeError: type Tensor doesn't define __round__ method\n",
+  "pid": 25696
+}

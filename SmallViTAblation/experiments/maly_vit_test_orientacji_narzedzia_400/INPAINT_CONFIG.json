@@ -1,0 +1,30 @@
+{
+  "repo": "edgetools/lama",
+  "revision": "d3f22ee032d32d9a68ac06dd3da40aba1f831f1d",
+  "model_sha256": "1faef5301d78db7dda502fe59966957ec4b79dd64e16f03ed96913c7a4eb68d6",
+  "model_cache_path": "F:\\HuggingFace\\hub\\models--edgetools--lama\\snapshots\\d3f22ee032d32d9a68ac06dd3da40aba1f831f1d\\lama_fp32.onnx",
+  "runtime": "1.19.2",
+  "providers": [
+    "CPUExecutionProvider"
+  ],
+  "threads": 4,
+  "batch": 1,
+  "image_values": "RGB CHW float32 0..1",
+  "mask_values": "1 erase 0 keep",
+  "output_values": "raw 0..255",
+  "preprocessing": "aspect-preserving long side512; round height; REFLECT_101 symmetric image padding; constant0 mask padding; nearest mask",
+  "postprocessing": "remove padding; LINEAR fill resize to actual native dimensions; round/clipuint8; composite edit only; losslessPNG",
+  "dilation": "native elliptical radius5; reference radius_xy depends on source size and is saved per pair",
+  "seed": null,
+  "deterministic_inference": true,
+  "reference_token_masks": "unchanged original",
+  "license": "Apache2.0; README/license saved; third-partyONNXmirror of Carve",
+  "hardware_audit": "RTX3070 8192MiB1531MiBused,0%util; CPUruntimeexisting, noGPUinference claim",
+  "qc_mask_exceptions": [
+    {
+      "frame_id": "cataract_lmm/tracking/TR_0022_S1_P03/00003266",
+      "native_radius": 10,
+      "reason": "visible dark shaft-like line in radius5; minimum of tested10/15 selected"
+    }
+  ]
+}

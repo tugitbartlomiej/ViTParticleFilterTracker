@@ -1,0 +1,216 @@
+[W1002 20:47:44.939657229 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [localhost]:34977 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:44.007333227 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.516798748 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.589229738 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.628047423 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.864587130 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.872870131 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.935161571 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.215125050 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.356193226 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.356826676 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.357487956 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+[W1002 20:47:50.357983762 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper-2]:36559 (errno: 97 - Address family not supported by protocol).
+Traceback (most recent call last):
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 26, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 19, in main
+Traceback (most recent call last):
+      File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 26, in <module>
+dist.init_process_group('nccl',timeout=timedelta(seconds=90),device_id=torch.device('cuda',0))
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+    if __name__=='__main__':main()
+          Traceback (most recent call last):
+        File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 26, in <module>
+return func(*args, **kwargs) 
+                       if __name__=='__main__':main()  
+   ^ ^  ^Traceback (most recent call last):
+ ^^ ^^  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 26, in <module>
+ ^^ ^^ ^^ ^^ 
+^ ^   File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 19, in main
+^ ^     ^if __name__=='__main__':main() ^
+ ^ ^    Traceback (most recent call last):
+ ^dist.init_process_group('nccl',timeout=timedelta(seconds=90),device_id=torch.device('cuda',0)) ^ 
+   File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 26, in <module>
+^  ^  
+     File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+             if __name__=='__main__':main()      
+      Traceback (most recent call last):
+func_return = func(*args, **kwargs)^return func(*args, **kwargs) 
+^
+    File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 26, in <module>
+^  ^    ^    ^    
+              File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 19, in main
+   if __name__=='__main__':main()    
+                dist.init_process_group('nccl',timeout=timedelta(seconds=90),device_id=torch.device('cuda',0))     
+      ^    ^     File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+^^   ^^   ^^   ^^       ^^^return func(*args, **kwargs)  ^^^
+  
+^^  ^^     File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 19, in main
+^^   ^^   ^^   ^^   ^^      ^^^ dist.init_process_group('nccl',timeout=timedelta(seconds=90),device_id=torch.device('cuda',0)) ^^^ 
+ ^^^  ^^^  ^^^  ^  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+^^ ^
+
+^ ^^ ^  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 19, in main
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+^ ^^ ^    ^^^return func(*args, **kwargs)^^^
+
+^^        ^^dist.init_process_group('nccl',timeout=timedelta(seconds=90),device_id=torch.device('cuda',0))func_return = func(*args, **kwargs)  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1769, in init_process_group
+^ ^
+
+^ ^
+ ^  ^   File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 19, in main
+   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+^  ^  ^  ^  ^      ^      dist.init_process_group('nccl',timeout=timedelta(seconds=90),device_id=torch.device('cuda',0))^return func(*args, **kwargs) ^
+^
+ ^
+ ^      ^  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+default_pg, _ = _new_process_group_helper(  ^  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+
+  ^   ^       ^ func_return = func(*args, **kwargs)  ^ 
+      ^^ return func(*args, **kwargs) ^^  
+ ^^   ^^   ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ 
+ ^ ^  ^ ^   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+ ^ ^ ^^ ^ ^^ ^^^^ ^^^    ^ ^^^^func_return = func(*args, **kwargs)^^^^^
+^^^^^
+^^^^^ ^^^^  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1769, in init_process_group
+ ^^^^ ^^^^ 
+^^^ ^^^   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+^^^ ^^^^ ^^^ ^^^ ^^^     ^^^func_return = func(*args, **kwargs) ^^^
+ ^
+    ^ ^default_pg, _ = _new_process_group_helper(^ ^   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+
+^ ^ ^ ^ 
+  ^  ^^^   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1769, in init_process_group
+ ^    
+  ^func_return = func(*args, **kwargs)  ^
+   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 2134, in _new_process_group_helper
+ ^  ^   ^   ^   ^   ^   ^   ^       ^default_pg, _ = _new_process_group_helper(   ^
+   ^ ^      ^ ^  eager_backend.eager_connect_single_device(device_id)^ ^  
+^ ^  ^ ^^ ^ ^torch.distributed^ ^ ^.^ 
+ ^DistBackendError^  ^: ^ ^  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1769, in init_process_group
+^NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:94, invalid usage (run with NCCL_DEBUG=WARN for details), NCCL version 2.27.5
+ncclInvalidUsage: This usually reflects invalid usage of NCCL library.
+Last error:
+Duplicate GPU detected : rank 9 and rank 8 both on CUDA device cb000^ ^^
+^ ^^^ ^^^ ^^^ ^^^ ^^^ ^^^ ^^^ ^^^ ^^^ ^^^^^
+    ^^^default_pg, _ = _new_process_group_helper(^^^  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1769, in init_process_group
+
+^^^^^ ^^^ ^^^ ^^^ ^^^ ^^^ 
+
+^ ^   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1769, in init_process_group
+^   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 2134, in _new_process_group_helper
+^ ^ ^ ^ ^ ^     ^default_pg, _ = _new_process_group_helper( ^
+ ^ ^  ^  ^ ^^ ^
+ ^ ^   File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 2134, in _new_process_group_helper
+^ ^ ^     ^default_pg, _ = _new_process_group_helper( ^
+     ^eager_backend.eager_connect_single_device(device_id) ^ 
+ ^  ^  ^ torch.distributed ^ . ^ DistBackendError ^ :  ^ NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:94, invalid usage (run with NCCL_DEBUG=WARN for details), NCCL version 2.27.5
+ncclInvalidUsage: This usually reflects invalid usage of NCCL library.
+Last error:
+Duplicate GPU detected : rank 4 and rank 5 both on CUDA device 9b000^    ^ 
+^eager_backend.eager_connect_single_device(device_id)^ ^
+^  ^ ^^ torch.distributed^^ .^^ DistBackendError^^ : ^^ NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:94, invalid usage (run with NCCL_DEBUG=WARN for details), NCCL version 2.27.5
+ncclInvalidUsage: This usually reflects invalid usage of NCCL library.
+Last error:
+Duplicate GPU detected : rank 5 and rank 4 both on CUDA device 9b000
+^ 
+^ ^^  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 2134, in _new_process_group_helper
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 2134, in _new_process_group_helper
+^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 2134, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:94, invalid usage (run with NCCL_DEBUG=WARN for details), NCCL version 2.27.5
+ncclInvalidUsage: This usually reflects invalid usage of NCCL library.
+Last error:
+Duplicate GPU detected : rank 8 and rank 9 both on CUDA device cb000
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:94, invalid usage (run with NCCL_DEBUG=WARN for details), NCCL version 2.27.5
+ncclInvalidUsage: This usually reflects invalid usage of NCCL library.
+Last error:
+Duplicate GPU detected : rank 6 and rank 7 both on CUDA device bb000
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:94, invalid usage (run with NCCL_DEBUG=WARN for details), NCCL version 2.27.5
+ncclInvalidUsage: This usually reflects invalid usage of NCCL library.
+Last error:
+Duplicate GPU detected : rank 7 and rank 6 both on CUDA device bb000
+[W1002 20:47:52.166863503 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[W1002 20:47:52.166880352 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[W1002 20:47:52.169114554 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[W1002 20:47:52.173072867 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[W1002 20:47:52.185879858 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+[W1002 20:47:52.186941378 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+Traceback (most recent call last):
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 26, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py", line 19, in main
+    dist.init_process_group('nccl',timeout=timedelta(seconds=90),device_id=torch.device('cuda',0))
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 81, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py", line 95, in wrapper
+    func_return = func(*args, **kwargs)
+                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 1769, in init_process_group
+    default_pg, _ = _new_process_group_helper(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py", line 2134, in _new_process_group_helper
+    eager_backend.eager_connect_single_device(device_id)
+torch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:94, remote process exited or there was a network error, NCCL version 2.27.5
+ncclRemoteError: A call failed possibly due to a network error or a remote process exiting prematurely.
+Last error:
+socketProgressOpt: Call to send to 10.0.11.24<39803> failed : Connection reset by peer
+[W1002 20:47:53.562364320 ProcessGroupNCCL.cpp:1524] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+W1002 20:47:53.247000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 722701 closing signal SIGTERM
+W1002 20:47:53.248000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 722702 closing signal SIGTERM
+W1002 20:47:53.248000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 722703 closing signal SIGTERM
+W1002 20:47:53.249000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 722704 closing signal SIGTERM
+W1002 20:47:53.249000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 722705 closing signal SIGTERM
+W1002 20:47:53.249000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 722708 closing signal SIGTERM
+W1002 20:47:53.249000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 722709 closing signal SIGTERM
+W1002 20:47:53.250000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 722710 closing signal SIGTERM
+W1002 20:47:53.250000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 722711 closing signal SIGTERM
+E1002 20:47:53.929000 722662 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:882] failed (exitcode: 1) local_rank: 5 (pid: 722706) of binary: /home2/faculty/bpiotrowski/venvs/nndmd_expanded_20261002/bin/python
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/run.py", line 940, in <module>
+    main()
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 357, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/run.py", line 936, in main
+    run(args)
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/run.py", line 927, in run
+    elastic_launch(
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 156, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 293, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+infra_11_uuid.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-10-02_20:47:53
+  host      : hopper-2
+  rank      : 6 (local_rank: 6)
+  exitcode  : 1 (pid: 722707)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-10-02_20:47:53
+  host      : hopper-2
+  rank      : 5 (local_rank: 5)
+  exitcode  : 1 (pid: 722706)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================

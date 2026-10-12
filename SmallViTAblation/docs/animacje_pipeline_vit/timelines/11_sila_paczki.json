@@ -1,0 +1,26 @@
+[
+  {
+    "start": 0,
+    "end": 21.541666666666643,
+    "title": "Od jednej liczby do 768 współrzędnych",
+    "text": "Nowszy eksperyment opisywał zmianę całego średniego wektora narzędzia, a nie tylko jego rzutu LDA. Proste równanie łączyło poprzednią zmianę z wpływem bieżącej paczki danych. Nadal był to średni wektor sondy, nie sześćset osobnych trajektorii. Współczynniki dopasowano na wcześniejszym odcinku uczenia."
+  },
+  {
+    "start": 21.541666666666643,
+    "end": 43.66666666666652,
+    "title": "Skąd bierze się siła paczki?",
+    "text": "Najpierw liczymy gradient bieżącej paczki. Następnie wydzielamy jego wkład w aktualizację AdamW. Tymczasowo podstawiamy przesunięte wagi i ponownie odczytujemy stałe sondy. Różnica latentu jest siłą paczki w tym eksperymencie. To wymaga dodatkowych przejść sieci i znajomości bieżącego gradientu."
+  },
+  {
+    "start": 43.66666666666652,
+    "end": 65.45833333333243,
+    "title": "85 procent: czego dotyczy wynik?",
+    "text": "W dziesięciu przebiegach proste równanie usuwało w medianie około osiemdziesięciu pięciu procent błędu przyrostu względem braku zmiany. Nie jest to osiemdziesiąt pięć procent trafnych detekcji. Ponieważ użyto gradientu paczki tworzącej krok, wynik wyjaśnia jej skutek. Nie jest prognozą z samej wcześniejszej historii."
+  },
+  {
+    "start": 65.45833333333243,
+    "end": 85.70833333333474,
+    "title": "Jak wygląda czysta prognoza?",
+    "text": "W prognozie przyszłych kroków trzeba odciąć informacje, których jeszcze nie mamy. Wariant oparty na pędzie optymalizatora też wymaga kontroli: użyty mianownik AdamW zawierał gradient bieżącej paczki. Bez ponownego testu wersji pozbawionej tego wkładu nie traktujemy wyniku jako czystej prognozy."
+  }
+]

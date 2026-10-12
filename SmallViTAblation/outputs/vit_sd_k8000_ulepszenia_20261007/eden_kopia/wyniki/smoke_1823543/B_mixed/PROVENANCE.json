@@ -1,0 +1,61 @@
+{
+  "signature": {
+    "version": 1,
+    "arm": "B_mixed",
+    "base_sha256": "6df4710b6c84eb7ea3bd7b3781347172a7a7f787772539ecdc11b53c209777b7",
+    "teacher_sha256": "0844a20aabaa2ed340cc68f75ec8a23094382285e0d7eeb01930153bdea1490b",
+    "manifest_sha256": "5be5b519e318a35120d2e3e9107e506bed7890245ba4664b2c24dfbb206f8db7",
+    "steps": 2,
+    "eval_every": 2,
+    "batch_size": 1,
+    "workers": 2,
+    "world_size": 4,
+    "frame_stride": 600,
+    "film_buffer": 8,
+    "smoke": true,
+    "ddim_steps": 2,
+    "spacing": "leading",
+    "seeds": [
+      20261007
+    ],
+    "initialization": "own_random_origin_sd_step7500_new_optimizer",
+    "full_latent_shape": [
+      600,
+      768
+    ],
+    "roi_coefficient": 0
+  },
+  "base_step": 7500,
+  "new_optimizer": true,
+  "resume_new_steps": 0,
+  "frozen_vae": true,
+  "frozen_vit": true,
+  "data_restart_epoch": 0,
+  "bitwise_dataloader_resume": false,
+  "no_disk_images_or_latents": true,
+  "rejected_evaluation": [
+    {
+      "film": "TR_0005_S1_P03",
+      "split": "train",
+      "reason": "TR_0005_S1_P03: MP4 has more frames than CSV (3165)",
+      "error_type": "FrameCountMismatch"
+    }
+  ],
+  "code_sha256": {
+    "orchestrate.py": "ebac18d4eeb9280403ce91605a22a7363f0fc3f9d09aa39776f62a110a81a5d5",
+    "evaluation.py": "1efff1c4194f4b29309da5a49d01dd957ab8547d8f264bcf5484900913ec2ce5",
+    "test_sampler.py": "1c5a21114116af114f16ac39f96e59b6e5b89c0f8ee62a80f2c30eeae218e0bc",
+    "diagnostyka.py": "1b4474529078016e743d5dad1988fe072f13fee5a11be437b8fe8216b7758b6d",
+    "training_utils.py": "ffeea2df53354856994fe1a5b9a2efe00496f98bde0c2c6e894421003990ac43",
+    "__init__.py": "86bb177cda1cdb1737a09ce76b3aaa7ed8f4fe147e59d02b5703400d91785e28",
+    "sampler.py": "1a1a057548a02c44ddac4fc0aa031f6b6419a4c88bfa8ed3c17ce44d9e1e02f5",
+    "deploy.py": "6376d570444d701beb51a8fc475632c4c120fe58aa307b7510d78c547504c385",
+    "test_orchestration.py": "ab190411e2d41e370051510fc8677817998a2ac94964412864a72bc21996b622",
+    "model_snapshot.py": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+    "train.py": "0a892ba27451958a729bc99b7f1fde77fc19203f131a0a8f4761c2ac4c6d1bcf",
+    "test_training_utils.py": "0ac04f8c207d78927cce1939d3071de6713aef3bd7549e01ed3175556153ce07",
+    "dane.py": "cb05d2fe3569dee0c0b6b9c823146c97ed4fae476d850eb38f6ae7305b577cf0",
+    "test_evaluation.py": "541346fc44104857dd2740cb0ac4bb69fe84ac77bec24b203809f33c3e5644cb",
+    "model.py": "0a534016eba87d1743596519603c0bcb886610c8ee8f79e8fd6d06787a51b40c"
+  }
+}

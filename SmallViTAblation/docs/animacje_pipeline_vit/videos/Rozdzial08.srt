@@ -1,0 +1,63 @@
+1
+00:00:00,100 --> 00:00:07,754
+Rozgrzewka trwała tysiąc aktualizacji, co przy tej bazie i paczce odpowiada około dwudziestu jeden epokom.
+
+2
+00:00:07,754 --> 00:00:12,520
+Stałe sondy mierzyliśmy przed uczeniem i co dziesięć aktualizacji.
+
+3
+00:00:12,520 --> 00:00:14,615
+Dawało to sto jeden pomiarów.
+
+4
+00:00:14,615 --> 00:00:19,525
+Pomiar aktywacji nie musi oznaczać zapisania całego checkpointu wag.
+
+5
+00:00:20,225 --> 00:00:26,219
+Dotychczasowy kod odrzucał pomiar początkowy i uśredniał pięć kolejnych zapisów.
+
+6
+00:00:26,219 --> 00:00:29,067
+Dostawał dwadzieścia punktów na sondę.
+
+7
+00:00:29,067 --> 00:00:32,364
+To filtr wygładzający, a nie wymóg Koopmana.
+
+8
+00:00:32,364 --> 00:00:38,358
+Może ograniczyć wahania, ale może także usunąć szybkie reakcje na paczki danych.
+
+9
+00:00:39,058 --> 00:00:43,092
+Dwie zupełnie różne ścieżki mogą mieć tę samą średnią.
+
+10
+00:00:43,092 --> 00:00:48,022
+Jeżeli chcemy odtworzyć szybką dynamikę, wygładzenie ją ogranicza.
+
+11
+00:00:48,022 --> 00:00:52,280
+Jeśli celem jest wolny trend, średnia może być użyteczna.
+
+12
+00:00:52,280 --> 00:00:57,733
+Trzeba jednak mówić jasno, jaki proces modelujemy i w jakiej skali czasu.
+
+13
+00:00:58,433 --> 00:01:03,493
+Wersję surową należy porównać z wygładzoną na tym samym przyszłym odcinku.
+
+14
+00:01:03,493 --> 00:01:11,014
+Cztery opóźnienia przy zapisie co dziesięć kroków oznaczają inną pamięć niż cztery opóźnienia co pięćdziesiąt.
+
+15
+00:01:11,014 --> 00:01:16,278
+Dlatego kontrolujemy zarówno liczbę parametrów, jak i fizyczny czas historii.
+
+16
+00:01:16,278 --> 00:01:19,150
+Podstawowym odniesieniem jest brak zmiany.

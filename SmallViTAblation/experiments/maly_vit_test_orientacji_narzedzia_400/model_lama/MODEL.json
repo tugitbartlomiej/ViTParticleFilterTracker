@@ -1,0 +1,65 @@
+{
+  "repo": "edgetools/lama",
+  "revision": "d3f22ee032d32d9a68ac06dd3da40aba1f831f1d",
+  "license": "apache-2.0",
+  "files": {
+    "README.md": {
+      "sha256": "16a7e90cc4c9bcff32205712fb4faea87dbf80869745ba1619b28de2c627a65b",
+      "bytes": 1489,
+      "url": "https://huggingface.co/edgetools/lama/resolve/d3f22ee032d32d9a68ac06dd3da40aba1f831f1d/README.md",
+      "cache_path": "F:\\HuggingFace\\hub\\models--edgetools--lama\\snapshots\\d3f22ee032d32d9a68ac06dd3da40aba1f831f1d\\README.md"
+    },
+    "LICENSE": {
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "url": "https://huggingface.co/edgetools/lama/resolve/d3f22ee032d32d9a68ac06dd3da40aba1f831f1d/LICENSE",
+      "cache_path": "F:\\HuggingFace\\hub\\models--edgetools--lama\\snapshots\\d3f22ee032d32d9a68ac06dd3da40aba1f831f1d\\LICENSE"
+    },
+    "lama_fp32.onnx": {
+      "sha256": "1faef5301d78db7dda502fe59966957ec4b79dd64e16f03ed96913c7a4eb68d6",
+      "bytes": 208044816,
+      "url": "https://huggingface.co/edgetools/lama/resolve/d3f22ee032d32d9a68ac06dd3da40aba1f831f1d/lama_fp32.onnx",
+      "cache_path": "F:\\HuggingFace\\hub\\models--edgetools--lama\\snapshots\\d3f22ee032d32d9a68ac06dd3da40aba1f831f1d\\lama_fp32.onnx"
+    }
+  },
+  "hf_home": "F:/HuggingFace",
+  "ort_version": "1.19.2",
+  "available_providers": [
+    "AzureExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "inputs": [
+    {
+      "name": "image",
+      "shape": [
+        "batch",
+        3,
+        512,
+        512
+      ],
+      "type": "tensor(float)"
+    },
+    {
+      "name": "mask",
+      "shape": [
+        "batch",
+        1,
+        512,
+        512
+      ],
+      "type": "tensor(float)"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output",
+      "shape": [
+        "batch",
+        3,
+        512,
+        512
+      ],
+      "type": "tensor(float)"
+    }
+  ]
+}

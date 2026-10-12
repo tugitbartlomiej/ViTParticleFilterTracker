@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "source_experiment": "dobor_klatek_stan_sieci",
+  "source_frozen_on": "2026-09-22",
+  "files": [
+    {
+      "source": "../../dobor_klatek_stan_sieci/dane.py",
+      "source_sha256": "ee953d5792ef2ee016f9fa13a8a4a365043d7d446a97114639c74a264a4b52bf",
+      "destination": "dane.py",
+      "destination_sha256": "ee953d5792ef2ee016f9fa13a8a4a365043d7d446a97114639c74a264a4b52bf"
+    },
+    {
+      "source": "../../dobor_klatek_stan_sieci/model.py",
+      "source_sha256": "06fb29e07653e73975feea5fd3c4cb6b49f60ba0d2a3d3065bcc36d59e29c31e",
+      "destination": "model.py",
+      "destination_sha256": "06fb29e07653e73975feea5fd3c4cb6b49f60ba0d2a3d3065bcc36d59e29c31e"
+    },
+    {
+      "source": "../../dobor_klatek_stan_sieci/token_model.py",
+      "source_sha256": "a9b801a6cf7af61320eeee927d0e365462149dc8077691363ca117127d56f84e",
+      "destination": "token_model.py",
+      "destination_sha256": "a9b801a6cf7af61320eeee927d0e365462149dc8077691363ca117127d56f84e"
+    },
+    {
+      "source": "../../dobor_klatek_stan_sieci/token_dopasowanie.py",
+      "source_sha256": "2fccbbfa4e7f21677dfa91d4ac104e91182e8e7c34e301be8430ccc55d86d510",
+      "destination": "token_dopasowanie.py",
+      "destination_sha256": "b3bb6f1f796c4c05ea2e856ab02c5a02b2425e4126686a2cd79d19bc7de142cf"
+    },
+    {
+      "source": "../../dobor_klatek_stan_sieci/token_ekstrakcja.py",
+      "source_sha256": "c9feb98aa801ba660f54bdc1722dc7b4d36e7549163ab9e15c647cd08c5c2796",
+      "destination": "../dynamika.py (live-hook adaptation only)",
+      "destination_sha256": "e7c2d2f407f5d9c909f892b1c9a98b81cea583f06edffe0f8fcfbb612fdc4fd6"
+    }
+  ],
+  "adaptation": [
+    "Exclude all D groups from scaler, readout, GLE and Koopman fitting in every fold.",
+    "Cross-fit FIT groups and assign D groups only to held scoring folds.",
+    "Live encoder hook uses current detector weights and projects channels only.",
+    "Strict lag >= 1 residual path retained; no target latent or metadata prediction access."
+  ],
+  "runtime_verification": "Not run; user authorized code and Eden test preparation only."
+}

@@ -1,0 +1,51 @@
+--- executed_training_snapshot
++++ final_evaluation_source
+@@ -1,4 +1,4 @@
+-"""Actual PyKoopman NNDMD. Sampler/normalization adapters only; package loss unchanged."""
++"""Actual PyKoopman NNDMD with explicit full768+J128 loss and weight adapters."""
+ from __future__ import annotations
+ import os
+ os.environ.setdefault("OMP_NUM_THREADS","4")
+@@ -54,7 +54,7 @@
+ 
+ 
+ def adapter_class(original,weights,scale,seed):
+-    """Sampling/scaling adapter around package data module, unchanged loss."""
++    """Sampling/scaling adapter around the actual package data module."""
+     from pykoopman.regression._nndmd import TensorNormalize,InverseTensorNormalize
+     class WeightedDataModule(original):
+         def prepare_data(self):
+@@ -74,7 +74,7 @@
+ 
+ 
+ def learned_rollout(module,start,scale,n_steps):
+-    """Encode origin once, propagate learned128, decode without measurements."""
++    """Encode origin once, propagate the full learned state, decode without measurements."""
+     module.eval()
+     with torch.no_grad():
+         x=torch.as_tensor(np.asarray(start,dtype=np.float32),device=module.device)
+@@ -401,12 +401,14 @@
+     rows={"full768":[],"identity_J128":[],"reversion_full768":[],"reversion_J128":[]}
+     prediction_file=root/"NNDMD_PROGNOZA_HOLDOUT_FULL768.npy"
+     predictions=np.lib.format.open_memmap(prediction_file,mode="w+",dtype=np.float32,shape=(50,4,600,768))
++    identity_predictions=np.lib.format.open_memmap(root/"NNDMD_PROGNOZA_HOLDOUT_J128.npy",mode="w+",dtype=np.float32,shape=(50,4,600,128))
+     reconstruction=[]
+     print("NNDMD FROZEN exploratory final test:4images500..1000; decodedFULL768 thenJ128",flush=True)
+     for position,image in enumerate(holdids):
+         origin=np.asarray(latent[50,image],dtype=np.float32)
+         pred=learned_rollout(module,origin,config["scale"],50)
+         predictions[:,position]=pred
++        identity_predictions[:,position]=pred[...,channels]
+         ids=np.flatnonzero(tool[image]&(coverage[image]>0))
+         w=coverage[image,ids].astype(np.float64); w/=w.sum()
+         with torch.no_grad():
+@@ -431,7 +433,9 @@
+                 rows[key].append({"image_index":image,"horizon_updates":h*10,**values,**signs})
+         print(f"NNDMD final image{image} completed",flush=True)
+         predictions.flush()
++        identity_predictions.flush()
+     del predictions
++    del identity_predictions
+     complete={key:{"per_image_horizon":value,"aggregate":aggregate_rows(value)} for key,value in rows.items()}
+     static=json.loads((root/"SIGN_ALL_COMPARABILITY.json").read_text(encoding="utf-8"))["holdout"]
+     complete["static_EDMD_J128"]=static

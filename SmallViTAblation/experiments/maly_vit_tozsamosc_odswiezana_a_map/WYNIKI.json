@@ -1,0 +1,18 @@
+{
+  "rodzina": "maly_vit_tozsamosc_odswiezana_a_map",
+  "klasa": "badawcza",
+  "status": "zakonczone_pomiar_z_zapisanych_latentow",
+  "created": "2026-10-05",
+  "pytanie": "Czy rozdzielenie narzędzia od tła mierzone kierunkiem odświeżanym idzie w parze z mAP, skoro siła wzdłuż kierunku stałego nie idzie, i co z zachowania tożsamości da się przewidzieć?",
+  "werdykt": "Rozdzielenie odświeżane jest pełne od 50. kroku uczenia (10,7 przy mAP 0,000) i nie rośnie (K1 niespełnione, 4 z 10 ziaren). Związek z mAP między ramionami słaby: koopman 9 z 10, losowe 6 z 10, korelacja wewnątrz chwili 0,12 [0,00; 0,25]; siła stała −0,14. Spadek siły stałej to starzenie się kierunku (cosinus 0,75 po 50 krokach, 0,45 po 500, 0,10 po 3500). Z krzywej innych ziaren przewidywalne jest tylko starzenie (0,53), nie siła (−0,11) ani rozdzielenie (−0,11). Kierunki między ziarnami prostopadłe (0,00).",
+  "confirmatory": false,
+  "primary_replications": 10,
+  "training_new_vit": false,
+  "slurm": {"zrodlo_danych": 1817949},
+  "code_or_results_executed": true,
+  "plan": "PLAN.md",
+  "raport": "WYNIKI.md",
+  "metryki": ["wyniki/WYNIK.json", "wyniki/UZUPELNIENIE.json"],
+  "dane": ["../maly_vit_wektor_tozsamosci/wyniki_eden/petla_s47..s56", "wyniki/POMIAR.npz"],
+  "zastrzezenie": "Definicja tożsamości stary (narzędzie przeciw tłu i scenie); definicji parowej J128 te zapisy nie pozwalają policzyć."
+}

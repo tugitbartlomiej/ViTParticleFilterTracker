@@ -1,0 +1,85 @@
+{
+  "configs": [
+    {
+      "name": "shift_lr001",
+      "kind": "shift",
+      "lr": 0.01,
+      "penalty": 0.001
+    },
+    {
+      "name": "affine_lr0003",
+      "kind": "affine",
+      "lr": 0.003,
+      "penalty": 0.001
+    },
+    {
+      "name": "affine_lr001",
+      "kind": "affine",
+      "lr": 0.01,
+      "penalty": 0.001
+    },
+    {
+      "name": "affine_lr003",
+      "kind": "affine",
+      "lr": 0.03,
+      "penalty": 0.001
+    },
+    {
+      "name": "affine_lr001_reg",
+      "kind": "affine",
+      "lr": 0.01,
+      "penalty": 0.01
+    },
+    {
+      "name": "adapter16_lr0003",
+      "kind": "adapter",
+      "lr": 0.003,
+      "penalty": 0.001
+    },
+    {
+      "name": "adapter16_lr001",
+      "kind": "adapter",
+      "lr": 0.01,
+      "penalty": 0.001
+    }
+  ],
+  "epochs": 120,
+  "batch": 16,
+  "seed": 20261005,
+  "provenance": {
+    "checkpoint_step": 1000,
+    "checkpoint_sha": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+    "channels_sha": "5212a7bfff03d4d5a0756b37eae958ddc15a4f7fbd3935a9f8e1388b68b587a6",
+    "manifest_sha": "140c843927780c12e49a434cabf61e643487bb44fb395186cf19f7a5d9e4e3fa",
+    "splits": {
+      "train": {
+        "images": 240,
+        "films": 69
+      },
+      "val": {
+        "images": 75,
+        "films": 23
+      },
+      "test": {
+        "images": 85,
+        "films": 24
+      }
+    },
+    "torch": "2.6.0+cu124",
+    "device": "NVIDIA GeForce RTX 3070",
+    "weights_hash": "c9e860c84bf4fa2f37ad6fe6f6925e2c5f2071f687b53a74f35754683715e3ad"
+  },
+  "selection": "max val AP50_95, then AP50, then min film-weighted loss",
+  "executed_sources": {
+    "dane.py": "b9c2394a3bb3342a63f824c98e84898903c438ceb95816afe1d1d0ee55bc8969",
+    "metryki_source.py": "529eef1d1990faa2528380dbac63f872fefff91c828a65e1ba802d65282d49e4",
+    "model_snapshot.py": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+    "PLAN.md": "3602cd4b95278b8a690bb2dbed539d1d5403970c68b3df943f236c21e6fb5069",
+    "README.md": "05b3603d2cef1ad72e57c338b9e3b38bf9ed8a96b341afed11f5305c28abc6ef",
+    "regulator.py": "b6e53eb9d608e203f2df41587b4b32324e1a9cd2ec609c486098906aa02e26f7",
+    "szukaj.py": "f8306523b39f46d23cc337012671842d45d9ed067b4e437cc96c3a34b8b021b2",
+    "uruchom_w_tle.ps1": "d21f4b1d7c3bafd88f6559e96ae238ca41a2afff8ba4f93f8fd98b33faced3e3",
+    "WYNIKI.json": "38fca3a793bd5fc61064e6635c30874d78b1e5a70c8b6f64abf82a19c2eda0b2",
+    "__init__.py": "317594868c57554260c88b0b429abdfbd2d6a22b9625be20864dbd329b394517"
+  }
+}

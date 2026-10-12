@@ -1,0 +1,40 @@
+{
+  "benchmark_only": true,
+  "not_1500training": true,
+  "data": "old34cache first32images, checkpoints0..10",
+  "image_batch": 32,
+  "particles_per_image": 600,
+  "dimensions": [
+    768,
+    768,
+    768
+  ],
+  "encoder_decoder": "both swish768hidden768; actual PyKoopman neural core",
+  "H": 10,
+  "normalization_scalar": 0.3536769151687622,
+  "RAM_window_bytes": 648806400,
+  "old_cache_read_seconds": 0.6048641999987012,
+  "GPU": "NVIDIA GeForce RTX 3070",
+  "results": [
+    {
+      "micro_tokens": 512,
+      "seconds_logical32images": [
+        1.362813300002017,
+        1.3888766999989457
+      ],
+      "mean_seconds": 1.3758450000004814,
+      "peak_tensor_allocated_bytes": 332963840,
+      "prediction_RMSE_H10": 46.999364065188644
+    },
+    {
+      "micro_tokens": 1024,
+      "seconds_logical32images": [
+        0.8370764999999665,
+        0.8184335000005376
+      ],
+      "mean_seconds": 0.827755000000252,
+      "peak_tensor_allocated_bytes": 585164800,
+      "prediction_RMSE_H10": 46.99936672203718
+    }
+  ]
+}

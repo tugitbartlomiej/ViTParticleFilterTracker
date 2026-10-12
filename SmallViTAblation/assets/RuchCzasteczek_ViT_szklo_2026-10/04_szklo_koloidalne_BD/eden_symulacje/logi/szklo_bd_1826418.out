@@ -1,0 +1,25 @@
+tryb proba, węzeł dgx-2, GPU NVIDIA A100-SXM4-40GB, start Sat Oct 10 04:02:49 PM CEST 2026
+tryb stala, N 4096, φ (0.58, 0.62, 0.66), T 0.0003, dt 0.3, kroki 20000/30000/200000, co 200, urządzenie cuda NVIDIA A100-SXM4-40GB [0 s]
+równoważenie 0/30000 [26 s]
+ściśnięte i zrównoważone, L = [15.568, 15.244, 14.881] K listy 61 [39 s]
+zapis 0/200000, T = 3.00e-04, odświeżeń listy 1176 [39 s]
+symulacja gotowa, rekordów 1000 [126 s]
+przebieg.npz zapisany [127 s]
+Traceback (most recent call last):
+  File "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_koloidalne/kod/model_szkla_eden.py", line 207, in <module>
+    nn, dnn, dsh = O.knn_3d_pudlo(Pw[okno[0] // Pw_co], float(L[b]), 6)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_koloidalne/kod/odciski.py", line 65, in knn_3d_pudlo
+    nn = np.argpartition(D, kk, axis=1)[:, :kk]
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/_core/fromnumeric.py", line 961, in argpartition
+    return _wrapfunc(a, 'argpartition', kth, axis=axis, kind=kind, order=order)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/_core/fromnumeric.py", line 57, in _wrapfunc
+    return bound(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^
+ValueError: kth(=6) out of bounds (3)
+17M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_koloidalne/wyniki/proba
+8.0K	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_koloidalne/wyniki/stala
+8.0K	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_koloidalne/wyniki/stygnace
+      /mnt/evafs  138.7G    200G    220G       -  116319  200000  220000       -

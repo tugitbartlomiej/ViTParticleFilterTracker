@@ -1,0 +1,215 @@
+{
+  "sympy_version": "1.14.0",
+  "python_version": "3.13.6",
+  "arithmetic": "exact symbolic / rational; no floats",
+  "systems": [
+    {
+      "name": "fully_symbolic_scalar",
+      "shape": {
+        "x": 1,
+        "h": 1,
+        "u": 1
+      },
+      "checks": [
+        {
+          "k": 0,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 1,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 2,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 3,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 4,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 5,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 6,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        }
+      ]
+    },
+    {
+      "name": "fully_symbolic_noncommuting_2x2",
+      "shape": {
+        "x": 2,
+        "h": 2,
+        "u": 2
+      },
+      "checks": [
+        {
+          "k": 0,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 1,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 2,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        }
+      ]
+    },
+    {
+      "name": "exact_rational_2x2_stable",
+      "shape": {
+        "x": 2,
+        "h": 2,
+        "u": 1
+      },
+      "checks": [
+        {
+          "k": 0,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 1,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 2,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 3,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 4,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 5,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 6,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 7,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 8,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        }
+      ]
+    },
+    {
+      "name": "exact_rational_2x2_nilpotent",
+      "shape": {
+        "x": 2,
+        "h": 2,
+        "u": 1
+      },
+      "checks": [
+        {
+          "k": 0,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 1,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 2,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 3,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 4,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 5,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 6,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 7,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        },
+        {
+          "k": 8,
+          "hidden_residual_zero": true,
+          "observed_residual_zero": true
+        }
+      ]
+    }
+  ],
+  "gaussian_ar1": {
+    "assumptions": "0 < rho < 1, q > 0; z0,z1 independent standard normal",
+    "lag1_covariance": "-q*rho/(rho**2 - 1)",
+    "stationary_variance": "-q/(rho**2 - 1)",
+    "rho_half_q_three_quarters_covariance": "1/2",
+    "conclusion": "nonzero lag covariance excludes white noise; Gaussian marginal alone does not imply white"
+  },
+  "rank_examples": [
+    {
+      "name": "minimal",
+      "state_dimension": 2,
+      "observability_rank": 2,
+      "controllability_rank": 2,
+      "T": "Matrix([[1, 1], [1, 0]])",
+      "G": "Matrix([[0], [1]])",
+      "H": "Matrix([[1, 0]])"
+    },
+    {
+      "name": "hidden_decoupled",
+      "state_dimension": 2,
+      "observability_rank": 1,
+      "controllability_rank": 1,
+      "T": "Matrix([[1, 0], [0, 1/2]])",
+      "G": "Matrix([[1], [0]])",
+      "H": "Matrix([[1, 0]])"
+    }
+  ],
+  "all_checks_passed": true
+}

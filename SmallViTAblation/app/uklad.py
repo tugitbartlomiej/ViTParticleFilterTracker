@@ -1,7 +1,7 @@
 """Układ „przepływowy”: kontrolki w wierszu, a gdy brakuje miejsca, zawijają się do następnej linii
 (jak tekst). Dzięki temu panele z wieloma opcjami nie rozpychają okna na szerokość."""
 from PyQt6.QtCore import QPoint, QRect, QSize, Qt
-from PyQt6.QtWidgets import (QComboBox, QHBoxLayout, QLabel, QLayout, QPushButton, QSplitter, QStackedWidget, QStyle,
+from PyQt6.QtWidgets import (QCheckBox, QComboBox, QHBoxLayout, QLabel, QLayout, QPushButton, QSplitter, QStackedWidget, QStyle,
                              QStyleOptionComboBox, QStylePainter, QTabWidget, QVBoxLayout, QWidget, QWidgetItem)
 
 
@@ -86,6 +86,37 @@ def dodaj(uklad, nazwa, widget, opis):
     return widget
 
 
+def przycisk(uklad, tekst, opis, glowny=False):
+    """Przycisk z podpowiedzią dodany do układu; `glowny` = rola „glowny” (główna akcja, patrz styl.py)."""
+    from styl import rola
+    b = QPushButton(tekst)
+    if glowny:
+        rola(b, 'glowny')
+    b.setToolTip(opis)
+    uklad.addWidget(b)
+    return b
+
+
+def pole_wyboru(uklad, tekst, opis, zaznaczone=False):
+    """Pole wyboru (checkbox) z podpowiedzią dodane do układu."""
+    c = QCheckBox(tekst)
+    c.setChecked(zaznaczone)
+    c.setToolTip(opis)
+    uklad.addWidget(c)
+    return c
+
+
+def staly_napis(etykieta, linie):
+    """Napis o stałej wysokości (linie tekstu) i bez wpływu na szerokość układu: zmiana treści co klatkę
+    odtwarzania nie przesuwa podziału okna ani nie zmienia wysokości wykresów pod spodem."""
+    from PyQt6.QtWidgets import QSizePolicy
+    etykieta.setWordWrap(True)
+    etykieta.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+    etykieta.setFixedHeight(etykieta.fontMetrics().lineSpacing() * linie + 4)
+    etykieta.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+    return etykieta
+
+
 class PanelOpcji:
     """Opcje widoku: pasek przycisków zawsze widoczny (z przyciskiem „Opcje”, który chowa resztę) i zakładki
     z grupami opcji. Dzięki temu widok 3D dostaje prawie całą wysokość, a opcje są pogrupowane tematycznie."""
@@ -122,8 +153,13 @@ class PanelOpcji:
         return self._strony[strona]
 
     def zakoncz(self):
+        """Dociska wiersze każdej strony do góry (rozciągnięcie na końcu); strona, która już się nim kończy
+        (np. „Nawigacja” z `dodaj_nawigacje`), zostaje bez zmian. Bez tego wolne miejsce strony rozkłada się
+        między wiersze i opcje rozjeżdżają się w pionie."""
         for lay in self._strony.values():
-            lay.addStretch(1)
+            ostatni = lay.itemAt(lay.count() - 1) if lay.count() else None
+            if ostatni is None or ostatni.spacerItem() is None:
+                lay.addStretch(1)
 
 
 class WaskiCombo(QComboBox):

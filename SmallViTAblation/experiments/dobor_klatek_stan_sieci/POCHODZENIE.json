@@ -1,0 +1,20 @@
+{
+  "audit_date": "2026-09-22",
+  "sources": [
+    {"path": "F:/Studia/MCHTR/Grant/Projekt/experiments/tft_langevin_latent_56/model.py", "sha256": "a8b7260ebb6d2f0420ea87e49a995c31866651d004df5aa04b276eec69107e9c", "contribution": "D, JP, W, N"},
+    {"path": "F:/Studia/MCHTR/Grant/Projekt/experiments/tft_langevin_czlon_zdarzen/model_z.py", "sha256": "49f1ef9d26c843abbbafa3baadba9e904d12b66eb960c1a4981cc98beafc1667", "contribution": "event anchor Z"},
+    {"path": "F:/Studia/MCHTR/Grant/Projekt/experiments/tft_langevin_optymalizacja_95/model_s.py", "sha256": "a58b511d86ab07e943cd6181fe1fe9c1689143836c19721ec095dfc285841259", "contribution": "particle-specific motion scale and learned gamma"}
+  ],
+  "adaptations": [
+    "particle is one image-grid patch; Eulerian correspondence, no object tracking",
+    "24 projected channels, 8 observations, hidden64 instead of original TFT dimensions/history",
+    "strict causal mode; target image features and target metadata unavailable to prediction",
+    "detector metadata replaces calendar/sales; Z is a readout-confidence anchor",
+    "scaled strict mode has D/JP/W gamma only, no conditional future-event jump",
+    "scale window is at most8 available observations instead of28 days",
+    "first short-window residuals retained instead of setting original K0=2 residuals to zero",
+    "N predicts the conditional structured component of earlier base residuals; no stochastic noise sample"
+  ],
+  "original_project_modified": false,
+  "test_data_used": false
+}

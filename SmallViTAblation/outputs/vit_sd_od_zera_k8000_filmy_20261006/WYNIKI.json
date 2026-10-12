@@ -1,0 +1,100 @@
+{
+  "status": "needs_review_artificial_K8000_target_missing",
+  "pytanie": "Czy dyfuzja i VAE uczone od losowych wag na filmach potrafią generować obrazy warunkowane pełnym naturalnym latentem K8000?",
+  "teacher": "MalyViT_K8000_s47_losowe",
+  "generator_initialization": "random VAE, UNet, adapter",
+  "images_saved": false,
+  "latents_saved": false,
+  "held_out_unit": "film",
+  "falsification": "Brak rekonstrukcji VAE, zapadnięcie generacji lub brak przewagi właściwego warunku nad zaburzonym warunkiem.",
+  "previous_sd_checkpoint_used": false,
+  "job_id": "1823430",
+  "smoke_job": "1823296",
+  "smoke_state": "COMPLETED 0:0",
+  "remote_root": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-06_vit_sd_od_zera_k8000_filmy",
+  "train_films": 118,
+  "val_films": 25,
+  "vae_max_steps": 30000,
+  "sd_max_steps": 100000,
+  "early_stop": true,
+  "quality_proven": false,
+  "repaired_job": "1823267",
+  "verified_first_steps": 150,
+  "last_monitor_utc": "2026-10-06T21:41:27.801928+00:00",
+  "latest_step": 19000,
+  "validation": {
+    "film_mean": {
+      "psnr": 30.449869174511374,
+      "ssim": 0.9445555698871613,
+      "latent_relative_mse": 0.5814417767524719,
+      "cosine": 0.6865505099296569,
+      "image_std": 0.22897858679294586,
+      "wrong_condition_mse": 0.6834480381011963,
+      "condition_image_mse": 0.009751849994063377
+    },
+    "stage": "sd",
+    "step": 19000,
+    "train_film_coverage": 0.9830508474576272,
+    "quality": false,
+    "films": 25,
+    "plateau": true
+  },
+  "train_frame_stride": 600,
+  "resume_step": 18487,
+  "best_sd_step": 7500,
+  "best_validation_relative_mse": 0.5354590320587158,
+  "slurm_state": "COMPLETED 0:0",
+  "local_checkpoint_verified": true,
+  "cleanup_done": false,
+  "local_fresh_load_verified": true,
+  "local_test_natural": {
+    "full_mse": 0.1263629049062729,
+    "full_relative_mse": 0.38387196275169433,
+    "full_cosine": 0.7878963947296143,
+    "spatial_std": 0.2263026386499405,
+    "clipped_fraction": 0.004185052588582039,
+    "detection": {
+      "confidence": 0.5252344012260437,
+      "bbox_xyxy": [
+        290.04766845703125,
+        79.44820404052734,
+        342.0231018066406,
+        170.50436401367188
+      ]
+    },
+    "reference_layout_iou_not_generated_ground_truth": 0.18462398111553302
+  },
+  "local_test_wrong_condition": {
+    "full_mse": 0.28578224778175354,
+    "full_relative_mse": 0.8681645333885235,
+    "full_cosine": 0.48847246170043945,
+    "spatial_std": 0.20534415543079376,
+    "clipped_fraction": 0.006359712686389685,
+    "detection": {
+      "confidence": 0.7752504348754883,
+      "bbox_xyxy": [
+        188.25694274902344,
+        166.07229614257812,
+        234.84146118164062,
+        303.3526306152344
+      ]
+    }
+  },
+  "local_visual_review": {
+    "reviewed": true,
+    "scope": "one held-out frame and one paired alternate-condition generation, same seed",
+    "observation_pl": "Scena operacyjna i oko rozpoznawalne, obraz niejednolity. Widoczne zniekształcenia narzędzia, drobnych struktur i układu względem referencji. Inny warunek wyraźnie zmienia układ obrazu.",
+    "quality_target_met": false,
+    "images_viewed_in_ram_preview": true
+  },
+  "artificial_test": {
+    "state": "blocked",
+    "reason": "No verified artificial K8000 target found. Existing targets use K1000 or K6402; neither was substituted."
+  },
+  "cleanup_status": "Disposable smoke checkpoints removed; production recovery retained pending review.",
+  "checkpoint_local": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\vit_sd_od_zera_k8000_filmy_20261006\\eden_kopia\\trening\\best_sd.pt",
+  "preview_url": "http://127.0.0.1:63262/",
+  "monitoring_status": "PAUSED",
+  "reason_for_pause": "needs_review: missing verified artificial K8000 target",
+  "cleanup_recovered_bytes": 7692393292
+}

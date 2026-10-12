@@ -1,0 +1,13 @@
+{
+  "target_sha256": "2e00434405969a0742b30f15e16cb6156f99e0a6aae2ee9e0f93ce90249a66df",
+  "checkpoint_sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+  "target_mean_square": 14.545352021767485,
+  "mse90_max": 0.14545352021767485,
+  "mse_lower_bound": 6.26027425890453,
+  "agreement_upper": 34.395359237805565,
+  "threshold90_excluded": true,
+  "formula": "S=100*max(0,1-sqrt(MSE768/mean(target^2)))",
+  "proof": "LayerNorm q has sum(q)=0 and norm(q)<=sqrt(192). Center W*gamma; apply Cauchy-Schwarz. GELU(h)<=max(0,h). Upper bound includes 0.01 numeric safety. Sum squared positive excess over all 600x768 coordinates.",
+  "diagnostic_sha256": "328a93bf0e2753869d72fa32ea7b038d09586d05bd876d5f50a209fef14d3e54",
+  "bounds_sha256": "d82b719df6bf20f40deff60c9920eb1bbb2498c5d2b8a20706726b0c6bae66f1"
+}

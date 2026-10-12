@@ -1,0 +1,32 @@
+[
+  {
+    "start": 0,
+    "end": 23.124999999999975,
+    "title": "Historyczna pętla z generatorem",
+    "text": "W dotychczasowej pętli wybieraliśmy sondy o dużej przewidywanej zmianie odczytu. FastGAN odtwarzał obraz kotwicy, a potem zmienialiśmy jego wejście tak, aby przesunąć odczyt w zadanym kierunku. Wygenerowany obraz służył do wyszukiwania podobnych prawdziwych klatek przez cechy DINO. Detektor uczono na wybranych prawdziwych danych."
+  },
+  {
+    "start": 23.124999999999975,
+    "end": 43.83333333333306,
+    "title": "Nowość musi być użyteczna",
+    "text": "Duży ruch lub zaskoczenie modelu nie oznacza automatycznie dobrej klatki treningowej. Może pochodzić z refleksu, rozmycia albo innego obiektu. Kandydatów trzeba powiązać z brakami detektora i zadbać o różnorodność. Sąsiednie niemal identyczne klatki nie powinny zużywać całego budżetu."
+  },
+  {
+    "start": 43.83333333333306,
+    "end": 67.83333333333258,
+    "title": "Co musi rozstrzygnąć eksperyment?",
+    "text": "Ostatecznym testem jest uczenie detektora na jednakowej liczbie klatek i przy porównywalnym koszcie. Potrzebujemy losowego doboru oraz wariantów rozdzielających wpływ odczytu, ruchu i różnorodności. Wynik mierzymy na odłożonych operacjach. Wcześniejsze ramię current też korzystało z prognozy do wyboru kotwic, więc nie usuwało całego wpływu prognozy."
+  },
+  {
+    "start": 67.83333333333258,
+    "end": 89.87500000000175,
+    "title": "Co wiemy, a co pozostaje hipotezą?",
+    "text": "Mamy rzeczywisty model, maski, zapisane kierunki odczytu i pierwszy pomiar ruchu pojedynczych tokenów. Nie mamy jeszcze dowodu, że dominujące kierunki ruchu są pełną tożsamością cystotomu. Nie wolno także utożsamiać poprawnej prognozy z poprawą detekcji. Każdy z tych kroków ma w tym cyklu własną kontrolę."
+  },
+  {
+    "start": 89.87500000000175,
+    "end": 114.75000000000449,
+    "title": "Cały pipeline w jednym obrazie",
+    "text": "Najważniejsza zmiana w twoim pomyśle polega na zachowaniu pojedynczych cząstek i całej ich historii. Maska od jednego piksela wskazuje kandydatów związanych z narzędziem. Kierunki wyznaczamy z danych, ich znaczenie sprawdzamy na innych obrazach, a dopiero później używamy dynamiki do wyboru klatek. Kod, źródła, napisy i wszystkie rozdziały są dołączone do filmu."
+  }
+]

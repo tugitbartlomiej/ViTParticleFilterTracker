@@ -1,0 +1,26 @@
+[
+  {
+    "start": 0,
+    "end": 20.958333333333307,
+    "title": "Dotychczasowa pętla: średnia tokenów",
+    "text": "W poprzedniej pętli maska wybierała tokeny, ale potem je uśrednialiśmy. Otrzymywaliśmy jeden wektor narzędzia na obraz i drugi wektor tła. Ten zabieg ułatwiał obliczenia, lecz usuwał informację o osobnych częściach i różnicach ich ruchu. Sondy były wycinkami o stu dwudziestu jeden tokenach."
+  },
+  {
+    "start": 20.958333333333307,
+    "end": 40.79166666666657,
+    "title": "Kierunek rozdzielający dwie grupy",
+    "text": "LDA bierze różnicę średnich narzędzia i tła oraz uwzględnia rozrzut cech. Szuka takiej kombinacji współrzędnych, która dobrze rozdziela obie grupy. W kodzie użyto stabilizowanego oszacowania kowariancji. To coś więcej niż samo odejmowanie dwóch obrazów lub dwóch średnich."
+  },
+  {
+    "start": 40.79166666666657,
+    "end": 62.87499999999899,
+    "title": "Jedna liczba na sondę",
+    "text": "Na końcu rozgrzewki zamrażamy kierunek oraz skalowanie cech. Rzut wektora na tę oś daje siłę aktywacji. Dla każdego obrazu zapisujemy, jak ta liczba zmienia się podczas uczenia. Dwuklasowe LDA daje jeden kierunek z konstrukcji metody. Nie oznacza to, że całe narzędzie ma tylko jeden wymiar."
+  },
+  {
+    "start": 62.87499999999899,
+    "end": 83.79166666666784,
+    "title": "Odczytywalność i wykorzystanie",
+    "text": "Jeżeli z kierunku da się odczytać narzędzie, reprezentacja zawiera odpowiednią informację. Żeby wykazać, że detektor jej używa, trzeba wykonać interwencję: usunąć lub podmienić składową, a potem sprawdzić zmianę detekcji. Porównaniem powinna być równie silna zmiana w losowym kierunku."
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "rodzina": "maly_vit_odpowiedz_latentu_na_paczke",
+  "klasa": "badawcza",
+  "status": "zakonczone_pomiar_z_nagran",
+  "created": "2026-10-05",
+  "pytanie": "Ile z pchnięcia jednej paczki zostaje w latencie sond po 1-500 krokach uczenia i czy pchnięcia kolejnych paczek składają się liniowo?",
+  "werdykt": "Pchnięcie narasta przez pęd do 3,2 pierwszego kroku w piątym kroku, potem wraca: 2,4 po 10 krokach, 1,2 po 20, 0,64 po 50, około 0,4 po 500. Znajomość bieżącej paczki podnosi umiejętność prognozy o 0,29 na 1 krok, 0,06 na 10 kroków i 0,002 na 50. Składanie liniowe pchnięć ze stałą odpowiedzią nie działa (0,63 na 10 kroków). K1 i K3 niespełnione, K2 nierozstrzygalne, K4 opisowe.",
+  "confirmatory": false,
+  "primary_replications": 2,
+  "training_new_vit": false,
+  "slurm": {},
+  "code_or_results_executed": true,
+  "plan": "PLAN.md",
+  "poprawka": "AMENDMENT_PROJEKCJA_LOKALNA.md",
+  "raport": "WYNIKI.md",
+  "metryki": ["wyniki/ODPOWIEDZ.json", "wyniki/ANALIZA_GRAMOW.json", "wyniki/dluga/ODPOWIEDZ_DLUGA.json"],
+  "dane": ["../maly_vit_rownanie_latentu/nagranie_s47_sily", "../maly_vit_rownanie_latentu/nagranie_s48_sily", "wyniki/GRAMY.npz", "wyniki/dluga/GRAMY_DLUGA.npz"],
+  "zastrzezenie": "Regresja na zwykłym uczeniu, nie interwencja. Pary przebiegów różniące się jedną paczką niewykonane (wymagają planu i zgody)."
+}

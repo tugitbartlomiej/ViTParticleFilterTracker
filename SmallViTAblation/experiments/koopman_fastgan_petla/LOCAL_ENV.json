@@ -1,0 +1,574 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-09-24T15:11:10.200879+00:00",
+  "scope": "Importy, wersje, SHA-256 plik�w, istnienie �cie�ek i metadane CUDA. Bez modeli, inferencji i treningu.",
+  "preflight_python": "F:\\Python\\python.exe",
+  "environments": [
+    {
+      "python": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\fastgan_local\\Scripts\\python.exe",
+      "checks": {
+        "metadata": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "python": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\fastgan_local\\Scripts\\python.exe",
+            "version": "3.11.8",
+            "prefix": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\fastgan_local",
+            "base_prefix": "F:\\Python",
+            "user_site_enabled": true,
+            "packages": {
+              "torch": {
+                "version": "2.6.0+cu124",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "torchvision": {
+                "version": "0.21.0+cu124",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "rfdetr": null,
+              "transformers": {
+                "version": "5.1.0",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "numpy": {
+                "version": "2.2.5",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "scipy": {
+                "version": "1.15.3",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "scikit-learn": {
+                "version": "1.7.1",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "Pillow": {
+                "version": "12.1.0",
+                "root": "C:\\Users\\bartl\\AppData\\Roaming\\Python\\Python311\\site-packages"
+              },
+              "faiss-cpu": {
+                "version": "1.11.0.post1",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "pytorch-lightning": {
+                "version": "2.2.2",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "supervision": null,
+              "lpips": {
+                "version": "0.1.4",
+                "root": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\fastgan_local\\Lib\\site-packages"
+              },
+              "timm": {
+                "version": "0.9.16",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "omegaconf": {
+                "version": "2.3.0",
+                "root": "F:\\Python\\Lib\\site-packages"
+              }
+            },
+            "pyvenv_cfg": "home = F:\\Python\ninclude-system-site-packages = true\nversion = 3.11.8\nexecutable = F:\\Python\\python.exe\ncommand = F:\\Python\\python.exe -m venv --system-site-packages F:\\Studia\\PhD_projekt\\VIT\\venvs\\fastgan_local\n"
+          },
+          "stdout": "",
+          "stderr": ""
+        },
+        "numerical_imports": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "numpy": "2.2.5"
+          },
+          "stdout": "",
+          "stderr": ""
+        },
+        "torch_cuda_metadata": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "torch": "2.6.0+cu124",
+            "torchvision": "0.21.0+cu124",
+            "cuda_build": "12.4",
+            "cuda_built": true,
+            "cuda_available_nvml": true,
+            "device_count_nvml": 1,
+            "cuda_context_initialized": false
+          },
+          "stdout": "",
+          "stderr": "F:\\Python\\Lib\\site-packages\\torch\\utils\\_pytree.py:185: FutureWarning: optree is installed but the version is too old to support PyTorch Dynamo in C++ pytree. C++ pytree support is disabled. Please consider upgrading optree using `python3 -m pip install --upgrade 'optree>=0.13.0'`.\n  warnings.warn(\n"
+        },
+        "rfdetr_generation_imports": {
+          "ok": false,
+          "returncode": 1,
+          "details": null,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 4, in <module>\nModuleNotFoundError: No module named 'rfdetr'\n"
+        },
+        "faiss_import": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "version": "1.11.0"
+          },
+          "stdout": "",
+          "stderr": ""
+        },
+        "torch_then_faiss_import": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "version": "1.11.0"
+          },
+          "stdout": "",
+          "stderr": "F:\\Python\\Lib\\site-packages\\torch\\utils\\_pytree.py:185: FutureWarning: optree is installed but the version is too old to support PyTorch Dynamo in C++ pytree. C++ pytree support is disabled. Please consider upgrading optree using `python3 -m pip install --upgrade 'optree>=0.13.0'`.\n  warnings.warn(\n"
+        },
+        "fastgan_vendor_import": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "Generator_present": true
+          },
+          "stdout": "",
+          "stderr": "F:\\Python\\Lib\\site-packages\\torch\\utils\\_pytree.py:185: FutureWarning: optree is installed but the version is too old to support PyTorch Dynamo in C++ pytree. C++ pytree support is disabled. Please consider upgrading optree using `python3 -m pip install --upgrade 'optree>=0.13.0'`.\n  warnings.warn(\n"
+        },
+        "dino_hubconf_import": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "dinov2_vits14_present": true
+          },
+          "stdout": "",
+          "stderr": "F:\\Python\\Lib\\site-packages\\torch\\utils\\_pytree.py:185: FutureWarning: optree is installed but the version is too old to support PyTorch Dynamo in C++ pytree. C++ pytree support is disabled. Please consider upgrading optree using `python3 -m pip install --upgrade 'optree>=0.13.0'`.\n  warnings.warn(\n"
+        }
+      }
+    },
+    {
+      "python": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\rfdetr_1_10_1\\Scripts\\python.exe",
+      "checks": {
+        "metadata": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "python": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\rfdetr_1_10_1\\Scripts\\python.exe",
+            "version": "3.11.8",
+            "prefix": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\rfdetr_1_10_1",
+            "base_prefix": "F:\\Python",
+            "user_site_enabled": true,
+            "packages": {
+              "torch": {
+                "version": "2.6.0+cu124",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "torchvision": {
+                "version": "0.21.0+cu124",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "rfdetr": {
+                "version": "1.10.1",
+                "root": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\rfdetr_1_10_1\\Lib\\site-packages",
+                "requires": [
+                  "requests",
+                  "numpy",
+                  "torch>=2.2.0",
+                  "torchvision>=0.17.0",
+                  "tqdm",
+                  "transformers<6.0.0,>=5.1.0",
+                  "pydantic<3,>=2.0",
+                  "supervision>=0.29.0",
+                  "pyDeprecate<0.10,>=0.9",
+                  "peft; extra == \"lora\"",
+                  "peft; extra == \"train\"",
+                  "pytorch_lightning!=2.6.2,!=2.6.3,<3,>=2.6; extra == \"train\"",
+                  "torchmetrics[detection]<1.9.0,>=1.8.2; extra == \"train\"",
+                  "faster-coco-eval>=1.7.2; extra == \"train\"",
+                  "pycocotools; extra == \"train\"",
+                  "scipy; extra == \"train\"",
+                  "torch-hungarian==0.1.0rc0; extra == \"train\"",
+                  "roboflow; extra == \"train\"",
+                  "albumentations<3.0.0,>=1.4.24; extra == \"augment\"",
+                  "kornia<1,>=0.7; extra == \"augment\"",
+                  "onnx<2.0,>=1.16.0; extra == \"onnx\"",
+                  "onnxsim>=0.7.0; extra == \"onnx\"",
+                  "onnx_graphsurgeon; extra == \"onnx\"",
+                  "onnxruntime<1.24; python_version < \"3.11\" and extra == \"onnx\"",
+                  "onnxruntime; python_version >= \"3.11\" and extra == \"onnx\"",
+                  "polygraphy; extra == \"onnx\"",
+                  "onnxruntime-gpu; extra == \"tensorrt\"",
+                  "tensorrt>=8.6.1; extra == \"tensorrt\"",
+                  "polygraphy; extra == \"tensorrt\"",
+                  "pycuda>=2024.1; extra == \"tensorrt-bench\"",
+                  "onnx<2.0,>=1.20.0; (python_version >= \"3.12\" and python_version < \"3.13\") and extra == \"tflite\"",
+                  "onnxsim>=0.7.0; (python_version >= \"3.12\" and python_version < \"3.13\") and extra == \"tflite\"",
+                  "onnx_graphsurgeon; (python_version >= \"3.12\" and python_version < \"3.13\") and extra == \"tflite\"",
+                  "polygraphy; (python_version >= \"3.12\" and python_version < \"3.13\") and extra == \"tflite\"",
+                  "onnx2tf<3.0.0,>=2.4.0; (python_version >= \"3.12\" and python_version < \"3.13\") and extra == \"tflite\"",
+                  "flatbuffers>=23.5.26; (python_version >= \"3.12\" and python_version < \"3.13\") and extra == \"tflite\"",
+                  "tf-keras>=2.16.0; (python_version >= \"3.12\" and python_version < \"3.13\") and extra == \"tflite\"",
+                  "tensorflow>=2.16.0; (python_version >= \"3.12\" and python_version < \"3.13\") and extra == \"tflite\"",
+                  "executorch<2.0,>=1.3; python_version < \"3.14\" and extra == \"executorch\"",
+                  "coremltools<10.0,>=8.0; extra == \"coreml\"",
+                  "torch<2.12; extra == \"coreml\"",
+                  "tensorboard>=2.13.0; extra == \"loggers\"",
+                  "protobuf>=3.20.0; extra == \"loggers\"",
+                  "wandb; extra == \"loggers\"",
+                  "mlflow; extra == \"loggers\"",
+                  "clearml; extra == \"loggers\"",
+                  "matplotlib; extra == \"visual\"",
+                  "pandas; extra == \"visual\"",
+                  "seaborn; extra == \"visual\"",
+                  "jsonargparse[signatures]>=4.27.7; extra == \"cli\"",
+                  "rfdetr_plus<2.0.0,>=1.0.1; extra == \"plus\"",
+                  "torch==2.9.*; sys_platform == \"linux\" and extra == \"xla\"",
+                  "torch_xla==2.9.*; sys_platform == \"linux\" and extra == \"xla\""
+                ]
+              },
+              "transformers": {
+                "version": "5.1.0",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "numpy": {
+                "version": "1.26.4",
+                "root": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\rfdetr_1_10_1\\Lib\\site-packages"
+              },
+              "scipy": {
+                "version": "1.15.3",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "scikit-learn": {
+                "version": "1.7.1",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "Pillow": {
+                "version": "12.1.0",
+                "root": "C:\\Users\\bartl\\AppData\\Roaming\\Python\\Python311\\site-packages"
+              },
+              "faiss-cpu": {
+                "version": "1.11.0.post1",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "pytorch-lightning": {
+                "version": "2.2.2",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "supervision": {
+                "version": "0.30.5",
+                "root": "F:\\Studia\\PhD_projekt\\VIT\\venvs\\rfdetr_1_10_1\\Lib\\site-packages"
+              },
+              "lpips": null,
+              "timm": {
+                "version": "0.9.16",
+                "root": "F:\\Python\\Lib\\site-packages"
+              },
+              "omegaconf": {
+                "version": "2.3.0",
+                "root": "F:\\Python\\Lib\\site-packages"
+              }
+            },
+            "pyvenv_cfg": "home = F:\\Python\ninclude-system-site-packages = true\nversion = 3.11.8\nexecutable = F:\\Python\\python.exe\ncommand = F:\\Python\\python.exe -m venv --system-site-packages F:\\Studia\\PhD_projekt\\VIT\\venvs\\rfdetr_1_10_1\n"
+          },
+          "stdout": "",
+          "stderr": ""
+        },
+        "numerical_imports": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "numpy": "1.26.4"
+          },
+          "stdout": "",
+          "stderr": ""
+        },
+        "torch_cuda_metadata": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "torch": "2.6.0+cu124",
+            "torchvision": "0.21.0+cu124",
+            "cuda_build": "12.4",
+            "cuda_built": true,
+            "cuda_available_nvml": true,
+            "device_count_nvml": 1,
+            "cuda_context_initialized": false
+          },
+          "stdout": "",
+          "stderr": "F:\\Python\\Lib\\site-packages\\torch\\utils\\_pytree.py:185: FutureWarning: optree is installed but the version is too old to support PyTorch Dynamo in C++ pytree. C++ pytree support is disabled. Please consider upgrading optree using `python3 -m pip install --upgrade 'optree>=0.13.0'`.\n  warnings.warn(\n"
+        },
+        "rfdetr_generation_imports": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "RFDETRNano_module": "rfdetr.variants",
+            "NestedTensor_module": "rfdetr.utilities.tensors"
+          },
+          "stdout": "",
+          "stderr": "F:\\Python\\Lib\\site-packages\\torch\\utils\\_pytree.py:185: FutureWarning: optree is installed but the version is too old to support PyTorch Dynamo in C++ pytree. C++ pytree support is disabled. Please consider upgrading optree using `python3 -m pip install --upgrade 'optree>=0.13.0'`.\n  warnings.warn(\n"
+        },
+        "faiss_import": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "version": "1.11.0"
+          },
+          "stdout": "",
+          "stderr": ""
+        },
+        "torch_then_faiss_import": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "version": "1.11.0"
+          },
+          "stdout": "",
+          "stderr": "F:\\Python\\Lib\\site-packages\\torch\\utils\\_pytree.py:185: FutureWarning: optree is installed but the version is too old to support PyTorch Dynamo in C++ pytree. C++ pytree support is disabled. Please consider upgrading optree using `python3 -m pip install --upgrade 'optree>=0.13.0'`.\n  warnings.warn(\n"
+        },
+        "fastgan_vendor_import": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "Generator_present": true
+          },
+          "stdout": "",
+          "stderr": "F:\\Python\\Lib\\site-packages\\torch\\utils\\_pytree.py:185: FutureWarning: optree is installed but the version is too old to support PyTorch Dynamo in C++ pytree. C++ pytree support is disabled. Please consider upgrading optree using `python3 -m pip install --upgrade 'optree>=0.13.0'`.\n  warnings.warn(\n"
+        },
+        "dino_hubconf_import": {
+          "ok": true,
+          "returncode": 0,
+          "details": {
+            "dinov2_vits14_present": true,
+            "hubconf_path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\koopman_fastgan_petla\\local_inputs\\dino\\hubconf.py"
+          },
+          "stdout": "",
+          "stderr": "F:\\Python\\Lib\\site-packages\\torch\\utils\\_pytree.py:185: FutureWarning: optree is installed but the version is too old to support PyTorch Dynamo in C++ pytree. C++ pytree support is disabled. Please consider upgrading optree using `python3 -m pip install --upgrade 'optree>=0.13.0'`.\n  warnings.warn(\n",
+          "verified_at": "2026-09-24T15:22:43.064443+00:00"
+        }
+      }
+    }
+  ],
+  "assets": {
+    "fastgan_checkpoint": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/fastgan_narzedzie/wyniki/eden_20260923_50k/results_50k/checkpoint_050000.pth",
+      "exists": true,
+      "bytes": 605664543,
+      "sha256": "51895dcb216fc8b69f9b538461face293c418b7478b75812eb2130d7d3368fef",
+      "expected_sha256": "51895dcb216fc8b69f9b538461face293c418b7478b75812eb2130d7d3368fef",
+      "download_sha256_matches": true
+    },
+    "fastgan_vendor": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/fastgan_narzedzie/vendor/deepfake_gi_fastGAN/models.py",
+      "exists": true,
+      "bytes": 13681,
+      "sha256": "f1ba7b7422f7a424657ac43a447eed40996c4326df8e7943000368d194813e12",
+      "training_architecture_sha256_matches": true
+    },
+    "fastgan_training_config": {
+      "steps": 50000,
+      "batch": 2,
+      "checkpoint_every": 5000,
+      "preview_every": 1000,
+      "memory_fraction": 0.5,
+      "frames": 1044,
+      "size": 256,
+      "channels": 4,
+      "width": 64,
+      "seed": 42,
+      "torch": "2.9.1+cu128",
+      "gpu": "NVIDIA A100-SXM4-40GB",
+      "ema_decay": 0.999,
+      "initial_weights": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-09-23_fastgan/resume.pth",
+      "architecture_sha256": "f1ba7b7422f7a424657ac43a447eed40996c4326df8e7943000368d194813e12",
+      "data_manifest_sha256": "3305e533a48c6e90e1e39ec9a661a4288327e821627c2e6f564518e289a25b8e",
+      "code_sha256": "1ff25fd30e786d0ed5a3909d60a1e3d12040cd3a1677efcaad47f0b168fc08de",
+      "dataset_code_sha256": "a48801bce999b7552dc95eab62e930265c8966aa74cc82e79adc5fb10a7bf408",
+      "augmentation": "joint RGB/mask horizontal flip, no color augmentation",
+      "loss": "hinge + LPIPS VGG RGB + L1 mask reconstruction",
+      "note": "Generator only, no detector training. No guarantee of fiber matching."
+    },
+    "crop_manifest": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/fastgan_narzedzie/dane/pilot_1000/MANIFEST.json",
+      "exists": true,
+      "bytes": 509472,
+      "sha256": "3305e533a48c6e90e1e39ec9a661a4288327e821627c2e6f564518e289a25b8e",
+      "root": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\fastgan_narzedzie\\dane\\pilot_1000",
+      "records": 1044,
+      "missing_files": 0,
+      "training_manifest_sha256_matches": true
+    },
+    "pool": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/feature_cache/eden_static36/data/tracking_static36/pool_manifest.jsonl",
+      "exists": true,
+      "bytes": 19450466,
+      "sha256": "10d84e513054b6287b3eb2a4864839fc5457942c9f636716b17aa9e2d709d91e",
+      "split_counts": {
+        "train": 10637,
+        "val": 12043
+      },
+      "candidate_data_roots": [
+        {
+          "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/feature_cache/eden_static36/data/tracking_static36",
+          "train_files_present": 0,
+          "train_files_expected": 10637
+        },
+        {
+          "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/feature_cache/lokalny_static36",
+          "train_files_present": 2791,
+          "train_files_expected": 10637
+        }
+      ]
+    },
+    "local_pool_manifest": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/feature_cache/lokalny_static36/pool_manifest.jsonl",
+      "exists": true,
+      "bytes": 19450466,
+      "sha256": "10d84e513054b6287b3eb2a4864839fc5457942c9f636716b17aa9e2d709d91e"
+    },
+    "source_annotation_archives": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Dataset/Cataract-LMM/3_Object_Tracking/annotations",
+    "dino": {
+      "torch_hub_dir": "C:/Users/bartl/.cache/torch/hub/facebookresearch_dinov2_main",
+      "weights": {
+        "path": "C:/Users/bartl/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth",
+        "exists": true,
+        "bytes": 88283115,
+        "sha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9"
+      },
+      "eden_code_ref": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+      "local_code_matches_eden": null,
+      "note": "Local main hubconf import succeeds; source hash equality with Eden pinned ref is unverified."
+    },
+    "initial_selection_candidate": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/feature_cache/eden_static36/data/tracking_static36/variants/tracking_random_b1500_s42.json",
+      "exists": true,
+      "bytes": 79860,
+      "sha256": "0c0ce10f8b05250bbffd3ed5aa9a3c2692cf2fb7344942781d66f450a5a00121"
+    },
+    "initial_weights": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/rf-detr-nano.pth",
+      "exists": true,
+      "bytes": 366287238,
+      "sha256": "d8d6b9ee57d4d0ed2b1f305163624712a0532cb7bce0c747317984fc5457440d",
+      "expected_sha256": "d8d6b9ee57d4d0ed2b1f305163624712a0532cb7bce0c747317984fc5457440d",
+      "sha256_matches": true
+    },
+    "source_annotation_archives_inspection": {
+      "missing_train_files": 7846,
+      "groups_with_missing_train_files": 118,
+      "existing_zip_archives_for_these_groups": 118,
+      "sample_member_found": "TR_0001_S1_P03/TR_0001_S1_P03_000006.jpg",
+      "exact_eden_image_byte_identity_verified": false,
+      "all_zip_members_verified": false
+    },
+    "initial_selection": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/initial_selection.json",
+      "exists": true,
+      "bytes": 79874,
+      "sha256": "c2227943b7185dab87d5d68de2055a9228cd5b8c4265b60273f33a743f3a9420",
+      "records": 1500,
+      "unique_frame_ids": 1500,
+      "outside_train": 0,
+      "provenance": "Exact Eden initial_selection.json copied by parent; local membership and uniqueness verified."
+    },
+    "normalized_pool": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/data/pool_manifest.jsonl",
+      "exists": true,
+      "bytes": 19450466,
+      "sha256": "10d84e513054b6287b3eb2a4864839fc5457942c9f636716b17aa9e2d709d91e",
+      "expected_sha256": "10d84e513054b6287b3eb2a4864839fc5457942c9f636716b17aa9e2d709d91e",
+      "expected_sha256_source": "SHA-256 puli Edena potwierdzone przez użytkownika.",
+      "sha256_matches": true,
+      "train_files_present": 10637,
+      "train_files_expected": 10637,
+      "split_counts": {
+        "train": 10637,
+        "val": 12043
+      },
+      "missing_files_by_split": {}
+    },
+    "exact_eden_archive": {
+      "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/tracking_static36.tar",
+      "bytes": 2108682240,
+      "sha256": "5850b5c8dd4411159061e254e1f9b32e2b4b633036d3990049b553bea767d8b1",
+      "expected_sha256_source": "User supplied exact Eden archive SHA-256",
+      "sha256_verified": true,
+      "safe_unpack_reported_by_parent": true
+    },
+    "exact_dino": {
+      "torch_hub_dir": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/dino",
+      "hubconf": {
+        "path": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/dino/hubconf.py",
+        "exists": true,
+        "bytes": 1126,
+        "sha256": "c1f5090e78ff940b72c076d2bf9c0310d1707c946b3d10e2d6f2b0bdf56a6f64"
+      },
+      "import_verified": true,
+      "provenance": "Exact Eden source copy supplied by parent.",
+      "source_ref_reported": "7764ea0f912e53c92e82eb78a2a1631e92725fc8"
+    }
+  },
+  "gpu_metadata": {
+    "ok": true,
+    "columns": [
+      "name",
+      "driver",
+      "total_MiB",
+      "used_MiB",
+      "free_MiB",
+      "compute_capability"
+    ],
+    "csv": "NVIDIA GeForce RTX 3070, 591.86, 8192, 2518, 5501, 8.6",
+    "stderr": "",
+    "observed_utc": "2026-09-24T15:11:35.695074+00:00"
+  },
+  "python": "F:/Studia/PhD_projekt/VIT/venvs/rfdetr_1_10_1/Scripts/python.exe",
+  "data_root": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/data",
+  "pool": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/data/pool_manifest.jsonl",
+  "initial_selection": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/initial_selection.json",
+  "initial_weights": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/rf-detr-nano.pth",
+  "crop_manifest": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/fastgan_narzedzie/dane/pilot_1000/MANIFEST.json",
+  "crop_root": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/fastgan_narzedzie/dane/pilot_1000",
+  "generator": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/fastgan_narzedzie/wyniki/eden_20260923_50k/results_50k/checkpoint_050000.pth",
+  "vendor": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/fastgan_narzedzie/vendor/deepfake_gi_fastGAN",
+  "hub": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/koopman_fastgan_petla/local_inputs/dino",
+  "dino_weights": "C:/Users/bartl/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth",
+  "pythonpath": [],
+  "ready": true,
+  "ready_scope": "Importy i kompletność lokalnych wejść; bez testu forward, gradientów i dopasowania do VRAM.",
+  "blockers": [],
+  "inference_verified": false,
+  "gpu_execution_verified": false,
+  "notes": [
+    "Oba venv korzystają z --system-site-packages i aktywnego user site; nie zmieniano żadnych pakietów.",
+    "Do lokalnego generowania wybrano RF-DETR 1.10.1; fastgan_local nie ma RF-DETR.",
+    "Lightning 2.2.2 nie spełnia rfdetr[train]: >=2.6,<3,!=2.6.2,!=2.6.3. Konstruktor/generowanie nie wymagają lokalnego treningu.",
+    "Podstawowe wymagania RF-DETR: torch>=2.2, torchvision>=0.17, transformers>=5.1,<6, supervision>=0.29, pydantic>=2,<3.",
+    "Docelowe dane, initial_selection i kod DINO pochodzą z kopii Edena w local_inputs; stare kontrole assets/pool i assets/dino opisują wcześniejszy lokalny cache.",
+    "Wagi DINO pozostają w lokalnym cache; ich SHA-256 zapisano w assets/dino/weights. Indeks i zapytania muszą używać tego samego źródła modelu.",
+    "Torch lokalny 2.6.0+cu124 różni się od zapisanego środowiska FastGAN 2.9.1+cu128; zgodność numeryczna forward/gradientów nie była badana.",
+    "config.json ma permutations=32; konfiguracji nie zmieniano."
+  ],
+  "cpu_constructor_check": {
+    "ok": true,
+    "python": "F:/Studia/PhD_projekt/VIT/venvs/rfdetr_1_10_1/Scripts/python.exe",
+    "constructor": "RFDETRNano(num_classes=1, resolution=384, pretrain_weights=None, device=\"cpu\", amp=False)",
+    "parameter_device": "cpu",
+    "forward_callable": true,
+    "forward_executed": false,
+    "pytorch_lightning_imported": false,
+    "cuda_context_initialized_reported": true,
+    "note": "CPU constructor succeeded; library reported CUDA initialization despite CPU model parameters. No forward or GPU tensor computation was requested."
+  },
+  "inference_environment_recommendation": {
+    "python": "F:/Studia/PhD_projekt/VIT/venvs/rfdetr_1_10_1/Scripts/python.exe",
+    "imports_passed": true,
+    "cpu_constructor_passed": true,
+    "forward_verified": false,
+    "gradient_verified": false,
+    "installations_needed_for_verified_checks": false,
+    "torch": "2.6.0+cu124",
+    "torchvision": "0.21.0+cu124",
+    "rfdetr": "1.10.1",
+    "transformers": "5.1.0",
+    "local_training_required": false,
+    "environment_ready": true
+  },
+  "inference_environment_ready": true,
+  "finalized_at": "2026-09-24T15:25:04.005244+00:00"
+}

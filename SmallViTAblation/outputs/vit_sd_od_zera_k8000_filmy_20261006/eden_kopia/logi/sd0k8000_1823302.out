@@ -1,0 +1,49 @@
+Tue Oct  6 17:37:38 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.71.05              Driver Version: 595.71.05      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H100 PCIe               On  |   00000000:02:00.0 Off |                    0 |
+| N/A   28C    P0             47W /  350W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA H100 PCIe               On  |   00000000:61:00.0 Off |                    0 |
+| N/A   32C    P0             48W /  350W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA H100 PCIe               On  |   00000000:62:00.0 Off |                    0 |
+| N/A   30C    P0             48W /  350W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA H100 PCIe               On  |   00000000:82:00.0 Off |                    0 |
+| N/A   27C    P0             50W /  350W |       0MiB /  81559MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+[W1006 17:37:41.329890145 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [localhost]:39399 (errno: 97 - Address family not supported by protocol).
+[W1006 17:37:42.557522907 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:41273 (errno: 97 - Address family not supported by protocol).
+[W1006 17:37:52.743007929 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:41273 (errno: 97 - Address family not supported by protocol).
+[W1006 17:37:52.798225324 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:41273 (errno: 97 - Address family not supported by protocol).
+[W1006 17:37:52.868878369 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:41273 (errno: 97 - Address family not supported by protocol).
+[W1006 17:37:52.870135201 socket.cpp:767] [c10d] The client socket cannot be initialized to connect to [hopper.eden.mini.pw.edu.pl]:41273 (errno: 97 - Address family not supported by protocol).
+/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py:4876: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  warnings.warn(  # warn only once
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-06_vit_sd_od_zera_k8000_filmy/kod/dane.py:268: RuntimeWarning: {"event": "film_rejected_before_training", "film": "TR_0007_S1_P03", "split": "train", "rank": 1, "worker": 1, "reason": "TR_0007_S1_P03: MP4 has more frames than CSV (2163)"}
+  warnings.warn(json.dumps(dict(event='film_rejected_before_training',
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-06_vit_sd_od_zera_k8000_filmy/kod/dane.py:268: RuntimeWarning: {"event": "film_rejected_before_training", "film": "TR_0005_S1_P03", "split": "train", "rank": 3, "worker": 0, "reason": "TR_0005_S1_P03: MP4 has more frames than CSV (3165)"}
+  warnings.warn(json.dumps(dict(event='film_rejected_before_training',
+W1006 21:34:03.474000 3551888 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 3551916 closing signal SIGTERM
+W1006 21:34:03.501000 3551888 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 3551918 closing signal SIGTERM
+W1006 21:34:03.502000 3551888 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:908] Sending process 3551919 closing signal SIGTERM
+E1006 21:34:03.718000 3551888 /mnt/evafs/faculty/home/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/api.py:882] failed (exitcode: 75) local_rank: 1 (pid: 3551917) of binary: /home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/bin/python
+mode=train segment=1/10 rc=75 time_signal=0

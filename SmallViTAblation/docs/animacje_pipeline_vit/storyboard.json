@@ -1,0 +1,443 @@
+[
+  {
+    "id": 1,
+    "slug": "01_obraz_i_tokeny",
+    "title": "Od obrazu do 600 cząstek",
+    "slides": [
+      {
+        "kind": "overview",
+        "title": "Co chcemy zrozumieć?",
+        "caption": "Obraz → tokeny → informacja o narzędziu → dynamika uczenia → dobór klatek",
+        "narration": "Ten cykl pokazuje twój rzeczywisty pipeline małego transformera wizyjnego. Najpierw wyjaśnimy, czym są cząstki w latencie. Następnie pokażemy maski, odczyt tożsamości i ruch cech podczas uczenia. Na końcu połączymy to z prognozą i dobieraniem prawdziwych klatek. Schematy i zmierzone dane będą oznaczone osobno.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "frame",
+        "title": "Pełna klatka na wejściu",
+        "caption": "Szerokość 480 px, wysokość 320 px. Trzy kanały RGB.",
+        "narration": "Do tego małego modelu trafia pełna klatka zmniejszona do czterystu osiemdziesięciu na trzysta dwadzieścia pikseli. Pokazujemy rzeczywisty obraz ze zbioru Cataract. Rozmiar wejścia nie jest rozmiarem badanego latentu. Najpierw obraz przechodzi przez konwolucyjną część sieci.",
+        "mode": "RZECZYWISTY OBRAZ"
+      },
+      {
+        "kind": "grid",
+        "title": "Siatka miejsc obserwacji",
+        "caption": "30 kolumn × 20 wierszy = 600 tokenów. Odstęp siatki: 16 px.",
+        "narration": "Cztery konwolucje, każda z krokiem dwa, zmniejszają rozdzielczość szesnastokrotnie. Otrzymujemy trzydzieści kolumn i dwadzieścia wierszy. To sześćset tokenów. W naszej interpretacji każdy token jest jedną cząstką. Linie pokazują przypisanie miejsca, ale konwolucyjne pola widzenia nakładają się na siebie.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "dimensions",
+        "title": "Cząstka jest wektorem",
+        "caption": "600 × 192 w blokach; 600 × 768 w badanej warstwie MLP.",
+        "narration": "Każdy token ma sto dziewięćdziesiąt dwie cechy w głównym strumieniu transformera. Wewnątrz ostatniego bloku warstwa MLP rozszerza go do siedmiuset sześćdziesięciu ośmiu aktywacji. Odczytujemy je po funkcji GELU. To sześćset wektorów, każdy o siedmiuset sześćdziesięciu ośmiu współrzędnych. Nie siedemset sześćdziesiąt osiem cząstek.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "architecture",
+        "title": "Rzeczywista architektura",
+        "caption": "2 926 493 parametrów • 6 bloków • 3 głowy uwagi w bloku",
+        "narration": "Ten model ma około dwóch przecinek dziewięćdziesięciu trzech miliona parametrów. Zawiera sześć bloków transformera i trzy głowy uwagi w każdym bloku. Na końcu gęsta głowa przewiduje położenie środka narzędzia i jego ramkę. Odczyt latentu wykonujemy wcześniej, wewnątrz ostatniego bloku. Nie zmieniamy przez to dekodera.",
+        "mode": "PARAMETRY Z KODU"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "slug": "02_pozycja_i_uwaga",
+    "title": "Pozycja, uwaga i mieszanie informacji",
+    "slides": [
+      {
+        "kind": "position",
+        "title": "Stały adres tokena",
+        "caption": "Cechy obrazu + stały kod pozycji sinus–cosinus",
+        "narration": "Każde miejsce siatki dostaje stały wektor pozycji, obliczany z sinusów i cosinusów. Dodajemy go do cech obrazu przed blokami transformera. Nie jest uczonym parametrem. Ten sam adres dostaje ten sam kod. Treść tokena może jednak zmieniać się wraz z obrazem.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "attention",
+        "title": "Skąd token bierze kontekst?",
+        "caption": "Q = TWq, K = TWk, V = TWv; uwaga = softmax(QKᵀ / √d).",
+        "narration": "Z tokenów powstają zapytania, klucze i wartości. Podobieństwo zapytania do kluczy określa wagi uwagi. Token otrzymuje ważoną mieszaninę informacji z innych miejsc. Dlatego token leżący na cystotomie może również zawierać informację o oku, drugim narzędziu i oświetleniu. Pokazane połączenia ilustrują mechanizm, nie są zmierzoną mapą uwagi.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "reset",
+        "title": "Nowa klatka: nowy odczyt",
+        "caption": "Brak stanu tokenów przenoszonego między klatkami w tym ViT.",
+        "narration": "Gdy przychodzi nowa klatka, tokeny są liczone od nowa. Sieć nie przechowuje poprzednich cząstek jako swojego stanu czasowego. Przy zamrożonych wagach identyczny obraz w trybie oceny daje identyczną reprezentację. Podobne obrazy często dają podobne cechy, ale duża zmiana lokalnej treści może mocno przesunąć token.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "two_times",
+        "title": "Dwie różne osie czasu",
+        "caption": "Film: zmienia się obraz. Uczenie: zmienia się sieć, sonda jest stała.",
+        "narration": "Trzeba rozdzielić dwie sytuacje. W pierwszej oglądamy kolejne klatki jednego filmu przy stałej sieci. W drugiej przepuszczamy ten sam obraz przez sieć po kolejnych aktualizacjach wag. Nasz eksperyment przewidywania latentu dotyczy tej drugiej sytuacji. Nie mylmy ruchu narzędzia w filmie z uczeniem reprezentacji.",
+        "mode": "SCHEMAT METODY"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "slug": "03_maska_jeden_piksel",
+    "title": "Maska wskazuje cząstki narzędzia",
+    "slides": [
+      {
+        "kind": "mask",
+        "title": "Od pikseli do etykiet tokenów",
+        "caption": "Maska segmentacji jest w pikselach; token odpowiada polu siatki.",
+        "narration": "W zbiorze mamy obrys cystotomu. Najpierw tworzymy z niego maskę pikseli. Potem dopasowujemy maskę do rozmiaru wejściowej klatki i nakładamy siatkę tokenów. Maska nie identyfikuje automatycznie semantycznych neuronów. Wskazuje miejsca obrazu przecinające narzędzie.",
+        "mode": "RZECZYWISTA MASKA"
+      },
+      {
+        "kind": "one_pixel",
+        "title": "Nowa reguła: choć jeden piksel",
+        "caption": "mᵢ = 1, gdy suma maski w polu 16 × 16 jest większa od zera.",
+        "narration": "Zgodnie z twoim pomysłem wystarczy choć jeden piksel maski w danym polu. Wtedy zachowujemy cały token jako związany z narzędziem. Nie wymagamy już jednej czwartej pola. Przy zmniejszaniu maski zachowujemy także cienkie fragmenty, które zwykłe próbkowanie mogłoby zgubić.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "mask_compare",
+        "title": "Co przybywa po zmianie progu?",
+        "caption": "Zielone: ≥25%. Pomarańczowe: dodatkowe tokeny od 1 piksela.",
+        "narration": "Zielone pola przekraczają stary próg dwudziestu pięciu procent. Pomarańczowe to dodatkowe pola wybrane nową regułą. W dwunastu pełnych klatkach nowy próg wybrał od siedmiu do trzydziestu jeden tokenów narzędzia. Nadal zapisujemy wszystkie sześćset tokenów, także te leżące poza maską.",
+        "mode": "POMIAR: 12 PEŁNYCH KLATEK"
+      },
+      {
+        "kind": "mask_weights",
+        "title": "Etykieta nie oznacza czystej cechy",
+        "caption": "Zachowujemy udział pokrycia i oddalone tło jako kontrolę.",
+        "narration": "Token z jednym pikselem narzędzia może w większości opisywać otoczenie. Dlatego oprócz etykiety zapisujemy dokładny udział pokrycia. Osobno wybieramy tło oddalone od maski. Dzięki temu możemy sprawdzić, czy efekt pochodzi z narzędzia, z jego brzegu, czy ze wspólnej zmiany całej sceny.",
+        "mode": "SCHEMAT METODY"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "slug": "04_geometria_latentu",
+    "title": "Jak czytać chmurę 768-wymiarową",
+    "slides": [
+      {
+        "kind": "cloud",
+        "title": "Obraz jako chmura punktów",
+        "caption": "Jeden punkt = jeden token. Kolor określa maska, nie odkryty koncept.",
+        "narration": "Wektor tokena możemy potraktować jako punkt w przestrzeni cech. Cały obraz tworzy chmurę sześciuset punktów. Kolorem zaznaczamy tokeny należące do maski. Na ekranie widzimy tylko rzut na dwie osie. Bliskość na takim rysunku nie gwarantuje bliskości w pełnej przestrzeni.",
+        "mode": "RZUT RZECZYWISTYCH TOKENÓW"
+      },
+      {
+        "kind": "directions",
+        "title": "Punkt i kierunek to różne rzeczy",
+        "caption": "Aktywacja kierunku: aᵢ = wᵀ zᵢ. Token nie musi leżeć na osi.",
+        "narration": "Kierunek w latencie działa jak oś pomiarowa. Cząstka może mieć dużą składową wzdłuż tej osi i jednocześnie wiele innych składowych. Nie musi leżeć dokładnie na prostej. Dodatni rzut może wskazywać narzędzie, ale znaczenie kierunku trzeba sprawdzić na danych.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "subspace",
+        "title": "Tożsamość może wymagać wielu osi",
+        "caption": "W = [w₁, …, wₖ], współrzędne konceptu: aᵢ = Wᵀ zᵢ.",
+        "narration": "Zamiast jednej osi możemy zachować podprzestrzeń wielu kierunków. Jedne cechy mogą opisywać obecność cystotomu, inne jego kształt, obrót lub części. Sam duży wymiar albo skupisko nie dowodzi tożsamości. Potrzebujemy kontroli tła, innych narzędzi i obrazów niewidzianych przy dopasowaniu.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "invariance",
+        "title": "Co ma pozostać wspólne?",
+        "caption": "Ten sam cystotom: inne położenie, obrót, długość i tło.",
+        "narration": "Dobra reprezentacja tożsamości powinna zachowywać informację o cystotomie mimo zmian wyglądu. Nie wymagamy, żeby cały wektor był nieruchomy. Chcemy, żeby rozpoznawalna składowa narzędzia przetrwała obrót, przesunięcie i zmianę tła. Pozostałe współrzędne mogą opisywać te różnice.",
+        "mode": "SCHEMAT METODY"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "slug": "05_lda_i_odczyt",
+    "title": "Co naprawdę wyznacza LDA",
+    "slides": [
+      {
+        "kind": "pooling",
+        "title": "Dotychczasowa pętla: średnia tokenów",
+        "caption": "Maska → średni wektor narzędzia i średni wektor tła.",
+        "narration": "W poprzedniej pętli maska wybierała tokeny, ale potem je uśrednialiśmy. Otrzymywaliśmy jeden wektor narzędzia na obraz i drugi wektor tła. Ten zabieg ułatwiał obliczenia, lecz usuwał informację o osobnych częściach i różnicach ich ruchu. Sondy były wycinkami o stu dwudziestu jeden tokenach.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "lda",
+        "title": "Kierunek rozdzielający dwie grupy",
+        "caption": "w ∝ (Σ + regularyzacja)⁻¹ (μnarzędzie − μtło)",
+        "narration": "LDA bierze różnicę średnich narzędzia i tła oraz uwzględnia rozrzut cech. Szuka takiej kombinacji współrzędnych, która dobrze rozdziela obie grupy. W kodzie użyto stabilizowanego oszacowania kowariancji. To coś więcej niż samo odejmowanie dwóch obrazów lub dwóch średnich.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "score",
+        "title": "Jedna liczba na sondę",
+        "caption": "s(t) = wᵀ [(z(t) − μtła) / σtła]",
+        "narration": "Na końcu rozgrzewki zamrażamy kierunek oraz skalowanie cech. Rzut wektora na tę oś daje siłę aktywacji. Dla każdego obrazu zapisujemy, jak ta liczba zmienia się podczas uczenia. Dwuklasowe LDA daje jeden kierunek z konstrukcji metody. Nie oznacza to, że całe narzędzie ma tylko jeden wymiar.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "causal",
+        "title": "Odczytywalność i wykorzystanie",
+        "caption": "Informacja w tokenie ≠ dowód, że detektor z niej korzysta.",
+        "narration": "Jeżeli z kierunku da się odczytać narzędzie, reprezentacja zawiera odpowiednią informację. Żeby wykazać, że detektor jej używa, trzeba wykonać interwencję: usunąć lub podmienić składową, a potem sprawdzić zmianę detekcji. Porównaniem powinna być równie silna zmiana w losowym kierunku.",
+        "mode": "SCHEMAT METODY"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "slug": "06_ruch_osobnych_tokenow",
+    "title": "Nowy pomiar: żadnych średnich cząstek",
+    "slides": [
+      {
+        "kind": "experiment",
+        "title": "Stałe obrazy, kolejne stany sieci",
+        "caption": "Z[t, obraz, token, cecha]; osobne 600 × 768 na każdą klatkę.",
+        "narration": "Nowy pomiar zachowuje osobno wszystkie tokeny pełnej klatki. Ten sam obraz trafia do sieci przy kolejnych checkpointach. Maska i indeksy siatki pozostają stałe. Dzięki temu różnica reprezentacji tego samego tokena opisuje zmianę odpowiedzi sieci podczas uczenia.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "trajectories",
+        "title": "Rzeczywiste przemieszczenia",
+        "caption": "Δzᵢ = zᵢ(t₂) − zᵢ(t₁). Pośrednie punkty animacji są interpolacją.",
+        "narration": "W lokalnym pomiarze dostępne były dwa stany krótkiej próby: krok sześćdziesiąt i sto dwadzieścia. Pokazujemy rzeczywiste końce przemieszczeń tokenów. Płynny ruch pomiędzy końcami służy wizualizacji i nie jest nagraną trajektorią. Z dwóch punktów nie wyznaczymy wiarygodnie pamięci ani przyspieszenia.",
+        "mode": "POMIAR 60 → 120; INTERPOLACJA WIZUALNA"
+      },
+      {
+        "kind": "background_drift",
+        "title": "Odejmujemy wspólną zmianę tła",
+        "caption": "vᵢ = Δzᵢ / Δt; rᵢ = vᵢ − referencyjny dryf tła.",
+        "narration": "Cała sieć może zmieniać się wspólnie. Dlatego obok surowych przemieszczeń badamy ruch po odjęciu referencyjnej zmiany tła. Przy nierównych odstępach dzielimy przez liczbę aktualizacji. Na odłożonych obrazach referencja pochodzi wyłącznie z filmów użytych do dopasowania.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "dense",
+        "title": "Gęsta historia: właściwy cel pomiaru",
+        "caption": "Co 10 kroków: 101 stanów. Co krok: 1001 stanów do t = 1000.",
+        "narration": "Docelowo potrzebujemy gęstej historii tych samych sześciuset tokenów. Sto jeden stanów daje zapis co dziesięć aktualizacji do kroku tysiąc. Zapis co każdą aktualizację daje tysiąc jeden stanów. Osobny eksperyment gęstej historii ma taki plan. Ten film nie deklaruje jego ukończenia ani nie zastępuje brakujących danych.",
+        "mode": "PLAN GĘSTEGO POMIARU; STATUS NIEZWERYFIKOWANY"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "slug": "07_kierunki_z_ruchu",
+    "title": "Jak wyznaczamy wiele kierunków",
+    "slides": [
+      {
+        "kind": "svd",
+        "title": "Macierz ruchów tokenów narzędzia",
+        "caption": "R = [r₁ᵀ; …; rₙᵀ], R = UΣVᵀ. Kolumny V są osiami ruchu.",
+        "narration": "Zbieramy osobne wektory ruchu tokenów wskazanych maską. Rozkład SVD szuka kierunków, wzdłuż których te wektory mają najwięcej energii. Każdy obraz i przedział dostają równy łączny udział w dopasowaniu. Nie zastępujemy wcześniej wszystkich tokenów jednym wektorem.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "spectrum",
+        "title": "Energia ruchu i liczba kierunków",
+        "caption": "16 osi opisuje 90% energii w tym wstępnym pomiarze.",
+        "narration": "Na danych uczących naszego krótkiego pomiaru szesnaście osi opisuje dziewięćdziesiąt procent energii skorygowanego ruchu. To liczba opisująca ruch w tym konkretnym zbiorze. Nie wolno nazywać jej liczbą wymiarów tożsamości cystotomu. SVD może przechwycić także kontekst i zmiany nieswoiste.",
+        "mode": "WSTĘPNY POMIAR: 60 → 120"
+      },
+      {
+        "kind": "holdout",
+        "title": "Sprawdzamy inne filmy",
+        "caption": "8 filmów: kierunki. 4 odłożone filmy: ocena narzędzie / tło.",
+        "narration": "Kierunki wyznaczamy na ośmiu filmach, a oceniamy na czterech innych. Nie dzielimy losowo tokenów tego samego obrazu między dopasowanie i test. Porównujemy rzut ruchu narzędzia i tła. Taka ocena sprawdza przenoszenie między obrazami, nie prognozę przyszłych kroków uczenia.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "results",
+        "title": "Wynik nie daje jeszcze tożsamości",
+        "caption": "Średni kierunek: AUC 0,669. 16 osi: 0,611; losowe: 0,608.",
+        "narration": "Średni podpisany kierunek ruchu daje wstępny sygnał rozróżniający narzędzie od tła. Natomiast szesnaście głównych osi wypada prawie tak samo jak losowa podprzestrzeń tej wielkości. To nie jest przekonujący dowód odkrycia tożsamości. Wynik pochodzi z jednego krótkiego przebiegu i czterech odłożonych obrazów.",
+        "mode": "WYNIK ZAPISANY; BEZ TWIERDZENIA PRZYCZYNOWEGO"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "slug": "08_historia_bez_usredniania",
+    "title": "Sto pomiarów czy dwadzieścia średnich?",
+    "slides": [
+      {
+        "kind": "history",
+        "title": "Jak zbieraliśmy historię?",
+        "caption": "1000 aktualizacji ≈ 21 epok; pomiary w krokach 0, 10, …, 1000.",
+        "narration": "Rozgrzewka trwała tysiąc aktualizacji, co przy tej bazie i paczce odpowiada około dwudziestu jeden epokom. Stałe sondy mierzyliśmy przed uczeniem i co dziesięć aktualizacji. Dawało to sto jeden pomiarów. Pomiar aktywacji nie musi oznaczać zapisania całego checkpointu wag.",
+        "mode": "RZECZYWISTA HISTORIA ODCZYTU LDA"
+      },
+      {
+        "kind": "averaging",
+        "title": "Co robiła średnia z pięciu?",
+        "caption": "100 surowych pomiarów → 20 średnich; odstęp rośnie z 10 do 50 kroków.",
+        "narration": "Dotychczasowy kod odrzucał pomiar początkowy i uśredniał pięć kolejnych zapisów. Dostawał dwadzieścia punktów na sondę. To filtr wygładzający, a nie wymóg Koopmana. Może ograniczyć wahania, ale może także usunąć szybkie reakcje na paczki danych.",
+        "mode": "DANE: SUROWE I ŚREDNIE"
+      },
+      {
+        "kind": "aliasing",
+        "title": "Jakie informacje mogą zniknąć?",
+        "caption": "Wzrost i spadek wewnątrz bloku mogą dać tę samą średnią.",
+        "narration": "Dwie zupełnie różne ścieżki mogą mieć tę samą średnią. Jeżeli chcemy odtworzyć szybką dynamikę, wygładzenie ją ogranicza. Jeśli celem jest wolny trend, średnia może być użyteczna. Trzeba jednak mówić jasno, jaki proces modelujemy i w jakiej skali czasu.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "fair_compare",
+        "title": "Uczciwe porównanie wariantów",
+        "caption": "Te same przyszłe cele, horyzont w aktualizacjach i kontrola czasu pamięci.",
+        "narration": "Wersję surową należy porównać z wygładzoną na tym samym przyszłym odcinku. Cztery opóźnienia przy zapisie co dziesięć kroków oznaczają inną pamięć niż cztery opóźnienia co pięćdziesiąt. Dlatego kontrolujemy zarówno liczbę parametrów, jak i fizyczny czas historii. Podstawowym odniesieniem jest brak zmiany.",
+        "mode": "SCHEMAT METODY"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "slug": "09_koopman_krok_po_kroku",
+    "title": "Koopman: dopasowanie i prognoza",
+    "slides": [
+      {
+        "kind": "koopman",
+        "title": "Idea operatora Koopmana",
+        "caption": "Dla obserwacji ψ: Kψ(x) = ψ(F(x)). W kodzie: skończony model liniowy.",
+        "narration": "Operator Koopmana opisuje, jak obserwowane wielkości zmieniają się pod działaniem dynamiki. Zamiast modelować bezpośrednio wszystkie szczegóły układu, szukamy wygodnych obserwacji. W naszej pętli używamy ograniczonego modelu liniowego historii przyrostów. To przybliżenie, nie dowód znalezienia dokładnych niezmienników.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "lags",
+        "title": "Cztery poprzednie zmiany",
+        "caption": "Δs(t+1) = a₀Δs(t) + a₁Δs(t−1) + a₂Δs(t−2) + a₃Δs(t−3).",
+        "narration": "Stanem w dotychczasowej wersji była jedna liczba na sondę: siła odczytu LDA. Liczymy jej kolejne przyrosty i układamy cztery poprzednie zmiany jako wejście. Następna zmiana jest celem. Wszystkie współczynniki dopasowujemy wyłącznie na dostępnej przeszłości, z regularyzacją stabilizującą rozwiązanie.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "fit",
+        "title": "Jak powstają współczynniki?",
+        "caption": "X: przeszłe zmiany. Y: następne zmiany. Minimalizacja błędu + kara.",
+        "narration": "Każdy wiersz macierzy wejściowej zawiera historię przed danym krokiem. Odpowiadający mu cel jest zmianą w następnym kroku. Regresja dobiera współczynniki tak, aby odtworzyć cele z przeszłych danych. W starej pętli współczynniki były wspólne dla sond. Osobne dopasowanie na jednym obrazie to odrębny wariant.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "rollout",
+        "title": "Prognoza składana w czasie",
+        "caption": "Przewidź przyrost → dodaj do stanu → wpisz do historii → powtórz.",
+        "narration": "Tutaj pokazujemy obliczony przykład dla jednej sondy, na stu pomiarach bez uśredniania. Dopasowanie kończy się w kroku tysiąc. Potem przewidujemy pięćset aktualizacji, korzystając z własnych poprzednich prognoz. Szara linia pokazuje rzeczywisty późniejszy odczyt. Błąd porównujemy z utrzymaniem ostatniej wartości. Ten jeden przykład nie jest dowodem przewagi metody.",
+        "mode": "RZECZYWISTY ODCZYT; PROGNOZA JEDNEJ SONDY"
+      },
+      {
+        "kind": "koopman_limit",
+        "title": "Co właściwie zostało przewidziane?",
+        "caption": "Prognoza odczytu ≠ odkrycie kierunku tożsamości ≠ poprawa detektora.",
+        "narration": "Koopman w tej wersji nie wybierał cząstek narzędzia i nie odkrywał kierunku LDA. Maska wskazywała tokeny, LDA definiowała odczyt, a model dynamiki przewidywał jego zmianę. To trzy osobne operacje. Każda wymaga własnej oceny. Dobra prognoza nie dowodzi jeszcze użyteczności doboru klatek.",
+        "mode": "SCHEMAT METODY"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "slug": "10_langevin_i_pamiec",
+    "title": "Langevin: dryf, pamięć i reszta",
+    "slides": [
+      {
+        "kind": "langevin",
+        "title": "Co dodaje wariant Langevina?",
+        "caption": "Δs(t+1) = k·s(t) + Σ bⱼΔs(t−j) + csondy + reszta.",
+        "narration": "Wariant nazwany w kodzie Langevinem dodaje obecny poziom aktywacji i osobną stałą dla sondy. Pozostałe składniki opisują zależność od wcześniejszych przyrostów. To może uchwycić tendencję do powrotu w okolice pewnego poziomu, ale stabilność takiego powrotu trzeba sprawdzić, a nie zakładać.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "forces",
+        "title": "Interpretacja składników",
+        "caption": "Dryf: stan obecny. Pamięć: historia. Reszta: niewyjaśniona zmiana.",
+        "narration": "Strzałki pokazują sumowanie wkładów. Jedna zależy od obecnego stanu, kolejne od historii. Różnica między przewidzianą i rzeczywistą zmianą jest resztą. Samo nazwanie jej szumem nie dowodzi, że jest biała, gaussowska lub niezależna. To ilustracja rachunku, nie zmierzona siła fizyczna.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "memory",
+        "title": "Jak sprawdzać pamięć i szum?",
+        "caption": "Autokorelacja reszt, stabilność, test przyszłości, porównanie bez pamięci.",
+        "narration": "Jeżeli reszty pozostają zależne w czasie, model nie uchwycił całej struktury. Sprawdzamy korelacje reszt, stabilność prognozy i porównanie z modelem bez pamięci. Skończona regresja z opóźnieniami nie jest automatycznie pełnym uogólnionym równaniem Langevina z potwierdzoną relacją fluktuacji i dyssypacji.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "selection_model",
+        "title": "Który model wybierała pętla?",
+        "caption": "Ukryj ostatnie 500 aktualizacji → porównaj błędy → dopasuj zwycięzcę.",
+        "narration": "Stara pętla porównywała oba modele na ukrytej końcówce dostępnej historii. Potem lepszy wariant dopasowywała ponownie na całej przeszłości i prognozowała następny odcinek. Wygranie z drugim modelem nie oznacza jeszcze wygrania z brakiem zmiany. To odniesienie trzeba pokazać osobno.",
+        "mode": "SCHEMAT METODY"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "slug": "11_sila_paczki",
+    "title": "Nowsze równanie pełnego latentu",
+    "slides": [
+      {
+        "kind": "full_latent",
+        "title": "Od jednej liczby do 768 współrzędnych",
+        "caption": "Δz(t+1) ≈ 0,83·Δz(t) + 0,98·S(t) + reszta.",
+        "narration": "Nowszy eksperyment opisywał zmianę całego średniego wektora narzędzia, a nie tylko jego rzutu LDA. Proste równanie łączyło poprzednią zmianę z wpływem bieżącej paczki danych. Nadal był to średni wektor sondy, nie sześćset osobnych trajektorii. Współczynniki dopasowano na wcześniejszym odcinku uczenia.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "optimizer",
+        "title": "Skąd bierze się siła paczki?",
+        "caption": "S(t) = z(θ + część aktualizacji od bieżącego gradientu) − z(θ).",
+        "narration": "Najpierw liczymy gradient bieżącej paczki. Następnie wydzielamy jego wkład w aktualizację AdamW. Tymczasowo podstawiamy przesunięte wagi i ponownie odczytujemy stałe sondy. Różnica latentu jest siłą paczki w tym eksperymencie. To wymaga dodatkowych przejść sieci i znajomości bieżącego gradientu.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "explanation",
+        "title": "85 procent: czego dotyczy wynik?",
+        "caption": "Około 85% redukcji błędu kwadratowego względem braku zmiany.",
+        "narration": "W dziesięciu przebiegach proste równanie usuwało w medianie około osiemdziesięciu pięciu procent błędu przyrostu względem braku zmiany. Nie jest to osiemdziesiąt pięć procent trafnych detekcji. Ponieważ użyto gradientu paczki tworzącej krok, wynik wyjaśnia jej skutek. Nie jest prognozą z samej wcześniejszej historii.",
+        "mode": "WYNIK: WYJAŚNIENIE BIEŻĄCEGO KROKU"
+      },
+      {
+        "kind": "no_leak",
+        "title": "Jak wygląda czysta prognoza?",
+        "caption": "Przed wyborem przyszłej paczki nie wolno używać jej gradientu.",
+        "narration": "W prognozie przyszłych kroków trzeba odciąć informacje, których jeszcze nie mamy. Wariant oparty na pędzie optymalizatora też wymaga kontroli: użyty mianownik AdamW zawierał gradient bieżącej paczki. Bez ponownego testu wersji pozbawionej tego wkładu nie traktujemy wyniku jako czystej prognozy.",
+        "mode": "SCHEMAT METODY"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "slug": "12_dobor_klatek_i_wnioski",
+    "title": "Od kierunków do lepszego treningu",
+    "slides": [
+      {
+        "kind": "retrieval",
+        "title": "Historyczna pętla z generatorem",
+        "caption": "Prognoza odczytu → sterowanie FastGAN → podobne prawdziwe klatki.",
+        "narration": "W dotychczasowej pętli wybieraliśmy sondy o dużej przewidywanej zmianie odczytu. FastGAN odtwarzał obraz kotwicy, a potem zmienialiśmy jego wejście tak, aby przesunąć odczyt w zadanym kierunku. Wygenerowany obraz służył do wyszukiwania podobnych prawdziwych klatek przez cechy DINO. Detektor uczono na wybranych prawdziwych danych.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "diversity",
+        "title": "Nowość musi być użyteczna",
+        "caption": "Ocena błędu + kierunki braków + różnorodność + rozdział filmów.",
+        "narration": "Duży ruch lub zaskoczenie modelu nie oznacza automatycznie dobrej klatki treningowej. Może pochodzić z refleksu, rozmycia albo innego obiektu. Kandydatów trzeba powiązać z brakami detektora i zadbać o różnorodność. Sąsiednie niemal identyczne klatki nie powinny zużywać całego budżetu.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "controls",
+        "title": "Co musi rozstrzygnąć eksperyment?",
+        "caption": "Losowo, sam odczyt, sam ruch, ruch + tożsamość; ten sam budżet.",
+        "narration": "Ostatecznym testem jest uczenie detektora na jednakowej liczbie klatek i przy porównywalnym koszcie. Potrzebujemy losowego doboru oraz wariantów rozdzielających wpływ odczytu, ruchu i różnorodności. Wynik mierzymy na odłożonych operacjach. Wcześniejsze ramię current też korzystało z prognozy do wyboru kotwic, więc nie usuwało całego wpływu prognozy.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "evidence",
+        "title": "Co wiemy, a co pozostaje hipotezą?",
+        "caption": "Maski i odczyty: zmierzone. Tożsamość z ruchu: kandydaci. Zysk treningu: osobny test.",
+        "narration": "Mamy rzeczywisty model, maski, zapisane kierunki odczytu i pierwszy pomiar ruchu pojedynczych tokenów. Nie mamy jeszcze dowodu, że dominujące kierunki ruchu są pełną tożsamością cystotomu. Nie wolno także utożsamiać poprawnej prognozy z poprawą detekcji. Każdy z tych kroków ma w tym cyklu własną kontrolę.",
+        "mode": "SCHEMAT METODY"
+      },
+      {
+        "kind": "end",
+        "title": "Cały pipeline w jednym obrazie",
+        "caption": "Obserwuj → wyznacz kierunki → sprawdź → prognozuj → dobierz → porównaj trening.",
+        "narration": "Najważniejsza zmiana w twoim pomyśle polega na zachowaniu pojedynczych cząstek i całej ich historii. Maska od jednego piksela wskazuje kandydatów związanych z narzędziem. Kierunki wyznaczamy z danych, ich znaczenie sprawdzamy na innych obrazach, a dopiero później używamy dynamiki do wyboru klatek. Kod, źródła, napisy i wszystkie rozdziały są dołączone do filmu.",
+        "mode": "SCHEMAT METODY"
+      }
+    ]
+  }
+]

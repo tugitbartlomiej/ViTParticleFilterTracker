@@ -1,0 +1,83 @@
+{
+  "query": "Decoupled Weight Decay Regularization",
+  "sources_used": [
+    "arxiv",
+    "crossref"
+  ],
+  "source_results": {
+    "arxiv": 2,
+    "crossref": 2
+  },
+  "errors": {},
+  "total": 4,
+  "papers": [
+    {
+      "paper_id": "2011.11152v6",
+      "title": "On the Overlooked Pitfalls of Weight Decay and How to Mitigate Them: A Gradient-Norm Perspective",
+      "authors": "Zeke Xie; Zhiqiang Xu; Jingzhao Zhang; Issei Sato; Masashi Sugiyama",
+      "abstract": "Weight decay is a simple yet powerful regularization technique that has been very widely used in training of deep neural networks (DNNs). While weight decay has attracted much attention, previous studies fail to discover some overlooked pitfalls on large gradient norms resulted by weight decay. In this paper, we discover that, weight decay can unfortunately lead to large gradient norms at the final phase (or the terminated solution) of training, which often indicates bad convergence and poor generalization. To mitigate the gradient-norm-centered pitfalls, we present the first practical scheduler for weight decay, called the Scheduled Weight Decay (SWD) method that can dynamically adjust the weight decay strength according to the gradient norm and significantly penalize large gradient norms during training. Our experiments also support that SWD indeed mitigates large gradient norms and often significantly outperforms the conventional constant weight decay strategy for Adaptive Moment Estimation (Adam).",
+      "doi": "",
+      "published_date": "2020-11-23T00:39:49",
+      "pdf_url": "https://arxiv.org/pdf/2011.11152v6",
+      "url": "http://arxiv.org/abs/2011.11152v6",
+      "source": "arxiv",
+      "updated_date": "2024-08-16T10:36:24",
+      "categories": "cs.LG; cs.AI",
+      "keywords": "",
+      "citations": 0,
+      "references": "",
+      "extra": ""
+    },
+    {
+      "paper_id": "1711.05101v3",
+      "title": "Decoupled Weight Decay Regularization",
+      "authors": "Ilya Loshchilov; Frank Hutter",
+      "abstract": "L$_2$ regularization and weight decay regularization are equivalent for standard stochastic gradient descent (when rescaled by the learning rate), but as we demonstrate this is \\emph{not} the case for adaptive gradient algorithms, such as Adam. While common implementations of these algorithms employ L$_2$ regularization (often calling it \"weight decay\" in what may be misleading due to the inequivalence we expose), we propose a simple modification to recover the original formulation of weight decay regularization by \\emph{decoupling} the weight decay from the optimization steps taken w.r.t. the loss function. We provide empirical evidence that our proposed modification (i) decouples the optimal choice of weight decay factor from the setting of the learning rate for both standard SGD and Adam and (ii) substantially improves Adam's generalization performance, allowing it to compete with SGD with momentum on image classification datasets (on which it was previously typically outperformed by the latter). Our proposed decoupled weight decay has already been adopted by many researchers, and the community has implemented it in TensorFlow and PyTorch; the complete source code for our experiments is available at https://github.com/loshchil/AdamW-and-SGDW",
+      "doi": "",
+      "published_date": "2017-11-14T14:24:06",
+      "pdf_url": "https://arxiv.org/pdf/1711.05101v3",
+      "url": "http://arxiv.org/abs/1711.05101v3",
+      "source": "arxiv",
+      "updated_date": "2019-01-04T21:01:49",
+      "categories": "cs.LG; cs.NE; math.OC",
+      "keywords": "",
+      "citations": 0,
+      "references": "",
+      "extra": ""
+    },
+    {
+      "paper_id": "10.1126/scirobotics.aaw1329",
+      "title": "Toward principled regularization of deep networks\u2014From weight decay to feature contraction",
+      "authors": "Atsuto Maki",
+      "abstract": "<jats:p>Deep networks for classification problems may be enhanced by training with proper regularization exploiting intrinsic class similarities.</jats:p>",
+      "doi": "10.1126/scirobotics.aaw1329",
+      "published_date": "2019-05-22T00:00:00",
+      "pdf_url": "",
+      "url": "https://doi.org/10.1126/scirobotics.aaw1329",
+      "source": "crossref",
+      "updated_date": "",
+      "categories": "journal-article",
+      "keywords": "",
+      "citations": 6,
+      "references": "",
+      "extra": "{'publisher': 'American Association for the Advancement of Science (AAAS)', 'container_title': 'Science Robotics', 'volume': '4', 'issue': '30', 'page': '', 'issn': ['2470-9476'], 'isbn': [], 'crossref_type': 'journal-article', 'member': '221', 'prefix': '10.1126'}"
+    },
+    {
+      "paper_id": "10.1609/aaai.v35i8.16837",
+      "title": "Understanding Decoupled and Early Weight Decay",
+      "authors": "Johan Bjorck; Kilian Q. Weinberger; Carla Gomes",
+      "abstract": "<jats:p>Weight decay (WD) is a traditional regularization technique in deep learning, but despite its ubiquity, its behavior is still an area of active research. Golatkar et al. have recently shown that WD only matters at the start of the training in computer vision, upending traditional wisdom. Loshchilov et al. show that for adaptive optimizers, manually decaying weights can outperform adding an l2 penalty to the loss. This technique has become increasingly popular and is referred to as decoupled WD. The goal of this paper is to investigate these two recent empirical observations. We demonstrate that by applying WD only at the start, the network norm stays small throughout training. This has a regularizing effect as the effective gradient updates become larger. However, traditional generalizations metrics fail to capture this effect of WD, and we show how a simple scale-invariant metric can. We also show how the growth of network weights is heavily influenced by the dataset and its generalization properties. For decoupled WD, we perform experiments in NLP and RL where adaptive optimizers are the norm. We demonstrate that the primary issue that decoupled WD alleviates is the mixing of gradients from the objective function and the l2 penalty in the buffers of Adam (which stores the estimates of the first-order moment). Adaptivity itself is not problematic and decoupled WD ensures that the gradients from the l2 term cannot \"drown out\" the true objective, facilitating easier hyperparameter tuning.</jats:p>",
+      "doi": "10.1609/aaai.v35i8.16837",
+      "published_date": "2021-05-18T00:00:00",
+      "pdf_url": "https://ojs.aaai.org/index.php/AAAI/article/download/16837/16644",
+      "url": "https://doi.org/10.1609/aaai.v35i8.16837",
+      "source": "crossref",
+      "updated_date": "",
+      "categories": "journal-article",
+      "keywords": "",
+      "citations": 22,
+      "references": "",
+      "extra": "{'publisher': 'Association for the Advancement of Artificial Intelligence (AAAI)', 'container_title': 'Proceedings of the AAAI Conference on Artificial Intelligence', 'volume': '35', 'issue': '8', 'page': '6777-6785', 'issn': ['2374-3468', '2159-5399'], 'isbn': [], 'crossref_type': 'journal-article', 'member': '9382', 'prefix': '10.1609'}"
+    }
+  ]
+}

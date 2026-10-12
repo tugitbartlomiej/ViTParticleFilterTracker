@@ -1,0 +1,49 @@
+WEBVTT
+
+00:00:00.100 --> 00:00:06.931
+Nowszy eksperyment opisywał zmianę całego średniego wektora narzędzia, a nie tylko jego rzutu LDA.
+
+00:00:06.931 --> 00:00:12.159
+Proste równanie łączyło poprzednią zmianę z wpływem bieżącej paczki danych.
+
+00:00:12.159 --> 00:00:16.899
+Nadal był to średni wektor sondy, nie sześćset osobnych trajektorii.
+
+00:00:16.899 --> 00:00:20.942
+Współczynniki dopasowano na wcześniejszym odcinku uczenia.
+
+00:00:21.642 --> 00:00:24.723
+Najpierw liczymy gradient bieżącej paczki.
+
+00:00:24.723 --> 00:00:28.612
+Następnie wydzielamy jego wkład w aktualizację AdamW.
+
+00:00:28.612 --> 00:00:34.115
+Tymczasowo podstawiamy przesunięte wagi i ponownie odczytujemy stałe sondy.
+
+00:00:34.115 --> 00:00:38.004
+Różnica latentu jest siłą paczki w tym eksperymencie.
+
+00:00:38.004 --> 00:00:43.067
+To wymaga dodatkowych przejść sieci i znajomości bieżącego gradientu.
+
+00:00:43.767 --> 00:00:52.806
+W dziesięciu przebiegach proste równanie usuwało w medianie około osiemdziesięciu pięciu procent błędu przyrostu względem braku zmiany.
+
+00:00:52.806 --> 00:00:56.623
+Nie jest to osiemdziesiąt pięć procent trafnych detekcji.
+
+00:00:56.623 --> 00:01:01.577
+Ponieważ użyto gradientu paczki tworzącej krok, wynik wyjaśnia jej skutek.
+
+00:01:01.577 --> 00:01:04.858
+Nie jest prognozą z samej wcześniejszej historii.
+
+00:01:05.558 --> 00:01:10.963
+W prognozie przyszłych kroków trzeba odciąć informacje, których jeszcze nie mamy.
+
+00:01:10.963 --> 00:01:18.770
+Wariant oparty na pędzie optymalizatora też wymaga kontroli: użyty mianownik AdamW zawierał gradient bieżącej paczki.
+
+00:01:18.770 --> 00:01:25.108
+Bez ponownego testu wersji pozbawionej tego wkładu nie traktujemy wyniku jako czystej prognozy.

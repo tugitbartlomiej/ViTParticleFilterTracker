@@ -1,0 +1,47 @@
+{
+  "status": "submitted",
+  "merge_job": "1825166",
+  "producer_marker_sha256": "103739fb10100dab9ed5f0f3743572cca9560cb78ac8bdcd71f9a4b64038e968",
+  "jobs": {
+    "panel1024": "1825171",
+    "population900k": "1825172"
+  },
+  "commands": {
+    "panel1024": [
+      "sbatch",
+      "--parsable",
+      "--dependency=afterok:1825166",
+      "--kill-on-invalid-dep=yes",
+      "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/code_frozen_production/panel.slurm",
+      "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_replay900k_co5_20261009/results/merged/TEMPORAL_PANEL_MANIFEST.json"
+    ],
+    "population900k": [
+      "sbatch",
+      "--parsable",
+      "--dependency=afterok:1825166",
+      "--kill-on-invalid-dep=yes",
+      "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/code_frozen_production/population.slurm"
+    ]
+  },
+  "source_hashes": {
+    "population.slurm": "12a8cec30227a4b113517c2a2aedf082925721d863b76fec752747c3e5df913f",
+    "panel.slurm": "5a0aaf529f6d02d6bac5688e685a49462196d11bb8109d80da590a92460e1df5",
+    "temporal_core.py": "ace40b2635a0973de5c4aa18f0b50f317993281ae0e220266b07dde4e1d7fd2a",
+    "PLAN.md": "72ff71eec789ac86fbf5aba443f8ae64f0eaef9ff0e0fc0238fe3a323bfbf9df",
+    "KONTRAKT_DANYCH.md": "b31447c9a66c0eabcbc49e7c23a2499d3399e0cf9b7aea160031103ec227879c",
+    "smoke.slurm": "596f816269fc626e1c6417e1794798351ae59f8f81c8f2565e631da78ac4f0fb",
+    "analiza_temporalna.py": "dfc6dbeb53f6e9176f5a49b417bcf22164fd12dac9be72ecd82a5e066f79f515",
+    "submit_after_merge.py": "ab6089e80ef501e41494453f6203a0aa72c12dcf1179540606fb2b61dac93ea3",
+    "README.md": "65c98d2be6703c69846d8f2cca0aa7f52e4a8f0620a9ea190dc360175bb74b17",
+    "podsumuj_smoke.py": "8154a98b4114587d5c5914316fdbc6739c9f7ed322f17dacf29bbcd2fd209ce4",
+    "test_pipeline.py": "ced0410ad0849156b85907ddebc8f961080cc02a828a43c3ef7e459f33a0d034",
+    "analiza_populacji.py": "c2a0ac2f9f3427949b080039c455e63492e08cf60e6d942b345112c71bf92577"
+  },
+  "frozen_code": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/code_frozen_production",
+  "started_utc": "2026-10-09T01:52:41.823940+00:00",
+  "panel1024_submission_stdout": "1825171\n",
+  "panel1024_submission_stderr": "",
+  "population900k_submission_stdout": "1825172\n",
+  "population900k_submission_stderr": "",
+  "finished_utc": "2026-10-09T01:52:41.933460+00:00"
+}

@@ -1,0 +1,30 @@
+{
+  "rank": 9,
+  "local_rank": 9,
+  "world_size": 11,
+  "assigned": {
+    "uuid": "MIG-6e673ee9-0663-536d-9071-24375dac9a2a",
+    "profile": "3g.71gb",
+    "physical_index": 6
+  },
+  "torch": "2.9.1+cu128",
+  "cuda_runtime": "12.8",
+  "nccl": [
+    2,
+    27,
+    5
+  ],
+  "CUDA_VISIBLE_DEVICES": "MIG-6e673ee9-0663-536d-9071-24375dac9a2a",
+  "cuda_device_count": 1,
+  "status": "FAIL",
+  "actual_fit_steps": 0,
+  "time": "2026-10-02T18:47:48.848099+00:00",
+  "device_name": "NVIDIA H200 MIG 3g.71gb",
+  "total_memory": 74893492224,
+  "observed_uuid": "d5655938-6b88-8867-c085-31699513c8ea",
+  "compute_capability": [
+    9,
+    0
+  ],
+  "error": "Traceback (most recent call last):\n  File \"/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-02_nndmd_lokalne_przyrosty_hopper/infra_11_uuid.py\", line 19, in main\n    dist.init_process_group('nccl',timeout=timedelta(seconds=90),device_id=torch.device('cuda',0))\n  File \"/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 81, in wrapper\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/c10d_logger.py\", line 95, in wrapper\n    func_return = func(*args, **kwargs)\n                  ^^^^^^^^^^^^^^^^^^^^^\n  File \"/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 1769, in init_process_group\n    default_pg, _ = _new_process_group_helper(\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/distributed/distributed_c10d.py\", line 2134, in _new_process_group_helper\n    eager_backend.eager_connect_single_device(device_id)\ntorch.distributed.DistBackendError: NCCL error in: /pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:94, invalid usage (run with NCCL_DEBUG=WARN for details), NCCL version 2.27.5\nncclInvalidUsage: This usually reflects invalid usage of NCCL library.\nLast error:\nDuplicate GPU detected : rank 9 and rank 8 both on CUDA device cb000\n"
+}

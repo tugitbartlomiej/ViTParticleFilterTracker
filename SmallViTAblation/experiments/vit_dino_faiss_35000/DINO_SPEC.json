@@ -1,0 +1,27 @@
+{
+  "model": "dinov2_vits14",
+  "register_tokens": 0,
+  "dimension": 384,
+  "descriptor": "forward_features(x)['x_norm_clstoken']; float32; L2 normalization dim=1",
+  "weights": "C:/Users/bartl/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth",
+  "weights_sha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9",
+  "weights_bytes": 88283115,
+  "official_url": "https://dl.fbaipublicfiles.com/dinov2/dinov2_vits14/dinov2_vits14_pretrain.pth",
+  "official_download_sha256_verified": true,
+  "hub_repo": "C:/Users/bartl/.cache/torch/hub/facebookresearch_dinov2_main",
+  "vision_transformer_source_sha256": "7799a260f2d7d0fe197331d08502fb8c542f9b7424723650f6a39b64fa2639ea",
+  "runtime": "F:/Python/python.exe",
+  "torch": "2.6.0+cu124",
+  "torchvision": "0.21.0+cu124",
+  "preprocessing": {
+    "decode": "PIL RGB",
+    "resize": "shorter side 256, torchvision Resize(256), PIL BICUBIC, antialias=True",
+    "crop": "torchvision CenterCrop(224)",
+    "tensor": "ToTensor(), float32 [0,1], CHW",
+    "mean": [0.485, 0.456, 0.406],
+    "std": [0.229, 0.224, 0.225],
+    "augmentation": false
+  },
+  "inference": "frozen eval inference_mode; TF32 disabled; FP32 reference; AMP selected only after balanced FP32 control recorded in CONFIG.json",
+  "cache_policy": "Do not reuse eden_static36 CLS+max-patch cache: descriptor and declared weights hash differ"
+}

@@ -1,0 +1,156 @@
+{
+  "created": "2026-10-02T13:18:57.638410+02:00",
+  "model_sha256": "72b20c3b41bcf87e6c9fe492494aae2b47e185304c21331d55247465082d22e9",
+  "no_tuning": true,
+  "stability": {
+    "spectral_radius_A": 1.033197707889594,
+    "operator_norm2_A": 1.1936922973334383,
+    "operator_norm2_A_power50": 10.677115483121954,
+    "min_singular_value_A": 0.1794253735625207,
+    "condition_number2_A": 6.652862265979882,
+    "max_real_generator_eigenvalue": 0.03265639375022331,
+    "finite_A_power50": true,
+    "coefficients_A": 589824,
+    "note": "Stability is in learned coordinates; spectral radius alone does not bound transient amplification or decoded prediction error.",
+    "decoder_linear_C": {
+      "rank_at_float32_relative_tolerance": 767,
+      "tolerance": 0.00037288254154117925,
+      "min_singular_value": 2.4207299457080742e-05,
+      "operator_norm2": 4.072871707073787,
+      "condition_number2": 168249.73451891818,
+      "note": "If C is invertible, decoded rollout is (C A C^-1)^h R(x0), R=s C E(x0/s). A nonlinear encoder and a square linear decoder do not by themselves establish physical nonlinear conjugacy."
+    }
+  },
+  "closure": {
+    "fit30_prefix500": {
+      "learned_one_step_rmse": 0.13130349413793482,
+      "learned_persistence_rmse": 0.1570208837976652,
+      "learned_rmse_ratio_vs_persistence": 0.8362167564101254,
+      "relative_rmse_to_learned_state_rms": 0.4358280551590654,
+      "images": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33
+      ],
+      "source_updates": [
+        0,
+        500
+      ],
+      "post_test_diagnostic_only": true,
+      "units": "learned normalized coordinates; not raw native channels"
+    },
+    "holdout_future_diagnostic": {
+      "learned_one_step_rmse": 0.1889912968686509,
+      "learned_persistence_rmse": 0.1536822761094073,
+      "learned_rmse_ratio_vs_persistence": 1.2297533694393419,
+      "relative_rmse_to_learned_state_rms": 0.5968738008668748,
+      "images": [
+        8,
+        9,
+        10,
+        11
+      ],
+      "source_updates": [
+        500,
+        1000
+      ],
+      "post_test_diagnostic_only": true,
+      "units": "learned normalized coordinates; not raw native channels"
+    }
+  },
+  "decoded_J128_bitwise_equal_to_full_forecast_slice": true,
+  "internal_validation_baselines": {
+    "origin_updates": 300,
+    "images": [
+      28,
+      29,
+      30,
+      31,
+      32,
+      33
+    ],
+    "rows": [
+      {
+        "horizon_updates": 10,
+        "static_EDMD_rmse": 0.20014189156618808,
+        "persistence_rmse": 0.1879190798456795
+      },
+      {
+        "horizon_updates": 20,
+        "static_EDMD_rmse": 0.2515587080943786,
+        "persistence_rmse": 0.22278377006155708
+      },
+      {
+        "horizon_updates": 50,
+        "static_EDMD_rmse": 0.2651362079560134,
+        "persistence_rmse": 0.19296482455968458
+      },
+      {
+        "horizon_updates": 100,
+        "static_EDMD_rmse": 0.3558835396818743,
+        "persistence_rmse": 0.20670326617594356
+      },
+      {
+        "horizon_updates": 200,
+        "static_EDMD_rmse": 0.5953853263124977,
+        "persistence_rmse": 0.24562620031388047
+      }
+    ],
+    "static_EDMD_mean5_rmse": 0.3336211347221904,
+    "persistence_mean5_rmse": 0.21119942819134904
+  },
+  "reconstruction_origin": {
+    "per_image": [
+      {
+        "image_index": 8,
+        "mse_full768": 0.007367447303962206,
+        "mse_J128": 0.0049558799367063824
+      },
+      {
+        "image_index": 9,
+        "mse_full768": 0.004482850250417412,
+        "mse_J128": 0.00235594043263095
+      },
+      {
+        "image_index": 10,
+        "mse_full768": 0.00771772465833659,
+        "mse_J128": 0.003921447756323237
+      },
+      {
+        "image_index": 11,
+        "mse_full768": 0.004406778859860353,
+        "mse_J128": 0.0025563759511576965
+      }
+    ],
+    "rmse_full768": 0.07741899165026718,
+    "rmse_J128": 0.0587146576180477
+  },
+  "interpretation": "Reconstruction RMSE is a measured encoder/decoder error, not a rigorous lower bound on forecast RMSE. Closure residual uses true future encoder states only after test; no forecast consumes them."
+}

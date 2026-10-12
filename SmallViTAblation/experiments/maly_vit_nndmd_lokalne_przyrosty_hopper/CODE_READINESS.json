@@ -1,0 +1,42 @@
+{
+  "phase": "code_CPU_validated_pending_remote_GPU_guard",
+  "updated": "2026-10-02T18:52:38.540118+00:00",
+  "code_ready": true,
+  "cpu_validated": true,
+  "gpu_model_validated": false,
+  "submitted_full_fit": false,
+  "actual_training_steps": 0,
+  "cpu_tests": 19,
+  "CPU_log_sha256": "abd0e007daeaa60526d6495e2146315456e0eedae258f54369262e85847c6a92",
+  "CPU_proofs": {
+    "4": {
+      "max_gradient_error": 3.725290298461914e-09,
+      "max_weights_error": 1.4901161193847656e-08,
+      "global_batches": [
+        32,
+        28
+      ]
+    },
+    "11": {
+      "max_gradient_error": 5.587935447692871e-09,
+      "max_weights_error": 1.4901161193847656e-08,
+      "global_batches": [
+        32,
+        28
+      ]
+    }
+  },
+  "hashes": {
+    "model.py": "d47cc45f8872d99a273fcb52d8cad7e0e68cddb6c1bcb363be3f040dbb9ceca6",
+    "state.py": "f9b7289da4f225f99dce21b6021922f5405aec0d3c16f0f122c290a83e7726b2",
+    "train.py": "0272af7aed10a1dccf6b29e9bc2297a635061aefc944f9b6f8c634d1990c1b4d",
+    "gpu_smoke.py": "97633c83b6c3d128252d7918680665f57dffc4e088109387e2d776ff07424026",
+    "CONFIG.json": "d0df5a71d6caa6a41eb10c0156b518b0abf709ceb48fcb5090e3353ae259311c",
+    "PLAN_MODELU.md": "4e77503e44531e20fe13e27c2cf3d75bf7b0329753dba344e62800539388f326",
+    "test_expanded.py": "db14a018f27d774bef54f0a64084e2d0e03941ddc7757e12b5b9554981cd6dc4",
+    "test_driver.py": "6fb14d7de253943ce4278182f64f0ffa276f5a726f7b52a493aae223d1b0ead6",
+    "test_distributed.py": "28b305473ca8d6afb4d09f9fd7bfb4ea69a171538f1c7299499500a537286974"
+  },
+  "scope": "new late-window anchored residual; no localGPU fitting",
+  "runtime_cpu": "PyKoopman1.2.1, Torch2.1.2+cu121 on CPU; remoteGPU guard still required"
+}

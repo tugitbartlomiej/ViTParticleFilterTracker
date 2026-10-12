@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "checked_utc": "2026-10-09T01:50:13.926345+00:00",
+  "indices": [
+    91,
+    684,
+    0
+  ],
+  "count_images": 3,
+  "count_panel_images": 2,
+  "statuses": {
+    "success": 1,
+    "budget_exhausted": 2
+  },
+  "first_success_steps": {
+    "91": null,
+    "684": 19,
+    "0": null
+  },
+  "exact_match_counts_vs_old": {
+    "before": 3,
+    "step_100": 3,
+    "step_500": 3
+  },
+  "max_state_abs_error_vs_old_at_0_100_500": 0.0,
+  "max_telemetry_abs_error_vs_old": 0.0,
+  "weights_buffers_unchanged": true,
+  "analysis_pca32_basis_sha256": "8eb0de248d837cbcd81945c94e7210bf27165c3e077f1df1f78831ea3783845b",
+  "analysis_pca32_energy_audit": {
+    "train": {
+      "images": 501,
+      "state_samples": 24048,
+      "movement_samples": 16032,
+      "state_energy_total": 26479243.863065034,
+      "state_energy_captured": 24434241.04037265,
+      "state_energy_fraction": 0.922769591410241,
+      "movement_energy_total": 25320202.66345856,
+      "movement_energy_captured": 23193621.573393732,
+      "movement_energy_fraction": 0.9160124775330549
+    },
+    "validation": {
+      "images": 167,
+      "state_samples": 8016,
+      "movement_samples": 5344,
+      "state_energy_total": 9575555.27754546,
+      "state_energy_captured": 8702005.737418408,
+      "state_energy_fraction": 0.9087729625272476,
+      "movement_energy_total": 9687318.540550437,
+      "movement_energy_captured": 8750087.671722595,
+      "movement_energy_fraction": 0.9032517755140744
+    },
+    "test": {
+      "images": 128,
+      "state_samples": 6144,
+      "movement_samples": 4096,
+      "state_energy_total": 7377427.753533979,
+      "state_energy_captured": 6745928.381447083,
+      "state_energy_fraction": 0.9144011445202712,
+      "movement_energy_total": 6947100.97852219,
+      "movement_energy_captured": 6283079.5570243,
+      "movement_energy_fraction": 0.9044174795283971
+    }
+  },
+  "cuda_peak_memory_allocated_bytes": 105183744,
+  "cuda_peak_memory_reserved_bytes": 127926272,
+  "device": "NVIDIA H100 PCIe",
+  "smoke_output_bytes": 230279930,
+  "benchmark": {
+    "basis": "three-image smoke; includes success and budget-exhausted paths; two panel images",
+    "median_optimization_projection_seconds_per_image": 5.028752740472555,
+    "median_total_seconds_per_image": 5.7746999859809875,
+    "seconds_per_real_update": 0.01005750548094511,
+    "eight_gpu_wall_seconds_simple": 1085.6435973644257,
+    "eight_gpu_wall_hours_simple": 0.3015676659345627,
+    "upper_budget_updates": 750000,
+    "production_panel_images": 64,
+    "raw_tensor_budget_bytes": 22987801728,
+    "dense_export_bytes": 1454400000,
+    "compression_credit_assumed": 0
+  },
+  "records": [
+    {
+      "index": 91,
+      "status": "budget_exhausted",
+      "first_success_step": null,
+      "timing_seconds": {
+        "optimization_projection_serialization": 66.9801442520693,
+        "optimization_projection": 52.84148915018886,
+        "per_real_update": 0.10568297830037773
+      },
+      "bytes": 109549861
+    },
+    {
+      "index": 684,
+      "status": "success",
+      "first_success_step": 19,
+      "timing_seconds": {
+        "optimization_projection_serialization": 5.7746999859809875,
+        "optimization_projection": 5.028752740472555,
+        "per_real_update": 0.01005750548094511
+      },
+      "bytes": 109549771
+    },
+    {
+      "index": 0,
+      "status": "budget_exhausted",
+      "first_success_step": null,
+      "timing_seconds": {
+        "optimization_projection_serialization": 5.048598452471197,
+        "optimization_projection": 4.355274201370776,
+        "per_real_update": 0.008710548402741552
+      },
+      "bytes": 11180298
+    }
+  ]
+}

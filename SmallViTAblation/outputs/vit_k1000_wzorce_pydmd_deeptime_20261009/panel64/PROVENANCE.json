@@ -1,0 +1,93 @@
+{
+  "status": "complete",
+  "elapsed_seconds": 73.38815140724182,
+  "job_id": "1825171",
+  "libraries": {
+    "pydmd": {
+      "version": "2025.8.1",
+      "source": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/.venv/lib/python3.11/site-packages/pydmd/dmdc.py",
+      "sha256": "12d7935cf2192f400f87e8f2dabc6096749463d0851d0ded14434d57ba40dafe"
+    },
+    "deeptime": {
+      "version": "0.4.5",
+      "source": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/.venv/lib/python3.11/site-packages/deeptime/decomposition/_vamp.py",
+      "sha256": "4872c21c506e97d02f43e9490c810954b942f1f70fb039b4128ccd3c635fcd5b"
+    },
+    "numpy": {
+      "version": "2.2.6"
+    },
+    "scipy": {
+      "version": "1.15.3"
+    },
+    "scikit-learn": {
+      "version": "1.6.1"
+    }
+  },
+  "source_hashes": {
+    "temporal_core.py": "ace40b2635a0973de5c4aa18f0b50f317993281ae0e220266b07dde4e1d7fd2a",
+    "analiza_temporalna.py": "dfc6dbeb53f6e9176f5a49b417bcf22164fd12dac9be72ecd82a5e066f79f515",
+    "submit_after_merge.py": "ab6089e80ef501e41494453f6203a0aa72c12dcf1179540606fb2b61dac93ea3",
+    "podsumuj_smoke.py": "8154a98b4114587d5c5914316fdbc6739c9f7ed322f17dacf29bbcd2fd209ce4",
+    "test_pipeline.py": "ced0410ad0849156b85907ddebc8f961080cc02a828a43c3ef7e459f33a0d034",
+    "analiza_populacji.py": "c2a0ac2f9f3427949b080039c455e63492e08cf60e6d942b345112c71bf92577"
+  },
+  "arguments": {
+    "old_root": null,
+    "panel_manifest": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_replay900k_co5_20261009/results/merged/TEMPORAL_PANEL_MANIFEST.json",
+    "output": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wzorce_pydmd_deeptime_20261009/results/panel64",
+    "rank": 16,
+    "max_windows": 80
+  },
+  "train_only_fit_images": [
+    20,
+    39,
+    136,
+    171,
+    246,
+    269,
+    353,
+    372,
+    385,
+    426,
+    440,
+    472,
+    500,
+    526,
+    556,
+    588,
+    617,
+    628,
+    664,
+    742,
+    797,
+    862,
+    941,
+    966,
+    1027,
+    1102,
+    1153,
+    1178,
+    1184,
+    1271,
+    1298,
+    1327,
+    1337,
+    1393,
+    1397,
+    1415,
+    1439,
+    1468,
+    1472,
+    1490
+  ],
+  "video_disjoint": true,
+  "input_panel_images": 64,
+  "input_trajectories": 1024,
+  "transitions": 512000,
+  "max_adam_alignment_abs": 9.537428304895457e-07,
+  "analytical_rank": 16,
+  "metric_dimensions": 768,
+  "max_windows_per_trajectory_phase_horizon": 80,
+  "scope": "Selected full768 control trajectories, not all900000. Displacement PCA fitted only train. Residual outside basis held at rollout start. Phases and future controls are oracle information. No detection evaluation/corrector export.",
+  "knownB_interpretation": "B=I after projecting analytically clamped Adam update from pre-step g,m,v,lr and true current state; teacher-forced integration upper baseline, not identified causality or deployable predictor."
+}

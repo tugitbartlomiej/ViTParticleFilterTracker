@@ -109,8 +109,13 @@ def main():
 
     q = Z[0] / (np.linalg.norm(Z[0], axis=1, keepdims=True) + 1e-9)
     for i, (e, _, r) in enumerate(obrazy):
+        a = fig.add_subplot(gs[3, i]); a.set_axis_off()
+        if i == 0:                      # obraz SD sam ze sobą dałby same jedynki: pokazujemy długość jego tokenów
+            a.imshow(np.linalg.norm(Z[0], axis=1).reshape(20, 30), cmap='viridis')
+            a.set_title('SD: długość tokenów', fontsize=7, color=kol[r])
+            continue
         zi = Z[i] / (np.linalg.norm(Z[i], axis=1, keepdims=True) + 1e-9)
-        a = fig.add_subplot(gs[3, i]); a.imshow((q * zi).sum(1).reshape(20, 30), cmap='magma', vmin=0, vmax=1); a.set_axis_off()
+        a.imshow((q * zi).sum(1).reshape(20, 30), cmap='magma', vmin=0, vmax=1)
         a.set_title(f'{e.split(" ")[0]}: tokeny vs SD', fontsize=7, color=kol[r])
     fig.suptitle('Podobieństwo cech: obraz SD po optymalizacji warunku (czerwony), zdjęcie celu (czarny), '
                  'A = najbliższe obrazowi SD (pomarańczowe), B = najbliższe zdjęciu celu (niebieskie)', fontsize=13)

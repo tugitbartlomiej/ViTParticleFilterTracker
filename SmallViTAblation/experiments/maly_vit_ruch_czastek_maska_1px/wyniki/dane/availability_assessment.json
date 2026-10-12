@@ -1,0 +1,47 @@
+{
+  "measured_result_classification": "SMOKE / preliminary only: proba_s47 steps 60,120; not full warmup history",
+  "why_not_selected": "Earlier instruction requested common seed47 segment <=1000 updates and no branching after1000. The full run has only one local checkpoint within that interval. No intrinsic technical obstacle to a separate 1000->4500 bez measurement.",
+  "preferred_future_pair": [
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_petla_sila_tozsamosci\\wyniki_eden\\petla_s47\\wspolny\\k02.pt",
+      "relative_path": "experiments/maly_vit_petla_sila_tozsamosci/wyniki_eden/petla_s47/wspolny/k02.pt",
+      "bytes": 35212057,
+      "selected": false,
+      "sha256": "b817ea5f4fd9bce64f263c3d1477cba2592d3b813ed5d4a1a425eec62d122913",
+      "step": 1000,
+      "architecture_matches": true,
+      "state_sha256": "0694e73509cf4a481f4dd8b718d692f254c8434725cd9a5043c0413f10d9c8fb",
+      "reason": "not_selected_other_run_or_branch_or_single_checkpoint",
+      "verified_step": 1000,
+      "step_evidence": "Checkpoint krok plus all three BatchNorm num_batches_tracked"
+    },
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_petla_sila_tozsamosci\\wyniki_eden\\petla_s47\\bez\\wagi_koncowe.pth",
+      "relative_path": "experiments/maly_vit_petla_sila_tozsamosci/wyniki_eden/petla_s47/bez/wagi_koncowe.pth",
+      "bytes": 11744005,
+      "selected": false,
+      "sha256": "a04e1af7586b75c9434bbff2fe89630ea2fcc081a06106b56f44e8757e5f492c",
+      "step": null,
+      "architecture_matches": true,
+      "state_sha256": "87ff532c9cc8050a011666977660fff712799400fbce8e4c45bc1563978dab87",
+      "reason": "not_selected_other_run_or_branch_or_single_checkpoint",
+      "verified_step": 4500,
+      "step_evidence": "bez/KONIEC.json final evaluation step plus all three BatchNorm num_batches_tracked"
+    }
+  ],
+  "continuity_evidence": {
+    "run": "experiments/maly_vit_petla_sila_tozsamosci/wyniki_eden/petla_s47",
+    "seed": 47,
+    "code": "experiments/maly_vit_petla_sila_tozsamosci/kod/petla.py:133 loads wspolny/k02.pt for bez; line208 saves final state",
+    "interpretation": "One branch bez continuing common warmup; no mixing arms, seeds or independently initialized runs.",
+    "limitation": "Lineage supported by local code, run metadata and BN counters; not replayed by training."
+  },
+  "nagranie_s47_sily": {
+    "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\maly_vit_rownanie_latentu\\nagranie_s47_sily",
+    "weights_directory_exists": false,
+    "checkpoint_count_in_inventory": 0,
+    "note": "Contains recorded probe latents/forces and META.json, no local wagi checkpoints. Separate seed48 recording has k01000..k03000 every100; excluded as other seed."
+  },
+  "existing_measurements_modified": false,
+  "new_extraction_performed": false
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "start": 0,
+    "end": 20.333333333333307,
+    "title": "Od pikseli do etykiet tokenów",
+    "text": "W zbiorze mamy obrys cystotomu. Najpierw tworzymy z niego maskę pikseli. Potem dopasowujemy maskę do rozmiaru wejściowej klatki i nakładamy siatkę tokenów. Maska nie identyfikuje automatycznie semantycznych neuronów. Wskazuje miejsca obrazu przecinające narzędzie."
+  },
+  {
+    "start": 20.333333333333307,
+    "end": 39.83333333333329,
+    "title": "Nowa reguła: choć jeden piksel",
+    "text": "Zgodnie z twoim pomysłem wystarczy choć jeden piksel maski w danym polu. Wtedy zachowujemy cały token jako związany z narzędziem. Nie wymagamy już jednej czwartej pola. Przy zmniejszaniu maski zachowujemy także cienkie fragmenty, które zwykłe próbkowanie mogłoby zgubić."
+  },
+  {
+    "start": 39.83333333333329,
+    "end": 59.95833333333237,
+    "title": "Co przybywa po zmianie progu?",
+    "text": "Zielone pola przekraczają stary próg dwudziestu pięciu procent. Pomarańczowe to dodatkowe pola wybrane nową regułą. W dwunastu pełnych klatkach nowy próg wybrał od siedmiu do trzydziestu jeden tokenów narzędzia. Nadal zapisujemy wszystkie sześćset tokenów, także te leżące poza maską."
+  },
+  {
+    "start": 59.95833333333237,
+    "end": 80.66666666666737,
+    "title": "Etykieta nie oznacza czystej cechy",
+    "text": "Token z jednym pikselem narzędzia może w większości opisywać otoczenie. Dlatego oprócz etykiety zapisujemy dokładny udział pokrycia. Osobno wybieramy tło oddalone od maski. Dzięki temu możemy sprawdzić, czy efekt pochodzi z narzędzia, z jego brzegu, czy ze wspólnej zmiany całej sceny."
+  }
+]
