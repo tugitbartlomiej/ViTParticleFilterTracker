@@ -308,3 +308,49 @@ ForLLamaCloud/
 # .pyc nigdy - odwraca szerokie "!.sessions/tools/**"
 **/__pycache__/
 *.pyc
+
+# ============================================================
+# DUŻE DANE NAUKOWE (2026-10-12) - nie do repo
+# Twardy limit rozmiaru pilnuje hook .git/hooks/pre-commit (5 MB).
+# ============================================================
+
+# Surowe tablice i bazy (latenty, trajektorie, pamięć mapowana)
+*.q16
+*.f16
+*.f32
+*.f64
+*.memmap
+*.mmap
+*.hdf5
+*.hdf
+*.zarr/
+*.lmdb
+*.parquet
+*.feather
+*.arrow
+*.db
+*.sqlite
+*.sqlite3
+*.duckdb
+*.faiss
+*.index
+*.tsv
+
+# Manifesty i rankingi całych zbiorów (setki MB tekstu)
+**/MANIFEST*.jsonl
+**/manifest*.jsonl
+**/RANKING*.csv
+**/*_annotation.csv
+**/input/*.csv
+**/inventory_full.json
+**/LISTA_PLIKOW.csv
+
+# Katalogi z danymi pośrednimi SmallViTAblation
+SmallViTAblation/tmp/
+SmallViTAblation/feature_cache/
+SmallViTAblation/outputs/ruch_czasteczek_gui/
+SmallViTAblation/outputs/audyt_miejsca_eden_*/plan_sprzatania_calosci/
+SmallViTAblation/**/wejscia/
+**/inventory_cache/
+**/local_inputs/
+**/cancelled_*/
