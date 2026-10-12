@@ -1,0 +1,208 @@
+% Diagram MałegoViT i bloku transformera z odczytem „lasery i koloidy” (2026-10-12).
+% Źródło architektury: assets/RuchCzasteczek_ViT_szklo_2026-10/07_kod/eden/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py
+% Kompilacja: pdflatex diagram_maly_vit.tex
+\documentclass[a4paper,landscape,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage[margin=1.2cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds,calc,decorations.pathreplacing}
+\usepackage{booktabs}
+\pagestyle{empty}
+
+\definecolor{konw}{HTML}{4C72B0}
+\definecolor{tok}{HTML}{55A868}
+\definecolor{uwaga}{HTML}{C44E52}
+\definecolor{mlp}{HTML}{DD8452}
+\definecolor{glowa}{HTML}{8172B3}
+\definecolor{szary}{HTML}{666666}
+
+\tikzset{
+  kl/.style={draw, rounded corners=3pt, thick, align=center, minimum height=1.25cm, inner sep=4pt, font=\small},
+  str/.style={-{Stealth[length=2.6mm]}, thick},
+  wym/.style={font=\scriptsize\itshape, text=szary},
+  fiz/.style={draw, dashed, rounded corners=3pt, align=left, font=\footnotesize, inner sep=5pt},
+}
+
+\begin{document}
+
+%======================================================================= strona 1
+\begin{center}
+{\LARGE\bfseries MałyViT: cała sieć}\\[2pt]
+{\small 6 bloków, wymiar 192, 3 głowy uwagi, MLP 192 → 768 → 192, ok.\ 2,9 mln parametrów, AdamW}
+\end{center}
+\vspace{4mm}
+
+\begin{center}
+\begin{tikzpicture}[node distance=7mm and 6mm]
+  \node[kl, fill=konw!12, minimum width=2.4cm] (img) {Klatka RGB\\[2pt]$480\times320\times3$};
+  \node[kl, fill=konw!25, right=of img, minimum width=3.6cm] (lod) {\textbf{Łodyga}\\4 $\times$ (konw.\ $3{\times}3$, krok 2)\\BN + GELU\\{\scriptsize 3→24→48→96→192}};
+  \node[kl, fill=tok!20, right=of lod, minimum width=2.9cm] (tok) {\textbf{600 tokenów}\\siatka $30\times20$\\$x_j\in\mathbb{R}^{192}$\\{\scriptsize patch = 16 px}};
+  \node[kl, fill=tok!10, below=9mm of tok, minimum width=2.9cm] (poz) {kodowanie pozycji\\2D sin-cos (stałe)};
+  \node[circle, draw, thick, right=6mm of tok, inner sep=1pt] (plus) {$+$};
+  \draw[str] (img) -- (lod);
+  \draw[str] (lod) -- (tok);
+  \draw[str] (tok) -- (plus);
+  \draw[str] (poz) -| (plus);
+
+  % stos bloków
+  \foreach \i in {1,...,6} {
+    \node[kl, fill=mlp!15, minimum width=1.25cm, minimum height=3.3cm, font=\footnotesize]
+      (b\i) at ($(plus)+(0.95+1.45*\i,0)$) {Blok\\\i\\[3pt]{\scriptsize uwaga}\\{\scriptsize +}\\{\scriptsize MLP}};
+  }
+  \draw[str] (plus) -- (b1);
+  \foreach \i [evaluate=\i as \j using int(\i+1)] in {1,...,5} { \draw[str] (b\i) -- (b\j); }
+  \node[fill=uwaga!10, draw=uwaga, thick, rounded corners=2pt, font=\scriptsize, align=center, above=4mm of b6] (lat)
+    {latent filmów: 768 aktywacji GELU\\w MLP bloku 6 (natężenia laserów)};
+  \draw[-{Stealth}, uwaga, thick] (lat) -- (b6);
+
+  \node[kl, fill=glowa!12, right=6mm of b6, minimum width=1.6cm] (ln) {Layer-\\Norm};
+  \node[kl, fill=glowa!25, right=of ln, minimum width=3.1cm] (gl) {\textbf{Głowa gęsta}\\(na każdym tokenie)\\Lin 192→192, GELU\\Lin 192→5};
+  \draw[str] (b6) -- (ln);
+  \draw[str] (ln) -- (gl);
+  \node[kl, fill=glowa!8, below=9mm of gl, minimum width=3.1cm] (wy) {mapa $30\times20\times5$:\\logit „tu środek narzędzia”\\$l,t,r,b$ do krawędzi ramki};
+  \draw[str] (gl) -- (wy);
+  \node[kl, fill=white, below=6mm of wy, minimum width=3.6cm, font=\footnotesize] (strata)
+    {strata: ogniskowa CenterNet\\na mapie środków\\$+\;2\,(1-\mathrm{GIoU})$ ramki};
+  \draw[str, dashed] (wy) -- (strata);
+
+  \draw[decorate, decoration={brace, amplitude=6pt, mirror}, thick]
+     ($(b1.south west)+(0,-0.15)$) -- ($(b6.south east)+(0,-0.15)$)
+     node[midway, below=8pt, font=\footnotesize, align=center] {czas ruchu tokenu jako cząstki = \textbf{głębokość}\\(każdy blok to jeden krok $x\leftarrow x+\Delta x$)};
+\end{tikzpicture}
+\end{center}
+
+\vspace{6mm}
+\noindent\begin{minipage}{\linewidth}\small
+\textbf{Odczyt.} Cząstka (koloid) to token $j$ ze stanem $x_j\in\mathbb{R}^{192}$. Kodowanie pozycji dodane raz na wejściu
+nadaje cząstkom adresy na siatce $30\times20$. Każdy z 6 bloków przesuwa każdą cząstkę o $\Delta x$: część od uwagi (siły między
+cząstkami) i część od MLP (768 laserów działających na każdą cząstkę osobno). Filmy pokazują natężenia laserów ostatniego bloku,
+czyli „plamkę ogniskową” na końcu toru. Uczenie przestawia lasery (wagi), a nie popycha tokeny bezpośrednio.
+\end{minipage}
+
+\newpage
+%======================================================================= strona 2
+\begin{center}
+{\LARGE\bfseries Jeden blok transformera (pre-LN, timm)}\\[2pt]
+{\small $x \leftarrow x + \mathrm{Uwaga}(\mathrm{LN}_1(x))$, \quad $x \leftarrow x + \mathrm{MLP}(\mathrm{LN}_2(x))$, \quad dla wszystkich 600 tokenów naraz}
+\end{center}
+\vspace{2mm}
+
+\begin{center}
+\begin{tikzpicture}[node distance=5mm and 5mm]
+  \node[kl, fill=tok!20, minimum width=1.7cm] (x) {$x$\\{\scriptsize $600\times192$}};
+  \node[kl, fill=gray!10, right=of x, minimum width=1.2cm] (ln1) {LN$_1$};
+  \node[kl, fill=uwaga!18, right=of ln1, minimum width=3.6cm] (att) {\textbf{Uwaga wielogłowa}\\3 głowy $\times$ 64\\$Q{=}xW_Q,\ K{=}xW_K,\ V{=}xW_V$\\$A=\mathrm{softmax}(QK^\top/\sqrt{64})$\\wyjście $A V W_O$};
+  \node[circle, draw, thick, right=of att, inner sep=1pt] (p1) {$+$};
+  \node[kl, fill=gray!10, right=of p1, minimum width=1.2cm] (ln2) {LN$_2$};
+  \node[kl, fill=mlp!20, right=of ln2, minimum width=2.4cm] (fc1) {\textbf{fc1}\\$192\to768$\\wiersze $w_c$, progi $b_c$};
+  \node[kl, fill=mlp!35, right=of fc1, minimum width=1.9cm] (gelu) {\textbf{GELU}\\$z_c$\\{\scriptsize 768 na token}};
+  \node[kl, fill=mlp!20, right=of gelu, minimum width=2.4cm] (fc2) {\textbf{fc2}\\$768\to192$\\kolumny $v_c$, $b_2$};
+  \node[circle, draw, thick, right=of fc2, inner sep=1pt] (p2) {$+$};
+  \node[kl, fill=tok!20, right=of p2, minimum width=1.4cm] (xn) {$x'$};
+
+  \draw[str] (x) -- (ln1); \draw[str] (ln1) -- (att); \draw[str] (att) -- (p1);
+  \draw[str] (p1) -- (ln2); \draw[str] (ln2) -- (fc1); \draw[str] (fc1) -- (gelu); \draw[str] (gelu) -- (fc2);
+  \draw[str] (fc2) -- (p2); \draw[str] (p2) -- (xn);
+  % połączenia rezydualne
+  \coordinate (r0) at ($(x.north)+(0,0.9)$);
+  \draw[str, szary] (x.north) -- (r0) -| (p1.north) node[pos=0.25, above, font=\scriptsize] {połączenie rezydualne};
+  \coordinate (r1) at ($(p1.north)+(0,1.25)$);
+  \draw[str, szary] ($(p1.north)+(0,0.12)$) -- ++(0,0) |- (r1) -| (p2.north) node[pos=0.25, above, font=\scriptsize] {połączenie rezydualne};
+
+  % odczyt fizyczny
+  \node[fiz, draw=uwaga, below=12mm of att, text width=5.3cm] (fA)
+    {\textbf{Siły między cząstkami.}\\Token $j$ przesuwa się w stronę\\średniej ważonej innych tokenów:\\$\Delta x_j=\sum_k A_{jk}\,(V x_k)\,W_O$.\\Jedyne bezpośrednie oddziaływanie\\cząstka–cząstka w sieci.};
+  \draw[dashed, uwaga] (att) -- (fA);
+  \node[fiz, draw=mlp, below=12mm of gelu, text width=11.2cm] (fM)
+    {\textbf{768 laserów działających na każdą cząstkę osobno.}\\
+     Laser $c$ ma \emph{dwa} wektory: celownik $w_c$ (kiedy świeci) i kierunek pchnięcia $v_c$.\\[2pt]
+     natężenie:\ \ $z_{jc}=\mathrm{GELU}\big(w_c\cdot \mathrm{LN}_2(x_j)+b_c\big)$\ \ (zależy od położenia cząstki)\\
+     pchnięcie:\ \ $\Delta x_j=\sum_{c=1}^{768} z_{jc}\,v_c + b_2$\ \ (jeden krok, nie ciągła siła)\\[2pt]
+     GELU $\geq -0{,}17$, więc laser pcha prawie tylko w stronę $+v_c$; pchnięcie w stronę $-v_c$ daje inny laser (przeciwlaser).};
+  \draw[dashed, mlp] (gelu) -- (fM);
+  \draw[dashed, mlp] (fc1.south) -- (fM.north west -| fc1.south);
+  \draw[dashed, mlp] (fc2.south) -- (fM.north east -| fc2.south);
+\end{tikzpicture}
+\end{center}
+
+\vspace{2mm}
+\noindent\begin{minipage}{\linewidth}\small
+\textbf{Gdzie jest „latent” filmów.} To wyjście GELU w MLP bloku 6, czyli 768 natężeń $z_{jc}$ na każdy z 600 tokenów.
+Aplikacja i filmy 1--6 układały token w 3D wzorem $p=\sum_c (z_c-\mu_c)\,d_c$ z kierunkami $d_c$ ze sfery Fibonacciego.
+Ma on postać fc2, tylko z kierunkami umownymi zamiast prawdziwych $v_c$. Wierny rzut to $p = P\,W_2\,(z-\mu)$, gdzie $P$ to stały rzut $192\to3$.
+\end{minipage}
+
+\newpage
+%======================================================================= strona 3
+\begin{center}
+{\LARGE\bfseries Lasery i przeciwlasery wokół jednej cząstki}\\[2pt]
+{\small rysunek poglądowy w 2D; w sieci kierunki $v_c$ leżą w 192 wymiarach}
+\end{center}
+
+\noindent
+\begin{minipage}[c]{0.47\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.92]
+  \draw[thick, gray!60] (0,0) circle (3.6);
+  \node[gray, font=\scriptsize] at (0,-3.95) {sfera laserów (pozycja lasera $=-\hat v_c$)};
+  % pary laser / przeciwlaser: kąt kierunku pchnięcia, natężenie lasera, natężenie przeciwlasera
+  \foreach \kat/\za/\zb/\kol in {0/1.00/0.35/mlp, 60/0.30/0.70/konw, 125/0.55/0.50/glowa} {
+    % laser A pcha w stronę \kat, stoi po przeciwnej stronie
+    \coordinate (A) at (\kat+180:3.6);
+    \coordinate (B) at (\kat:3.6);
+    \fill[\kol] (A) circle (3.6pt);
+    \fill[\kol!45] (B) circle (3.6pt);
+    \draw[\kol, line width=0.4pt+2.6pt*\za, opacity=0.25] (A) -- (0,0);
+    \draw[\kol!45, line width=0.4pt+2.6pt*\zb, opacity=0.25] (B) -- (0,0);
+    \draw[-{Stealth[length=2.2mm]}, \kol, thick] (0,0) -- (\kat:1.8*\za);
+    \draw[-{Stealth[length=2.2mm]}, \kol!55, thick] (0,0) -- (\kat+180:1.8*\zb);
+  }
+  % wypadkowa (suma wektorów powyżej)
+  \pgfmathsetmacro{\fx}{1.8*((1.00-0.35)*cos(0)+(0.30-0.70)*cos(60)+(0.55-0.50)*cos(125))}
+  \pgfmathsetmacro{\fy}{1.8*((1.00-0.35)*sin(0)+(0.30-0.70)*sin(60)+(0.55-0.50)*sin(125))}
+  \draw[-{Stealth[length=3.2mm]}, ultra thick, uwaga] (0,0) -- (\fx,\fy) node[right, font=\small] {$\Delta x_j$};
+  \fill[tok] (0,0) circle (5pt);
+  \node[font=\small, tok!60!black] at (-0.45,0.4) {$x_j$};
+  \node[font=\scriptsize, align=center] at (0,-4.55) {grubość wiązki i długość strzałki $\propto z_{jc}$\\ciemny laser i jasny przeciwlaser w tym samym kolorze};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.5\linewidth}\small
+\vspace{2mm}
+\textbf{Zasada przeciwlaserów.} Laser $c$ stoi na sferze w punkcie $-\hat v_c$ i świeci do środka, więc pcha cząstkę w stronę $+\hat v_c$.
+Wzdłuż osi pary laser–przeciwlaser wypadkowa to \emph{różnica natężeń}: $(z_c - z_{c'})\,|v|$.
+Przy równych natężeniach pchnięcia się znoszą. Blok daje jedno pchnięcie; cząstka nie musi spoczywać w punkcie równowagi.
+
+\vspace{2mm}
+\textbf{Pomiar na wagach bloku 6} (\texttt{PRZECIWLASERY.json}):\\[2pt]
+\begin{tabular}{@{}lccc@{}}
+\toprule
+krok (epoka) & partner $\cos<-0{,}5$ & $\cos(w_c,v_c)$ & $|v_c|$ \\
+\midrule
+0 (0)          & 0\,\%  & $0{,}00$  & 0,29 \\
+5300 (4,8)     & 2\,\%  & $-0{,}06$ & 0,34 \\
+11\,000 (10,1) & 17\,\% & $-0{,}12$ & 0,44 \\
+22\,974 (21,0) & 38\,\% & $-0{,}16$ & 0,64 \\
+\bottomrule
+\end{tabular}
+
+\vspace{2mm}
+Uczenie \textbf{tworzy} przeciwlasery: na starcie kierunki są losowe i żaden laser nie ma partnera.
+Ujemny $\cos(w_c,v_c)$ oznacza słabą siłę zwrotną: laser pcha cząstkę z powrotem, przeciw kierunkowi, z którego ją widzi (hipoteza).
+
+\vspace{3mm}
+\textbf{Dwa czasy, dwie role}\\[2pt]
+\begin{tabular}{@{}p{2.1cm}p{3.6cm}p{3.6cm}@{}}
+\toprule
+ & czas = głębokość & czas = uczenie \\
+\midrule
+token & cząstka ze stanem; działa na nią 768 sił w każdym bloku i uwaga & bez własnego stanu; przesuwa się jego punkt końcowy (plamka) \\
+laser (neuron) & źródło siły: celownik $w_c$, pchnięcie $v_c$ & cząstka: $w_c$, $v_c$, $b_c$ zmienia AdamW \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+
+\end{document}

@@ -52,7 +52,7 @@ SKALA = 2.0                                                                     
 Zr = np.maximum(Z, 0) / SKALA
 Mk = np.maximum(Z.mean(1), 0) / SKALA                                               # (806, 768) średnia po tokenach
 log(f'latent {Z.shape}, natężenia > 0,1: krok 0 {(Z[0] > 0.1).mean():.0%}, koniec {(Z[-1] > 0.1).mean():.0%}')
-sA, sQ, sC = (PchipInterpolator(kroki, X, axis=0) for X in (A3, Q3, C3))
+sA, sQ, sC, sCw = (PchipInterpolator(kroki, X, axis=0) for X in (A3, Q3, C3, Q3.mean(1)))       # sCw: środek wygładzony (ślad)
 
 # lasery na sferze Fibonacciego w kolejności kanałów (laser c stoi w kierunku d_c, tym samym, w którym ciągnie cząsteczki)
 LAS = DIR * R
@@ -78,8 +78,8 @@ def krok_w(t):
 
 sm = lambda u: (lambda v: v * v * (3 - 2 * v))(np.clip(u, 0, 1))
 KAM = [  # (czas, azymut, elewacja, odległość, cel)
-    (0, -60, 14, 128, None), (6, -30, 20, 116, None), (13, 0, 28, 108, None), (22, 30, 52, 72, None),
-    (27, 62, 38, 10, 'fok'), (32, 100, 30, 10, 'fok'), (36, 140, 42, 62, None), (73, 450, 42, 62, None), (79, 480, 36, 70, None)]
+    (0, -60, 14, 128, None), (6, -30, 20, 116, None), (13, 0, 28, 100, None), (22, 30, 52, 52, None),
+    (27, 62, 38, 6, 'fok'), (32, 100, 30, 6, 'fok'), (36, 140, 42, 54, None), (73, 450, 42, 54, None), (79, 480, 36, 70, None)]
 
 
 def kamera(t):
@@ -195,21 +195,21 @@ vao_sf, _ = dyn_vao(linie, sf, np.tile([0.25, 0.42, 0.62, 0.22], (len(sf), 1)))
 FN = lambda r, b=False: ImageFont.truetype('C:/Windows/Fonts/segoeuib.ttf' if b else 'C:/Windows/Fonts/segoeui.ttf', r)
 F_T, F_S, F_M = FN(34, True), FN(21), FN(17)
 TEKSTY = {
-    'lasery': ('768 laserów na sferze = 768 neuronów warstwy fc1 ostatniego bloku',
-               ['Każdy laser to jedna współrzędna latentu tokenu (wyjście GELU, 768 liczb). Laser stoi nad tym fragmentem obrazu,',
-                'który najmocniej oświetla pod koniec uczenia (przydział neuronów do punktów sfery — to ilustracja, nie pomiar).']),
-    'niebieskie': ('Niebieskie: z każdego lasera jedna wiązka do środka układu',
-                   ['Siła = średnie natężenie neuronu po wszystkich 600 tokenach zdjęcia — część wspólna wszystkich cząsteczek.',
-                    'Środek układu = środek masy chmury tokenów (położenia liczymy względem średniej zdjęcia).']),
+    'lasery': ('768 laserów na sferze Fibonacciego = 768 kanałów latentu',
+               ['Laser c stoi w kierunku d_c spirali Fibonacciego, tak jak kanał c w aplikacji (ten sam kolor z koła barw).',
+                'Każdy laser to jeden neuron warstwy fc1 ostatniego bloku (wyjście GELU): jedna współrzędna latentu tokenu.']),
+    'niebieskie': ('Niebieskie: z każdego lasera jedna wiązka do środka zdjęcia',
+                   ['Siła = średnie natężenie kanału po 600 tokenach. Środek zdjęcia = średnia położeń wszystkich cząsteczek.',
+                    'W tym układzie środek też się porusza, bo zmienia się średni latent zdjęcia.']),
     'zielone': ('Zielone: z każdego lasera 600 wiązek, po jednej do każdej cząsteczki',
-                ['Siła wiązki k → j = natężenie neuronu k dla tokenu j.  768 × 601 = 461 568 wiązek.',
-                 'Gdzie krzyżują się zielone wiązki, tam w kroku 0 stoją cząsteczki: siatka 30 × 20 patchy obrazu.']),
-    'zblizenie': ('Jedna cząsteczka z bliska: 768 wiązek zbiega się w jednym ognisku',
-                  ['Pasek u dołu = 768 natężeń tej cząsteczki, czyli jej współrzędne w latencie. Pozostałe wiązki przygaszone.',
-                   'Położenie ogniska w filmie = rzut tych 768 liczb na 3 kierunki największego ruchu w czasie uczenia.']),
-    'uczenie': ('Uczenie: natężenia się zmieniają, ogniska wędrują',
-                ['Strzałki = przesunięcie środka ogniska (średnia ±300 kroków) od miejsca z kroku 0 (szare kropki).',
-                 '1 jednostka = odstęp sąsiadów w kroku 0.  Tempo: epoki 0–2 przez 12 s, epoki 2–60 przez 26 s.']),
+                ['Siła wiązki c → j = natężenie kanału c dla tokenu j.  768 × 601 = 461 568 wiązek.',
+                 'Cząsteczka stoi w wypadkowej swoich 768 wiązek: p = s · Σ (z_c − μ_c) · d_c, jak w Przestrzeni makrowektorów aplikacji.']),
+    'zblizenie': ('Jedna cząsteczka z bliska: 768 wiązek ciągnie ją w 768 stron',
+                  ['Pasek u dołu = 768 natężeń tej cząsteczki. Mocniejszy kanał ciągnie mocniej w stronę swojego lasera.',
+                   'Sąsiedzi na obrazie nie muszą być sąsiadami tutaj: układ Fibonacciego to stały rzut 768 liczb na 3D, nie siatka obrazu.']),
+    'uczenie': ('Uczenie: natężenia się zmieniają, cząsteczki wędrują',
+                ['Strzałki = przesunięcie węzła (średnia ±300 kroków) od węzła z kroku 0 (szare kropki). Niebieski ślad = droga środka zdjęcia.',
+                 f'1 jednostka = odstęp sąsiadów w kroku 0 w tym układzie.  Tempo: epoki 0–2 przez 12 s, epoki 2–60 przez 26 s.']),
     'koniec': ('Po 60 epokach', []),
 }
 iou_x = kroki / EP
@@ -223,12 +223,12 @@ def nakladka(img, faza, kr, t, kod):
     d.text((WY / 2, 26), tyt, font=F_T, fill=(235, 240, 245, 255), anchor='mt')
     for n, s in enumerate(pod):
         d.text((WY / 2, 78 + 30 * n), s, font=F_S, fill=(255, 190, 120, 255), anchor='mt')
-    d.text((22, HY - 58), 'Dane: natężenia 768 neuronów i położenia ognisk z 806 checkpointów biegu 35 000 (zdjęcie TRAIN 0).',
+    d.text((22, HY - 58), 'Dane: natężenia 768 kanałów z 806 checkpointów biegu 35 000 (zdjęcie TRAIN 0). Położenia = stały rzut tych natężeń na kierunki Fibonacciego.',
            font=F_M, fill=(205, 210, 215, 255))
-    d.text((22, HY - 32), 'Ilustracja: lasery, sfera, kolory i rampa jasności wzdłuż wiązki. Zielone = wiązki do cząsteczek, niebieskie = do środka, '
+    d.text((22, HY - 32), 'Ilustracja: sfera, rampa jasności wzdłuż wiązki. Zielone = wiązki do cząsteczek, niebieskie = do środka zdjęcia, '
            'błękitne pierścienie = narzędzie.', font=F_M, fill=(205, 210, 215, 255))
     if faza in ('uczenie', 'koniec'):
-        d.text((WY - 30, 150), f'epoka {kr / EP:5.2f}   krok {kr:,.0f}'.replace(',', ' '), font=FN(26, True), fill=(235, 240, 245, 255), anchor='ra')
+        d.text((WY - 30, 150), f'epoka {pl(kr / EP, 2)}   krok ' + f'{kr:,.0f}'.replace(',', ' '), font=FN(26, True), fill=(235, 240, 245, 255), anchor='ra')
         x0, y0, sw, sh = WY - 400, HY - 250, 370, 150                                    # wykres IoU
         d.rectangle((x0, y0, x0 + sw, y0 + sh), fill=(11, 16, 20, 220), outline=(42, 51, 58, 255))
         px = x0 + iou_x / iou_x[-1] * sw; py = y0 + sh - np.clip(iou, 0, 1) * sh
@@ -252,13 +252,20 @@ def nakladka(img, faza, kr, t, kod):
             d.point((x0 + k, y0 + hh - hm), fill=(90, 160, 255, 255))
 
 
-PRZES = np.linalg.norm(Q3 - g3[None], axis=2)                                          # (806, 600) długość strzałek
+from scipy.spatial.distance import cdist                                              # noqa: E402
+_dm = cdist(A3[0], A3[0]); np.fill_diagonal(_dm, np.inf)
+A0 = float(np.median(np.sort(_dm, 1)[:, :4].mean(1)))                                 # odstęp sąsiadów w kroku 0 (ten układ)
+PRZES = np.linalg.norm(Q3 - g3[None], axis=2) / A0                                     # (806, 600) długość strzałek w A0
 PRZES_SR = PRZES.mean(1)
+WSP = np.linalg.norm(Q3[-1].mean(0) - g3.mean(0)) / A0                                 # przesunięcie środka zdjęcia
+WL = np.linalg.norm((Q3[-1] - Q3[-1].mean(0)) - (g3 - g3.mean(0)), axis=1).mean() / A0  # własne, względem środka
 pa, pz = (Z[0] > 0.1).mean(), (Z[-1] > 0.1).mean()
-KONIEC_TXT = [f'Średnie przesunięcie ogniska {PRZES[-1].mean():.2f} jednostki (narzędzie {PRZES[-1][narz].mean():.2f}, reszta {PRZES[-1][~narz].mean():.2f}).  '
-              f'IoU {iou[-1]:.2f}.',
-              f'Zielone wiązki rzadsze i mocniejsze: natężeń > 0,1 było {pa:.0%}, jest {pz:.0%}; najsilniejsza wiązka {Z[0].max():.1f} → {Z[-1].max():.1f}.']
-log(KONIEC_TXT)
+pl = lambda x, n=1: f'{x:.{n}f}'.replace('.', ',')
+KONIEC_TXT = [f'Średnie przesunięcie cząsteczki {pl(PRZES[-1].mean())} odstępu sąsiadów (narzędzie {pl(PRZES[-1][narz].mean())}, reszta {pl(PRZES[-1][~narz].mean())}).  '
+              f'IoU {pl(iou[-1], 2)}.',
+              f'Środek zdjęcia przesunął się o {pl(WSP)}, a cząsteczki względem środka średnio o {pl(WL)}: część ruchu jest wspólna dla całego zdjęcia.',
+              f'Zielone wiązki rzadsze i mocniejsze: natężeń > 0,1 było {pa:.0%}, jest {pz:.0%}; najsilniejsza wiązka {pl(Z[0].max())} → {pl(Z[-1].max())}.']
+log(KONIEC_TXT, "A0", A0, "S_UKL", S_UKL, "FOK", FOK)
 
 
 def interp_kr(kr):
@@ -271,7 +278,7 @@ def klatka(t):
     kr = krok_w(t)
     i, u = interp_kr(kr)
     I = Zr[i] * (1 - u) + Zr[i + 1] * u; M = Mk[i] * (1 - u) + Mk[i + 1] * u
-    A = sA(kr) if kr > 0 else A3[0]; Q = sQ(kr) if kr > 0 else Q3[0]
+    A = sA(kr) if kr > 0 else A3[0]; Q = sQ(kr) if kr > 0 else Q3[0]; C = sC(kr) if kr > 0 else C3[0]
     mvp, oko, f, skala = macierz(t)
     mvp_b = mvp.T.astype('f4').tobytes()
     buf_P.write(np.concatenate([A, np.zeros((TOK, 1))], 1).astype('f4').tobytes())
@@ -286,7 +293,7 @@ def klatka(t):
     ctx.blend_func = moderngl.ONE, moderngl.ONE
     linie['mvp'].write(mvp_b); linie['szer'].value = 1.6
     vao_sf.render(moderngl.LINES)
-    wiazki['mvp'].write(mvp_b); wiazki['przyc'].value = przyc; wiazki['wzm'].value = 1.0 + 30.0 * (1.0 - przyc) / 0.8; wiazki['fok'].value = FOK
+    wiazki['mvp'].write(mvp_b); wiazki['srodek'].value = tuple(C.astype(float)); wiazki['przyc'].value = przyc; wiazki['wzm'].value = 1.0 + 30.0 * (1.0 - przyc) / 0.8; wiazki['fok'].value = FOK
     if nieb > 0:
         wiazki['tryb'].value = 1; wiazki['wl'].value = 2.0; wiazki['gain'].value = 0.9 * nieb; wiazki['kolor'].value = (0.25, 0.5, 1.6)
         vao_w.render(moderngl.LINES, vertices=2, instances=NK)
@@ -295,35 +302,40 @@ def klatka(t):
         vao_w.render(moderngl.LINES, vertices=2, instances=NK * TOK)
     kropki['mvp'].write(mvp_b); kropki['skala'].value = skala; kropki['pierscien'].value = 0
     moc = (I.mean(0) / max(1e-6, Zr[0].mean(0).max()))                                  # moc lasera = średnie natężenie po tokenach
-    kl = np.concatenate([np.tile([0.75, 1.0, 0.85], (NK, 1)), (las_on * (0.35 + 0.65 * np.clip(moc, 0, 1)))[:, None] * 2.2], 1)
+    kl = np.concatenate([0.35 + 0.65 * KOL, (las_on * (0.35 + 0.65 * np.clip(moc, 0, 1)))[:, None] * 2.2], 1)
     v, b = dyn_vao(kropki, LAS, kl, np.full(NK, 0.6)); v.render(moderngl.POINTS); v.release(); b.release()
     ogn = sm((t - 15) / 6)                                                              # poświata w ogniskach = suma natężeń
     if ogn > 0:
         S = I.sum(1); jas = np.clip(S / np.percentile(Zr[0].sum(1), 90), 0, 1.6) * ogn * 0.9
         kc = np.concatenate([np.tile([0.55, 1.0, 0.7], (TOK, 1)), jas[:, None]], 1)
-        v, b = dyn_vao(kropki, A, kc, np.full(TOK, 0.38)); v.render(moderngl.POINTS); v.release(); b.release()
+        v, b = dyn_vao(kropki, A, kc, np.full(TOK, 0.38 * A0)); v.render(moderngl.POINTS); v.release(); b.release()
     if nieb > 0:
-        v, b = dyn_vao(kropki, np.zeros((1, 3)), np.array([[0.35, 0.6, 1.0, 2.5 * nieb]]), np.array([1.6])); v.render(moderngl.POINTS); v.release(); b.release()
+        v, b = dyn_vao(kropki, C[None], np.array([[0.35, 0.6, 1.0, 2.5 * nieb]]), np.array([1.6])); v.render(moderngl.POINTS); v.release(); b.release()
     # --- tonemapping do LDR, potem nakładki z przezroczystością ---
     fb_ldr.use(); ctx.disable(moderngl.BLEND)
     hdr.use(0); ton['eksp'].value = 1.0; quad.render(moderngl.TRIANGLE_STRIP)
     ctx.enable(moderngl.BLEND); ctx.blend_func = moderngl.ONE, moderngl.ONE_MINUS_SRC_ALPHA
     ref = sm((t - 21) / 3)
     if ref > 0:                                                                         # ogniska z kroku 0
-        v, b = dyn_vao(kropki, g3, np.tile([0.62, 0.66, 0.7, 0.7 * ref], (TOK, 1)), np.full(TOK, 0.16)); v.render(moderngl.POINTS); v.release(); b.release()
+        v, b = dyn_vao(kropki, g3, np.tile([0.62, 0.66, 0.7, 0.7 * ref], (TOK, 1)), np.full(TOK, 0.16 * A0)); v.render(moderngl.POINTS); v.release(); b.release()
     kropki['pierscien'].value = 1
-    v, b = dyn_vao(kropki, A[narz], np.tile([0.29, 0.94, 1.0, 0.9 * ogn], (int(narz.sum()), 1)), np.full(int(narz.sum()), 0.42)); v.render(moderngl.POINTS); v.release(); b.release()
+    v, b = dyn_vao(kropki, A[narz], np.tile([0.29, 0.94, 1.0, 0.9 * ogn], (int(narz.sum()), 1)), np.full(int(narz.sum()), 0.42 * A0)); v.render(moderngl.POINTS); v.release(); b.release()
     if przyc < 0.99:
-        v, b = dyn_vao(kropki, A[FOK:FOK + 1], np.array([[1.0, 1.0, 1.0, 0.8 * (1 - przyc) / 0.8]]), np.array([0.6])); v.render(moderngl.POINTS); v.release(); b.release()
+        v, b = dyn_vao(kropki, A[FOK:FOK + 1], np.array([[1.0, 1.0, 1.0, 0.8 * (1 - przyc) / 0.8]]), np.array([0.6 * A0])); v.render(moderngl.POINTS); v.release(); b.release()
     kropki['pierscien'].value = 0
+    if kr > 0:                                                                          # ślad środka zdjęcia
+        kk_ = np.linspace(0, kr, 200); sl = sCw(kk_)
+        seg_ = np.stack([sl[:-1], sl[1:]], 1).reshape(-1, 3)
+        linie['szer'].value = 4.0
+        v, b = dyn_vao(linie, seg_, np.tile([0.35, 0.6, 1.0, 0.9], (len(seg_), 1))); v.render(moderngl.LINES); v.release(); b.release()
     if kr > 0:                                                                          # strzałki g → Q
-        d_ = Q - g3; L = np.linalg.norm(d_, axis=1); ok = L > 0.03
-        dn = d_ / np.maximum(L, 1e-9)[:, None]; hl = np.minimum(0.32, 0.45 * L)[:, None]
+        d_ = Q - g3; L = np.linalg.norm(d_, axis=1); ok = L > 0.03 * A0
+        dn = d_ / np.maximum(L, 1e-9)[:, None]; hl = np.minimum(0.32 * A0, 0.45 * L)[:, None]
         bok = np.cross(dn, -f); bok /= np.maximum(np.linalg.norm(bok, axis=1), 1e-9)[:, None]
         tylek = Q - dn * hl
         seg = np.concatenate([np.stack([g3, Q], 1)[ok], np.stack([Q, tylek + bok * hl * 0.55], 1)[ok], np.stack([Q, tylek - bok * hl * 0.55], 1)[ok]]).reshape(-1, 3)
-        kk = np.tile([1.0, 0.70, 0.28, 0.92], (len(seg), 1))
-        linie['szer'].value = 3.2
+        kk = np.tile([1.0, 0.70, 0.28, 0.5], (len(seg), 1))
+        linie['szer'].value = 1.8
         v, b = dyn_vao(linie, seg, kk); v.render(moderngl.LINES); v.release(); b.release()
     ldr.build_mipmaps()
     raw = np.frombuffer(ldr.read(level=1), np.uint8).reshape(HY, WY, 4)[::-1]
@@ -338,8 +350,15 @@ def klatka(t):
 CZASY = np.arange(int(FAZY[-1][0] * FPS)) / FPS
 if PROBA:
     CZASY = np.array([10.0, 18.0, 24.0, 30.5, 45.0])
-ff = None if PROBA else ffmpeg(HERE / 'lasery_4_sfera.mp4', FPS)
+ff = None if PROBA else ffmpeg(HERE / 'lasery_6_fibonacci.mp4', FPS)
 for n, t in enumerate(CZASY):
     img = klatka(float(t))
     if PROBA:
-        im
+        img.save(HERE / f'lasery_6_proba_{t:04.1f}.png')
+    else:
+        ff.stdin.write(img.convert('RGBA').tobytes())
+        if n % 150 == 0:
+            log(f'klatka {n}/{len(CZASY)}')
+if ff:
+    ff.stdin.close(); ff.wait()
+log('gotowe')

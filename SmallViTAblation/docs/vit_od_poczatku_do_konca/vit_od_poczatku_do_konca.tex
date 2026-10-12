@@ -1,0 +1,577 @@
+% Vision Transformer od początku do końca — skrypt do nauki
+% kompilacja: lualatex vit_od_poczatku_do_konca.tex (dwa razy, dla spisu treści)
+\documentclass[11pt,a4paper]{article}
+\usepackage[polish]{babel}
+\usepackage{fontspec}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,backgrounds,shapes.geometric}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage[most]{tcolorbox}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{emb}{HTML}{4C72B0}
+\definecolor{att}{HTML}{DD8452}
+\definecolor{mlp}{HTML}{55A868}
+\definecolor{nrm}{HTML}{8172B3}
+\definecolor{cls}{HTML}{C44E52}
+\definecolor{pos}{HTML}{937860}
+\definecolor{tlo}{HTML}{F4F6FA}
+
+\newtcolorbox{intuicja}{colback=emb!6,colframe=emb!70,title=Intuicja,fonttitle=\bfseries,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{uwaga}{colback=att!8,colframe=att!80,title=Pułapka,fonttitle=\bfseries,boxrule=0.6pt,arc=2pt}
+\newtcolorbox{wzor}{colback=tlo,colframe=black!40,boxrule=0.4pt,arc=2pt}
+
+\lstset{language=Python,basicstyle=\ttfamily\small,keywordstyle=\color{emb}\bfseries,
+  commentstyle=\color{black!55}\itshape,stringstyle=\color{cls},frame=single,
+  framerule=0.3pt,rulecolor=\color{black!30},backgroundcolor=\color{tlo},
+  columns=fullflexible,keepspaces=true,showstringspaces=false,
+  literate={ą}{{\k{a}}}1 {ę}{{\k{e}}}1 {ó}{{\'o}}1 {ś}{{\'s}}1 {ł}{{\l}}1 {ż}{{\.z}}1 {ź}{{\'z}}1 {ć}{{\'c}}1 {ń}{{\'n}}1 {×}{{$\times$}}1 {→}{{$\to$}}1}
+
+\tikzset{
+  blok/.style={draw,rounded corners=2pt,minimum height=8mm,inner sep=4pt,font=\small,align=center},
+  strz/.style={-{Stealth[length=2.2mm]},thick},
+  tok/.style={draw,minimum width=5mm,minimum height=5mm,inner sep=0pt,font=\scriptsize},
+}
+
+\title{\textbf{Vision Transformer od początku do końca}\\[2mm]
+\large Jak obraz zamienia się w odpowiedź modelu, krok po kroku, z kształtami tensorów,\\ liczbami parametrów, treningiem i kodem}
+\author{Skrypt do nauki — projekt SmallViTAblation}
+\date{12 października 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%======================================================================
+\section{Cały obraz na jednej stronie}
+%======================================================================
+
+Vision Transformer (ViT, Dosovitskiy i in., 2020, \emph{„An Image is Worth 16×16 Words''}) to
+transformer z NLP, któremu zamiast słów podaje się \textbf{kawałki obrazu}. Cały model to sześć
+kroków:
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Pocięcie} obrazu $224\times224$ na siatkę $14\times14 = 196$ łatek $16\times16$ pikseli.
+  \item \textbf{Osadzenie} (\emph{patch embedding}): każda łatka (768 liczb) $\to$ wektor $D=768$ przez jedną warstwę liniową.
+  \item \textbf{Token klasy} \texttt{[CLS]} doklejony na początek i \textbf{pozycje} dodane do każdego tokenu $\Rightarrow$ $197\times768$.
+  \item \textbf{$L=12$ bloków enkodera}: każdy to \emph{uwaga} (tokeny wymieniają informację) + \emph{MLP} (każdy token przetwarzany osobno), oba z połączeniem rezydualnym.
+  \item \textbf{Głowica}: z końcowego tokenu \texttt{[CLS]} liniowo liczymy 1000 logitów $\to$ softmax $\to$ prawdopodobieństwa klas.
+  \item \textbf{Trening}: entropia krzyżowa, propagacja wsteczna, AdamW, rozgrzewka + kosinus, dużo augmentacji.
+\end{enumerate}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=5mm and 6mm]
+  % obraz
+  \node[draw,minimum size=22mm,fill=black!5] (img) {};
+  \foreach \i in {1,2,3} {\draw[black!40] ($(img.south west)+(\i*5.5mm,0)$) -- ++(0,22mm);
+                           \draw[black!40] ($(img.south west)+(0,\i*5.5mm)$) -- ++(22mm,0);}
+  \node[below=1mm of img,font=\scriptsize,align=center] {obraz $224^2$\\ siatka $14\times14$};
+  % łatki
+  \node[right=8mm of img,yshift=6mm,tok,fill=black!10] (p1) {};
+  \node[right=0.5mm of p1,tok,fill=black!10] (p2) {};
+  \node[right=0.5mm of p2,font=\scriptsize] (pd) {$\cdots$};
+  \node[right=0.5mm of pd,tok,fill=black!10] (p3) {};
+  \node[below=0mm of pd,font=\scriptsize,yshift=-1mm,align=center] {196 łatek\\ po $16{\cdot}16{\cdot}3{=}768$};
+  % embed
+  \node[blok,fill=emb!20,right=8mm of p3,yshift=-6mm] (E) {Linear\\ $768\!\to\!D$};
+  % tokeny
+  \node[right=7mm of E,tok,fill=cls!35] (c) {C};
+  \node[right=0.5mm of c,tok,fill=emb!25] (t1) {};
+  \node[right=0.5mm of t1,tok,fill=emb!25] (t2) {};
+  \node[right=0.5mm of t2,font=\scriptsize] (td) {$\cdots$};
+  \node[right=0.5mm of td,tok,fill=emb!25] (t3) {};
+  \node[above=1mm of t2,font=\scriptsize,text=pos] {$+$ pozycje};
+  \node[below=1mm of t2,font=\scriptsize] {$197\times D$};
+  \draw[strz] (img.east) -- ++(6mm,0) |- (p1.west);
+  \draw[strz] (p3.east) -- ++(2mm,0) |- (E.west);
+  \draw[strz] (E) -- (c);
+  % enkoder
+  \node[blok,fill=att!25,below=14mm of t1,minimum width=40mm] (enc) {Enkoder: $L\times$[ uwaga + MLP ]};
+  \draw[strz] (t2.south) ++(0,-4mm) -- (enc.north -| t2.south);
+  \node[blok,fill=cls!25,left=10mm of enc] (head) {LayerNorm\\ + Linear $D\!\to\!1000$};
+  \node[blok,fill=black!5,left=8mm of head] (sm) {softmax\\ „kot: 0,93''};
+  \draw[strz] (enc) -- node[above,font=\scriptsize]{tylko \texttt{[CLS]}} (head);
+  \draw[strz] (head) -- (sm);
+\end{tikzpicture}
+\caption{ViT w jednym rysunku. Kolor czerwony to token klasy, niebieskie to tokeny łatek.}
+\end{figure}
+
+\begin{intuicja}
+Myśl o każdym tokenie jak o \emph{notatce przyczepionej do jednej łatki}. Na starcie notatka mówi tylko
+„tu są takie piksele''. Każdy blok pozwala notatkom \emph{przeczytać siebie nawzajem} (uwaga) i
+\emph{przemyśleć to, co przeczytały} (MLP). Po 12 rundach notatka \texttt{[CLS]}, która nie należy do
+żadnej łatki, zebrała streszczenie całego obrazu i z niej czytamy odpowiedź.
+\end{intuicja}
+
+%======================================================================
+\section{Krok 1: obraz $\to$ łatki}
+%======================================================================
+
+Obraz $x\in\mathbb{R}^{H\times W\times C}$, standardowo $H=W=224$, $C=3$ (RGB, znormalizowane średnią
+i odchyleniem z ImageNetu). Wybieramy rozmiar łatki $P=16$. Liczba łatek:
+\begin{wzor}
+\[
+N=\frac{H}{P}\cdot\frac{W}{P}=\frac{224}{16}\cdot\frac{224}{16}=14\cdot14=196,
+\qquad
+x_p\in\mathbb{R}^{N\times(P^2C)}=\mathbb{R}^{196\times768}.
+\]
+\end{wzor}
+Każda łatka zostaje \emph{spłaszczona} do wektora $16\cdot16\cdot3=768$ liczb. Kolejność łatek to
+zwykłe czytanie wierszami: od lewego górnego rogu, wiersz po wierszu.
+
+\begin{uwaga}
+To, że łatka ma 768 liczb i model ma $D=768$, w ViT-B/16 jest \textbf{przypadkiem}. Te dwie liczby
+nie muszą być równe: ViT-S/16 ma łatki po 768 liczb, ale $D=384$.
+\end{uwaga}
+
+Nazwa „ViT-B/16'' oznacza: rozmiar \textbf{B}ase, łatka \textbf{16}. Mniejsza łatka, np. /8, daje
+$28\cdot28=784$ tokeny: dokładniej, ale uwaga kosztuje kwadratowo od liczby tokenów (sekcja~\ref{sec:koszt}).
+
+%======================================================================
+\section{Krok 2: osadzenie łatek (\emph{patch embedding})}
+%======================================================================
+
+Każdą łatkę mnożymy przez tę samą macierz:
+\begin{wzor}
+\[ z_i = x_p^{(i)}\,E + b,\qquad E\in\mathbb{R}^{768\times D},\; b\in\mathbb{R}^{D}. \]
+\end{wzor}
+W praktyce robi się to jedną konwolucją \texttt{Conv2d(3, D, kernel\_size=16, stride=16)}. Jądro
+$16\times16$ z krokiem 16 widzi każdą łatkę dokładnie raz, bez nakładania. To \emph{matematycznie
+to samo} co pocięcie i mnożenie macierzy, tylko szybsze.
+
+Wynik: $Z\in\mathbb{R}^{196\times D}$. Od tej chwili model nie widzi już pikseli, tylko 196 wektorów.
+
+\begin{intuicja}
+Wiersze macierzy $E$ (po przekształceniu z powrotem do $16\times16\times3$) wyglądają po treningu
+jak filtry krawędzi i kolorów, podobne do pierwszej warstwy sieci CNN. To jedyne miejsce, gdzie ViT
+„patrzy'' lokalnie.
+\end{intuicja}
+
+%======================================================================
+\section{Krok 3: token \texttt{[CLS]} i kodowanie pozycji}
+%======================================================================
+
+\subsection{Token klasy}
+Doklejamy na początek jeden \textbf{uczony} wektor $x_{\text{cls}}\in\mathbb{R}^{D}$. Nie pochodzi z
+żadnej łatki. Przez 12 bloków będzie zbierał informacje od wszystkich łatek, a na końcu tylko on
+trafia do klasyfikatora. Teraz mamy $N+1=197$ tokenów.
+
+Alternatywą, popularną w nowszych modelach, jest brak \texttt{[CLS]} i uśrednienie wszystkich
+tokenów na końcu (\emph{global average pooling}).
+
+\subsection{Kodowanie pozycji}
+Uwaga, opisana dalej, jest \textbf{niewrażliwa na kolejność}: gdyby przetasować tokeny, każdy dostałby
+ten sam wynik, tylko w innym miejscu. Model sam z siebie nie wie, gdzie leży łatka. Dlatego dodajemy
+do każdego tokenu wektor pozycji:
+\begin{wzor}
+\[
+Z_0=\big[\,x_{\text{cls}};\; x_p^{(1)}E;\; x_p^{(2)}E;\;\dots;\; x_p^{(N)}E\,\big]+E_{\text{pos}},
+\qquad E_{\text{pos}}\in\mathbb{R}^{(N+1)\times D}.
+\]
+\end{wzor}
+\begin{itemize}[itemsep=1pt]
+  \item W oryginalnym ViT $E_{\text{pos}}$ jest \textbf{uczona} (197 wektorów jak zwykłe wagi).
+  \item Alternatywa: \textbf{stałe sinusy i kosinusy 2D} (jak w MAE i w Twoim modelu, sekcja~\ref{sec:twoj}): połowa wymiarów koduje wiersz, połowa kolumnę.
+  \item Przy zmianie rozdzielczości uczoną $E_{\text{pos}}$ trzeba \emph{interpolować} na nową siatkę.
+\end{itemize}
+To jest \textbf{dodawanie}, nie doklejanie. Pozycja i treść dzielą te same $D$ wymiarów.
+
+%======================================================================
+\section{Krok 4: blok enkodera}
+%======================================================================
+
+Cały enkoder to $L$ identycznych (ale z osobnymi wagami) bloków. ViT używa wersji \textbf{pre-norm}:
+\begin{wzor}
+\[
+\begin{aligned}
+Z'_\ell &= Z_{\ell-1} + \mathrm{MSA}\big(\mathrm{LN}(Z_{\ell-1})\big) &&\text{(wymiana między tokenami)}\\
+Z_\ell  &= Z'_\ell + \mathrm{MLP}\big(\mathrm{LN}(Z'_\ell)\big) &&\text{(przetwarzanie każdego tokenu osobno)}
+\end{aligned}
+\]
+\end{wzor}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=6mm]
+  \node (in) {$Z_{\ell-1}$};
+  \node[blok,fill=nrm!25,above=6mm of in,minimum width=30mm] (ln1) {LayerNorm};
+  \node[blok,fill=att!30,above=of ln1,minimum width=30mm] (msa) {Multi-Head\\ Self-Attention};
+  \node[circle,draw,inner sep=1pt,above=of msa] (p1) {$+$};
+  \node[blok,fill=nrm!25,above=of p1,minimum width=30mm] (ln2) {LayerNorm};
+  \node[blok,fill=mlp!30,above=of ln2,minimum width=30mm] (mlp) {MLP\\ $D\!\to\!4D\!\to\!D$, GELU};
+  \node[circle,draw,inner sep=1pt,above=of mlp] (p2) {$+$};
+  \node[above=5mm of p2] (out) {$Z_{\ell}$};
+  \draw[strz] (in) -- (ln1); \draw[strz] (ln1) -- (msa); \draw[strz] (msa) -- (p1);
+  \draw[strz] (p1) -- (ln2); \draw[strz] (ln2) -- (mlp); \draw[strz] (mlp) -- (p2); \draw[strz] (p2) -- (out);
+  \draw[strz,black!60] ($(in.north)+(0,1mm)$) -- ++(-24mm,0) |- (p1.west) node[pos=0.25,left,font=\scriptsize]{rezyduum};
+  \draw[strz,black!60] ($(p1.north)+(0,1.5mm)$) -- ++(-24mm,0) |- (p2.west) node[pos=0.25,left,font=\scriptsize]{rezyduum};
+  \node[right=12mm of msa,align=left,font=\small,text width=60mm] {tokeny \textbf{rozmawiają ze sobą}:\\ każdy pobiera ważoną mieszankę innych};
+  \node[right=12mm of mlp,align=left,font=\small,text width=60mm] {każdy token \textbf{myśli sam}:\\ ta sama sieć dla wszystkich 197 tokenów};
+\end{tikzpicture}
+\caption{Jeden blok enkodera ViT (pre-norm). Kształt na wejściu i wyjściu jest ten sam: $197\times D$.}
+\end{figure}
+
+\subsection{LayerNorm}
+Dla \emph{każdego tokenu osobno} odejmujemy średnią i dzielimy przez odchylenie po jego $D$
+wymiarach, potem skalujemy i przesuwamy uczonymi $\gamma,\beta\in\mathbb{R}^D$:
+\[ \mathrm{LN}(z)=\gamma\odot\frac{z-\mu(z)}{\sqrt{\sigma^2(z)+\varepsilon}}+\beta. \]
+Normalizacja nie miesza tokenów ani przykładów w batchu (w przeciwieństwie do BatchNorm).
+
+\subsection{Połączenie rezydualne, czyli „strumień rezydualny''}
+Blok nie \emph{zastępuje} tokenu, tylko \textbf{dopisuje do niego poprawkę}: $Z_\ell=Z_{\ell-1}+\Delta$.
+Dzięki temu gradient płynie przez sumy prosto do wczesnych warstw, a każdy token jest jak
+\emph{cząstka}, która przez 12 bloków przesuwa się małymi krokami w przestrzeni $\mathbb{R}^D$.
+To jest dokładnie obraz, który oglądasz w swoich filmach o cząstkach.
+
+%======================================================================
+\section{Serce modelu: uwaga (self-attention)}
+\label{sec:uwaga}
+%======================================================================
+
+\subsection{Jedna głowa}
+Z wejścia $X\in\mathbb{R}^{n\times D}$ ($n=197$) liczymy trzy macierze tymi samymi tokenami, ale
+różnymi wagami:
+\begin{wzor}
+\[
+Q=XW_Q,\quad K=XW_K,\quad V=XW_V,\qquad W_\ast\in\mathbb{R}^{D\times d_k},
+\]
+\[
+\mathrm{Attention}(Q,K,V)=\underbrace{\mathrm{softmax}\!\Big(\frac{QK^\top}{\sqrt{d_k}}\Big)}_{A\;\in\;\mathbb{R}^{n\times n}}\,V .
+\]
+\end{wzor}
+
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{Query} $q_i$: „czego szukam?'' (pytanie tokenu $i$).
+  \item \textbf{Key} $k_j$: „co oferuję?'' (etykieta tokenu $j$).
+  \item \textbf{Value} $v_j$: „co przekażę, jeśli ktoś mnie wybierze?'' (treść tokenu $j$).
+  \item $q_i\cdot k_j$ mierzy dopasowanie. Softmax po $j$ zamienia wiersz dopasowań na wagi sumujące się do 1.
+  \item Wynik dla tokenu $i$: $\sum_j A_{ij}\,v_j$, czyli średnia ważona wartości wszystkich tokenów.
+  \item Dzielenie przez $\sqrt{d_k}$: bez niego iloczyny skalarne rosną z wymiarem, softmax staje się prawie jedynką w jednym miejscu, a gradienty znikają.
+\end{itemize}
+
+\subsection{Przykład liczbowy (3 tokeny, $d_k=2$)}
+Weźmy trzy tokeny i proste wagi:
+\[
+X=\begin{bmatrix}1&0\\0&1\\1&1\end{bmatrix},\;
+W_Q=\begin{bmatrix}1&0\\0&1\end{bmatrix},\;
+W_K=\begin{bmatrix}1&1\\0&1\end{bmatrix},\;
+W_V=\begin{bmatrix}2&0\\0&1\end{bmatrix}.
+\]
+Wtedy
+\[
+Q=X,\quad
+K=\begin{bmatrix}1&1\\0&1\\1&2\end{bmatrix},\quad
+V=\begin{bmatrix}2&0\\0&1\\2&1\end{bmatrix},\quad
+\frac{QK^\top}{\sqrt2}=\begin{bmatrix}0{,}707&0&0{,}707\\0{,}707&0{,}707&1{,}414\\1{,}414&0{,}707&2{,}121\end{bmatrix}.
+\]
+Softmax w każdym wierszu i mnożenie przez $V$:
+\[
+A=\begin{bmatrix}0{,}401&0{,}198&0{,}401\\0{,}248&0{,}248&0{,}503\\0{,}284&0{,}140&0{,}576\end{bmatrix},
+\qquad
+AV=\begin{bmatrix}1{,}604&0{,}599\\1{,}503&0{,}752\\1{,}720&0{,}716\end{bmatrix}.
+\]
+Odczyt: token 3 najbardziej „słucha'' samego siebie (0,576), a token 1 dzieli uwagę po równo między
+siebie i token 3. Każdy wiersz $A$ sumuje się do 1. Policz to raz na kartce, a uwaga przestanie być magią.
+
+\subsection{Wiele głów (multi-head)}
+Zamiast jednej uwagi o wymiarze $D$ robimy $h$ uwag po $d_k=D/h$ wymiarów, każdą z osobnymi
+wagami, i sklejamy wyniki:
+\begin{wzor}
+\[
+\mathrm{MSA}(X)=\big[\mathrm{head}_1;\dots;\mathrm{head}_h\big]\,W_O,\qquad
+\mathrm{head}_m=\mathrm{Attention}(XW_Q^{m},XW_K^{m},XW_V^{m}),\quad W_O\in\mathbb{R}^{D\times D}.
+\]
+\end{wzor}
+W ViT-B: $h=12$ głów po $d_k=64$. Każda głowa może patrzeć na co innego: jedna na sąsiadów,
+inna na cały obiekt, jeszcze inna na tło. Koszt jest taki sam jak jednej dużej głowy. W kodzie
+$W_Q,W_K,W_V$ wszystkich głów są w jednej warstwie \texttt{qkv = Linear(D, 3D)}.
+
+\begin{intuicja}
+Uwaga to \textbf{jedyne} miejsce w ViT, gdzie informacja przechodzi między łatkami. Już w
+pierwszym bloku łatka z lewego górnego rogu może czytać łatkę z prawego dolnego. Sieć CNN
+potrzebuje na to wielu warstw. Cena: ViT nie ma wbudowanego założenia, że sąsiedzi są ważniejsi,
+więc musi się tego \emph{nauczyć z danych}. Dlatego jest głodny danych.
+\end{intuicja}
+
+%======================================================================
+\section{MLP: myślenie każdego tokenu osobno}
+%======================================================================
+\begin{wzor}
+\[ \mathrm{MLP}(z)=\mathrm{GELU}(zW_1+b_1)\,W_2+b_2,\qquad W_1\in\mathbb{R}^{D\times4D},\;W_2\in\mathbb{R}^{4D\times D}. \]
+\end{wzor}
+Rozszerzenie do $4D=3072$ wymiarów, nieliniowość GELU ($\mathrm{GELU}(x)=x\,\Phi(x)$, gładka wersja
+ReLU), z powrotem do $D$. Ta sama sieć dla każdego tokenu. Około dwóch trzecich parametrów bloku
+siedzi właśnie tutaj. Ukryta warstwa $4D$ to miejsce, gdzie neurony „rozpoznają cechy''.
+
+%======================================================================
+\section{Krok 5: głowica i wyjście}
+%======================================================================
+Po $L$ blokach bierzemy końcowy token klasy i normalizujemy go:
+\[ y=\mathrm{LN}\big(Z_L^{(0)}\big)\in\mathbb{R}^{D},\qquad \text{logity}=yW_{\text{head}}+b,\quad W_{\text{head}}\in\mathbb{R}^{D\times K}. \]
+Dla ImageNetu $K=1000$. Prawdopodobieństwa: $p_k=\dfrac{e^{\text{logit}_k}}{\sum_j e^{\text{logit}_j}}$.
+Pozostałe 196 tokenów jest w klasyfikacji ignorowane. W detekcji i segmentacji jest odwrotnie:
+\textbf{każdy} token łatki dostaje własną głowicę, tak jak w Twoim modelu.
+
+%======================================================================
+\section{Śledzenie kształtów: ViT-B/16 od wejścia do wyjścia}
+%======================================================================
+Batch $B$ obrazów. To jest tabela, którą warto umieć odtworzyć z pamięci.
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Etap & Operacja & Kształt \\
+\midrule
+wejście & obraz RGB & $B\times3\times224\times224$ \\
+łatki & \texttt{Conv2d(3,768,16,16)} & $B\times768\times14\times14$ \\
+spłaszczenie & \texttt{flatten(2).transpose(1,2)} & $B\times196\times768$ \\
+\texttt{[CLS]} & \texttt{cat} na początek & $B\times197\times768$ \\
+pozycje & $+E_{\text{pos}}$ & $B\times197\times768$ \\
+\midrule
+w bloku: qkv & \texttt{Linear(768, 2304)} & $B\times197\times2304$ \\
+podział na głowy & \texttt{reshape, permute} & $3\times B\times12\times197\times64$ \\
+mapa uwagi & $QK^\top/8$, softmax & $B\times12\times197\times197$ \\
+ważona suma & $AV$ & $B\times12\times197\times64$ \\
+sklejenie głów & \texttt{transpose, reshape} & $B\times197\times768$ \\
+projekcja & $W_O$: \texttt{Linear(768,768)} & $B\times197\times768$ \\
+MLP & $768\to3072\to768$ & $B\times197\times768$ \\
+\midrule
+po 12 blokach & LN, wybór tokenu 0 & $B\times768$ \\
+głowica & \texttt{Linear(768,1000)} & $B\times1000$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%======================================================================
+\section{Liczenie parametrów}
+%======================================================================
+Wszystko można policzyć ręcznie. Dla ViT-B/16 ($D=768$, $L=12$, MLP $4D$, $K=1000$):
+
+\begin{center}
+\begin{tabular}{@{}lr@{}}
+\toprule
+Część & Parametry \\
+\midrule
+osadzenie łatek: $768\cdot768+768$ & 590\,592 \\
+token \texttt{[CLS]} & 768 \\
+pozycje: $197\cdot768$ & 151\,296 \\
+\midrule
+\multicolumn{2}{@{}l}{\emph{jeden blok:}}\\
+\quad qkv: $768\cdot2304+2304$ & 1\,771\,776 \\
+\quad projekcja $W_O$: $768\cdot768+768$ & 590\,592 \\
+\quad MLP $W_1$: $768\cdot3072+3072$ & 2\,362\,368 \\
+\quad MLP $W_2$: $3072\cdot768+768$ & 2\,360\,064 \\
+\quad 2× LayerNorm: $2\cdot2\cdot768$ & 3\,072 \\
+\quad \textbf{razem blok} & \textbf{7\,087\,872} \\
+12 bloków & 85\,054\,464 \\
+\midrule
+końcowy LayerNorm & 1\,536 \\
+głowica: $768\cdot1000+1000$ & 769\,000 \\
+\midrule
+\textbf{razem} & \textbf{86\,567\,656} $\approx$ 86,6 M \\
+\bottomrule
+\end{tabular}
+\end{center}
+Prawie cała masa (98\,\%) to bloki, a w bloku dwie trzecie to MLP. Skrót: blok ma około $12D^2$ parametrów
+($4D^2$ uwaga + $8D^2$ MLP).
+
+\subsection{Rodzina modeli}
+\begin{center}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Model & $D$ & bloki $L$ & głowy $h$ & MLP & parametry \\
+\midrule
+ViT-Ti/16 & 192 & 12 & 3 & 768 & 5,7 M \\
+ViT-S/16 & 384 & 12 & 6 & 1536 & 22 M \\
+ViT-B/16 & 768 & 12 & 12 & 3072 & 86 M \\
+ViT-L/16 & 1024 & 24 & 16 & 4096 & 304 M \\
+ViT-H/14 & 1280 & 32 & 16 & 5120 & 632 M \\
+\bottomrule
+\end{tabular}
+\end{center}
+We wszystkich $d_k=64$, z wyjątkiem Ti, gdzie $d_k=192/3=64$ też się zgadza.
+
+\subsection{Koszt obliczeń}
+\label{sec:koszt}
+Mapa uwagi ma $n\times n$ elementów na głowę, więc koszt uwagi rośnie jak $O(n^2D)$, a MLP jak $O(nD^2)$.
+Dla $n=197$ i $D=768$ dominuje MLP. Dla łatek /8 ($n=785$) albo dużych obrazów zaczyna dominować
+uwaga. Dlatego ViT do detekcji często używa uwagi w oknach (Swin, ViTDet).
+
+%======================================================================
+\section{Krok 6: trening}
+%======================================================================
+
+\subsection{Funkcja straty}
+Dla klasyfikacji: entropia krzyżowa między rozkładem modelu $p$ a prawdziwą klasą $c$:
+\[ \mathcal{L}=-\log p_c. \]
+Zwykle z \emph{label smoothing} ($\varepsilon=0{,}1$): cel to $0{,}9$ dla prawdziwej klasy i reszta rozdzielona po równo.
+
+\subsection{Jedna iteracja}
+\begin{lstlisting}
+for obrazy, etykiety in loader:            # B obrazów
+    logity = model(obrazy)                 # B×1000   (przejście w przód)
+    strata = F.cross_entropy(logity, etykiety, label_smoothing=0.1)
+    opt.zero_grad()
+    strata.backward()                      # gradient dla każdej z 86 M wag
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    opt.step()                             # AdamW przesuwa wagi
+    sched.step()                           # rozgrzewka + kosinus
+\end{lstlisting}
+
+\subsection{Typowy przepis (DeiT, trening na ImageNet-1k od zera)}
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Składnik & Wartość \\
+\midrule
+optymalizator & AdamW, $\beta=(0{,}9;\,0{,}999)$ \\
+learning rate & $5\cdot10^{-4}\cdot B/512$ \\
+weight decay & 0,05 (bez LN, biasów, pozycji) \\
+harmonogram & 5 epok rozgrzewki liniowej, potem kosinus do zera \\
+epoki & 300 \\
+augmentacje & RandAugment, Mixup 0,8, CutMix 1,0, Random Erasing \\
+regularyzacja & stochastic depth (drop path) 0,1, label smoothing 0,1 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{uwaga}
+Oryginalny ViT trenowany na samym ImageNet-1k (1,3 mln zdjęć) przegrywał z ResNetem. Wygrał dopiero
+po pretreningu na JFT-300M (300 mln zdjęć). Powód: brak wbudowanych założeń (lokalność, niezmienniczość
+na przesunięcie), które CNN ma za darmo. DeiT pokazał, że mocne augmentacje i regularyzacja
+wystarczają, żeby trenować na samym ImageNecie. Na małych zbiorach (tysiące obrazów) zwykły ViT
+od zera prawie zawsze potrzebuje pomocy: pretreningu, konwolucyjnej łodygi albo dużej augmentacji.
+\end{uwaga}
+
+\subsection{Rozgrzewka i kosinus}
+\[
+\eta(t)=\begin{cases}\eta_{\max}\,\dfrac{t}{T_w} & t<T_w\\[2mm]
+\tfrac12\eta_{\max}\Big(1+\cos\dfrac{\pi(t-T_w)}{T-T_w}\Big) & t\ge T_w\end{cases}
+\]
+Rozgrzewka jest w transformerach ważna: na starcie Adam ma złe szacunki wariancji gradientu, a duży
+krok rozwala uwagę (softmax nasyca się w jednym miejscu).
+
+\subsection{Pretrening i dostrajanie}
+W praktyce prawie nikt nie trenuje ViT od zera. Typowy schemat:
+\begin{enumerate}[itemsep=1pt]
+  \item \textbf{Pretrening} na dużych danych: nadzorowany (ImageNet-21k), albo samonadzorowany: DINO/DINOv2 (uczeń naśladuje nauczyciela), MAE (odtwarzanie 75\,\% zamaskowanych łatek), CLIP (dopasowanie obrazów do podpisów).
+  \item \textbf{Dostrajanie} (fine-tuning): nowa głowica, mały learning rate, często większa rozdzielczość z interpolacją pozycji.
+\end{enumerate}
+
+%======================================================================
+\section{Cały ViT w ~45 liniach PyTorcha}
+%======================================================================
+\begin{lstlisting}
+import torch, torch.nn as nn
+
+class Uwaga(nn.Module):
+    def __init__(self, D, h):
+        super().__init__()
+        self.h, self.dk = h, D // h
+        self.qkv = nn.Linear(D, 3 * D)          # Q, K, V wszystkich głów naraz
+        self.proj = nn.Linear(D, D)              # W_O
+    def forward(self, x):                        # x: B×n×D
+        B, n, D = x.shape
+        q, k, v = self.qkv(x).reshape(B, n, 3, self.h, self.dk).permute(2, 0, 3, 1, 4)
+        A = (q @ k.transpose(-2, -1)) * self.dk ** -0.5   # B×h×n×n
+        A = A.softmax(dim=-1)
+        y = (A @ v).transpose(1, 2).reshape(B, n, D)       # sklejenie głów
+        return self.proj(y)
+
+class Blok(nn.Module):
+    def __init__(self, D, h, r=4):
+        super().__init__()
+        self.ln1, self.ln2 = nn.LayerNorm(D), nn.LayerNorm(D)
+        self.att = Uwaga(D, h)
+        self.mlp = nn.Sequential(nn.Linear(D, r * D), nn.GELU(), nn.Linear(r * D, D))
+    def forward(self, x):
+        x = x + self.att(self.ln1(x))            # rezyduum 1
+        return x + self.mlp(self.ln2(x))         # rezyduum 2
+
+class ViT(nn.Module):
+    def __init__(self, obraz=224, P=16, D=768, L=12, h=12, K=1000):
+        super().__init__()
+        N = (obraz // P) ** 2
+        self.lat = nn.Conv2d(3, D, kernel_size=P, stride=P)   # pocięcie + osadzenie
+        self.cls = nn.Parameter(torch.zeros(1, 1, D))
+        self.pos = nn.Parameter(torch.randn(1, N + 1, D) * 0.02)
+        self.bloki = nn.Sequential(*[Blok(D, h) for _ in range(L)])
+        self.ln = nn.LayerNorm(D)
+        self.glowa = nn.Linear(D, K)
+    def forward(self, x):                        # B×3×224×224
+        x = self.lat(x).flatten(2).transpose(1, 2)            # B×196×D
+        x = torch.cat([self.cls.expand(len(x), -1, -1), x], 1) + self.pos
+        x = self.bloki(x)                                    # B×197×D
+        return self.glowa(self.ln(x[:, 0]))                  # B×K
+
+m = ViT()
+print(sum(p.numel() for p in m.parameters()))   # 86 567 656
+print(m(torch.randn(2, 3, 224, 224)).shape)     # torch.Size([2, 1000])
+\end{lstlisting}
+Ten kod daje dokładnie 86\,567\,656 parametrów, czyli wynik z tabeli. Gotowa implementacja
+produkcyjna: \texttt{timm.create\_model('vit\_base\_patch16\_224')}.
+
+%======================================================================
+\section{Twój mały ViT na tle standardowego}
+\label{sec:twoj}
+%======================================================================
+Model \texttt{MalyViT} z \texttt{assets/RuchCzasteczek\_ViT\_szklo\_2026-10/07\_kod/.../model.py} to
+ViT z tymi samymi blokami (\texttt{timm.Block}), ale zmienionym wejściem i wyjściem.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l>{\raggedright}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Element & Standardowy ViT-B/16 & \texttt{MalyViT} \\
+\midrule
+szerokość $D$ & 768 & 192 (jak ViT-Ti) \\
+bloki $L$ & 12 & 6 \\
+głowy & 12 po 64 & 3 po 64 \\
+MLP & 3072 & 768 \\
+wejście do tokenów & jedna konwolucja $16\times16$, krok 16 & \textbf{konwolucyjna łodyga}: 3× (conv+BN+akt.) $3\to24\to48\to96$, potem conv do 192 \\
+pozycje & uczone & stałe sin-cos 2D \\
+\texttt{[CLS]} & tak & \textbf{nie ma} \\
+głowica & z \texttt{[CLS]}: 1000 klas & \textbf{na każdym tokenie}: 5 liczb (mapa środka + odległości l, t, r, b do krawędzi ramki) \\
+zadanie & klasyfikacja & detekcja narzędzia (w stylu FCOS/CenterNet) \\
+parametry & 86,6 M & ok. 2,9 M \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Wnioski do nauki:
+\begin{itemize}[itemsep=2pt]
+  \item \textbf{Blok jest identyczny.} Wszystko z sekcji o uwadze i MLP stosuje się wprost do Twojego modelu. Jeden blok ma tam $4\cdot192^2+\dots\approx148$ tys. parametrów uwagi i 296 tys. MLP.
+  \item \textbf{Łodyga konwolucyjna} daje modelowi lokalność „za darmo''. To jeden z przepisów (Xiao i in., 2021, \emph{Early Convolutions Help Transformers See Better}) na trenowanie ViT na małym zbiorze od zera.
+  \item \textbf{Brak \texttt{[CLS]}}: każdy token łatki jest sam w sobie odpowiedzią. To dlatego w Twoich filmach każdy z 600 tokenów jest pełnoprawną cząstką, a nie tylko dostawcą informacji dla jednego tokenu klasy.
+  \item \textbf{Latent} zapisywany w Twoim kodzie to wyjście GELU w MLP ostatniego bloku: $n\times768$, czyli ukryta warstwa $4D$, a nie strumień rezydualny $n\times192$.
+\end{itemize}
+
+%======================================================================
+\section{Plan nauki i ćwiczenia}
+%======================================================================
+\begin{enumerate}[itemsep=3pt]
+  \item Policz ręcznie przykład uwagi z sekcji~\ref{sec:uwaga}. Potem zmień $W_K$ i sprawdź, jak zmienia się mapa $A$.
+  \item Przepisz z pamięci tabelę kształtów dla ViT-S/16 ($D=384$, $h=6$).
+  \item Policz parametry ViT-Ti/16 metodą z tabeli. Sprawdź kodem z sekcji o PyTorchu (\texttt{ViT(D=192, h=3)}).
+  \item Uruchom kod, wypisz \texttt{A} z pierwszego bloku i narysuj wiersz dla tokenu \texttt{[CLS]} jako obrazek $14\times14$.
+  \item Sprawdź eksperymentalnie, że bez pozycji model jest niewrażliwy na przetasowanie łatek: przetasuj tokeny i porównaj wyjście \texttt{[CLS]}.
+  \item Przeczytaj w tej kolejności: ViT (Dosovitskiy 2020), DeiT (Touvron 2021), MAE (He 2022), DINOv2 (Oquab 2023).
+\end{enumerate}
+
+\subsection*{Słowniczek}
+\begin{description}[itemsep=1pt,font=\normalfont\bfseries]
+  \item[token] wektor $D$ liczb reprezentujący jedną łatkę (albo \texttt{[CLS]}).
+  \item[strumień rezydualny] wartość tokenu między blokami; bloki dopisują do niego poprawki.
+  \item[mapa uwagi $A$] macierz $n\times n$, wiersz $i$ mówi, ile token $i$ bierze od każdego innego.
+  \item[głowa] jedna niezależna uwaga o wymiarze $d_k$.
+  \item[pre-norm] LayerNorm \emph{przed} uwagą i MLP, wewnątrz gałęzi rezydualnej.
+  \item[indukcyjne założenie] wbudowana wiedza o danych (np. lokalność w CNN); ViT ma jej mało.
+\end{description}
+
+\end{document}
