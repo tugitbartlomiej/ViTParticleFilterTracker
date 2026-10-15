@@ -1,0 +1,26 @@
+{
+ "opis": "SYGNAŁY SIECI JAKO WEJŚCIA DLA KOOPMANA I LANGEVINA NA PUŁAPKACH (2026-10-13).\n\nPowtórka uczenia od zapisanego stanu (wagi + AdamW, przepis biegu 35 000: paczka 32, augmentacja, AdamW, obcięcie gradientu 1,\nbf16) przez --kroki kroków; w każdym kroku dla --n_sond zdjęć-sond zapis:\n  z6     — latent ostatniego bloku (GELU MLP, 768 laserów) w losowym rzucie 128D (ta sama macierz co obserwator_rp, ziarno 0),\n           z niego liczy się pułapki (średnia krocząca lub bloki);\n  xin    — stan tokenu WCHODZĄCY do ostatniego bloku (wyjście bloku 5, 192D): wejście „z góry sieci” (wiązka wejściowa);\n  zwl    — „własna siła” zdjęcia: przesunięcie z6 po kroku wag tylko na stracie tego zdjęcia,\n           Δθ_wł = −lr · (1 − β1) · g_wł / (32 · max(|g_paczki|, 1)) / (√v̂ + ε)  (próba: bez 1/32 i przycięcia |z_wł| ≈ 7, za dużo)  (wkład tego gradientu do kroku AdamW przy bieżącym stanie v),\n           liczone różnicą skończoną w fp32 (eval, bez augmentacji) — da się policzyć w KAŻDYM kroku, choć zdjęcie bywa w paczce\n           raz na epokę;\n  skalary — czy sonda jest w paczce, strata paczki przed krokiem, strata sondy (eval), normy kroku wag w łodydze, 6 blokach i głowie.\nZapis porcjami do npz (float16 dla tensorów), mała kwota na Edenie: 4 sondy × 1100 kroków ≈ 2,4 GB.\nUruchomienie: python sygnaly_sieci.py --stan .../stan_eNN.pt --bieg <katalog biegu z sondami> --lr 5e-4 --out DIR [--kroki 1100]\n",
+ "stan": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/lr_5e-4_rp/pelny/stan_e03.pt",
+ "krok_startu": 3282,
+ "lr": 0.0005,
+ "sondy": [
+  144,
+  448,
+  922,
+  2741
+ ],
+ "kroki": 1100,
+ "grupy_norm": [
+  "lodyga",
+  "blok0",
+  "blok1",
+  "blok2",
+  "blok3",
+  "blok4",
+  "blok5",
+  "glowa"
+ ],
+ "porcji": 12,
+ "proba": false,
+ "czas_s": 181
+}

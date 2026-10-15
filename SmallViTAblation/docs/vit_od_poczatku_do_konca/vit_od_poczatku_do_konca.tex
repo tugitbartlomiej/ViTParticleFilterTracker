@@ -92,12 +92,12 @@ kroków:
   \draw[strz] (img.east) -- ++(6mm,0) |- (p1.west);
   \draw[strz] (p3.east) -- ++(2mm,0) |- (E.west);
   \draw[strz] (E) -- (c);
-  % enkoder
-  \node[blok,fill=att!25,below=14mm of t1,minimum width=40mm] (enc) {Enkoder: $L\times$[ uwaga + MLP ]};
-  \draw[strz] (t2.south) ++(0,-4mm) -- (enc.north -| t2.south);
-  \node[blok,fill=cls!25,left=10mm of enc] (head) {LayerNorm\\ + Linear $D\!\to\!1000$};
-  \node[blok,fill=black!5,left=8mm of head] (sm) {softmax\\ „kot: 0,93''};
-  \draw[strz] (enc) -- node[above,font=\scriptsize]{tylko \texttt{[CLS]}} (head);
+  % drugi rząd: enkoder i głowica
+  \node[blok,fill=att!25,below=16mm of img.south west,anchor=north west,minimum width=40mm] (enc) {Enkoder: $L\times$[ uwaga + MLP ]\\ $197\times D \to 197\times D$};
+  \node[blok,fill=cls!25,right=16mm of enc] (head) {LayerNorm\\ + Linear $D\!\to\!1000$};
+  \node[blok,fill=black!5,right=9mm of head] (sm) {softmax\\ „kot: 0,93''};
+  \draw[strz] (t3.south) ++(0,-6mm) -- ++(0,-4mm) -| (enc.north);
+  \draw[strz] (enc) -- node[below,font=\scriptsize]{tylko \texttt{[CLS]}} (head);
   \draw[strz] (head) -- (sm);
 \end{tikzpicture}
 \caption{ViT w jednym rysunku. Kolor czerwony to token klasy, niebieskie to tokeny łatek.}
@@ -285,7 +285,9 @@ Zamiast jednej uwagi o wymiarze $D$ robimy $h$ uwag po $d_k=D/h$ wymiarów, każ
 wagami, i sklejamy wyniki:
 \begin{wzor}
 \[
-\mathrm{MSA}(X)=\big[\mathrm{head}_1;\dots;\mathrm{head}_h\big]\,W_O,\qquad
+\mathrm{MSA}(X)=\big[\mathrm{head}_1;\dots;\mathrm{head}_h\big]\,W_O,\quad W_O\in\mathbb{R}^{D\times D},
+\]
+\[
 \mathrm{head}_m=\mathrm{Attention}(XW_Q^{m},XW_K^{m},XW_V^{m}),\quad W_O\in\mathbb{R}^{D\times D}.
 \]
 \end{wzor}
@@ -396,7 +398,7 @@ ViT-H/14 & 1280 & 32 & 16 & 5120 & 632 M \\
 \bottomrule
 \end{tabular}
 \end{center}
-We wszystkich $d_k=64$, z wyjątkiem Ti, gdzie $d_k=192/3=64$ też się zgadza.
+Wymiar głowy $d_k=D/h$ wynosi 64 we wszystkich modelach od Ti do L. W ViT-H wynosi 80.
 
 \subsection{Koszt obliczeń}
 \label{sec:koszt}

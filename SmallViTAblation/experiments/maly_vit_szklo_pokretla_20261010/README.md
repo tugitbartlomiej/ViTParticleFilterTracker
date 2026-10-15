@@ -63,3 +63,13 @@ kroków: zamrożona czy przemijająca heterogeniczność), `korelacja_krzyzowa_*
 `rozklad_wariancji` (wspólny / zdjęcie / sąsiedztwo / własny). Test jądra: `kod/jadro_pola.py` + `jadro_pola.slurm` — przesunięcia
 tokenów z Jakobianu sieci (kierunki losowe prekondycjonowane AdamW, prawdziwe kroki na paczkach, średni gradient, szum) kontra
 zmierzone przyrosty (`wyniki/<bieg>/JADRO_<stan>.json`).
+
+## Fala 5 (plan 2026-10-12): odpowiedzi na zarzuty recenzentów
+
+Instrukcje dla Edena (najpierw próby i małe biegi): `FALA5_RECENZENCI_INSTRUKCJE.md`. Cztery pakiety:
+- A: obcinanie gradientu (temperatura);
+- B: DeiT-Tiny z timm na Imagenette/CIFAR-10;
+- C: teoria funkcji korelacji z jądra i kodowania pozycji, z testem na zmienionych częstościach PE;
+- D: zysk praktyczny, czyli przewidywanie końcowego IoU niewidzianych zdjęć z wczesnej ruchliwości.
+
+Kod jeszcze niedopisany (spis plików w instrukcji).

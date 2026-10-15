@@ -1,0 +1,30 @@
+FDT v_e12_lr5e-4_b00: bieg dlugi_lr_5e-4_rp, stan_e12.pt, lr 5e-4, argumenty --frac_v 1e-3 --frac_n 1e-4 --beta1 0.0, węzeł hopper-2, GPU NVIDIA H200, start Tue Oct 13 02:38:45 AM CEST 2026
+stan /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/dlugi_lr_5e-4_rp/pelny/stan_e12.pt (krok 13128), lr 0.0005, β1 0.9, wd None, sondy [144, 448, 922, 2741, 2786, 3200, 3438, 3698, 4122, 5105, 5425, 5493] [1 s]
+klatki: 35000 z 117 archiwów w 21 s
+35000 klatek, 12 sond [35 s]
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+kalibracja: |∇L| 3.64, |∇L_V(h=1)| 0.131, |∇L_N(h=1)| 0.111 → h0 {'V': 0.027759284654371136, 'N': 0.003269706707055269} [37 s]
+krok 100: strata 0.5579 | χ_V 1.895 Δ_V 0.02547 T_V 0.01344 | χ_N 1.897 Δ_N 0.008779 T_N 0.004628 χ3/χ 0.991 | MSD V 9.681 N 10.13 [90 s]
+krok 200: strata 0.3974 | χ_V 4.423 Δ_V 0.02973 T_V 0.006723 | χ_N 4.085 Δ_N 0.01108 T_N 0.002711 χ3/χ 1.014 | MSD V 11.38 N 12.99 [143 s]
+krok 300: strata 0.4307 | χ_V 6.759 Δ_V 0.04119 T_V 0.006094 | χ_N 5.88 Δ_N 0.01479 T_N 0.002516 χ3/χ 1.101 | MSD V 15.56 N 16.96 [197 s]
+krok 400: strata 0.4993 | χ_V 9.64 Δ_V 0.03984 T_V 0.004133 | χ_N 7.807 Δ_N 0.01538 T_N 0.00197 χ3/χ 1.108 | MSD V 15.12 N 17.8 [243 s]
+krok 500: strata 0.3833 | χ_V 12.61 Δ_V 0.04377 T_V 0.003472 | χ_N 9.629 Δ_N 0.01721 T_N 0.001788 χ3/χ 1.133 | MSD V 16.89 N 20.3 [290 s]
+krok 600: strata 0.4702 | χ_V 15.72 Δ_V 0.04283 T_V 0.002724 | χ_N 10.92 Δ_N 0.01905 T_N 0.001745 χ3/χ 1.173 | MSD V 16.37 N 22.21 [336 s]
+krok 700: strata 0.6676 | χ_V 19.56 Δ_V 0.03912 T_V 0.002 | χ_N 12.22 Δ_N 0.01866 T_N 0.001527 χ3/χ 1.226 | MSD V 15.47 N 21.49 [382 s]
+krok 800: strata 0.4683 | χ_V 23.89 Δ_V 0.05081 T_V 0.002126 | χ_N 15.25 Δ_N 0.02106 T_N 0.001382 χ3/χ 1.153 | MSD V 19.71 N 24.52 [429 s]
+krok 900: strata 0.5645 | χ_V 28.09 Δ_V 0.04828 T_V 0.001719 | χ_N 15.07 Δ_N 0.01901 T_N 0.001262 χ3/χ 1.251 | MSD V 18.31 N 22.31 [476 s]
+krok 1000: strata 0.6652 | χ_V 35.12 Δ_V 0.047 T_V 0.001338 | χ_N 17.8 Δ_N 0.02004 T_N 0.001126 χ3/χ 1.177 | MSD V 18.31 N 23.3 [522 s]
+krok 1100: strata 0.3505 | χ_V 43.8 Δ_V 0.04518 T_V 0.001031 | χ_N 19.51 Δ_N 0.01987 T_N 0.001019 χ3/χ 1.209 | MSD V 17.76 N 23.54 [568 s]
+krok 1200: strata 0.5286 | χ_V 54.31 Δ_V 0.05974 T_V 0.0011 | χ_N 22.12 Δ_N 0.02616 T_N 0.001183 χ3/χ 1.232 | MSD V 23.53 N 30.39 [613 s]
+krok 1300: strata 0.6054 | χ_V 66.38 Δ_V 0.05394 T_V 0.0008126 | χ_N 22.86 Δ_N 0.02285 T_N 0.0009998 χ3/χ 1.244 | MSD V 20.45 N 26.83 [660 s]
+krok 1400: strata 0.4697 | χ_V 85.95 Δ_V 0.04636 T_V 0.0005394 | χ_N 25.86 Δ_N 0.02263 T_N 0.0008749 χ3/χ 1.231 | MSD V 17.91 N 25.87 [707 s]
+krok 1500: strata 0.6392 | χ_V 113.7 Δ_V 0.06486 T_V 0.0005705 | χ_N 27.8 Δ_N 0.02695 T_N 0.0009693 χ3/χ 1.236 | MSD V 24.4 N 31.58 [753 s]
+krok 1600: strata 0.4178 | χ_V 153.5 Δ_V 0.0496 T_V 0.0003231 | χ_N 28.12 Δ_N 0.02381 T_N 0.0008469 χ3/χ 1.307 | MSD V 18.75 N 27.24 [798 s]
+krok 1700: strata 0.4681 | χ_V 209.7 Δ_V 0.06048 T_V 0.0002885 | χ_N 30.44 Δ_N 0.029 T_N 0.0009528 χ3/χ 1.307 | MSD V 23.16 N 32.97 [845 s]
+krok 1800: strata 0.6006 | χ_V 318.4 Δ_V 0.05537 T_V 0.0001739 | χ_N 31.76 Δ_N 0.02737 T_N 0.0008618 χ3/χ 1.311 | MSD V 21.13 N 31.72 [891 s]
+krok 1900: strata 0.3342 | χ_V 454.9 Δ_V 0.05489 T_V 0.0001207 | χ_N 33.02 Δ_N 0.02812 T_N 0.0008516 χ3/χ 1.342 | MSD V 20.83 N 32.47 [937 s]
+krok 2000: strata 0.5035 | χ_V 594.4 Δ_V 0.05167 T_V 8.694e-05 | χ_N 35.31 Δ_N 0.02562 T_N 0.0007255 χ3/χ 1.327 | MSD V 19.62 N 29.91 [983 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_fdt_temperatura/wyniki/v_e12_lr5e-4_b00 [985 s]
+KONIEC v_e12_lr5e-4_b00 Tue Oct 13 02:55:23 AM CEST 2026

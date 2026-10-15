@@ -19,7 +19,6 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-import torch
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QFileDialog,
@@ -865,6 +864,7 @@ class EdytorSD:
     def _model_gotowy(self, trained):
         self.trained = trained
         urzadzenie = trained.device
+        import torch
         nazwa = torch.cuda.get_device_name(urzadzenie) if urzadzenie.type == 'cuda' else 'CPU'
         self.etykieta_model.setText(
             f'Model gotowy: checkpoint krok {trained.step}, tryb cross-attention, {nazwa}.')
@@ -1021,3 +1021,10 @@ class EdytorSD:
         self.btn_obraz.setEnabled(True)
         self.statusBar().showMessage('Wystąpił błąd — szczegóły w oknie dialogowym.')
         QMessageBox.warning(self, 'Błąd', komunikat)
+
+
+# Stan edytora (atrybuty `self.x = ...` tej klasy). Edytor buduje się leniwie (`app.Okno.zbuduj_edytor`):
+# pierwszy odczyt któregoś z nich przez inną zakładkę (np. `okno.lim_lo`, `okno.obraz`) najpierw buduje edytor.
+import re as _re  # noqa: E402
+ATRYBUTY_EDYTORA = frozenset(n for n in _re.findall(r'self\.([A-Za-z_]\w*)\s*=(?!=)', Path(__file__).read_text(encoding='utf-8'))
+                             if not n.startswith('zakladka_'))

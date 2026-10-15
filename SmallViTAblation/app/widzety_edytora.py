@@ -3,7 +3,6 @@ generacji DDIM i latentu ViT ze zdjęcia. Logika edycji wektora zostaje w app.Ok
 import traceback
 from pathlib import Path
 
-import torch
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QRectF
 from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import QDoubleSpinBox, QHBoxLayout, QLabel, QSlider, QVBoxLayout, QWidget
@@ -144,6 +143,7 @@ class WatekModelu(QThread):
 
     def run(self):
         try:
+            import torch
             urzadzenie = 'cuda' if torch.cuda.is_available() else 'cpu'
             self.gotowy.emit(silnik.zaladuj_model(urzadzenie))
         except Exception:
@@ -181,6 +181,7 @@ class WatekViT(QThread):
 
     def run(self):
         try:
+            import torch
             urzadzenie = 'cuda' if torch.cuda.is_available() else 'cpu'
             self.gotowy.emit(silnik.latent_z_obrazu(self.sciezka, urzadzenie), Path(self.sciezka).name)
         except Exception:

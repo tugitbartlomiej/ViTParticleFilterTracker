@@ -1,6 +1,7 @@
 """Zapis i odczyt ustawień całej aplikacji do pliku konfiguracyjnego JSON.
 
-Ustawienia to stan kontrolek: listy wyboru (indeks i tekst), pola liczbowe i pola wyboru (checkboxy), zebrane z atrybutów okna i jego zakładek, np. `zakladka_filmu.w3d.combo_pca`. Nie zapisuje danych
+Ustawienia to stan kontrolek: listy wyboru (indeks i tekst), pola liczbowe i pola wyboru (checkboxy) oraz układ okienek
+zakładek, które go udostępniają (`uklad_okienek` / `ustaw_uklad_okienek`, np. doki zakładki „Lasery i koloidy”), zebrane z atrybutów okna i jego zakładek, np. `zakladka_filmu.w3d.combo_pca`. Nie zapisuje danych
 (obrazów, latentu, sekwencji) ani suwaków przebiegu (klatka, przejście PRZED/PO).
 
 - Plik domyślny `ustawienia.json` obok aplikacji: wczytywany przy starcie, zapisywany przy zamknięciu okna.
@@ -8,7 +9,8 @@ Ustawienia to stan kontrolek: listy wyboru (indeks i tekst), pola liczbowe i pol
 Listy z pozycjami zależnymi od danych (np. film, głowa atencji) wracają po tekście; gdy pozycji nie ma, zostają.
 
 Zakładki budowane leniwie (`app.ZAKLADKI_LENIWE`, powstają przy pierwszym wejściu na kartę): ustawienia takiej
-zakładki, której jeszcze nie ma, czekają w `okno._ustawienia_oczekujace`, stosują się zaraz po jej zbudowaniu
+zakładki, której jeszcze nie ma (także edytora SD, gdy `okno._edytor_gotowy` jest False), czekają w
+`okno._ustawienia_oczekujace`, stosują się zaraz po jej zbudowaniu
 (`Okno.zbuduj_zakladke`) i są dopisywane do zapisu, żeby plik nie tracił ustawień zakładek, których nie otwarto.
 """
 import json
@@ -21,7 +23,7 @@ PLIK = Path(__file__).resolve().parent / 'ustawienia.json'
 # EDYTOR_BEZ_USTAWIEN=1: start na ustawieniach domyślnych, bez wczytywania i zapisu pliku (testy)
 WERSJA = 1
 MODULY = ('app', 'widzety_edytora', 'zakladka_detekcji', 'zakladka_filmu', 'czasteczki', 'czasteczki3d',
-          'przestrzen_makro', 'opcje_atencji', 'zakladka_ruchu')
+          'przestrzen_makro', 'opcje_atencji', 'zakladka_ruchu', 'zakladka_laserow')
 POMIN = {'okno', 'suwak', 'pasek'}            # odnośnik wstecz do okna, suwaki przebiegu, paski postępu
 
 
@@ -64,6 +66,12 @@ def stan(korzen):
             wynik[s] = w.text()
         else:
             wynik[s] = w.isChecked()
+    for nazwa, z in vars(korzen).items():                              # układ okienek zakładek (np. doki „Lasery i koloidy”)
+        if nazwa.startswith('zakladka_') and hasattr(z, 'uklad_okienek'):
+            try:
+                wynik[f'{nazwa}.uklad_okienek'] = z.uklad_okienek()
+            except Exception:                                          # noqa: BLE001
+                pass
     for s, v in vars(korzen).get('_ustawienia_oczekujace', {}).items():      # zakładki jeszcze niezbudowane
         wynik.setdefault(s, v)
     return wynik
@@ -74,11 +82,16 @@ def ustaw(korzen, ustawienia):
     k = kontrolki(korzen)
     ok, pom = 0, 0
     leniwe = vars(korzen).get('_leniwe', {})
+    edytor_czeka = vars(korzen).get('_edytor_gotowy') is False          # edytor SD (kontrolki okna) jeszcze niezbudowany
     for s, v in ustawienia.items():
+        if s.endswith('.uklad_okienek') and hasattr(vars(korzen).get(s.split('.', 1)[0]), 'ustaw_uklad_okienek'):
+            vars(korzen)[s.split('.', 1)[0]].ustaw_uklad_okienek(v); ok += 1
+            continue
         w = k.get(s)
         if w is None:
             zakladka = s.split('.', 1)[0]
-            if '.' in s and zakladka in leniwe and zakladka not in vars(korzen):   # zakładka jeszcze nie istnieje:
+            if (edytor_czeka and zakladka not in leniwe) or \
+                    ('.' in s and zakladka in leniwe and zakladka not in vars(korzen)):   # zakładka jeszcze nie istnieje:
                 vars(korzen).setdefault('_ustawienia_oczekujace', {})[s] = v          # ustawimy po jej zbudowaniu
                 ok += 1
             else:

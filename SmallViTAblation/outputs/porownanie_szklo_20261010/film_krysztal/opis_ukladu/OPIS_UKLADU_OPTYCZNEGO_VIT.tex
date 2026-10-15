@@ -1,0 +1,812 @@
+% Opis układu optycznego MałegoViT (reflektory, szklane sfery, wiązki, pułapka koloidalna) — wersja sprawdzona matematycznie.
+% Wszystkie liczby: pomiary_opisu_s47.py -> POMIARY_OPISU_S47.json (bieg MalyViT_35000_od_zera_s47). Sesja szklo3_3D, 2026-10-12.
+% Aktualizacja 2026-10-13 (sesja laser-koloid-zasady): filmy 20-23, aplikacja (zakładka „Lasery i koloidy”, dane wersji 3),
+% dokładny rozkład wycentrowany, ujemne jasności, rozdział 5 „Gradient” (obrót igieł: film_lasery_23_obrot_reflektorow.py).
+% Kompilacja: pdflatex OPIS_UKLADU_OPTYCZNEGO_VIT.tex (dwa razy, odsyłacze do przypisów)
+\documentclass[a4paper,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,bm}
+\usepackage[margin=2.0cm]{geometry}
+\usepackage{booktabs,tabularx,longtable,array}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\definecolor{dok}{HTML}{1B7F3B}\definecolor{pom}{HTML}{1F5FA8}\definecolor{ilu}{HTML}{B36B00}\definecolor{ana}{HTML}{8A1C1C}
+\newcommand{\stD}{\textcolor{dok}{\textsf{\textbf{[D]}}}}
+\newcommand{\stP}{\textcolor{pom}{\textsf{\textbf{[P]}}}}
+\newcommand{\stI}{\textcolor{ilu}{\textsf{\textbf{[I]}}}}
+\newcommand{\stA}{\textcolor{ana}{\textsf{\textbf{[A]}}}}
+\newcommand{\LN}{\mathrm{LN}}
+\newcommand{\GELU}{\mathrm{GELU}}
+\newcommand{\tr}{\operatorname{tr}}
+% przypisy końcowe: \pp{klucz} w tekście, \przypis{klucz}{treść} w sekcji „Przypisy”
+\newcounter{pn}
+\newcommand{\pp}[1]{\textsuperscript{\ref{pp:#1}}}
+\newcommand{\przypis}[2]{\refstepcounter{pn}\label{pp:#1}\par\noindent\hangindent=1.6em\hangafter=1\makebox[1.6em][l]{\textbf{\thepn.}}#2\par\medskip}
+\newcommand{\elem}[1]{\par\medskip\noindent\textbf{#1}\par\nopagebreak}
+\setlength{\parskip}{3pt}
+
+\title{Układ optyczny MałegoViT: reflektory, szklane sfery, wiązki\\ i pojedyncza pułapka koloidalna\\[4pt]\large opis sprawdzony matematycznie, punkt po punkcie}
+\author{analiza z sesji \texttt{szklo3\_3D}; aktualizacja z sesji \texttt{laser-koloid-zasady}}
+\date{12 października 2026, aktualizacja 13 października 2026}
+
+\begin{document}
+\maketitle
+\sloppy
+
+\begin{abstract}
+Dokument zbiera wszystkie przemyślenia o obrazie „lasery, reflektory i koloidy” zbudowanym w filmach 4--23 i w aplikacji
+(zakładka „Lasery i koloidy”) i porządkuje je według tego,
+co jest \emph{tożsamością matematyczną} bloku sieci, co jest \emph{pomiarem}, co jest tylko \emph{ilustracją} i co jest \emph{analogią}.
+Wszystkie liczby pochodzą z jednego biegu uczenia (\texttt{MalyViT\_35000\_od\_zera\_s47}), z którego pochodzą też zapisane aktywacje;
+przejście modelu odtwarza je z $R^2 = 1{,}0$. Najważniejsze wnioski: (1) blok MLP jest \emph{dokładnie} zbiorem 768 wektorów siły
+działających na każdy token; (2) token jest cząstką w czasie płynącym przez głębokość sieci, a neurony („reflektory”) są cząstkami
+w czasie uczenia; (3) lokalna „pułapka” bloku wokół tokenu to siodło z wirem: połowa kierunków cofa, połowa wypycha, a wir
+na starcie ma dokładnie poziom macierzy losowej i w uczeniu słabnie tylko trochę; (4) uczenie tworzy pary przeciwnych laserów
+(0\,\% $\to$ 53\,\%) i słabe sprzężenie zwrotne, które ilościowo tłumaczy pojawiającą się kontrakcję; (5) ostatni blok
+rozsuwa tokeny wewnątrz tła i wewnątrz narzędzia, a prawie nie zmienia odległości narzędzie--tło; (6) wszystkie sześć bloków
+(uwaga jako wiązki między cząsteczkami, MLP jako lasery bloku) da się rozpisać \emph{dokładnie} także względem środka chmury tokenów,
+tak że suma rysowanych wiązek równa się rysowanemu ruchowi z błędem około $10^{-5}$; (7) gradient siedzi w układzie jako obrót
+igieł reflektorów: $\partial L/\partial\bm v_c=\sum_j z_{jc}\bm\delta_j$, a zmierzony obrót ma dwie części --- drganie o prawie stałej
+wielkości (około 3,5° na 100 kroków przy stałym kroku uczenia) i dryf netto, który z wiekiem zwalnia (1,04 $\to$ 0,52° na 100 kroków).
+\end{abstract}
+
+\tableofcontents
+\bigskip
+
+\section*{Jak czytać ten dokument}
+Każde twierdzenie ma znacznik statusu:
+\begin{itemize}
+\item \stD\ \textbf{dokładne} --- tożsamość algebraiczna wynikająca z równań sieci; prawdziwa dla każdego wejścia i każdych wag;
+\item \stP\ \textbf{pomiar} --- liczba zmierzona na danych; zawsze podany bieg, zdjęcie, blok i krok uczenia;
+\item \stI\ \textbf{ilustracja} --- element obrazu bez odpowiednika w sieci albo wybór wizualny (rzut, kolor, położenie);
+\item \stA\ \textbf{analogia lub hipoteza} --- nazwa fizyczna albo interpretacja, którą trzeba dopiero sprawdzić.
+\end{itemize}
+Przypisy (numery w indeksie górnym) są zebrane na końcu dokumentu, przed listą literatury. Zawierają wyprowadzenia, zastrzeżenia
+i dokładne odwołania do prac, które podpierają (albo ograniczają) dane twierdzenie.
+
+%=====================================================================================================================
+\section{Dane i ich weryfikacja}
+
+\subsection{Sieć}
+MałyViT\pp{model}: łodyga konwolucyjna (4 konwolucje $3\times3$ z krokiem 2) zamienia klatkę $480\times320$ na siatkę $30\times20$,
+czyli $N=600$ tokenów o wymiarze $d=192$; do tokenów raz dodawane jest stałe kodowanie pozycji 2D sin-cos. Dalej 6 bloków typu pre-LN
+(timm), każdy z uwagą (3 głowy po 64) i MLP $192\to768\to192$ z GELU; na końcu LayerNorm i gęsta głowa ($192\to192\to5$ na każdym tokenie).
+Dla tokenu $j$ w bloku $l$:
+\begin{align}
+\tilde{\bm x}_j &= \bm x_j + \sum_{k} A_{jk}\, W_O W_V\, \LN_1(\bm x_k), \qquad
+A_{jk}=\operatorname{softmax}_k\!\Big(\tfrac{1}{8}\big\langle W_Q\LN_1(\bm x_j),\,W_K\LN_1(\bm x_k)\big\rangle\Big), \label{eq:uwaga}\\
+\bm x_j^{+} &= \tilde{\bm x}_j + \bm F(\tilde{\bm x}_j), \qquad
+\bm F(\bm x) = \sum_{c=1}^{768} \GELU(a_c)\, \bm v_c + \bm b_2, \qquad a_c=\bm w_c^{\!\top}\LN_2(\bm x)+b_c. \label{eq:mlp}
+\end{align}
+$\bm w_c^{\!\top}$ to wiersz $c$ macierzy $W_1$ (fc1), $\bm v_c$ to kolumna $c$ macierzy $W_2$ (fc2), $b_c$ i $\bm b_2$ to wyrazy wolne.
+W całym dokumencie „blok” oznacza ostatni, szósty blok (indeks 5), a $\bm x_j$ to stan tokenu tuż przed jego MLP (po uwadze).
+
+\subsection{Bieg, zdjęcie, tokeny}
+\begin{itemize}
+\item \textbf{Bieg:} \texttt{assets/MalyViT\_35000\_od\_zera\_s47}, 806 checkpointów od kroku 0 do 65\,640 (60 epok po 1094 kroki),
+ziarno 47, AdamW $5\cdot10^{-4}$, rozpad wag 0,05, paczka 32, 35\,000 klatek Cataract-LMM.
+\item \textbf{Zdjęcie:} TRAIN 0 (oko z narzędziem). \textbf{Tokeny narzędzia:} 20 z 600 (maska z adnotacji ramki).
+\textbf{Token 316:} token narzędzia najbliższy środkowi narzędzia (wiersz 10, kolumna 16); to „cząsteczka w pułapce” z filmów 16--19.
+\item \textbf{Aktywacje:} \texttt{pelne768.npy} (768 wyjść GELU bloku 6 dla każdego tokenu w każdym checkpoincie).
+\end{itemize}
+
+\subsection{Weryfikacja zgodności wag i aktywacji \stP}
+\begin{enumerate}
+\item Przejście modelu z wagami biegu s47 odtwarza zapisany latent z $R^2\ge0{,}9999$ w każdym sprawdzonym kroku (1000, 22\,974, 65\,640).
+\item Wyliczenie $\GELU(a_c)$ ze stanów $\bm x_j$ (pkt~\ref{sec:pulapka}) daje $R^2 = 0{,}99993$--$0{,}99997$ względem zapisanego latentu
+dla wszystkich 600 tokenów w krokach 0, 1094, 10\,940 i 65\,640. Wszystkie wzory poniżej są więc liczone na tym samym obiekcie,
+który pokazują filmy.
+\item Pomiar z Edenu (\texttt{eden/wyniki/TEST\_SFERY.json}, \texttt{WIAZKI.json}, 100 zdjęć: 84--98\,\% szybkich drgań z wcześniejszych
+warstw, 75\,\% wolnego dryfu z laserów) też pochodzi z biegu s47: zapisane tam wagi fc1 różnią się od wag s47 o 0,02--0,04\,\%
+(precyzja float16), a od biegu gęstego o 40--106\,\% (\texttt{PRZELICZENIE\_ZASADY\_S47.json}, część W).
+\end{enumerate}
+
+\subsection{Drugi bieg z tej samej inicjalizacji \stP}\label{sec:dwa}
+W assetach jest też bieg „gęsty” (\texttt{01\_bieg\_35000\_gesty\_zapis}): ten sam przepis i to samo ziarno, ale osobne uruchomienie
+z obserwatorem zapisu\pp{dwabiegi}. Start jest identyczny, a potem biegi się rozchodzą:
+\begin{center}
+\begin{tabular}{lcccc}\toprule
+krok & 0 & 1000 & 5300 & 22\,974\\\midrule
+$R^2$ latentu zdjęcia przy wagach biegu gęstego & 0,9999 & 0,785 & 0,532 & $-0{,}029$\\
+$\lVert\theta_{\text{gęsty}}-\theta_{\text{s47}}\rVert / \lVert\theta_{\text{s47}}-\theta_0\rVert$ & 0 & 0,60 & 0,81 & 1,01\\\bottomrule
+\end{tabular}
+\end{center}
+Po 21 epokach dwa biegi są od siebie tak daleko, jak każdy z nich od punktu startu. Filmy 8--16 oraz wcześniejsze pliki
+\texttt{PRZECIWLASERY.json}, \texttt{OBROT\_REFLEKTORA.json} i \texttt{PULAPKA\_JAKOBIAN.json} używały wag biegu gęstego razem
+z aktywacjami biegu s47. Ich liczby opisują bieg gęsty; ten dokument je zastępuje (pkt~\ref{sec:korekty}), a
+\texttt{ZASADY\_LASER\_KOLOID.md}, \texttt{matematyka\_reflektorow.pdf} i \texttt{diagram\_maly\_vit.pdf} przeliczono na biegu s47
+(\texttt{przelicz\_zasady\_s47.py}). Rozchodzą się konkretne wagi, a nie ich statystyki: w 21.~epoce przeciwlasery to 37\,\% w s47
+wobec 38\,\% w biegu gęstym, mediana $\cos$ partnera $-0{,}47$ w obu, udział 3 składowych 22\,\% w obu.
+
+%=====================================================================================================================
+\section{Dwa czasy: głębokość i uczenie}\label{sec:czasy}
+\elem{2.1. Czas płynący przez głębokość \stD}
+Równania \eqref{eq:uwaga}--\eqref{eq:mlp} to jeden krok Eulera układu cząstek: uwaga jest członem oddziaływania (dyfuzji),
+a MLP członem konwekcji zależnym tylko od położenia własnej cząstki; kolejność „uwaga, potem MLP” to rozszczepienie
+Lie--Trottera\pp{lu}. W tym czasie token \emph{ma własny stan} $\bm x_j^{(l)}$ i jest prawdziwą cząstką; tak samo w teorii
+tokenów jako oddziałujących cząstek\pp{ges}.
+
+\elem{2.2. Czas uczenia \stD}
+W kroku uczenia $t$ reprezentacja tokenu jest funkcją wag: $\bm z_j(t)=f(\text{obraz}_j;\theta_t)$. Token nie ma tu własnego stanu ani
+bezwładności. Dlatego obraz „koloid nadąża za ruchomą pułapką” jest w czasie uczenia błędny: nie ma opóźnienia, lepkości ani własnego
+szumu cząstki; całą dynamikę niosą wagi\pp{czasuczenia}. Prawdziwymi cząstkami w czasie uczenia są neurony (wektory ich wag)\pp{meanfield}.
+Odwrotny obraz, w którym pułapka nadąża za koloidem, też się nie potwierdził \stP: w tym samym przedziale ruch koloidu i zmiana pułapki
+pchają wyjście bloku w tę samą stronę (wspólne zejście po gradiencie), a z opóźnieniem 100 kroków żadne z nich nie reaguje na drugie;
+tylko w pierwszych 1000 krokach widać słabą wzajemną kompensację, 2--8\,\% (\texttt{NADAZANIE\_PULAPKI\_S47.md}).
+
+\elem{2.3. Wniosek dla obrazu \stD}
+Ten sam neuron gra dwie role: w głębokości jest \emph{źródłem siły} (elementem soczewki), w uczeniu jest \emph{cząstką}. Ruch tokenu
+widoczny w filmach w czasie uczenia to przesunięcie punktu końcowego jego toru przez głębokość („plamki ogniskowej”), wywołane
+przestawieniem neuronów\pp{sprzezenie}.
+
+%=====================================================================================================================
+\section{Cały układ optyczny, element po elemencie}\label{sec:uklad}
+Opis dotyczy filmu 12 (\texttt{lasery\_12\_reflektory\_stale.mp4}): 768 stałych reflektorów na zewnętrznej sferze, po 600 wiązek każdy,
+szklana sfera załamująca wiązki raz na powierzchni, w środku cząsteczki. Dla każdego elementu: co to jest w obrazie, czemu odpowiada
+w sieci, status, liczby.
+
+\elem{3.1. Cząsteczka (koloid) = token $j$ \stD}
+Stan $\bm x_j\in\mathbb R^{192}$ tuż przed MLP bloku 6. Mediana normy $\lVert\bm x_j\rVert$ rośnie w uczeniu z 14,7 (krok 0) do 90,5
+(60.~epoka) \stP; to strumień rezydualny, do którego każdy blok dodaje swoje wyjście, a LayerNorm normuje tylko wejście podwarstwy.
+Dlatego odległości między tokenami trzeba porównywać po LayerNorm (pkt~4.7).
+
+\elem{3.2. Położenie cząsteczki na ekranie \stI}
+W użyciu są trzy umowy; we wszystkich $P\in\mathbb R^{3\times192}$ to rzut liniowy, a liczby liczymy w 192 wymiarach\pp{rzut}.
+\begin{enumerate}
+\item \textbf{Filmy 8--12, 23:} $\bm p_j = s\,P\,W_2(\bm z_j-\bar{\bm z})$, $P$ = trzy główne składowe kierunków $\hat{\bm v}_c$ (60.~epoka),
+$\bar{\bm z}$ = średnia po tokenach. To rzut \emph{przesunięcia} od bloku (sumy sił bez $\bm b_2$), a nie stanu tokenu; jest spójny
+z kierunkami wiązek. Filmy 8--12 liczyły go z jasności obciętych do $z\ge0$ (pkt~3.6), film 23 z jasności ze znakiem.
+\item \textbf{Aplikacja (dane wersji $\ge2$), film 20:} $\bm p_j = s\,P(\bm x_j-\bar{\bm x})$, rzut \emph{stanu} tokenu tuż przed MLP bloku 6.
+Przesunięcie cząsteczki przez MLP to wtedy dokładnie $\sum_c (z_{jc}-\bar z_c)\,P\bm v_c$, czyli suma wiązek względem środka chmury \stD.
+\item \textbf{Film 22:} $\bm p_j = s\,P\big(\widehat{\LN}(\bm x_j)-\overline{\widehat{\LN}(\bm x)}\big)$, gdzie $\widehat{\LN}$ to LayerNorm bez
+$\bm\gamma,\bm\beta$ (każdy token osobno). To kierunek tokenu, czyli dokładnie to, co czyta każdy blok (pkt~3.3); długość strumienia
+pokazuje osobny licznik $\lVert\bm x\rVert$. W pierwszym rzędzie zmiana $\widehat{\LN}$ wywołana przesunięciem $\Delta\bm x$ to część
+$P_1\Delta\bm x$ prostopadła do kierunku tokenu, podzielona przez $\sigma$ \stD.
+\end{enumerate}
+Trzy składowe niosą tylko 3--22\,\% wariancji kierunków $\hat{\bm v}_c$ \stP; obraz 3D jest ilustracją.
+
+\elem{3.3. Wewnętrzna sfera = LayerNorm (sfera odczytu) \stD}
+\begin{equation}
+\LN(\bm x)=\bm\gamma\odot\frac{\bm x-\mu(\bm x)\bm 1}{\sigma(\bm x)}+\bm\beta,\qquad
+\sigma(\bm x)=\sqrt{\tfrac1d\lVert\bm x-\mu\bm 1\rVert^2+\epsilon},\ \epsilon=10^{-6}.
+\end{equation}
+LayerNorm rzutuje token na hiperpłaszczyznę $\perp\bm 1$, normuje go na sferę o promieniu $\sqrt{192}\approx13{,}9$ i rozciąga przez
+$\bm\gamma$ do hiperelipsoidy\pp{ln}. Jego Jakobian zeruje kierunek $\bm 1$, a dla $\epsilon\to0$ także kierunek radialny: reflektory
+\emph{widzą tylko kierunek tokenu na tej sferze}. Anizotropia elipsoidy rośnie w uczeniu: $\gamma\in[1;1]$ na starcie,
+$[0{,}20;\,1{,}65]$ (mediana 1,19) w 60.~epoce \stP. Ta sfera jest w filmach nieobecna, a jest jedyną \emph{prawdziwą} sferą układu.
+
+\elem{3.4. Reflektor $c$ = neuron $c$ \stD}
+Trójka $(\bm w_c, b_c, \bm v_c)$, jedna dla wszystkich 600 tokenów (wspólne wagi). To para „klucz--wartość” pamięci MLP\pp{kv}.
+Reflektorów jest 768 w każdym bloku (razem $6\times768$); film pokazuje blok 6.
+
+\elem{3.5. Czujnik (celownik) reflektora \stD}
+Rozpisując LayerNorm, pobudzenie neuronu ma postać
+\begin{equation}
+a_{jc} = \frac{(\bm\gamma\odot\bm w_c)^{\!\top}\big(\bm x_j-\mu_j\bm 1\big)}{\sigma_j} + \big(\bm w_c^{\!\top}\bm\beta+b_c\big),
+\end{equation}
+czyli \emph{rzeczywisty kierunek celowania w przestrzeni tokenu} to $\bm s_c=\bm\gamma\odot\bm w_c$ (po odjęciu średniej), a próg
+to $-(\bm w_c^{\!\top}\bm\beta+b_c)$. Celownik czyta znormowany kierunek tokenu, nie jego długość.
+
+\elem{3.6. Dioda $j$ w reflektorze $c$ = aktywacja \stD}
+Jasność $z_{jc}=\GELU(a_{jc})$. GELU ma minimum $-0{,}170$, a z góry jest nieograniczony: laser świeci mocno tylko w jedną stronę,
+a „ciemny” laser może co najwyżej słabo ciągnąć w przeciwną ($|z|\le0{,}17$) \stD. Pomiary \stP:
+\begin{center}\small
+\begin{tabular}{lccccccc}\toprule
+epoka & 0 & 1 & 5 & 10 & 20 & 40 & 60\\\midrule
+diody jasne ($z>0{,}05$), mediana po tokenach & 45\,\% & 34\,\% & 28\,\% & 24\,\% & 24\,\% & 21\,\% & 19\,\%\\
+diody słabo ujemne ($z<-0{,}05$) & 42\,\% & 53\,\% & 59\,\% & 53\,\% & 44\,\% & 42\,\% & 42\,\%\\\bottomrule
+\end{tabular}
+\end{center}
+Uczenie zapala coraz mniej laserów na token (rzadszy kod), a słabe ujemne wyjścia są częste\pp{rzadkosc}.
+Ujemna dioda nie jest ciemna: ten sam reflektor ciągnie wtedy token słabo w stronę $-\bm v_c$. Filmy 8--12 obcinały jasności do $z\ge0$
+(i rysowały, i liczyły z nich położenia) \stI; od filmu 20 i w aplikacji ujemne jasności są rysowane na błękitno, w prawdziwej
+proporcji do dodatnich. Ujemne wiązki niosą 9--24\,\% sumy długości sił (\texttt{ZASADY\_LASER\_KOLOID.md}, Z5).
+
+\elem{3.7. Wiązka $c\to j$ = wektor siły \stD}
+$\bm f_{jc}=z_{jc}\,\bm v_c$. Kierunek $\bm v_c$ jest ten sam dla każdego tokenu (to jest treść „telecentryczności” sfery w filmie 12);
+długość $|z_{jc}|\,\lVert\bm v_c\rVert$ zależy od tokenu.
+
+\elem{3.8. Ognisko i wypadkowa \stD}
+Wszystkie 768 wiązek danej cząsteczki spotyka się w niej; jej przesunięcie w bloku to $\Delta\bm x_j=\sum_c\bm f_{jc}+\bm b_2=\bm F(\bm x_j)$.
+Pomiary \stP\ (mediana po tokenach):
+\begin{center}\small
+\begin{tabular}{lccccccc}\toprule
+epoka & 0 & 1 & 5 & 10 & 20 & 40 & 60\\\midrule
+$\lVert\sum_c z_c\bm v_c\rVert\,/\,\sum_c|z_c|\lVert\bm v_c\rVert$ (znoszenie) & 0,054 & 0,109 & 0,216 & 0,217 & 0,198 & 0,147 & 0,144\\
+$\lVert\bm F(\bm x_j)\rVert/\lVert\bm x_j\rVert$ & 0,19 & 0,13 & 0,30 & 0,30 & 0,35 & 0,28 & 0,23\\\bottomrule
+\end{tabular}
+\end{center}
+Z sumy długości 768 sił zostaje jako wypadkowa tylko 5--22\,\%: siły w większości się znoszą. Na starcie to efekt sumowania
+losowych kierunków; później znoszenie maleje do około 0,14--0,22 i sprawiają je m.in. przeciwlasery (pkt~3.9)\pp{znoszenie}.
+
+\elem{3.9. Przeciwlasery \stP}
+Dla każdego $\bm v_c$ partner $c'$ o najmniejszym $\cos(\bm v_c,\bm v_{c'})$; przeciwlaser, gdy $\cos<-0{,}5$:
+\begin{center}\small
+\begin{tabular}{lccccccc}\toprule
+epoka & 0 & 1 & 5 & 10 & 20 & 40 & 60\\\midrule
+lasery z przeciwlaserem ($\cos<-0{,}5$) & 0\,\% & 0\,\% & 1\,\% & 14\,\% & 36\,\% & 52\,\% & 53\,\%\\
+mediana $\cos$ partnera & $-0{,}22$ & $-0{,}23$ & $-0{,}28$ & $-0{,}37$ & $-0{,}46$ & $-0{,}51$ & $-0{,}51$\\\bottomrule
+\end{tabular}
+\end{center}
+Na starcie kierunki są losowe ($-0{,}22$ to poziom losowy dla 768 wektorów w 192D); uczenie tworzy pary od około 5.~epoki i nasyca
+się po 40.~epoce. Żadna para nie przekracza $\cos<-0{,}8$: pary są przybliżone. Mechanizm \stD: ponieważ laser pcha praktycznie
+w jedną stronę, ruch w obie strony osi wymaga dwóch neuronów; wzdłuż osi pary wypadkowa to
+$z_{jc}\lVert\bm v_c\rVert-z_{jc'}\lVert\bm v_{c'}\rVert$ (przy dokładnej antyrównoległości). To samo zjawisko opisano w CNN
+(pary filtrów o przeciwnej fazie przy ReLU) i w modelach superpozycji (pary antypodalne); obie analogie mają zastrzeżenia\pp{pary}.
+
+\elem{3.10. Sprzężenie zwrotne lasera: $\cos(\bm s_c,\bm v_c)$ \stP\ i jego skutek \stD}
+Mediana $\cos(\bm\gamma\odot\bm w_c,\ \bm v_c)$: 0,00 (krok 0) $\to$ $-0{,}055$ (5.~ep.) $\to$ $-0{,}124$ (10.) $\to$ $-0{,}170$ (20.)
+$\to$ $-0{,}178$ (60.). Laser coraz częściej pcha token \emph{przeciw} kierunkowi, w którym sam go „widzi”. To nie jest tylko
+interpretacja: ślad Jakobianu pola jest dokładnie sumą tych iloczynów (przypis\pp{slad}),
+\begin{equation}
+\tr J = \sum_{c}\GELU'(a_c)\;\bm w_c^{\!\top}J_{\LN}\,\bm v_c
+\;\approx\;\frac{1}{\sigma}\sum_c \GELU'(a_c)\,(\bm\gamma\odot\bm w_c)^{\!\top}\bm v_c ,
+\end{equation}
+więc ujemny $\cos(\bm s_c,\bm v_c)$ wprost daje ujemny ślad, czyli kontrakcję objętości zmierzoną w pkt~\ref{sec:pulapka}.
+
+\elem{3.11. Galwa \stI}
+Celowanie każdej z 600 wiązek w punkt wejścia na sferze. Nie mają odpowiednika w sieci: kierunek siły zależy od reflektora, nie od tokenu.
+
+\elem{3.12. Zewnętrzna szklana sfera (film 12) \stI\ / \stD}
+Geometria (punkty i kąty załamania) jest umowna \stI. Treść jest dokładna \stD: po załamaniu wszystkie wiązki reflektora $c$
+biegną równolegle w kierunku $\bm v_c$, bo wagi są wspólne dla tokenów. Ważony jasnością średni kąt załamania w filmie 12 (wagi biegu
+gęstego) spada z około 107° na starcie do 33° w kroku 22\,974; na wagach s47, z przypisaniem do kierunków z 60.~epoki, z 108° do 27°.
+To skutek przypisania reflektorów do kierunków z końca uczenia, a nie odkrycie\pp{sfera}.
+
+\elem{3.13. Miejsca i kolory reflektorów \stI}
+768 punktów spirali Fibonacciego (układ z aplikacji), przypisanych kanałom algorytmem węgierskim do $-\hat{\bm d}_c$; kolor z koła barw
+aplikacji. Wybór czytelności, bez znaczenia w sieci.
+
+\elem{3.14. Ruch reflektorów w uczeniu \stP}
+\begin{center}\footnotesize
+\begin{tabular}{>{\raggedright\arraybackslash}p{4.2cm}ccccccc}\toprule
+epoka & 0 & 1 & 5 & 10 & 20 & 40 & 60\\\midrule
+mediana $\cos(\bm v_c(t),\bm v_c(0))$ & 1 & 0,96 & 0,77 & 0,55 & 0,33 & 0,18 & 0,11\\
+mediana $\cos(\bm w_c(t),\bm w_c(0))$ & 1 & 0,98 & 0,83 & 0,65 & 0,46 & 0,29 & 0,20\\
+mediana $\lVert\bm v_c\rVert$ & 0,289 & 0,293 & 0,335 & 0,429 & 0,605 & 0,782 & 0,836\\
+mediana $\lVert\bm w_c\rVert$ & 0,578 & 0,575 & 0,642 & 0,780 & 0,921 & 0,997 & 1,007\\
+wspólny obrót 192D, \% zmiany (zero) & -- & 14 (12) & 14 (12) & 15 (12) & 17 (11) & 21 (11) & 24 (11)\\
+3 główne składowe $\hat{\bm v}_c$, \% wariancji & 3 & 5 & 13 & 18 & 22 & 23 & 22\\\bottomrule
+\end{tabular}
+\end{center}
+Kierunek pchnięcia tego samego lasera obraca się do 60.~epoki o około 84° (mediana $\cos=0{,}11$), siła lasera rośnie 2,9 raza.
+Reflektor obraca się jako całość tylko w małej części: jeden wspólny obrót wyjaśnia 24\,\% zmiany wobec 11\,\% dla zera (ta sama zmiana
+przetasowana między laserami), więc nadwyżka to około 13 punktów procentowych; reszta to indywidualne przestawianie lusterek\pp{prokrustes}.
+Po stronie celowników $\bm w_c$ wspólny obrót rośnie pod koniec uczenia: w oknach 5-epokowych po 40.~epoce wyjaśnia 22--24\,\% zmiany
+kierunków wobec 9--10\,\% zera (\texttt{PRZELICZENIE\_ZASADY\_S47.json}, część O). Nie jest to nadążanie za strumieniem rezydualnym
+(test~7 w pkt~\ref{sec:testy}): strumień obraca się co epokę jako całość (około jednej trzeciej zmiany), ale jego obrót przyłożony do
+celowników działa tak źle jak obrót wokół losowych osi. Wspólny obrót celowników zachodzi głównie w kierunkach, których strumień prawie
+nie używa; tę część wchłania próg $b_c$ (\texttt{NADAZANIE\_PULAPKI\_S47.md}).
+Kierunki skupiają się w mniejszej liczbie wymiarów (3\,\% $\to$ 22\,\% w trzech składowych).
+Skąd ten obrót i jak szybko zachodzi w czasie (drganie i dryf), opisuje rozdział~\ref{sec:gradient}.
+
+\elem{3.15. Uwaga = wiązki między cząsteczkami \stD}
+Równanie \eqref{eq:uwaga}, rozpisane na głowy: cząsteczka $j$ dostaje od cząsteczki $k$ wektor
+$\bm f_{jk}=\sum_{h=1}^{3}A^{h}_{jk}\,W_O^{h}W_V^{h}\LN_1(\bm x_k)$, a jej przesunięcie w podkroku uwagi to $\sum_k\bm f_{jk}+\bm b_O$.
+To jedyne prawdziwe oddziaływanie cząstka--cząstka w sieci; MLP działa na każdy token osobno\pp{uwaga}. Element jest już pokazany:
+filmy 20--22 (linie $j$--$k$ o jasności $A_{jk}$, dwie najsilniejsze na głowę) i okienko „Przejście przez sieć” aplikacji (linie
+uwagi i wektory $\bm f_{jk}$ wybranej cząsteczki).
+
+\elem{3.16. Łańcuch 6 bloków \stD}
+Sześć stopni optycznych po kolei; w każdym najpierw uwaga, potem MLP (768 własnych reflektorów bloku), stąd 12 podkroków
+i 13 stanów strumienia rezydualnego na jedno przejście. Pokazują to filmy 20--22 i aplikacja (schemat sieci, przycisk podkroków);
+w filmie 21 każdy podkrok „świeci, przesuwa, gaśnie”, a w filmie 22 cząsteczki ruszają się \emph{tylko} wtedy, gdy świecą wiązki
+podkroku (położenia z pkt~3.2(3), jedna skala kamery na krok uczenia, kamera stoi w czasie przejścia). Kontrola w filmie 20: przesunięcie
+w podkroku uwagi odtworzone z $A$ i przesunięcie w podkroku MLP odtworzone z $z$ zgadzają się z przejściem modelu z błędem względnym
+$\le10^{-6}$ \stP.
+
+\elem{3.17. Dokładny rozkład względem środka chmury \stD}
+Ekran pokazuje położenia względem średniej po tokenach, więc wiązki trzeba wycentrować tak samo. Odejmując średnią po $j$:
+\begin{equation}
+\Delta\bm x_j-\overline{\Delta\bm x}=\sum_{k,h}\big(A^{h}_{jk}-\bar A^{h}_{k}\big)\,W_O^{h}W_V^{h}\LN_1(\bm x_k)
+\quad\text{(uwaga)},\qquad
+\Delta\bm x_j-\overline{\Delta\bm x}=\sum_{c}\big(z_{jc}-\bar z_{c}\big)\,\bm v_c\quad\text{(MLP)},
+\end{equation}
+gdzie $\bar A^{h}_{k}=\frac1N\sum_j A^{h}_{jk}$ i $\bar z_c=\frac1N\sum_j z_{jc}$; wyrazy wolne $\bm b_O$, $\bm b_2$ znikają.
+Rysowanie surowych $A_{jk}$ i $z_{jc}$ przy wycentrowanych położeniach daje wektory, których suma \emph{nie} równa się ruchowi.
+Aplikacja ma trzy układy: surowy (z wyrazami wolnymi), względem środka i względem środka w jednej skali na checkpoint
+(\emph{nie} LayerNorm: jedna liczba dla wszystkich tokenów i 13 stanów). W każdym suma rysowanych wektorów równa się rysowanemu
+ruchowi z błędem względnym $\approx10^{-5}$ (bieg s47, kroki 0, 10\,940, 65\,640) \stP; przed tą poprawką błąd w układach
+wycentrowanych wynosił 0,3--3,8, a w uwadze przy starcie do 176.
+
+\subsection*{Tabela zbiorcza: cały układ}
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{6.0cm}>{\raggedright\arraybackslash}p{1.4cm}>{\raggedright\arraybackslash}p{4.6cm}}
+\toprule
+\textbf{Element} & \textbf{Odpowiednik w sieci} & \textbf{Status} & \textbf{Liczba (bieg s47, blok 6)}\\\midrule\endhead
+cząsteczka & token $\bm x_j$ przed MLP & \stD & $\lVert\bm x\rVert$: 14,7 $\to$ 90,5\\
+położenie na ekranie & $s\,PW_2(\bm z_j-\bar{\bm z})$ (filmy 8--12, 23); $s\,P(\bm x_j-\bar{\bm x})$ (aplikacja, film 20); $s\,P\,\widehat{\LN}$ (film 22) & \stI & 3 składowe: 3--22\,\% wariancji\\
+sfera wewnętrzna & LayerNorm: sfera $\sqrt{192}$, elipsoida $\bm\gamma$ & \stD & $\gamma\in[0{,}20;1{,}65]$ w 60.~ep.\\
+reflektor & neuron $(\bm w_c,b_c,\bm v_c)$, wspólny & \stD & 768 na blok\\
+celownik & $\bm s_c=\bm\gamma\odot\bm w_c$, próg $-(\bm w_c^{\!\top}\bm\beta+b_c)$ & \stD & --\\
+dioda & $z_{jc}=\GELU(a_{jc})\ge-0{,}17$; ujemna = słabe ciągnięcie w $-\bm v_c$ (błękit) & \stD & jasne 45\,\% $\to$ 19\,\%\\
+wiązka & $z_{jc}\bm v_c$, kierunek wspólny & \stD & --\\
+wypadkowa & $\bm F(\bm x_j)=\sum_c z_{jc}\bm v_c+\bm b_2$ & \stD & znoszenie: 0,05 $\to$ 0,14\\
+przeciwlasery & pary $\cos(\bm v_c,\bm v_{c'})<-0{,}5$ & \stP & 0\,\% $\to$ 53\,\%\\
+sprzężenie zwrotne & $\cos(\bm s_c,\bm v_c)<0$ $\Rightarrow$ $\tr J<0$ & \stP+\stD & 0 $\to$ $-0{,}18$\\
+galwa & brak & \stI & --\\
+sfera zewnętrzna & warunek: kierunek $\bm v_c$ wspólny & \stD/\stI & kąt 107° $\to$ 33° (umowny)\\
+ruch reflektorów & uczenie $\bm w_c(t),\bm v_c(t)$ & \stP & obrót $\approx84^\circ$, $\lVert\bm v\rVert\times2{,}9$\\
+strzałka obrotu igły & obrót $\hat{\bm v}_c$ (gradient przez AdamW), rozdz.~\ref{sec:gradient} & \stP & drganie $\approx3{,}5$°/100 kr.; dryf 1,04 $\to$ 0,52\\
+uwaga & $\sum_h A^h_{jk}\,W^h_OW^h_V\LN_1(\bm x_k)$ & \stD & filmy 20--22, aplikacja\\
+rozkład wycentrowany & $(A_{jk}-\bar A_k)$, $(z_{jc}-\bar z_c)$, bez biasów & \stD & suma = ruch, błąd $\approx10^{-5}$\\
+\bottomrule
+\end{longtable}
+
+%=====================================================================================================================
+\section{Pojedyncza pułapka koloidalna, punkt po punkcie}\label{sec:pulapka}
+Dotyczy filmów 16--19, przede wszystkim 18 i 19 (dokładny Jakobian, ten sam bieg).
+
+\elem{4.1. Czym jest pułapka \stD}
+Pole sił bloku wokół tokenu $j$ w liniowym przybliżeniu: $\bm F(\bm x_j+\bm\delta)\approx\bm F(\bm x_j)+J_j\bm\delta$. Pułapka to
+macierz $J_j$, czyli to, jak blok traktuje tokeny różniące się od $\bm x_j$ o mały wektor $\bm\delta$. Blok wykonuje \emph{jeden} krok
+$\bm x\mapsto\bm x+\bm F(\bm x)$; płynięcie cząstek próbnych w filmach to ilustracja w duchu ciągłej głębokości \stI\pp{krok}.
+
+\elem{4.2. Dokładny Jakobian \stD}
+\begin{equation}
+J_j=\frac{\partial\bm F}{\partial\bm x}(\bm x_j)=W_2\,\operatorname{diag}\!\big(\GELU'(\bm a_j)\big)\,W_1\,J_{\LN}(\bm x_j)
+=\sum_{c=1}^{768}\GELU'(a_{jc})\;\bm v_c\,\bm w_c^{\!\top}J_{\LN}(\bm x_j),
+\end{equation}
+\begin{equation}
+J_{\LN}(\bm x)=\operatorname{diag}(\bm\gamma)\Big(\frac{P_1}{\sigma}-\frac{\bm u\bm u^{\!\top}}{d\,\sigma^3}\Big),\qquad
+P_1=I-\tfrac1d\bm 1\bm 1^{\!\top},\quad \bm u=P_1\bm x.
+\end{equation}
+Pułapka jest więc sumą 768 macierzy rzędu 1: każdy laser wnosi „pchnij wzdłuż $\bm v_c$ proporcjonalnie do przesunięcia wzdłuż
+swojego celownika”, ważone nachyleniem GELU w punkcie pracy. $J_{\LN}\bm 1=\bm 0$ dokładnie, a kierunek radialny jest zerowany
+z dokładnością do $\epsilon$; $J$ ma więc co najmniej jeden zerowy i jeden prawie zerowy kierunek. Liczone na stanach $\bm x_j$
+z przejścia modelu; $\GELU(\bm a_j)$ odtwarza zapisany latent z $R^2\ge0{,}99993$ \stP.
+
+\elem{4.3. Siodło i wir: rozkład $J=S+A$ \stD}
+$S=\tfrac12(J+J^{\!\top})$ to część potencjalna (sztywność): ujemne wartości własne cofają, dodatnie wypychają. $A=\tfrac12(J-J^{\!\top})$
+to wir: nie zbliża ani nie oddala, tylko obraca. Pole jest gradientem potencjału wtedy i tylko wtedy, gdy $J$ jest symetryczny
+w całym obszarze\pp{zachowawcze}. Dla porównania: dla macierzy o niezależnych losowych wyrazach
+$\lVert S\rVert^2/\lVert J\rVert^2=\frac{n+1}{2n}=0{,}503$ i $\lVert A\rVert/\lVert S\rVert=\sqrt{\frac{n-1}{n+1}}=0{,}995$ przy $n=192$\pp{losowa}.
+
+\elem{4.4. Pomiar na wszystkich 600 tokenach \stP}
+Mediany po tokenach ($\lambda$ --- wartości własne; ostatnie dwie kolumny dotyczą mapy bloku $I+J$):
+\begin{center}\small
+\begin{tabular}{lcccccccc}\toprule
+krok (ep.) & $\lambda(S)<0$ & $\tr J/192$ & $\frac{\lVert S\rVert^2}{\lVert J\rVert^2}$ & $\frac{\lVert A\rVert}{\lVert S\rVert}$ & $\lVert J\rVert_2$ & $\max\operatorname{Re}\lambda(J)$ & $|1{+}\lambda|>1$ & $\rho(I{+}J)$\\\midrule
+0 (0) & 50\,\% & $-0{,}0006$ & 0,504 & 0,993 & 0,47 & 0,19 & 51\,\% & 1,19\\
+1094 (1) & 51\,\% & $-0{,}0005$ & 0,533 & 0,936 & 0,29 & 0,14 & 48\,\% & 1,14\\
+10\,940 (10) & 51\,\% & $-0{,}0046$ & 0,546 & 0,913 & 1,29 & 0,33 & 47\,\% & 1,33\\
+65\,640 (60) & 51\,\% & $-0{,}0162$ & 0,576 & 0,859 & 1,39 & 0,25 & 46\,\% & 1,25\\\midrule
+\multicolumn{9}{l}{\emph{60.~epoka osobno:}}\\
+narzędzie (20) & 51\,\% & $-0{,}0139$ & 0,536 & 0,930 & 1,72 & 0,23 & 47\,\% & 1,23\\
+tło (580) & 51\,\% & $-0{,}0163$ & 0,576 & 0,858 & 1,39 & 0,25 & 46\,\% & 1,25\\
+token 316 & 51\,\% & $-0{,}0072$ & 0,521 & 0,958 & 1,38 & 0,23 & 48\,\% & 1,23\\\bottomrule
+\end{tabular}
+\end{center}
+
+\elem{4.5. Odczyt pomiaru}
+\begin{enumerate}
+\item \textbf{Siodło, nie studnia} \stP. Przez całe uczenie około 51\,\% kierunków $S$ cofa, a 49\,\% wypycha. Blok nigdy nie tworzy
+studni, w której wszystkie kierunki wracają do tokenu. To zgadza się z analizą pól FFN w dużych modelach językowych, gdzie większość
+punktów krytycznych to siodła\pp{mudarisov}.
+\item \textbf{Wir na poziomie losowym na starcie, potem trochę słabszy} \stP. W kroku 0 symetryczność 0,504 i stosunek 0,993 to dokładnie
+poziom macierzy losowej (0,503 i 0,995). Uczenie zmniejsza wir do 0,86 (tło) i 0,93 (narzędzie); token 316 zostaje przy 0,96.
+Pole zostaje silnie niezachowawcze: wyuczone autoenkodery mają symetryczność 95--99\,\%, a u nas 52--58\,\%\pp{autoenk}.
+\item \textbf{Słaba kontrakcja z uczeniem} \stP+\stD. Średnia wartość własna (ślad$/192$) spada z $-0{,}0006$ do $-0{,}016$. Wyjaśnia to
+dokładnie wzór na ślad z pkt~3.10: ujemne $\cos(\bm s_c,\bm v_c)$ (do $-0{,}18$) sumuje się do ujemnego śladu. Ślad opisuje
+przybliżenie ciągłe; dla prawdziwego, jednego kroku $\bm x\mapsto\bm x+\bm F(\bm x)$ miarą jest $\log\lvert\det(I+J)\rvert/192$, który spada
+z $-0{,}0008$ do $-0{,}021$ i jest ujemny dla wszystkich 600 tokenów: objętość otoczenia tokenu maleje w jednym przejściu około 1,2 raza
+na starcie i około 55 razy w 60.~epoce.
+\item \textbf{Siła pola rośnie około trzykrotnie} \stP\ ($\lVert J\rVert_2$: 0,47 $\to$ 1,39; najpierw spada w 1.~epoce do 0,29).
+\item \textbf{Mapa bloku nie ściska} \stP. Około połowy modów $I+J$ ma $|1+\lambda|>1$, a promień spektralny $\rho(I+J)\approx1{,}2$--$1{,}3$:
+sam MLP ostatniego bloku nie jest pułapką w sensie dyskretnej dynamiki; wzmacnia część różnic, inne tłumi.
+\item \textbf{Porównanie z fizyką} \stA. W pęsetach optycznych część rotacyjna to około 1--4\,\% sztywności, a „fontanna
+prawdopodobieństwa” to słaba siła niezachowawcza ($\epsilon\approx0{,}11$) na tle silnej studni. U nas wir jest prawie tak silny jak
+siodło i nie ma studni. Liczby nie są wprost porównywalne (inne miary), ale jakościowo nasza „pułapka” jest daleko od optycznej\pp{fizyka}.
+\end{enumerate}
+
+\elem{4.6. Co znaczą kierunki dla tokenu \stA}
+Kierunki cofające to cechy, których różnice blok zaciera (niezmienniczość); wypychające --- cechy, których różnice blok wzmacnia
+(selektywność); wir przenosi różnicę z jednej cechy w inną (mieszanie cech). „Cząstki próbne” w filmach 16, 18 i 19 to umowne
+małe zaburzenia $\bm x_j+\bm\delta$, a nie dane.
+
+\elem{4.7. Prawdziwe tokeny wokół pułapki (film 17; wszystkie pary) \stP}
+Dla pary tokenów $(k,l)$ liczymy, jak blok zmienia ich odległość widzianą przez następną warstwę (po LayerNorm, bez $\bm\gamma,\bm\beta$):
+$r_{kl}=\lVert\widehat{\LN}(\bm x_k+\bm F_k)-\widehat{\LN}(\bm x_l+\bm F_l)\rVert\,/\,\lVert\widehat{\LN}(\bm x_k)-\widehat{\LN}(\bm x_l)\rVert$;
+$r<1$ --- przyciąganie, $r>1$ --- odpychanie\pp{ln-odl}. Mediana mnożnika i odsetek par przyciąganych:
+\begin{center}\small
+\begin{tabular}{lccc}\toprule
+krok (ep.) & narzędzie--narzędzie (190 par) & narzędzie--tło (11\,600) & tło--tło (167\,910)\\\midrule
+0 (0) & $\times1{,}010$ (14\,\%) & $\times1{,}003$ (41\,\%) & $\times1{,}006$ (34\,\%)\\
+1094 (1) & $\times1{,}021$ (27\,\%) & $\times1{,}004$ (41\,\%) & $\times1{,}035$ (20\,\%)\\
+10\,940 (10) & $\times1{,}021$ (29\,\%) & $\times1{,}053$ (1,5\,\%) & $\times1{,}082$ (0,8\,\%)\\
+65\,640 (60) & $\times1{,}084$ (26\,\%) & $\times1{,}011$ (25\,\%) & $\times1{,}100$ (0,3\,\%)\\\bottomrule
+\end{tabular}
+\end{center}
+Względem samego tokenu 316 w 60.~epoce: tokeny narzędzia $\times1{,}098$ (żaden nie jest przyciągany), tło $\times1{,}020$ (5\,\% przyciąganych).
+Odczyt: ostatni blok rozsuwa tokeny \emph{wewnątrz} grup --- najmocniej tło (o 10\,\%), także narzędzie (o 8\,\%) --- a odległości
+narzędzie--tło w 60.~epoce prawie nie zmienia (o 1\,\%; w 10.~epoce jeszcze o 5\,\%). Wcześniejsze zdanie „blok rozsuwa narzędzie mocniej
+niż tło” było prawdziwe tylko względem tokenu 316, nie dla wszystkich par\pp{antysmoothing}.
+
+\elem{4.8. Siły w ognisku tokenu 316 \stP}
+Wypadkowa 768 sił to 5,6\,\% sumy ich długości w kroku 0, 12,8\,\% w 1.~epoce i 16,8\,\% w 60.~epoce.
+
+\elem{4.9. Pułapka w czasie uczenia --- inny obiekt \stA}
+Jedyna prawdziwa „pułapka” w czasie uczenia leży w przestrzeni wag: dolina minimów straty. Wokół niej szum SGD daje ograniczone
+drgania w kierunkach poprzecznych (proces Ornsteina--Uhlenbecka z czasem relaksacji $1/(\eta\lambda)$ kroków) i dyfuzję wzdłuż
+doliny\pp{dolina}. Nasz pomiar na biegach z różnym krokiem uczenia daje $\tau\propto\eta^{-0{,}5}$, a nie $\eta^{-1}$, więc prosty obraz
+„krok uczenia = temperatura” się nie potwierdza\pp{tau}. Relacje fluktuacja--dyssypacja i metody kalibracji pęset są kandydatami na
+pomiar „temperatury” i „sztywności” tokenów, ale nikt ich dotąd nie stosował do sieci i ich założenia trzeba sprawdzić\pp{kalibracja}.
+
+\subsection*{Tabela zbiorcza: pojedyncza pułapka}
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{5.9cm}>{\raggedright\arraybackslash}p{1.4cm}>{\raggedright\arraybackslash}p{4.6cm}}
+\toprule
+\textbf{Element} & \textbf{Odpowiednik} & \textbf{Status} & \textbf{Liczba}\\\midrule\endhead
+cząstka w pułapce & token 316, $\bm x_{316}$ & \stD & --\\
+cząstki próbne & $\bm x_{316}+\bm\delta$ (umowne) & \stI & --\\
+pole pułapki & $J=W_2\operatorname{diag}(\GELU')W_1J_{\LN}$ & \stD & $R^2$ kontroli $\ge0{,}99993$\\
+sztywność & $S=\tfrac12(J+J^{\!\top})$ & \stD & 51\,\% kierunków cofa\\
+wir & $A=\tfrac12(J-J^{\!\top})$ & \stD & $\lVert A\rVert/\lVert S\rVert$: 0,99 $\to$ 0,86--0,96\\
+kontrakcja & $\tr J<0$, z $\cos(\bm s_c,\bm v_c)<0$ & \stD+\stP & $\tr J/192$: $-0{,}0006\to-0{,}016$\\
+siła pola & $\lVert J\rVert_2$ & \stP & $\times3$ (0,47 $\to$ 1,39)\\
+krok bloku & $I+J$ & \stD & $\rho\approx1{,}2$; 46--51\,\% modów rośnie\\
+prawdziwe tokeny & stosunek odległości po LN & \stP & tło--tło $\times1{,}10$, narz.--tło $\times1{,}01$\\
+„płynięcie” & ciągła głębokość (Lu) & \stI & --\\
+nazwa „pułapka koloidalna” & lokalna odpowiedź liniowa & \stA & siodło z wirem, nie studnia\\
+\bottomrule
+\end{longtable}
+
+%=====================================================================================================================
+\section{Gradient: obrót igieł reflektorów}\label{sec:gradient}
+Rozdział odpowiada na pytanie, gdzie w układzie laserów siedzi gradient. Krótko: w czasie głębokości gradientu nie ma (siły liczy
+przejście w przód); w czasie uczenia gradient \emph{obraca i wydłuża igły reflektorów} (wektory $\bm v_c$) i przestawia ich celowniki.
+Pokazują to film 23 (\texttt{lasery\_23\_obrot\_reflektorow.mp4}) i strzałki obrotu w aplikacji.
+
+\elem{5.1. Poprawka z głowy: $\bm\delta_j$ \stD}
+Niech $\bm\delta_j=\partial L/\partial\bm x^{+}_j$ będzie gradientem straty względem stanu tokenu $j$ po bloku 6, czyli tym, co głowa
+(przez końcowy LayerNorm) odsyła do cząsteczki $j$: „w którą stronę przesunąć ten token, żeby strata spadła”. Wstecz przez blok 6
+poprawka przechodzi jako $\tilde{\bm\delta}_j=(I+J_j)^{\!\top}\bm\delta_j$ (pkt~4.2), dalej przez uwagę do wszystkich tokenów
+i do bloków 5, 4, \dots, 1.
+
+\elem{5.2. Moment siły na pokrętłach reflektora \stD}
+Z równania \eqref{eq:mlp}, sumując po tokenach i po obrazach paczki ($32\times600$ cząsteczek)\pp{grad}:
+\begin{equation}
+\frac{\partial L}{\partial\bm v_c}=\sum_j z_{jc}\,\bm\delta_j,\qquad
+g_{jc}\equiv\frac{\partial L}{\partial a_{jc}}=\GELU'(a_{jc})\,\bm v_c^{\!\top}\bm\delta_j,\qquad
+\frac{\partial L}{\partial\bm w_c}=\sum_j g_{jc}\,\LN_2(\tilde{\bm x}_j),\qquad
+\frac{\partial L}{\partial b_c}=\sum_j g_{jc}.
+\end{equation}
+Odczyt: igłę $\bm v_c$ ciągną poprawki $-\bm\delta_j$ tych cząsteczek, na które reflektor świeci, ważone jasnością diody
+(ujemna dioda ciągnie w przeciwną stronę); celownik $\bm w_c$ obraca się w stronę tokenów, dla których pchnięcie wzdłuż $\bm v_c$
+pomogłoby ($\bm v_c^{\!\top}\bm\delta_j<0$), i od tokenów, którym szkodzi. Zdjęcie TRAIN 0 to jeden z 32 obrazów paczki: jego diody
+są tylko częścią źródeł momentu.
+
+\elem{5.3. Od gradientu do kroku: AdamW \stD}
+Kod uczenia (\texttt{trening.py}): obcięcie normy całego gradientu do 1, potem AdamW z $\beta=(0{,}9;\,0{,}999)$, krok
+$\eta_k=5\cdot10^{-4}\min(1,(k+1)/300)$ (rozgrzewka 300 kroków, potem stały) i rozpadem wag $\lambda=0{,}05$ tylko dla tensorów
+o wymiarze $\ge2$ (wagi fc1, fc2, uwagi, konwolucji), bez biasów i parametrów LayerNorm\pp{adamw}:
+\begin{equation}
+\theta\leftarrow\theta\,(1-\eta_k\lambda)-\eta_k\,\frac{\hat{\bm m}}{\sqrt{\hat{\bm s}}+\epsilon},\qquad
+\bm m\leftarrow\beta_1\bm m+(1-\beta_1)\bm g,\quad \bm s\leftarrow\beta_2\bm s+(1-\beta_2)\bm g^{2}.
+\end{equation}
+Skutki dla igieł:
+\begin{enumerate}
+\item \textbf{Sprężyna nie obraca.} Rozpad wag mnoży całą kolumnę $\bm v_c$ przez tę samą liczbę $1-\eta\lambda=1-2{,}5\cdot10^{-5}$:
+skraca igłę, ale nie zmienia jej kierunku. Obrót igły pochodzi więc wyłącznie z członu gradientowego \stD.
+\item \textbf{Adam zmienia kierunek.} Dzielenie przez $\sqrt{\hat{\bm s}}$ jest osobne dla każdej współrzędnej, więc krok nie jest
+równoległy do $-\partial L/\partial\bm v_c$; pierwszy moment uśrednia około 10 ostatnich kroków (bezwładność), drugi około 1000 (hamulec) \stD.
+\item \textbf{Obcięcie działało zawsze.} Norma gradientu przekraczała 1 w 100\,\% paczek od kroku 0 do 60.~epoki (mediana 9,8 na starcie,
+2,4 w 60.~epoce); to prawie stały mnożnik, który Adam znosi, bo normuje skalę (\texttt{obciecie\_gradientu/NORMA\_GRADIENTU.md}) \stP.
+\item \textbf{Stały krok.} Po rozgrzewce $\eta$ się nie zmienia, a znormowany krok Adama ma na każdej współrzędnej rząd $\eta$;
+długość kroku nie maleje sama z siebie w czasie uczenia \stD.
+\end{enumerate}
+Checkpointy biegu s47 zawierają tylko wagi (\texttt{net}), bez stanu optymalizatora; dlatego mierzymy rzeczywisty obrót między
+checkpointami, a nie sam gradient ani $\hat{\bm m}$.
+
+\elem{5.4. Pomiar obrotu igieł \stP}
+Kąt między $\hat{\bm v}_c(t)$ a $\hat{\bm v}_c(t+\Delta)$ w pełnych 192 wymiarach, mediana po 768 laserach (odstęp zaokrąglony do
+najbliższego zapisanego checkpointu):
+\begin{center}\small
+\begin{tabular}{lcccccc}\toprule
+od kroku (epoka) & $\Delta\approx100$ & 300 & 1000 & 3000 & 10\,000 & 20\,000\\\midrule
+300 (0,3) & 3,8° & 7,2° & 15,1° & 28,5° & 54,2° & 68,4°\\
+1094 (1) & 3,8° & 6,5° & 13,4° & 26,7° & 52,2° & 66,4°\\
+5470 (5) & 5,2° & 7,6° & 11,8° & 21,5° & 41,8° & 55,8°\\
+21\,880 (20) & 4,2° & 6,6° & 9,9° & 15,0° & 25,1° & 35,3°\\
+43\,760 (40) & 3,8° & 5,4° & 8,2° & 12,8° & 20,1° & 28,3°\\\bottomrule
+\end{tabular}
+\end{center}
+Prędkość kątowa (stopnie na 100 kroków, mediana po laserach), z checkpointów odległych o $\ge100$ kroków („drganie”) i o $\ge2000$
+kroków („dryf netto”, kąt podzielony przez liczbę setek kroków):
+\begin{center}\small
+\begin{tabular}{lccccc}\toprule
+krok (epoka) & 0 & 300 (0,3) & 1094 (1) & 21\,880 (20) & 65\,640 (60)\\\midrule
+drganie ($\ge100$ kroków) & 2,88 & 3,75 & 3,56 & 3,53 & 2,79\\
+dryf netto ($\ge2000$ kroków) & 1,14 & 1,15 & 1,04 & 0,63 & 0,52\\\bottomrule
+\end{tabular}
+\end{center}
+Wykładnik $\alpha$ w zależności kąt $\propto\Delta^{\alpha}$ (z $\Delta=300$ i $3000$): 0,60 od kroku 300, 0,45 od 5.~epoki, 0,36 od 20.,
+0,38 od 40. Mediana obrotu igły od kroku 0 to 84° w 60.~epoce (zgodnie z $\cos=0{,}11$ w pkt~3.14), z czego 19\,\% w pierwszej epoce;
+celowniki $\bm w_c$ obracają się o 78°. Kontrola danych: wyjście MLP $=\sum_c z_c\bm v_c+\bm b_2$ z błędem względnym $5\cdot10^{-8}$.
+
+\elem{5.5. Odczyt pomiaru}
+\begin{enumerate}
+\item \textbf{Większość krótkiego ruchu to drganie} \stP. Gdyby igła obracała się tylko w jedną stronę z prędkością dryfu (około 1° na
+100 kroków na początku, 0,5° na końcu), w 100 krokach obróciłaby się o 0,5--1°, a obraca się o około 4°. Kolejne paczki ciągną igłę w różne strony.
+\item \textbf{Drganie ma prawie stałą wielkość} \stP+\stD: 2,8--3,8° na 100 kroków przez całe uczenie, zgodnie ze stałym krokiem
+po rozgrzewce (pkt~5.3).
+\item \textbf{Dryf zwalnia} \stP: o połowę między 1. a 60.~epoką, a $\alpha$ spada z 0,60 do około 0,37 --- poniżej 0,5, czyli wolniej niż
+zwykłe błądzenie losowe.
+\item \textbf{Starzenie} \stA. Stałe drganie przy coraz wolniejszym dryfie i $\alpha<0{,}5$ to jakościowo obraz starzejącego się szkła
+(cząstka coraz dłużej drga w „klatce”). To nazwa, nie dowód; potrzebne są testy z innym krokiem uczenia (otwarte testy).
+\end{enumerate}
+
+\elem{5.6. Jak to pokazujemy \stI}
+Przy każdym stałym reflektorze rysujemy igłę: odcinek od reflektora w kierunku $\bm d_c$ (rzut $P\hat{\bm v}_c$ znormowany, pkt~3.12).
+Na końcu igły strzałka obrotu: kierunek = część zmiany $\bm d_c$ prostopadła do igły (rzut na 3D), długość = prędkość kątowa w 192
+wymiarach w skali logarytmicznej. Gruba strzałka w kolorach skali plasma pokazuje dryf netto ($\ge2000$ kroków), cienka biała kreska ---
+drganie ($\ge100$ kroków). Kierunek strzałki jest rzutem (3 składowe niosą 22\,\% wariancji $\hat{\bm v}_c$) i jest tylko orientacyjny;
+długość pochodzi z pełnej przestrzeni. Aplikacja liczy obroty w danych wersji 3 (\texttt{lasery\_dane.obroty}), rysuje je
+w shaderze sfery (tryb 11), a okienko 10 pokazuje medianę drgania i dryfu w czasie.
+
+%=====================================================================================================================
+\section{Przemyślenia: jak doszliśmy do tego obrazu}
+\begin{enumerate}
+\item \textbf{Od koloidu w pułapce do dwóch czasów.} Pierwszy obraz („pułapki muszą nadążyć za cząsteczkami”) zakładał, że token ma
+własną dynamikę w czasie uczenia. Nie ma (pkt~2.2). Obraz uratowało rozdzielenie czasów: siły działają wzdłuż głębokości, a uczenie
+przestawia źródła sił.
+\item \textbf{Reflektor matrycowy.} Jedna matryca diod (aktywacje) przełącza się szybko, przy każdym tokenie; lusterka (wagi)
+przestawiają się powoli, przez uczenie. To rozdzielenie skal czasu jest dokładne \stD.
+\item \textbf{Reflektor = neuron, nie token.} W filmie 10 reflektorem był token, co wymagało 600 identycznych reflektorów; w filmie 11
+reflektorem jest neuron z 600 diodami. Obie wersje mają te same 460\,800 wiązek, ale tylko druga oddaje wspólne wagi przez budowę.
+\item \textbf{Stałe reflektory i uczona sfera.} W filmie 12 reflektory stoją, a uczenie zmienia to, jak sfera kieruje wiązki. Wagi
+„siedzą” w optyce, nie w położeniach źródeł. Najbliższe urządzenie fizyczne to holograficzne pęsety optyczne (jeden modulator, wiele
+pułapek); różnica: tam każdą pułapkę ustawia się osobno, a w ViT jeden reflektor ma jeden kierunek dla wszystkich cząsteczek\pp{hot}.
+\item \textbf{Lentikular.} Jedna optyka, różne „obrazy” dla różnych odbiorców (tokenów) --- to dobra metafora wspólnych wag z zależną
+od tokenu jasnością.
+\item \textbf{Przeciwlasery jako konieczność jednostronnych laserów.} Skoro GELU pcha praktycznie w jedną stronę, ruch w obie strony
+osi wymaga par; uczenie je tworzy (0\,\% $\to$ 53\,\%).
+\item \textbf{Pułapka okazała się siodłem z wirem.} Lokalnie blok ani nie łapie, ani nie wypuszcza tokenów jako całości: wzmacnia
+połowę różnic, tłumi drugą połowę i silnie miesza cechy. Nazwa „pułapka koloidalna” jest więc tylko nazwą lokalnej odpowiedzi liniowej.
+\item \textbf{Ostatni blok różnicuje tokeny wewnątrz grup.} To pasuje do obserwacji, że FFN przywraca zróżnicowanie tokenów, które
+uwaga zmniejsza (anty-wygładzanie), i do potrzeb gęstej głowy, która na każdym tokenie przewiduje inne odległości do krawędzi ramki ---
+druga część to hipoteza do sprawdzenia.
+\item \textbf{Sześć bloków w każdym kroku uczenia.} Każdy krok uczenia to nowe przejście sygnału: 6 stacji, w każdej uwaga (wiązki
+między cząsteczkami) i MLP (768 laserów stacji). Cząsteczka rusza się tylko od sił podkroku; ruch widoczny bez świecących wiązek
+(zmiana skali kamery, obrót kamery, skok między krokami uczenia) to artefakt obrazu, który film 22 usuwa.
+\item \textbf{Rysowany ruch musi być sumą rysowanych sił.} Położenia pokazujemy względem środka chmury, więc siły też trzeba wycentrować
+(pkt~3.17); dopiero wtedy obraz jest dokładnym rozpisaniem bloku.
+\item \textbf{Gradient = obrót igieł.} W czasie uczenia źródła sił się obracają: igła $\bm v_c$ idzie za poprawkami $\bm\delta_j$
+oświetlanych cząsteczek, przepuszczonymi przez AdamW. Obrót to głównie drganie o stałej wielkości (stały krok uczenia) i powolny,
+z wiekiem coraz wolniejszy dryf (rozdz.~\ref{sec:gradient}).
+\end{enumerate}
+
+%=====================================================================================================================
+\section{Korekty i błędy z sesji}\label{sec:korekty}
+\begin{enumerate}
+\item \textbf{Wagi z innego biegu.} Filmy 8--16 oraz \texttt{PRZECIWLASERY.json}, \texttt{OBROT\_REFLEKTORA.json},
+\texttt{PULAPKA\_JAKOBIAN.json} i tabela w pkt~4 \texttt{matematyka\_reflektorow.pdf} używały wag biegu gęstego z aktywacjami biegu s47.
+Liczby tego dokumentu je zastępują: przeciwlasery 53\,\% w 60.~ep. (37\,\% w 21.~ep. biegu s47 wobec 38\,\% w 21.~ep. biegu gęstego, więc
+różnica wynika głównie z dłuższego uczenia), $\cos(\bm s_c,\bm v_c)=-0{,}18$ (było $-0{,}16$), $\lVert\bm v\rVert\times2{,}9$ w 60.~ep.
+($\times2{,}1$ w 20.~ep.; bieg gęsty $\times2{,}2$ w 21.~ep.), siła pola pułapki $\times3$ (było $\times14$), ślad$/192$ $-0{,}016$
+(było $-0{,}05$ do $-0{,}08$; tamte liczby liczono też z położeń odtwarzanych z latentu ze skalą $\sigma=1$).
+W filmach 8--12 kierunki wiązek pochodzą z biegu gęstego; obraz jakościowy jest ten sam, ale do prezentacji warto je przeliczyć.
+\texttt{ZASADY\_LASER\_KOLOID.md}, \texttt{matematyka\_reflektorow.pdf} i \texttt{diagram\_maly\_vit.pdf} przeliczono już na biegu s47
+(\texttt{przelicz\_zasady\_s47.py} $\to$ \texttt{PRZELICZENIE\_ZASADY\_S47.json}).
+\item \textbf{Kąt załamania 88°} podawany wcześniej jako „początek uczenia” w filmie 12 to odczyt z kroku 1400; na starcie kąt wynosi
+około 107° (pkt~3.12).
+\item \textbf{Liczba bloków:} MałyViT ma 6 bloków, nie 12.
+\item \textbf{Przepełnienie float16} przy sprawdzaniu $R^2$ (dawało pozorne $R^2=1{,}0$); poprawione na float64.
+\item \textbf{FORMA i kalibracja pęset} to metody fizyki, nie sieci neuronowych (przypis~\ref{pp:kalibracja}).
+\item \textbf{„Blok rozsuwa narzędzie mocniej niż tło”} --- prawdziwe tylko względem tokenu 316; dla wszystkich par mocniej rozsuwane jest tło.
+\item \textbf{Ujemne jasności obcinane} (filmy 8--12 i aplikacja przed 13.10): rysowano i liczono tylko $z\ge0$. Poprawione: ujemne
+wiązki rysowane na błękitno w prawdziwej proporcji (pkt~3.6).
+\item \textbf{Aplikacja przed 13.10:} (a) układ nazwany „jak LayerNorm” dzielił każdy stan przez jego własną średnią normę --- to nie jest
+LayerNorm (ten normuje każdy token osobno) i w podkrokach 2--137\,\% pokazanego ruchu było samą zmianą skali; teraz jedna skala na
+checkpoint; (b) w układach względem środka rysowano surowe $A_{jk}$, $z_{jc}$ i wyrazy wolne, więc suma wektorów nie równała się ruchowi
+(błąd 0,3--176); teraz rozkład z pkt~3.17; (c) położenie na osi uczenia było sumą wiązek, teraz jest stanem tokenu (pkt~3.2(2)).
+\item \textbf{Film 21:} cząsteczki ruszały się także bez sił (zmiany przybliżenia w podkroku, obrót kamery, skoki między krokami); film 22
+to poprawia.
+\item \textbf{„Igły z czasem zwalniają”} --- pierwsza wersja filmu 23 tak zakładała; pomiar pokazał, że drganie ma stałą wielkość,
+a zwalnia tylko dryf netto (pkt~5.4).
+\end{enumerate}
+
+\section{Otwarte testy}\label{sec:testy}
+\begin{enumerate}
+\item Profile pułapki po wszystkich 6 blokach w 806 checkpointach (czy siodło z wirem to cecha ostatniego bloku, czy każdego).
+\item Zrobione: uwaga jako wiązki między cząsteczkami i łańcuch 6 stopni w jednym filmie (filmy 20--22, aplikacja).
+\item Hipoteza o gęstej głowie: czy przyrosty odległości między tokenami narzędzia korelują z różnicami ich celów $(l,t,r,b)$.
+\item Czy przeciwlasery to pary cech wejściowych (porównać selektywność $\bm w_c$, $\bm w_{c'}$ i wzory aktywacji), czy tylko geometria wyjścia.
+\item Czas relaksacji z autokorelacji wychylenia od środka klatki i krzywizna straty --- sprawdzenie $\tau\propto1/(\eta\lambda)$ przy AdamW.
+\item Przeliczenie filmów 8--12 na wagach biegu s47 (częściowo: film 23 to geometria filmu 12 na s47).
+\item Wiązki poprawek $\bm\delta_j$ (gradient wstecz od głowy przez 6 bloków) jako obraz; wymaga liczenia gradientu na paczce.
+\item Starzenie igieł: $\alpha$ i dryf netto w biegach z innym krokiem uczenia (\texttt{eden/wyniki/pokretla}); oraz krótki bieg
+z zapisem stanu AdamW, żeby porównać kierunek kroku z kierunkiem gradientu (pkt~5.3).
+\item Zrobione, wynik negatywny: wspólny obrót celowników $\bm w_c$ (pkt~3.14) nie jest nadążaniem za obrotem strumienia rezydualnego
+(\texttt{NADAZANIE\_PULAPKI\_S47.md}).
+\end{enumerate}
+
+\section*{Pliki}
+\begin{itemize}
+\item \texttt{opis\_ukladu/pomiary\_opisu\_s47.py} $\to$ \texttt{POMIARY\_OPISU\_S47.json}: wszystkie liczby z punktów 1--4.
+\item \texttt{film\_lasery\_17\_pulapka\_ognisko.py} (cache stanów $\bm x$, $\bm F$ z 806 checkpointów), \texttt{film\_lasery\_18\ldots},
+\texttt{film\_lasery\_19\_pulapka\_dwa\_widoki\_sync.py}: filmy pułapki na właściwych wagach.
+\item \texttt{przelicz\_zasady\_s47.py} $\to$ \texttt{PRZELICZENIE\_ZASADY\_S47.json}: przeciwlasery, obrót reflektora (okna 5-epokowe),
+dokładny Jakobian w epokach 0--60, sprawdzenie danych z Edenu, geometria filmu 12.
+\item \texttt{ZASADY\_LASER\_KOLOID.md}, \texttt{matematyka\_reflektorow/}, \texttt{diagram\_maly\_vit/}: wcześniejsze opisy, liczby przeliczone
+na biegu s47.
+\item \texttt{film\_lasery\_20\_szesc\_blokow.py} (cache \texttt{szesc\_blokow\_20\_cache.npz}), \texttt{film\_lasery\_21\ldots},
+\texttt{film\_lasery\_22\_ruch\_tylko\_od\_sil.py}: sześć bloków z podkrokami.
+\item \texttt{film\_lasery\_23\_obrot\_reflektorow.py} (cache \texttt{obrot\_reflektorow\_23\_cache.npz}) $\to$
+\texttt{lasery\_23\_obrot\_reflektorow.mp4}: obrót igieł, liczby z pkt~5.4.
+\item Aplikacja: \texttt{app/lasery\_dane.py} (dane wersji 3: \texttt{policz}, \texttt{obroty}, \texttt{podkroki}),
+\texttt{app/lasery\_gpu.py} (shadery), \texttt{app/zakladka\_laserow.py} (zakładka „Lasery i koloidy”).
+\item \texttt{obciecie\_gradientu/NORMA\_GRADIENTU.md}: jak często działało obcięcie gradientu.
+\end{itemize}
+
+%=====================================================================================================================
+\section*{Przypisy}
+\addcontentsline{toc}{section}{Przypisy}
+\small
+
+\przypis{model}{Definicja: \texttt{model.py} w katalogu \texttt{assets/RuchCzasteczek\_ViT\_szklo\_2026-10/07\_kod/eden/} \texttt{2026-10-09\_maly\_vit\_od\_zera\_35000\_21epok/kod/};
+blok \texttt{timm.models.vision\_transformer.Block}, LayerNorm w blokach z $\epsilon=10^{-6}$ (timm; końcowa \texttt{nn.LayerNorm} ma $10^{-5}$),
+skala uwagi $1/\sqrt{64}=1/8$. Skrypty pomiarowe przyjmowały $\epsilon=10^{-5}$; przy $\sigma^2\gtrsim1$ zmienia to wyniki względnie o mniej niż $10^{-5}$.
+Odtworzenie latentu z $R^2\ge0{,}9999$ potwierdza, że wzory \eqref{eq:uwaga}--\eqref{eq:mlp} są zgodne z implementacją, a Jakobian ze wzoru
+zgadza się z autogradem PyTorch (float64) z błędem względnym $\le10^{-15}$.}
+
+\przypis{dwabiegi}{Że ten sam przepis i to samo ziarno nie gwarantują tego samego modelu, pokazali Summers i Dinneen: zmiana jednego bitu
+jednej wagi startowej daje rozrzut modeli porównywalny z innym ziarnem, a różnice rosną już w pierwszych epokach \cite{sum21};
+podobnie Kwok i in. o wrażliwości trajektorii uczenia na warunki początkowe \cite{kwo25}. Nasz przypadek (inny bieg z obserwatorem
+zapisu, ten sam start) jest zgodny z tym obrazem, ale nie badaliśmy, które źródło niedeterminizmu zadziałało.}
+
+\przypis{lu}{Lu i in. \cite{lu19}, równania (5)--(7) i Claim 1: uwaga = człon $F$ zależny od wszystkich cząstek, FFN = człon $G$ zależny
+tylko od własnej cząstki, warstwa = krok Eulera z rozszczepieniem Lie--Trottera; proponują też wariant Strang (FFN--uwaga--FFN, „Macaron”).
+LayerNorm w tej pracy jest tylko wspomniany w przypisie; nasz blok pre-LN to bliski, ale nie dosłowny przypadek.}
+
+\przypis{ges}{Geshkovski i in. \cite{ges23} oraz Rigollet \cite{rig25}: tokeny jako cząstki na sferze, czas = głębokość, uwaga jako
+oddziaływanie prowadzące do skupiania; prace nie modelują czasu uczenia, a główne twierdzenia pomijają MLP.}
+
+\przypis{czasuczenia}{W przesuwanej pęsecie optycznej cząstka spóźnia się za pułapką o prędkość razy czas relaksacji $\gamma/k$ i ma
+własny szum termiczny \cite{gie20}; tu nie ma żadnej z tych wielkości, bo $\bm z_j(t)$ jest funkcją $\theta_t$.}
+
+\przypis{meanfield}{W teorii pola średniego cząstkami są neurony (ich wektory wag), a uczenie to przepływ gradientowy ich rozkładu
+\cite{mei18,rot18}. Herty i Liu łączą oba obrazy: rozkład tokenów płynie przez głębokość, rozkład parametrów przez czas uczenia \cite{her26};
+Isobe i in. pokazują, że uczenie może wyprowadzić tokeny ze skupienia w ostatnich warstwach \cite{iso26}.}
+
+\przypis{sprzezenie}{Formalnie: zmiana punktu końcowego tokenu w kroku uczenia to $\Delta\bm z_j\approx G_j\Delta\theta_t$, gdzie $G_j$ to
+Jakobian po parametrach; tokeny są sprzężone przez wspólne $\Delta\theta_t$ (jądro NTK, lokalna sprężystość \cite{jac18,he19}).}
+
+\przypis{rzut}{Rzuty trajektorii na kilka wymiarów potrafią tworzyć struktury także dla błądzenia losowego \cite{ant18}; dlatego wszystkie
+liczby liczymy w pełnym wymiarze, a rzut służy tylko do obrazu.}
+
+\przypis{ln}{Riechers \cite{rie24}, równanie (6): rzut na hiperpłaszczyznę $\perp\bm 1$, normowanie na sferę $\sqrt d$, rozciągnięcie przez
+$\operatorname{diag}(\bm\gamma)$ i przesunięcie o $\bm\beta$; obraz leży na $(d-1)$-wymiarowej hiperelipsoidzie. Jakobian (wyprowadzony
+z równania (6), praca go nie podaje): $J_{\LN}=\operatorname{diag}(\bm\gamma)(P_1/\sigma-\bm u\bm u^{\!\top}/(d\sigma^3))$; $J_{\LN}\bm 1=0$,
+$J_{\LN}\bm u=\operatorname{diag}(\bm\gamma)\,\epsilon\,\bm u/\sigma^3$.}
+
+\przypis{kv}{Geva i in. \cite{gev21}: wiersz pierwszej warstwy to „klucz” wykrywający wzorzec wejścia, kolumna drugiej to „wartość”
+dopisywana do strumienia rezydualnego.}
+
+\przypis{rzadkosc}{„Diody jasne” to $z>0{,}05$, „słabo ujemne” $z<-0{,}05$; GELU nie schodzi poniżej $-0{,}170$ (zmierzone minimum
+$-0{,}1699$ we wszystkich krokach). Dla porównania pomiar z Edenu (\texttt{TEST\_SFERY.json}, ten sam bieg --- triangulacja położenia
+z laserów działa z $R^2=0{,}99997$, co wymaga zgodnych wag) dał 374 $\to$ 156 laserów z $z>0$ na token między krokiem 0 a 60.~epoką.}
+
+\przypis{znoszenie}{Dla $K=768$ wektorów o niezależnych losowych kierunkach i długościach $m_c$ wypadkowa to około
+$\sqrt{\sum m_c^2}$, a suma długości $\sum m_c$, więc stosunek $\approx\sqrt{\mathbb E m^2}/(\sqrt K\,\mathbb E m)$, czyli kilka procent
+(np. 0,045 dla długości o rozkładzie półnormalnym). Zmierzone 0,054 w kroku 0 odpowiada temu poziomowi. Wzrost do 0,22 w 5.--10.~epoce oznacza, że siły
+zaczynają się układać spójnie; późniejszy spadek do 0,14 zbiega się z przyrostem przeciwlaserów.}
+
+\przypis{pary}{Shang i in. \cite{sha16}: w CNN z ReLU filtry dolnych warstw tworzą pary o przeciwnej fazie (minimalny cosinus z innymi
+filtrami jest wyraźnie ujemny względem losowego zera), a CReLU usuwa to zjawisko; uwaga: mierzono wektory \emph{wejściowe} filtrów,
+nie kolumny wyjściowe. Elhage i in. \cite{elh22}: w superpozycji cechy rzadkie tworzą pary antypodalne, bo ReLU „za darmo” odcina ujemną
+interferencję; uwaga: model zabawkowy z wiązanymi wagami i ReLU, a sam ujemny cosinus kolumn wyjściowych nie dowodzi par cech.
+Nasze GELU jest prawie jednostronne, więc oba mechanizmy są wiarygodne, ale nie sprawdzone (test 4 w otwartych testach).}
+
+\przypis{slad}{$\tr J=\tr(W_2DW_1J_{\LN})=\tr(DW_1J_{\LN}W_2)=\sum_c D_{cc}\,(W_1J_{\LN}W_2)_{cc}=\sum_c\GELU'(a_c)\,\bm w_c^{\!\top}J_{\LN}\bm v_c$,
+a $\bm w_c^{\!\top}J_{\LN}\bm v_c=\big[(\bm\gamma\odot\bm w_c)^{\!\top}P_1\bm v_c\big]/\sigma-\big[(\bm\gamma\odot\bm w_c)^{\!\top}\bm u\big]\big[\bm u^{\!\top}\bm v_c\big]/(d\sigma^3)$.
+Pierwszy człon jest proporcjonalny do $\cos(\bm s_c,P_1\bm v_c)$; drugi to poprawka radialna. Ujemne cosinusy przy dodatnich
+$\GELU'$ (dla jasnych laserów $\GELU'\approx1$) dają ujemny ślad.}
+
+\przypis{prokrustes}{Wspólny obrót: ortogonalne $R$ minimalizujące $\lVert\hat V(t)-R\hat V(0)\rVert_F$ (rozwiązanie Prokrustesa przez SVD);
+udział = $1-\lVert\hat V(t)-R\hat V(0)\rVert^2/\lVert\hat V(t)-\hat V(0)\rVert^2$. Zero: ta sama macierz zmian z przetasowanymi kolumnami
+(3 losowania). Obrót 192D ma wiele stopni swobody, stąd niezerowe 11--12\,\% nawet dla zera.}
+
+\przypis{sfera}{Kąt załamania liczony jako średni (ważony jasnością) kąt między wiązką z reflektora a kierunkiem $\bm v_c$ w sferze;
+miejsca reflektorów dobrano do kierunków z 60.~epoki (przypisanie węgierskie, średni $\cos=0{,}98$), więc na końcu muszą pasować najlepiej.}
+
+\przypis{uwaga}{Lu i in. \cite{lu19}; Geshkovski i in. \cite{ges23}. W ViT uwaga działa też jako filtr dolnoprzepustowy, wygładzający
+różnice między tokenami \cite{wan22} (pkt~4.7).}
+
+\przypis{krok}{Ciągłe płynięcie to ilustracja w duchu \cite{lu19}; jeden blok to jeden skończony krok. Dlatego obok $J$ podajemy widmo
+mapy $I+J$ (pkt~4.4).}
+
+\przypis{zachowawcze}{Im, Belghazi i Memisevic \cite{im16}, Propozycje 1--2: pole autoenkodera jest zachowawcze wtedy i tylko wtedy, gdy
+$R\,D_{h'}(\bm x)W^{\!\top}$ jest symetryczne dla każdego $\bm x$ w obszarze jednospójnym; wystarcza np. $R=WD$ z diagonalnym $D$ (dla nas
+$\bm v_c\propto\bm s_c$). Zmierzone $\cos(\bm s_c,\bm v_c)\approx-0{,}18$ jest daleko od $\pm1$, więc nasz blok tego warunku nie spełnia.}
+
+\przypis{losowa}{Dla $G$ o niezależnych wyrazach $N(0,1)$: $S=\tfrac12(G+G^{\!\top})$ ma na przekątnej wariancję 1, poza nią $\tfrac12$,
+więc $\mathbb E\lVert S\rVert_F^2=n+\tfrac12n(n-1)=\tfrac12n(n+1)$; $\mathbb E\lVert A\rVert_F^2=\tfrac12n(n-1)$. Stąd symetryczność
+$\frac{n+1}{2n}$ i stosunek $\sqrt{\frac{n-1}{n+1}}$; dla $n=192$: 0,503 i 0,995.}
+
+\przypis{mudarisov}{Mudarisov, Burtsev i State \cite{mud26}: dla pól FFN w GPT-2, Pythii, Mistralu i Llamie 118 ze 140 przybliżonych
+punktów krytycznych ma charakter siodła (to przybliżone kandydatury, nie zweryfikowane równowagi); FFN przede wszystkim „steruje”
+kierunkiem tokenu (składowa styczna), a usunięcie składowej stycznej jest dla modelu katastrofalne.}
+
+\przypis{autoenk}{\cite{im16}, Tabela~1: symetryczność Jakobianu wyuczonych autoenkoderów na MNIST 95,1--99,1\,\% (miara
+$\lVert S\rVert^2/\lVert J\rVert^2$; praca zapisuje normę jako $\lVert\cdot\rVert_2$, my używamy normy Frobeniusa --- porównanie
+przybliżone). Autoenkoder przybliża pole tożsamości, a blok ViT nie ma takiego celu, więc wysokiej symetrii nie należy się spodziewać.}
+
+\przypis{fizyka}{Pesce i in. \cite{pes09}: w pęsecie optycznej współczynnik części rotacyjnej $\epsilon$ wynosi 0,7--3,8\,\%, wykrywalny
+dopiero przy słabych wiązkach i długich pomiarach (różnica korelacji krzyżowych, DCCF). Roichman i in. \cite{roi08}: siła rozpraszania
+prostuje fluktuacje termiczne w krążący prąd prawdopodobieństwa („fontanna prawdopodobieństwa”, $\epsilon=0{,}11\pm0{,}04$), co łamie
+równowagę szczegółową. Ich $\epsilon$ to parametr skali siły, nie stosunek norm Jakobianu.}
+
+\przypis{ln-odl}{$\widehat{\LN}$ = odjęcie średniej i normowanie wariancji bez $\bm\gamma,\bm\beta$ (te same dla wszystkich tokenów);
+surowe odległości rosną dla prawie wszystkich par, bo norma strumienia rezydualnego rośnie (pkt~3.1). Liczone dokładnie w 192D na stanach
+z przejścia modelu (\texttt{pulapka\_17\_cache.npz}).}
+
+\przypis{antysmoothing}{Wang i in. \cite{wan22} dowodzą, że uwaga jest filtrem dolnoprzepustowym (wygładza różnice między tokenami), a FFN
+z połączeniem rezydualnym nie przywraca \emph{selektywnie} wysokich częstotliwości --- ich oszacowanie jest tylko górnym ograniczeniem.
+Mudarisov i in. \cite{mud26} mierzą, że w dużych modelach uwaga zwykle zmniejsza zróżnicowanie kierunków tokenów, a FFN je zwiększa.
+Isobe i in. \cite{iso26} opisują ucieczkę ze skupienia w ostatnich warstwach wymuszaną przez uczenie (model uproszczony). Nasz wynik
+(rozsuwanie wewnątrz grup przez ostatni MLP) jest zgodny z tymi pracami, ale nie mierzyliśmy jeszcze wkładu uwagi.}
+
+\przypis{dolina}{Pashakhanloo i Koulakov \cite{pas23}, równania (6)--(7) i (17): odchylenia w kierunkach normalnych do doliny to proces
+OU z czasem relaksacji $1/(\eta\lambda)$ kroków, a ruch wzdłuż doliny to dyfuzja; uwaga: sieć liniowa, SGD z paczką 1, nie AdamW.}
+
+\przypis{tau}{Biegi z pokrętłami (\texttt{eden/wyniki/pokretla}, rzut RP128, okno kroków 12\,034--13\,128): $\tau_{1/e}=13$, 6 i 3 kroki
+dla $\eta=1{,}25\cdot10^{-4}$, $5\cdot10^{-4}$, $2\cdot10^{-3}$. To osobne biegi i czas zaniku funkcji rozpraszania, nie autokorelacja
+wychylenia. Dla Adama potrzebne są osobne równania stochastyczne (reguła pierwiastka) \cite{mal22}.}
+
+\przypis{kalibracja}{Relacje fluktuacja--dyssypacja Yaidy dotyczą parametrów SGD (z pędem), nie reprezentacji i nie AdamW \cite{yai18};
+efektywną temperaturę SGD analizują też Mignacco i Urbani \cite{mig22}. Metody kalibracji pęset (ekwipartycja, widmo mocy, FORMA)
+\cite{gie20,gar18} zakładają ruch przetłumiony, stały krok czasu i szum niezależny w kolejnych krokach; w przeczytanej literaturze
+nie stosowano ich do sieci neuronowych --- tu byłyby nową, nieuzasadnioną jeszcze metodą.}
+
+\przypis{hot}{Grier i Roichman \cite{gri05}: jeden laser, hologram na modulatorze światła i obiektyw tworzą setki pułapek; wspólne są
+laser, modulator i jeden hologram, a położenie i siłę każdej pułapki projektuje się osobno (choć wszystkie są sprzężone przez ten sam
+hologram). W ViT jeden reflektor ma \emph{jeden} kierunek dla wszystkich cząsteczek, więc układ jest bardziej ograniczony niż pęseta
+holograficzna.}
+
+\przypis{grad}{Z $\bm x^{+}_j=\tilde{\bm x}_j+\sum_c z_{jc}\bm v_c+\bm b_2$ i $z_{jc}=\GELU(a_{jc})$, $a_{jc}=\bm w_c^{\!\top}\LN_2(\tilde{\bm x}_j)+b_c$:
+$\partial\bm x^{+}_j/\partial\bm v_c=z_{jc}I$, $\partial\bm x^{+}_j/\partial a_{jc}=\GELU'(a_{jc})\,\bm v_c$; reguła łańcuchowa daje wzory z pkt~5.2.
+Wkłady przez inne tokeny (uwaga w kolejnych blokach) nie dotyczą bloku 6, bo jest ostatni; dla bloków 1--5 $\bm\delta_j$ zawiera też
+drogę przez uwagę. Strata to średnia po paczce, więc w praktyce sumy mają czynnik $1/32$ (i normowanie wewnątrz \texttt{M.strata}).}
+
+\przypis{adamw}{Adam: Kingma i Ba \cite{kin15}; rozpad wag oddzielony od gradientu (AdamW): Loshchilov i Hutter \cite{los19}.
+W PyTorch krok AdamW najpierw mnoży parametr przez $1-\eta\lambda$, potem odejmuje $\eta\,\hat{\bm m}/(\sqrt{\hat{\bm s}}+\epsilon)$
+z poprawką obciążenia momentów. Obcięcie: \texttt{clip\_grad\_norm\_(net.parameters(), 1.0)} przed krokiem (\texttt{trening.py}, wiersz 80).}
+
+%=====================================================================================================================
+\begin{thebibliography}{99}\small
+\addcontentsline{toc}{section}{Literatura}
+\bibitem{lu19} Y.~Lu i in., \emph{Understanding and Improving Transformer From a Multi-Particle Dynamic System Point of View}, 2019. \url{https://arxiv.org/abs/1906.02762}
+\bibitem{ges23} B.~Geshkovski i in., \emph{A mathematical perspective on Transformers}, 2023. \url{https://doi.org/10.48550/arXiv.2312.10794}
+\bibitem{rig25} P.~Rigollet, \emph{The Mean-Field Dynamics of Transformers}, 2025. \url{https://doi.org/10.48550/arXiv.2512.01868}
+\bibitem{her26} M.~Herty, H.~Liu, \emph{A Mean-Field Theory of Transformers: Well-Posedness of the Coupled Data--Parameter Dynamics and Global Convergence of Training}, 2026. \url{https://arxiv.org/abs/2608.25055}
+\bibitem{iso26} N.~Isobe, D.~Inoue, M.~Imaizumi, \emph{Training-Induced Escape from Token Clustering in a Mean-Field Formulation of Transformers}, 2026. \url{https://doi.org/10.48550/arXiv.2605.07772}
+\bibitem{mei18} S.~Mei, A.~Montanari, P.-M.~Nguyen, \emph{A mean field view of the landscape of two-layer neural networks}, PNAS 115 (2018). \url{https://doi.org/10.1073/pnas.1806579115}
+\bibitem{rot18} G.~M.~Rotskoff, E.~Vanden-Eijnden, \emph{Neural Networks as Interacting Particle Systems: Asymptotic Convexity of the Loss Landscape and Universal Scaling of the Approximation Error}, 2018. \url{https://www.semanticscholar.org/paper/50ad17c11eeae5982f81e90385a2182f30330afa}
+\bibitem{jac18} A.~Jacot, F.~Gabriel, C.~Hongler, \emph{Neural Tangent Kernel}, NeurIPS 2018. \url{https://arxiv.org/abs/1806.07572}
+\bibitem{he19} H.~He, W.~Su, \emph{The Local Elasticity of Neural Networks}, ICLR 2020. \url{https://arxiv.org/abs/1910.06943}
+\bibitem{gev21} M.~Geva i in., \emph{Transformer Feed-Forward Layers Are Key-Value Memories}, EMNLP 2021. \url{https://doi.org/10.18653/v1/2021.emnlp-main.446}
+\bibitem{rie24} P.~Riechers, \emph{Geometry and Dynamics of LayerNorm}, 2024. \url{https://doi.org/10.48550/arXiv.2405.04134}
+\bibitem{mud26} T.~Mudarisov, M.~Burtsev, R.~State, \emph{Feed-Forward Steering in Transformer Residual Dynamics}, 2026. \url{https://arxiv.org/abs/2608.02071}
+\bibitem{im16} D.~J.~Im, M.~I.~Belghazi, R.~Memisevic, \emph{Conservativeness of Untied Auto-Encoders}, AAAI 2016. \url{https://doi.org/10.1609/aaai.v30i1.10268}
+\bibitem{wan22} P.~Wang i in., \emph{Anti-Oversmoothing in Deep Vision Transformers via the Fourier Domain Analysis}, ICLR 2022. \url{https://doi.org/10.48550/arXiv.2203.05962}
+\bibitem{sha16} W.~Shang i in., \emph{Understanding and Improving Convolutional Neural Networks via Concatenated Rectified Linear Units}, ICML 2016. \url{https://arxiv.org/abs/1603.05201}
+\bibitem{elh22} N.~Elhage i in., \emph{Toy Models of Superposition}, 2022. \url{https://doi.org/10.48550/arXiv.2209.10652}
+\bibitem{sum21} C.~Summers, M.~J.~Dinneen, \emph{Nondeterminism and Instability in Neural Network Optimization}, ICML 2021. \url{https://arxiv.org/abs/2103.04514}
+\bibitem{kwo25} D.~Kwok i in., \emph{The Butterfly Effect: Neural Network Training Trajectories Are Highly Sensitive to Initial Conditions}, 2025. \url{https://doi.org/10.48550/arXiv.2506.13234}
+\bibitem{ant18} J.~Antognini, J.~Sohl-Dickstein, \emph{PCA of high dimensional random walks with comparison to neural network training}, NeurIPS 2018. \url{https://arxiv.org/abs/1806.08805}
+\bibitem{pas23} F.~Pashakhanloo, A.~Koulakov, \emph{Stochastic Gradient Descent-induced drift of representation in a two-layer neural network}, ICML 2023. \url{https://doi.org/10.48550/arXiv.2302.02563}
+\bibitem{yai18} S.~Yaida, \emph{Fluctuation-dissipation relations for stochastic gradient descent}, ICLR 2019. \url{https://arxiv.org/abs/1810.00004}
+\bibitem{mig22} F.~Mignacco, P.~Urbani, \emph{The effective noise of stochastic gradient descent}, J.~Stat.~Mech. (2022) 083405. \url{https://doi.org/10.1088/1742-5468/ac841d}
+\bibitem{mal22} S.~Malladi i in., \emph{On the SDEs and Scaling Rules for Adaptive Gradient Algorithms}, NeurIPS 2022. \url{https://doi.org/10.48550/arXiv.2205.10287}
+\bibitem{gie20} J.~Gieseler i in., \emph{Optical Tweezers: A Comprehensive Tutorial from Calibration to Applications}, Adv.~Opt.~Photon. 13 (2021). \url{https://doi.org/10.1364/aop.394888}
+\bibitem{gar18} L.~Pérez García i in., \emph{High-performance reconstruction of microscopic force fields from Brownian trajectories}, Nat.~Commun. 9, 5166 (2018). \url{https://doi.org/10.1038/s41467-018-07437-x}
+\bibitem{pes09} G.~Pesce i in., \emph{Quantitative assessment of non-conservative radiation forces in an optical trap}, EPL 86, 38002 (2009). \url{https://doi.org/10.1209/0295-5075/86/38002}
+\bibitem{roi08} Y.~Roichman i in., \emph{Influence of nonconservative optical forces on the dynamics of optically trapped colloidal spheres: the fountain of probability}, PRL 101, 128301 (2008). \url{https://doi.org/10.1103/PhysRevLett.101.128301}
+\bibitem{gri05} D.~G.~Grier, Y.~Roichman, \emph{Holographic optical trapping}, Appl.~Opt. 45, 880 (2006). \url{https://doi.org/10.1364/AO.45.000880}
+\bibitem{kin15} D.~P.~Kingma, J.~Ba, \emph{Adam: A Method for Stochastic Optimization}, ICLR 2015. \url{https://arxiv.org/abs/1412.6980}
+\bibitem{los19} I.~Loshchilov, F.~Hutter, \emph{Decoupled Weight Decay Regularization}, ICLR 2019. \url{https://arxiv.org/abs/1711.05101}
+\end{thebibliography}
+\end{document}

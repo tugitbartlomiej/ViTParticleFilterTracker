@@ -12,7 +12,8 @@ os.environ.setdefault('TRANSFORMERS_OFFLINE', '1')
 import sys
 from pathlib import Path
 import numpy as np
-import torch
+
+# torch importowany dopiero w funkcjach: start okna nie czeka na PyTorch (kilka sekund na zimnym dysku)
 
 ROOT = Path('F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation')
 EKSPERYMENT_SD = ROOT/'experiments/vit_sd_pelny_latent_filmy_eden_20261006'
@@ -80,14 +81,21 @@ def obraz_startowy(sciezka):
 
 
 def _dekoduj(trained, sample):
+    import torch
     with torch.autocast(trained.device.type, enabled=False):
         rgb = (trained.vae.decode(sample.float() / float(trained.vae.config.scaling_factor)).sample + 1) / 2
     return rgb.float().clamp(0, 1)[0].cpu().numpy()
 
 
-@torch.inference_mode()
-def generuj(trained, latent, kroki=50, ziarno=0, postep=None, start=None, sila=1.0,
-            podglad=None, podglad_co=0, podglad_x0=False):
+def generuj(*a, **k):
+    """`_generuj` w torch.inference_mode (opis tam)."""
+    import torch
+    with torch.inference_mode():
+        return _generuj(*a, **k)
+
+
+def _generuj(trained, latent, kroki=50, ziarno=0, postep=None, start=None, sila=1.0,
+             podglad=None, podglad_co=0, podglad_x0=False):
     """DDIM (eta=0) z warunku 600x768 do RGB; postep(i, n) po każdym kroku.
 
     start=None albo sila>=1: zgodne 1:1 z generate.generate (czysty szum, wszystkie `kroki`).
@@ -98,6 +106,7 @@ def generuj(trained, latent, kroki=50, ziarno=0, postep=None, start=None, sila=1
     albo, gdy podglad_x0, przewidywany obraz końcowy (pred_original_sample).
     Zwraca ndarray float32 [3,384,576] w [0,1].
     """
+    import torch
     from diffusers import DDIMScheduler
     warunek = torch.as_tensor(np.asarray(latent), dtype=torch.float32)[None]
     if warunek.shape[1:] != (TOKENY, KANALY) or not torch.isfinite(warunek).all():
@@ -148,6 +157,7 @@ def latent_z_obrazu(sciezka, urzadzenie='cuda'):
     """
     import cv2
     from PIL import Image
+    import torch
     from model import load_vit, vit_forward
     vit = load_vit(str(VIT_CHECKPOINT), torch.device(urzadzenie))
     try:
@@ -216,6 +226,7 @@ def granice_z_wag(checkpoint=VIT_CHECKPOINT):
     pobudzenie a_j leży w [m_j - r_j, m_j + r_j], m_j = W1_j . b + c_j, r_j = sqrt(d) ||P(W1_j * g)||.
     Zwraca (h_min, h_max) float32 [768].
     """
+    import torch
     sd = torch.load(checkpoint, map_location='cpu', weights_only=True)
     sd = sd.get('net', sd)
     blok = max(int(k.split('.')[1]) for k in sd if k.startswith('bloki.'))

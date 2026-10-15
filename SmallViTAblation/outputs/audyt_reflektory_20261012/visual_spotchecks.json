@@ -1,0 +1,155 @@
+{
+  "scope": "Existing-data audit only; no forward pass, training, or rendering.",
+  "focal_token": 316,
+  "cache_dtypes": {
+    "X": "float16",
+    "F": "float16",
+    "Zf": "float32",
+    "V": "float16"
+  },
+  "files": [
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\porownanie_szklo_20261010\\film_krysztal\\szescian.npz",
+      "bytes": 21567279,
+      "mtime_ns": 1791737349443717500
+    },
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\porownanie_szklo_20261010\\film_krysztal\\pulapka_17_cache.npz",
+      "bytes": 565910671,
+      "mtime_ns": 1791816491549056900
+    },
+    {
+      "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\porownanie_szklo_20261010\\film_krysztal\\pulapka_18_cache.npz",
+      "bytes": 110555721,
+      "mtime_ns": 1791817110417646200
+    }
+  ],
+  "method": {
+    "projection": "Final-checkpoint centered raw X PCA, identical subspace to film 17. Float64 audit arithmetic, original caches retained.",
+    "red": "Movie-17 red = P V max(Zf,0). Full arrow = P cached F. Common render scaling cancels from relative error/cosine.",
+    "metric": "Compare distances after standardization without affine parameters versus the same standardization multiplied by actual final net.norm.weight at that checkpoint. beta cancels from pair differences. eps=1e-5 is the final torch.nn.LayerNorm default.",
+    "limitations": "Existing X/F/V caches are float16. This check measures the movie's cached data; it does not replace an independent full-precision forward validation."
+  },
+  "endpoints": [
+    {
+      "step": 0,
+      "weight_file": {
+        "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\assets\\MalyViT_35000_od_zera_s47\\wagi\\k00000.pt",
+        "bytes": 11730645,
+        "mtime_ns": 1791561921603136200
+      },
+      "negative_z_fraction_focal": 0.4830729166666667,
+      "red_relerr_vs_full_F_3d": 0.18698805159096113,
+      "red_cos_vs_full_F_3d": 0.9971370843354707,
+      "signed_sum_relerr_vs_full_F_3d": 0.04375684291440157,
+      "bias_norm_over_full_F_192d": 0.09838334911977756,
+      "negative_sum_norm_over_full_F_192d": 0.25872506897826214,
+      "cached_F_vs_current_V_signed_z_plus_bias_relerr": 0.00020499507176322438,
+      "cached_V_vs_current_V_relerr": 0.00021410599822925427,
+      "final_gamma_range": [
+        1.0,
+        1.0
+      ],
+      "distance_ratios": {
+        "all_except_focal": {
+          "count": 599,
+          "changed_attraction_label_count": 0,
+          "changed_attraction_label_fraction": 0.0,
+          "attraction_fraction_no_gamma": 0.6928213689482471,
+          "attraction_fraction_actual_final_gamma": 0.6928213689482471,
+          "median_r_no_gamma": 0.995995037024023,
+          "median_r_actual_final_gamma": 0.995995037024023
+        },
+        "tool_except_focal": {
+          "count": 19,
+          "changed_attraction_label_count": 0,
+          "changed_attraction_label_fraction": 0.0,
+          "attraction_fraction_no_gamma": 0.21052631578947367,
+          "attraction_fraction_actual_final_gamma": 0.21052631578947367,
+          "median_r_no_gamma": 1.0076012502625002,
+          "median_r_actual_final_gamma": 1.0076012502625002
+        },
+        "background": {
+          "count": 580,
+          "changed_attraction_label_count": 0,
+          "changed_attraction_label_fraction": 0.0,
+          "attraction_fraction_no_gamma": 0.7086206896551724,
+          "attraction_fraction_actual_final_gamma": 0.7086206896551724,
+          "median_r_no_gamma": 0.9955943085344682,
+          "median_r_actual_final_gamma": 0.9955943085344682
+        }
+      }
+    },
+    {
+      "step": 65640,
+      "weight_file": {
+        "path": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\assets\\MalyViT_35000_od_zera_s47\\wagi\\k65640.pt",
+        "bytes": 11730645,
+        "mtime_ns": 1791564743940484000
+      },
+      "negative_z_fraction_focal": 0.9088541666666666,
+      "red_relerr_vs_full_F_3d": 0.9589491388190587,
+      "red_cos_vs_full_F_3d": 0.2945168687522052,
+      "signed_sum_relerr_vs_full_F_3d": 0.14450668704714537,
+      "bias_norm_over_full_F_192d": 0.1062606257147465,
+      "negative_sum_norm_over_full_F_192d": 0.6381639293734601,
+      "cached_F_vs_current_V_signed_z_plus_bias_relerr": 0.00019967328720851366,
+      "cached_V_vs_current_V_relerr": 0.00020758711747606606,
+      "final_gamma_range": [
+        0.2867121398448944,
+        1.2320687770843506
+      ],
+      "distance_ratios": {
+        "all_except_focal": {
+          "count": 599,
+          "changed_attraction_label_count": 124,
+          "changed_attraction_label_fraction": 0.20701168614357263,
+          "attraction_fraction_no_gamma": 0.045075125208681135,
+          "attraction_fraction_actual_final_gamma": 0.25208681135225375,
+          "median_r_no_gamma": 1.0204936404897493,
+          "median_r_actual_final_gamma": 1.0079606014628102
+        },
+        "tool_except_focal": {
+          "count": 19,
+          "changed_attraction_label_count": 2,
+          "changed_attraction_label_fraction": 0.10526315789473684,
+          "attraction_fraction_no_gamma": 0.0,
+          "attraction_fraction_actual_final_gamma": 0.10526315789473684,
+          "median_r_no_gamma": 1.0982394509495506,
+          "median_r_actual_final_gamma": 1.0867803698101837
+        },
+        "background": {
+          "count": 580,
+          "changed_attraction_label_count": 122,
+          "changed_attraction_label_fraction": 0.2103448275862069,
+          "attraction_fraction_no_gamma": 0.04655172413793104,
+          "attraction_fraction_actual_final_gamma": 0.25689655172413794,
+          "median_r_no_gamma": 1.0198358650303014,
+          "median_r_actual_final_gamma": 1.007736561063316
+        }
+      }
+    }
+  ],
+  "right_panel_projection": [
+    {
+      "step": 0,
+      "diagonal_in_final_basis_e1_e2_e3": [
+        0.01807219751499802,
+        0.027677882169367504,
+        -0.006731650265547307
+      ],
+      "outside_basis_Frobenius_fraction_of_JQ": 0.9885336184764547,
+      "comment": "Closed 3D probe dynamics omit this out-of-plane component; the subspace is not invariant."
+    },
+    {
+      "step": 65640,
+      "diagonal_in_final_basis_e1_e2_e3": [
+        -0.8762635694673404,
+        0.6486612718005624,
+        -0.49705415369083084
+      ],
+      "outside_basis_Frobenius_fraction_of_JQ": 0.3439567718462896,
+      "comment": "Closed 3D probe dynamics omit this out-of-plane component; the subspace is not invariant."
+    }
+  ]
+}

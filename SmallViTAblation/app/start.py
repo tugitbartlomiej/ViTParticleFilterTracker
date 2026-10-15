@@ -1,7 +1,7 @@
 """Start edytora latentu z okienkiem ładowania.
 
-Pierwsze uruchomienie importuje torch; na zimnym dysku trwa to kilkadziesiąt sekund i bez tego okienka przez ten
-czas nic nie widać. Aplikacja startuje pusta: nie wczytuje sekwencji, historii uczenia ani modelu SD (patrz `app.py`).
+Aplikacja startuje pusta: nie importuje PyTorcha i nie wczytuje niczego (latentu, wag ViT, sekwencji, historii
+uczenia, modelu SD). Każda zakładka, także „Edytor SD”, buduje się dopiero po kliknięciu (patrz `app.py`).
 Każdy błąd startu trafia do okna z komunikatem i do `start.log`.
 Uruchomienie: python start.py (albo uruchom.bat).
 """
@@ -14,9 +14,9 @@ from PyQt6.QtCore import QCoreApplication, Qt
 from PyQt6.QtWidgets import QApplication, QLabel, QMessageBox
 
 LOG = Path(__file__).with_name('start.log')
-# Tylko to, co potrzebuje samo okno. Ciężkie biblioteki zakładek (timm i torchvision w `detekcja`, OpenGL, wykresy)
-# ładują się dopiero przy pierwszym wejściu na zakładkę, która ich używa (`Okno.zbuduj_zakladke`).
-KROKI = [('torch', 'biblioteki PyTorch'), ('silnik', 'silnika SD'), ('app', 'okna aplikacji')]
+# Tylko to, co potrzebuje samo okno. PyTorch i ciężkie biblioteki zakładek (timm i torchvision w `detekcja`, OpenGL,
+# wykresy) ładują się dopiero przy pierwszym kliknięciu zakładki, która ich używa (`Okno.zbuduj_zakladke`, `zbuduj_edytor`).
+KROKI = [('app', 'okna aplikacji')]
 
 
 def main():

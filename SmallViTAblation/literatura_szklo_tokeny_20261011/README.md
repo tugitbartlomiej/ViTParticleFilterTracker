@@ -66,6 +66,19 @@ pobrać ręcznie lub przez Primo (`scripts\pobieranie\odswiez_kolejke.bat`).
 - `10.1038/s41593-022-01225-z` — Qin i in. 2023, Nat. Neurosci., skoordynowany dryf pol recepcyjnych przy zaszumionym uczeniu
 - `10.1016/j.cell.2017.07.021` — Driscoll i in. 2017, Cell, dryf reprezentacji w korze ciemieniowej
 
+## Dopisek 2026-10-12: nowość publikacyjna
+
+Lista `linki/nowosc-tokeny-czastki-czas-uczenia-2026-10-12.txt` (62 linki, deep research „czy ktoś już robił taki układ”).
+Raport: `outputs/porownanie_szklo_20261010/NOWOSC_PUBLIKACYJNA_2026-10-12.md`. Pobrano 54, 2 już były, 6 nieudanych
+(log `pobieranie_nowosc_2026-10-12.log`):
+
+- `10.1103/physreve.111.045310` — Avidan i in. 2025, PRE, faza gradientowa potem dyfuzyjna
+- `10.1039/d0sm01686a` — Soft Matter 2021, przegląd: brak dynamiki szklistej w typowych architekturach
+- `10.1073/pnas.1919995117` — Verpoort i in. 2020, PNAS, archetypowe krajobrazy (brak wysokich barier)
+- `10.59400/cai4258` — Rahman, Ottoborgo 2025, dryf wyjaśnień w czasie uczenia
+- `10.1007/s44163-026-01593-6` — La Quang i in. 2026, Discover AI, taksonomia stanów uczenia
+- `10.2312/eurovisshort.20161164` — Rauber i in. 2016, EuroVis, dynamiczny t-SNE
+
 ## Układ katalogu
 
 `PDF_all\` pobrane PDF-y, `linki\` listy wejściowe, `nieudane\` raport nieudanych, `config\config.json`

@@ -249,11 +249,14 @@ class Odpinanie:
         zastepca.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._zastepca = zastepca
         rozmiar = self.widok.size()
+        from okna import ekran
+        self._ekran = ekran(self.widok)                 # okno odpięte pojawia się na ekranie, na którym był widok
         self._oddaj = self._wyjmij(zastepca)
         self.okno = _OknoOdpiete(self, self.tytul)
         self.okno.layout().addWidget(self.widok)
         self.widok.show()
         self.okno.resize(max(900, rozmiar.width()), max(700, rozmiar.height()))
+        g = self.okno.frameGeometry(); g.moveCenter(self._ekran.availableGeometry().center()); self.okno.move(g.topLeft())
         self.okno.show()
         self.przycisk.setText('Przypnij')
 
@@ -346,13 +349,27 @@ class RamaPanelu(QWidget):
         from styl import rola
         et = rola(QLabel(tytul), 'opis'); pasek.addWidget(et, 1)
         self.btn_odepnij = QPushButton('Odepnij'); self.btn_odepnij.setFixedHeight(20)
+        self.btn_maks = QPushButton('⛶'); self.btn_maks.setFixedSize(24, 20)
+        self.btn_maks.setToolTip(f'„{tytul}” w osobnym oknie zmaksymalizowanym na tym ekranie, na którym jest teraz\n'
+                                 '(drugie kliknięcie przywraca rozmiar okna; F11 działa tak samo w każdym oknie).')
         self.btn_zamknij = QPushButton('✕'); self.btn_zamknij.setFixedSize(24, 20)
         self.btn_zamknij.setToolTip(f'Chowa panel „{tytul}”. Pokaż go z powrotem polem „{chk.text()}” w „Widoki”.')
-        pasek.addWidget(self.btn_odepnij); pasek.addWidget(self.btn_zamknij)
+        pasek.addWidget(self.btn_maks); pasek.addWidget(self.btn_odepnij); pasek.addWidget(self.btn_zamknij)
         lay.addLayout(pasek); lay.addWidget(widzet, 1)
         self.odpinanie = Odpinanie(self, tytul, self.btn_odepnij)
         self.btn_zamknij.clicked.connect(lambda: chk.setChecked(False))
+        self.btn_maks.clicked.connect(self.maksymalizuj)
         chk.toggled.connect(self.pokaz)
+
+    def maksymalizuj(self):
+        """Odpina panel (gdy przypięty) i maksymalizuje jego okno na ekranie, na którym panel jest; drugi raz przywraca."""
+        from okna import ekran, maksymalizuj_na, przelacz_okno
+        if self.odpinanie.okno is None:
+            e = ekran(self)
+            self.btn_odepnij.setChecked(True)
+            maksymalizuj_na(self.odpinanie.okno, e)
+        else:
+            przelacz_okno(self.odpinanie.okno)
 
     def pokaz(self, wl):
         if not wl and self.odpinanie.okno is not None:
