@@ -1,0 +1,1116 @@
+{
+  "date": "2026-10-16",
+  "status": "Literature search only; no new experiments",
+  "notes": [
+    "Scite read_fulltext denied for 2311.17030, 2407.08734, 2309.16042; primary arXiv HTML used.",
+    "Missing editorialNotices means unavailable, not verified absence of retractions.",
+    "paper-search CLI targeted query found 2404.15255 via arXiv; Semantic Scholar HTTP429. Root independently runs additional paper-search and Undermind.",
+    "Search result snippets are discovery evidence; report references link to verified primary papers."
+  ],
+  "queries": [
+    {
+      "key": "scispace_patching",
+      "query": "Which primary studies demonstrate pitfalls of activation patching and causal tracing in transformer mechanistic interpretability, including corruption methods, off-distribution interventions, and faithfulness of discovered circuits?",
+      "results": [
+        {
+          "title": "Is This the Subspace You Are Looking for? An Interpretability Illusion for Subspace Activation Patching",
+          "doi": "10.48550/arxiv.2311.17030",
+          "authors": {
+            "total": 3,
+            "data": [
+              {
+                "display_name": "Aleksandar Makelov",
+                "full_slug": null
+              },
+              {
+                "display_name": "Georg Lange",
+                "full_slug": null
+              },
+              {
+                "display_name": "Neel Nanda",
+                "id": 4002889891,
+                "slug": "neel-nanda",
+                "unique_id": "1scd0u20",
+                "full_slug": "neel-nanda-1scd0u20"
+              }
+            ]
+          },
+          "abstract": "Mechanistic interpretability aims to understand model behaviors in terms of specific, interpretable features, often hypothesized to manifest as low-dimensional subspaces of activations. Specifically, recent studies have explored subspace interventions (such as activation patching) as a way to simultaneously manipulate model behavior and attribute the features behind it to given subspaces. In this work, we demonstrate that these two aims diverge, potentially leading to an illusory sense of interpretability. Counterintuitively, even if a subspace intervention makes the model's output behave as if the value of a feature was changed, this effect may be achieved by activating a dormant parallel pathway leveraging another subspace that is causally disconnected from model outputs. We demonstrate this phenomenon in a distilled mathematical example, in two real-world domains (the indirect object identification task and factual recall), and present evidence for its prevalence in practice. In the context of factual recall, we further show a link to rank-1 fact editing, providing a mechanistic explanation for previous work observing an inconsistency between fact editing performance and fact localization. However, this does not imply that activation patching of subspaces is intrinsically unfit for interpretability. To contextualize our findings, we also show what a success case looks like in a task (indirect object identification) where prior manual circuit analysis informs an understanding of the location of a feature. We explore the additional evidence needed to argue that a patched subspace is faithful.",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Causality $\\neq$ Decodability, and Vice Versa: Lessons from Interpreting Counting ViTs",
+          "doi": "10.48550/arxiv.2510.09794",
+          "authors": {
+            "total": 1,
+            "data": [
+              {
+                "display_name": "Chang Ying-Shan",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "Mechanistic interpretability seeks to uncover how internal components of neural networks give rise to predictions. A persistent challenge, however, is disentangling two often conflated notions: decodability--the recoverability of information from hidden states--and causality--the extent to which those states functionally influence outputs. In this work, we investigate their relationship in vision transformers (ViTs) fine-tuned for object counting. Using activation patching, we test the causal role of spatial and CLS tokens by transplanting activations across clean-corrupted image pairs. In parallel, we train linear probes to assess the decodability of count information at different depths. Our results reveal systematic mismatches: middle-layer object tokens exert strong causal influence despite being weakly decodable, whereas final-layer object tokens support accurate decoding yet are functionally inert. Similarly, the CLS token becomes decodable in mid-layers but only acquires causal power in the final layers. These findings highlight that decodability and causality reflect complementary dimensions of representation--what information is present versus what is used--and that their divergence can expose hidden computational circuits. ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Have Faith in Faithfulness: Going Beyond Circuit Overlap When Finding Model Mechanisms",
+          "doi": "10.48550/arxiv.2403.17806",
+          "authors": {
+            "total": 3,
+            "data": [
+              {
+                "display_name": "Michael Hanna",
+                "full_slug": null
+              },
+              {
+                "display_name": "Sandro Pezzelle",
+                "full_slug": null
+              },
+              {
+                "display_name": "Yonatan Belinkov",
+                "id": 2279044859,
+                "slug": "yonatan-belinkov",
+                "unique_id": "4s1xp0c5lk",
+                "full_slug": "yonatan-belinkov-4s1xp0c5lk",
+                "affiliation_full_slug": "technion-israel-institute-of-technology-3s7bh4fv"
+              }
+            ]
+          },
+          "abstract": "Many recent language model (LM) interpretability studies have adopted the circuits framework, which aims to find the minimal computational subgraph, or circuit, that explains LM behavior on a given task. Most studies determine which edges belong in a LM's circuit by performing causal interventions on each edge independently, but this scales poorly with model size. Edge attribution patching (EAP), gradient-based approximation to interventions, has emerged as a scalable but imperfect solution to this problem. In this paper, we introduce a new method - EAP with integrated gradients (EAP-IG) - that aims to better maintain a core property of circuits: faithfulness. A circuit is faithful if all model edges outside the circuit can be ablated without changing the model's performance on the task; faithfulness is what justifies studying circuits, rather than the full model. Our experiments demonstrate that circuits found using EAP are less faithful than those found using EAP-IG, even though both have high node overlap with circuits found previously using causal interventions. We conclude more generally that when using circuits to compare the mechanisms models use to solve tasks, faithfulness, not overlap, is what should be measured.",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Disentangling Recall and Reasoning in Transformer Models through Layer-wise Attention and Activation Analysis",
+          "doi": "10.48550/arxiv.2510.03366",
+          "authors": {
+            "total": 2,
+            "data": [
+              {
+                "display_name": "Raja Rahul",
+                "full_slug": null
+              },
+              {
+                "display_name": "Vats, Arpita",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "Transformer-based language models excel at both recall (retrieving memorized facts) and reasoning (performing multi-step inference), but whether these abilities rely on distinct internal mechanisms remains unclear. Distinguishing recall from reasoning is crucial for predicting model generalization, designing targeted evaluations, and building safer interventions that affect one ability without disrupting the other.We approach this question through mechanistic interpretability, using controlled datasets of synthetic linguistic puzzles to probe transformer models at the layer, head, and neuron level. Our pipeline combines activation patching and structured ablations to causally measure component contributions to each task type. Across two model families (Qwen and LLaMA), we find that interventions on distinct layers and attention heads lead to selective impairments: disabling identified \"recall circuits\" reduces fact-retrieval accuracy by up to 15\\% while leaving reasoning intact, whereas disabling \"reasoning circuits\" reduces multi-step inference by a comparable margin. At the neuron level, we observe task-specific firing patterns, though these effects are less robust, consistent with neuronal polysemanticity.Our results provide the first causal evidence that recall and reasoning rely on separable but interacting circuits in transformer models. These findings advance mechanistic interpretability by linking circuit-level structure to functional specialization and demonstrate how controlled datasets and causal interventions can yield mechanistic insights into model cognition, informing safer deployment of large language models. ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Transformer Circuit Faithfulness Metrics are not Robust",
+          "doi": "10.48550/arxiv.2407.08734",
+          "authors": {
+            "total": 3,
+            "data": [
+              {
+                "display_name": "Joseph T. Miller",
+                "full_slug": null
+              },
+              {
+                "display_name": "Bilal Chughtai",
+                "full_slug": null
+              },
+              {
+                "display_name": "William H. Saunders",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "Mechanistic interpretability work attempts to reverse engineer the learned algorithms present inside neural networks. One focus of this work has been to discover 'circuits' -- subgraphs of the full model that explain behaviour on specific tasks. But how do we measure the performance of such circuits? Prior work has attempted to measure circuit 'faithfulness' -- the degree to which the circuit replicates the performance of the full model. In this work, we survey many considerations for designing experiments that measure circuit faithfulness by ablating portions of the model's computation. Concerningly, we find existing methods are highly sensitive to seemingly insignificant changes in the ablation methodology. We conclude that existing circuit faithfulness scores reflect both the methodological choices of researchers as well as the actual components of the circuit - the task a circuit is required to perform depends on the ablation used to test it. The ultimate goal of mechanistic interpretability work is to understand neural networks, so we emphasize the need for more clarity in the precise claims being made about circuits. We open source a library at https://github.com/UFO-101/auto-circuit that includes highly efficient implementations of a wide range of ablation methodologies and circuit discovery algorithms. ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Addressing divergent representations from causal interventions on neural networks",
+          "doi": "10.48550/arxiv.2511.04638",
+          "authors": {
+            "total": 1,
+            "data": [
+              {
+                "display_name": "Potts, Christopher",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "A common approach to mechanistic interpretability is to causally manipulate model representations via targeted interventions in order to understand what those representations encode. Here we ask whether such interventions create out-of-distribution (divergent) representations, and whether this raises concerns about how faithful their resulting explanations are to the target model in its natural state. First, we demonstrate empirically that common causal intervention techniques often do shift internal representations away from the natural distribution of the target model. Then, we provide a theoretical analysis of two classes of such divergences: `harmless' divergences that occur in the null-space of the weights and from covariance within behavioral decision boundaries, and `pernicious' divergences that activate hidden network pathways and cause dormant behavioral changes. Finally, in an effort to mitigate the pernicious cases, we modify the Counterfactual Latent (CL) loss from Grant (2025) that regularizes interventions to remain closer to the natural distributions, reducing the likelihood of harmful divergences while preserving the interpretive power of interventions. Together, these results highlight a path towards more reliable interpretability methods. ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Adversarial Activation Patching: A Framework for Detecting and Mitigating Emergent Deception in Safety-Aligned Transformers",
+          "doi": "10.48550/arxiv.2507.09406",
+          "authors": {
+            "total": 1,
+            "data": [
+              {
+                "display_name": "Santhosh Kumar Ravindran",
+                "id": 2750152317,
+                "slug": "santhosh-kumar-ravindran",
+                "unique_id": "2db2016dx3",
+                "full_slug": "santhosh-kumar-ravindran-2db2016dx3"
+              }
+            ]
+          },
+          "abstract": "Large language models (LLMs) aligned for safety through techniques like reinforcement learning from human feedback (RLHF) often exhibit emergent deceptive behaviors, where outputs appear compliant but subtly mislead or omit critical information. This paper introduces adversarial activation patching, a novel mechanistic interpretability framework that leverages activation patching as an adversarial tool to induce, detect, and mitigate such deception in transformer-based models. By sourcing activations from\"deceptive\"prompts and patching them into safe forward passes at specific layers, we simulate vulnerabilities and quantify deception rates. Through toy neural network simulations across multiple scenarios (e.g., 1000 trials per setup), we demonstrate that adversarial patching increases deceptive outputs to 23.9% from a 0% baseline, with layer-specific variations supporting our hypotheses. We propose six hypotheses, including transferability across models, exacerbation in multimodal settings, and scaling effects. An expanded literature review synthesizes over 20 key works in interpretability, deception, and adversarial attacks. Mitigation strategies, such as activation anomaly detection and robust fine-tuning, are detailed, alongside ethical considerations and future research directions. This work advances AI safety by highlighting patching's dual-use potential and provides a roadmap for empirical studies on large-scale models.",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Activation Transport Operators",
+          "doi": "10.48550/arxiv.2508.17540",
+          "authors": {
+            "total": 2,
+            "data": [
+              {
+                "display_name": "Andrzej Szablewski",
+                "full_slug": null
+              },
+              {
+                "display_name": "Marek Masiak",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "The residual stream mediates communication between transformer decoder layers via linear reads and writes of non-linear computations. While sparse-dictionary learning-based methods locate features in the residual stream, and activation patching methods discover circuits within the model, the mechanism by which features flow through the residual stream remains understudied. Understanding this dynamic can better inform jailbreaking protections, enable early detection of model mistakes, and their correction. In this work, we propose Activation Transport Operators (ATO), linear maps from upstream to downstream residuals $k$ layers later, evaluated in feature space using downstream SAE decoder projections. We empirically demonstrate that these operators can determine whether a feature has been linearly transported from a previous layer or synthesised from non-linear layer computation. We develop the notion of transport efficiency, for which we provide an upper bound, and use it to estimate the size of the residual stream subspace that corresponds to linear transport. We empirically demonstrate the linear transport, report transport efficiency and the size of the residual stream's subspace involved in linear transport. This compute-light (no finetuning,<50 GPU-h) method offers practical tools for safety, debugging, and a clearer picture of where computation in LLMs behaves linearly.",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Circuit Insights: Towards Interpretability Beyond Activations",
+          "doi": "10.48550/arxiv.2510.14936",
+          "authors": {
+            "total": 3,
+            "data": [
+              {
+                "display_name": "Ibrahim Ammar",
+                "full_slug": null
+              },
+              {
+                "display_name": "Samek Wojciech",
+                "full_slug": null
+              },
+              {
+                "display_name": "Lapuschkin, Sebastian",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "The fields of explainable AI and mechanistic interpretability aim to uncover the internal structure of neural networks, with circuit discovery as a central tool for understanding model computations. Existing approaches, however, rely on manual inspection and remain limited to toy tasks. Automated interpretability offers scalability by analyzing isolated features and their activations, but it often misses interactions between features and depends strongly on external LLMs and dataset quality. Transcoders have recently made it possible to separate feature attributions into input-dependent and input-invariant components, providing a foundation for more systematic circuit analysis. Building on this, we propose WeightLens and CircuitLens, two complementary methods that go beyond activation-based analysis. WeightLens interprets features directly from their learned weights, removing the need for explainer models or datasets while matching or exceeding the performance of existing methods on context-independent features. CircuitLens captures how feature activations arise from interactions between components, revealing circuit-level dynamics that activation-only approaches cannot identify. Together, these methods increase interpretability robustness and enhance scalable mechanistic analysis of circuits while maintaining efficiency and quality. ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Rethinking Circuit Completeness in Language Models: AND, OR, and ADDER Gates",
+          "doi": "10.48550/arxiv.2505.10039",
+          "authors": {
+            "total": 4,
+            "data": [
+              {
+                "display_name": "Chen Hang",
+                "full_slug": null
+              },
+              {
+                "display_name": "Zhu Jia-ying",
+                "full_slug": null
+              },
+              {
+                "display_name": "Yang Xinyu",
+                "full_slug": null
+              },
+              {
+                "display_name": "Wang, Wenya",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "Circuit discovery has gradually become one of the prominent methods for mechanistic interpretability, and research on circuit completeness has also garnered increasing attention. Methods of circuit discovery that do not guarantee completeness not only result in circuits that are not fixed across different runs but also cause key mechanisms to be omitted. The nature of incompleteness arises from the presence of OR gates within the circuit, which are often only partially detected in standard circuit discovery methods. To this end, we systematically introduce three types of logic gates: AND, OR, and ADDER gates, and decompose the circuit into combinations of these logical gates. Through the concept of these gates, we derive the minimum requirements necessary to achieve faithfulness and completeness. Furthermore, we propose a framework that combines noising-based and denoising-based interventions, which can be easily integrated into existing circuit discovery methods without significantly increasing computational complexity. This framework is capable of fully identifying the logic gates and distinguishing them within the circuit. In addition to the extensive experimental validation of the framework's ability to restore the faithfulness, completeness, and sparsity of circuits, using this framework, we uncover fundamental properties of the three logic gates, such as their proportions and contributions to the output, and explore how they behave among the functionalities of language models. ",
+          "editorialNotices": "field_not_returned"
+        }
+      ]
+    },
+    {
+      "key": "scispace_causal",
+      "query": "How do causal scrubbing, interchange interventions, and circuit faithfulness tests distinguish necessity, sufficiency, and completeness of a proposed neural network mechanism?",
+      "results": [
+        {
+          "title": "Causal Abstraction for Faithful Model Interpretation",
+          "doi": "10.48550/arXiv.2301.04709",
+          "authors": {
+            "total": 3,
+            "data": [
+              {
+                "display_name": "Atticus Geiger",
+                "id": 2899206174,
+                "slug": "atticus-geiger",
+                "unique_id": "23754o1ud4",
+                "full_slug": "atticus-geiger-23754o1ud4"
+              },
+              {
+                "display_name": "Chris Potts",
+                "full_slug": null
+              },
+              {
+                "display_name": "Thomas Icard",
+                "id": 1793331958,
+                "slug": "thomas-icard",
+                "unique_id": "18ktnldwqx",
+                "full_slug": "thomas-icard-18ktnldwqx"
+              }
+            ]
+          },
+          "abstract": "A faithful and interpretable explanation of an AI model's behavior and internal structure is a high-level explanation that is human-intelligible but also consistent with the known, but often opaque low-level causal details of the model. We argue that the theory of causal abstraction provides the mathematical foundations for the desired kinds of model explanations. In causal abstraction analysis, we use interventions on model-internal states to rigorously assess whether an interpretable high-level causal model is a faithful description of an AI model. Our contributions in this area are: (1) We generalize causal abstraction to cyclic causal structures and typed high-level variables. (2) We show how multi-source interchange interventions can be used to conduct causal abstraction analyses. (3) We define a notion of approximate causal abstraction that allows us to assess the degree to which a high-level causal model is a causal abstraction of a lower-level one. (4) We prove constructive causal abstraction can be decomposed into three operations we refer to as marginalization, variable-merge, and value-merge. (5) We formalize the XAI methods of LIME, causal effect estimation, causal mediation analysis, iterated nullspace projection, and circuit-based explanations as special cases of causal abstraction analysis.",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Causal Analysis for Robust Interpretability of Neural Networks",
+          "doi": "10.48550/arXiv.2305.08950",
+          "authors": {
+            "total": 4,
+            "data": [
+              {
+                "display_name": "Ola Ahmad",
+                "id": 2952897927,
+                "slug": "ola-ahmad",
+                "unique_id": "2devx9wfqi",
+                "full_slug": "ola-ahmad-2devx9wfqi"
+              },
+              {
+                "display_name": "Nicolas B'ereux",
+                "id": 4001440786,
+                "slug": "nicolas-b-ereux",
+                "unique_id": "3rohxoa9",
+                "full_slug": "nicolas-b-ereux-3rohxoa9"
+              },
+              {
+                "display_name": "Vahid Moraveji-Hashemi",
+                "id": 3002455943,
+                "slug": "vahid-moraveji-hashemi",
+                "unique_id": "1t8t97m999",
+                "full_slug": "vahid-moraveji-hashemi-1t8t97m999"
+              },
+              {
+                "display_name": "Freddy Lecue",
+                "id": 233931727,
+                "slug": "freddy-lecue",
+                "unique_id": "3qxri6b558",
+                "full_slug": "freddy-lecue-3qxri6b558"
+              }
+            ]
+          },
+          "abstract": "Interpreting the inner function of neural networks is crucial for the trustworthy development and deployment of these black-box models. Prior interpretability methods focus on correlation-based measures to attribute model decisions to individual examples. However, these measures are susceptible to noise and spurious correlations encoded in the model during the training phase (e.g., biased inputs, model overfitting, or misspecification). Moreover, this process has proven to result in noisy and unstable attributions that prevent any transparent understanding of the model's behavior. In this paper, we develop a robust interventional-based method grounded by causal analysis to capture cause-effect mechanisms in pre-trained neural networks and their relation to the prediction. Our novel approach relies on path interventions to infer the causal mechanisms within hidden layers and isolate relevant and necessary information (to model prediction), avoiding noisy ones. The result is task-specific causal explanatory graphs that can audit model behavior and express the actual causes underlying its performance. We apply our method to vision models trained on classification tasks. On image classification tasks, we provide extensive quantitative experiments to show that our approach can capture more stable and faithful explanations than standard attribution-based methods. Furthermore, the underlying causal graphs reveal the neural interactions in the model, making it a valuable tool in other applications (e.g., model repair).",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Causal Analysis for Robust Interpretability of Neural Networks",
+          "doi": "10.48550/arxiv.2305.08950",
+          "abstract": "Interpreting the inner function of neural networks is crucial for the trustworthy development and deployment of these black-box models. Prior interpretability methods focus on correlation-based measures to attribute model decisions to individual examples. However, these measures are susceptible to noise and spurious correlations encoded in the model during the training phase (e.g., biased inputs, model overfitting, or misspecification). Moreover, this process has proven to result in noisy and unstable attributions that prevent any transparent understanding of the model's behavior. In this paper, we develop a robust interventional-based method grounded by causal analysis to capture cause-effect mechanisms in pre-trained neural networks and their relation to the prediction. Our novel approach relies on path interventions to infer the causal mechanisms within hidden layers and isolate relevant and necessary information (to model prediction), avoiding noisy ones. The result is task-specific causal explanatory graphs that can audit model behavior and express the actual causes underlying its performance. We apply our method to vision models trained on classification tasks. On image classification tasks, we provide extensive quantitative experiments to show that our approach can capture more stable and faithful explanations than standard attribution-based methods. Furthermore, the underlying causal graphs reveal the neural interactions in the model, making it a valuable tool in other applications (e.g., model repair). ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Addressing divergent representations from causal interventions on neural networks",
+          "doi": "10.48550/arxiv.2511.04638",
+          "authors": {
+            "total": 1,
+            "data": [
+              {
+                "display_name": "Potts, Christopher",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "A common approach to mechanistic interpretability is to causally manipulate model representations via targeted interventions in order to understand what those representations encode. Here we ask whether such interventions create out-of-distribution (divergent) representations, and whether this raises concerns about how faithful their resulting explanations are to the target model in its natural state. First, we demonstrate empirically that common causal intervention techniques often do shift internal representations away from the natural distribution of the target model. Then, we provide a theoretical analysis of two classes of such divergences: `harmless' divergences that occur in the null-space of the weights and from covariance within behavioral decision boundaries, and `pernicious' divergences that activate hidden network pathways and cause dormant behavioral changes. Finally, in an effort to mitigate the pernicious cases, we modify the Counterfactual Latent (CL) loss from Grant (2025) that regularizes interventions to remain closer to the natural distributions, reducing the likelihood of harmful divergences while preserving the interpretive power of interventions. Together, these results highlight a path towards more reliable interpretability methods. ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Beyond Correlation: Redefining Causation Through Robustness and Resilience to Perturbation",
+          "doi": "10.20944/preprints202511.0510.v1",
+          "authors": {
+            "total": 1,
+            "data": [
+              {
+                "display_name": "Arturo Tozzi",
+                "id": 2270132816,
+                "slug": "arturo-tozzi",
+                "unique_id": "41zxkbbhle",
+                "full_slug": "arturo-tozzi-41zxkbbhle",
+                "affiliation_full_slug": "university-of-north-texas-2s4sn4yj"
+              }
+            ]
+          },
+          "abstract": "Correlation and causation are often treated as interchangeable yet describe different relationships. Correlation quantifies how variables co-vary, while causation denotes a directional influence by which one variable determines another’s state. Classical causal inference assumes that where causation occurs, correlation must follow, an assumption formalized as Faithfulness. However, Faithfulness fails in many biological and physical control systems like hormonal regulation, neural homeostasis and ecological feedback loops, which function by counteracting disturbances rather than amplifying them. Causation may therefore operate without producing observable co-variation, causing correlation to vanish and revealing the limits of conventional statistical approaches that rely exclusively on correlated change. We introduce an information-based definition of causation, conceived as preservation of informational structure against disturbance. A variable is considered causal when its influence decreases uncertainty in another variable exposed to unpredictable inputs, thereby maintaining order under noise. Using numerical simulations of feedback and feedforward systems, we showed that strong causal interactions can be reliably detected even when correlations between variables are negligible or negative. Our simulations revealed also reductions in conditional entropy and delayed oppositions between control and outcome, providing quantitative evidence of stabilizing causation hidden to traditional correlation-based measures. Unlike regression, structural equation modeling or transfer entropy, our approach revealed compensatory and self-maintaining dynamics operating through feedback, nonlinearity and temporal delay. By unifying causal inference and control theory, our agenda reframes stability as an active expression of causal power and enables the detection of hidden causal architectures in physiological homeostasis, neural stability, ecosystem resilience and engineered feedback systems. ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "CITS: Nonparametric Statistical Causal Modeling for High-Resolution Neural Time Series",
+          "doi": "10.48550/arxiv.2508.01920",
+          "authors": {
+            "total": 4,
+            "data": [
+              {
+                "display_name": "Biswas, Rahul",
+                "full_slug": null
+              },
+              {
+                "display_name": "Sripada, SuryaNarayana",
+                "full_slug": null
+              },
+              {
+                "display_name": "Mukherjee, Somabha",
+                "full_slug": null
+              },
+              {
+                "display_name": "Abbasi-Asl, Reza",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "Understanding how signals propagate through neural circuits is central to deciphering brain computation. While functional connectivity captures statistical associations, it does not reveal directionality or causal mechanisms. We introduce CITS (Causal Inference in Time Series), a non-parametric method for inferring statistically causal neural circuitry from high-resolution time series data. CITS models neural dynamics using a structural causal model with arbitrary Markov order and tests for time-lagged conditional independence using either Gaussian or distribution-free statistics. Unlike classical Granger Causality, which assumes linear autoregressive models and Gaussian noise, or the Peter-Clark algorithm, which assumes i.i.d. data and no temporal structure, CITS handles temporally dependent, potentially non-Gaussian data with flexible testing procedures. We prove consistency under mild mixing assumptions and validate CITS on simulated linear, nonlinear, and continuous-time recurrent neural network data, where it outperforms state-of-the-art methods. We then apply CITS to Neuropixels recordings from mouse brain during visual tasks. CITS uncovers interpretable, stimulus-specific causal circuits linking cortical, thalamic, and hippocampal regions, consistent with experimental literature. It also reveals that neurons with similar orientation selectivity indices are more likely to be causally connected. Our results demonstrate the utility of CITS in uncovering biologically meaningful pathways and generating hypotheses for future experimental studies. ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "What Caused What? A Quantitative Account of Actual Causation Using Dynamical Causal Networks.",
+          "doi": "10.3390/E21050459",
+          "authors": {
+            "total": 5,
+            "data": [
+              {
+                "display_name": "Larissa Albantakis",
+                "id": 1793787877,
+                "slug": "larissa-albantakis",
+                "unique_id": "bve0luyof7",
+                "full_slug": "larissa-albantakis-bve0luyof7",
+                "affiliation_full_slug": "university-of-wisconsin-madison-1lo9rg1b"
+              },
+              {
+                "display_name": "William Marshall",
+                "id": 2495282750,
+                "slug": "william-marshall",
+                "unique_id": "l2htliu7ih",
+                "full_slug": "william-marshall-l2htliu7ih",
+                "affiliation_full_slug": "brock-university-2pgpvl46"
+              },
+              {
+                "display_name": "William Marshall",
+                "id": 2495282750,
+                "slug": "william-marshall",
+                "unique_id": "l2htliu7ih",
+                "full_slug": "william-marshall-l2htliu7ih",
+                "affiliation_full_slug": "university-of-wisconsin-madison-1lo9rg1b"
+              },
+              {
+                "display_name": "Erik Hoel",
+                "id": 2243627391,
+                "slug": "erik-hoel",
+                "unique_id": "47fza9d7na",
+                "full_slug": "erik-hoel-47fza9d7na",
+                "affiliation_full_slug": "tufts-university-2jgbqkl0"
+              },
+              {
+                "display_name": "Giulio Tononi",
+                "id": 1784168215,
+                "slug": "giulio-tononi",
+                "unique_id": "1l9e35e78i",
+                "full_slug": "giulio-tononi-1l9e35e78i",
+                "affiliation_full_slug": "university-of-wisconsin-madison-1lo9rg1b"
+              }
+            ]
+          },
+          "abstract": "Actual causation is concerned with the question: \"What caused what?\" Consider a transition between two states within a system of interacting elements, such as an artificial neural network, or a biological brain circuit. Which combination of synapses caused the neuron to fire? Which image features caused the classifier to misinterpret the picture? Even detailed knowledge of the system's causal network, its elements, their states, connectivity, and dynamics does not automatically provide a straightforward answer to the \"what caused what?\" question. Counterfactual accounts of actual causation, based on graphical models paired with system interventions, have demonstrated initial success in addressing specific problem cases, in line with intuitive causal judgments. Here, we start from a set of basic requirements for causation (realization, composition, information, integration, and exclusion) and develop a rigorous, quantitative account of actual causation, that is generally applicable to discrete dynamical systems. We present a formal framework to evaluate these causal requirements based on system interventions and partitions, which considers all counterfactuals of a state transition. This framework is used to provide a complete causal account of the transition by identifying and quantifying the strength of all actual causes and effects linking the two consecutive system states. Finally, we examine several exemplary cases and paradoxes of causation and show that they can be illuminated by the proposed framework for quantifying actual causation.",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "What caused what? A quantitative account of actual causation using dynamical causal networks",
+          "doi": null,
+          "authors": {
+            "total": 5,
+            "data": [
+              {
+                "display_name": "Larissa Albantakis",
+                "id": 1793787877,
+                "slug": "larissa-albantakis",
+                "unique_id": "bve0luyof7",
+                "full_slug": "larissa-albantakis-bve0luyof7",
+                "affiliation_full_slug": "university-of-wisconsin-madison-1lo9rg1b"
+              },
+              {
+                "display_name": "William Marshall",
+                "id": 2495282750,
+                "slug": "william-marshall",
+                "unique_id": "l2htliu7ih",
+                "full_slug": "william-marshall-l2htliu7ih",
+                "affiliation_full_slug": "brock-university-2pgpvl46"
+              },
+              {
+                "display_name": "William Marshall",
+                "id": 2495282750,
+                "slug": "william-marshall",
+                "unique_id": "l2htliu7ih",
+                "full_slug": "william-marshall-l2htliu7ih",
+                "affiliation_full_slug": "university-of-wisconsin-madison-1lo9rg1b"
+              },
+              {
+                "display_name": "Erik Hoel",
+                "id": 2243627391,
+                "slug": "erik-hoel",
+                "unique_id": "47fza9d7na",
+                "full_slug": "erik-hoel-47fza9d7na",
+                "affiliation_full_slug": "tufts-university-2jgbqkl0"
+              },
+              {
+                "display_name": "Giulio Tononi",
+                "id": 1784168215,
+                "slug": "giulio-tononi",
+                "unique_id": "1l9e35e78i",
+                "full_slug": "giulio-tononi-1l9e35e78i",
+                "affiliation_full_slug": "university-of-wisconsin-madison-1lo9rg1b"
+              }
+            ]
+          },
+          "abstract": "Actual causation is concerned with the question \"what caused what?\" Consider a transition between two states within a system of interacting elements, such as an artificial neural network, or a biological brain circuit. Which combination of synapses caused the neuron to fire? Which image features caused the classifier to misinterpret the picture? Even detailed knowledge of the system's causal network, its elements, their states, connectivity, and dynamics does not automatically provide a straightforward answer to the \"what caused what?\" question. Counterfactual accounts of actual causation based on graphical models, paired with system interventions, have demonstrated initial success in addressing specific problem cases in line with intuitive causal judgments. Here, we start from a set of basic requirements for causation (realization, composition, information, integration, and exclusion) and develop a rigorous, quantitative account of actual causation that is generally applicable to discrete dynamical systems. We present a formal framework to evaluate these causal requirements that is based on system interventions and partitions, and considers all counterfactuals of a state transition. This framework is used to provide a complete causal account of the transition by identifying and quantifying the strength of all actual causes and effects linking the two consecutive system states. Finally, we examine several exemplary cases and paradoxes of causation and show that they can be illuminated by the proposed framework for quantifying actual causation.",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "Deciphering interventional dynamical causality from non-intervention\n  systems",
+          "doi": "10.48550/arxiv.2407.01621",
+          "authors": {
+            "total": 7,
+            "data": [
+              {
+                "display_name": "Jifan Shi",
+                "full_slug": null
+              },
+              {
+                "display_name": "Li Yang",
+                "full_slug": null
+              },
+              {
+                "display_name": "J. W. Zhao",
+                "full_slug": null
+              },
+              {
+                "display_name": "Siyang Leng",
+                "full_slug": null
+              },
+              {
+                "display_name": "Kazuyuki Aihara",
+                "full_slug": null
+              },
+              {
+                "display_name": "Luonan Chen",
+                "full_slug": null
+              },
+              {
+                "display_name": "Wei Lin",
+                "full_slug": null
+              }
+            ]
+          },
+          "abstract": "Detecting and quantifying causality is a focal topic in the fields of science, engineering, and interdisciplinary studies. However, causal studies on non-intervention systems attract much attention but remain extremely challenging. To address this challenge, we propose a framework named Interventional Dynamical Causality (IntDC) for such non-intervention systems, along with its computational criterion, Interventional Embedding Entropy (IEE), to quantify causality. The IEE criterion theoretically and numerically enables the deciphering of IntDC solely from observational (non-interventional) time-series data, without requiring any knowledge of dynamical models or real interventions in the considered system. Demonstrations of performance showed the accuracy and robustness of IEE on benchmark simulated systems as well as real-world systems, including the neural connectomes of C. elegans, COVID-19 transmission networks in Japan, and regulatory networks surrounding key circadian genes. ",
+          "editorialNotices": "field_not_returned"
+        },
+        {
+          "title": "On the Mechanistic Interpretability of Neural Networks for Causality in Bio-statistics",
+          "doi": "10.48550/arxiv.2505.00555",
+          "abstract": "Interpretable insights from predictive models remain critical in bio-statistics, particularly when assessing causality, where classical statistical and machine learning methods often provide inherent clarity. While Neural Networks (NNs) offer powerful capabilities for modeling complex biological data, their traditional \"black-box\" nature presents challenges for validation and trust in high-stakes health applications. Recent advances in Mechanistic Interpretability (MI) aim to decipher the internal computations learned by these networks. This work investigates the application of MI techniques to NNs within the context of causal inference for bio-statistics. We demonstrate that MI tools can be leveraged to: (1) probe and validate the internal representations learned by NNs, such as those estimating nuisance functions in frameworks like Targeted Minimum Loss-based Estimation (TMLE); (2) discover and visualize the distinct computational pathways employed by the network to process different types of inputs, potentially revealing how confounders and treatments are handled; and (3) provide methodologies for comparing the learned mechanisms and extracted insights across statistical, machine learning, and NN models, fostering a deeper understanding of their respective strengths and weaknesses for causal bio-statistical analysis. ",
+          "editorialNotices": "field_not_returned"
+        }
+      ]
+    },
+    {
+      "key": "scispace_hydra",
+      "available": false
+    },
+    {
+      "key": "scite_patching",
+      "query": "\"activation patching\" AND (pitfalls OR metrics OR faithfulness)",
+      "results": [
+        {
+          "title": "Causal Attribution via Activation Patching",
+          "year": 2026,
+          "doi": "10.48550/arxiv.2603.13652",
+          "url": "https://doi.org/10.48550/arxiv.2603.13652",
+          "authors": [
+            {
+              "authorName": "Ahmad Izadi"
+            },
+            {
+              "authorName": "Mohammadali Banayeeanzade"
+            },
+            {
+              "authorName": "Alireza Mirrokni"
+            }
+          ],
+          "abstract": "Attribution methods for Vision Transformers (ViTs) aim to identify image regions that influence model predictions, but producing faithful and well-localized attributions remains challenging. Existing gradient-based and perturbation-based techniques often fail to isolate the causal contribution of in...",
+          "fulltextExcerpts": [
+            "In this work, we propose Causal Attribution via Activation Patching (CAAP), a novel attribution method motivated by mechanistic interpretability. CAAP measures attribution by intervening on hidden activations of a trained ViT. For each patch, we insert the corresponding source-image activations into a neutral blank context and use the resulting target-class score as the attribution signal.",
+            "Activation Patching\n\nLet f be a neural network composed of L layers. For an input x, we denote by h l (x) the activation tensor at layer l ∈ {1, . . . , L}. Activation patching is an intervention-based procedure that modifies a forward pass by replacing selected internal activations of one input with those from another, while keeping all other computations unchanged.",
+            "Causal interventions and activation patching. Causal viewpoints formalize attribution as the effect of interventions rather than local sensitivity [6]. In mechanistic interpretability, activation patching (interchange interventions or causal tracing) replaces internal activations from a source run into a target run while keeping the remaining computation fixed, enabling direct tests of which internal representations carry information used for a prediction [42]."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Mechanistic Interpretability of Chain-of-Thought Reasoning via Sequential Activation Patching",
+          "year": 2026,
+          "doi": "10.48550/arxiv.2608.22332",
+          "url": "https://arxiv.org/pdf/2608.22332",
+          "authors": [
+            {
+              "authorName": "Murat Dura"
+            },
+            {
+              "authorName": "Serkan Öztürk"
+            },
+            {
+              "authorName": "Selma Tekır"
+            }
+          ],
+          "abstract": "Large Language Models (LLMs) demonstrate remarkable problem-solving capabilities when guided by Chain-of-Thought (CoT)  prompting, yet the internal mechanisms underlying these improvements remain poorly understood. In this work, we investigate where CoT-related causal effects emerge across the gener...",
+          "fulltextExcerpts": [
+            "We adopt sequential activation patching, where the outputs of attention heads from the clean run (the CoT prompting condition) are injected into the corrupted run (No-CoT). This setting allows us to ask whether intervention-sensitive internal components carry signals that influence the final answer. We summarize our contributions as follows:\n\n• We adopt a many-to-one, sequential activation patching strategy, where the outputs of CoT attention heads are injected into No-CoT.",
+            "Using distribution-level and logit-level metrics, we show that sequential activation patching moves No-CoT executions toward CoT behavior, suggesting that CoT-conditioned activations causally contribute to final-answer computation.",
+            "We publicly share our code to support reproducibility.2 • Targeted CoT activation patching consistently moves No-CoT executions toward CoT-like behavior, while cross-question patching shows weaker but still meaningful transfer, suggesting that the identified activations are not limited to problem-specific tokens."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Float32-Induced Distortion in Activation Patching: Precision Floors and Displacement-Dependent Endpoint-Curvature Error",
+          "year": 2026,
+          "doi": "10.3390/computation14090212",
+          "url": "https://ct.prod.getft.io/c2NpdGUsdW5kZWZpbmVkLE1UQXVNek01TUM5amIyMXdkWFJoZEdsdmJqRTBNRGt3TWpFeSxaV1F6WTJOa01ERXRNR0ptTWkwME1EY3hMVGhtTXpndE9EVmpObUU0WWprMllqZ3osaHR0cHM6Ly9kb2kub3JnLzEwLjMzOTAvY29tcHV0YXRpb24xNDA5MDIxMg.Y7r3xAxalC-b9E_grEqbMQiRlytQOe_itevDPCzQfdY",
+          "authors": [
+            {
+              "authorName": "Yash Baligar"
+            }
+          ],
+          "abstract": "Interaction-level activation patching is used to infer nonlinear cooperation in neural networks, but its numerical validity has not been systematically audited. In two pretrained checkpoints—GPT-2-medium and Pythia-410M, audited on one CUDA backend with a single templated cloze task family—we identi...",
+          "fulltextExcerpts": [
+            "The title names a demonstrated phenomenon at that scope-float32-induced distortion of interaction-level patching, established in these two audited models, together with a portable audit procedure-not a universal quantitative law of activation patching.",
+            "On the interpretability side, the reliability of activation patching itself is an active concern: patching estimands interact with unpatched mediators [12] and circuit-faithfulness metrics are sensitive to ablation and metric choices [13]; our results add numerical precision, displacement magnitude, and evaluation point to that list of design choices with measurable consequences.",
+            "Vaidyanathan et al. analyze the activation-patching estimand: they prove that mediated interaction effects scale with activation displacement and that multi-component patching decomposes into pairwise and higher-order cross-interactions-a statement about what the causal quantity is."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Towards Best Practices of Activation Patching in Language Models: Metrics and Methods",
+          "year": 2023,
+          "doi": "10.48550/arxiv.2309.16042",
+          "url": "https://arxiv.org/pdf/2309.16042",
+          "authors": [
+            {
+              "authorName": "Fred Zhang"
+            },
+            {
+              "authorName": "Neel Nanda"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Towards Faithful Natural Language Explanations: A Study Using Activation Patching in Large Language Models",
+          "year": 2025,
+          "doi": "10.18653/v1/2025.emnlp-main.529",
+          "url": "https://aclanthology.org/2025.emnlp-main.529.pdf",
+          "authors": [
+            {
+              "authorName": "Wei Jie Yeo"
+            },
+            {
+              "authorName": "Ranjan Satapathy"
+            },
+            {
+              "authorName": "Erik Cambria"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Towards Faithful Natural Language Explanations: A Study Using Activation Patching in Large Language Models",
+          "year": 2024,
+          "doi": "10.48550/arxiv.2410.14155",
+          "url": "https://arxiv.org/pdf/2410.14155",
+          "authors": [
+            {
+              "authorName": "Wei Jie Yeo"
+            },
+            {
+              "authorName": "Erik Cambria"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Mechanistic Circuit Tracking Causal Activation Patching and Formation Trajectories in Transformer Architectures",
+          "year": 2026,
+          "doi": "10.21203/rs.3.rs-10782868/v1",
+          "url": "https://www.reprintsdesk.com/landing/po.aspx?rft_id=info:doi/10.21203/rs.3.rs-10782868/v1&utm_campaign=scite&utm_source=scite&utm_medium=referral&email=bartlomiejpiotrowski1606%40gmail.com",
+          "authors": [
+            {
+              "authorName": "Yash Prajapati"
+            }
+          ],
+          "abstract": "Abstract\n                Mechanistic interpretability provides a principled methodology to reverse-engineer deep neural networks from opaque black boxes into transparent, human-understandable computational circuits. In this work, we present Mechanistic Circuit Tracking, a modular framework engineere...",
+          "fulltextExcerpts": [
+            "Causal Intervention & Activation Patching\n\nActivation patching (also known as causal tracing) isolates the internal representations that carry information necessary for a specific task. By replacing the activation vector x from a clean run with the activation x ′ from a corrupted run, researchers can measure the exact drop or shift in logit probability. This establishes a true causal link between specific hidden state components and the final prediction.\n\nA.",
+            "CONCLUSION\n\nThis study presented the Mechanistic Circuit Tracking framework, establishing quantitative benchmarks for causal activation patching, direct logit attribution, and backup circuit rerouting in transformer networks. By mapping attention head formation trajectories and formalizing the Circuit Stability Index, our framework offers essential tools for auditing model alignment, preventing safety bypasses, and understanding the internal mechanisms of deep learning models."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "A Mechanistic Study of AI-Text Detection Neurons in Frozen BERT: Sparse Probing and Activation Patching on RAID",
+          "year": 2026,
+          "doi": "10.48550/arxiv.2609.30287",
+          "url": "https://arxiv.org/pdf/2609.30287",
+          "authors": [
+            {
+              "authorName": "Paweł Blicharz"
+            },
+            {
+              "authorName": "Miłosz Grunwald"
+            }
+          ],
+          "abstract": "AI-generated text detectors achieve high accuracy on standard benchmarks, yet the internal representations that drive these predictions remain poorly understood. We study which neurons in a frozen BERT-base-uncased encoder support AI-text detection, using the RAID benchmark across six generators spa...",
+          "fulltextExcerpts": [
+            "Right branch ( §5.1): bidirectional activation patching, forward (AI → human) and reverse (human → AI). Numerical results are reported in the cited sections.\n\nregression selects a per-cell candidate set; neurons that survive across folds and seeds form the aggregated stable set S * . An independent L2 probe serves as the frozen evaluator for all subsequent experiments.",
+            "We then apply two causal interventions to the same selected neuron set: mean ablation, which replaces these neurons with their training-set means to test necessity; and same-domain bidirectional activation patching, run in both the forward direction (AI donor → human target, testing sufficiency) and the reverse direction (human donor → AI target, testing partial necessity on-manifold).",
+            "The first application of bidirectional activation patching to AI-text detection neurons. Forward patching establishes that the selected neurons are sufficient to drive the probe's AI predictions (10-16× above random); reverse patching establishes that they are partially nec-essary to preserve them (7-12× above random).\n\n3. A cross-generator analysis."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "A Mechanistic Lens on Semantic Conflicts: Using Activation Patching to Understand LLM Behavior",
+          "year": 2026,
+          "doi": "10.48550/arxiv.2607.05587",
+          "url": "https://arxiv.org/pdf/2607.05587",
+          "authors": [
+            {
+              "authorName": "Youssef Abdelsalam"
+            },
+            {
+              "authorName": "Norman Peitek"
+            },
+            {
+              "authorName": "Anna-Maria Maurer"
+            }
+          ],
+          "abstract": "Large language models (LLMs) are increasingly used in software-engineering tasks processing executable code and non-executable semantic cues such as comments or identifiers. These two sources of information can conflict, leading to situations where the semantic cues suggest different program behavio...",
+          "fulltextExcerpts": [
+            "Using residual-stream activation patching, an intervention-based method commonly used in mechanistic interpretability [17], [18], we causally trace where conflictrelevant representations emerge within the model.",
+            "We then (i) assess how semantic conflicts shift model behavior relative to execution and cues, and (ii) identify the token-layer sites that causally drive these shifts via residual activation patching.",
+            "Activation patching is particularly relevant to our work, as it provides a causal method for asking whether a specific internal activation contributes to an externally observable behavioral difference."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "What Drives Representation Steering? A Mechanistic Case Study on Steering Refusal",
+          "year": 2026,
+          "doi": "10.48550/arxiv.2604.08524",
+          "url": "https://doi.org/10.48550/arxiv.2604.08524",
+          "authors": [
+            {
+              "authorName": "Stephen Z. D. Cheng"
+            },
+            {
+              "authorName": "Sarah Wiegreffe"
+            },
+            {
+              "authorName": "Dinesh Manocha"
+            }
+          ],
+          "abstract": "Applying steering vectors to large language models (LLMs) is an efficient and effective model alignment technique, but we lack an interpretable explanation for how it worksspecifically, what internal mechanisms steering vectors affect and how this results in different model outputs. To investigate t...",
+          "fulltextExcerpts": [
+            "Activation patching (Meng et al., 2022;Vig et al., 2020) identifies the submodules that are causally responsible for a specific behavior. Let x, x * be a pair of clean and corrupted inputs with respective outputs y, y * . With input x * to the model, we are interested in identifying which nodes and edges are important for pushing the prediction from y * to y.",
+            "Data for Activation patching We curate our activation patching datasets from the Alpaca and Jailbreakbench test sets. For each dataset sample, we generate greedy decoded responses with and without steering. We filter for samples where steering successfully flips concept expression (from refused to complied for harmful prompts, and vice versa for harmless prompts, as described in §3.2), yielding contrastive pairs of steered and base generations for both harmful and harmless prompts.",
+            "This gives us four prompt-response datasets for activation patching. Details on dataset size are in Appendix B.\n\nCircuit Faithfulness\n\nWe perform activation patching on all datasets to get an IE score for every edge, and then we extract circuits C from model M following a greedy search algorithm (Mueller et al., 2025). We only consider edges from layers ≥ the steering layer, as the prior activations are the same between the steered and base models."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        }
+      ]
+    },
+    {
+      "key": "scite_superposition",
+      "query": "\"superposition\" AND (neurons OR \"mechanistic interpretability\")",
+      "results": [
+        {
+          "title": "Exemplar Partitioning for Mechanistic Interpretability",
+          "year": 2026,
+          "doi": "10.48550/arxiv.2605.14347",
+          "url": "https://doi.org/10.48550/arxiv.2605.14347",
+          "authors": [
+            {
+              "authorName": "Jessica Rumbelow"
+            }
+          ],
+          "abstract": "We introduce Exemplar Partitioning (EP), an unsupervised method for constructing interpretable feature dictionaries from Large Language Model (LLM) activations with ∼ 10 3 × fewer tokens than comparable sparse autoencoders. An EP dictionary is a Voronoi partition of activation space, built by leader...",
+          "fulltextExcerpts": [
+            "Introduction\n\nMechanistic interpretability aims to reverse-engineer neural networks into human-legible algorithms.",
+            "SAEs are k-sparse with k typically in the tens to low hundreds, buying reconstruction and superposition-handling at the cost of training compute and feature anonymity.",
+            "The corresponding choice for EP is the readout, not the underlying object: native nearest-exemplar assignment is 1-sparse and buys identity, retrieval, and a native distance-to-cover; the full vector of distances to all exemplars is a dense weighted assignment that recovers superposition-style multi-region overlap when downstream use requires it.\n\nDictionary Stability\n\nLeader-clustering is seed-dependent because streaming order determines which activation first arrives to exemplify a region."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Putting a Face to Forgetting: Continual Learning meets Mechanistic Interpretability",
+          "year": 2026,
+          "doi": "10.48550/arxiv.2601.22012",
+          "url": "https://arxiv.org/pdf/2601.22012",
+          "authors": [
+            {
+              "authorName": "Sergi Masip"
+            },
+            {
+              "authorName": "Gido M. van de Ven"
+            },
+            {
+              "authorName": "Javier Ferrando"
+            }
+          ],
+          "abstract": "Catastrophic forgetting in continual learning is often measured at the performance or last-layer representation level, overlooking the underlying mechanisms. We introduce a mechanistic framework that offers a geometric interpretation of catastrophic forgetting as the result of transformations to the...",
+          "fulltextExcerpts": [
+            "The field of mechanistic interpretability provides such a lens by aiming to reverse-engineer the algorithms learned by neural networks (Ferrando et al., 2024;Bereska and Gavves, 2024). Its core premise is that knowledge is encoded in a network by hierarchically representing many individual featuresthe fundamental units of representation-which correspond to meaningful concepts or patterns in the data.",
+            "Discussion and limitations\n\nWe have bridged continual learning and mechanistic interpretability, which has resulted in a conceptual framework that provides a granular vocabulary for forgetting. We have studied a toy model that we refer to as the feature-reader model, which functions as a proxy for analyzing the mechanisms of feature forgetting in practical neural networks.",
+            "Conclusions\n\nWe have introduced a new, feature-centric framework that bridges continual learning and mechanistic interpretability. We showed how forgetting can be interpreted as the result of geometric transformations that reduce the allocated capacity of features or cause readout misalignment. We characterized the best and worst scenarios for forgetting and formalized this in a tractable feature-reader model."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Survey on the Role of Mechanistic Interpretability in Generative AI",
+          "year": 2025,
+          "doi": "10.3390/bdcc9080193",
+          "url": "https://ct.prod.getft.io/c2NpdGUsdW5kZWZpbmVkLE1UQXVNek01TUM5aVpHTmpPVEE0TURFNU13LE5qazJNRGRtTURBdE5qYzFZaTAwTW1NeUxXSmlZVGN0T1dFM056WXpabU15TldReSxodHRwczovL2RvaS5vcmcvMTAuMzM5MC9iZGNjOTA4MDE5Mw.BArWHrC4t_8R5XxjO2wDDvstn7JYcY6URzZ64uVtYxg",
+          "authors": [
+            {
+              "authorName": "Leonardo Ranaldi"
+            }
+          ],
+          "abstract": "The rapid advancement of artificial intelligence (AI) and machine learning has revolutionised how systems process information, make decisions, and adapt to dynamic environments. AI-driven approaches have significantly enhanced efficiency and problem-solving capabilities across various domains, from ...",
+          "fulltextExcerpts": [
+            "Taxonomy of approaches that use mechanistic interpretability viewpoint .\n\nOur contribution significantly extends and complements existing survey articles on the explainability and mechanistic interpretability (illustrated in Table A1), which predominantly focus either on cataloguing explainability techniques [68] or on discussing their importance [69].",
+            "The Role of Mechanistic Interpretability\n\nThe mechanistic view of mechanistic interpretability represents a paradigm shift towards a deeper understanding of the dynamics occurring in ANNs [71,78].",
+            "Mechanistic interpretability contributes in the following ways:\n\n• Implementation Perspective: Mechanistic interpretability aims to decipher the complexities and mechanisms present in pre-trained models without needing to build models that can be explained explicitly by adapting to existing architectures [79].\n\n•\n\nVision Perspective: Mechanistic interpretability brings a global view as it aims to comprehend models as a whole through the lens of high-level concepts and circuits."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Mechanistic Interpretability of Code Correctness in LLMs via Sparse Autoencoders",
+          "year": 2025,
+          "doi": "10.48550/arxiv.2510.02917",
+          "url": "https://arxiv.org/pdf/2510.02917",
+          "authors": [
+            {
+              "authorName": "Kriz Tahimic"
+            },
+            {
+              "authorName": "Charibeth Cheng"
+            }
+          ],
+          "abstract": "As Large Language Models become integral to software development, with substantial portions of AI-suggested code entering production, understanding their internal correctness mechanisms becomes critical for safe deployment. We apply sparse autoencoders to decompose LLM representations, identifying d...",
+          "fulltextExcerpts": [
+            "However, models face a fundamental challenge: they must compress thousands of features in lower-dimensional spaces, creating superposition where individual neurons respond to multiple unrelated concepts (Elhage et al., 2022). A single neuron might simultaneously activate for Python syntax, academic citations, HTTP requests, and Korean text (Bricken et al., 2023).",
+            "RELATED WORK\n\nRecent advances in mechanistic interpretability have mapped how language models process factual information, including entity recognition mechanisms (Ferrando et al., 2024), specialized extraction heads that route attributes to final positions (Geva et al., 2023), and structured circuits for factual recall (Nanda et al., 2023). These discoveries reveal interpretable, causal mechanisms underlying natural language processing.",
+            "While these approaches reveal what models encode about code structure and how they process information, they do not address the fundamental challenge of superposition-where models compress multiple features into the same neurons, making individual features difficult to isolate and interpret (Elhage et al., 2022). This superposition phenomenon means that analyzing raw activations provides entangled, polysemantic signals rather than clean, interpretable features."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Superposition Is Not Necessary: A Mechanistic Interpretability Analysis of Transformer Representations for Time Series Forecasting",
+          "year": 2026,
+          "doi": "10.48550/arxiv.2605.05151",
+          "url": "https://doi.org/10.48550/arxiv.2605.05151",
+          "authors": [
+            {
+              "authorName": "Alper Yildirim"
+            }
+          ],
+          "abstract": "Transformer architectures have been widely adopted for time series forecasting, yet whether the representational mechanisms that make them powerful in NLP actually engage on time series data remains unexplored. The persistent competitiveness of simple linear models such as DLinear has fueled ongoing...",
+          "fulltextExcerpts": [
+            "In parallel, the field of mechanistic interpretability has developed powerful tools for understanding the internal representations of neural networks. The superposition hypothesis [Elhage et al., 2022] proposes that neural networks represent more features than they have dimensions by encoding them in overlapping, superimposed directions.",
+            "Third, we synthesize these findings into a mechanistic argument: superposition is not necessary for competitive performance on standard time series forecasting benchmarks.\n\nCrucially, our claim is not that no time series transformer could ever employ superposition, nor that superposition cannot exist within these models.",
+            "Mechanistic Interpretability and Sparse Autoencoders\n\nThe superposition hypothesis [Elhage et al., 2022] proposes that neural networks represent more features than they have dimensions by encoding them in overlapping, superimposed directions. Sparse autoencoders (SAEs) have emerged as the primary tool for decomposing these superimposed representations into interpretable sparse features."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Mechanistic Interpretability of Antibody Language Models Using SAEs",
+          "year": 2025,
+          "doi": "10.48550/arxiv.2512.05794",
+          "url": "https://arxiv.org/pdf/2512.05794",
+          "authors": [
+            {
+              "authorName": "Oliver M. Turnbull"
+            },
+            {
+              "authorName": "Anisha Parsan"
+            },
+            {
+              "authorName": "Nithin Parsan"
+            }
+          ],
+          "abstract": "Sparse autoencoders (SAEs) are a mechanistic interpretability technique that have been used to provide insight into learned concepts within large protein language models. Here, we employ TopK and Ordered SAEs to investigate an autoregressive antibody language model, p-IgGen, and steer its generation...",
+          "fulltextExcerpts": [
+            "Mechanistic Interpretability\n\nMechanistic interpretability refers to the approach of explaining complex machine learning systems through the behaviour of their functional units (Kästner & Crook, 2024) by decomposing or reverse-engineering systems into their more elementary computations (Rai et al., 2025). The eventual goal is to discover causal relationships between model inputs and corresponding outputs.",
+            "Within the context of transformer-based language models, there are three main ideas relevant for mechanistic interpretability research: features, circuits and universality (Rai et al., 2025). Features refer to human-interpretable properties that are encoded by model activations (Templeton et al., 2024). Circuits inform how these features are extracted from model inputs and processed to influence model outputs (Olah et al., 2020b).",
+            "Sparse Autoencoders\n\nSparse Autoencoders (SAEs) have specifically been employed in mechanistic interpretability for feature discovery. They are able to tackle the issue of feature superposition resulting in polysemantic neurons, where any given neuron encodes multiple, often unrelated features."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Geospatial Mechanistic Interpretability of Large Language Models",
+          "year": 2026,
+          "doi": "10.3233/faia260476",
+          "url": "https://air.uniud.it/bitstream/11390/1334706/1/FAIA-422-FAIA260476.pdf",
+          "authors": [
+            {
+              "authorName": "De Sabbata S."
+            },
+            {
+              "authorName": "Mizzaro S."
+            },
+            {
+              "authorName": "Roitero K."
+            }
+          ],
+          "abstract": "Large Language Models (LLMs) have demonstrated unprecedented capabilities across various natural language processing tasks. Their ability to process and generate viable text and code has made them ubiquitous in many fields, while their deployment as knowledge bases and “reasoning” tools remains an a...",
+          "editorialNotices": "field_not_returned",
+          "contentDenied": true
+        },
+        {
+          "title": "Progress measures for grokking via mechanistic interpretability",
+          "year": 2023,
+          "doi": "10.48550/arxiv.2301.05217",
+          "url": "https://arxiv.org/pdf/2301.05217",
+          "authors": [
+            {
+              "authorName": "Neel Nanda"
+            },
+            {
+              "authorName": "Lawrence Chan"
+            },
+            {
+              "authorName": "Tom Lieberum"
+            }
+          ],
+          "abstract": "Neural networks often exhibit emergent behavior, where qualitatively new capabilities arise from scaling up the amount of parameters, training data, or training steps. One approach to understanding emergence is to find continuous progress measures that underlie the seemingly discontinuous qualitativ...",
+          "fulltextExcerpts": [
+            "Circuits-style mechanistic interpretability. The style of post-hoc mechanistic interpretability in Section 4 is heavily inspired by the Circuits approach of Cammarata et al. (2020), Elhage et al. (2021), and Olsson et al. (2022).\n\nProgress measures. Barak et al. (2022) introduce the notion of progress measures-metrics that improve smoothly and that precede emergent behavior. They prove theoretically that training would amplify a certain mechanism and heuristically define a progress measure.",
+            "F FURTHER DISCUSSION ON USING MECHANISTIC INTERPRETABILITY AND PROGRESS MEASURES FOR STUDYING EMERGENT PHENOMENA\n\nWhile we find approach of using mechanistic interpretability to define progress measures relatively promising, there remains significant uncertainty as to how scalable existing mechanistic interpretability approaches really are.",
+            "Broadly speaking, depending on the success of future mechanistic interpretability work, we think there are three methods through which mechanistic interpretability and progress measures can help with understanding and predicting emergent phenomena:\n\n1. If mechanistic interpretability can be scaled to large models to the level where we can understand the mechanisms behind significant portions of their behavior, we could perform the same style of analysis as was done in this work."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Superposition and Polysemanticity in Mamba’s Selective State Space: A Mechanistic Interpretability Study via Sparse Autoencoders",
+          "year": 2026,
+          "doi": "10.2139/ssrn.6749882",
+          "url": "https://doi.org/10.2139/ssrn.6749882",
+          "authors": [
+            {
+              "authorName": "Dip Roy"
+            },
+            {
+              "authorName": "Rajiv Misra"
+            },
+            {
+              "authorName": "Sanjay  Kumar Singh"
+            }
+          ],
+          "abstract": "State space models (SSMs), particularly the Mamba architecture, have emerged as competitive alternatives to Transformers for sequence modeling, offering linear-time complexity during both training and inference. Despite their growing adoption, the internal representations of SSMs remain poorly under...",
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Superposition and Polysemanticity in Mamba's Selective State Space: A Mechanistic Interpretability Study via Sparse Autoencoders",
+          "year": 2026,
+          "doi": "10.2139/ssrn.6465858",
+          "url": "https://doi.org/10.2139/ssrn.6465858",
+          "authors": [
+            {
+              "authorName": "Dip Roy"
+            },
+            {
+              "authorName": "Anisha Roy"
+            },
+            {
+              "authorName": "Sanjay  Kumar Singh"
+            }
+          ],
+          "abstract": "State space models (SSMs), particularly the Mamba architecture, have emerged as competitive alternatives to Transformers for sequence modeling, offering linear-time complexity during both training and inference. Despite their growing adoption, the internal representations of SSMs remain poorly under...",
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        }
+      ]
+    },
+    {
+      "key": "scite_targeted",
+      "query": "ablation OR patching OR faithfulness",
+      "results": [
+        {
+          "title": "Have Faith in Faithfulness: Going Beyond Circuit Overlap When Finding Model Mechanisms",
+          "year": 2024,
+          "doi": "10.48550/arxiv.2403.17806",
+          "url": "https://arxiv.org/pdf/2403.17806",
+          "authors": [
+            {
+              "authorName": "Michael Hanna"
+            },
+            {
+              "authorName": "Sandro Pezzelle"
+            },
+            {
+              "authorName": "Yonatan Belinkov"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Transformer Circuit Faithfulness Metrics are not Robust",
+          "year": 2024,
+          "doi": "10.48550/arxiv.2407.08734",
+          "url": "https://arxiv.org/pdf/2407.08734",
+          "authors": [
+            {
+              "authorName": "Joseph T. Miller"
+            },
+            {
+              "authorName": "Bilal I. Chughtai"
+            },
+            {
+              "authorName": "WILLIAM H. JUN. SAUNDERS"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Is This the Subspace You Are Looking for? An Interpretability Illusion for Subspace Activation Patching",
+          "year": 2023,
+          "doi": "10.48550/arxiv.2311.17030",
+          "url": "https://arxiv.org/pdf/2311.17030",
+          "authors": [
+            {
+              "authorName": "Aleksandar Makelov"
+            },
+            {
+              "authorName": "Georg Lange"
+            },
+            {
+              "authorName": "Neel Nanda"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Towards Best Practices of Activation Patching in Language Models: Metrics and Methods",
+          "year": 2023,
+          "doi": "10.48550/arxiv.2309.16042",
+          "url": "https://arxiv.org/pdf/2309.16042",
+          "authors": [
+            {
+              "authorName": "Fred Zhang"
+            },
+            {
+              "authorName": "Neel Nanda"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        }
+      ]
+    },
+    {
+      "key": "scite_primary_extra",
+      "query": "patching OR ablation OR compensation OR superposition",
+      "results": [
+        {
+          "title": "Causal Attribution via Activation Patching",
+          "year": 2026,
+          "doi": "10.48550/arxiv.2603.13652",
+          "url": "https://doi.org/10.48550/arxiv.2603.13652",
+          "authors": [
+            {
+              "authorName": "Ahmad Izadi"
+            },
+            {
+              "authorName": "Mohammadali Banayeeanzade"
+            },
+            {
+              "authorName": "Alireza Mirrokni"
+            }
+          ],
+          "abstract": "Attribution methods for Vision Transformers (ViTs) aim to identify image regions that influence model predictions, but producing faithful and well-localized attributions remains challenging. Existing gradient-based and perturbation-based techniques often fail to isolate the causal contribution of in...",
+          "fulltextExcerpts": [
+            "For each visual patch p i ∈ P, we identify the corresponding spatial indices in the activation tensors and define a patch selection operator S(p i ).",
+            "Patch Selection Operator S\n\nIn the naive implementation, the patch selection operator S(p i ) corresponds exactly to the patch p i . However, patching a single token often does not transfer sufficient predictive information from the source context. To account for spatial feature spread across neighboring tokens, we consider a padded variant in which S(p i ) includes the patch p i and its immediate spatial neighbors.",
+            "Ablation Studies\n\nWe design (Section 3.1), confirming that because features spread spatially, patching a single token often misses context, and spatial padding improves attribution quality. We use the Radius-1 Box setting, which includes a 3 × 3 patch region, as the default in our experiments.\n\nChoice of intervened layers. To analyze the effect of layer depth, we first examine attention patterns that govern information flow (Section 3.2)."
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "Toy Models of Superposition",
+          "year": 2022,
+          "doi": "10.48550/arxiv.2209.10652",
+          "url": "https://arxiv.org/pdf/2209.10652",
+          "authors": [
+            {
+              "authorName": "Nelson Elhage"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "How to use and interpret activation patching",
+          "year": 2024,
+          "doi": "10.48550/arxiv.2404.15255",
+          "url": "https://arxiv.org/pdf/2404.15255",
+          "authors": [
+            {
+              "authorName": "Stefan Heimersheim"
+            },
+            {
+              "authorName": "Neel Nanda"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        },
+        {
+          "title": "The Hydra Effect: Emergent Self-repair in Language Model Computations",
+          "year": 2023,
+          "doi": "10.48550/arxiv.2307.15771",
+          "url": "https://arxiv.org/pdf/2307.15771",
+          "authors": [
+            {
+              "authorName": "Matthew Rahtz"
+            },
+            {
+              "authorName": "János Kramár"
+            },
+            {
+              "authorName": "Vladimir Mikulik"
+            }
+          ],
+          "editorialNotices": "field_not_returned",
+          "contentDenied": false
+        }
+      ]
+    }
+  ]
+}

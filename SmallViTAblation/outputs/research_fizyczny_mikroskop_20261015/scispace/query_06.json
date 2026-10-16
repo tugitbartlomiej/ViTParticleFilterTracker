@@ -1,0 +1,486 @@
+{
+  "question": "How can one measure local Jacobians, divergence, rotational nonconservative components, finite-step stability, or volume contraction of attention and feed-forward residual vector fields in pretrained transformers?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'How can one measure local Jacobians, divergence, rotational nonconservative components, finite-step stability, or volume contraction of attention and feed-forward residual vector fields in pretrained transformers?'.\n\n\n1. Lyapunov Exponents for Attention Composition: A Dynamical Systems Perspective on Deep Transformers\n   ID: mmvjpay8ndg4\n   2026 · Tyler Gibbs\n   DOI: 10.5281/zenodo.18202127\n   Abstract: I develop the first Lyapunov exponent framework for analyzing eigenvalue dynamics in composed attention layers, bridging transformer theory with dynamical systems. Key contributions: (1) First computation of the full Lyapunov spectrum for attention products, proving Λ₁ = 0 exactly and Λₖ < 0 for k > 1 (2) Quantification of temperature effects on spectral collapse rates (3) Refined closed-form formula for predicting rank collapse depth (4) Discovery that non-commutative attention matrices exhibit Lyapunov structure distinct from naive eigenvalue products (5) Precise quantification of how residual connections reduce contraction rates by 2.4× All theoretical results are experimentally verified. Code available at: https://github.com/Tylerbryy/lyapunov-attention \n\n2. Lyapunov Exponents for Attention Composition: A Dynamical Systems Perspective on Deep Transformers\n   ID: fregicefprxd\n   2026 · Tyler Gibbs\n   DOI: 10.5281/zenodo.18202128\n   Abstract: I develop the first Lyapunov exponent framework for analyzing eigenvalue dynamics in composed attention layers, bridging transformer theory with dynamical systems. Key contributions: (1) First computation of the full Lyapunov spectrum for attention products, proving Λ₁ = 0 exactly and Λₖ < 0 for k > 1 (2) Quantification of temperature effects on spectral collapse rates (3) Refined closed-form formula for predicting rank collapse depth (4) Discovery that non-commutative attention matrices exhibit Lyapunov structure distinct from naive eigenvalue products (5) Precise quantification of how residual connections reduce contraction rates by 2.4× All theoretical results are experimentally verified. Code available at: https://github.com/Tylerbryy/lyapunov-attention \n\n3. Cekirge Perturbation Report v4\n   ID: k4odhari55w6\n   2025\n   DOI: 10.5281/zenodo.17393650\n   Abstract: This report introduces a deterministic σ-regularized framework for transformer-style models that computes attention and decoding in closed form without iterative gradient descent. By constructing nonsingular query (Q), key (K), value (V), and output (W) matrices, the method ensures invertibility, numerical stability, and reproducibility. Stability is probed by uniform matrix perturbations of amplitude ε, and the resulting change in loss ΔL = L(ε) − L(0) is recorded. Empirically, ΔL increases nearly linearly with a gently decreasing slope (≈1.84 → ≈1.70 for ε = 0.01 → 0.10), confirming energy-bounded forward determinism. This linear ε–ΔL dependence distinguishes the Çekirge method from stochastic training, revealing a predictable, non-chaotic energy profile. The deterministic σ-regularized formulation provides a foundation for algebraic pretraining, analytical model verification, and thermodynamically aligned, energy-efficient artificial intelligence. \n\n4. Activation Transport Operators\n   ID: h3xa0h6e59g5\n   2025 · Andrzej Szablewski, Marek Masiak · arXiv.org\n   DOI: 10.48550/arxiv.2508.17540\n   Abstract: The residual stream mediates communication between transformer decoder layers via linear reads and writes of non-linear computations. While sparse-dictionary learning-based methods locate features in the residual stream, and activation patching methods discover circuits within the model, the mechanism by which features flow through the residual stream remains understudied. Understanding this dynamic can better inform jailbreaking protections, enable early detection of model mistakes, and their correction. In this work, we propose Activation Transport Operators (ATO), linear maps from upstream to downstream residuals $k$ layers later, evaluated in feature space using downstream SAE decoder projections. We empirically demonstrate that these operators can determine whether a feature has been linearly transported from a previous layer or synthesised from non-linear layer computation. We develop the notion of transport efficiency, for which we provide an upper bound, and use it to estimate the size of the residual stream subspace that corresponds to linear transport. We empirically demonstrate the linear transport, report transport efficiency and the size of the residual stream's subspace involved in linear transport. This compute-light (no finetuning,<50 GPU-h) method offers practical tools for safety, debugging, and a clearer picture of where computation in LLMs behaves linearly.\n\n5. Generative Flows with Invertible Attentions (Supplementary Material)\n   ID: 2kil49u8\n   Rhea Sanjay Sukthanker, Zhiwu Huang, Suryansh Kumar\n   Abstract: The supplementary document includes: (i) further illustration of the suggested Jacobian computation, (ii) neural architecture design details of the proposed attention flows (AttnFlows), (iii) detailed experimental settings, (iv) training details and curves, (v) more visual results on MNIST, CIFAR10, CelebA and Cityscapes, (vi) better/more visualization plots of the ablation study presented in the main paper on the used datasets, as well as some more results for different iTrans-based attention head numbers on CelebA, (vii) pseudo code of the proposed key components (i.e., iMap and iTrans), and (viii) further remarks on the possible future directions. 1. Jacobian Computation The suggested masking over the learned attention weights (Eqn.6 and Eqn.8 of the main paper) additionally leads to tractable Jacobian computation, i.e., Eqn.7 and Eqn.9 of the main paper. One example of the masked attention weight is illustrated in Fig.(1) (a). For this example, the resulting Jacobian is a block-lower triangular matrix, as shown in Fig.(1) (b). This is because one part of the input is made to depend on the other portion of the input. In this case, the determinant of a block triangular matrix can be easily computed by the product of the determinants of its block diagonal matrices. The resulting Jocobian determinant enables us to compute the log-likelihood of data efficiently by Eqn.2 (or Eqn.3) of the main paper. 2. AttnFlow Network Architecture The proposed attention flow model (AttnFlow) aims to insert invertible map-based (iMap) and transformer-based (iTrans) attentions to regular flow-based generative models. Fig.(2) (a) (b) show the neural architecture design of regular flow-based generative models and the proposed AttnFlow respectively. As shown in Fig.(2) (b), the invertible attention modules (i.e., iMap and iTrans) can be stacked on the affine coupling layers. It is also possible to add the attention modules at any other positions, such as before invertible 1 × 1 convolution, or actnorm. The detailed architectures of the proposed iMap and iTrans are illustrated in Fig. (2) (c) (d) respectively. Their designs follow the conceptual graphs of forward and inverse propagation of the proposed Map-based and Trans-based attention mechanisms that are shown in Fig.(3) of the major paper. In particular, both of the iMap and iTrans modules apply the 3D checkboard mask in order to make the proposed attention invertible. After the 3D masking, the iMap attention further applies map-based transformations (i.e., 1D convolution and average pooling) for the first-order attention learning. By comparison, the iTrans attention aims at learning the second-order correlations among the flow feature maps with a scaled dot-product over two different transformations of inputs, which are obtained by two 2D convolutions, respectively. More architecture details of the proposed AttnFlowiMap and AttnFlow-iTrans are shown in Fig.(2) (c) (d). 3. Detailed Experimental Setup We used MNIST [7], CIFAR10 [6], CelebA [8] and Cityscapes [1] datasets to evaluate the proposed AttnFlows in the main paper. MNIST is a dataset of 70,000 small square 28 × 28 pixel grayscale images of handwritten single digits between 0 and 9. Following most of the generative modeling works such as [5, 10], we use the whole dataset from the real set to train our AttnFlows and the competing methods. CIFAR10 dataset is comprised of 60,000 32× 32 pixel color images of objects from 10 classes, such as frogs, birds, cats, ships, airplanes, etc. To train the proposed AttnFlows and its competitors, we also utilize the whole dataset for the real data. We additionally evaluate the proposed cAttnFlows for face super-resolution (8×) using 5000 160 × 160 images from the test split of the CelebA dataset. On CelebA, we use the full train split of CelebA for the training high-resolution image set. Following [9], we apply a bicubic kernel to down-scale those selected images into 20 × 20 low-resolution images. We use 162770 train-\n\n6. Numerical Fragility in Transformers: A Layer-wise Theory for Explaining, Forecasting, and Mitigating Instability\n   ID: 9bzu8jt5pjde\n   2025 · Baek Jinwoo\n   DOI: 10.48550/arxiv.2510.21770\n   Abstract: Transformers trained in low precision can suffer forward-error amplification. We give a first-order, module-wise theory that predicts when and where errors grow. For self-attention we derive a per-layer bound that factorizes into three interpretable diagnostics: a score-scale ratio $κ_{\\rm score}$, a rowwise softmax sensitivity $κ_{\\rm softmax}$, and value conditioning $κ(V)$. We prove a residual relaxation inequality showing that residual blocks attenuate depth-wise accumulation, and we introduce a precision- and width-aware LayerNorm indicator $ρ_{\\rm LN}$ with a matching first-order bound in the $ε$-dominated regime. These pieces yield a unified forward-stability bound whose right-hand side is directly estimable during training. On Tiny-ViT/CIFAR-10 we evaluate the bound and components. (1) The combined predictor $κ_{\\rm softmax},(1+κ_{\\rm score}),κ(V),|W_O|2+κ{\\rm eff}+C_{\\rm LN}$ tracks FP32$\\leftrightarrow$LP mismatches across seeds, widths, and precisions; scaling by $ε_{\\rm mach}$ collapses mixed-precision points. (2) The time-series maximum of $κ_{\\rm softmax}$ acts as an early-warning signal, leading error spikes by 16-24 steps (corr. 0.65-0.82; permutation $p!\\approx!10^{-3}$; Precision@K 0.89-1.00). (3) Guided by $ρ_{\\rm LN}$, a small LayerNorm-$ε$ tweak targeting $ρ_\\star$ gives consistent stabilization (mean tail-loss $\\downarrow\\ \\approx0.010$ at $ρ_\\star!=!0.6$, cap$=10^{-2}$) with negligible overhead. Overall, our theory supplies actionable, unitless diagnostics that (i) explain when self-attention is fragile, (ii) forecast instability, and (iii) motivate a minimally invasive mitigation. \n\n7. Recurrent Self-Attention Dynamics: An Energy-Agnostic Perspective from Jacobians\n   ID: v7yqvcdc37it\n   2025 · Akiyoshi Tomihari, Ryo Karakida · arXiv.org\n   DOI: 10.48550/arxiv.2505.19458\n   Abstract: The theoretical understanding of self-attention (SA) has been steadily progressing. A prominent line of work studies a class of SA layers that admit an energy function decreased by state updates. While it provides valuable insights into inherent biases in signal propagation, it often relies on idealized assumptions or additional constraints not necessarily present in standard SA. Thus, to broaden our understanding, this work aims to relax these energy constraints and provide an energy-agnostic characterization of inference dynamics by dynamical systems analysis. In more detail, we first consider relaxing the symmetry and single-head constraints traditionally required in energy-based formulations. Next, we show that analyzing the Jacobian matrix of the state is highly valuable when investigating more general SA architectures without necessarily admitting an energy function. It reveals that the normalization layer plays an essential role in suppressing the Lipschitzness of SA and the Jacobian's complex eigenvalues, which correspond to the oscillatory components of the dynamics. In addition, the Lyapunov exponents computed from the Jacobians demonstrate that the normalized dynamics lie close to a critical state, and this criticality serves as a strong indicator of high inference performance. Furthermore, the Jacobian perspective also enables us to develop regularization methods for training and a pseudo-energy for monitoring inference dynamics.\n\n8. Equivalent Linear Mappings of Large Language Models\n   ID: wfuy8g9cdu74\n   2025\n   DOI: 10.48550/arxiv.2505.24293\n   Abstract: Despite significant progress in transformer interpretability, an understanding of the computational mechanisms of large language models (LLMs) remains a fundamental challenge. Many approaches interpret a network's hidden representations but remain agnostic about how those representations are generated. We address this by mapping LLM inference for a given input sequence to an equivalent and interpretable linear system which reconstructs the predicted output embedding with relative error below $10^{-13}$ at double floating-point precision, requiring no additional model training. We exploit a property of transformers wherein every operation (gated activations, attention, and normalization) can be expressed as $A(x) \\cdot x$, where $A(x)$ represents an input-dependent linear transform and $x$ preserves the linear pathway. To expose this linear structure, we strategically detach components of the gradient computation with respect to an input sequence, freezing the $A(x)$ terms at their values computed during inference, such that the Jacobian yields an equivalent linear mapping. This detached Jacobian of the model reconstructs the output with one linear operator per input token, which is shown for Qwen 3, Gemma 3 and Llama 3, up to Qwen 3 14B. These linear representations demonstrate that LLMs operate in extremely low-dimensional subspaces where the singular vectors can be decoded to interpretable semantic concepts. The computation for each intermediate output also has a linear equivalent, and we examine how the linear representations of individual layers and their attention and multilayer perceptron modules build predictions, and use these as steering operators to insert semantic concepts into unrelated text. Despite their global nonlinearity, LLMs can be interpreted through equivalent linear representations that reveal low-dimensional semantic structures in the next-token prediction process. \n\n9. Transolver is a Linear Transformer: Revisiting Physics-Attention through the Lens of Linear Attention\n   ID: mgyxjfbyjw7d\n   2025 · Wenjie Hu, Sidun Liu, Peng Qiao · arXiv.org\n   DOI: 10.48550/arxiv.2511.06294\n   Abstract: Recent advances in Transformer-based Neural Operators have enabled significant progress in data-driven solvers for Partial Differential Equations (PDEs). Most current research has focused on reducing the quadratic complexity of attention to address the resulting low training and inference efficiency. Among these works, Transolver stands out as a representative method that introduces Physics-Attention to reduce computational costs. Physics-Attention projects grid points into slices for slice attention, then maps them back through deslicing. However, we observe that Physics-Attention can be reformulated as a special case of linear attention, and that the slice attention may even hurt the model performance. Based on these observations, we argue that its effectiveness primarily arises from the slice and deslice operations rather than interactions between slices. Building on this insight, we propose a two-step transformation to redesign Physics-Attention into a canonical linear attention, which we call Linear Attention Neural Operator (LinearNO). Our method achieves state-of-the-art performance on six standard PDE benchmarks, while reducing the number of parameters by an average of 40.0% and computational cost by 36.2%. Additionally, it delivers superior performance on two challenging, industrial-level datasets: AirfRANS and Shape-Net Car.\n\n10. Contextual Residual Inversion in Transformer-Based Large Language Models: A Reversibility Paradigm for Studying Representational Fidelity\n   ID: vd8u07sf2o8c\n   2025 · Daniel Arthev, Rachel E. Abercrombie, Clive Fenwick\n   DOI: 10.31219/osf.io/7qbsa_v1\n   Abstract: Contextual Residual Inversion introduces a theoretical and computational approach for estimating partial reversibility of internal residual streams in transformer-based LLMs through non-invasive linear inversion operators applied to frozen inference passes. The method defines invertibility over structured prompt families by quantifying layer-wise reconstruction fidelity using projection-constrained residual approximations. Inversion accuracy is examined under varying lexical entropy, token classes, and layer depth, revealing substantial directional drift and energy compression patterns in deeper layers. Semantic stability of inverted representations is further analyzed through KL divergence and centroid shift in token distributions, demonstrating mild correlation between residual fidelity and generative coherence. Residual operators trained on specific prompt clusters show degradation when generalized across structurally divergent prompts, suggesting sensitivity to latent representation regimes not apparent from surface form alone. Metrics including cosine similarity, semantic drift score, and re-alignment ratio provide modest insight into the underlying activation structure governing token-wise representation. Experimental data is drawn from controlled synthetic prompts using a sparse Mixture-of-Experts LLM architecture, enabling reproducible assessments of inversion fragility and directional bias. The findings offer an interpretable, layer-sensitive perspective on the reversibility and geometric constraints of contextual encoding in high-capacity generative systems. "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "How can one measure local Jacobians, divergence, rotational nonconservative components, finite-step stability, or volume contraction of attention and feed-forward residual vector fields in pretrained transformers?",
+        "papers": [
+          {
+            "id": 4108048769,
+            "title": "Lyapunov Exponents for Attention Composition: A Dynamical Systems Perspective on Deep Transformers",
+            "is_archived": false,
+            "full_slug": "lyapunov-exponents-for-attention-composition-a-dynamical-mmvjpay8ndg4",
+            "journal": null,
+            "conference_series": null,
+            "date": "2026-01-09T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.5281/zenodo.18202127",
+            "unique_id": "mmvjpay8ndg4",
+            "abstract": "I develop the first Lyapunov exponent framework for analyzing eigenvalue dynamics in composed attention layers, bridging transformer theory with dynamical systems. Key contributions: (1) First computation of the full Lyapunov spectrum for attention products, proving Λ₁ = 0 exactly and Λₖ < 0 for k > 1 (2) Quantification of temperature effects on spectral collapse rates (3) Refined closed-form formula for predicting rank collapse depth (4) Discovery that non-commutative attention matrices exhibit Lyapunov structure distinct from naive eigenvalue products (5) Precise quantification of how residual connections reduce contraction rates by 2.4× All theoretical results are experimentally verified. Code available at: https://github.com/Tylerbryy/lyapunov-attention ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Tyler Gibbs",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study develops a Lyapunov exponent framework for analyzing attention dynamics in deep transformers, providing novel insights into eigenvalue behavior, temperature effects, and the impact of residual connections on contraction rates.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4108065469,
+            "title": "Lyapunov Exponents for Attention Composition: A Dynamical Systems Perspective on Deep Transformers",
+            "is_archived": false,
+            "full_slug": "lyapunov-exponents-for-attention-composition-a-dynamical-fregicefprxd",
+            "journal": null,
+            "conference_series": null,
+            "date": "2026-01-09T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.5281/zenodo.18202128",
+            "unique_id": "fregicefprxd",
+            "abstract": "I develop the first Lyapunov exponent framework for analyzing eigenvalue dynamics in composed attention layers, bridging transformer theory with dynamical systems. Key contributions: (1) First computation of the full Lyapunov spectrum for attention products, proving Λ₁ = 0 exactly and Λₖ < 0 for k > 1 (2) Quantification of temperature effects on spectral collapse rates (3) Refined closed-form formula for predicting rank collapse depth (4) Discovery that non-commutative attention matrices exhibit Lyapunov structure distinct from naive eigenvalue products (5) Precise quantification of how residual connections reduce contraction rates by 2.4× All theoretical results are experimentally verified. Code available at: https://github.com/Tylerbryy/lyapunov-attention ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Tyler Gibbs",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study develops a Lyapunov exponent framework for analyzing attention dynamics in deep transformers, providing novel insights into eigenvalue behavior, temperature effects, and the impact of residual connections on contraction rates.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4086654812,
+            "title": "Cekirge Perturbation Report v4",
+            "is_archived": false,
+            "full_slug": "cekirge-perturbation-report-v4-k4odhari55w6",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-11-02T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Repository",
+            "doi": "10.5281/zenodo.17393650",
+            "unique_id": "k4odhari55w6",
+            "abstract": "This report introduces a deterministic σ-regularized framework for transformer-style models that computes attention and decoding in closed form without iterative gradient descent. By constructing nonsingular query (Q), key (K), value (V), and output (W) matrices, the method ensures invertibility, numerical stability, and reproducibility. Stability is probed by uniform matrix perturbations of amplitude ε, and the resulting change in loss ΔL = L(ε) − L(0) is recorded. Empirically, ΔL increases nearly linearly with a gently decreasing slope (≈1.84 → ≈1.70 for ε = 0.01 → 0.10), confirming energy-bounded forward determinism. This linear ε–ΔL dependence distinguishes the Çekirge method from stochastic training, revealing a predictable, non-chaotic energy profile. The deterministic σ-regularized formulation provides a foundation for algebraic pretraining, analytical model verification, and thermodynamically aligned, energy-efficient artificial intelligence. ",
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4073323419,
+            "title": "Activation Transport Operators",
+            "is_archived": false,
+            "full_slug": "activation-transport-operators-h3xa0h6e59g5",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-08-24T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2508.17540",
+            "unique_id": "h3xa0h6e59g5",
+            "abstract": "The residual stream mediates communication between transformer decoder layers via linear reads and writes of non-linear computations. While sparse-dictionary learning-based methods locate features in the residual stream, and activation patching methods discover circuits within the model, the mechanism by which features flow through the residual stream remains understudied. Understanding this dynamic can better inform jailbreaking protections, enable early detection of model mistakes, and their correction. In this work, we propose Activation Transport Operators (ATO), linear maps from upstream to downstream residuals $k$ layers later, evaluated in feature space using downstream SAE decoder projections. We empirically demonstrate that these operators can determine whether a feature has been linearly transported from a previous layer or synthesised from non-linear layer computation. We develop the notion of transport efficiency, for which we provide an upper bound, and use it to estimate the size of the residual stream subspace that corresponds to linear transport. We empirically demonstrate the linear transport, report transport efficiency and the size of the residual stream's subspace involved in linear transport. This compute-light (no finetuning,<50 GPU-h) method offers practical tools for safety, debugging, and a clearer picture of where computation in LLMs behaves linearly.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Andrzej Szablewski",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Marek Masiak",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/activation-transport-operators-h3xa0h6e59g5.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2508.17540v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This work proposes Activation Transport Operators (ATO) to study feature flow in transformer residual streams, enabling early detection of model mistakes, jailbreaking protections, and understanding linear computation in large language models with practical compute-light methods.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4000374728,
+            "title": "Generative Flows with Invertible Attentions (Supplementary Material)",
+            "is_archived": false,
+            "full_slug": "generative-flows-with-invertible-attentions-supplementary-2kil49u8",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": false,
+            "publication_type": null,
+            "doi": null,
+            "unique_id": "2kil49u8",
+            "abstract": "The supplementary document includes: (i) further illustration of the suggested Jacobian computation, (ii) neural architecture design details of the proposed attention flows (AttnFlows), (iii) detailed experimental settings, (iv) training details and curves, (v) more visual results on MNIST, CIFAR10, CelebA and Cityscapes, (vi) better/more visualization plots of the ablation study presented in the main paper on the used datasets, as well as some more results for different iTrans-based attention head numbers on CelebA, (vii) pseudo code of the proposed key components (i.e., iMap and iTrans), and (viii) further remarks on the possible future directions. 1. Jacobian Computation The suggested masking over the learned attention weights (Eqn.6 and Eqn.8 of the main paper) additionally leads to tractable Jacobian computation, i.e., Eqn.7 and Eqn.9 of the main paper. One example of the masked attention weight is illustrated in Fig.(1) (a). For this example, the resulting Jacobian is a block-lower triangular matrix, as shown in Fig.(1) (b). This is because one part of the input is made to depend on the other portion of the input. In this case, the determinant of a block triangular matrix can be easily computed by the product of the determinants of its block diagonal matrices. The resulting Jocobian determinant enables us to compute the log-likelihood of data efficiently by Eqn.2 (or Eqn.3) of the main paper. 2. AttnFlow Network Architecture The proposed attention flow model (AttnFlow) aims to insert invertible map-based (iMap) and transformer-based (iTrans) attentions to regular flow-based generative models. Fig.(2) (a) (b) show the neural architecture design of regular flow-based generative models and the proposed AttnFlow respectively. As shown in Fig.(2) (b), the invertible attention modules (i.e., iMap and iTrans) can be stacked on the affine coupling layers. It is also possible to add the attention modules at any other positions, such as before invertible 1 × 1 convolution, or actnorm. The detailed architectures of the proposed iMap and iTrans are illustrated in Fig. (2) (c) (d) respectively. Their designs follow the conceptual graphs of forward and inverse propagation of the proposed Map-based and Trans-based attention mechanisms that are shown in Fig.(3) of the major paper. In particular, both of the iMap and iTrans modules apply the 3D checkboard mask in order to make the proposed attention invertible. After the 3D masking, the iMap attention further applies map-based transformations (i.e., 1D convolution and average pooling) for the first-order attention learning. By comparison, the iTrans attention aims at learning the second-order correlations among the flow feature maps with a scaled dot-product over two different transformations of inputs, which are obtained by two 2D convolutions, respectively. More architecture details of the proposed AttnFlowiMap and AttnFlow-iTrans are shown in Fig.(2) (c) (d). 3. Detailed Experimental Setup We used MNIST [7], CIFAR10 [6], CelebA [8] and Cityscapes [1] datasets to evaluate the proposed AttnFlows in the main paper. MNIST is a dataset of 70,000 small square 28 × 28 pixel grayscale images of handwritten single digits between 0 and 9. Following most of the generative modeling works such as [5, 10], we use the whole dataset from the real set to train our AttnFlows and the competing methods. CIFAR10 dataset is comprised of 60,000 32× 32 pixel color images of objects from 10 classes, such as frogs, birds, cats, ships, airplanes, etc. To train the proposed AttnFlows and its competitors, we also utilize the whole dataset for the real data. We additionally evaluate the proposed cAttnFlows for face super-resolution (8×) using 5000 160 × 160 images from the test split of the CelebA dataset. On CelebA, we use the full train split of CelebA for the training high-resolution image set. Following [9], we apply a bicubic kernel to down-scale those selected images into 20 × 20 low-resolution images. We use 162770 train-",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Rhea Sanjay Sukthanker",
+                  "id": 3096007113,
+                  "slug": "rhea-sanjay-sukthanker",
+                  "unique_id": "1ka8duq4hz",
+                  "full_slug": "rhea-sanjay-sukthanker-1ka8duq4hz"
+                },
+                {
+                  "display_name": "Zhiwu Huang",
+                  "id": 2476917633,
+                  "slug": "zhiwu-huang",
+                  "unique_id": "2enq9f68ql",
+                  "full_slug": "zhiwu-huang-2enq9f68ql"
+                },
+                {
+                  "display_name": "Suryansh Kumar",
+                  "id": 2106791176,
+                  "slug": "suryansh-kumar",
+                  "unique_id": "1h9phk7d4h",
+                  "full_slug": "suryansh-kumar-1h9phk7d4h"
+                },
+                {
+                  "display_name": "Radu Timofte",
+                  "id": 2058433139,
+                  "slug": "radu-timofte",
+                  "unique_id": "1411fb7502",
+                  "full_slug": "radu-timofte-1411fb7502"
+                },
+                {
+                  "display_name": "Luc Van Gool",
+                  "id": 2103920730,
+                  "slug": "luc-van-gool",
+                  "unique_id": "3vvkqjzpe0",
+                  "full_slug": "luc-van-gool-3vvkqjzpe0"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "The supplementary document includes: (i) further illustration of the suggested Jacobian computation, (ii) neural architecture design details of the proposed attention flows (AttnFlows), (iii) detailed experimental settings, (iv) training details and curves, more visual results on MNIST, CIFAR10, CelebA and Cityscapes, and (v) further remarks on the possible future directions.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4102151512,
+            "title": "Numerical Fragility in Transformers: A Layer-wise Theory for Explaining, Forecasting, and Mitigating Instability",
+            "is_archived": false,
+            "full_slug": "numerical-fragility-in-transformers-a-layer-wise-theory-for-9bzu8jt5pjde",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-28T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.21770",
+            "unique_id": "9bzu8jt5pjde",
+            "abstract": "Transformers trained in low precision can suffer forward-error amplification. We give a first-order, module-wise theory that predicts when and where errors grow. For self-attention we derive a per-layer bound that factorizes into three interpretable diagnostics: a score-scale ratio $κ_{\\rm score}$, a rowwise softmax sensitivity $κ_{\\rm softmax}$, and value conditioning $κ(V)$. We prove a residual relaxation inequality showing that residual blocks attenuate depth-wise accumulation, and we introduce a precision- and width-aware LayerNorm indicator $ρ_{\\rm LN}$ with a matching first-order bound in the $ε$-dominated regime. These pieces yield a unified forward-stability bound whose right-hand side is directly estimable during training. On Tiny-ViT/CIFAR-10 we evaluate the bound and components. (1) The combined predictor $κ_{\\rm softmax},(1+κ_{\\rm score}),κ(V),|W_O|2+κ{\\rm eff}+C_{\\rm LN}$ tracks FP32$\\leftrightarrow$LP mismatches across seeds, widths, and precisions; scaling by $ε_{\\rm mach}$ collapses mixed-precision points. (2) The time-series maximum of $κ_{\\rm softmax}$ acts as an early-warning signal, leading error spikes by 16-24 steps (corr. 0.65-0.82; permutation $p!\\approx!10^{-3}$; Precision@K 0.89-1.00). (3) Guided by $ρ_{\\rm LN}$, a small LayerNorm-$ε$ tweak targeting $ρ_\\star$ gives consistent stabilization (mean tail-loss $\\downarrow\\ \\approx0.010$ at $ρ_\\star!=!0.6$, cap$=10^{-2}$) with negligible overhead. Overall, our theory supplies actionable, unitless diagnostics that (i) explain when self-attention is fragile, (ii) forecast instability, and (iii) motivate a minimally invasive mitigation. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Baek Jinwoo",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4069204330,
+            "title": "Recurrent Self-Attention Dynamics: An Energy-Agnostic Perspective from Jacobians",
+            "is_archived": false,
+            "full_slug": "recurrent-self-attention-dynamics-an-energy-agnostic-v7yqvcdc37it",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-05-26T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2505.19458",
+            "unique_id": "v7yqvcdc37it",
+            "abstract": "The theoretical understanding of self-attention (SA) has been steadily progressing. A prominent line of work studies a class of SA layers that admit an energy function decreased by state updates. While it provides valuable insights into inherent biases in signal propagation, it often relies on idealized assumptions or additional constraints not necessarily present in standard SA. Thus, to broaden our understanding, this work aims to relax these energy constraints and provide an energy-agnostic characterization of inference dynamics by dynamical systems analysis. In more detail, we first consider relaxing the symmetry and single-head constraints traditionally required in energy-based formulations. Next, we show that analyzing the Jacobian matrix of the state is highly valuable when investigating more general SA architectures without necessarily admitting an energy function. It reveals that the normalization layer plays an essential role in suppressing the Lipschitzness of SA and the Jacobian's complex eigenvalues, which correspond to the oscillatory components of the dynamics. In addition, the Lyapunov exponents computed from the Jacobians demonstrate that the normalized dynamics lie close to a critical state, and this criticality serves as a strong indicator of high inference performance. Furthermore, the Jacobian perspective also enables us to develop regularization methods for training and a pseudo-energy for monitoring inference dynamics.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Akiyoshi Tomihari",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Ryo Karakida",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/recurrent-self-attention-dynamics-an-energy-agnostic-v7yqvcdc37it.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2505.19458v4.pdf",
+                  "https://export.arxiv.org/pdf/2505.19458v3.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This work relaxes energy constraints in self-attention (SA) and provides an energy-agnostic characterization of inference dynamics using dynamical systems analysis, revealing the normalization layer's role in suppressing Lipschitzness and promoting criticality for high inference performance.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4091790892,
+            "title": "Equivalent Linear Mappings of Large Language Models",
+            "is_archived": false,
+            "full_slug": "equivalent-linear-mappings-of-large-language-models-wfuy8g9cdu74",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-06-02T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2505.24293",
+            "unique_id": "wfuy8g9cdu74",
+            "abstract": "Despite significant progress in transformer interpretability, an understanding of the computational mechanisms of large language models (LLMs) remains a fundamental challenge. Many approaches interpret a network's hidden representations but remain agnostic about how those representations are generated. We address this by mapping LLM inference for a given input sequence to an equivalent and interpretable linear system which reconstructs the predicted output embedding with relative error below $10^{-13}$ at double floating-point precision, requiring no additional model training. We exploit a property of transformers wherein every operation (gated activations, attention, and normalization) can be expressed as $A(x) \\cdot x$, where $A(x)$ represents an input-dependent linear transform and $x$ preserves the linear pathway. To expose this linear structure, we strategically detach components of the gradient computation with respect to an input sequence, freezing the $A(x)$ terms at their values computed during inference, such that the Jacobian yields an equivalent linear mapping. This detached Jacobian of the model reconstructs the output with one linear operator per input token, which is shown for Qwen 3, Gemma 3 and Llama 3, up to Qwen 3 14B. These linear representations demonstrate that LLMs operate in extremely low-dimensional subspaces where the singular vectors can be decoded to interpretable semantic concepts. The computation for each intermediate output also has a linear equivalent, and we examine how the linear representations of individual layers and their attention and multilayer perceptron modules build predictions, and use these as steering operators to insert semantic concepts into unrelated text. Despite their global nonlinearity, LLMs can be interpreted through equivalent linear representations that reveal low-dimensional semantic structures in the next-token prediction process. ",
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers develop an equivalent linear mapping for large language models, revealing low-dimensional semantic structures in next-token predictions, and demonstrate that LLMs operate in extremely low-dimensional subspaces, enabling interpretable semantic concept decoding.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4111520130,
+            "title": "Transolver is a Linear Transformer: Revisiting Physics-Attention through the Lens of Linear Attention",
+            "is_archived": false,
+            "full_slug": "transolver-is-a-linear-transformer-revisiting-physics-mgyxjfbyjw7d",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-11-09T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2511.06294",
+            "unique_id": "mgyxjfbyjw7d",
+            "abstract": "Recent advances in Transformer-based Neural Operators have enabled significant progress in data-driven solvers for Partial Differential Equations (PDEs). Most current research has focused on reducing the quadratic complexity of attention to address the resulting low training and inference efficiency. Among these works, Transolver stands out as a representative method that introduces Physics-Attention to reduce computational costs. Physics-Attention projects grid points into slices for slice attention, then maps them back through deslicing. However, we observe that Physics-Attention can be reformulated as a special case of linear attention, and that the slice attention may even hurt the model performance. Based on these observations, we argue that its effectiveness primarily arises from the slice and deslice operations rather than interactions between slices. Building on this insight, we propose a two-step transformation to redesign Physics-Attention into a canonical linear attention, which we call Linear Attention Neural Operator (LinearNO). Our method achieves state-of-the-art performance on six standard PDE benchmarks, while reducing the number of parameters by an average of 40.0% and computational cost by 36.2%. Additionally, it delivers superior performance on two challenging, industrial-level datasets: AirfRANS and Shape-Net Car.",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Wenjie Hu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Sidun Liu",
+                  "id": 4003785798,
+                  "slug": "sidun-liu",
+                  "unique_id": "rokxxlmz",
+                  "full_slug": "sidun-liu-rokxxlmz"
+                },
+                {
+                  "display_name": "Peng Qiao",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zhenglun Sun",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yong Dou",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "https://export.arxiv.org/pdf/2511.06294v3.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers reformulate Physics-Attention as linear attention, redesigning it into Linear Attention Neural Operator (LinearNO), achieving state-of-the-art performance on PDE benchmarks with reduced parameters and computational cost, and superior performance on industrial-level datasets.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4069969764,
+            "title": "Contextual Residual Inversion in Transformer-Based Large Language Models: A Reversibility Paradigm for Studying Representational Fidelity",
+            "is_archived": false,
+            "full_slug": "contextual-residual-inversion-in-transformer-based-large-vd8u07sf2o8c",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-03-24T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.31219/osf.io/7qbsa_v1",
+            "unique_id": "vd8u07sf2o8c",
+            "abstract": "Contextual Residual Inversion introduces a theoretical and computational approach for estimating partial reversibility of internal residual streams in transformer-based LLMs through non-invasive linear inversion operators applied to frozen inference passes. The method defines invertibility over structured prompt families by quantifying layer-wise reconstruction fidelity using projection-constrained residual approximations. Inversion accuracy is examined under varying lexical entropy, token classes, and layer depth, revealing substantial directional drift and energy compression patterns in deeper layers. Semantic stability of inverted representations is further analyzed through KL divergence and centroid shift in token distributions, demonstrating mild correlation between residual fidelity and generative coherence. Residual operators trained on specific prompt clusters show degradation when generalized across structurally divergent prompts, suggesting sensitivity to latent representation regimes not apparent from surface form alone. Metrics including cosine similarity, semantic drift score, and re-alignment ratio provide modest insight into the underlying activation structure governing token-wise representation. Experimental data is drawn from controlled synthetic prompts using a sparse Mixture-of-Experts LLM architecture, enabling reproducible assessments of inversion fragility and directional bias. The findings offer an interpretable, layer-sensitive perspective on the reversibility and geometric constraints of contextual encoding in high-capacity generative systems. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Daniel Arthev",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Rachel E. Abercrombie",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Clive Fenwick",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers introduce Contextual Residual Inversion, a method to study representational fidelity in transformer-based LLMs by estimating partial reversibility of internal residual streams through linear inversion operators, revealing directional drift and energy compression patterns in deeper layers.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

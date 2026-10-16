@@ -1,0 +1,565 @@
+{
+  "question": "Which studies apply observability and controllability Gramians, Hankel singular values, or minimum-energy interventions directly to hidden states of trained transformers and feed-forward neural networks?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'Which studies apply observability and controllability Gramians, Hankel singular values, or minimum-energy interventions directly to hidden states of trained transformers and feed-forward neural networks?'.\n\n\n1. From Black-Box to White-Box: Control-Theoretic Neural Network Interpretability\n   ID: 80a78s1yrt6p\n   2025 · Jihoon Moon · arXiv.org\n   DOI: 10.48550/arxiv.2511.12852\n   Abstract: Deep neural networks achieve state of the art performance but remain difficult to interpret mechanistically. In this work, we propose a control theoretic framework that treats a trained neural network as a nonlinear state space system and uses local linearization, controllability and observability Gramians, and Hankel singular values to analyze its internal computation. For a given input, we linearize the network around the corresponding hidden activation pattern and construct a state space model whose state consists of hidden neuron activations. The input state and state output Jacobians define local controllability and observability Gramians, from which we compute Hankel singular values and associated modes. These quantities provide a principled notion of neuron and pathway importance: controllability measures how easily each neuron can be excited by input perturbations, observability measures how strongly each neuron influences the output, and Hankel singular values rank internal modes that carry input output energy. We illustrate the framework on simple feedforward networks, including a 1 2 2 1 SwiGLU network and a 2 3 3 2 GELU network. By comparing different operating points, we show how activation saturation reduces controllability, shrinks the dominant Hankel singular value, and shifts the dominant internal mode to a different subset of neurons. The proposed method turns a neural network into a collection of local white box dynamical models and suggests which internal directions are natural candidates for pruning or constraints to improve interpretability.\n\n2. Manipulating Transformer-Based Models: Controllability, Steerability, and Robust Interventions\n   ID: 541xipnl19q7\n   2025\n   DOI: 10.48550/arxiv.2509.04549\n   Abstract: Transformer-based language models excel in NLP tasks, but fine-grained control remains challenging. This paper explores methods for manipulating transformer models through principled interventions at three levels: prompts, activations, and weights. We formalize controllable text generation as an optimization problem addressable via prompt engineering, parameter-efficient fine-tuning, model editing, and reinforcement learning. We introduce a unified framework encompassing prompt-level steering, activation interventions, and weight-space edits. We analyze robustness and safety implications, including adversarial attacks and alignment mitigations. Theoretically, we show minimal weight updates can achieve targeted behavior changes with limited side-effects. Empirically, we demonstrate &gt;90% success in sentiment control and factual edits while preserving base performance, though generalization-specificity trade-offs exist. We discuss ethical dual-use risks and the need for rigorous evaluation. This work lays groundwork for designing controllable and robust language models. \n\n3. Controllability-Constrained Deep Network Models for Enhanced Control of Dynamical Systems\n   ID: 1bbvilso3y\n   2023 · Suruchi Sharma, Volodymyr Makarenko, Gautam Kumar · arXiv.org\n   DOI: 10.48550/arxiv.2311.06438\n   Abstract: Control of a dynamical system without the knowledge of dynamics is an important and challenging task. Modern machine learning approaches, such as deep neural networks (DNNs), allow for the estimation of a dynamics model from control inputs and corresponding state observation outputs. Such data-driven models are often utilized for the derivation of model-based controllers. However, in general, there are no guarantees that a model represented by DNNs will be controllable according to the formal control-theoretical meaning of controllability, which is crucial for the design of effective controllers. This often precludes the use of DNN-estimated models in applications, where formal controllability guarantees are required. In this proof-of-the-concept work, we propose a control-theoretical method that explicitly enhances models estimated from data with controllability. That is achieved by augmenting the model estimation objective with a controllability constraint, which penalizes models with a low degree of controllability. As a result, the models estimated with the proposed controllability constraint allow for the derivation of more efficient controllers, they are interpretable by the control-theoretical quantities and have a lower long-term prediction error. The proposed method provides new insights on the connection between the DNN-based estimation of unknown dynamics and the control-theoretical guarantees of the solution properties. We demonstrate the superiority of the proposed method in two standard classical control systems with state observation given by low resolution high-dimensional images.\n\n4. References\n   ID: 3kfdousf\n   2022\n   DOI: 10.1002/9781119078166.ref\n   Abstract: Free Access References Peyman Setoodeh, Peyman Setoodeh McMaster University, Ontario, CanadaSearch for more papers by this authorSaeid Habibi, Saeid Habibi McMaster University, Ontario, CanadaSearch for more papers by this authorSimon Haykin, Simon Haykin McMaster University, Ontario, CanadaSearch for more papers by this author Book Author(s):Peyman Setoodeh, Peyman Setoodeh McMaster University, Ontario, CanadaSearch for more papers by this authorSaeid Habibi, Saeid Habibi McMaster University, Ontario, CanadaSearch for more papers by this authorSimon Haykin, Simon Haykin McMaster University, Ontario, CanadaSearch for more papers by this author First published: 18 March 2022 https://doi.org/10.1002/9781119078166.ref AboutPDF ToolsRequest permissionExport citationAdd to favoritesTrack citation ShareShare Give accessShare full text accessShare full-text accessPlease review our Terms and Conditions of Use and check box below to share full-text version of article.I have read and accept the Wiley Online Library Terms and Conditions of UseShareable LinkUse the link below to share a full-text version of this article with your friends and colleagues. Learn more.Copy URL Share a linkShare onFacebookTwitterLinked InRedditWechat References R. E. Kalman , “ On the general theory of control systems ,” in Proceedings First International Conference on Automatic Control, Moscow, USSR , 1960 , pp. 481 – 492 . Google Scholar M. Karl , M. Soelch , J. Bayer , and P. van der Smagt , “ Deep variational Bayes filters: Unsupervised learning of state space models from raw data ,” in International Conference on Learning Representations , 2017 , pp. 1 – 13 . Google Scholar R. G. Brown and P. Y. Hwang , Introduction to Random Signals and Applied Kalman Filtering with MATLAB Exercises , 4th ed . John Wiley & Sons , New York, NY, USA , 2012 . Google Scholar B. C. Smith , “ The foundations of computing ,” in Computationalism: New Directions , M. Scheutz , Ed. Cambridge, MA, USA : The MIT Press , 2002 , Ch. 2, pp. 23 – 58 . Google Scholar L. Breiman , “ Statistical modeling: The two cultures (with comments and a rejoinder by the author) ,” Statistical Science , vol. 16 , no. 3 , pp. 199 – 231 , 2001 . CrossrefWeb of Science®Google Scholar A. Y. Ng and M. I. Jordan , “ On discriminative vs. generative classifiers: A comparison of logistic regression and naive Bayes ,” in Advances in Neural Information Processing Systems , 2002 , pp. 841 – 848 . Google Scholar R. Shwartz-Ziv and N. Tishby , “ Opening the black box of deep neural networks via information ,” arXiv preprint arXiv:1703.00810 , 2017 . Google Scholar K. P. Murphy , “ Dynamic Bayesian networks: Representation, inference and learning ,” Ph.D. dissertation, University of California, Berkeley, 2002 . Google Scholar K. R. Muske and T. F. Edgar , “ Nonlinear state estimation ,” in Nonlinear Process Control , M. A. Henson and D. E. Seborg , Eds. Upper Saddle River, NJ, USA : Prentice Hall , 1997 , Ch. 6, pp. 311 – 370 . Google Scholar N. Wiener , Cybernetics: Or Control and Communication in the Animal and the Machine , 2nd ed . The MIT Press , 1965 . Google Scholar J. Pearl , Causality , 2nd ed . Cambridge University Press , 2009 . CrossrefGoogle Scholar A. Isidori , Nonlinear Control Systems , 3rd ed . Springer Science & Business Media , 2013 . Google Scholar R. Hermann and A. Krener , “ Nonlinear controllability and observability ,” IEEE Transactions on Automatic Contro l , vol. 22 , no. 5 , pp. 728 – 740 , 1977 . CrossrefWeb of Science®Google Scholar T. Glad and L. Ljung , Control Theory: Multivariable and Nonlinear Methods . CRC Press , 2000 . Google Scholar G. Besançon and G. Bornard , “ On characterizing classes of observer forms for nonlinear systems ,” in 1997 European Control Conference (ECC) . IEEE, 1997 , pp. 3113 – 3118 . Google Scholar T. Kailath , Linear Systems . Prentice-Hall Englewood Cliffs, NJ, USA , 1980 , vol. 156 . Google Scholar S. Skogestad and I. Postlethwaite , Multivariable Feedback Control: Analysis and Design , 2nd ed . Wiley-Interscience , 2006 . Google Scholar K. J. Astrom and B. Wittenmark , Computer-Controlled Systems: Theory and Design , 3rd ed . Prentice-Hall , 1997 . Google Scholar J. M. Mendel , Lessons in Estimation Theory for Signal Processing, Communications, and Control , 2nd ed . Pearson Education , 2008 . Google Scholar W. Respondek , “ Geometry of static and dynamic feedback ,” in Lecture Notes at the Summer School on Mathematical Control Theory, Italy, September 2001 and Bedlewo-Warsaw, Poland, September 2002 , 2001 . Google Scholar A. J. Krener , “ Nonlinear observers ,” in Control Systems, Robotics and Automation: Nonlinear, Distributed, and Time Delay Ststems-II , H. Unbehauen , Ed. Cambridge, MA, USA : The MIT Press , 2009 , Ch. 6, pp. 153 – 179 . Google Scholar J.-J. E. Slotine , W. Li et al ., Applied Nonlinear Control . Prentice Hall Englewood Cliffs, NJ, USA , 1991 . Google Scholar H. K. Khalil , Nonlinear Systems , 3rd ed . Pearson , 2002 . Web of Science®Google Scholar A. J. Krener and W. Respondek , “ Nonlinear observers with linearizable error dynamics ,” SIAM Journal on Control and Optimization , vol. 23 , no. 2 , pp. 197 – 216 , 1985 . CrossrefWeb of Science®Google Scholar W. Lee and K. Nam , “ Observer design for autonomous discrete-time nonlinear systems ,” Systems & Control Letters , vol. 17 , no. 1 , pp. 49 – 58 , 1991 . CrossrefWeb of Science®Google Scholar T. M. Cover and J. A. Thomas , Elements of Information Theory , 2nd ed . John Wiley & Sons , 2006 . Google Scholar B. R. Frieden , Science from Fisher Information . Cambridge University Press , 2004 . CrossrefGoogle Scholar A. R. Liu and R. R. Bitmead , “ Stochastic observability in network state estimation and control ,” Automatica , vol. 47 , no. 1 , pp. 65 – 78 , 2011 . CrossrefCASPubMedWeb of Science®Google Scholar R. Brown , “ Not just observable, but how observable?” in National Electronics Conference, 22 nd, Chicago, ILL , 1966 , pp. 709 – 714 . Google Scholar F. M. Ham and R. G. Brown , “ Observability, eigenvalues, and Kalman filtering ,” IEEE Transactions on Aerospace and Electronic Systems , no. 2 , pp. 269 – 273 , 1983 . CrossrefWeb of Science®Google Scholar R. Mohler and C. Hwang , “ Nonlinear data observability and information ,” Journal of the Franklin Institute , vol . 325 , no. 4 , pp. 443 – 464 , 1988 . CrossrefWeb of Science®Google Scholar M. Kam , R. Cheng , and P. Kalata , “ An information-theoretic interpretation of stability and observability ,” in Proceedings of American Control Conference , 1987 , pp. 1957 – 1962 . Google Scholar M. Fatemi , P. Setoodeh , and S. Haykin , “ Observability of stochastic complex networks under the supervision of cognitive dynamic systems ,” Journal of Complex Networks , vol. 5 , no. 3 , pp. 433 – 460 , 2017 . Web of Science®Google Scholar B. Baxter , L. Graham , and S. Wright , “ Invertible and non-invertible information sets in linear rational expectations models ,” Journal of Economic Dynamics and Control , vol. 35 , no. 3 , pp. 295 – 311 , 2011 . CrossrefWeb of Science®Google Scholar S. Sundaram , “ Fault-tolerant and secure control systems ,” University of Waterloo, Lecture Notes , 2012 . Google Scholar G. Ciccarella , M. Dalla Mora , and A. Germani , “ Observers for discrete-time nonlinear systems ,” Systems & Control Letters , vol. 20 , pp. 373 – 382 , 1993 . CrossrefWeb of Science®Google Scholar I. Haskara , U. Ozguner , and V. Utkin , “ On sliding mode observers via equivalent control approach ,” International Journal of Control , vol. 71 , no. 6 , pp. 1051 – 1067 , 1998 . CrossrefWeb of Science®Google Scholar S. Drakunov and V. Utkin , “ Sliding mode observers. Tutorial ,” in Proceedings of 1995 34th IEEE Conference on Decision and Control , vol. 4 . IEEE, 1995 , pp. 3376 – 3378 . Google Scholar S.-K. Chang , W.-T. You , and P.-L. Hsu , “ Design of general structured observers for linear systems with unknown inputs ,” Journal of the Franklin Institute , vol. 334 , no. 2 , pp. 213 – 232 , 1997 . CrossrefWeb of Science®Google Scholar H. K. Khalil and L. Praly , “ High-gain observers in nonlinear feedback control ,” International Journal of Robust and Nonlinear Control , vol. 24 , no. 6 , pp. 993 – 1015 , 2014 . Wiley Online LibraryWeb of Science®Google Scholar J. Lee , J. Choi , and H. K. Khalil , “ New implementation of high-gain observers in the presence of measurement noise using stochastic approximation ,” in 2016 European Control Conference (ECC) . IEEE, 2016 , pp. 1740 – 1745 . Google Scholar C. Combastel , “ A state bounding observer based on zonotopes ,” in European Control Conference (ECC) . IEEE, 2003 , pp. 2589 – 2594 . Google Scholar B. Magee , The Story of Philosophy: A Concise Introduction to the World's Greatest Thinkers and Their Ideas . Dorling Kindersley , 2016 . Google Scholar C. P. Robert , The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation , 2nd ed . Springer , 2007 . Google Scholar G. D'Agostini , Bayesian Reasoning in Data Analysis: A Critical Introduction . World Scientific , 2003 . CrossrefGoogle Scholar B. Ristic , S. Arulampalam , and N. Gordon , Beyond the Kalman Filter: Particle Filters for Tracking Applications . Artech House , 2004 . Google Scholar Y. Bar-Shalom , X. R. Li , and T. Kirubarajan , Estimation with Applications to Tracking and Navigation: Theory, Algor ithms, and Software . John Wiley & Sons , 2001 . Wiley Online LibraryGoogle Scholar Y. Ho and R. Lee , “ A Bayesian approach to problems in stochastic estimation and control ,” IEEE Transactions on Automatic Control , vol. 9 , no. 4 , pp. 333 – 339 , 1964 . CrossrefWeb of Science®Google Scholar R. K. Boel , M. R. James , and I. R. Petersen , “ Robustness and risk-sensitive filtering ,” IEEE Transactions on Automatic Control , vol. 47 , no. 3 , pp. 451 – 461 , 2002 . CrossrefWeb of Science®Google Scholar W. H. Fleming , “ Deterministic nonlinear filtering ,” Annali Della Scuola Normale Superiore di Pisa-Classe di Scienze , vol. 25 , no. 3–4 , pp. 435 – 454 , 1997 . Google Scholar J. C. Spall , Introduction to Stochastic Search and Optimization: Estimation, Simulation, and Control . John Wiley & Sons , 2005 . Google Scholar H. L. van Trees , Detection, Estimation, and Modulation Theory, Part I: Detection, Estimation, and Linear Modulation Theory . John Wiley & Sons , 1968 . Google Scholar J. Dauwels , “ Computing Bayesian Cramer-Rao bounds ,” in Proceedings. International Symposium on Information Theory (ISIT) . IEEE, 2005 , pp. 425 – 429 . Google Scholar H. L. van Trees and K. L. Bell , Bayesian Bounds for Parameter Estimation and Nonlinear Filtering/Tracking . Wiley-IEEE Press , 2007 . CrossrefGoogle Scholar P. Tichavsky , C. H. Muravchik , and A. Nehorai , “ Posterior Cramér-Rao bounds for discrete-time nonlinear filtering ,” IEEE Transactions on Signal Processing , vol. 46 , no. 5 , pp. 1386 – 1396 , 1998 . CrossrefWeb of Science®Google Scholar M. S. Grewal and A. P. Andrews , Kalman Filtering: Theory and Practice with MATLAB , 4th ed . John Wiley & Sons , 2014 . Google Scholar H. W. Sorenson , Kalman Filtering: Theory and Application . IEEE , 1985 . Google Scholar R. E. Kalman , “ A new approach to linear filtering and prediction problems ,” Transactions of the ASME. Series D, Journal of Basic Engineering , vol. 82 , pp. 35 – 45 , 1960 . CrossrefGoogle Scholar J. S. Meditch , Stochastic Optimal Linear Estimation and Control . McGraw-Hill , 1969 . Web of Science®Google Scholar B. D. O. Anderson and J. B. Moore , Optimal Filtering . Prentice-Hall , 1979 . Google Scholar P. S. Maybeck , Stochastic Models, Estimation, and Control . Academic Press , 1982 . Google Scholar D. Simon , Optimal State Estimation: Kalman, H ∞ \n\n5. The Use of State Space Control Theory for Analysing Feedforward Neural Networks\n   ID: 3ckt034l6a\n   1998 · Mirek Kárný, Kevin Warwick, Vera Kůrková\n   DOI: 10.1007/978-1-4471-1523-6_2\n   Abstract: Multi-layer neural networks have the ability to approximate any nonlinear function [l][2][3], and are therefore used for a variety of purposes. However, in many cases, the neural network is treated as a black box, since the internal mathematics of a neural network can be hard to analyse. As the size of a neural network increases, its mathematics becomes more complex and hence harder to analyse. This chapter examines the use of concepts from state space control theory, for the analysis of feedforward neural networks. The concepts used in this chapter are observability, controllability and stability. Some can be applied completely to feedforward neural networks and others have little or no meaning in the context of neural computing. Each concept will be examined and its used for analysing feedforward neural networks discussed.\n\n6. emgr - The Empirical Gramian Framework\n   ID: 9u5j3pg50v4b\n   2022 · Himpe, Christian\n   DOI: 10.48550/arxiv.1611.00675\n   Abstract: System Gramian matrices are a well-known encoding for properties of input-output systems such as controllability, observability or minimality. These so-called system Gramians were developed in linear system theory for applications such as model order reduction of control systems. Empirical Gramian are an extension to the system Gramians for parametric and nonlinear systems as well as a data-driven method of computation. The empirical Gramian framework - emgr - implements the empirical Gramians in a uniform and configurable manner, with applications such as Gramian-based (nonlinear) model reduction, decentralized control, sensitivity analysis, parameter identification and combined state and parameter reduction. \n\n7. emgr—The Empirical Gramian Framework\n   ID: 3el9al170n\n   2018 · Christian Himpe · Algorithms\n   DOI: 10.3390/A11070091\n   Abstract: System Gramian matrices are a well-known encoding for properties of input-output systems such as controllability, observability or minimality. These so-called system Gramians were developed in linear system theory for applications such as model order reduction of control systems. Empirical Gramians are an extension to the system Gramians for parametric and nonlinear systems as well as a data-driven method of computation. The empirical Gramian framework - emgr - implements the empirical Gramians in a uniform and configurable manner, with applications such as Gramian-based (nonlinear) model reduction, decentralized control, sensitivity analysis, parameter identification and combined state and parameter reduction.\n\n8. Sparse Mamba: Reinforcing Controllability In Structural State Space\n  Models\n   ID: ub3sf3hqy6g1\n   2024 · Emadeldeen Hamdan, Hongyi Pan, A. Enis Çetin\n   DOI: 10.48550/arxiv.2409.00563\n   Abstract: In this article, we introduce the concept of controllability and observability to the M amba architecture in our Sparse-Mamba (S-Mamba) for natural language processing (NLP) applications. The structured state space model (SSM) development in recent studies, such as Mamba and Mamba2, outperformed and solved the computational inefficiency of transformers and large language models (LLMs) on longer sequences in small to medium NLP tasks. The Mamba SSMs architecture drops the need for attention layer or MLB blocks in transformers. However, the current Mamba models do not reinforce the controllability on state space equations in the calculation of A, B, C, and D matrices at each time step, which increase the complexity and the computational cost needed. In this article we show that the number of parameters can be significantly decreased by reinforcing controllability in the state space equations in the proposed Sparse-Mamba (S-Mamba), while maintaining the performance. The controllable n x n state matrix A is sparse and it has only n free parameters. Our novel approach will ensure a controllable system and could be the gate key for Mamba 3. \n\n9. Local Observability of a Class of Feedforward Neural Networks\n   ID: mruyfocvgyc6\n   2025 · Yi Yang, Victor G. Lopez, Matthias A. Müller\n   DOI: 10.1109/cdc57313.2025.11312732\n   Abstract: Beyond the traditional neural network training methods based on gradient descent and its variants, state estimation techniques have been proposed to determine a set of ideal weights from a control-theoretic perspective. Hence, the concept of observability becomes relevant in neural network training. In this paper, we investigate local observability of a class of two-layer feedforward neural networks (FNNs) with rectified linear unit (ReLU) activation functions. We analyze local observability of FNNs by evaluating an observability rank condition with respect to the weight matrix and the input sequence. First, we show that, in general, the weights of FNNs are not locally observable. Then, we provide sufficient conditions on the network structures and the weights that lead to local observability. Moreover, we propose an input design approach to render the weights distinguishable and show that this input also excites other weights inside a neighborhood. Finally, we validate our results through a numerical example. \n\n10. Local Observability of a Class of Feedforward Neural Networks\n   ID: zsdli4tktews\n   2025 · Yi Yang, Victor G. Lopez, Matthias A. Müller\n   DOI: 10.48550/arxiv.2508.20544\n   Abstract: Beyond the traditional neural network training methods based on gradient descent and its variants, state estimation techniques have been proposed to determine a set of ideal weights from a control-theoretic perspective. Hence, the concept of observability becomes relevant in neural network training. In this paper, we investigate local observability of a class of two-layer feedforward neural networks~(FNNs) with rectified linear unit~(ReLU) activation functions. We analyze local observability of FNNs by evaluating an observability rank condition with respect to the weight matrix and the input sequence. First, we show that, in general, the weights of FNNs are not locally observable. Then, we provide sufficient conditions on the network structures and the weights that lead to local observability. Moreover, we propose an input design approach to render the weights distinguishable and show that this input also excites other weights inside a neighborhood. Finally, we validate our results through a numerical example. "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "Which studies apply observability and controllability Gramians, Hankel singular values, or minimum-energy interventions directly to hidden states of trained transformers and feed-forward neural networks?",
+        "papers": [
+          {
+            "id": 4112211019,
+            "title": "From Black-Box to White-Box: Control-Theoretic Neural Network Interpretability",
+            "is_archived": false,
+            "full_slug": "from-black-box-to-white-box-control-theoretic-neural-network-80a78s1yrt6p",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-11-17T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2511.12852",
+            "unique_id": "80a78s1yrt6p",
+            "abstract": "Deep neural networks achieve state of the art performance but remain difficult to interpret mechanistically. In this work, we propose a control theoretic framework that treats a trained neural network as a nonlinear state space system and uses local linearization, controllability and observability Gramians, and Hankel singular values to analyze its internal computation. For a given input, we linearize the network around the corresponding hidden activation pattern and construct a state space model whose state consists of hidden neuron activations. The input state and state output Jacobians define local controllability and observability Gramians, from which we compute Hankel singular values and associated modes. These quantities provide a principled notion of neuron and pathway importance: controllability measures how easily each neuron can be excited by input perturbations, observability measures how strongly each neuron influences the output, and Hankel singular values rank internal modes that carry input output energy. We illustrate the framework on simple feedforward networks, including a 1 2 2 1 SwiGLU network and a 2 3 3 2 GELU network. By comparing different operating points, we show how activation saturation reduces controllability, shrinks the dominant Hankel singular value, and shifts the dominant internal mode to a different subset of neurons. The proposed method turns a neural network into a collection of local white box dynamical models and suggests which internal directions are natural candidates for pruning or constraints to improve interpretability.",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Jihoon Moon",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "https://export.arxiv.org/pdf/2511.12852v1.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This work proposes a control-theoretic framework to interpret neural networks by treating them as nonlinear state space systems, providing a principled notion of neuron and pathway importance through controllability, observability, and Hankel singular values.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4085453598,
+            "title": "Manipulating Transformer-Based Models: Controllability, Steerability, and Robust Interventions",
+            "is_archived": false,
+            "full_slug": "manipulating-transformer-based-models-controllability-541xipnl19q7",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-09-08T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2509.04549",
+            "unique_id": "541xipnl19q7",
+            "abstract": "Transformer-based language models excel in NLP tasks, but fine-grained control remains challenging. This paper explores methods for manipulating transformer models through principled interventions at three levels: prompts, activations, and weights. We formalize controllable text generation as an optimization problem addressable via prompt engineering, parameter-efficient fine-tuning, model editing, and reinforcement learning. We introduce a unified framework encompassing prompt-level steering, activation interventions, and weight-space edits. We analyze robustness and safety implications, including adversarial attacks and alignment mitigations. Theoretically, we show minimal weight updates can achieve targeted behavior changes with limited side-effects. Empirically, we demonstrate &gt;90% success in sentiment control and factual edits while preserving base performance, though generalization-specificity trade-offs exist. We discuss ethical dual-use risks and the need for rigorous evaluation. This work lays groundwork for designing controllable and robust language models. ",
+            "fulltext_url": "pdf/manipulating-transformer-based-models-controllability-541xipnl19q7.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2509.04549"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4020488914,
+            "title": "Controllability-Constrained Deep Network Models for Enhanced Control of Dynamical Systems",
+            "is_archived": false,
+            "full_slug": "controllability-constrained-deep-network-models-for-enhanced-1bbvilso3y",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-11-11T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2311.06438",
+            "unique_id": "1bbvilso3y",
+            "abstract": "Control of a dynamical system without the knowledge of dynamics is an important and challenging task. Modern machine learning approaches, such as deep neural networks (DNNs), allow for the estimation of a dynamics model from control inputs and corresponding state observation outputs. Such data-driven models are often utilized for the derivation of model-based controllers. However, in general, there are no guarantees that a model represented by DNNs will be controllable according to the formal control-theoretical meaning of controllability, which is crucial for the design of effective controllers. This often precludes the use of DNN-estimated models in applications, where formal controllability guarantees are required. In this proof-of-the-concept work, we propose a control-theoretical method that explicitly enhances models estimated from data with controllability. That is achieved by augmenting the model estimation objective with a controllability constraint, which penalizes models with a low degree of controllability. As a result, the models estimated with the proposed controllability constraint allow for the derivation of more efficient controllers, they are interpretable by the control-theoretical quantities and have a lower long-term prediction error. The proposed method provides new insights on the connection between the DNN-based estimation of unknown dynamics and the control-theoretical guarantees of the solution properties. We demonstrate the superiority of the proposed method in two standard classical control systems with state observation given by low resolution high-dimensional images.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Suruchi Sharma",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Volodymyr Makarenko",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Gautam Kumar",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Stas Tiomkin",
+                  "id": 1220384578,
+                  "slug": "stas-tiomkin",
+                  "unique_id": "ce1nmz9pwh",
+                  "full_slug": "stas-tiomkin-ce1nmz9pwh",
+                  "affiliation_full_slug": "university-of-california-berkeley-24veh4gb"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "University of California, Berkeley",
+                  "city": "Berkeley",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 95457486,
+                  "slug": "university-of-california-berkeley",
+                  "unique_id": "24veh4gb",
+                  "full_slug": "university-of-california-berkeley-24veh4gb"
+                }
+              ]
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "The proposed method provides new insights on the connection between the DNN-based estimation of unknown dynamics and the control-theoretical guarantees of the solution properties, and demonstrates the superiority of the proposed method in two standard classical control systems with state observation given by low resolution high-dimensional images.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4018704467,
+            "title": "References",
+            "is_archived": false,
+            "full_slug": "references-3kfdousf",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-03-18T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Other",
+            "doi": "10.1002/9781119078166.ref",
+            "unique_id": "3kfdousf",
+            "abstract": "Free Access References Peyman Setoodeh, Peyman Setoodeh McMaster University, Ontario, CanadaSearch for more papers by this authorSaeid Habibi, Saeid Habibi McMaster University, Ontario, CanadaSearch for more papers by this authorSimon Haykin, Simon Haykin McMaster University, Ontario, CanadaSearch for more papers by this author Book Author(s):Peyman Setoodeh, Peyman Setoodeh McMaster University, Ontario, CanadaSearch for more papers by this authorSaeid Habibi, Saeid Habibi McMaster University, Ontario, CanadaSearch for more papers by this authorSimon Haykin, Simon Haykin McMaster University, Ontario, CanadaSearch for more papers by this author First published: 18 March 2022 https://doi.org/10.1002/9781119078166.ref AboutPDF ToolsRequest permissionExport citationAdd to favoritesTrack citation ShareShare Give accessShare full text accessShare full-text accessPlease review our Terms and Conditions of Use and check box below to share full-text version of article.I have read and accept the Wiley Online Library Terms and Conditions of UseShareable LinkUse the link below to share a full-text version of this article with your friends and colleagues. Learn more.Copy URL Share a linkShare onFacebookTwitterLinked InRedditWechat References R. E. Kalman , “ On the general theory of control systems ,” in Proceedings First International Conference on Automatic Control, Moscow, USSR , 1960 , pp. 481 – 492 . Google Scholar M. Karl , M. Soelch , J. Bayer , and P. van der Smagt , “ Deep variational Bayes filters: Unsupervised learning of state space models from raw data ,” in International Conference on Learning Representations , 2017 , pp. 1 – 13 . Google Scholar R. G. Brown and P. Y. Hwang , Introduction to Random Signals and Applied Kalman Filtering with MATLAB Exercises , 4th ed . John Wiley & Sons , New York, NY, USA , 2012 . Google Scholar B. C. Smith , “ The foundations of computing ,” in Computationalism: New Directions , M. Scheutz , Ed. Cambridge, MA, USA : The MIT Press , 2002 , Ch. 2, pp. 23 – 58 . Google Scholar L. Breiman , “ Statistical modeling: The two cultures (with comments and a rejoinder by the author) ,” Statistical Science , vol. 16 , no. 3 , pp. 199 – 231 , 2001 . CrossrefWeb of Science®Google Scholar A. Y. Ng and M. I. Jordan , “ On discriminative vs. generative classifiers: A comparison of logistic regression and naive Bayes ,” in Advances in Neural Information Processing Systems , 2002 , pp. 841 – 848 . Google Scholar R. Shwartz-Ziv and N. Tishby , “ Opening the black box of deep neural networks via information ,” arXiv preprint arXiv:1703.00810 , 2017 . Google Scholar K. P. Murphy , “ Dynamic Bayesian networks: Representation, inference and learning ,” Ph.D. dissertation, University of California, Berkeley, 2002 . Google Scholar K. R. Muske and T. F. Edgar , “ Nonlinear state estimation ,” in Nonlinear Process Control , M. A. Henson and D. E. Seborg , Eds. Upper Saddle River, NJ, USA : Prentice Hall , 1997 , Ch. 6, pp. 311 – 370 . Google Scholar N. Wiener , Cybernetics: Or Control and Communication in the Animal and the Machine , 2nd ed . The MIT Press , 1965 . Google Scholar J. Pearl , Causality , 2nd ed . Cambridge University Press , 2009 . CrossrefGoogle Scholar A. Isidori , Nonlinear Control Systems , 3rd ed . Springer Science & Business Media , 2013 . Google Scholar R. Hermann and A. Krener , “ Nonlinear controllability and observability ,” IEEE Transactions on Automatic Contro l , vol. 22 , no. 5 , pp. 728 – 740 , 1977 . CrossrefWeb of Science®Google Scholar T. Glad and L. Ljung , Control Theory: Multivariable and Nonlinear Methods . CRC Press , 2000 . Google Scholar G. Besançon and G. Bornard , “ On characterizing classes of observer forms for nonlinear systems ,” in 1997 European Control Conference (ECC) . IEEE, 1997 , pp. 3113 – 3118 . Google Scholar T. Kailath , Linear Systems . Prentice-Hall Englewood Cliffs, NJ, USA , 1980 , vol. 156 . Google Scholar S. Skogestad and I. Postlethwaite , Multivariable Feedback Control: Analysis and Design , 2nd ed . Wiley-Interscience , 2006 . Google Scholar K. J. Astrom and B. Wittenmark , Computer-Controlled Systems: Theory and Design , 3rd ed . Prentice-Hall , 1997 . Google Scholar J. M. Mendel , Lessons in Estimation Theory for Signal Processing, Communications, and Control , 2nd ed . Pearson Education , 2008 . Google Scholar W. Respondek , “ Geometry of static and dynamic feedback ,” in Lecture Notes at the Summer School on Mathematical Control Theory, Italy, September 2001 and Bedlewo-Warsaw, Poland, September 2002 , 2001 . Google Scholar A. J. Krener , “ Nonlinear observers ,” in Control Systems, Robotics and Automation: Nonlinear, Distributed, and Time Delay Ststems-II , H. Unbehauen , Ed. Cambridge, MA, USA : The MIT Press , 2009 , Ch. 6, pp. 153 – 179 . Google Scholar J.-J. E. Slotine , W. Li et al ., Applied Nonlinear Control . Prentice Hall Englewood Cliffs, NJ, USA , 1991 . Google Scholar H. K. Khalil , Nonlinear Systems , 3rd ed . Pearson , 2002 . Web of Science®Google Scholar A. J. Krener and W. Respondek , “ Nonlinear observers with linearizable error dynamics ,” SIAM Journal on Control and Optimization , vol. 23 , no. 2 , pp. 197 – 216 , 1985 . CrossrefWeb of Science®Google Scholar W. Lee and K. Nam , “ Observer design for autonomous discrete-time nonlinear systems ,” Systems & Control Letters , vol. 17 , no. 1 , pp. 49 – 58 , 1991 . CrossrefWeb of Science®Google Scholar T. M. Cover and J. A. Thomas , Elements of Information Theory , 2nd ed . John Wiley & Sons , 2006 . Google Scholar B. R. Frieden , Science from Fisher Information . Cambridge University Press , 2004 . CrossrefGoogle Scholar A. R. Liu and R. R. Bitmead , “ Stochastic observability in network state estimation and control ,” Automatica , vol. 47 , no. 1 , pp. 65 – 78 , 2011 . CrossrefCASPubMedWeb of Science®Google Scholar R. Brown , “ Not just observable, but how observable?” in National Electronics Conference, 22 nd, Chicago, ILL , 1966 , pp. 709 – 714 . Google Scholar F. M. Ham and R. G. Brown , “ Observability, eigenvalues, and Kalman filtering ,” IEEE Transactions on Aerospace and Electronic Systems , no. 2 , pp. 269 – 273 , 1983 . CrossrefWeb of Science®Google Scholar R. Mohler and C. Hwang , “ Nonlinear data observability and information ,” Journal of the Franklin Institute , vol . 325 , no. 4 , pp. 443 – 464 , 1988 . CrossrefWeb of Science®Google Scholar M. Kam , R. Cheng , and P. Kalata , “ An information-theoretic interpretation of stability and observability ,” in Proceedings of American Control Conference , 1987 , pp. 1957 – 1962 . Google Scholar M. Fatemi , P. Setoodeh , and S. Haykin , “ Observability of stochastic complex networks under the supervision of cognitive dynamic systems ,” Journal of Complex Networks , vol. 5 , no. 3 , pp. 433 – 460 , 2017 . Web of Science®Google Scholar B. Baxter , L. Graham , and S. Wright , “ Invertible and non-invertible information sets in linear rational expectations models ,” Journal of Economic Dynamics and Control , vol. 35 , no. 3 , pp. 295 – 311 , 2011 . CrossrefWeb of Science®Google Scholar S. Sundaram , “ Fault-tolerant and secure control systems ,” University of Waterloo, Lecture Notes , 2012 . Google Scholar G. Ciccarella , M. Dalla Mora , and A. Germani , “ Observers for discrete-time nonlinear systems ,” Systems & Control Letters , vol. 20 , pp. 373 – 382 , 1993 . CrossrefWeb of Science®Google Scholar I. Haskara , U. Ozguner , and V. Utkin , “ On sliding mode observers via equivalent control approach ,” International Journal of Control , vol. 71 , no. 6 , pp. 1051 – 1067 , 1998 . CrossrefWeb of Science®Google Scholar S. Drakunov and V. Utkin , “ Sliding mode observers. Tutorial ,” in Proceedings of 1995 34th IEEE Conference on Decision and Control , vol. 4 . IEEE, 1995 , pp. 3376 – 3378 . Google Scholar S.-K. Chang , W.-T. You , and P.-L. Hsu , “ Design of general structured observers for linear systems with unknown inputs ,” Journal of the Franklin Institute , vol. 334 , no. 2 , pp. 213 – 232 , 1997 . CrossrefWeb of Science®Google Scholar H. K. Khalil and L. Praly , “ High-gain observers in nonlinear feedback control ,” International Journal of Robust and Nonlinear Control , vol. 24 , no. 6 , pp. 993 – 1015 , 2014 . Wiley Online LibraryWeb of Science®Google Scholar J. Lee , J. Choi , and H. K. Khalil , “ New implementation of high-gain observers in the presence of measurement noise using stochastic approximation ,” in 2016 European Control Conference (ECC) . IEEE, 2016 , pp. 1740 – 1745 . Google Scholar C. Combastel , “ A state bounding observer based on zonotopes ,” in European Control Conference (ECC) . IEEE, 2003 , pp. 2589 – 2594 . Google Scholar B. Magee , The Story of Philosophy: A Concise Introduction to the World's Greatest Thinkers and Their Ideas . Dorling Kindersley , 2016 . Google Scholar C. P. Robert , The Bayesian Choice: From Decision-Theoretic Foundations to Computational Implementation , 2nd ed . Springer , 2007 . Google Scholar G. D'Agostini , Bayesian Reasoning in Data Analysis: A Critical Introduction . World Scientific , 2003 . CrossrefGoogle Scholar B. Ristic , S. Arulampalam , and N. Gordon , Beyond the Kalman Filter: Particle Filters for Tracking Applications . Artech House , 2004 . Google Scholar Y. Bar-Shalom , X. R. Li , and T. Kirubarajan , Estimation with Applications to Tracking and Navigation: Theory, Algor ithms, and Software . John Wiley & Sons , 2001 . Wiley Online LibraryGoogle Scholar Y. Ho and R. Lee , “ A Bayesian approach to problems in stochastic estimation and control ,” IEEE Transactions on Automatic Control , vol. 9 , no. 4 , pp. 333 – 339 , 1964 . CrossrefWeb of Science®Google Scholar R. K. Boel , M. R. James , and I. R. Petersen , “ Robustness and risk-sensitive filtering ,” IEEE Transactions on Automatic Control , vol. 47 , no. 3 , pp. 451 – 461 , 2002 . CrossrefWeb of Science®Google Scholar W. H. Fleming , “ Deterministic nonlinear filtering ,” Annali Della Scuola Normale Superiore di Pisa-Classe di Scienze , vol. 25 , no. 3–4 , pp. 435 – 454 , 1997 . Google Scholar J. C. Spall , Introduction to Stochastic Search and Optimization: Estimation, Simulation, and Control . John Wiley & Sons , 2005 . Google Scholar H. L. van Trees , Detection, Estimation, and Modulation Theory, Part I: Detection, Estimation, and Linear Modulation Theory . John Wiley & Sons , 1968 . Google Scholar J. Dauwels , “ Computing Bayesian Cramer-Rao bounds ,” in Proceedings. International Symposium on Information Theory (ISIT) . IEEE, 2005 , pp. 425 – 429 . Google Scholar H. L. van Trees and K. L. Bell , Bayesian Bounds for Parameter Estimation and Nonlinear Filtering/Tracking . Wiley-IEEE Press , 2007 . CrossrefGoogle Scholar P. Tichavsky , C. H. Muravchik , and A. Nehorai , “ Posterior Cramér-Rao bounds for discrete-time nonlinear filtering ,” IEEE Transactions on Signal Processing , vol. 46 , no. 5 , pp. 1386 – 1396 , 1998 . CrossrefWeb of Science®Google Scholar M. S. Grewal and A. P. Andrews , Kalman Filtering: Theory and Practice with MATLAB , 4th ed . John Wiley & Sons , 2014 . Google Scholar H. W. Sorenson , Kalman Filtering: Theory and Application . IEEE , 1985 . Google Scholar R. E. Kalman , “ A new approach to linear filtering and prediction problems ,” Transactions of the ASME. Series D, Journal of Basic Engineering , vol. 82 , pp. 35 – 45 , 1960 . CrossrefGoogle Scholar J. S. Meditch , Stochastic Optimal Linear Estimation and Control . McGraw-Hill , 1969 . Web of Science®Google Scholar B. D. O. Anderson and J. B. Moore , Optimal Filtering . Prentice-Hall , 1979 . Google Scholar P. S. Maybeck , Stochastic Models, Estimation, and Control . Academic Press , 1982 . Google Scholar D. Simon , Optimal State Estimation: Kalman, H ∞ ",
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "In this article , the authors proposed a nonlinear control system based on deep variational Bayes filters for state space models from raw data, which can be seen as a generalization of Bayesian networks.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 1500029312,
+            "title": "The Use of State Space Control Theory for Analysing Feedforward Neural Networks",
+            "is_archived": false,
+            "full_slug": "the-use-of-state-space-control-theory-for-analysing-3ckt034l6a",
+            "journal": null,
+            "conference_series": null,
+            "date": "1998-01-01T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Book Chapter",
+            "doi": "10.1007/978-1-4471-1523-6_2",
+            "unique_id": "3ckt034l6a",
+            "abstract": "Multi-layer neural networks have the ability to approximate any nonlinear function [l][2][3], and are therefore used for a variety of purposes. However, in many cases, the neural network is treated as a black box, since the internal mathematics of a neural network can be hard to analyse. As the size of a neural network increases, its mathematics becomes more complex and hence harder to analyse. This chapter examines the use of concepts from state space control theory, for the analysis of feedforward neural networks. The concepts used in this chapter are observability, controllability and stability. Some can be applied completely to feedforward neural networks and others have little or no meaning in the context of neural computing. Each concept will be examined and its used for analysing feedforward neural networks discussed.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Mirek Kárný",
+                  "id": 2121063227,
+                  "slug": "mirek-karny",
+                  "unique_id": "3yosdhlr9m",
+                  "full_slug": "mirek-karny-3yosdhlr9m"
+                },
+                {
+                  "display_name": "Kevin Warwick",
+                  "id": 2473320941,
+                  "slug": "kevin-warwick",
+                  "unique_id": "39nqwbwqet",
+                  "full_slug": "kevin-warwick-39nqwbwqet",
+                  "affiliation_full_slug": "university-of-reading-31zh3jki"
+                },
+                {
+                  "display_name": "Vera Kůrková",
+                  "id": 2126426667,
+                  "slug": "vera-kurkova",
+                  "unique_id": "i1wupddnb8",
+                  "full_slug": "vera-kurkova-i1wupddnb8",
+                  "affiliation_full_slug": "academy-of-sciences-of-the-czech-republic-1oojl3wz"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "University of Reading",
+                  "city": "Reading",
+                  "region": null,
+                  "country": "United Kingdom",
+                  "id": 71052956,
+                  "slug": "university-of-reading",
+                  "unique_id": "31zh3jki",
+                  "full_slug": "university-of-reading-31zh3jki"
+                },
+                {
+                  "display_name": "Academy of Sciences of the Czech Republic",
+                  "city": "Prague",
+                  "region": null,
+                  "country": "Czechia",
+                  "id": 202391551,
+                  "slug": "academy-of-sciences-of-the-czech-republic",
+                  "unique_id": "1oojl3wz",
+                  "full_slug": "academy-of-sciences-of-the-czech-republic-1oojl3wz"
+                }
+              ]
+            },
+            "fulltext_url": null,
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://link.springer.com/chapter/10.1007/978-1-4471-1523-6_2",
+                  "https://rd.springer.com/chapter/10.1007/978-1-4471-1523-6_2"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 2
+              }
+            },
+            "tldr": "This chapter examines the use of concepts from state space control theory, for the analysis of feedforward neural networks, and the concepts used in this chapter are observability, controllability and stability.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4102242828,
+            "title": "emgr - The Empirical Gramian Framework",
+            "is_archived": false,
+            "full_slug": "emgr-the-empirical-gramian-framework-9u5j3pg50v4b",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-03-06T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Repository",
+            "doi": "10.48550/arxiv.1611.00675",
+            "unique_id": "9u5j3pg50v4b",
+            "abstract": "System Gramian matrices are a well-known encoding for properties of input-output systems such as controllability, observability or minimality. These so-called system Gramians were developed in linear system theory for applications such as model order reduction of control systems. Empirical Gramian are an extension to the system Gramians for parametric and nonlinear systems as well as a data-driven method of computation. The empirical Gramian framework - emgr - implements the empirical Gramians in a uniform and configurable manner, with applications such as Gramian-based (nonlinear) model reduction, decentralized control, sensitivity analysis, parameter identification and combined state and parameter reduction. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Himpe, Christian",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 2546500126,
+            "title": "emgr—The Empirical Gramian Framework",
+            "is_archived": false,
+            "full_slug": "emgr-the-empirical-gramian-framework-3el9al170n",
+            "journal": {
+              "display_name": "Algorithms",
+              "official_page": "http://www.mdpi.com/journal/algorithms",
+              "issn": "1999-4893",
+              "alias": null,
+              "id": 190629608,
+              "slug": "algorithms",
+              "unique_id": "ofcxvofp",
+              "full_slug": "algorithms-ofcxvofp"
+            },
+            "conference_series": null,
+            "date": "2018-06-26T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Journal Article",
+            "doi": "10.3390/A11070091",
+            "unique_id": "3el9al170n",
+            "abstract": "System Gramian matrices are a well-known encoding for properties of input-output systems such as controllability, observability or minimality. These so-called system Gramians were developed in linear system theory for applications such as model order reduction of control systems. Empirical Gramians are an extension to the system Gramians for parametric and nonlinear systems as well as a data-driven method of computation. The empirical Gramian framework - emgr - implements the empirical Gramians in a uniform and configurable manner, with applications such as Gramian-based (nonlinear) model reduction, decentralized control, sensitivity analysis, parameter identification and combined state and parameter reduction.",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Christian Himpe",
+                  "id": 1140353110,
+                  "slug": "christian-himpe",
+                  "unique_id": "39g8f4daxu",
+                  "full_slug": "christian-himpe-39g8f4daxu",
+                  "affiliation_full_slug": "max-planck-society-3o0xx7lg"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Max Planck Society",
+                  "city": "Munich",
+                  "region": null,
+                  "country": "Germany",
+                  "id": 149899117,
+                  "slug": "max-planck-society",
+                  "unique_id": "3o0xx7lg",
+                  "full_slug": "max-planck-society-3o0xx7lg"
+                }
+              ]
+            },
+            "fulltext_url": "/pdf/emgr-the-empirical-gramian-framework-3el9al170n.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf",
+                "Html",
+                "Others"
+              ],
+              "data": {
+                "Html": [
+                  "https://dblp.uni-trier.de/db/journals/algorithms/algorithms11.html#Himpe18",
+                  "https://www.mdpi.com/1999-4893/11/7/91"
+                ],
+                "Others": [
+                  "https://www.mdpi.com/1999-4893/11/7/91/pdf"
+                ],
+                "Pdf": [
+                  "http://arxiv.org/pdf/1611.00675.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 18
+              }
+            },
+            "tldr": "The empirical Gramian framework as mentioned in this paper implements the empirical Gramians in a uniform and configurable manner, with applications such as Gramian-based (nonlinear) model reduction, decentralized control, sensitivity analysis, parameter identification and combined state and parameter reduction.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4048193654,
+            "title": "Sparse Mamba: Reinforcing Controllability In Structural State Space\n  Models",
+            "is_archived": false,
+            "full_slug": "sparse-mamba-reinforcing-controllability-in-structural-state-ub3sf3hqy6g1",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-08-31T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2409.00563",
+            "unique_id": "ub3sf3hqy6g1",
+            "abstract": "In this article, we introduce the concept of controllability and observability to the M amba architecture in our Sparse-Mamba (S-Mamba) for natural language processing (NLP) applications. The structured state space model (SSM) development in recent studies, such as Mamba and Mamba2, outperformed and solved the computational inefficiency of transformers and large language models (LLMs) on longer sequences in small to medium NLP tasks. The Mamba SSMs architecture drops the need for attention layer or MLB blocks in transformers. However, the current Mamba models do not reinforce the controllability on state space equations in the calculation of A, B, C, and D matrices at each time step, which increase the complexity and the computational cost needed. In this article we show that the number of parameters can be significantly decreased by reinforcing controllability in the state space equations in the proposed Sparse-Mamba (S-Mamba), while maintaining the performance. The controllable n x n state matrix A is sparse and it has only n free parameters. Our novel approach will ensure a controllable system and could be the gate key for Mamba 3. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Emadeldeen Hamdan",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Hongyi Pan",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "A. Enis Çetin",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "https://export.arxiv.org/pdf/2409.00563v2.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper introduces Sparse-Mamba, a novel architecture that reinforces controllability in structural state space models for NLP, reducing parameters by 90% while maintaining performance, and potentially paving the way for Mamba 3.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4110263770,
+            "title": "Local Observability of a Class of Feedforward Neural Networks",
+            "is_archived": false,
+            "full_slug": "local-observability-of-a-class-of-feedforward-neural-mruyfocvgyc6",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-12-09T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.1109/cdc57313.2025.11312732",
+            "unique_id": "mruyfocvgyc6",
+            "abstract": "Beyond the traditional neural network training methods based on gradient descent and its variants, state estimation techniques have been proposed to determine a set of ideal weights from a control-theoretic perspective. Hence, the concept of observability becomes relevant in neural network training. In this paper, we investigate local observability of a class of two-layer feedforward neural networks (FNNs) with rectified linear unit (ReLU) activation functions. We analyze local observability of FNNs by evaluating an observability rank condition with respect to the weight matrix and the input sequence. First, we show that, in general, the weights of FNNs are not locally observable. Then, we provide sufficient conditions on the network structures and the weights that lead to local observability. Moreover, we propose an input design approach to render the weights distinguishable and show that this input also excites other weights inside a neighborhood. Finally, we validate our results through a numerical example. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Yi Yang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Victor G. Lopez",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Matthias A. Müller",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper investigates local observability of two-layer feedforward neural networks with ReLU activation functions, showing that weights are generally not locally observable, but providing sufficient conditions and an input design approach to render weights distinguishable.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4072473411,
+            "title": "Local Observability of a Class of Feedforward Neural Networks",
+            "is_archived": false,
+            "full_slug": "local-observability-of-a-class-of-feedforward-neural-zsdli4tktews",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-08-28T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2508.20544",
+            "unique_id": "zsdli4tktews",
+            "abstract": "Beyond the traditional neural network training methods based on gradient descent and its variants, state estimation techniques have been proposed to determine a set of ideal weights from a control-theoretic perspective. Hence, the concept of observability becomes relevant in neural network training. In this paper, we investigate local observability of a class of two-layer feedforward neural networks~(FNNs) with rectified linear unit~(ReLU) activation functions. We analyze local observability of FNNs by evaluating an observability rank condition with respect to the weight matrix and the input sequence. First, we show that, in general, the weights of FNNs are not locally observable. Then, we provide sufficient conditions on the network structures and the weights that lead to local observability. Moreover, we propose an input design approach to render the weights distinguishable and show that this input also excites other weights inside a neighborhood. Finally, we validate our results through a numerical example. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Yi Yang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Victor G. Lopez",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Matthias A. Müller",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/local-observability-of-a-class-of-feedforward-neural-zsdli4tktews.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2508.20544v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper investigates local observability of two-layer feedforward neural networks with ReLU activation functions, showing that weights are generally not locally observable, but provides sufficient conditions and an input design approach to render weights distinguishable.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

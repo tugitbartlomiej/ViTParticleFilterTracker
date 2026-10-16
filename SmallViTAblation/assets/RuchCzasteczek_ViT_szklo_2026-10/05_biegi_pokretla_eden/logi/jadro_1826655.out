@@ -1,0 +1,32 @@
+jądro dlugi_lr_5e-4_rp stan_e12.pt: 100 kierunków, 40 paczek, hopper-2, GPU NVIDIA H200, Sun Oct 11 12:30:49 AM CEST 2026
+bieg dlugi_lr_5e-4_rp, stan krok 13128, model vit, opt adamw, lr 0.0005, tokenów 600 [1 s]
+klatki: 1292 z 117 archiwów w 5 s
+12 sond, 40 paczek × 32; parametrów 2926493 [9 s]
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+paczki: 40, norma kroku AdamW 0.1703, <|Δz|²> 0.1342 [21 s]
+kontrola numeryczna: <|Δz|²> 0.0824 (paczka 0.147) [21 s]
+kierunki losowe: 100 prekondycjonowanych i izotropowych [24 s]
+zmierzone: 201 rekordów 12928–13128 [27 s]
+los_prek [blok]: C1 max 0.763 @τ=1 (null -0.024; surowe 0.775), powłoki ['0.763', '0.538', '0.346'], skupianie 4.22, cos sąsiedzi−losowe 0.707, cross C1 0.207 (null -0.009) [30 s]
+los_prek populacja [populacja]: C1 max 0.785 @τ=1 (null -0.009; surowe 0.797), powłoki ['0.785', '0.588', '0.425'], skupianie 4.47, cos sąsiedzi−losowe 0.596, cross C1 0.183 (null -0.013) [32 s]
+los_prek rozkład energii kroku: τ=1: wspólny 0.03 zdjęcie 0.14 sąsiedztwo 0.55 własny 0.23 [33 s]
+los_izo [blok]: C1 max 0.738 @τ=1 (null 0.005; surowe 0.772), powłoki ['0.738', '0.527', '0.362'], skupianie 4.22, cos sąsiedzi−losowe 0.707, cross C1 0.139 (null -0.002) [35 s]
+los_izo populacja [populacja]: C1 max 0.768 @τ=1 (null -0.006; surowe 0.798), powłoki ['0.768', '0.584', '0.437'], skupianie 4.53, cos sąsiedzi−losowe 0.596, cross C1 0.106 (null -0.001) [37 s]
+los_izo rozkład energii kroku: τ=1: wspólny 0.04 zdjęcie 0.14 sąsiedztwo 0.55 własny 0.23 [38 s]
+paczka [blok]: C1 max 0.820 @τ=1 (null -0.012; surowe 0.866), powłoki ['0.820', '0.630', '0.463'], skupianie 4.95, cos sąsiedzi−losowe 0.779, cross C1 0.195 (null -0.009) [39 s]
+paczka populacja [populacja]: C1 max 0.849 @τ=1 (null -0.029; surowe 0.889), powłoki ['0.849', '0.690', '0.549'], skupianie 5.26, cos sąsiedzi−losowe 0.624, cross C1 0.155 (null -0.010) [39 s]
+paczka rozkład energii kroku: τ=1: wspólny 0.13 zdjęcie 0.16 sąsiedztwo 0.50 własny 0.15 [40 s]
+szum [blok]: C1 max 0.825 @τ=1 (null -0.048; surowe 0.869), powłoki ['0.825', '0.643', '0.482'], skupianie 5.08, cos sąsiedzi−losowe 0.764, cross C1 0.251 (null -0.018) [41 s]
+szum populacja [populacja]: C1 max 0.852 @τ=1 (null -0.049; surowe 0.891), powłoki ['0.852', '0.699', '0.561'], skupianie 5.36, cos sąsiedzi−losowe 0.627, cross C1 0.217 (null -0.031) [41 s]
+szum rozkład energii kroku: τ=1: wspólny 0.14 zdjęcie 0.15 sąsiedztwo 0.51 własny 0.16 [42 s]
+numeryczna [blok]: C1 max 0.005 @τ=1 (null 0.004; surowe 0.008), powłoki ['0.005', '0.008', '-0.005'], skupianie 1.76, cos sąsiedzi−losowe 0.706, cross C1 0.012 (null -0.004) [42 s]
+numeryczna populacja [populacja]: C1 max 0.004 @τ=1 (null -0.000; surowe 0.007), powłoki ['0.004', '0.005', '-0.002'], skupianie 1.75, cos sąsiedzi−losowe 0.595, cross C1 0.014 (null 0.000) [42 s]
+numeryczna rozkład energii kroku: τ=1: wspólny 0.03 zdjęcie 0.14 sąsiedztwo 0.55 własny 0.23 [42 s]
+zmierzone [blok]: C1 max 0.711 @τ=1 (null -0.002; surowe 0.790), powłoki ['0.711', '0.573', '0.440'], skupianie 3.83, cos sąsiedzi−losowe 0.710, cross C1 0.227 (null -0.001) [46 s]
+zmierzone populacja [populacja]: C1 max 0.763 @τ=1 (null 0.002; surowe 0.831), powłoki ['0.763', '0.648', '0.538'], skupianie 4.24, cos sąsiedzi−losowe 0.590, cross C1 0.192 (null 0.003) [50 s]
+zmierzone rozkład energii kroku: τ=1: wspólny 0.17 zdjęcie 0.14 sąsiedztwo 0.48 własny 0.19 [51 s]
+mapa ruchliwości (Spearman przewidziana vs zmierzona): {'los_prek': {'surowa': 0.20295387029083126, 'wzgledna': 0.17494236637640076, 'zdjecia': 0.49650349650349657}, 'los_izo': {'surowa': 0.20557896235711634, 'wzgledna': 0.17733144043239438, 'zdjecia': 0.49650349650349657}, 'paczka': {'surowa': 0.3736895211475774, 'wzgledna': 0.37096434192178024, 'zdjecia': 0.14685314685314685}, 'szum': {'surowa': 0.5098197430968374, 'wzgledna': 0.48604296664385, 'zdjecia': 0.08391608391608392}, 'numeryczna': {'surowa': 0.20289352557515858, 'wzgledna': 0.17515611896299635, 'zdjecia': 0.49650349650349657}} [52 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/dlugi_lr_5e-4_rp/JADRO_stan_e12.json [52 s]
+KONIEC Sun Oct 11 12:32:02 AM CEST 2026

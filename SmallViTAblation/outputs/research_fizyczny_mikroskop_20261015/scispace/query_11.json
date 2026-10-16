@@ -1,0 +1,546 @@
+{
+  "question": "What empirical or theoretical evidence supports Ornstein-Uhlenbeck, stochastic thermodynamic, or glassy descriptions of neural-network training, especially when observables are learned representations rather than optimizer parameters?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'What empirical or theoretical evidence supports Ornstein-Uhlenbeck, stochastic thermodynamic, or glassy descriptions of neural-network training, especially when observables are learned representations rather than optimizer parameters?'.\n\n\n1. How glassy are neural networks?\n   ID: ab9uxnprpt\n   2024 · Max Kerr Winter, Liesbeth M. C. Janssen\n   DOI: 10.48550/arxiv.2405.13098\n   Abstract: Deep Neural Networks (DNNs) share important similarities with structural glasses. Both have many degrees of freedom, and their dynamics are governed by a high-dimensional, non-convex landscape representing either the loss or energy, respectively. Furthermore, both experience gradient descent dynamics subject to noise. In this work we investigate, by performing quantitative measurements on realistic networks trained on the MNIST and CIFAR-10 datasets, the extent to which this qualitative similarity gives rise to glass-like dynamics in neural networks. We demonstrate the existence of a Topology Trivialisation Transition as well as the previously studied under-to-overparameterised transition analogous to jamming. By training DNNs with overdamped Langevin dynamics in the resulting disordered phases, we do not observe diverging relaxation times at non-zero temperature, nor do we observe any caging effects, in contrast to glass phenomenology. However, the weight overlap function follows a power law in time, with an exponent of approximately -0.5, in agreement with the Mode-Coupling Theory of structural glasses. In addition, the DNN dynamics obey a form of time-temperature superposition. Finally, dynamic heterogeneity and ageing are observed at low temperatures. These results highlight important and surprising points of both difference and agreement between the behaviour of DNNs and structural glasses. \n\n2. Stochastic Thermodynamics of Learning\n   ID: nv0ftx2qotk4\n   2022 · Goldt, Sebastian, Seifert, Udo\n   DOI: 10.48550/arxiv.1611.09428\n   Abstract: Virtually every organism gathers information about its noisy environment and builds models from that data, mostly using neural networks. Here, we use stochastic thermodynamics to analyse the learning of a classification rule by a neural network. We show that the information acquired by the network is bounded by the thermodynamic cost of learning and introduce a learning efficiency $η\\le1$. We discuss the conditions for optimal learning and analyse Hebbian learning in the thermodynamic limit. \n\n3. SGD as Free Energy Minimization: A Thermodynamic View on Neural Network Training\n   ID: 0bokjmnsj195\n   2025 · Sadrtdinov, Ildus, Lobacheva, Ekaterina, Vetrov, Dmitry\n   DOI: 10.48550/arxiv.2505.23489\n   Abstract: We present a thermodynamic interpretation of the stationary behavior of stochastic gradient descent (SGD) under fixed learning rates (LRs) in neural network training. We show that SGD implicitly minimizes a free energy function $F=U-TS$, balancing training loss $U$ and the entropy of the weights distribution $S$, with temperature $T$ determined by the LR. This perspective offers a new lens on why high LRs prevent training from converging to the loss minima and how different LRs lead to stabilization at different loss levels. We empirically validate the free energy framework on both underparameterized (UP) and overparameterized (OP) models. UP models consistently follow free energy minimization, with temperature increasing monotonically with LR, while for OP models, the temperature effectively drops to zero at low LRs, causing SGD to minimize the loss directly and converge to an optimum. We attribute this mismatch to differences in the signal-to-noise ratio of stochastic gradients near optima, supported by both a toy example and neural network experiments. \n\n4. Ornstein-Uhlenbeck Adaptation as a Mechanism for Learning in Brains and\n  Machines\n   ID: 1xzqnchk7yvf\n   2024 · Jesús García Fernández, Nasir Ahmad, Marcel van Gerven\n   DOI: 10.48550/arxiv.2410.13563\n   Abstract: Learning is a fundamental property of intelligent systems, observed across biological organisms and engineered systems. While modern intelligent systems typically rely on gradient descent for learning, the need for exact gradients and complex information flow makes its implementation in biological and neuromorphic systems challenging. This has motivated the exploration of alternative learning mechanisms that can operate locally and do not rely on exact gradients. In this work, we introduce a novel approach that leverages noise in the parameters of the system and global reinforcement signals. Using an Ornstein-Uhlenbeck process with adaptive dynamics, our method balances exploration and exploitation during learning, driven by deviations from error predictions, akin to reward prediction error. Operating in continuous time, Orstein-Uhlenbeck adaptation (OUA) is proposed as a general mechanism for learning dynamic, time-evolving environments. We validate our approach across diverse tasks, including supervised learning and reinforcement learning in feedforward and recurrent systems. Additionally, we demonstrate that it can perform meta-learning, adjusting hyper-parameters autonomously. Our results indicate that OUA provides a viable alternative to traditional gradient-based methods, with potential applications in neuromorphic computing. It also hints at a possible mechanism for noise-driven learning in the brain, where stochastic neurotransmitter release may guide synaptic adjustments. \n\n5. Learning Thermodynamics with Boltzmann Machines\n   ID: xp7c4geuncpn\n   2022 · Torlai, Giacomo, Melko, Roger G.\n   DOI: 10.48550/arxiv.1606.02718\n   Abstract: A Boltzmann machine is a stochastic neural network that has been extensively used in the layers of deep architectures for modern machine learning applications. In this paper, we develop a Boltzmann machine that is capable of modelling thermodynamic observables for physical systems in thermal equilibrium. Through unsupervised learning, we train the Boltzmann machine on data sets constructed with spin configurations importance-sampled from the partition function of an Ising Hamiltonian at different temperatures using Monte Carlo (MC) methods. The trained Boltzmann machine is then used to generate spin states, for which we compare thermodynamic observables to those computed by direct MC sampling. We demonstrate that the Boltzmann machine can faithfully reproduce the observables of the physical system. Further, we observe that the number of neurons required to obtain accurate results increases as the system is brought close to criticality. \n\n6. Neural Thermodynamics I: Entropic Forces in Deep and Universal Representation Learning\n   ID: nq28yerbingl\n   2025 · Ziyin Liu, Yizhou Xu, Isaac Chuang · arXiv.org\n   DOI: 10.48550/arxiv.2505.12387\n   Abstract: With the rapid discovery of emergent phenomena in deep learning and large language models, understanding their cause has become an urgent need. Here, we propose a rigorous entropic-force theory for understanding the learning dynamics of neural networks trained with stochastic gradient descent (SGD) and its variants. Building on the theory of parameter symmetries and an entropic loss landscape, we show that representation learning is crucially governed by emergent entropic forces arising from stochasticity and discrete-time updates. These forces systematically break continuous parameter symmetries and preserve discrete ones, leading to a series of gradient balance phenomena that resemble the equipartition property of thermal systems. These phenomena, in turn, (a) explain the universal alignment of neural representations between AI models and lead to a proof of the Platonic Representation Hypothesis, and (b) reconcile the seemingly contradictory observations of sharpness- and flatness-seeking behavior of deep learning optimization. Our theory and experiments demonstrate that a combination of entropic forces and symmetry breaking is key to understanding emergent phenomena in deep learning.\n\n7. Ornstein–Uhlenbeck Adaptation as a Mechanism for Learning in Brains and Machines\n   ID: 1epivqcufgkb\n   2024 · Jesús García Fernández, Nasir Ahmad, Marcel van Gerven · Entropy\n   DOI: 10.3390/e26121125\n   Abstract: Learning is a fundamental property of intelligent systems, observed across biological organisms and engineered systems. While modern intelligent systems typically rely on gradient descent for learning, the need for exact gradients and complex information flow makes its implementation in biological and neuromorphic systems challenging. This has motivated the exploration of alternative learning mechanisms that can operate locally and do not rely on exact gradients. In this work, we introduce a novel approach that leverages noise in the parameters of the system and global reinforcement signals. Using an Ornstein–Uhlenbeck process with adaptive dynamics, our method balances exploration and exploitation during learning, driven by deviations from error predictions, akin to reward prediction error. Operating in continuous time, Ornstein–Uhlenbeck adaptation (OUA) is proposed as a general mechanism for learning in dynamic, time-evolving environments. We validate our approach across a range of different tasks, including supervised learning and reinforcement learning in feedforward and recurrent systems. Additionally, we demonstrate that it can perform meta-learning, adjusting hyper-parameters autonomously. Our results indicate that OUA provides a promising alternative to traditional gradient-based methods, with potential applications in neuromorphic computing. It also hints at a possible mechanism for noise-driven learning in the brain, where stochastic neurotransmitter release may guide synaptic adjustments. \n\n8. From First Principles: A Statistical Mechanics Framework for Machine Learning\n   ID: 5tuatc8xpnht\n   2025 · Xiaochen Liu · Applied and Computational Engineering\n   DOI: 10.54254/2755-2721/2025.ld26945\n   Abstract: Modern machine learning has achieved remarkable empirical success, yet its theoretical underpinnings remain incomplete. This paper develops a unified framework for understanding learning through the first principles of statistical physics. Within this view, a modelsloss functioncorresponds to anenergy landscape, thetraining processtostochastic dynamics, andgeneralizationto an entropy-driven preference forflat minimaand phase-transition behavior. Energy-Based Models (EBMs)are analyzed as a central case study. This study shows how their mathematical form arises naturally from thePrinciple of Maximum Entropy, and how their latent-variable structures can be interpreted as learning aneffective theoryof the data. The learning dynamics are also given a direct physical interpretation, with training algorithms like Contrastive Divergence representingnon-equilibrium relaxation processes. In particular, we highlight that the Hessian-dependent gradient noise in Stochastic Gradient Descent emerges as the key mechanism driving anexponential preferencefor the flat minima associated with good generalization. Beyond explanation, this framework offers constructive principles.Symmetry, conservation laws, and dualityprovide powerful inductive biases for building data-efficient and interpretable models, as exemplified by Physics-Informed Neural Networks and compositional generative architectures. We conclude by pointing toward future research directions, including exploring the limits of compositionality through the lens of spin glass theory and developing a non-equilibrium thermodynamic framework for learning dynamics. \n\n9. A Spin Glass Characterization of Neural Networks\n   ID: 8wg5xqv1bcod\n   2025 · Jun Li · arXiv.org\n   DOI: 10.48550/arxiv.2508.07397\n   Abstract: This work presents a statistical mechanics characterization of neural networks, motivated by the replica symmetry breaking (RSB) phenomenon in spin glasses. A Hopfield-type spin glass model is constructed from a given feedforward neural network (FNN). Overlaps between simulated replica samples serve as a characteristic descriptor of the FNN. The connection between the spin-glass description and commonly studied properties of the FNN -- such as data fitting, capacity, generalization, and robustness -- has been investigated and empirically demonstrated. Unlike prior analytical studies that focus on model ensembles, this method provides a computable descriptor for individual network instances, which reveals nontrivial structural properties that are not captured by conventional metrics such as loss or accuracy. Preliminary results suggests its potential for practical applications such as model inspection, safety verification, and detection of hidden vulnerabilities.\n\n10. Stochastic Thermodynamics of Learning Generative Parametric Probabilistic Models\n   ID: 1nrr7njjrr\n   2023 · S. Parsi · arXiv.org\n   DOI: 10.48550/arxiv.2310.19802\n   Abstract: We have formulated generative machine learning problems as the time evolution of Parametric Probabilistic Models (PPMs), inherently rendering a thermodynamic process. Then, we have studied the thermodynamic exchange between the model's parameters, denoted as $\\Theta$, and the model's generated samples, denoted as $X$. We demonstrate that the training dataset and the action of the Stochastic Gradient Descent (SGD) optimizer serve as a work source that governs the time evolution of these two subsystems. Our findings reveal that the model learns through the dissipation of heat during the generation of samples $X$, leading to an increase in the entropy of the model's parameters, $\\Theta$. Thus, the parameter subsystem acts as a heat reservoir, effectively storing the learned information. Furthermore, the role of the model's parameters as a heat reservoir provides valuable thermodynamic insights into the generalization power of over-parameterized models. This approach offers an unambiguous framework for computing information-theoretic quantities within deterministic neural networks by establishing connections with thermodynamic variables. To illustrate the utility of this framework, we introduce two information-theoretic metrics: Memorized-information (M-info) and Learned-information (L-info), which trace the dynamic flow of information during the learning process of PPMs."
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "What empirical or theoretical evidence supports Ornstein-Uhlenbeck, stochastic thermodynamic, or glassy descriptions of neural-network training, especially when observables are learned representations rather than optimizer parameters?",
+        "papers": [
+          {
+            "id": 4036207226,
+            "title": "How glassy are neural networks?",
+            "is_archived": false,
+            "full_slug": "how-glassy-are-neural-networks-ab9uxnprpt",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-05-21T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Preprint",
+            "doi": "10.48550/arxiv.2405.13098",
+            "unique_id": "ab9uxnprpt",
+            "abstract": "Deep Neural Networks (DNNs) share important similarities with structural glasses. Both have many degrees of freedom, and their dynamics are governed by a high-dimensional, non-convex landscape representing either the loss or energy, respectively. Furthermore, both experience gradient descent dynamics subject to noise. In this work we investigate, by performing quantitative measurements on realistic networks trained on the MNIST and CIFAR-10 datasets, the extent to which this qualitative similarity gives rise to glass-like dynamics in neural networks. We demonstrate the existence of a Topology Trivialisation Transition as well as the previously studied under-to-overparameterised transition analogous to jamming. By training DNNs with overdamped Langevin dynamics in the resulting disordered phases, we do not observe diverging relaxation times at non-zero temperature, nor do we observe any caging effects, in contrast to glass phenomenology. However, the weight overlap function follows a power law in time, with an exponent of approximately -0.5, in agreement with the Mode-Coupling Theory of structural glasses. In addition, the DNN dynamics obey a form of time-temperature superposition. Finally, dynamic heterogeneity and ageing are observed at low temperatures. These results highlight important and surprising points of both difference and agreement between the behaviour of DNNs and structural glasses. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Max Kerr Winter",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Liesbeth M. C. Janssen",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/how-glassy-are-neural-networks-ab9uxnprpt.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2405.13098"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 1
+              }
+            },
+            "tldr": "The dynamics of deep neural networks exhibit similarities with structural glasses, including glass-like features such as a high-dimensional non-convex landscape, gradient descent dynamics subject to noise, and a power law weight overlap function. However, DNNs do not exhibit diverging relaxation times, caging effects, or a zero-temperature glass transition.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4091029847,
+            "title": "Stochastic Thermodynamics of Learning",
+            "is_archived": false,
+            "full_slug": "stochastic-thermodynamics-of-learning-nv0ftx2qotk4",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-03-06T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Repository",
+            "doi": "10.48550/arxiv.1611.09428",
+            "unique_id": "nv0ftx2qotk4",
+            "abstract": "Virtually every organism gathers information about its noisy environment and builds models from that data, mostly using neural networks. Here, we use stochastic thermodynamics to analyse the learning of a classification rule by a neural network. We show that the information acquired by the network is bounded by the thermodynamic cost of learning and introduce a learning efficiency $η\\le1$. We discuss the conditions for optimal learning and analyse Hebbian learning in the thermodynamic limit. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Goldt, Sebastian",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Seifert, Udo",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study applies stochastic thermodynamics to neural network learning, demonstrating that information acquisition is bounded by thermodynamic cost, introducing a learning efficiency metric, and analyzing optimal learning conditions and Hebbian learning in the thermodynamic limit.",
+            "podcast": null,
+            "podcast_generation_allowed": false,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4088876593,
+            "title": "SGD as Free Energy Minimization: A Thermodynamic View on Neural Network Training",
+            "is_archived": false,
+            "full_slug": "sgd-as-free-energy-minimization-a-thermodynamic-view-on-0bokjmnsj195",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-05-30T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2505.23489",
+            "unique_id": "0bokjmnsj195",
+            "abstract": "We present a thermodynamic interpretation of the stationary behavior of stochastic gradient descent (SGD) under fixed learning rates (LRs) in neural network training. We show that SGD implicitly minimizes a free energy function $F=U-TS$, balancing training loss $U$ and the entropy of the weights distribution $S$, with temperature $T$ determined by the LR. This perspective offers a new lens on why high LRs prevent training from converging to the loss minima and how different LRs lead to stabilization at different loss levels. We empirically validate the free energy framework on both underparameterized (UP) and overparameterized (OP) models. UP models consistently follow free energy minimization, with temperature increasing monotonically with LR, while for OP models, the temperature effectively drops to zero at low LRs, causing SGD to minimize the loss directly and converge to an optimum. We attribute this mismatch to differences in the signal-to-noise ratio of stochastic gradients near optima, supported by both a toy example and neural network experiments. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Sadrtdinov, Ildus",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Lobacheva, Ekaterina",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Vetrov, Dmitry",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4047788485,
+            "title": "Ornstein-Uhlenbeck Adaptation as a Mechanism for Learning in Brains and\n  Machines",
+            "is_archived": false,
+            "full_slug": "ornstein-uhlenbeck-adaptation-as-a-mechanism-for-learning-in-1xzqnchk7yvf",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-10-17T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2410.13563",
+            "unique_id": "1xzqnchk7yvf",
+            "abstract": "Learning is a fundamental property of intelligent systems, observed across biological organisms and engineered systems. While modern intelligent systems typically rely on gradient descent for learning, the need for exact gradients and complex information flow makes its implementation in biological and neuromorphic systems challenging. This has motivated the exploration of alternative learning mechanisms that can operate locally and do not rely on exact gradients. In this work, we introduce a novel approach that leverages noise in the parameters of the system and global reinforcement signals. Using an Ornstein-Uhlenbeck process with adaptive dynamics, our method balances exploration and exploitation during learning, driven by deviations from error predictions, akin to reward prediction error. Operating in continuous time, Orstein-Uhlenbeck adaptation (OUA) is proposed as a general mechanism for learning dynamic, time-evolving environments. We validate our approach across diverse tasks, including supervised learning and reinforcement learning in feedforward and recurrent systems. Additionally, we demonstrate that it can perform meta-learning, adjusting hyper-parameters autonomously. Our results indicate that OUA provides a viable alternative to traditional gradient-based methods, with potential applications in neuromorphic computing. It also hints at a possible mechanism for noise-driven learning in the brain, where stochastic neurotransmitter release may guide synaptic adjustments. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Jesús García Fernández",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Nasir Ahmad",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Marcel van Gerven",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/ornstein-uhlenbeck-adaptation-as-a-mechanism-for-learning-in-1xzqnchk7yvf.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2410.13563"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This work introduces Ornstein-Uhlenbeck adaptation (OUA), a novel learning mechanism that leverages noise and global reinforcement signals to balance exploration and exploitation in dynamic environments, offering a viable alternative to traditional gradient-based methods.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4102335960,
+            "title": "Learning Thermodynamics with Boltzmann Machines",
+            "is_archived": false,
+            "full_slug": "learning-thermodynamics-with-boltzmann-machines-xp7c4geuncpn",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-03-05T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Repository",
+            "doi": "10.48550/arxiv.1606.02718",
+            "unique_id": "xp7c4geuncpn",
+            "abstract": "A Boltzmann machine is a stochastic neural network that has been extensively used in the layers of deep architectures for modern machine learning applications. In this paper, we develop a Boltzmann machine that is capable of modelling thermodynamic observables for physical systems in thermal equilibrium. Through unsupervised learning, we train the Boltzmann machine on data sets constructed with spin configurations importance-sampled from the partition function of an Ising Hamiltonian at different temperatures using Monte Carlo (MC) methods. The trained Boltzmann machine is then used to generate spin states, for which we compare thermodynamic observables to those computed by direct MC sampling. We demonstrate that the Boltzmann machine can faithfully reproduce the observables of the physical system. Further, we observe that the number of neurons required to obtain accurate results increases as the system is brought close to criticality. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Torlai, Giacomo",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Melko, Roger G.",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper develops a Boltzmann machine that models thermodynamic observables for physical systems in thermal equilibrium through unsupervised learning, demonstrating faithful reproduction of observables and increased neuron requirements near criticality.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4071975721,
+            "title": "Neural Thermodynamics I: Entropic Forces in Deep and Universal Representation Learning",
+            "is_archived": false,
+            "full_slug": "neural-thermodynamics-i-entropic-forces-in-deep-and-nq28yerbingl",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-05-18T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2505.12387",
+            "unique_id": "nq28yerbingl",
+            "abstract": "With the rapid discovery of emergent phenomena in deep learning and large language models, understanding their cause has become an urgent need. Here, we propose a rigorous entropic-force theory for understanding the learning dynamics of neural networks trained with stochastic gradient descent (SGD) and its variants. Building on the theory of parameter symmetries and an entropic loss landscape, we show that representation learning is crucially governed by emergent entropic forces arising from stochasticity and discrete-time updates. These forces systematically break continuous parameter symmetries and preserve discrete ones, leading to a series of gradient balance phenomena that resemble the equipartition property of thermal systems. These phenomena, in turn, (a) explain the universal alignment of neural representations between AI models and lead to a proof of the Platonic Representation Hypothesis, and (b) reconcile the seemingly contradictory observations of sharpness- and flatness-seeking behavior of deep learning optimization. Our theory and experiments demonstrate that a combination of entropic forces and symmetry breaking is key to understanding emergent phenomena in deep learning.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Ziyin Liu",
+                  "id": 2885157073,
+                  "slug": "ziyin-liu",
+                  "unique_id": "xc6213m30z",
+                  "full_slug": "ziyin-liu-xc6213m30z",
+                  "affiliation_full_slug": "university-of-tokyo-3wkpr7bv"
+                },
+                {
+                  "display_name": "Yizhou Xu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Isaac Chuang",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "University of Tokyo",
+                  "city": "Tokyo",
+                  "region": null,
+                  "country": "Japan",
+                  "id": 74801974,
+                  "slug": "university-of-tokyo",
+                  "unique_id": "3wkpr7bv",
+                  "full_slug": "university-of-tokyo-3wkpr7bv"
+                }
+              ]
+            },
+            "fulltext_url": "pdf/neural-thermodynamics-i-entropic-forces-in-deep-and-nq28yerbingl.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2505.12387v2.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers propose an entropic-force theory to explain emergent phenomena in deep learning, revealing that representation learning is governed by entropic forces that break continuous symmetries and preserve discrete ones, leading to universal alignment of neural representations.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4050309570,
+            "title": "Ornstein–Uhlenbeck Adaptation as a Mechanism for Learning in Brains and Machines",
+            "is_archived": false,
+            "full_slug": "ornstein-uhlenbeck-adaptation-as-a-mechanism-for-learning-in-1epivqcufgkb",
+            "journal": {
+              "display_name": "Entropy",
+              "official_page": "http://www.mdpi.com/journal/entropy/",
+              "issn": "1099-4300",
+              "alias": [
+                "thermodynamic entropy"
+              ],
+              "id": 195231649,
+              "slug": "entropy",
+              "unique_id": "2an5cv42",
+              "full_slug": "entropy-2an5cv42"
+            },
+            "conference_series": null,
+            "date": "2024-12-22T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.3390/e26121125",
+            "unique_id": "1epivqcufgkb",
+            "abstract": "Learning is a fundamental property of intelligent systems, observed across biological organisms and engineered systems. While modern intelligent systems typically rely on gradient descent for learning, the need for exact gradients and complex information flow makes its implementation in biological and neuromorphic systems challenging. This has motivated the exploration of alternative learning mechanisms that can operate locally and do not rely on exact gradients. In this work, we introduce a novel approach that leverages noise in the parameters of the system and global reinforcement signals. Using an Ornstein–Uhlenbeck process with adaptive dynamics, our method balances exploration and exploitation during learning, driven by deviations from error predictions, akin to reward prediction error. Operating in continuous time, Ornstein–Uhlenbeck adaptation (OUA) is proposed as a general mechanism for learning in dynamic, time-evolving environments. We validate our approach across a range of different tasks, including supervised learning and reinforcement learning in feedforward and recurrent systems. Additionally, we demonstrate that it can perform meta-learning, adjusting hyper-parameters autonomously. Our results indicate that OUA provides a promising alternative to traditional gradient-based methods, with potential applications in neuromorphic computing. It also hints at a possible mechanism for noise-driven learning in the brain, where stochastic neurotransmitter release may guide synaptic adjustments. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Jesús García Fernández",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Nasir Ahmad",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Marcel van Gerven",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This work introduces Ornstein-Uhlenbeck adaptation (OUA), a novel learning mechanism that leverages noise and global reinforcement signals to balance exploration and exploitation in dynamic environments, offering a promising alternative to traditional gradient-based methods.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4072747282,
+            "title": "From First Principles: A Statistical Mechanics Framework for Machine Learning",
+            "is_archived": false,
+            "full_slug": "from-first-principles-a-statistical-mechanics-framework-for-5tuatc8xpnht",
+            "journal": {
+              "display_name": "Applied and Computational Engineering",
+              "official_page": null,
+              "issn": "2755-2721",
+              "alias": [
+                "Appl Comput Eng"
+              ],
+              "id": 4000146575,
+              "slug": "applied-and-computational-engineering",
+              "unique_id": "3l2fzmi3",
+              "full_slug": "applied-and-computational-engineering-3l2fzmi3"
+            },
+            "conference_series": null,
+            "date": "2025-09-09T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.54254/2755-2721/2025.ld26945",
+            "unique_id": "5tuatc8xpnht",
+            "abstract": "Modern machine learning has achieved remarkable empirical success, yet its theoretical underpinnings remain incomplete. This paper develops a unified framework for understanding learning through the first principles of statistical physics. Within this view, a modelsloss functioncorresponds to anenergy landscape, thetraining processtostochastic dynamics, andgeneralizationto an entropy-driven preference forflat minimaand phase-transition behavior. Energy-Based Models (EBMs)are analyzed as a central case study. This study shows how their mathematical form arises naturally from thePrinciple of Maximum Entropy, and how their latent-variable structures can be interpreted as learning aneffective theoryof the data. The learning dynamics are also given a direct physical interpretation, with training algorithms like Contrastive Divergence representingnon-equilibrium relaxation processes. In particular, we highlight that the Hessian-dependent gradient noise in Stochastic Gradient Descent emerges as the key mechanism driving anexponential preferencefor the flat minima associated with good generalization. Beyond explanation, this framework offers constructive principles.Symmetry, conservation laws, and dualityprovide powerful inductive biases for building data-efficient and interpretable models, as exemplified by Physics-Informed Neural Networks and compositional generative architectures. We conclude by pointing toward future research directions, including exploring the limits of compositionality through the lens of spin glass theory and developing a non-equilibrium thermodynamic framework for learning dynamics. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Xiaochen Liu",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper develops a statistical mechanics framework for machine learning, interpreting models' loss functions as energy landscapes and training processes as stochastic dynamics, with implications for understanding generalization and developing data-efficient, interpretable models.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4073325473,
+            "title": "A Spin Glass Characterization of Neural Networks",
+            "is_archived": false,
+            "full_slug": "a-spin-glass-characterization-of-neural-networks-8wg5xqv1bcod",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-08-10T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2508.07397",
+            "unique_id": "8wg5xqv1bcod",
+            "abstract": "This work presents a statistical mechanics characterization of neural networks, motivated by the replica symmetry breaking (RSB) phenomenon in spin glasses. A Hopfield-type spin glass model is constructed from a given feedforward neural network (FNN). Overlaps between simulated replica samples serve as a characteristic descriptor of the FNN. The connection between the spin-glass description and commonly studied properties of the FNN -- such as data fitting, capacity, generalization, and robustness -- has been investigated and empirically demonstrated. Unlike prior analytical studies that focus on model ensembles, this method provides a computable descriptor for individual network instances, which reveals nontrivial structural properties that are not captured by conventional metrics such as loss or accuracy. Preliminary results suggests its potential for practical applications such as model inspection, safety verification, and detection of hidden vulnerabilities.",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Jun Li",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/a-spin-glass-characterization-of-neural-networks-8wg5xqv1bcod.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2508.07397v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study characterizes neural networks using a spin glass model, introducing a computable descriptor for individual network instances, revealing nontrivial structural properties and potential applications in model inspection, safety verification, and vulnerability detection.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4021889256,
+            "title": "Stochastic Thermodynamics of Learning Generative Parametric Probabilistic Models",
+            "is_archived": false,
+            "full_slug": "stochastic-thermodynamics-of-learning-generative-parametric-1nrr7njjrr",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-10-04T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2310.19802",
+            "unique_id": "1nrr7njjrr",
+            "abstract": "We have formulated generative machine learning problems as the time evolution of Parametric Probabilistic Models (PPMs), inherently rendering a thermodynamic process. Then, we have studied the thermodynamic exchange between the model's parameters, denoted as $\\Theta$, and the model's generated samples, denoted as $X$. We demonstrate that the training dataset and the action of the Stochastic Gradient Descent (SGD) optimizer serve as a work source that governs the time evolution of these two subsystems. Our findings reveal that the model learns through the dissipation of heat during the generation of samples $X$, leading to an increase in the entropy of the model's parameters, $\\Theta$. Thus, the parameter subsystem acts as a heat reservoir, effectively storing the learned information. Furthermore, the role of the model's parameters as a heat reservoir provides valuable thermodynamic insights into the generalization power of over-parameterized models. This approach offers an unambiguous framework for computing information-theoretic quantities within deterministic neural networks by establishing connections with thermodynamic variables. To illustrate the utility of this framework, we introduce two information-theoretic metrics: Memorized-information (M-info) and Learned-information (L-info), which trace the dynamic flow of information during the learning process of PPMs.",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "S. Parsi",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "The findings reveal that the model learns through the dissipation of heat during the generation of samples, leading to an increase in the entropy of the model's parameters, $\\Theta$, and the parameter subsystem acts as a heat reservoir, effectively storing the learned information.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

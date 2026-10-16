@@ -1,0 +1,18 @@
+pokrętła test: lr 5e-4, epoki 1, manifest MANIFEST_1500_z35k.jsonl, sondy - n=4, węzeł hopper-2, GPU NVIDIA H200, start Sat Oct 10 09:04:02 PM CEST 2026
+wolna kwota: 30.0 GB
+walidacja: 3000 klatek (usunięto 0 wspólnych z treningiem)
+klatki: 1500 z 117 archiwów w 8 s
+1500 klatek, 1 epok, 47 kroków; końce epok: [47]; zapisów wag: 6 (~0.1 GB)
+obserwator: 4 sond, PCA32 trzyma 0.986 wariancji kroku 0
+krok 0: mAP@0,5 0.0000
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+krok 20: mAP@0,5 0.0009
+krok 40: mAP@0,5 0.0151
+krok 47 (koniec epoki 1): mAP@0,5 0.0105
+epoka 1/1: krok 47, wolna kwota 30.0 GB, 21:06:52
+KONIEC: krok 47, 2 plików wag, 13 s
+KONIEC test Sat Oct 10 09:07:06 PM CEST 2026
+65M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/test
+      /mnt/evafs  170.1G    200G    220G       -  139292  200000  220000       -

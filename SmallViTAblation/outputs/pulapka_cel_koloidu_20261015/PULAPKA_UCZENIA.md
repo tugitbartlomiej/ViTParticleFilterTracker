@@ -1,0 +1,9 @@
+# Pułapka uczenia: koloid jako proces Ornsteina–Uhlenbecka wokół dryfującego środka
+- gęsty początek (co 10 kroków, 0–1000), okno 11, 226: φ = 0.283 → τ ≈ 8 kroków; korelacja kolejnych przyrostów -0.207 (OU: -0.358); wariancja drgań 7.55e-02 rms² → κ/kT ≈ 13.3; prędkość środka 8.55e-02 → 4.36e-02 rms/krok
+- gęsty początek (co 10 kroków, 0–1000), okno 11, w ramce: φ = 0.285 → τ ≈ 8 kroków; korelacja kolejnych przyrostów -0.218 (OU: -0.357); wariancja drgań 7.57e-02 rms² → κ/kT ≈ 13.2; prędkość środka 8.23e-02 → 4.50e-02 rms/krok
+- gęsty początek (co 10 kroków, 0–1000), okno 21, 226: φ = 0.439 → τ ≈ 12 kroków; korelacja kolejnych przyrostów -0.207 (OU: -0.280); wariancja drgań 1.02e-01 rms² → κ/kT ≈ 9.82; prędkość środka 4.64e-02 → 2.34e-02 rms/krok
+- gęsty początek (co 10 kroków, 0–1000), okno 21, w ramce: φ = 0.431 → τ ≈ 12 kroków; korelacja kolejnych przyrostów -0.218 (OU: -0.284); wariancja drgań 9.93e-02 rms² → κ/kT ≈ 10.1; prędkość środka 4.72e-02 → 2.46e-02 rms/krok
+- późne uczenie (co 100 kroków, od 1100), okno 11, 226: φ = 0.032 → τ ≈ 29 kroków; korelacja kolejnych przyrostów -0.415 (OU: -0.484); wariancja drgań 1.44e-02 rms² → κ/kT ≈ 69.7; prędkość środka 2.90e-03 → 2.11e-03 rms/krok
+- późne uczenie (co 100 kroków, od 1100), okno 11, w ramce: φ = 0.037 → τ ≈ 30 kroków; korelacja kolejnych przyrostów -0.414 (OU: -0.481); wariancja drgań 1.59e-02 rms² → κ/kT ≈ 63; prędkość środka 3.05e-03 → 2.21e-03 rms/krok
+- późne uczenie (co 100 kroków, od 1100), okno 21, 226: φ = 0.146 → τ ≈ 52 kroków; korelacja kolejnych przyrostów -0.415 (OU: -0.427); wariancja drgań 1.62e-02 rms² → κ/kT ≈ 61.7; prędkość środka 1.61e-03 → 1.15e-03 rms/krok
+- późne uczenie (co 100 kroków, od 1100), okno 21, w ramce: φ = 0.152 → τ ≈ 53 kroków; korelacja kolejnych przyrostów -0.414 (OU: -0.424); wariancja drgań 1.79e-02 rms² → κ/kT ≈ 55.8; prędkość środka 1.70e-03 → 1.20e-03 rms/krok

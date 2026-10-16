@@ -1,0 +1,731 @@
+{
+  "question": "How do Transformer feed-forward networks implement key-value memories and additive vector contributions in the residual stream, and what is known about cancellation or suppression between neuron contributions?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'How do Transformer feed-forward networks implement key-value memories and additive vector contributions in the residual stream, and what is known about cancellation or suppression between neuron contributions?'.\n\n\n1. Transformer Feed-Forward Layers Are Key-Value Memories\n   ID: 1rremy5lb3\n   2020 · Mor Geva, Roei Schuster, Jonathan Berant\n   Abstract: Feed-forward layers constitute two-thirds of a transformer model’s parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys’ input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model’s layers via residual connections to produce the final output distribution.\n\n2. Transformer Feed-Forward Layers Are Key-Value Memories\n   ID: 43k1jbril6\n   2020 · Mor Geva, Roei Schuster, Jonathan Berant · arXiv: Computation and Language\n   Abstract: Feed-forward layers constitute two-thirds of a transformer model's parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys' input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model's layers via residual connections to produce the final output distribution.\n\n3. Transformer Feed-Forward Layers Are Key-Value Memories\n   ID: 24jpyvwxnp45\n   Mor Geva, Roei Schuster, Jonathan Berant\n   DOI: 10.18653/v1/2021.emnlp-main.446\n   Abstract: Feed-forward layers constitute two-thirds of a transformer model's parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys' input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model's layers via residual connections to produce the final output distribution.\n\n4. Empirical Study on Updating Key-Value Memories in Transformer Feed-forward Layers\n   ID: 1ajrsbk49x\n   2024 · Zihan Qiu, Zeyu Huang, Youcheng Huang · arXiv.org\n   DOI: 10.48550/arxiv.2402.12233\n   Abstract: The feed-forward networks (FFNs) in transformers are recognized as a group of key-value neural memories to restore abstract high-level knowledge. In this work, we conduct an empirical ablation study on updating keys (the 1st layer in the FFNs layer) or values (the 2nd layer in the FFNs layer). We compare those two methods in various knowledge editing and fine-tuning tasks of large language models to draw insights to understand FFNs further. Code is available at $\\href{https://github.com/qiuzh20/Tuning-keys-v.s.-values}{this\\,repo}$.\n\n5. Memory-Augmented Transformers: A Systematic Review from Neuroscience Principles to Enhanced Model Architectures\n   ID: mbcsa879d4ow\n   2025 · Parsa Omidi, Xingshuai Huang, Axel Laborieux\n   DOI: 10.48550/arxiv.2508.10824\n   Abstract: Memory is fundamental to intelligence, enabling learning, reasoning, and adaptability across biological and artificial systems. While Transformer architectures excel at sequence modeling, they face critical limitations in long-range context retention, continual learning, and knowledge integration. This review presents a unified framework bridging neuroscience principles, including dynamic multi-timescale memory, selective attention, and consolidation, with engineering advances in Memory-Augmented Transformers. We organize recent progress through three taxonomic dimensions: functional objectives (context extension, reasoning, knowledge integration, adaptation), memory representations (parameter-encoded, state-based, explicit, hybrid), and integration mechanisms (attention fusion, gated control, associative retrieval). Our analysis of core memory operations (reading, writing, forgetting, and capacity management) reveals a shift from static caches toward adaptive, test-time learning systems. We identify persistent challenges in scalability and interference, alongside emerging solutions including hierarchical buffering and surprise-gated updates. This synthesis provides a roadmap toward cognitively-inspired, lifelong-learning Transformer architectures. \n\n6. Neural Knowledge Bank for Pretrained Transformers\n   ID: 3t741zrp\n   2022 · Damai Dai, Wen-Jie Jiang, Qingxiu Dong · arXiv.org\n   DOI: 10.48550/arXiv.2208.00399\n   Abstract: The ability of pretrained Transformers to remember factual knowledge is essential but still limited for existing models. Inspired by existing work that regards Feed-Forward Networks (FFNs) in Transformers as key-value memories, we design a Neural Knowledge Bank (NKB) and a knowledge injection strategy to introduce extra factual knowledge for pretrained Transformers. The NKB is in the form of additional knowledgeable memory slots to the FFN and the memory-like architecture makes it highly interpretable and flexible. When injecting extra knowledge with the Salient Span Masking (SSM) pretraining objective, we fix the original pretrained model and train only the NKB. This training strategy makes sure the general language modeling ability of the original pretrained model is not influenced. By mounting the NKB onto the T5 model, we verify its strong ability to store extra factual knowledge based on three closed-book question answering datasets. Also, we prove that mounting the NKB will not degrade the general language modeling ability of T5 through two representative tasks, summarization and machine translation. Further, we thoroughly analyze the interpretability of the NKB and reveal the meaning of its keys and values in a human-readable way. Finally, we show the flexibility of the NKB by directly modifying its value vectors to update the factual knowledge stored in it.\n\n7. Neural Knowledge Bank for Pretrained Transformers\n   ID: m2kfpz34\n   2022\n   DOI: 10.48550/arxiv.2208.00399\n   Abstract: The ability of pretrained Transformers to remember factual knowledge is essential but still limited for existing models. Inspired by existing work that regards Feed-Forward Networks (FFNs) in Transformers as key-value memories, we design a Neural Knowledge Bank (NKB) and a knowledge injection strategy to introduce extra factual knowledge for pretrained Transformers. The NKB is in the form of additional knowledgeable memory slots to the FFN and the memory-like architecture makes it highly interpretable and flexible. When injecting extra knowledge with the Salient Span Masking (SSM) pretraining objective, we fix the original pretrained model and train only the NKB. This training strategy makes sure the general language modeling ability of the original pretrained model is not influenced. By mounting the NKB onto the T5 model, we verify its strong ability to store extra factual knowledge based on three closed-book question answering datasets. Also, we prove that mounting the NKB will not degrade the general language modeling ability of T5 through two representative tasks, summarization and machine translation. Further, we thoroughly analyze the interpretability of the NKB and reveal the meaning of its keys and values in a human-readable way. Finally, we show the flexibility of the NKB by directly modifying its value vectors to update the factual knowledge stored in it. \n\n8. Neural Knowledge Bank for Pretrained Transformers\n   ID: 2wlnvxdhgl\n   2023 · Damai Dai, Wenbin Jiang, Qingxiu Dong · Lecture Notes in Computer Science\n   DOI: 10.1007/978-3-031-44696-2_60\n   Abstract: The ability of pretrained Transformers to remember factual knowledge is essential but still limited for existing models. Inspired by existing work that regards Feed-Forward Networks (FFNs) in Transformers as key-value memories, we design a Neural Knowledge Bank (NKB) and a knowledge injection strategy to introduce extra factual knowledge for pretrained Transformers. The NKB is in the form of additional knowledgeable memory slots to the FFN and the memory-like architecture makes it highly interpretable and flexible. When injecting extra knowledge with the Salient Span Masking (SSM) pretraining objective, we fix the original pretrained model and train only the NKB. This training strategy makes sure the general language modeling ability of the original pretrained model is not influenced. By mounting the NKB onto T5, we verify its strong ability to store extra factual knowledge based on three closed-book question answering datasets. Also, we prove that mounting the NKB will not degrade the general language modeling ability of T5 through two representative tasks, summarization and machine translation. Further, we analyze the interpretability of the NKB and reveal the meaning of its keys and values in a human-readable way. Finally, we show the flexibility of the NKB by directly modifying its value vectors to update the factual knowledge stored in it. The code is available at https://github.com/Hunter-DDM/nkb . \n\n9. From Transformer to Transponder: Introducing Contextual Modulation Training for Residual Learning in LLMs\n   ID: zhy1q77f9aht\n   2025 · Yingtao Zhang, Wenqi Gu, Wen Hu\n   DOI: 10.20944/preprints202506.0120.v2\n   Abstract: Transformers are the backbone of state-of-the-art systems across language, vision, and multimodal learning tasks, yet the relevance scale of their functional blocks (self-attention and feed-forward networks) is typically constant across inputs and depth. This static design neglects context-sensitive regulation of information flow through residual pathways. We introduce the \\emph{contextual modulator}: a lightweight, input-aware mechanism that can scale the outputs of linear sublayers within a block or the entire block output at token- and channel-level granularity. The modulator is implemented via compact parametric functions and adds negligible parameter overhead. Building on this idea, we propose Transponder, which integrates contextual modulators throughout Transformer blocks to endow functional residual architectures with fine-grained, input-adaptive control. Transponder provides evident improvement over six other scaling or normalization methods across LLaMA backbones ranging from 60M to 250M parameters, yielding consistent perplexity reductions with $&amp;lt;1\\%$ additional parameters. Analysis reveals depth-, module-, and token-specific scaling patterns, indicating that learned modulators act as input-adaptive regulators of residual information flow. Transponder provides a simple, general mechanism to augment Transformer-based models with context-sensitive modulators, providing robust and significant performance improvements without substantial architectural changes. \n\n10. Attention Sinks and Compression Valleys in LLMs are Two Sides of the Same Coin\n   ID: hkknzf862e4i\n   2025 · Arroyo, Alvaro, Barbero, Federico, Dong, Xiaowen\n   DOI: 10.48550/arxiv.2510.06477\n   Abstract: Attention sinks and compression valleys have attracted significant attention as two puzzling phenomena in large language models, but have been studied in isolation. In this work, we present a surprising connection between attention sinks and compression valleys, tracing both to the formation of massive activations in the residual stream. We prove theoretically that massive activations necessarily produce representational compression and establish bounds on the resulting entropy reduction. Through experiments across several models (410M-120B parameters), we confirm that when the beginning-of-sequence token develops extreme activation norms in the middle layers, both compression valleys and attention sinks emerge simultaneously. Targeted ablation studies validate our theoretical predictions. This unified view motivates us to propose the Mix-Compress-Refine theory of information flow, as an attempt to explain how LLMs organize their computation in depth by controlling attention and representational compression via massive activations. Specifically, we posit that Transformer-based LLMs process tokens in three distinct phases: (1) broad mixing in the early layers, (2) compressed computation with limited mixing in the middle layers, and (3) selective refinement in the late layers. Our framework helps explain why embedding tasks perform best at intermediate layers, whereas generation tasks benefit from full-depth processing, clarifying differences in task-dependent representations. "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "How do Transformer feed-forward networks implement key-value memories and additive vector contributions in the residual stream, and what is known about cancellation or suppression between neuron contributions?",
+        "papers": [
+          {
+            "id": 3214652767,
+            "title": "Transformer Feed-Forward Layers Are Key-Value Memories",
+            "is_archived": false,
+            "full_slug": "transformer-feed-forward-layers-are-key-value-memories-1rremy5lb3",
+            "journal": null,
+            "conference_series": {
+              "display_name": "Empirical Methods in Natural Language Processing",
+              "id": 1192655580,
+              "slug": "empirical-methods-in-natural-language-processing",
+              "unique_id": "24q1w44i",
+              "full_slug": "empirical-methods-in-natural-language-processing-24q1w44i"
+            },
+            "date": "2020-12-29T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Proceedings Article",
+            "doi": null,
+            "unique_id": "1rremy5lb3",
+            "abstract": "Feed-forward layers constitute two-thirds of a transformer model’s parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys’ input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model’s layers via residual connections to produce the final output distribution.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Mor Geva",
+                  "id": 2736090994,
+                  "slug": "mor-geva",
+                  "unique_id": "1gd7lwckoe",
+                  "full_slug": "mor-geva-1gd7lwckoe",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Roei Schuster",
+                  "id": 2499484578,
+                  "slug": "roei-schuster",
+                  "unique_id": "31p2s8uzup",
+                  "full_slug": "roei-schuster-31p2s8uzup",
+                  "affiliation_full_slug": "cornell-university-azbw8aij"
+                },
+                {
+                  "display_name": "Jonathan Berant",
+                  "id": 86633810,
+                  "slug": "jonathan-berant",
+                  "unique_id": "xq0yi3eath",
+                  "full_slug": "jonathan-berant-xq0yi3eath",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Omer Levy",
+                  "id": 2250897584,
+                  "slug": "omer-levy",
+                  "unique_id": "3yyxn6iecc",
+                  "full_slug": "omer-levy-3yyxn6iecc",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Tel Aviv University",
+                  "city": "Tel Aviv",
+                  "region": null,
+                  "country": "Israel",
+                  "id": 16391192,
+                  "slug": "tel-aviv-university",
+                  "unique_id": "3moiq3qe",
+                  "full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Cornell University",
+                  "city": "Ithaca",
+                  "region": "New York",
+                  "country": "United States",
+                  "id": 205783295,
+                  "slug": "cornell-university",
+                  "unique_id": "azbw8aij",
+                  "full_slug": "cornell-university-azbw8aij"
+                }
+              ]
+            },
+            "fulltext_url": null,
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://dblp.uni-trier.de/db/conf/emnlp/emnlp2021-1.html#GevaSBL21",
+                  "https://arxiv.org/abs/2012.14913"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This article showed that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3117576675,
+            "title": "Transformer Feed-Forward Layers Are Key-Value Memories",
+            "is_archived": false,
+            "full_slug": "transformer-feed-forward-layers-are-key-value-memories-43k1jbril6",
+            "journal": {
+              "display_name": "arXiv: Computation and Language",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2596401190,
+              "slug": "arxiv-computation-and-language",
+              "unique_id": "39f4jlbk",
+              "full_slug": "arxiv-computation-and-language-39f4jlbk"
+            },
+            "conference_series": null,
+            "date": "2020-12-29T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "43k1jbril6",
+            "abstract": "Feed-forward layers constitute two-thirds of a transformer model's parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys' input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model's layers via residual connections to produce the final output distribution.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Mor Geva",
+                  "id": 2736090994,
+                  "slug": "mor-geva",
+                  "unique_id": "1gd7lwckoe",
+                  "full_slug": "mor-geva-1gd7lwckoe",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Roei Schuster",
+                  "id": 2499484578,
+                  "slug": "roei-schuster",
+                  "unique_id": "31p2s8uzup",
+                  "full_slug": "roei-schuster-31p2s8uzup",
+                  "affiliation_full_slug": "cornell-university-azbw8aij"
+                },
+                {
+                  "display_name": "Jonathan Berant",
+                  "id": 86633810,
+                  "slug": "jonathan-berant",
+                  "unique_id": "xq0yi3eath",
+                  "full_slug": "jonathan-berant-xq0yi3eath",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Omer Levy",
+                  "id": 2250897584,
+                  "slug": "omer-levy",
+                  "unique_id": "3yyxn6iecc",
+                  "full_slug": "omer-levy-3yyxn6iecc",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Tel Aviv University",
+                  "city": "Tel Aviv",
+                  "region": null,
+                  "country": "Israel",
+                  "id": 16391192,
+                  "slug": "tel-aviv-university",
+                  "unique_id": "3moiq3qe",
+                  "full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Cornell University",
+                  "city": "Ithaca",
+                  "region": "New York",
+                  "country": "United States",
+                  "id": 205783295,
+                  "slug": "cornell-university",
+                  "unique_id": "azbw8aij",
+                  "full_slug": "cornell-university-azbw8aij"
+                }
+              ]
+            },
+            "fulltext_url": "http://arxiv.org/pdf/2012.14913.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://arxiv.org/pdf/2012.14913.pdf",
+                  "http://ui.adsabs.harvard.edu/abs/2020arXiv201214913G/abstract"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 17
+              }
+            },
+            "tldr": "This paper showed that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4059830759,
+            "title": "Transformer Feed-Forward Layers Are Key-Value Memories",
+            "is_archived": false,
+            "full_slug": "transformer-feed-forward-layers-are-key-value-memories-24jpyvwxnp45",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": null,
+            "publication_type": null,
+            "doi": "10.18653/v1/2021.emnlp-main.446",
+            "unique_id": "24jpyvwxnp45",
+            "abstract": "Feed-forward layers constitute two-thirds of a transformer model's parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys' input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model's layers via residual connections to produce the final output distribution.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Mor Geva",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Roei Schuster",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Jonathan Berant",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Omer Levy",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Transformer feed-forward layers function as key-value memories, capturing textual patterns and inducing output distributions, with lower layers learning shallow patterns and upper layers learning more semantic ones, refining output via residual connections.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4022966938,
+            "title": "Empirical Study on Updating Key-Value Memories in Transformer Feed-forward Layers",
+            "is_archived": false,
+            "full_slug": "empirical-study-on-updating-key-value-memories-in-1ajrsbk49x",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2024-02-19T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2402.12233",
+            "unique_id": "1ajrsbk49x",
+            "abstract": "The feed-forward networks (FFNs) in transformers are recognized as a group of key-value neural memories to restore abstract high-level knowledge. In this work, we conduct an empirical ablation study on updating keys (the 1st layer in the FFNs layer) or values (the 2nd layer in the FFNs layer). We compare those two methods in various knowledge editing and fine-tuning tasks of large language models to draw insights to understand FFNs further. Code is available at $\\href{https://github.com/qiuzh20/Tuning-keys-v.s.-values}{this\\,repo}$.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Zihan Qiu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zeyu Huang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Youcheng Huang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Jie Fu",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": 1
+              }
+            },
+            "tldr": "This work conducts an empirical ablation study on updating keys or values in the feed-forward networks, comparing those two methods in various knowledge editing and fine-tuning tasks of large language models to draw insights to understand FFNs further.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4072625100,
+            "title": "Memory-Augmented Transformers: A Systematic Review from Neuroscience Principles to Enhanced Model Architectures",
+            "is_archived": false,
+            "full_slug": "memory-augmented-transformers-a-systematic-review-from-mbcsa879d4ow",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-08-14T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2508.10824",
+            "unique_id": "mbcsa879d4ow",
+            "abstract": "Memory is fundamental to intelligence, enabling learning, reasoning, and adaptability across biological and artificial systems. While Transformer architectures excel at sequence modeling, they face critical limitations in long-range context retention, continual learning, and knowledge integration. This review presents a unified framework bridging neuroscience principles, including dynamic multi-timescale memory, selective attention, and consolidation, with engineering advances in Memory-Augmented Transformers. We organize recent progress through three taxonomic dimensions: functional objectives (context extension, reasoning, knowledge integration, adaptation), memory representations (parameter-encoded, state-based, explicit, hybrid), and integration mechanisms (attention fusion, gated control, associative retrieval). Our analysis of core memory operations (reading, writing, forgetting, and capacity management) reveals a shift from static caches toward adaptive, test-time learning systems. We identify persistent challenges in scalability and interference, alongside emerging solutions including hierarchical buffering and surprise-gated updates. This synthesis provides a roadmap toward cognitively-inspired, lifelong-learning Transformer architectures. ",
+            "authors": {
+              "total": 6,
+              "data": [
+                {
+                  "display_name": "Parsa Omidi",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Xingshuai Huang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Axel Laborieux",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Bahareh Nikpour",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Tianyu Shi",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Armaghan Eshaghi",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/memory-augmented-transformers-a-systematic-review-from-mbcsa879d4ow.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2508.10824v2.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This review synthesizes neuroscience principles with engineering advances to develop Memory-Augmented Transformers, addressing limitations in long-range context retention, continual learning, and knowledge integration through a unified framework and three taxonomic dimensions.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4003829066,
+            "title": "Neural Knowledge Bank for Pretrained Transformers",
+            "is_archived": false,
+            "full_slug": "neural-knowledge-bank-for-pretrained-transformers-3t741zrp",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2022-07-31T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arXiv.2208.00399",
+            "unique_id": "3t741zrp",
+            "abstract": "The ability of pretrained Transformers to remember factual knowledge is essential but still limited for existing models. Inspired by existing work that regards Feed-Forward Networks (FFNs) in Transformers as key-value memories, we design a Neural Knowledge Bank (NKB) and a knowledge injection strategy to introduce extra factual knowledge for pretrained Transformers. The NKB is in the form of additional knowledgeable memory slots to the FFN and the memory-like architecture makes it highly interpretable and flexible. When injecting extra knowledge with the Salient Span Masking (SSM) pretraining objective, we fix the original pretrained model and train only the NKB. This training strategy makes sure the general language modeling ability of the original pretrained model is not influenced. By mounting the NKB onto the T5 model, we verify its strong ability to store extra factual knowledge based on three closed-book question answering datasets. Also, we prove that mounting the NKB will not degrade the general language modeling ability of T5 through two representative tasks, summarization and machine translation. Further, we thoroughly analyze the interpretability of the NKB and reveal the meaning of its keys and values in a human-readable way. Finally, we show the flexibility of the NKB by directly modifying its value vectors to update the factual knowledge stored in it.",
+            "authors": {
+              "total": 6,
+              "data": [
+                {
+                  "display_name": "Damai Dai",
+                  "id": 2891250805,
+                  "slug": "damai-dai",
+                  "unique_id": "3t1embjc1n",
+                  "full_slug": "damai-dai-3t1embjc1n"
+                },
+                {
+                  "display_name": "Wen-Jie Jiang",
+                  "id": 2666862296,
+                  "slug": "wen-jie-jiang",
+                  "unique_id": "222rbml1m5",
+                  "full_slug": "wen-jie-jiang-222rbml1m5"
+                },
+                {
+                  "display_name": "Qingxiu Dong",
+                  "id": 3121252400,
+                  "slug": "qingxiu-dong",
+                  "unique_id": "469jrhi2b9",
+                  "full_slug": "qingxiu-dong-469jrhi2b9"
+                },
+                {
+                  "display_name": "Yajuan Lyu",
+                  "id": 2770769292,
+                  "slug": "yajuan-lyu",
+                  "unique_id": "23m7hgrgu1",
+                  "full_slug": "yajuan-lyu-23m7hgrgu1"
+                },
+                {
+                  "display_name": "Qiaoqiao She",
+                  "id": 2886754662,
+                  "slug": "qiaoqiao-she",
+                  "unique_id": "20w402q5le",
+                  "full_slug": "qiaoqiao-she-20w402q5le"
+                },
+                {
+                  "display_name": "Zhifang Sui",
+                  "id": 2949655638,
+                  "slug": "zhifang-sui",
+                  "unique_id": "4xj99770j8",
+                  "full_slug": "zhifang-sui-4xj99770j8"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/neural-knowledge-bank-for-pretrained-transformers-3t741zrp.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2208.00399v2.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 14
+              }
+            },
+            "tldr": "A Neural Knowledge Bank (NKB) and a knowledge in- jection strategy to introduce extra factual knowledge for pretrained Transformers and the interpretability of the NKB is thoroughly analyzed and reveal the meaning of its keys and values in a human-readable way.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4014184784,
+            "title": "Neural Knowledge Bank for Pretrained Transformers",
+            "is_archived": false,
+            "full_slug": "neural-knowledge-bank-for-pretrained-transformers-m2kfpz34",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-07-31T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2208.00399",
+            "unique_id": "m2kfpz34",
+            "abstract": "The ability of pretrained Transformers to remember factual knowledge is essential but still limited for existing models. Inspired by existing work that regards Feed-Forward Networks (FFNs) in Transformers as key-value memories, we design a Neural Knowledge Bank (NKB) and a knowledge injection strategy to introduce extra factual knowledge for pretrained Transformers. The NKB is in the form of additional knowledgeable memory slots to the FFN and the memory-like architecture makes it highly interpretable and flexible. When injecting extra knowledge with the Salient Span Masking (SSM) pretraining objective, we fix the original pretrained model and train only the NKB. This training strategy makes sure the general language modeling ability of the original pretrained model is not influenced. By mounting the NKB onto the T5 model, we verify its strong ability to store extra factual knowledge based on three closed-book question answering datasets. Also, we prove that mounting the NKB will not degrade the general language modeling ability of T5 through two representative tasks, summarization and machine translation. Further, we thoroughly analyze the interpretability of the NKB and reveal the meaning of its keys and values in a human-readable way. Finally, we show the flexibility of the NKB by directly modifying its value vectors to update the factual knowledge stored in it. ",
+            "fulltext_url": "/pdf/neural-knowledge-bank-for-pretrained-transformers-m2kfpz34.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2208.00399"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 3
+              }
+            },
+            "tldr": "In this article , a Neural Knowledge Bank (NKB) and a knowledge injection strategy was proposed to introduce extra factual knowledge for pretrained Transformers, which is in the form of additional knowledgeable memory slots to the FFN.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4040423086,
+            "title": "Neural Knowledge Bank for Pretrained Transformers",
+            "is_archived": false,
+            "full_slug": "neural-knowledge-bank-for-pretrained-transformers-2wlnvxdhgl",
+            "journal": {
+              "display_name": "Lecture Notes in Computer Science",
+              "official_page": "http://www.springer.com/lncs",
+              "issn": "0302-9743",
+              "alias": [
+                "LNCS",
+                "0302-9743",
+                "Springer Series-ID 558",
+                "Springer Series 558",
+                "Springer Lecture Notes in Computer Science"
+              ],
+              "id": 106296714,
+              "slug": "lecture-notes-in-computer-science",
+              "unique_id": "toobp8l4",
+              "full_slug": "lecture-notes-in-computer-science-toobp8l4"
+            },
+            "conference_series": null,
+            "date": "2023-01-01T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Book Chapter",
+            "doi": "10.1007/978-3-031-44696-2_60",
+            "unique_id": "2wlnvxdhgl",
+            "abstract": "The ability of pretrained Transformers to remember factual knowledge is essential but still limited for existing models. Inspired by existing work that regards Feed-Forward Networks (FFNs) in Transformers as key-value memories, we design a Neural Knowledge Bank (NKB) and a knowledge injection strategy to introduce extra factual knowledge for pretrained Transformers. The NKB is in the form of additional knowledgeable memory slots to the FFN and the memory-like architecture makes it highly interpretable and flexible. When injecting extra knowledge with the Salient Span Masking (SSM) pretraining objective, we fix the original pretrained model and train only the NKB. This training strategy makes sure the general language modeling ability of the original pretrained model is not influenced. By mounting the NKB onto T5, we verify its strong ability to store extra factual knowledge based on three closed-book question answering datasets. Also, we prove that mounting the NKB will not degrade the general language modeling ability of T5 through two representative tasks, summarization and machine translation. Further, we analyze the interpretability of the NKB and reveal the meaning of its keys and values in a human-readable way. Finally, we show the flexibility of the NKB by directly modifying its value vectors to update the factual knowledge stored in it. The code is available at https://github.com/Hunter-DDM/nkb . ",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Damai Dai",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Wenbin Jiang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Qingxiu Dong",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yajuan Lyu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zhifang Sui",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": 3
+              }
+            },
+            "tldr": "The Neural Knowledge Bank (NKB) is a novel memory module designed to enhance the factual knowledge storage capacity of pretrained Transformers. It consists of additional memory slots within the Feed-Forward Network (FFN) and is highly interpretable and flexible. The NKB is effective in storing and retrieving factual knowledge, as demonstrated through its performance on closed-book question answering tasks.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4097920385,
+            "title": "From Transformer to Transponder: Introducing Contextual Modulation Training for Residual Learning in LLMs",
+            "is_archived": false,
+            "full_slug": "from-transformer-to-transponder-introducing-contextual-zhy1q77f9aht",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-09-30T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Repository",
+            "doi": "10.20944/preprints202506.0120.v2",
+            "unique_id": "zhy1q77f9aht",
+            "abstract": "Transformers are the backbone of state-of-the-art systems across language, vision, and multimodal learning tasks, yet the relevance scale of their functional blocks (self-attention and feed-forward networks) is typically constant across inputs and depth. This static design neglects context-sensitive regulation of information flow through residual pathways. We introduce the \\emph{contextual modulator}: a lightweight, input-aware mechanism that can scale the outputs of linear sublayers within a block or the entire block output at token- and channel-level granularity. The modulator is implemented via compact parametric functions and adds negligible parameter overhead. Building on this idea, we propose Transponder, which integrates contextual modulators throughout Transformer blocks to endow functional residual architectures with fine-grained, input-adaptive control. Transponder provides evident improvement over six other scaling or normalization methods across LLaMA backbones ranging from 60M to 250M parameters, yielding consistent perplexity reductions with $&amp;lt;1\\%$ additional parameters. Analysis reveals depth-, module-, and token-specific scaling patterns, indicating that learned modulators act as input-adaptive regulators of residual information flow. Transponder provides a simple, general mechanism to augment Transformer-based models with context-sensitive modulators, providing robust and significant performance improvements without substantial architectural changes. ",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Yingtao Zhang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Wenqi Gu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Wen Hu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Jianguo Li",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Carlo Vittorio Cannistraci",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4092366880,
+            "title": "Attention Sinks and Compression Valleys in LLMs are Two Sides of the Same Coin",
+            "is_archived": false,
+            "full_slug": "attention-sinks-and-compression-valleys-in-llms-are-two-hkknzf862e4i",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-09T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.06477",
+            "unique_id": "hkknzf862e4i",
+            "abstract": "Attention sinks and compression valleys have attracted significant attention as two puzzling phenomena in large language models, but have been studied in isolation. In this work, we present a surprising connection between attention sinks and compression valleys, tracing both to the formation of massive activations in the residual stream. We prove theoretically that massive activations necessarily produce representational compression and establish bounds on the resulting entropy reduction. Through experiments across several models (410M-120B parameters), we confirm that when the beginning-of-sequence token develops extreme activation norms in the middle layers, both compression valleys and attention sinks emerge simultaneously. Targeted ablation studies validate our theoretical predictions. This unified view motivates us to propose the Mix-Compress-Refine theory of information flow, as an attempt to explain how LLMs organize their computation in depth by controlling attention and representational compression via massive activations. Specifically, we posit that Transformer-based LLMs process tokens in three distinct phases: (1) broad mixing in the early layers, (2) compressed computation with limited mixing in the middle layers, and (3) selective refinement in the late layers. Our framework helps explain why embedding tasks perform best at intermediate layers, whereas generation tasks benefit from full-depth processing, clarifying differences in task-dependent representations. ",
+            "authors": {
+              "total": 6,
+              "data": [
+                {
+                  "display_name": "Arroyo, Alvaro",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Barbero, Federico",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Dong, Xiaowen",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Bronstein Michael",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "LeCun, Yann",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Shwartz-Ziv, Ravid",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/attention-sinks-and-compression-valleys-in-llms-are-two-hkknzf862e4i.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2510.06477"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

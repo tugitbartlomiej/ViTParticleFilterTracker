@@ -1,0 +1,23 @@
+tryb gesty_proba, węzeł hopper, GPU NVIDIA H100 PCIe, start Fri Oct  9 09:32:48 PM CEST 2026
+df /dev/shm: tmpfs           504G  4.1G  500G   1% /dev/shm
+      /mnt/evafs  107.9G    200G    220G       -  115890  200000  220000       -
+wolna kwota: 92.1 GB
+walidacja: 200 klatek (usunięto 0 wspólnych z treningiem)
+klatki: 512 z 116 archiwów w 5 s
+512 klatek, 2 epok, 32 kroków; końce epok: [16, 32]; zapisów wag: 9 (~0.1 GB)
+obserwator: 16 sond, PCA32 trzyma 0.986 wariancji kroku 0
+krok 0: mAP@0,5 0.0000
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+krok 16 (koniec epoki 1): mAP@0,5 0.0064
+epoka 1/2: krok 16, wolna kwota 92.0 GB, 21:37:50
+krok 20: mAP@0,5 0.0157
+krok 32 (koniec epoki 2): mAP@0,5 0.0839
+epoka 2/2: krok 32, wolna kwota 92.0 GB, 21:37:52
+KONIEC: krok 32, 9 plików wag, 17 s
+KONIEC gesty_proba Fri Oct  9 09:38:14 PM CEST 2026
+pliki w /tmp powstałe w czasie zadania (puste = czysto):
+moje wpisy w /dev/shm po sprzątaniu (puste = czysto):
+76M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/wyniki/gesty_proba
+      /mnt/evafs    108G    200G    220G       -  115920  200000  220000       -

@@ -8,6 +8,8 @@ Okienka (każde można zamknąć, odpiąć jako osobne okno albo przesunąć; me
   4. Atencja 6 bloków (mozaika)               5. Mapa na zdjęciu (centra, drgania, atencja, natężenie reflektora)
   6. Wielkość trzech składowych ruchu         7. IoU    8. Pewność    9. Pary przeciwnych reflektorów
   10. Obrót igieł reflektorów (gradient, film 23); na sferze strzałki obrotu („Strzałki obrotu” w sekcji sfery)
+  11. Pułapka optyczna (ogniskowa wiązek)     12. Dolina pewności i IoU wybranej cząsteczki (dolina.py; też na sferze)
+  13. Reflektor: mechanika (reflektor_mechanika.py): odrzut wiązek i wykonany ruch igły, celownika i progu
 Wszystkie okienka pokazują tę samą chwilę osi czasu (suwak, odtwarzanie, klik w wykres). Rysują shadery (lasery_gpu.py).
 """
 from __future__ import annotations
@@ -25,7 +27,7 @@ from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDockWidget, QDoubleSpinBox, 
 import lasery_dane as LD
 import ogniskowa as OGN
 import przejscia_zapis as PZ
-from lasery_gpu import MapyNaZdjeciu, PoleOgniskowej, PrzejscieGPU, RuchPlaski, SferaReflektorow
+from lasery_gpu import DolinaGPU, MapyNaZdjeciu, PoleOgniskowej, PrzejscieGPU, RuchPlaski, SchematGPU, SferaReflektorow
 from uklad import WaskiCombo
 from widok_gl import WidokGL
 
@@ -143,6 +145,62 @@ class PolePodkrokowWatek(QThread):
                 self.gotowe.emit(klucz, dict(blad_watku=f'{type(e).__name__}: {e}'))
 
 
+class DolinaWatek(QThread):
+    """Przekrój doliny pewności i IoU (dolina.Liczydlo.policz) w tle. Zlecenia nadpisują się: liczy się tylko ostatnie."""
+    gotowe = pyqtSignal(object, object)
+
+    def __init__(self):
+        super().__init__()
+        self._zlecenie = None
+        self._liczydlo = None
+
+    def zlec(self, klucz, h, *args):
+        self._zlecenie = (klucz, h, args)
+        if not self.isRunning():
+            self.start()
+
+    def run(self):
+        import dolina as DL_
+        while self._zlecenie is not None:
+            klucz, h, args = self._zlecenie; self._zlecenie = None
+            try:
+                if self._liczydlo is None or self._liczydlo.h is not h:
+                    self._liczydlo = DL_.Liczydlo(h)
+                self.gotowe.emit(klucz, self._liczydlo.policz(*args))
+            except Exception as e:                                       # noqa: BLE001
+                import traceback
+                traceback.print_exc()
+                self.gotowe.emit(klucz, dict(blad_watku=f'{type(e).__name__}: {e}'))
+
+
+class MechanikaWatek(QThread):
+    """Mechanika reflektora (reflektor_mechanika.Liczydlo.policz) w tle. Zlecenia nadpisują się: liczy się tylko ostatnie."""
+    gotowe = pyqtSignal(object, object)
+
+    def __init__(self):
+        super().__init__()
+        self._zlecenie = None
+        self._liczydlo = None
+
+    def zlec(self, klucz, h, *args):
+        self._zlecenie = (klucz, h, args)
+        if not self.isRunning():
+            self.start()
+
+    def run(self):
+        import reflektor_mechanika as RM
+        while self._zlecenie is not None:
+            klucz, h, args = self._zlecenie; self._zlecenie = None
+            try:
+                if self._liczydlo is None or self._liczydlo.h is not h:
+                    self._liczydlo = RM.Liczydlo(h)
+                self.gotowe.emit(klucz, self._liczydlo.policz(*args))
+            except Exception as e:                                       # noqa: BLE001
+                import traceback
+                traceback.print_exc()
+                self.gotowe.emit(klucz, dict(blad_watku=f'{type(e).__name__}: {e}'))
+
+
 class PomiaryPulapkiWatek(QThread):
     """Pomiary pułapki w podkrokach dla całej historii (pulapka_obliczenia.policz_historie), w tle; zapis npz + csv."""
     postep = pyqtSignal(int, int, str)
@@ -166,18 +224,36 @@ class PomiaryPulapkiWatek(QThread):
 
 
 class Zwijana(QGroupBox):
-    """Sekcja panelu zwijana kliknięciem w tytuł (pole wyboru grupy): zwinięta pokazuje tylko tytuł."""
+    """Sekcja panelu zwijana strzałką w nagłówku: ▾ rozwinięta, ▸ zwinięta (klik w cały nagłówek). Zwinięta pokazuje tylko nagłówek.
+    Nagłówek leży nad treścią (górny margines treści = jego wysokość), więc sekcje budują się jak zwykły QGroupBox: QFormLayout(g)."""
 
     def __init__(self, tytul):
-        super().__init__(tytul)
-        self.setCheckable(True); self.setChecked(True)
-        self.setToolTip('Kliknij pole przy tytule, żeby zwinąć albo rozwinąć sekcję.')
-        self.toggled.connect(self._zwin)
+        super().__init__()
+        self.naglowek = QToolButton(self)
+        self.naglowek.setText(tytul); self.naglowek.setCheckable(True); self.naglowek.setChecked(True)
+        self.naglowek.setArrowType(Qt.ArrowType.DownArrow)
+        self.naglowek.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.naglowek.setAutoRaise(True)
+        self.naglowek.setStyleSheet('QToolButton { border: none; font-weight: bold; padding: 3px 2px; }'
+                                    'QToolButton:hover { background: rgba(255, 255, 255, 0.07); }')
+        self.naglowek.setToolTip('Kliknij, żeby zwinąć (▸) albo rozwinąć (▾) sekcję.')
+        self.naglowek.toggled.connect(self._zwin)
+        self._wys = self.naglowek.sizeHint().height() + 2
+        self.setContentsMargins(0, self._wys, 0, 0)
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        self.naglowek.setGeometry(3, 1, max(self.width() - 6, 10), self._wys - 2)
+
+    def zwinieta(self):
+        return not self.naglowek.isChecked()
 
     def _zwin(self, on):
+        self.naglowek.setArrowType(Qt.ArrowType.DownArrow if on else Qt.ArrowType.RightArrow)
         for w in self.findChildren(QWidget, options=Qt.FindChildOption.FindDirectChildrenOnly):
-            w.setVisible(on)
-            w.setEnabled(True)
+            if w is not self.naglowek:
+                w.setVisible(on)
+        self.setMaximumHeight(16777215 if on else self._wys + 3)       # zwinięta: sam nagłówek (bez marginesów pustej treści)
 
 
 def plaski_podkrokow(d, g_, narz):
@@ -899,6 +975,90 @@ class ZakladkaLaserow(QWidget):
         for w in (self.ch_pierw, self.ch_rm, self.ch_rg):
             w.toggled.connect(self._opcje)
         ll.addWidget(g)
+
+        # --- dolina pewności i IoU (okienko 12)
+        g = Zwijana('Dolina pewności i IoU wybranej cząsteczki (okienko 12)'); f = QFormLayout(g)
+        self.ch_dol = QCheckBox('licz dolinę w bieżącym checkpoincie'); self.ch_dol.setChecked(True)
+        self.ch_dol.setToolTip('Gdzie w przestrzeni stanu cząsteczki (192 wymiary, wejście MLP bloku 6) głowa dawałaby wysoką pewność\n'
+                               'i dobre IoU ramki. Głowa czyta z położenia tylko 5 kierunków (ściany doliny); w pozostałych 187\n'
+                               '(dno doliny) odpowiedź z bliska się nie zmienia. Rysowany jest przekrój 3D przez cząsteczkę.\n'
+                               'Liczy się w tle przy każdej zmianie checkpointu (oś uczenia, nie podkroki).')
+        self.cb_dol_baza = WaskiCombo()
+        import dolina as DL_
+        self.cb_dol_baza.addItems(list(DL_.OPIS_BAZ))
+        self.cb_dol_baza.setToolTip('Które 3 kierunki z 192 tworzą przekrój:\n'
+                                    '• osie sfery: dokładnie te, które widać na sferze reflektorów (przekrój leży w rysowanym rzucie);\n'
+                                    '• ściany: 3 najsilniejsze kierunki czytane przez głowę (dolina z bliska jest wąska);\n'
+                                    '• w poprzek: 2 kierunki czytane + 1 kierunek dna (rynna: wąsko w poprzek, długo wzdłuż);\n'
+                                    '• dno: 3 kierunki, których głowa nie czyta (z bliska nic się nie zmienia, daleko widać zakrzywienie dna).\n'
+                                    'Na dużej sferze dla baz innych niż osie sfery rysuje się cień przekroju (jego rzut na osie sfery).')
+        self.sp_dol_G = _spin(12, 72, 40, 4); self.sp_dol_G.setToolTip('Punkty siatki na bok sześcianu przekroju (G³ wywołań głowy).')
+        self.sp_dol_zas = _spin(0.1, 3.0, 1.0, 0.1, 2, ' × r99')
+        self.sp_dol_zas.setToolTip('Połowa boku sześcianu przekroju jako ułamek promienia chmury cząsteczek (99. percentyl odległości od środka).')
+        self.sp_dol_p = _spin(0.0, 0.999, 0.5, 0.05, 3); self.sp_dol_p.setToolTip('Próg pewności p = σ(logit) w dolinie.')
+        self.sp_dol_iou = _spin(0.0, 0.999, 0.5, 0.05, 3); self.sp_dol_iou.setToolTip('Próg IoU ramki tej cząsteczki z prawdziwą ramką.')
+        self.ch_dol_mgla = QCheckBox('mgła: punkty doliny (jaśniejsze = dalej nad progami)'); self.ch_dol_mgla.setChecked(True)
+        self.ch_dol_obrys = QCheckBox('obrys: brzeg doliny (powierzchnia progu)'); self.ch_dol_obrys.setChecked(True)
+        self.sp_dol_tlo = _spin(0, 1, 0.0, 0.05, 2)
+        self.sp_dol_tlo.setToolTip('Jasność miejsc, gdzie nad progiem jest tylko jedno: pomarańczowe = sama pewność, niebieskie = samo IoU (0 = ukryte).')
+        self.sp_dol_jas = _spin(0.05, 5, 0.6, 0.05, 2); self.sp_dol_rozm = _spin(1, 30, 6.0, 0.5, 1)
+        self.ch_dol_sfera = QCheckBox('dolina także na sferze reflektorów (wokół cząsteczki)'); self.ch_dol_sfera.setChecked(True)
+        self.ch_dol_kamera = QCheckBox('kamera okienka 12 obraca się powoli'); self.ch_dol_kamera.setChecked(False)
+        f.addRow(self.ch_dol); f.addRow('Przekrój', self.cb_dol_baza); f.addRow('Siatka G', self.sp_dol_G)
+        f.addRow('Pół boku', self.sp_dol_zas); f.addRow('Próg pewności', self.sp_dol_p); f.addRow('Próg IoU', self.sp_dol_iou)
+        f.addRow(self.ch_dol_mgla); f.addRow(self.ch_dol_obrys); f.addRow('Tylko jedno nad progiem', self.sp_dol_tlo)
+        f.addRow('Jasność mgły', self.sp_dol_jas); f.addRow('Wielkość punktów [px]', self.sp_dol_rozm)
+        f.addRow(self.ch_dol_sfera); f.addRow(self.ch_dol_kamera)
+        self.lb_dol = QLabel('—'); self.lb_dol.setWordWrap(True); f.addRow(self.lb_dol)
+        for w in (self.ch_dol, self.ch_dol_sfera):
+            w.toggled.connect(lambda *_: self._dol_zlec())
+        self.cb_dol_baza.currentIndexChanged.connect(lambda *_: self._dol_zlec())
+        for w in (self.sp_dol_G, self.sp_dol_zas):
+            w.valueChanged.connect(lambda *_: self._dol_zlec())
+        for w in (self.sp_dol_p, self.sp_dol_iou):
+            w.valueChanged.connect(lambda *_: self._dol_progi())
+        for w in (self.ch_dol_mgla, self.ch_dol_obrys):
+            w.toggled.connect(lambda *_: self._dol_wyglad())
+        for w in (self.sp_dol_tlo, self.sp_dol_jas, self.sp_dol_rozm):
+            w.valueChanged.connect(lambda *_: self._dol_wyglad())
+        self.ch_dol_kamera.toggled.connect(lambda on: self._dol_obrot.start() if on else self._dol_obrot.stop())
+        self.sp_tok.valueChanged.connect(lambda *_: self._dol_zlec())
+        self._dol = None; self._dol_klucz = None
+        ll.addWidget(g)
+
+        # --- mechanika reflektora (okienko 13)
+        g = Zwijana('Reflektor: mechanika — odrzut wiązek i ruch (okienko 13)'); f = QFormLayout(g)
+        self.ch_mech = QCheckBox('licz mechanikę wybranego reflektora (blok 6)'); self.ch_mech.setChecked(True)
+        self.ch_mech.setToolTip('Reflektor = „Reflektor” z sekcji sfery (neuron c bloku 6), token = „Cząsteczka”.\n'
+                                'Siła pola celu na koloid j to −∂L/∂x_j; wiązka przenosi ją na reflektor proporcjonalnie do jasności z_jc.\n'
+                                'Wypadkowy odrzut na igłę v_c to dokładnie −∂L/∂v_c = Σ_j z_jc F_j (zasada Z22).\n'
+                                'Wykonany ruch = różnica wag do następnego checkpointu (suma 10 albo 100 kroków AdamW).')
+        self.cb_mech_zr = WaskiCombo()
+        self.cb_mech_zr.addItems(['odrzut z tego zdjęcia (sonda)', 'odrzut z paczki 64 klatek zbioru uczącego'])
+        self.cb_mech_zr.setToolTip('Sonda: to jedno zdjęcie (mały kawałek prawdziwego odrzutu). Paczka: 64 stałe klatki zbioru uczącego,\n'
+                                   'bez augmentacji, fp32, bez obcinania gradientu — najbliżej tego, co naprawdę przestawiało reflektor.\n'
+                                   'Pierwsze liczenie paczki wczytuje 64 klatki z archiwów (kilka sekund), potem ~1 s na checkpoint.\n'
+                                   'Linki tokenów są zawsze z oglądanego zdjęcia.')
+        self.sp_mech_przes = _spin(0, 500, 0, 1, 0, ' ×'); self.sp_mech_przes.setSpecialValueText('auto')
+        self.sp_mech_przes.setToolTip('Przesada obrotów i przesunięć na rysunku (0 = auto: największy obrót ≈ 25°). Kąty w opisie są prawdziwe.')
+        self.sp_mech_linki = _spin(0, 80, 20, 2); self.sp_mech_linki.setToolTip('Ile najsilniejszych linek tokenów rysować (wybrany token zawsze).')
+        self.ch_mech_cel = QCheckBox('celownik w_c'); self.ch_mech_cel.setChecked(True)
+        self.ch_mech_prog = QCheckBox('suwak progu b_c'); self.ch_mech_prog.setChecked(True)
+        self.ch_mech_nap = QCheckBox('napisy'); self.ch_mech_nap.setChecked(True)
+        f.addRow(self.ch_mech); f.addRow('Odrzut', self.cb_mech_zr); f.addRow('Przesada ruchu', self.sp_mech_przes)
+        f.addRow('Linki tokenów', self.sp_mech_linki)
+        hb = QHBoxLayout(); hb.addWidget(self.ch_mech_cel); hb.addWidget(self.ch_mech_prog); hb.addWidget(self.ch_mech_nap); f.addRow(hb)
+        self.lb_mech = QLabel('—'); self.lb_mech.setWordWrap(True); f.addRow(self.lb_mech)
+        self.ch_mech.toggled.connect(lambda *_: self._mech_zlec())
+        self.cb_mech_zr.currentIndexChanged.connect(lambda *_: self._mech_zlec())
+        for w in (self.sp_tok, self.sp_refl):
+            w.valueChanged.connect(lambda *_: self._mech_zlec())
+        for w in (self.sp_mech_przes, self.sp_mech_linki):
+            w.valueChanged.connect(lambda *_: self._mech_rysuj())
+        for w in (self.ch_mech_cel, self.ch_mech_prog, self.ch_mech_nap):
+            w.toggled.connect(lambda *_: self._mech_rysuj())
+        self._mech = None
+        ll.addWidget(g)
         ll.addStretch(1)
 
         # --- pasek osi czasu
@@ -966,6 +1126,26 @@ class ZakladkaLaserow(QWidget):
         self._pp_pole = None; self._pp_klucz = None; self._pp_cache = {}
         self.watek_pp = PolePodkrokowWatek(); self.watek_pp.gotowe.connect(self._pole_pod_gotowe)
         self._dok('11', '11. Pułapka optyczna: koloid skacze w polu wiązek (blok 6)', self._z_napisem(self.vog, 'lb11'))
+        # okienko 12: dolina pewności i IoU wybranej cząsteczki (dolina.py); ta sama dolina wokół cząsteczki na dużej sferze
+        self.es_dol = DolinaGPU(); self.es_dol.setVisible(False); self.es_dol.setDepthValue(2); self.vs.addItem(self.es_dol)
+        self.vdol = WidokGL(); self.vdol.setBackgroundColor(TLO); self.vdol.setCameraPosition(distance=42, elevation=20, azimuth=-40)
+        self.edol = DolinaGPU(); self.vdol.addItem(self.edol)
+        self.watek_dol = DolinaWatek(); self.watek_dol.gotowe.connect(self._dol_gotowe)
+        self._dol_obrot = QTimer(self); self._dol_obrot.setInterval(33)
+        self._dol_obrot.timeout.connect(lambda: self.vdol.orbit(0.25, 0) if self.doki['12'].isVisible() else None)
+        self._dok('12', '12. Dolina pewności i IoU: gdzie cząsteczka daje dobrą odpowiedź (192 wymiary, przekrój 3D)',
+                  self._z_napisem(self.vdol, 'lb12'))
+        self.doki['12'].visibilityChanged.connect(lambda on: self._dol_zlec() if on else None)
+        # okienko 13: rysunek techniczny wybranego reflektora (reflektor_mechanika.py, reflektor_rysunek.py)
+        self.vmech = WidokGL(); self.vmech.setBackgroundColor(TLO)
+        self.vmech.setCameraPosition(distance=50, elevation=36, azimuth=-62)
+        from PyQt6.QtGui import QVector3D
+        self.vmech.opts['center'] = QVector3D(0.0, 0.0, 0.5)
+        self.emech = SchematGPU(); self.vmech.addItem(self.emech)
+        self._mech_napisy = []
+        self.watek_mech = MechanikaWatek(); self.watek_mech.gotowe.connect(self._mech_gotowe)
+        self._dok('13', '13. Reflektor: mechanika — odrzut wiązek, sprężyny i wykonany ruch (blok 6)', self._z_napisem(self.vmech, 'lb13'))
+        self.doki['13'].visibilityChanged.connect(lambda on: self._mech_zlec() if on else None)
         self._buduj_przejscie()
         self._uklad_domyslny()
         m = QMenu(self)
@@ -1031,6 +1211,8 @@ class ZakladkaLaserow(QWidget):
         self.okna.tabifyDockWidget(d['8'], d['9']); self.okna.tabifyDockWidget(d['9'], d['10']); d['8'].raise_()
         self.okna.tabifyDockWidget(d['4'], d['p']); d['4'].raise_()
         self.okna.tabifyDockWidget(d['5'], d['11']); d['11'].raise_()             # pułapka optyczna obok mapy 5
+        self.okna.tabifyDockWidget(d['11'], d['12'])                                # dolina pewności i IoU obok pułapki
+        self.okna.tabifyDockWidget(d['12'], d['13'])                                # mechanika reflektora obok doliny
         self.okna.resizeDocks([d['1'], d['s'], d['6']], [270, 560, 190], Vt)
         self.okna.resizeDocks([d['s'], d['4'], d['5']], [520, 620, 380], Hz)
 
@@ -1638,6 +1820,8 @@ class ZakladkaLaserow(QWidget):
         self._kolory_czastek()
         self._og = None; self._og_klucz = None
         self.eog.czysc(); self.es_og.czysc()
+        self._dol = None; self._dol_zlecony = None; self.edol.czysc(); self.es_dol.czysc(); self.es_dol.setVisible(False)
+        self._mech = None; self._mech_zlecony = None; self.emech.czysc()
         self._prz_opis()
         self._opcje()
         self.ustaw_czas(0.0)
@@ -1709,6 +1893,8 @@ class ZakladkaLaserow(QWidget):
                 self._og_zastosuj(self._og_klucz, self._og, kamera=False)
         if hasattr(self, 'eog'):
             self.eog.opcje['skala_chmury'] = self.es_og.opcje['skala_chmury'] = self.sp_skala_chm.value()
+        if getattr(self, '_dol', None) is not None:
+            self._dol_przeksztalcenie()
         self.es.update()
         al = self.sp_krycie.value(); gam = 0.5 if self.ch_pierw.isChecked() else 1.0
         for k in self.e4.kafelki:
@@ -2148,6 +2334,135 @@ class ZakladkaLaserow(QWidget):
         self.lb11.setText(f'krok {int(d["kroki"][k])}, cząsteczka {int(d["tok"])}:  {o_w}skok {pl(skok)} r99 (pomarańczowy);  '
                           f'kształt pola w koloidzie: {OGN.opis_lambda(d["lam0"][k])};  {o_p};  wiązki {"w pułapce" if zb else "w koloidzie"}: {wiazki}')
 
+    # ------------------------------------------------------------------ dolina pewności i IoU (okienko 12)
+    def _dol_klucz_teraz(self):
+        h = self.h
+        return (str(h.katalog), int(np.clip(round(self.t), 0, h.K - 1)), int(self.sp_tok.value()), self.cb_dol_baza.currentIndex(),
+                int(self.sp_dol_G.value()), round(float(self.sp_dol_zas.value()), 3))
+
+    def _dol_potrzebna(self):
+        return self.ch_dol.isChecked() and (self.doki['12'].isVisible() or self.ch_dol_sfera.isChecked())
+
+    def _dol_zlec(self):
+        """Zleca przekrój doliny dla bieżącego checkpointu i cząsteczki (tylko przy zmianie klucza; liczy się ostatnie zlecenie)."""
+        if self.h is None:
+            return
+        if not self._dol_potrzebna():
+            self.es_dol.setVisible(False)
+            return
+        tryb_pod = self.ch_pod.isChecked() and getattr(self, '_pp', None) is not None
+        self.es_dol.setVisible(self._dol is not None and self.ch_dol_sfera.isChecked() and not tryb_pod)
+        k = self._dol_klucz_teraz()
+        if k == getattr(self, '_dol_zlecony', None):
+            return
+        self._dol_zlecony = k
+        import dolina as DL_
+        self.watek_dol.zlec(k, self.h, k[1], k[2], DL_.BAZY[k[3]], k[4], k[5])
+
+    def _dol_czas(self, tryb_pod):
+        if self.h is None:
+            return
+        if tryb_pod:                                                 # podkroki mają inny rzut: dolina tylko w osi uczenia
+            self.es_dol.setVisible(False)
+            return
+        self._dol_zlec()
+
+    def _dol_gotowe(self, klucz, d):
+        if 'blad_watku' in d:
+            self.lb_dol.setText(f'Dolina: {d["blad_watku"]}'); return
+        if self.h is None or klucz[0] != str(self.h.katalog):
+            return
+        self._dol = d; self._dol_klucz = klucz
+        self.edol.ustaw_dane(d); self.es_dol.ustaw_dane(d)
+        self._dol_wyglad(); self._dol_progi(); self._dol_przeksztalcenie()
+        tryb_pod = self.ch_pod.isChecked() and getattr(self, '_pp', None) is not None
+        self.es_dol.setVisible(self.ch_dol.isChecked() and self.ch_dol_sfera.isChecked() and not tryb_pod)
+
+    def _dol_progi(self):
+        for e in (self.edol, self.es_dol):
+            e.opcje.update(p_min=self.sp_dol_p.value(), iou_min=self.sp_dol_iou.value())
+        d = self._dol
+        if d is None:
+            return
+        import dolina as DL_
+        tr = DL_.obrys(d, self.sp_dol_p.value(), self.sp_dol_iou.value())
+        self.edol.ustaw_obrys(tr); self.es_dol.ustaw_obrys(tr)
+        tekst = DL_.opis(d, self.sp_dol_p.value(), self.sp_dol_iou.value())
+        self.lb_dol.setText(tekst)
+        cien = '' if d['baza'] == 'sfera' else '  Na sferze: cień przekroju (rzut na osie sfery).'
+        self.lb12.setText(tekst + cien)
+
+    def _dol_wyglad(self):
+        for e, jas in ((self.edol, 1.0), (self.es_dol, 0.6)):
+            e.opcje.update(mgla=self.ch_dol_mgla.isChecked(), obrys=self.ch_dol_obrys.isChecked(), tlo=self.sp_dol_tlo.value(),
+                           jas=self.sp_dol_jas.value() * jas, rozm=self.sp_dol_rozm.value() * (1.0 if e is self.edol else 0.6))
+            e.update()
+
+    def _dol_przeksztalcenie(self):
+        """Okienko 12: sześcian przekroju o połowie boku 10 wokół cząsteczki. Sfera: położenie cząsteczki p_j + M3 a w skali sfery
+        (ta sama skala co cząsteczki: 0,55 R / r99 i skala chmury)."""
+        d, h = self._dol, self.h
+        if d is None or h is None:
+            return
+        s = 10.0 / max(d['Z'], 1e-9)
+        self.edol.ustaw_przeksztalcenie(np.diag([s, s, s, 1.0]))
+        i = d['i']
+        r = float(h.r99[-1] if self.cb_skala.currentIndex() == 1 else h.r99[i])
+        k = 0.55 * self.es.R / max(r, 1e-9) * self.sp_skala_chm.value()
+        M = np.eye(4); M[:3, :3] = k * d['M3']; M[:3, 3] = k * d['pos0']
+        self.es_dol.ustaw_przeksztalcenie(M)
+
+    # ------------------------------------------------------------------ mechanika reflektora (okienko 13)
+    def _mech_zlec(self):
+        """Zleca mechanikę reflektora dla bieżącego checkpointu (tylko gdy okienko 13 widać i klucz się zmienił)."""
+        h = self.h
+        if h is None or not self.ch_mech.isChecked() or not self.doki['13'].isVisible():
+            return
+        i = int(np.clip(np.floor(self.t), 0, h.K - 1))
+        zr = ('sonda', 'zbior')[self.cb_mech_zr.currentIndex()]
+        k = (str(h.katalog), i, int(self.sp_refl.value()), zr, int(self.sp_tok.value()))
+        if k == getattr(self, '_mech_zlecony', None):
+            return
+        self._mech_zlecony = k
+        lic = getattr(self.watek_mech, '_liczydlo', None)
+        if zr == 'zbior' and (lic is None or lic._zbior is None):
+            self.lb_mech.setText('Wczytuję 64 klatki zbioru uczącego z archiwów (raz)…')
+        self.watek_mech.zlec(k, h, i, k[2], zr, k[4], 80)
+
+    def _mech_gotowe(self, klucz, d):
+        if 'blad_watku' in d:
+            self.lb_mech.setText(f'Mechanika: {d["blad_watku"]}'); return
+        if self.h is None or klucz[0] != str(self.h.katalog):
+            return
+        self._mech = d
+        import reflektor_mechanika as RM
+        tekst = RM.opis(d)
+        self.lb_mech.setText(tekst); self.lb13.setText(tekst)
+        self._mech_rysuj()
+
+    def _mech_rysuj(self):
+        d, h = self._mech, self.h
+        if d is None or h is None:
+            return
+        import reflektor_rysunek as RR
+        u = float(np.clip(self.t - d['i'], 0.0, 1.0)) if not d['ostatni'] else 1.0
+        przes = self.sp_mech_przes.value() or float(np.clip(25.0 / max(d['igla']['kat'], d['cel']['kat'], 1e-3), 1, 500))
+        S = RR.schemat(d, u, przes, n_linek=self.sp_mech_linki.value(), celownik=self.ch_mech_cel.isChecked(),
+                       prog=self.ch_mech_prog.isChecked(), linki=self.sp_mech_linki.value() > 0)
+        S.napis((-19.0, 0.0, 10.5), f'reflektor {d["c"]}, krok {d["krok"]}: ruch narysowany ×{przes:.0f} (kąty w opisie są prawdziwe)',
+                (255, 209, 102, 255))
+        self.emech.ustaw_schemat(S)
+        import pyqtgraph.opengl as gl_
+        nap = S.nap if self.ch_mech_nap.isChecked() else []
+        while len(self._mech_napisy) < len(nap):
+            it = gl_.GLTextItem(); self.vmech.addItem(it); self._mech_napisy.append(it)
+        for k, it in enumerate(self._mech_napisy):
+            if k < len(nap):
+                p_, t_, kol = nap[k]
+                it.setData(pos=tuple(float(x) for x in p_), text=t_, color=kol); it.setVisible(True)
+            else:
+                it.setVisible(False)
+
     # ------------------------------------------------------------------ czas
     def ustaw_czas(self, t):
         h = self.h
@@ -2187,6 +2502,9 @@ class ZakladkaLaserow(QWidget):
         self.lb4.setText('bloki 1 2 3 (góra), 4 5 6 (dół); ' + ('pierwiastek z mapy, ' if self.ch_pierw.isChecked() else '') + 'normowana w każdym bloku;  biała = prawdziwa ramka, błękitna = ramka modelu')
         self.lb5.setText(f'{self.cb_mapa.currentText()}')
         self._og_czas(t)
+        self._dol_czas(tryb_pod)
+        if not tryb_pod and getattr(self, '_mech', None) is not None and self.doki['13'].isVisible():
+            self._mech_zlec(); self._mech_rysuj()                   # ruch w obrębie checkpointu: u = t − i
         if tryb_pod:
             return
         if self.ch_kamera.isChecked() and hasattr(self, '_cz'):

@@ -1,0 +1,18 @@
+klasyfikacja test_klas: lr 5e-4, epoki 2, sondy n=16, extra: --proba --warstwy --warstwy_n 4 --zapis f32, analizy -, węzeł hopper-2, GPU NVIDIA H200, start Sun Oct 11 12:19:49 AM CEST 2026
+wolna kwota: 28.5 GB
+train: 512 obrazów 320×320, 10 klas, w 0 s
+val: 200 obrazów 320×320, 10 klas, w 0 s
+512 obrazów, 2 epok, 32 kroków; końce epok: [16, 32]
+model vit (2890402 parametrów), adamw lr 0.0005 wd 0.05, paczka 32
+obserwator: 16 sond, losowy rzut 768 -> 128 (JL, ziarno 0), zapis f32, tokenów 400, krok 0, skan 6 warstw na 4 sondach
+krok 0: acc 0.1050
+krok 16 (koniec epoki 1): acc 0.1700
+epoka 1/2: krok 16, wolna kwota 28.4 GB, 00:20:05
+krok 20: acc 0.1550
+krok 32 (koniec epoki 2): acc 0.1800
+epoka 2/2: krok 32, wolna kwota 28.4 GB, 00:20:07
+KONIEC: krok 32, 3 s
+TRENING KONIEC test_klas Sun Oct 11 12:20:11 AM CEST 2026
+KONIEC test_klas ok=1 Sun Oct 11 12:20:11 AM CEST 2026
+113M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/test_klas
+      /mnt/evafs  171.6G    200G    220G       -  168069  200000  220000       -

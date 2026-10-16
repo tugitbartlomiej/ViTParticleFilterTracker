@@ -1,0 +1,13 @@
+# Próba analogii światła — protokół przed obliczeniami
+
+Cel: sprawdzić, czy opis wkładów MLP inspirowany superpozycją oraz model oscylacyjny pomagają opisywać i przewidywać istniejący SmallViT. Bez zmiany aplikacji, checkpointów i bez treningu ViT. Skrypty są narzędziem tej próby badawczej.
+
+Dane: wszystkie 806 checkpointów s47, trzy różne obrazy z istniejących cache eafb5a973be3d490, c584ef4647149c7c, 2cca2743e1c74b14. Pełny forward float32 z bieżącej wersji kodu modelu, eval, rzeczywisty epsilon LayerNorm. 24 stałe tokeny na obraz: 8 blisko środka anotacji, 8 blisko brzegu oraz 8 tła, wybór geometryczny przed wynikami. To trzy obrazy jednego biegu, a nie niezależne replikacje treningu ani potwierdzony test na nowych filmach.
+
+1. Dokładna superpozycja: u_c=z_c v_c, U=sum u_c, P_diag=sum ||u_c||², P_net=||U||², cross=P_net−P_diag. Iloraz P_net/P_diag określa wypadkowe wzmacnianie lub wygaszanie w ustalonej metryce. Nie jest fizyczną mocą optyczną. Bias raportować osobno. Kontrola tożsamości przez bezpośrednie sumowanie i rzeczywisty przyrost residual.
+2. Odpowiednik podatności: rzeczywisty Jacobian końcowej głowy dla logitu i czterech krawędzi znormalizowanych rozmiarem obrazu. Wyznaczyć analogiczne miary po przeniesieniu u_c przez ten Jacobian; jest to lokalny opis, nie dokładny efekt skończonej ablacji.
+3. Przydatność prognostyczna: przyszły ruch latentu, zmiana logitu i ramki. Tylko regularny fragment checkpointów co 100 aktualizacji. Dopasowanie na pierwszych 50%, wybór hiperparametru na następnych 15%, test na ostatnich 35%. Pierwsze dwa obrazy do dopasowania, trzeci wyłączony z dopasowania i walidacji. Wszystkie skalowania wyłącznie z części dopasowania. Baseline obejmuje czas, normy, stan wyjścia, poprzedni ruch, P_diag i P_net, więc zysk ilorazów nie jest odkryciem dodatkowej informacji. Porównać model liniowy ridge oraz nieliniowy baseline. Ocena po obrazach i czasach, bez traktowania tokenów jako niezależnych replik. Nie dostrajać po wyniku testowym.
+4. Faza: sprawdzić modele AR(1), AR(2) oraz ograniczony stabilny tłumiony oscylator na skalarnych odczytach. Zespolone bieguny nie dowodzą światła. Wyznaczanie fazy z całego szeregu (np. Hilbert/PCA po całym czasie) jest niedopuszczalne w prognozie. Porównać prognozy poza próbką i kontrolę szumu/dryfu. Zbyt krótki/niestacjonarny szereg nie uzasadnia fazy optycznej.
+5. Optyczny model natężenia nie zastępuje wektorowego równania MLP. Nie dopisywać arbitralnych faz, długości fali ani temperatury. Ujemny wynik oraz brak identyfikowalnej oscylacji są pełnoprawnym wynikiem próby.
+
+Wyniki: outputs/optyka_hipoteza_20261015/. Raport z definicjami, kontrolami, niepewnością i rozróżnieniem wyniku, tożsamości oraz hipotezy.

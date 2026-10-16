@@ -1,0 +1,63 @@
+{
+ "ramie": "A150",
+ "status": "complete",
+ "utc": "2026-10-08T20:43:10.461087+00:00",
+ "ziarno_rng": 47,
+ "epoka_krokow": 47,
+ "epok": 5,
+ "kroki": [
+  1000,
+  1047,
+  1094,
+  1141,
+  1188,
+  1235
+ ],
+ "start": {
+  "plik": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-08_k1000_podmiana150_sd/wejscia/k1000_pelny.pt",
+  "sha256": "e7a7727ccf19dd3801bd8ec4de65887480252ccdf7e21d385346c13a139259b6",
+  "krok": 1000
+ },
+ "hyper": {
+  "paczka": 32,
+  "lr": 0.0005,
+  "wd": 0.05,
+  "rozgrzewka_lr": 300,
+  "autocast_uczenia": "bf16"
+ },
+ "deterministyczne": true,
+ "uczenie_s": 22.947298288345337,
+ "razem_s": 32.320948362350464,
+ "wejscia": {
+  "CEL.json": "e6686803b72ec5c3a09f4773d63033cda75cbe182fde2c1ac569fee5cf920a59",
+  "NOWE.json": "3489fd85fa13a8073eeefc77f6b494fd31eb1a9cc67758e29a02f56ed4cd01f7",
+  "PODMIANA.json": "d050233e278f4a10adf6fb60bbeede455ec160be519f4968bfdb53db0cce7a94"
+ },
+ "kod": [
+  {
+   "path": "bieg.py",
+   "sha256": "281bd3ffbcc50e3536650b91763d0ce93fcbd1202f69c25f80cd19aa5fa84a49"
+  },
+  {
+   "path": "dane.py",
+   "sha256": "7197fb666430a9583ac9326391209bb5c675e7631411932b14b25bd10546321a"
+  },
+  {
+   "path": "model.py",
+   "sha256": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a"
+  },
+  {
+   "path": "trening.py",
+   "sha256": "6e2ea34909ed4383d8480ec93d01bbb9595bec9affc21b45debedceb15080284"
+  }
+ ],
+ "wersje": {
+  "python": "3.11.15",
+  "torch": "2.9.1+cu128",
+  "numpy": "2.3.5"
+ },
+ "gpu": "NVIDIA H100 PCIe",
+ "host": "hopper",
+ "slurm_job": "1824868",
+ "proba": false
+}

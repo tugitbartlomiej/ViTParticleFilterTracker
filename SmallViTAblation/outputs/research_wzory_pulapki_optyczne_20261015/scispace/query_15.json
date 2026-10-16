@@ -1,0 +1,595 @@
+{
+  "question": "How does Dynamical Similarity Analysis compare neural computations beyond representational geometry, and how can it distinguish shared external input from autonomous recurrent dynamics?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'How does Dynamical Similarity Analysis compare neural computations beyond representational geometry, and how can it distinguish shared external input from autonomous recurrent dynamics?'.\n\n\n1. InputDSA: Demixing then Comparing Recurrent and Externally Driven Dynamics\n   ID: pnmb7dtlx7en\n   2025 · Huang Ann, Ostrow, Mitchell, Singh, Satpreet H.\n   DOI: 10.48550/arxiv.2510.25943\n   Abstract: In control problems and basic scientific modeling, it is important to compare observations with dynamical simulations. For example, comparing two neural systems can shed light on the nature of emergent computations in the brain and deep neural networks. Recently, Ostrow et al. (2023) introduced Dynamical Similarity Analysis (DSA), a method to measure the similarity of two systems based on their recurrent dynamics rather than geometry or topology. However, DSA does not consider how inputs affect the dynamics, meaning that two similar systems, if driven differently, may be classified as different. Because real-world dynamical systems are rarely autonomous, it is important to account for the effects of input drive. To this end, we introduce a novel metric for comparing both intrinsic (recurrent) and input-driven dynamics, called InputDSA (iDSA). InputDSA extends the DSA framework by estimating and comparing both input and intrinsic dynamic operators using a variant of Dynamic Mode Decomposition with control (DMDc) based on subspace identification. We demonstrate that InputDSA can successfully compare partially observed, input-driven systems from noisy data. We show that when the true inputs are unknown, surrogate inputs can be substituted without a major deterioration in similarity estimates. We apply InputDSA on Recurrent Neural Networks (RNNs) trained with Deep Reinforcement Learning, identifying that high-performing networks are dynamically similar to one another, while low-performing networks are more diverse. Lastly, we apply InputDSA to neural data recorded from rats performing a cognitive task, demonstrating that it identifies a transition from input-driven evidence accumulation to intrinsically-driven decision-making. Our work demonstrates that InputDSA is a robust and efficient method for comparing intrinsic dynamics and the effect of external input on dynamical systems. \n\n2. Beyond Geometry: Comparing the Temporal Structure of Computation in Neural Circuits with Dynamical Similarity Analysis\n   ID: 1x968s6l\n   2023 · Adam Eisen, Leo Kozachkov, Ila Fiete · arXiv.org\n   DOI: 10.48550/arXiv.2306.10168\n   Abstract: How can we tell whether two neural networks are utilizing the same internal processes for a particular computation? This question is pertinent for multiple subfields of both neuroscience and machine learning, including neuroAI, mechanistic interpretability, and brain-machine interfaces. Standard approaches for comparing neural networks focus on the spatial geometry of latent states. Yet in recurrent networks, computations are implemented at the level of neural dynamics, which do not have a simple one-to-one mapping with geometry. To bridge this gap, we introduce a novel similarity metric that compares two systems at the level of their dynamics. Our method incorporates two components: Using recent advances in data-driven dynamical systems theory, we learn a high-dimensional linear system that accurately captures core features of the original nonlinear dynamics. Next, we compare these linear approximations via a novel extension of Procrustes Analysis that accounts for how vector fields change under orthogonal transformation. Via four case studies, we demonstrate that our method effectively identifies and distinguishes dynamic structure in recurrent neural networks (RNNs), whereas geometric methods fall short. We additionally show that our method can distinguish learning rules in an unsupervised manner. Our method therefore opens the door to novel data-driven analyses of the temporal structure of neural computation, and to more rigorous testing of RNNs as models of the brain.\n\n3. Beyond Geometry: Comparing the Temporal Structure of Computation in\n  Neural Circuits with Dynamical Similarity Analysis\n   ID: 1mh9glar\n   2023\n   DOI: 10.48550/arxiv.2306.10168\n   Abstract: How can we tell whether two neural networks are utilizing the same internal processes for a particular computation? This question is pertinent for multiple subfields of both neuroscience and machine learning, including neuroAI, mechanistic interpretability, and brain-machine interfaces. Standard approaches for comparing neural networks focus on the spatial geometry of latent states. Yet in recurrent networks, computations are implemented at the level of neural dynamics, which do not have a simple one-to-one mapping with geometry. To bridge this gap, we introduce a novel similarity metric that compares two systems at the level of their dynamics. Our method incorporates two components: Using recent advances in data-driven dynamical systems theory, we learn a high-dimensional linear system that accurately captures core features of the original nonlinear dynamics. Next, we compare these linear approximations via a novel extension of Procrustes Analysis that accounts for how vector fields change under orthogonal transformation. Via four case studies, we demonstrate that our method effectively identifies and distinguishes dynamic structure in recurrent neural networks (RNNs), whereas geometric methods fall short. We additionally show that our method can distinguish learning rules in an unsupervised manner. Our method therefore opens the door to novel data-driven analyses of the temporal structure of neural computation, and to more rigorous testing of RNNs as models of the brain. \n\n4. Dynamical similarity analysis uniquely captures how computations develop\n  in RNNs\n   ID: 6srvdnkwi1az\n   2024 · Quentin Guilhot, Michał Wójcik, Jascha Achterberg\n   DOI: 10.48550/arxiv.2410.24070\n   Abstract: Methods for analyzing representations in neural systems are increasingly popular tools in neuroscience and mechanistic interpretability. Measures comparing neural activations across conditions, architectures, and species give scalable ways to understand information transformation within different neural networks. However, recent findings show that some metrics respond to spurious signals, leading to misleading results. Establishing benchmark test cases is thus essential for identifying the most reliable metric and potential improvements. We propose that compositional learning in recurrent neural networks (RNNs) can provide a test case for dynamical representation alignment metrics. Implementing this case allows us to evaluate if metrics can identify representations that develop throughout learning and determine if representations identified by metrics reflect the network's actual computations. Building both attractor and RNN based test cases, we show that the recently proposed Dynamical Similarity Analysis (DSA) is more noise robust and reliably identifies behaviorally relevant representations compared to prior metrics (Procrustes, CKA). We also demonstrate how such test cases can extend beyond metric evaluation to study new architectures. Specifically, testing DSA in modern (Mamba) state space models suggests that these models, unlike RNNs, may not require changes in recurrent dynamics due to their expressive hidden states. Overall, we develop test cases that showcase how DSA's enhanced ability to detect dynamical motifs makes it highly effective for identifying ongoing computations in RNNs and revealing how networks learn tasks. \n\n5. Dynamical Similarity in Multitasking RNNs: Identifying Shared Motifs Across Task Periods\n   ID: 06qdnrv7o9v1\n   2025 · Gupta Akanksha, Khajehnejad, Moein\n   DOI: 10.5281/zenodo.15126464\n   Abstract: Biological networks exhibit remarkable flexibility, enabling efficient multitasking. This study investigates the role of dynamical motifs in facilitating this adaptability within recurrent neural networks (RNNs). Instead of focusing on geometric structures, we employ Dynamic Similarity Analysis (DSA) to reveal underlying dynamic patterns. applying DSA to the internal states of RNNs across 15 tasks, we identify the delayed response motif as particularly distinct, characterized by unique rotational properties. Our findings highlight DSA’s ability to uncover differences overlooked by geometric methods, offering deeper insights into the computational mechanisms underlying both biological and artificial intelligence systems. \n\n6. Dynamical Archetype Analysis: Autonomous Computation\n   ID: q42xnb31qb8s\n   2025 · Park, Il Memming\n   DOI: 10.48550/arxiv.2507.05505\n   Abstract: The study of neural computation aims to understand the function of a neural system as an information processing machine. Neural systems are undoubtedly complex, necessitating principled and automated tools to abstract away details to organize and incrementally build intuition. We argue that systems with the same effective behavior should be abstracted by their ideal representative, i.e., archetype, defined by its asymptotic dynamical structure. We propose a library of archetypical computations and a new measure of dissimilarity that allows us to group systems based on their effective behavior by explicitly considering both deformations that break topological conjugacy as well as diffeomorphisms that preserve it. The proposed dissimilarity can be estimated from observed trajectories. Numerical experiments demonstrate our method's ability to overcome previously reported fragility of existing (dis)similarity measures for approximate continuous attractors and high-dimensional recurrent neural networks. Although our experiments focus on working memory systems, our theoretical approach naturally extends to general mechanistic interpretation of recurrent dynamics in both biological and artificial neural systems. We argue that abstract dynamical archetypes, rather than detailed dynamical systems, offer a more useful vocabulary for describing neural computation. \n\n7. Predictive neural representations of naturalistic dynamic input\n   ID: 2ihbn06o\n   2023 · Ingmar E. J. de Vries · Nature Communications\n   DOI: 10.1038/s41467-023-39355-y\n   Abstract: Adaptive behavior such as social interaction requires our brain to predict unfolding external dynamics. While theories assume such dynamic prediction, empirical evidence is limited to static snapshots and indirect consequences of predictions. We present a dynamic extension to representational similarity analysis that uses temporally variable models to capture neural representations of unfolding events. We applied this approach to source-reconstructed magnetoencephalography (MEG) data of healthy human subjects and demonstrate both lagged and predictive neural representations of observed actions. Predictive representations exhibit a hierarchical pattern, such that high-level abstract stimulus features are predicted earlier in time, while low-level visual features are predicted closer in time to the actual sensory input. By quantifying the temporal forecast window of the brain, this approach allows investigating predictive processing of our dynamic world. It can be applied to other naturalistic stimuli (e.g., film, soundscapes, music, motor planning/execution, social interaction) and any biosignal with high temporal resolution. \n\n8. Predictive neural representations of naturalistic dynamic input\n   ID: 24pfgk9z\n   2023 · Ingmar E. J. de Vries, Moritz F. Wurm · bioRxiv\n   DOI: 10.1101/2022.09.02.506366\n   Abstract: Adaptive behavior such as social interaction requires our brain to predict unfolding external dynamics. While theories assume such dynamic prediction, empirical evidence is limited to static snapshots and indirect consequences of predictions. We present a dynamic extension to representational similarity analysis that uses temporally variable models to capture neural representations of unfolding events. We applied this approach to source-reconstructed magnetoencephalography (MEG) data of healthy human subjects and demonstrate both lagged and predictive neural representations of observed actions. Predictive representations exhibit a hierarchical pattern, such that high-level abstract stimulus features are predicted earlier in time, while low-level visual features are predicted closer in time to the actual sensory input. By quantifying the temporal forecast window of the brain, this approach allows investigating predictive processing of our dynamic world. It can be applied to other naturalistic stimuli (e.g., film, soundscapes, music, motor planning/execution, social interaction) and any biosignal with high temporal resolution.\n\n9. RNNs perform task computations by dynamically warping neural representations\n   ID: hh1ftmklf6a0\n   2025 · Arthur Pellegrino, Angus Chadwick · arXiv.org\n   DOI: 10.48550/arxiv.2512.04310\n   Abstract: Analysing how neural networks represent data features in their activations can help interpret how they perform tasks. Hence, a long line of work has focused on mathematically characterising the geometry of such\"neural representations.\"In parallel, machine learning has seen a surge of interest in understanding how dynamical systems perform computations on time-varying input data. Yet, the link between computation-through-dynamics and representational geometry remains poorly understood. Here, we hypothesise that recurrent neural networks (RNNs) perform computations by dynamically warping their representations of task variables. To test this hypothesis, we develop a Riemannian geometric framework that enables the derivation of the manifold topology and geometry of a dynamical system from the manifold of its inputs. By characterising the time-varying geometry of RNNs, we show that dynamic warping is a fundamental feature of their computations.\n\n10. Comparing noisy neural population dynamics using optimal transport\n  distances\n   ID: 7305vgsjwsa9\n   2024 · Amin Nejatbakhsh, Victor Geadah, Alex H. Williams\n   DOI: 10.48550/arxiv.2412.14421\n   Abstract: Biological and artificial neural systems form high-dimensional neural representations that underpin their computational capabilities. Methods for quantifying geometric similarity in neural representations have become a popular tool for identifying computational principles that are potentially shared across neural systems. These methods generally assume that neural responses are deterministic and static. However, responses of biological systems, and some artificial systems, are noisy and dynamically unfold over time. Furthermore, these characteristics can have substantial influence on a system's computational capabilities. Here, we demonstrate that existing metrics can fail to capture key differences between neural systems with noisy dynamic responses. We then propose a metric for comparing the geometry of noisy neural trajectories, which can be derived as an optimal transport distance between Gaussian processes. We use the metric to compare models of neural responses in different regions of the motor system and to compare the dynamics of latent diffusion models for text-to-image synthesis. "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "How does Dynamical Similarity Analysis compare neural computations beyond representational geometry, and how can it distinguish shared external input from autonomous recurrent dynamics?",
+        "papers": [
+          {
+            "id": 4096622369,
+            "title": "InputDSA: Demixing then Comparing Recurrent and Externally Driven Dynamics",
+            "is_archived": false,
+            "full_slug": "inputdsa-demixing-then-comparing-recurrent-and-externally-pnmb7dtlx7en",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-31T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.25943",
+            "unique_id": "pnmb7dtlx7en",
+            "abstract": "In control problems and basic scientific modeling, it is important to compare observations with dynamical simulations. For example, comparing two neural systems can shed light on the nature of emergent computations in the brain and deep neural networks. Recently, Ostrow et al. (2023) introduced Dynamical Similarity Analysis (DSA), a method to measure the similarity of two systems based on their recurrent dynamics rather than geometry or topology. However, DSA does not consider how inputs affect the dynamics, meaning that two similar systems, if driven differently, may be classified as different. Because real-world dynamical systems are rarely autonomous, it is important to account for the effects of input drive. To this end, we introduce a novel metric for comparing both intrinsic (recurrent) and input-driven dynamics, called InputDSA (iDSA). InputDSA extends the DSA framework by estimating and comparing both input and intrinsic dynamic operators using a variant of Dynamic Mode Decomposition with control (DMDc) based on subspace identification. We demonstrate that InputDSA can successfully compare partially observed, input-driven systems from noisy data. We show that when the true inputs are unknown, surrogate inputs can be substituted without a major deterioration in similarity estimates. We apply InputDSA on Recurrent Neural Networks (RNNs) trained with Deep Reinforcement Learning, identifying that high-performing networks are dynamically similar to one another, while low-performing networks are more diverse. Lastly, we apply InputDSA to neural data recorded from rats performing a cognitive task, demonstrating that it identifies a transition from input-driven evidence accumulation to intrinsically-driven decision-making. Our work demonstrates that InputDSA is a robust and efficient method for comparing intrinsic dynamics and the effect of external input on dynamical systems. ",
+            "authors": {
+              "total": 6,
+              "data": [
+                {
+                  "display_name": "Huang Ann",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Ostrow, Mitchell",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Singh, Satpreet H.",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Kozachkov, Leo",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Fiete, Ila",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Rajan, Kanaka",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4000899621,
+            "title": "Beyond Geometry: Comparing the Temporal Structure of Computation in Neural Circuits with Dynamical Similarity Analysis",
+            "is_archived": false,
+            "full_slug": "beyond-geometry-comparing-the-temporal-structure-of-1x968s6l",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-06-16T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arXiv.2306.10168",
+            "unique_id": "1x968s6l",
+            "abstract": "How can we tell whether two neural networks are utilizing the same internal processes for a particular computation? This question is pertinent for multiple subfields of both neuroscience and machine learning, including neuroAI, mechanistic interpretability, and brain-machine interfaces. Standard approaches for comparing neural networks focus on the spatial geometry of latent states. Yet in recurrent networks, computations are implemented at the level of neural dynamics, which do not have a simple one-to-one mapping with geometry. To bridge this gap, we introduce a novel similarity metric that compares two systems at the level of their dynamics. Our method incorporates two components: Using recent advances in data-driven dynamical systems theory, we learn a high-dimensional linear system that accurately captures core features of the original nonlinear dynamics. Next, we compare these linear approximations via a novel extension of Procrustes Analysis that accounts for how vector fields change under orthogonal transformation. Via four case studies, we demonstrate that our method effectively identifies and distinguishes dynamic structure in recurrent neural networks (RNNs), whereas geometric methods fall short. We additionally show that our method can distinguish learning rules in an unsupervised manner. Our method therefore opens the door to novel data-driven analyses of the temporal structure of neural computation, and to more rigorous testing of RNNs as models of the brain.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Adam Eisen",
+                  "id": 2787087463,
+                  "slug": "adam-eisen",
+                  "unique_id": "1ih7h4s1ce",
+                  "full_slug": "adam-eisen-1ih7h4s1ce"
+                },
+                {
+                  "display_name": "Leo Kozachkov",
+                  "id": 2951409681,
+                  "slug": "leo-kozachkov",
+                  "unique_id": "eemxi5v8q2",
+                  "full_slug": "leo-kozachkov-eemxi5v8q2"
+                },
+                {
+                  "display_name": "Ila Fiete",
+                  "id": 2621716127,
+                  "slug": "ila-fiete",
+                  "unique_id": "3t5gvczjy1",
+                  "full_slug": "ila-fiete-3t5gvczjy1"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/beyond-geometry-comparing-the-temporal-structure-of-1x968s6l.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2306.10168v2.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 12
+              }
+            },
+            "tldr": "In this article , a similarity metric that compares two systems at the level of their dynamics is introduced to bridge the gap between the spatial geometry of latent states and the dynamics of neural networks, which do not have a simple one-toone mapping with geometry.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4015982618,
+            "title": "Beyond Geometry: Comparing the Temporal Structure of Computation in\n  Neural Circuits with Dynamical Similarity Analysis",
+            "is_archived": false,
+            "full_slug": "beyond-geometry-comparing-the-temporal-structure-of-1mh9glar",
+            "journal": null,
+            "conference_series": null,
+            "date": "2023-06-16T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2306.10168",
+            "unique_id": "1mh9glar",
+            "abstract": "How can we tell whether two neural networks are utilizing the same internal processes for a particular computation? This question is pertinent for multiple subfields of both neuroscience and machine learning, including neuroAI, mechanistic interpretability, and brain-machine interfaces. Standard approaches for comparing neural networks focus on the spatial geometry of latent states. Yet in recurrent networks, computations are implemented at the level of neural dynamics, which do not have a simple one-to-one mapping with geometry. To bridge this gap, we introduce a novel similarity metric that compares two systems at the level of their dynamics. Our method incorporates two components: Using recent advances in data-driven dynamical systems theory, we learn a high-dimensional linear system that accurately captures core features of the original nonlinear dynamics. Next, we compare these linear approximations via a novel extension of Procrustes Analysis that accounts for how vector fields change under orthogonal transformation. Via four case studies, we demonstrate that our method effectively identifies and distinguishes dynamic structure in recurrent neural networks (RNNs), whereas geometric methods fall short. We additionally show that our method can distinguish learning rules in an unsupervised manner. Our method therefore opens the door to novel data-driven analyses of the temporal structure of neural computation, and to more rigorous testing of RNNs as models of the brain. ",
+            "fulltext_url": "/pdf/beyond-geometry-comparing-the-temporal-structure-of-1mh9glar.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2306.10168"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 5
+              }
+            },
+            "tldr": "In this article , a similarity metric that compares two systems at the level of their dynamics is introduced to bridge the gap between the spatial geometry of latent states and the dynamics of neural networks, which do not have a simple one-toone mapping with geometry.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4048901073,
+            "title": "Dynamical similarity analysis uniquely captures how computations develop\n  in RNNs",
+            "is_archived": false,
+            "full_slug": "dynamical-similarity-analysis-uniquely-captures-how-6srvdnkwi1az",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-10-31T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2410.24070",
+            "unique_id": "6srvdnkwi1az",
+            "abstract": "Methods for analyzing representations in neural systems are increasingly popular tools in neuroscience and mechanistic interpretability. Measures comparing neural activations across conditions, architectures, and species give scalable ways to understand information transformation within different neural networks. However, recent findings show that some metrics respond to spurious signals, leading to misleading results. Establishing benchmark test cases is thus essential for identifying the most reliable metric and potential improvements. We propose that compositional learning in recurrent neural networks (RNNs) can provide a test case for dynamical representation alignment metrics. Implementing this case allows us to evaluate if metrics can identify representations that develop throughout learning and determine if representations identified by metrics reflect the network's actual computations. Building both attractor and RNN based test cases, we show that the recently proposed Dynamical Similarity Analysis (DSA) is more noise robust and reliably identifies behaviorally relevant representations compared to prior metrics (Procrustes, CKA). We also demonstrate how such test cases can extend beyond metric evaluation to study new architectures. Specifically, testing DSA in modern (Mamba) state space models suggests that these models, unlike RNNs, may not require changes in recurrent dynamics due to their expressive hidden states. Overall, we develop test cases that showcase how DSA's enhanced ability to detect dynamical motifs makes it highly effective for identifying ongoing computations in RNNs and revealing how networks learn tasks. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Quentin Guilhot",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Michał Wójcik",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Jascha Achterberg",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Rui Ponte Costa",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/dynamical-similarity-analysis-uniquely-captures-how-6srvdnkwi1az.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2410.24070"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers propose Dynamical Similarity Analysis (DSA) as a reliable metric for identifying representations in recurrent neural networks (RNNs) that develop throughout learning, outperforming prior metrics in noise robustness and behaviorally relevant representation identification.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4095436851,
+            "title": "Dynamical Similarity in Multitasking RNNs: Identifying Shared Motifs Across Task Periods",
+            "is_archived": false,
+            "full_slug": "dynamical-similarity-in-multitasking-rnns-identifying-shared-06qdnrv7o9v1",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-05-17T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Repository",
+            "doi": "10.5281/zenodo.15126464",
+            "unique_id": "06qdnrv7o9v1",
+            "abstract": "Biological networks exhibit remarkable flexibility, enabling efficient multitasking. This study investigates the role of dynamical motifs in facilitating this adaptability within recurrent neural networks (RNNs). Instead of focusing on geometric structures, we employ Dynamic Similarity Analysis (DSA) to reveal underlying dynamic patterns. applying DSA to the internal states of RNNs across 15 tasks, we identify the delayed response motif as particularly distinct, characterized by unique rotational properties. Our findings highlight DSA’s ability to uncover differences overlooked by geometric methods, offering deeper insights into the computational mechanisms underlying both biological and artificial intelligence systems. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Gupta Akanksha",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Khajehnejad, Moein",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study applies Dynamic Similarity Analysis to RNNs, identifying a distinct \"delayed response motif\" with unique rotational properties, revealing underlying dynamic patterns that facilitate multitasking adaptability in both biological and artificial intelligence systems.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4087100935,
+            "title": "Dynamical Archetype Analysis: Autonomous Computation",
+            "is_archived": false,
+            "full_slug": "dynamical-archetype-analysis-autonomous-computation-q42xnb31qb8s",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-07-09T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2507.05505",
+            "unique_id": "q42xnb31qb8s",
+            "abstract": "The study of neural computation aims to understand the function of a neural system as an information processing machine. Neural systems are undoubtedly complex, necessitating principled and automated tools to abstract away details to organize and incrementally build intuition. We argue that systems with the same effective behavior should be abstracted by their ideal representative, i.e., archetype, defined by its asymptotic dynamical structure. We propose a library of archetypical computations and a new measure of dissimilarity that allows us to group systems based on their effective behavior by explicitly considering both deformations that break topological conjugacy as well as diffeomorphisms that preserve it. The proposed dissimilarity can be estimated from observed trajectories. Numerical experiments demonstrate our method's ability to overcome previously reported fragility of existing (dis)similarity measures for approximate continuous attractors and high-dimensional recurrent neural networks. Although our experiments focus on working memory systems, our theoretical approach naturally extends to general mechanistic interpretation of recurrent dynamics in both biological and artificial neural systems. We argue that abstract dynamical archetypes, rather than detailed dynamical systems, offer a more useful vocabulary for describing neural computation. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Park, Il Memming",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4018473295,
+            "title": "Predictive neural representations of naturalistic dynamic input",
+            "is_archived": false,
+            "full_slug": "predictive-neural-representations-of-naturalistic-dynamic-2ihbn06o",
+            "journal": {
+              "display_name": "Nature Communications",
+              "official_page": "http://www.nature.com/ncomms/index.html",
+              "issn": "2041-1723",
+              "alias": [
+                "Nat Commun",
+                "Nature communications"
+              ],
+              "id": 64187185,
+              "slug": "nature-communications",
+              "unique_id": "tdu0vkf1",
+              "full_slug": "nature-communications-tdu0vkf1"
+            },
+            "conference_series": null,
+            "date": "2023-06-29T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Journal Article",
+            "doi": "10.1038/s41467-023-39355-y",
+            "unique_id": "2ihbn06o",
+            "abstract": "Adaptive behavior such as social interaction requires our brain to predict unfolding external dynamics. While theories assume such dynamic prediction, empirical evidence is limited to static snapshots and indirect consequences of predictions. We present a dynamic extension to representational similarity analysis that uses temporally variable models to capture neural representations of unfolding events. We applied this approach to source-reconstructed magnetoencephalography (MEG) data of healthy human subjects and demonstrate both lagged and predictive neural representations of observed actions. Predictive representations exhibit a hierarchical pattern, such that high-level abstract stimulus features are predicted earlier in time, while low-level visual features are predicted closer in time to the actual sensory input. By quantifying the temporal forecast window of the brain, this approach allows investigating predictive processing of our dynamic world. It can be applied to other naturalistic stimuli (e.g., film, soundscapes, music, motor planning/execution, social interaction) and any biosignal with high temporal resolution. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Ingmar E. J. de Vries",
+                  "id": 2415079337,
+                  "slug": "ingmar-e-j-de-vries",
+                  "unique_id": "3wb6no5lac",
+                  "full_slug": "ingmar-e-j-de-vries-3wb6no5lac",
+                  "affiliation_full_slug": "university-of-trento-26z50udz"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "University of Trento",
+                  "city": "Trento",
+                  "region": null,
+                  "country": "Italy",
+                  "id": 193223587,
+                  "slug": "university-of-trento",
+                  "unique_id": "26z50udz",
+                  "full_slug": "university-of-trento-26z50udz"
+                }
+              ]
+            },
+            "fulltext_url": "/pdf/predictive-neural-representations-of-naturalistic-dynamic-2ihbn06o.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://www.nature.com/articles/s41467-023-39355-y.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "In this article , a dynamic extension to representational similarity analysis that uses temporally variable models to capture neural representations of unfolding events is presented. But it is limited to static snapshots and indirect consequences of predictions.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4005901173,
+            "title": "Predictive neural representations of naturalistic dynamic input",
+            "is_archived": false,
+            "full_slug": "predictive-neural-representations-of-naturalistic-dynamic-24pfgk9z",
+            "journal": {
+              "display_name": "bioRxiv",
+              "official_page": "http://biorxiv.org/",
+              "issn": "2692-8205",
+              "alias": [
+                "bioRxiv.org : the preprint server for biology",
+                "bioRxivorg",
+                "biorxiv.org"
+              ],
+              "id": 2734324842,
+              "slug": "biorxiv",
+              "unique_id": "318tydph",
+              "full_slug": "biorxiv-318tydph"
+            },
+            "conference_series": null,
+            "date": "2023-04-10T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.1101/2022.09.02.506366",
+            "unique_id": "24pfgk9z",
+            "abstract": "Adaptive behavior such as social interaction requires our brain to predict unfolding external dynamics. While theories assume such dynamic prediction, empirical evidence is limited to static snapshots and indirect consequences of predictions. We present a dynamic extension to representational similarity analysis that uses temporally variable models to capture neural representations of unfolding events. We applied this approach to source-reconstructed magnetoencephalography (MEG) data of healthy human subjects and demonstrate both lagged and predictive neural representations of observed actions. Predictive representations exhibit a hierarchical pattern, such that high-level abstract stimulus features are predicted earlier in time, while low-level visual features are predicted closer in time to the actual sensory input. By quantifying the temporal forecast window of the brain, this approach allows investigating predictive processing of our dynamic world. It can be applied to other naturalistic stimuli (e.g., film, soundscapes, music, motor planning/execution, social interaction) and any biosignal with high temporal resolution.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Ingmar E. J. de Vries",
+                  "id": 2415079337,
+                  "slug": "ingmar-e-j-de-vries",
+                  "unique_id": "3wb6no5lac",
+                  "full_slug": "ingmar-e-j-de-vries-3wb6no5lac"
+                },
+                {
+                  "display_name": "Moritz F. Wurm",
+                  "id": 2305625440,
+                  "slug": "moritz-f-wurm",
+                  "unique_id": "277tu013y3",
+                  "full_slug": "moritz-f-wurm-277tu013y3"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "/pdf/predictive-neural-representations-of-naturalistic-dynamic-24pfgk9z.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://www.biorxiv.org/content/biorxiv/early/2022/09/25/2022.09.02.506366.full.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "A dynamic extension to representational similarity analysis that uses temporally variable models to capture neural representations of unfolding events to offer a window into predictive processing of dynamic events, and can be applied to other sensory modalities and biosignals.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4112358284,
+            "title": "RNNs perform task computations by dynamically warping neural representations",
+            "is_archived": false,
+            "full_slug": "rnns-perform-task-computations-by-dynamically-warping-neural-hh1ftmklf6a0",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-12-03T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2512.04310",
+            "unique_id": "hh1ftmklf6a0",
+            "abstract": "Analysing how neural networks represent data features in their activations can help interpret how they perform tasks. Hence, a long line of work has focused on mathematically characterising the geometry of such\"neural representations.\"In parallel, machine learning has seen a surge of interest in understanding how dynamical systems perform computations on time-varying input data. Yet, the link between computation-through-dynamics and representational geometry remains poorly understood. Here, we hypothesise that recurrent neural networks (RNNs) perform computations by dynamically warping their representations of task variables. To test this hypothesis, we develop a Riemannian geometric framework that enables the derivation of the manifold topology and geometry of a dynamical system from the manifold of its inputs. By characterising the time-varying geometry of RNNs, we show that dynamic warping is a fundamental feature of their computations.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Arthur Pellegrino",
+                  "id": 4001688134,
+                  "slug": "arthur-pellegrino",
+                  "unique_id": "16fuv9j5",
+                  "full_slug": "arthur-pellegrino-16fuv9j5"
+                },
+                {
+                  "display_name": "Angus Chadwick",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "https://export.arxiv.org/pdf/2512.04310v1.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study proposes a Riemannian geometric framework to understand how recurrent neural networks (RNNs) perform computations by dynamically warping their representations of task variables, revealing dynamic warping as a fundamental feature of RNN computations.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4051285517,
+            "title": "Comparing noisy neural population dynamics using optimal transport\n  distances",
+            "is_archived": false,
+            "full_slug": "comparing-noisy-neural-population-dynamics-using-optimal-7305vgsjwsa9",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-12-18T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2412.14421",
+            "unique_id": "7305vgsjwsa9",
+            "abstract": "Biological and artificial neural systems form high-dimensional neural representations that underpin their computational capabilities. Methods for quantifying geometric similarity in neural representations have become a popular tool for identifying computational principles that are potentially shared across neural systems. These methods generally assume that neural responses are deterministic and static. However, responses of biological systems, and some artificial systems, are noisy and dynamically unfold over time. Furthermore, these characteristics can have substantial influence on a system's computational capabilities. Here, we demonstrate that existing metrics can fail to capture key differences between neural systems with noisy dynamic responses. We then propose a metric for comparing the geometry of noisy neural trajectories, which can be derived as an optimal transport distance between Gaussian processes. We use the metric to compare models of neural responses in different regions of the motor system and to compare the dynamics of latent diffusion models for text-to-image synthesis. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Amin Nejatbakhsh",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Victor Geadah",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Alex H. Williams",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "David Lipshutz",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/comparing-noisy-neural-population-dynamics-using-optimal-7305vgsjwsa9.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2412.14421"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study proposes an optimal transport distance metric to compare noisy neural population dynamics, addressing limitations of existing methods that assume deterministic and static neural responses, and applies it to motor system models and text-to-image synthesis.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

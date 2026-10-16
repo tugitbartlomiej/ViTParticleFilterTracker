@@ -1,0 +1,199 @@
+klasyfikacja klas_vit_od_zera_60ep_lr_5e-4: lr 5e-4, epoki 60, sondy n=24, extra: --historia_wag --gesto_od 16576, analizy 300:2188,16576:17760, węzeł hopper-2, GPU NVIDIA H200, start Sun Oct 11 05:29:44 PM CEST 2026
+wolna kwota: 51.4 GB
+train: 9469 obrazów 320×320, 10 klas, w 8 s
+val: 3925 obrazów 320×320, 10 klas, w 4 s
+9469 obrazów, 60 epok, 17760 kroków; końce epok: [296, 592, 888, 1184, 1480, 1776, 2072, 2368, 2664, 2960, 3256, 3552, 3848, 4144, 4440, 4736, 5032, 5328, 5624, 5920, 6216, 6512, 6808, 7104, 7400, 7696, 7992, 8288, 8584, 8880, 9176, 9472, 9768, 10064, 10360, 10656, 10952, 11248, 11544, 11840, 12136, 12432, 12728, 13024, 13320, 13616, 13912, 14208, 14504, 14800, 15096, 15392, 15688, 15984, 16280, 16576, 16872, 17168, 17464, 17760]
+model vit (2890402 parametrów), adamw lr 0.0005 wd 0.05, paczka 32
+obserwator: 24 sond, losowy rzut 768 -> 128 (JL, ziarno 0), zapis f16, tokenów 400, krok 0
+krok 0: acc 0.0991
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/trening_klasyfikacja.py:188: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  self.log.append(dict(krok=self.krok, strata=float(L), s_na_krok=(time.time() - t0) / 50))
+krok 296 (koniec epoki 1): acc 0.5210
+epoka 1/60: krok 296, wolna kwota 51.2 GB, 17:30:16
+krok 500: acc 0.6229
+krok 592 (koniec epoki 2): acc 0.6489
+epoka 2/60: krok 592, wolna kwota 50.0 GB, 17:30:30
+krok 888 (koniec epoki 3): acc 0.6701
+epoka 3/60: krok 888, wolna kwota 49.8 GB, 17:30:42
+krok 1000: acc 0.7037
+krok 1184 (koniec epoki 4): acc 0.7236
+epoka 4/60: krok 1184, wolna kwota 48.2 GB, 17:30:56
+krok 1480 (koniec epoki 5): acc 0.7580
+epoka 5/60: krok 1480, wolna kwota 48.0 GB, 17:31:07
+krok 1500: acc 0.7475
+krok 1776 (koniec epoki 6): acc 0.7720
+epoka 6/60: krok 1776, wolna kwota 46.5 GB, 17:31:20
+krok 2000: acc 0.7615
+krok 2072 (koniec epoki 7): acc 0.7608
+epoka 7/60: krok 2072, wolna kwota 45.3 GB, 17:31:33
+krok 2368 (koniec epoki 8): acc 0.7544
+epoka 8/60: krok 2368, wolna kwota 45.2 GB, 17:31:40
+krok 2500: acc 0.7717
+krok 2664 (koniec epoki 9): acc 0.7674
+epoka 9/60: krok 2664, wolna kwota 45.2 GB, 17:31:47
+krok 2960 (koniec epoki 10): acc 0.7778
+epoka 10/60: krok 2960, wolna kwota 45.2 GB, 17:31:53
+krok 3000: acc 0.7796
+krok 3256 (koniec epoki 11): acc 0.7789
+epoka 11/60: krok 3256, wolna kwota 45.2 GB, 17:32:00
+krok 3500: acc 0.7781
+krok 3552 (koniec epoki 12): acc 0.7862
+epoka 12/60: krok 3552, wolna kwota 45.1 GB, 17:32:07
+krok 3848 (koniec epoki 13): acc 0.7852
+epoka 13/60: krok 3848, wolna kwota 45.1 GB, 17:32:16
+krok 4000: acc 0.8020
+krok 4144 (koniec epoki 14): acc 0.7702
+epoka 14/60: krok 4144, wolna kwota 45.1 GB, 17:32:25
+krok 4440 (koniec epoki 15): acc 0.7903
+epoka 15/60: krok 4440, wolna kwota 45.0 GB, 17:32:35
+krok 4500: acc 0.7944
+krok 4736 (koniec epoki 16): acc 0.7916
+epoka 16/60: krok 4736, wolna kwota 44.9 GB, 17:32:45
+krok 5000: acc 0.7791
+krok 5032 (koniec epoki 17): acc 0.7977
+epoka 17/60: krok 5032, wolna kwota 44.9 GB, 17:32:55
+krok 5328 (koniec epoki 18): acc 0.7977
+epoka 18/60: krok 5328, wolna kwota 43.7 GB, 17:33:07
+krok 5500: acc 0.7934
+krok 5624 (koniec epoki 19): acc 0.8145
+epoka 19/60: krok 5624, wolna kwota 43.6 GB, 17:33:17
+krok 5920 (koniec epoki 20): acc 0.7944
+epoka 20/60: krok 5920, wolna kwota 43.6 GB, 17:33:26
+krok 6000: acc 0.8097
+krok 6216 (koniec epoki 21): acc 0.7712
+epoka 21/60: krok 6216, wolna kwota 43.5 GB, 17:33:36
+krok 6500: acc 0.7980
+krok 6512 (koniec epoki 22): acc 0.7896
+epoka 22/60: krok 6512, wolna kwota 43.5 GB, 17:33:46
+krok 6808 (koniec epoki 23): acc 0.7885
+epoka 23/60: krok 6808, wolna kwota 43.5 GB, 17:33:55
+krok 7000: acc 0.7906
+krok 7104 (koniec epoki 24): acc 0.8092
+epoka 24/60: krok 7104, wolna kwota 43.4 GB, 17:34:05
+krok 7400 (koniec epoki 25): acc 0.8033
+epoka 25/60: krok 7400, wolna kwota 43.4 GB, 17:34:14
+krok 7500: acc 0.7964
+krok 7696 (koniec epoki 26): acc 0.7822
+epoka 26/60: krok 7696, wolna kwota 43.3 GB, 17:34:21
+krok 7992 (koniec epoki 27): acc 0.8122
+epoka 27/60: krok 7992, wolna kwota 43.3 GB, 17:34:31
+krok 8000: acc 0.8107
+krok 8288 (koniec epoki 28): acc 0.8066
+epoka 28/60: krok 8288, wolna kwota 43.2 GB, 17:34:41
+krok 8500: acc 0.7778
+krok 8584 (koniec epoki 29): acc 0.8112
+epoka 29/60: krok 8584, wolna kwota 43.2 GB, 17:34:51
+krok 8880 (koniec epoki 30): acc 0.7969
+epoka 30/60: krok 8880, wolna kwota 43.2 GB, 17:35:00
+krok 9000: acc 0.8122
+krok 9176 (koniec epoki 31): acc 0.8066
+epoka 31/60: krok 9176, wolna kwota 43.1 GB, 17:35:10
+krok 9472 (koniec epoki 32): acc 0.7913
+epoka 32/60: krok 9472, wolna kwota 43.1 GB, 17:35:20
+krok 9500: acc 0.8056
+krok 9768 (koniec epoki 33): acc 0.8036
+epoka 33/60: krok 9768, wolna kwota 43.0 GB, 17:35:29
+krok 10000: acc 0.8028
+krok 10064 (koniec epoki 34): acc 0.7946
+epoka 34/60: krok 10064, wolna kwota 43.0 GB, 17:35:39
+krok 10360 (koniec epoki 35): acc 0.7918
+epoka 35/60: krok 10360, wolna kwota 41.8 GB, 17:35:51
+krok 10500: acc 0.8087
+krok 10656 (koniec epoki 36): acc 0.8028
+epoka 36/60: krok 10656, wolna kwota 41.8 GB, 17:36:01
+krok 10952 (koniec epoki 37): acc 0.8138
+epoka 37/60: krok 10952, wolna kwota 41.7 GB, 17:36:08
+krok 11000: acc 0.8089
+krok 11248 (koniec epoki 38): acc 0.8117
+epoka 38/60: krok 11248, wolna kwota 41.7 GB, 17:36:15
+krok 11500: acc 0.8076
+krok 11544 (koniec epoki 39): acc 0.8076
+epoka 39/60: krok 11544, wolna kwota 41.6 GB, 17:36:23
+krok 11840 (koniec epoki 40): acc 0.8120
+epoka 40/60: krok 11840, wolna kwota 41.6 GB, 17:36:32
+krok 12000: acc 0.7959
+krok 12136 (koniec epoki 41): acc 0.8094
+epoka 41/60: krok 12136, wolna kwota 41.6 GB, 17:36:42
+krok 12432 (koniec epoki 42): acc 0.8135
+epoka 42/60: krok 12432, wolna kwota 41.5 GB, 17:36:51
+krok 12500: acc 0.8158
+krok 12728 (koniec epoki 43): acc 0.7987
+epoka 43/60: krok 12728, wolna kwota 41.5 GB, 17:37:01
+krok 13000: acc 0.8148
+krok 13024 (koniec epoki 44): acc 0.8046
+epoka 44/60: krok 13024, wolna kwota 41.4 GB, 17:37:11
+krok 13320 (koniec epoki 45): acc 0.8092
+epoka 45/60: krok 13320, wolna kwota 41.3 GB, 17:37:21
+krok 13500: acc 0.8084
+krok 13616 (koniec epoki 46): acc 0.8189
+epoka 46/60: krok 13616, wolna kwota 41.3 GB, 17:37:30
+krok 13912 (koniec epoki 47): acc 0.8110
+epoka 47/60: krok 13912, wolna kwota 41.3 GB, 17:37:40
+krok 14000: acc 0.8033
+krok 14208 (koniec epoki 48): acc 0.8097
+epoka 48/60: krok 14208, wolna kwota 41.2 GB, 17:37:50
+krok 14500: acc 0.8120
+krok 14504 (koniec epoki 49): acc 0.8168
+epoka 49/60: krok 14504, wolna kwota 41.2 GB, 17:37:59
+krok 14800 (koniec epoki 50): acc 0.7921
+epoka 50/60: krok 14800, wolna kwota 41.2 GB, 17:38:09
+krok 15000: acc 0.8158
+krok 15096 (koniec epoki 51): acc 0.8031
+epoka 51/60: krok 15096, wolna kwota 41.1 GB, 17:38:19
+krok 15392 (koniec epoki 52): acc 0.7972
+epoka 52/60: krok 15392, wolna kwota 39.9 GB, 17:38:30
+krok 15500: acc 0.7964
+krok 15688 (koniec epoki 53): acc 0.8199
+epoka 53/60: krok 15688, wolna kwota 39.9 GB, 17:38:40
+krok 15984 (koniec epoki 54): acc 0.8036
+epoka 54/60: krok 15984, wolna kwota 39.8 GB, 17:38:50
+krok 16000: acc 0.8094
+krok 16280 (koniec epoki 55): acc 0.8031
+epoka 55/60: krok 16280, wolna kwota 39.8 GB, 17:38:59
+krok 16500: acc 0.8066
+krok 16576 (koniec epoki 56): acc 0.8069
+epoka 56/60: krok 16576, wolna kwota 39.8 GB, 17:39:09
+krok 16872 (koniec epoki 57): acc 0.8082
+epoka 57/60: krok 16872, wolna kwota 39.7 GB, 17:39:20
+krok 17000: acc 0.8117
+krok 17168 (koniec epoki 58): acc 0.8183
+epoka 58/60: krok 17168, wolna kwota 38.5 GB, 17:39:33
+krok 17464 (koniec epoki 59): acc 0.7931
+epoka 59/60: krok 17464, wolna kwota 37.3 GB, 17:39:45
+krok 17500: acc 0.8104
+krok 17760 (koniec epoki 60): acc 0.8087
+epoka 60/60: krok 17760, wolna kwota 37.2 GB, 17:39:55
+KONIEC: krok 17760, 592 s
+TRENING KONIEC klas_vit_od_zera_60ep_lr_5e-4 Sun Oct 11 05:39:59 PM CEST 2026
+=== analiza klas_vit_od_zera_60ep_lr_5e-4 okno 300 2188 Sun Oct 11 05:39:59 PM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/klas_vit_od_zera_60ep_lr_5e-4 gesty rekordów 4813 tokenów 9600 (400 na zdjęcie) kroki 0 17760 zapis f16 [46 s]
+S0 6 S1 7 Lindemann 0.7 c 0.422 τ_1e 81.0 β 0.65 E wykładnik 0.5961854141688039 [281 s]
+klas_vit_od_zera_60ep_lr_5e-4 S1 [blok]: C1 max 0.628 @τ=2 (null -0.016; surowe 0.773), powłoki ['0.628', '0.519', '0.438'], skupianie 3.25, cos sąsiedzi−losowe -0.023, cross C1 0.179 (null -0.002) [309 s]
+klas_vit_od_zera_60ep_lr_5e-4 S0 [blok]: C1 max 0.795 @τ=10 (null -0.017; surowe 0.901), powłoki ['0.795', '0.659', '0.542'], skupianie 5.07, cos sąsiedzi−losowe 0.770, cross C1 0.214 (null -0.003) [336 s]
+klas_vit_od_zera_60ep_lr_5e-4 S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.978 → ostatni 0.894; względny 0.973 → 0.878; zdjęcia 0.976 → 0.905 [357 s]
+klas_vit_od_zera_60ep_lr_5e-4 S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.946 → ostatni 0.736; względny 0.926 → 0.663; zdjęcia 0.954 → 0.777 [362 s]
+klas_vit_od_zera_60ep_lr_5e-4 korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.444, 0.422, 0.405, 0.342, 0.308, 0.242, 0.141, 0.026, -0.127, -0.315]; między zdjęciami [None, None, None, None, 0.477, 0.34, 0.26, 0.203, 0.101, -0.013] [364 s]
+klas_vit_od_zera_60ep_lr_5e-4 rozbieganie par: r²/r0² [0.98, 0.97, 0.95, 0.91, 0.98, 1.07, 0.91, 1.11, 1.29, 1.43, 1.33, 2.29] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1888]; wykładnik (r²−r0²) ∝ lag^0.4681584922669956 [364 s]
+klas_vit_od_zera_60ep_lr_5e-4 cała oś rozbieganie par: r²/r0² [0.98, 2.05, 2.36, 2.26, 1.79, 2.98, 3.47, 3.51, 3.71, 3.99, 3.44, 3.08, 3.28, 4.04, 3.9, 4.16, 3.9, 3.54, 3.53, 3.7, 3.17, 3.25, 3.11, 4.31, 4.37, 3.52, 3.47, 5.17, 4.34, 3.35, 4.69, 3.51, 3.82, 4.1, 4.03, 3.9, 3.98, 3.12, 3.35, 3.2, 3.57] przy lagach [1, 2420, 3070, 3720, 4370, 5020, 5670, 6320, 6970, 7620, 8270, 8920, 9570, 10220, 10870, 11520, 12170, 12820, 13470, 14120, 14770, 15420, 16070, 16320, 16385, 16450, 16515, 16580, 16645, 16710, 16775, 16840, 16905, 16970, 17035, 17100, 17165, 17230, 17295, 17360, 17425]; wykładnik (r²−r0²) ∝ lag^None [365 s]
+klas_vit_od_zera_60ep_lr_5e-4 rozkład energii kroku: τ=1: wspólny 0.23 zdjęcie 0.40 sąsiedztwo 0.26 własny 0.11; τ=10: wspólny 0.21 zdjęcie 0.42 sąsiedztwo 0.28 własny 0.09; τ=100: wspólny 0.15 zdjęcie 0.43 sąsiedztwo 0.31 własny 0.11; τ=1000: wspólny 0.16 zdjęcie 0.43 sąsiedztwo 0.30 własny 0.11 [366 s]
+klas_vit_od_zera_60ep_lr_5e-4 [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.783, min -0.104 @τ=50, losowe w zdjęciu C(0) 0.008, inne zdjęcia C(0) 0.0007175371091610335; auto [1.0, 0.98, 0.91, 0.82, 0.63, 0.31, 0.07, -0.04, -0.13, -0.11] [444 s]
+klas_vit_od_zera_60ep_lr_5e-4 [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.891, min -0.109 @τ=50, losowe w zdjęciu C(0) 0.537, inne zdjęcia C(0) -0.018936168247212965; auto [0.99, 0.97, 0.9, 0.81, 0.61, 0.29, 0.06, -0.05, -0.12, -0.11] [523 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/klas_vit_od_zera_60ep_lr_5e-4/ANALIZA.json [523 s]
+=== analiza klas_vit_od_zera_60ep_lr_5e-4 okno 16576 17760 Sun Oct 11 05:48:52 PM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/klas_vit_od_zera_60ep_lr_5e-4 gesty rekordów 4813 tokenów 9600 (400 na zdjęcie) kroki 0 17760 zapis f16 [41 s]
+S0 5 S1 5 Lindemann 1.106 c 0.394 τ_1e 13.0 β 0.38 E wykładnik 0.09903787050682529 [253 s]
+klas_vit_od_zera_60ep_lr_5e-4 S1 [blok]: C1 max 0.533 @τ=3 (null -0.005; surowe 0.715), powłoki ['0.533', '0.413', '0.324'], skupianie 2.69, cos sąsiedzi−losowe -0.014, cross C1 0.037 (null 0.000) [279 s]
+klas_vit_od_zera_60ep_lr_5e-4 S0 [blok]: C1 max 0.658 @τ=20 (null -0.012; surowe 0.820), powłoki ['0.658', '0.518', '0.410'], skupianie 3.93, cos sąsiedzi−losowe 0.643, cross C1 0.044 (null -0.002) [305 s]
+klas_vit_od_zera_60ep_lr_5e-4 S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.958 → ostatni 0.920; względny 0.954 → 0.914; zdjęcia 0.934 → 0.877 [308 s]
+klas_vit_od_zera_60ep_lr_5e-4 S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.901 → ostatni 0.824; względny 0.889 → 0.823; zdjęcia 0.883 → 0.772 [311 s]
+klas_vit_od_zera_60ep_lr_5e-4 korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.21, 0.212, 0.204, 0.186, 0.175, 0.13, 0.069, 0.012, -0.049, -0.127]; między zdjęciami [None, None, None, None, 0.063, 0.055, 0.042, 0.022, 0.003, -0.011] [313 s]
+klas_vit_od_zera_60ep_lr_5e-4 rozbieganie par: r²/r0² [1.01, 1.0, 1.01, 1.03, 1.13, 1.31, 1.38, 1.51, 1.47, 1.86, 1.75, 1.4] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1184]; wykładnik (r²−r0²) ∝ lag^0.3477001676795101 [313 s]
+klas_vit_od_zera_60ep_lr_5e-4 cała oś rozbieganie par: r²/r0² [1.01, 1.0, 1.01, 1.03, 1.13, 1.31, 1.38, 1.51, 1.47, 1.86, 1.75, 1.4] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1184]; wykładnik (r²−r0²) ∝ lag^0.3477001676795101 [313 s]
+klas_vit_od_zera_60ep_lr_5e-4 rozkład energii kroku: τ=1: wspólny 0.05 zdjęcie 0.28 sąsiedztwo 0.36 własny 0.35; τ=10: wspólny 0.05 zdjęcie 0.33 sąsiedztwo 0.36 własny 0.28; τ=100: wspólny 0.04 zdjęcie 0.34 sąsiedztwo 0.37 własny 0.26; τ=1000: wspólny 0.04 zdjęcie 0.34 sąsiedztwo 0.38 własny 0.23 [315 s]
+klas_vit_od_zera_60ep_lr_5e-4 [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.662, min -0.107 @τ=50, losowe w zdjęciu C(0) 0.013, inne zdjęcia C(0) 0.000758192053399398; auto [0.99, 0.97, 0.94, 0.89, 0.77, 0.47, 0.17, 0.01, -0.16, -0.14] [378 s]
+klas_vit_od_zera_60ep_lr_5e-4 [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.780, min -0.126 @τ=50, losowe w zdjęciu C(0) 0.393, inne zdjęcia C(0) -0.01278052687800179; auto [0.99, 0.97, 0.94, 0.89, 0.77, 0.47, 0.17, 0.02, -0.16, -0.14] [442 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/klas_vit_od_zera_60ep_lr_5e-4/ANALIZA_16576_17760.json [443 s]
+KONIEC klas_vit_od_zera_60ep_lr_5e-4 ok=1 Sun Oct 11 05:56:15 PM CEST 2026
+15G	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/klas_vit_od_zera_60ep_lr_5e-4
+      /mnt/evafs  163.6G    200G    220G       -  168786  200000  220000       -

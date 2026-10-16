@@ -1,0 +1,69 @@
+{
+  "status": "pass",
+  "phase": "production",
+  "checked_utc": "2026-10-08T20:46:51.105086+00:00",
+  "checks": {
+    "exact_input_hashes": true,
+    "exact_manifest_count": true,
+    "protected_full_adamw_state_exists": true,
+    "protected_full_adamw_state_size": true,
+    "source_archive_exists_without_extraction": true,
+    "source_archive_exact_size": true,
+    "space_threshold_met": true,
+    "no_existing_submission_marker": true,
+    "scheduler_query_succeeded": true,
+    "no_active_pipeline_job": true,
+    "runtime_imports_and_strict_checkpoint_load": true,
+    "test_environment_imports": true
+  },
+  "paths": {
+    "checkpoint": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-01_maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/wagi/k1000.pt",
+    "checkpoint_adamw": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-01_maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/pelny/k1000.pt",
+    "coco": "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/wejscia/pretrain/train/_annotations.coco.json",
+    "archive": "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-15_tracking_static36/data/tracking_static36.tar",
+    "manifest": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_1500_pelne_latenty_90_20261008/provenance/MANIFEST_1500.jsonl"
+  },
+  "hashes": {
+    "checkpoint": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+    "checkpoint_adamw": "e7a7727ccf19dd3801bd8ec4de65887480252ccdf7e21d385346c13a139259b6",
+    "coco": "3667dd12c8fddcb695c9ce6144ca4bf3f5300f70a47322a8da12b92de6d98f75",
+    "archive": "5850b5c8dd4411159061e254e1f9b32e2b4b633036d3990049b553bea767d8b1",
+    "manifest": "33caf6f005b3db0d091d6e9ba9a58cec141a859c66fcd7bd777d31e6fe1a80d7"
+  },
+  "archive_bytes": 2108682240,
+  "checkpoint_adamw_bytes": 35212799,
+  "disk": {
+    "total_bytes": 214748364800,
+    "used_bytes": 67023593472,
+    "free_bytes": 147724771328
+  },
+  "budget": {
+    "raw_large_tensors": 14610825216,
+    "small_artifacts_and_smoke_allowance": 800000000,
+    "operating_reserve": 5000000000,
+    "minimum_free_for_production": 20410825216,
+    "compression_credit_assumed": 0
+  },
+  "active_pipeline_jobs": [],
+  "runtime_probe": {
+    "ok": true,
+    "executable": "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/bin/python",
+    "returncode": 0,
+    "stdout": "{\"cv2\": \"5.0.0\", \"numpy\": \"2.3.5\", \"parameters\": 2926493, \"torch\": \"2.9.1+cu128\", \"weights_buffers_fingerprint\": \"443ef243f956ead49a7b9119cf3d454d93251476115006d1416a88d45415246e\"}",
+    "stderr": ""
+  },
+  "test_environment_probe": {
+    "ok": true,
+    "executable": "/home2/faculty/bpiotrowski/venvs/nndmd_expanded_20261002/bin/python",
+    "returncode": 0,
+    "stdout": "{\"cv2\": \"5.0.0\", \"numpy\": \"1.26.4\", \"pytest\": \"7.4.4\", \"torch\": \"2.9.1+cu128\"}",
+    "stderr": ""
+  },
+  "allow_existing_submission_for_resume": false,
+  "protected_dependencies": [
+    "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-01_maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/wagi/k1000.pt",
+    "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-01_maly_vit_ruch_czastek_gesta_historia/wyniki/pelny/pelny/k1000.pt",
+    "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-28_maly_vit_od_zera/wejscia/pretrain/train/_annotations.coco.json",
+    "/home2/faculty/bpiotrowski/smallvit_runs/2026-09-15_tracking_static36/data/tracking_static36.tar"
+  ]
+}

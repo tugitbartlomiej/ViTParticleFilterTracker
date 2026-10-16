@@ -1,0 +1,631 @@
+{
+  "question": "What work has applied broken detailed balance, entropy production, probability currents, or stochastic area measurements to stochastic gradient descent, Adam training, or neural-network representations?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'What work has applied broken detailed balance, entropy production, probability currents, or stochastic area measurements to stochastic gradient descent, Adam training, or neural-network representations?'.\n\n\n1. Machine learning in and out of equilibrium\n   ID: 1qsyr5yd\n   2023 · Shishir Adhikari, Alexander Strang, Deniz Yuret · arXiv.org\n   DOI: 10.48550/arXiv.2306.03521\n   Abstract: The algorithms used to train neural networks, like stochastic gradient descent (SGD), have close parallels to natural processes that navigate a high-dimensional parameter space -- for example protein folding or evolution. Our study uses a Fokker-Planck approach, adapted from statistical physics, to explore these parallels in a single, unified framework. We focus in particular on the stationary state of the system in the long-time limit, which in conventional SGD is out of equilibrium, exhibiting persistent currents in the space of network parameters. As in its physical analogues, the current is associated with an entropy production rate for any given training trajectory. The stationary distribution of these rates obeys the integral and detailed fluctuation theorems -- nonequilibrium generalizations of the second law of thermodynamics. We validate these relations in two numerical examples, a nonlinear regression network and MNIST digit classification. While the fluctuation theorems are universal, there are other aspects of the stationary state that are highly sensitive to the training details. Surprisingly, the effective loss landscape and diffusion matrix that determine the shape of the stationary distribution vary depending on the simple choice of minibatching done with or without replacement. We can take advantage of this nonequilibrium sensitivity to engineer an equilibrium stationary state for a particular application: sampling from a posterior distribution of network weights in Bayesian machine learning. We propose a new variation of stochastic gradient Langevin dynamics (SGLD) that harnesses without replacement minibatching. In an example system where the posterior is exactly known, this SGWORLD algorithm outperforms SGLD, converging to the posterior orders of magnitude faster as a function of the learning rate.\n\n2. Machine learning in and out of equilibrium\n   ID: 2xe24z5m\n   2023\n   DOI: 10.48550/arxiv.2306.03521\n   Abstract: The algorithms used to train neural networks, like stochastic gradient descent (SGD), have close parallels to natural processes that navigate a high-dimensional parameter space -- for example protein folding or evolution. Our study uses a Fokker-Planck approach, adapted from statistical physics, to explore these parallels in a single, unified framework. We focus in particular on the stationary state of the system in the long-time limit, which in conventional SGD is out of equilibrium, exhibiting persistent currents in the space of network parameters. As in its physical analogues, the current is associated with an entropy production rate for any given training trajectory. The stationary distribution of these rates obeys the integral and detailed fluctuation theorems -- nonequilibrium generalizations of the second law of thermodynamics. We validate these relations in two numerical examples, a nonlinear regression network and MNIST digit classification. While the fluctuation theorems are universal, there are other aspects of the stationary state that are highly sensitive to the training details. Surprisingly, the effective loss landscape and diffusion matrix that determine the shape of the stationary distribution vary depending on the simple choice of minibatching done with or without replacement. We can take advantage of this nonequilibrium sensitivity to engineer an equilibrium stationary state for a particular application: sampling from a posterior distribution of network weights in Bayesian machine learning. We propose a new variation of stochastic gradient Langevin dynamics (SGLD) that harnesses without replacement minibatching. In an example system where the posterior is exactly known, this SGWORLD algorithm outperforms SGLD, converging to the posterior orders of magnitude faster as a function of the learning rate. \n\n3. Neural Thermodynamics I: Entropic Forces in Deep and Universal Representation Learning\n   ID: nq28yerbingl\n   2025 · Ziyin Liu, Yizhou Xu, Isaac Chuang · arXiv.org\n   DOI: 10.48550/arxiv.2505.12387\n   Abstract: With the rapid discovery of emergent phenomena in deep learning and large language models, understanding their cause has become an urgent need. Here, we propose a rigorous entropic-force theory for understanding the learning dynamics of neural networks trained with stochastic gradient descent (SGD) and its variants. Building on the theory of parameter symmetries and an entropic loss landscape, we show that representation learning is crucially governed by emergent entropic forces arising from stochasticity and discrete-time updates. These forces systematically break continuous parameter symmetries and preserve discrete ones, leading to a series of gradient balance phenomena that resemble the equipartition property of thermal systems. These phenomena, in turn, (a) explain the universal alignment of neural representations between AI models and lead to a proof of the Platonic Representation Hypothesis, and (b) reconcile the seemingly contradictory observations of sharpness- and flatness-seeking behavior of deep learning optimization. Our theory and experiments demonstrate that a combination of entropic forces and symmetry breaking is key to understanding emergent phenomena in deep learning.\n\n4. The Probabilistic Stability of Stochastic Gradient Descent\n   ID: a9oqektn\n   2023\n   DOI: 10.48550/arxiv.2303.13093\n   Abstract: A fundamental open problem in deep learning theory is how to define and understand the stability of stochastic gradient descent (SGD) close to a fixed point. Conventional literature relies on the convergence of statistical moments, esp., the variance, of the parameters to quantify the stability. We revisit the definition of stability for SGD and use the \\textit{convergence in probability} condition to define the \\textit{probabilistic stability} of SGD. The proposed stability directly answers a fundamental question in deep learning theory: how SGD selects a meaningful solution for a neural network from an enormous number of solutions that may overfit badly. To achieve this, we show that only under the lens of probabilistic stability does SGD exhibit rich and practically relevant phases of learning, such as the phases of the complete loss of stability, incorrect learning, convergence to low-rank saddles, and correct learning. When applied to a neural network, these phase diagrams imply that SGD prefers low-rank saddles when the underlying gradient is noisy, thereby improving the learning performance. This result is in sharp contrast to the conventional wisdom that SGD prefers flatter minima to sharp ones, which we find insufficient to explain the experimental data. We also prove that the probabilistic stability of SGD can be quantified by the Lyapunov exponents of the SGD dynamics, which can easily be measured in practice. Our work potentially opens a new venue for addressing the fundamental question of how the learning algorithm affects the learning outcome in deep learning. \n\n5. Mutual Information Based Learning Rate Decay for Stochastic Gradient Descent Training of Deep Neural Networks.\n   ID: lxm5llk4sl\n   2020 · Shrihari Vasudevan · Entropy\n   DOI: 10.3390/E22050560\n   Abstract: This paper demonstrates a novel approach to training deep neural networks using a Mutual Information (MI)-driven, decaying Learning Rate (LR), Stochastic Gradient Descent (SGD) algorithm. MI between the output of the neural network and true outcomes is used to adaptively set the LR for the network, in every epoch of the training cycle. This idea is extended to layer-wise setting of LR, as MI naturally provides a layer-wise performance metric. A LR range test determining the operating LR range is also proposed. Experiments compared this approach with popular alternatives such as gradient-based adaptive LR algorithms like Adam, RMSprop, and LARS. Competitive to better accuracy outcomes obtained in competitive to better time, demonstrate the feasibility of the metric and approach.\n\n6. SGD as Free Energy Minimization: A Thermodynamic View on Neural Network Training\n   ID: 0bokjmnsj195\n   2025 · Sadrtdinov, Ildus, Lobacheva, Ekaterina, Vetrov, Dmitry\n   DOI: 10.48550/arxiv.2505.23489\n   Abstract: We present a thermodynamic interpretation of the stationary behavior of stochastic gradient descent (SGD) under fixed learning rates (LRs) in neural network training. We show that SGD implicitly minimizes a free energy function $F=U-TS$, balancing training loss $U$ and the entropy of the weights distribution $S$, with temperature $T$ determined by the LR. This perspective offers a new lens on why high LRs prevent training from converging to the loss minima and how different LRs lead to stabilization at different loss levels. We empirically validate the free energy framework on both underparameterized (UP) and overparameterized (OP) models. UP models consistently follow free energy minimization, with temperature increasing monotonically with LR, while for OP models, the temperature effectively drops to zero at low LRs, causing SGD to minimize the loss directly and converge to an optimum. We attribute this mismatch to differences in the signal-to-noise ratio of stochastic gradients near optima, supported by both a toy example and neural network experiments. \n\n7. From First Principles: A Statistical Mechanics Framework for Machine Learning\n   ID: 5tuatc8xpnht\n   2025 · Xiaochen Liu · Applied and Computational Engineering\n   DOI: 10.54254/2755-2721/2025.ld26945\n   Abstract: Modern machine learning has achieved remarkable empirical success, yet its theoretical underpinnings remain incomplete. This paper develops a unified framework for understanding learning through the first principles of statistical physics. Within this view, a modelsloss functioncorresponds to anenergy landscape, thetraining processtostochastic dynamics, andgeneralizationto an entropy-driven preference forflat minimaand phase-transition behavior. Energy-Based Models (EBMs)are analyzed as a central case study. This study shows how their mathematical form arises naturally from thePrinciple of Maximum Entropy, and how their latent-variable structures can be interpreted as learning aneffective theoryof the data. The learning dynamics are also given a direct physical interpretation, with training algorithms like Contrastive Divergence representingnon-equilibrium relaxation processes. In particular, we highlight that the Hessian-dependent gradient noise in Stochastic Gradient Descent emerges as the key mechanism driving anexponential preferencefor the flat minima associated with good generalization. Beyond explanation, this framework offers constructive principles.Symmetry, conservation laws, and dualityprovide powerful inductive biases for building data-efficient and interpretable models, as exemplified by Physics-Informed Neural Networks and compositional generative architectures. We conclude by pointing toward future research directions, including exploring the limits of compositionality through the lens of spin glass theory and developing a non-equilibrium thermodynamic framework for learning dynamics. \n\n8. Stochastic Gradient Descent Performs Variational Inference, Converges to Limit Cycles for Deep Networks\n   ID: 209zcsh4et\n   2018 · Pratik Chaudhari, Stefano Soatto\n   DOI: 10.1109/ITA.2018.8503224\n   Abstract: Stochastic gradient descent (SGD) is widely believed to perform implicit regularization when used to train deep neural networks, but the precise manner in which this occurs has thus far been elusive. We prove that SGD minimizes an average potential over the posterior distribution of weights along with an entropic regularization term. This potential is however not the original loss function in general. So SGD does perform variational inference, but for a different loss than the one used to compute the gradients. Even more surprisingly, SGD does not even converge in the classical sense: we show that the most likely trajectories of SGD for deep networks do not behave like Brownian motion around critical points. Instead, they resemble closed loops with deterministic components. We prove that such “out-of-equilibrium” behavior is a consequence of highly nonisotropic gradient noise in SGD; the covariance matrix of mini-batch gradients for deep networks has a rank as small as 1% of its dimension. We provide extensive empirical validation of these claims. This article summarizes the findings in [1]. See the longer version for background, detailed results and proofs.\n\n9. Stochastic gradient descent performs variational inference, converges to limit cycles for deep networks\n   ID: 2mm0j82eik\n   2017 · Pratik Chaudhari, Stefano Soatto · arXiv: Learning\n   Abstract: Stochastic gradient descent (SGD) is widely believed to perform implicit regularization when used to train deep neural networks, but the precise manner in which this occurs has thus far been elusive. We prove that SGD minimizes an average potential over the posterior distribution of weights along with an entropic regularization term. This potential is however not the original loss function in general. So SGD does perform variational inference, but for a different loss than the one used to compute the gradients. Even more surprisingly, SGD does not even converge in the classical sense: we show that the most likely trajectories of SGD for deep networks do not behave like Brownian motion around critical points. Instead, they resemble closed loops with deterministic components. We prove that such \"out-of-equilibrium\" behavior is a consequence of highly non-isotropic gradient noise in SGD; the covariance matrix of mini-batch gradients for deep networks has a rank as small as 1% of its dimension. We provide extensive empirical validation of these claims, proven in the appendix.\n\n10. What is the long-run distribution of stochastic gradient descent? A\n  large deviations analysis\n   ID: 34m5rbv88j\n   2024 · Waïss Azizian, Franck Iutzeler, Jérôme Malick\n   DOI: 10.48550/arxiv.2406.09241\n   Abstract: In this paper, we examine the long-run distribution of stochastic gradient descent (SGD) in general, non-convex problems. Specifically, we seek to understand which regions of the problem's state space are more likely to be visited by SGD, and by how much. Using an approach based on the theory of large deviations and randomly perturbed dynamical systems, we show that the long-run distribution of SGD resembles the Boltzmann-Gibbs distribution of equilibrium thermodynamics with temperature equal to the method's step-size and energy levels determined by the problem's objective and the statistics of the noise. In particular, we show that, in the long run, (a) the problem's critical region is visited exponentially more often than any non-critical region; (b) the iterates of SGD are exponentially concentrated around the problem's minimum energy state (which does not always coincide with the global minimum of the objective); (c) all other connected components of critical points are visited with frequency that is exponentially proportional to their energy level; and, finally (d) any component of local maximizers or saddle points is \"dominated\" by a component of local minimizers which is visited exponentially more often. "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "What work has applied broken detailed balance, entropy production, probability currents, or stochastic area measurements to stochastic gradient descent, Adam training, or neural-network representations?",
+        "papers": [
+          {
+            "id": 4003545140,
+            "title": "Machine learning in and out of equilibrium",
+            "is_archived": false,
+            "full_slug": "machine-learning-in-and-out-of-equilibrium-1qsyr5yd",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-06-06T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arXiv.2306.03521",
+            "unique_id": "1qsyr5yd",
+            "abstract": "The algorithms used to train neural networks, like stochastic gradient descent (SGD), have close parallels to natural processes that navigate a high-dimensional parameter space -- for example protein folding or evolution. Our study uses a Fokker-Planck approach, adapted from statistical physics, to explore these parallels in a single, unified framework. We focus in particular on the stationary state of the system in the long-time limit, which in conventional SGD is out of equilibrium, exhibiting persistent currents in the space of network parameters. As in its physical analogues, the current is associated with an entropy production rate for any given training trajectory. The stationary distribution of these rates obeys the integral and detailed fluctuation theorems -- nonequilibrium generalizations of the second law of thermodynamics. We validate these relations in two numerical examples, a nonlinear regression network and MNIST digit classification. While the fluctuation theorems are universal, there are other aspects of the stationary state that are highly sensitive to the training details. Surprisingly, the effective loss landscape and diffusion matrix that determine the shape of the stationary distribution vary depending on the simple choice of minibatching done with or without replacement. We can take advantage of this nonequilibrium sensitivity to engineer an equilibrium stationary state for a particular application: sampling from a posterior distribution of network weights in Bayesian machine learning. We propose a new variation of stochastic gradient Langevin dynamics (SGLD) that harnesses without replacement minibatching. In an example system where the posterior is exactly known, this SGWORLD algorithm outperforms SGLD, converging to the posterior orders of magnitude faster as a function of the learning rate.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Shishir Adhikari",
+                  "id": 2731112569,
+                  "slug": "shishir-adhikari",
+                  "unique_id": "1trzrtgrgd",
+                  "full_slug": "shishir-adhikari-1trzrtgrgd"
+                },
+                {
+                  "display_name": "Alexander Strang",
+                  "id": 2758907790,
+                  "slug": "alexander-strang",
+                  "unique_id": "2b2rrdm58v",
+                  "full_slug": "alexander-strang-2b2rrdm58v"
+                },
+                {
+                  "display_name": "Deniz Yuret",
+                  "id": 15371017,
+                  "slug": "deniz-yuret",
+                  "unique_id": "26o55wk7mo",
+                  "full_slug": "deniz-yuret-26o55wk7mo"
+                },
+                {
+                  "display_name": "Michael Hinczewski",
+                  "id": 2305277003,
+                  "slug": "michael-hinczewski",
+                  "unique_id": "271ipxqh3z",
+                  "full_slug": "michael-hinczewski-271ipxqh3z"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "In this article , a Fokker-Planck approach is used to explore the parallels between stochastic gradient descent and natural processes that navigate a high-dimensional parameter space, such as protein folding or evolution.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4015823414,
+            "title": "Machine learning in and out of equilibrium",
+            "is_archived": false,
+            "full_slug": "machine-learning-in-and-out-of-equilibrium-2xe24z5m",
+            "journal": null,
+            "conference_series": null,
+            "date": "2023-06-06T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2306.03521",
+            "unique_id": "2xe24z5m",
+            "abstract": "The algorithms used to train neural networks, like stochastic gradient descent (SGD), have close parallels to natural processes that navigate a high-dimensional parameter space -- for example protein folding or evolution. Our study uses a Fokker-Planck approach, adapted from statistical physics, to explore these parallels in a single, unified framework. We focus in particular on the stationary state of the system in the long-time limit, which in conventional SGD is out of equilibrium, exhibiting persistent currents in the space of network parameters. As in its physical analogues, the current is associated with an entropy production rate for any given training trajectory. The stationary distribution of these rates obeys the integral and detailed fluctuation theorems -- nonequilibrium generalizations of the second law of thermodynamics. We validate these relations in two numerical examples, a nonlinear regression network and MNIST digit classification. While the fluctuation theorems are universal, there are other aspects of the stationary state that are highly sensitive to the training details. Surprisingly, the effective loss landscape and diffusion matrix that determine the shape of the stationary distribution vary depending on the simple choice of minibatching done with or without replacement. We can take advantage of this nonequilibrium sensitivity to engineer an equilibrium stationary state for a particular application: sampling from a posterior distribution of network weights in Bayesian machine learning. We propose a new variation of stochastic gradient Langevin dynamics (SGLD) that harnesses without replacement minibatching. In an example system where the posterior is exactly known, this SGWORLD algorithm outperforms SGLD, converging to the posterior orders of magnitude faster as a function of the learning rate. ",
+            "fulltext_url": "/pdf/machine-learning-in-and-out-of-equilibrium-2xe24z5m.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2306.03521"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 1
+              }
+            },
+            "tldr": "In this paper , a Fokker-Planck approach is used to explore the parallels between stochastic gradient descent and natural processes that navigate a high-dimensional parameter space, such as protein folding or evolution.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4071975721,
+            "title": "Neural Thermodynamics I: Entropic Forces in Deep and Universal Representation Learning",
+            "is_archived": false,
+            "full_slug": "neural-thermodynamics-i-entropic-forces-in-deep-and-nq28yerbingl",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-05-18T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2505.12387",
+            "unique_id": "nq28yerbingl",
+            "abstract": "With the rapid discovery of emergent phenomena in deep learning and large language models, understanding their cause has become an urgent need. Here, we propose a rigorous entropic-force theory for understanding the learning dynamics of neural networks trained with stochastic gradient descent (SGD) and its variants. Building on the theory of parameter symmetries and an entropic loss landscape, we show that representation learning is crucially governed by emergent entropic forces arising from stochasticity and discrete-time updates. These forces systematically break continuous parameter symmetries and preserve discrete ones, leading to a series of gradient balance phenomena that resemble the equipartition property of thermal systems. These phenomena, in turn, (a) explain the universal alignment of neural representations between AI models and lead to a proof of the Platonic Representation Hypothesis, and (b) reconcile the seemingly contradictory observations of sharpness- and flatness-seeking behavior of deep learning optimization. Our theory and experiments demonstrate that a combination of entropic forces and symmetry breaking is key to understanding emergent phenomena in deep learning.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Ziyin Liu",
+                  "id": 2885157073,
+                  "slug": "ziyin-liu",
+                  "unique_id": "xc6213m30z",
+                  "full_slug": "ziyin-liu-xc6213m30z",
+                  "affiliation_full_slug": "university-of-tokyo-3wkpr7bv"
+                },
+                {
+                  "display_name": "Yizhou Xu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Isaac Chuang",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "University of Tokyo",
+                  "city": "Tokyo",
+                  "region": null,
+                  "country": "Japan",
+                  "id": 74801974,
+                  "slug": "university-of-tokyo",
+                  "unique_id": "3wkpr7bv",
+                  "full_slug": "university-of-tokyo-3wkpr7bv"
+                }
+              ]
+            },
+            "fulltext_url": "pdf/neural-thermodynamics-i-entropic-forces-in-deep-and-nq28yerbingl.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2505.12387v2.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers propose an entropic-force theory to explain emergent phenomena in deep learning, revealing that representation learning is governed by entropic forces that break continuous symmetries and preserve discrete ones, leading to universal alignment of neural representations.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4017321206,
+            "title": "The Probabilistic Stability of Stochastic Gradient Descent",
+            "is_archived": false,
+            "full_slug": "the-probabilistic-stability-of-stochastic-gradient-descent-a9oqektn",
+            "journal": null,
+            "conference_series": null,
+            "date": "2023-03-23T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2303.13093",
+            "unique_id": "a9oqektn",
+            "abstract": "A fundamental open problem in deep learning theory is how to define and understand the stability of stochastic gradient descent (SGD) close to a fixed point. Conventional literature relies on the convergence of statistical moments, esp., the variance, of the parameters to quantify the stability. We revisit the definition of stability for SGD and use the \\textit{convergence in probability} condition to define the \\textit{probabilistic stability} of SGD. The proposed stability directly answers a fundamental question in deep learning theory: how SGD selects a meaningful solution for a neural network from an enormous number of solutions that may overfit badly. To achieve this, we show that only under the lens of probabilistic stability does SGD exhibit rich and practically relevant phases of learning, such as the phases of the complete loss of stability, incorrect learning, convergence to low-rank saddles, and correct learning. When applied to a neural network, these phase diagrams imply that SGD prefers low-rank saddles when the underlying gradient is noisy, thereby improving the learning performance. This result is in sharp contrast to the conventional wisdom that SGD prefers flatter minima to sharp ones, which we find insufficient to explain the experimental data. We also prove that the probabilistic stability of SGD can be quantified by the Lyapunov exponents of the SGD dynamics, which can easily be measured in practice. Our work potentially opens a new venue for addressing the fundamental question of how the learning algorithm affects the learning outcome in deep learning. ",
+            "fulltext_url": "http://arxiv.org/pdf/2303.13093",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": 2
+              }
+            },
+            "tldr": "In this article , the authors use the convergence in probability condition to define the probabilistic stability of stochastic gradient descent (SGD) and show that SGD exhibits rich and practically relevant phases of learning, such as the phases of complete loss of stability, incorrect learning, convergence to low-rank saddles, and correct learning.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3025887512,
+            "title": "Mutual Information Based Learning Rate Decay for Stochastic Gradient Descent Training of Deep Neural Networks.",
+            "is_archived": false,
+            "full_slug": "mutual-information-based-learning-rate-decay-for-stochastic-lxm5llk4sl",
+            "journal": {
+              "display_name": "Entropy",
+              "official_page": "http://www.mdpi.com/journal/entropy/",
+              "issn": "1099-4300",
+              "alias": [
+                "thermodynamic entropy"
+              ],
+              "id": 195231649,
+              "slug": "entropy",
+              "unique_id": "2an5cv42",
+              "full_slug": "entropy-2an5cv42"
+            },
+            "conference_series": null,
+            "date": "2020-05-01T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Journal Article",
+            "doi": "10.3390/E22050560",
+            "unique_id": "lxm5llk4sl",
+            "abstract": "This paper demonstrates a novel approach to training deep neural networks using a Mutual Information (MI)-driven, decaying Learning Rate (LR), Stochastic Gradient Descent (SGD) algorithm. MI between the output of the neural network and true outcomes is used to adaptively set the LR for the network, in every epoch of the training cycle. This idea is extended to layer-wise setting of LR, as MI naturally provides a layer-wise performance metric. A LR range test determining the operating LR range is also proposed. Experiments compared this approach with popular alternatives such as gradient-based adaptive LR algorithms like Adam, RMSprop, and LARS. Competitive to better accuracy outcomes obtained in competitive to better time, demonstrate the feasibility of the metric and approach.",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Shrihari Vasudevan",
+                  "id": 2107736785,
+                  "slug": "shrihari-vasudevan",
+                  "unique_id": "2hn3yy177b",
+                  "full_slug": "shrihari-vasudevan-2hn3yy177b",
+                  "affiliation_full_slug": "ibm-3vfvs9ir"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "IBM",
+                  "city": "Armonk",
+                  "region": "New York",
+                  "country": "United States",
+                  "id": 1341412227,
+                  "slug": "ibm",
+                  "unique_id": "3vfvs9ir",
+                  "full_slug": "ibm-3vfvs9ir"
+                }
+              ]
+            },
+            "fulltext_url": "https://www.mdpi.com/1099-4300/22/5/560/pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://dblp.uni-trier.de/db/journals/entropy/entropy22.html#Vasudevan20",
+                  "https://www.mdpi.com/1099-4300/22/5/560/htm"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper demonstrates a novel approach to training deep neural networks using a Mutual Information (MI)-driven, decaying Learning Rate (LR), Stochastic Gradient Descent (SGD) algorithm, and demonstrates the feasibility of the metric and approach.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4088876593,
+            "title": "SGD as Free Energy Minimization: A Thermodynamic View on Neural Network Training",
+            "is_archived": false,
+            "full_slug": "sgd-as-free-energy-minimization-a-thermodynamic-view-on-0bokjmnsj195",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-05-30T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2505.23489",
+            "unique_id": "0bokjmnsj195",
+            "abstract": "We present a thermodynamic interpretation of the stationary behavior of stochastic gradient descent (SGD) under fixed learning rates (LRs) in neural network training. We show that SGD implicitly minimizes a free energy function $F=U-TS$, balancing training loss $U$ and the entropy of the weights distribution $S$, with temperature $T$ determined by the LR. This perspective offers a new lens on why high LRs prevent training from converging to the loss minima and how different LRs lead to stabilization at different loss levels. We empirically validate the free energy framework on both underparameterized (UP) and overparameterized (OP) models. UP models consistently follow free energy minimization, with temperature increasing monotonically with LR, while for OP models, the temperature effectively drops to zero at low LRs, causing SGD to minimize the loss directly and converge to an optimum. We attribute this mismatch to differences in the signal-to-noise ratio of stochastic gradients near optima, supported by both a toy example and neural network experiments. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Sadrtdinov, Ildus",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Lobacheva, Ekaterina",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Vetrov, Dmitry",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4072747282,
+            "title": "From First Principles: A Statistical Mechanics Framework for Machine Learning",
+            "is_archived": false,
+            "full_slug": "from-first-principles-a-statistical-mechanics-framework-for-5tuatc8xpnht",
+            "journal": {
+              "display_name": "Applied and Computational Engineering",
+              "official_page": null,
+              "issn": "2755-2721",
+              "alias": [
+                "Appl Comput Eng"
+              ],
+              "id": 4000146575,
+              "slug": "applied-and-computational-engineering",
+              "unique_id": "3l2fzmi3",
+              "full_slug": "applied-and-computational-engineering-3l2fzmi3"
+            },
+            "conference_series": null,
+            "date": "2025-09-09T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.54254/2755-2721/2025.ld26945",
+            "unique_id": "5tuatc8xpnht",
+            "abstract": "Modern machine learning has achieved remarkable empirical success, yet its theoretical underpinnings remain incomplete. This paper develops a unified framework for understanding learning through the first principles of statistical physics. Within this view, a modelsloss functioncorresponds to anenergy landscape, thetraining processtostochastic dynamics, andgeneralizationto an entropy-driven preference forflat minimaand phase-transition behavior. Energy-Based Models (EBMs)are analyzed as a central case study. This study shows how their mathematical form arises naturally from thePrinciple of Maximum Entropy, and how their latent-variable structures can be interpreted as learning aneffective theoryof the data. The learning dynamics are also given a direct physical interpretation, with training algorithms like Contrastive Divergence representingnon-equilibrium relaxation processes. In particular, we highlight that the Hessian-dependent gradient noise in Stochastic Gradient Descent emerges as the key mechanism driving anexponential preferencefor the flat minima associated with good generalization. Beyond explanation, this framework offers constructive principles.Symmetry, conservation laws, and dualityprovide powerful inductive biases for building data-efficient and interpretable models, as exemplified by Physics-Informed Neural Networks and compositional generative architectures. We conclude by pointing toward future research directions, including exploring the limits of compositionality through the lens of spin glass theory and developing a non-equilibrium thermodynamic framework for learning dynamics. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Xiaochen Liu",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper develops a statistical mechanics framework for machine learning, interpreting models' loss functions as energy landscapes and training processes as stochastic dynamics, with implications for understanding generalization and developing data-efficient, interpretable models.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 2963177640,
+            "title": "Stochastic Gradient Descent Performs Variational Inference, Converges to Limit Cycles for Deep Networks",
+            "is_archived": false,
+            "full_slug": "stochastic-gradient-descent-performs-variational-inference-209zcsh4et",
+            "journal": null,
+            "conference_series": {
+              "display_name": "Information Theory and Applications",
+              "id": 1129078273,
+              "slug": "information-theory-and-applications",
+              "unique_id": "3qunhm3a",
+              "full_slug": "information-theory-and-applications-3qunhm3a"
+            },
+            "date": "2018-02-15T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Proceedings Article",
+            "doi": "10.1109/ITA.2018.8503224",
+            "unique_id": "209zcsh4et",
+            "abstract": "Stochastic gradient descent (SGD) is widely believed to perform implicit regularization when used to train deep neural networks, but the precise manner in which this occurs has thus far been elusive. We prove that SGD minimizes an average potential over the posterior distribution of weights along with an entropic regularization term. This potential is however not the original loss function in general. So SGD does perform variational inference, but for a different loss than the one used to compute the gradients. Even more surprisingly, SGD does not even converge in the classical sense: we show that the most likely trajectories of SGD for deep networks do not behave like Brownian motion around critical points. Instead, they resemble closed loops with deterministic components. We prove that such “out-of-equilibrium” behavior is a consequence of highly nonisotropic gradient noise in SGD; the covariance matrix of mini-batch gradients for deep networks has a rank as small as 1% of its dimension. We provide extensive empirical validation of these claims. This article summarizes the findings in [1]. See the longer version for background, detailed results and proofs.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Pratik Chaudhari",
+                  "id": 2110845099,
+                  "slug": "pratik-chaudhari",
+                  "unique_id": "4pcw174tms",
+                  "full_slug": "pratik-chaudhari-4pcw174tms",
+                  "affiliation_full_slug": "university-of-california-los-angeles-3qypghuz"
+                },
+                {
+                  "display_name": "Stefano Soatto",
+                  "id": 343589990,
+                  "slug": "stefano-soatto",
+                  "unique_id": "1yus8r7qyq",
+                  "full_slug": "stefano-soatto-1yus8r7qyq",
+                  "affiliation_full_slug": "university-of-california-los-angeles-3qypghuz"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "University of California, Los Angeles",
+                  "city": "Los Angeles",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 161318765,
+                  "slug": "university-of-california-los-angeles",
+                  "unique_id": "3qypghuz",
+                  "full_slug": "university-of-california-los-angeles-3qypghuz"
+                }
+              ]
+            },
+            "fulltext_url": "https://arxiv.org/pdf/1710.11029",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://dblp.uni-trier.de/db/journals/corr/corr1710.html#abs-1710-11029",
+                  "https://arxiv.org/abs/1710.11029"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 373
+              }
+            },
+            "tldr": "The authors showed that SGD does not converge in the classical sense: the most likely trajectories of SGD for deep networks do not behave like Brownian motion around critical points, instead, they resemble closed loops with deterministic components.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 2765393161,
+            "title": "Stochastic gradient descent performs variational inference, converges to limit cycles for deep networks",
+            "is_archived": false,
+            "full_slug": "stochastic-gradient-descent-performs-variational-inference-2mm0j82eik",
+            "journal": {
+              "display_name": "arXiv: Learning",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2597173376,
+              "slug": "arxiv-learning",
+              "unique_id": "2w4i5zua",
+              "full_slug": "arxiv-learning-2w4i5zua"
+            },
+            "conference_series": null,
+            "date": "2017-10-30T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "2mm0j82eik",
+            "abstract": "Stochastic gradient descent (SGD) is widely believed to perform implicit regularization when used to train deep neural networks, but the precise manner in which this occurs has thus far been elusive. We prove that SGD minimizes an average potential over the posterior distribution of weights along with an entropic regularization term. This potential is however not the original loss function in general. So SGD does perform variational inference, but for a different loss than the one used to compute the gradients. Even more surprisingly, SGD does not even converge in the classical sense: we show that the most likely trajectories of SGD for deep networks do not behave like Brownian motion around critical points. Instead, they resemble closed loops with deterministic components. We prove that such \"out-of-equilibrium\" behavior is a consequence of highly non-isotropic gradient noise in SGD; the covariance matrix of mini-batch gradients for deep networks has a rank as small as 1% of its dimension. We provide extensive empirical validation of these claims, proven in the appendix.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Pratik Chaudhari",
+                  "id": 2110845099,
+                  "slug": "pratik-chaudhari",
+                  "unique_id": "4pcw174tms",
+                  "full_slug": "pratik-chaudhari-4pcw174tms",
+                  "affiliation_full_slug": "university-of-california-los-angeles-3qypghuz"
+                },
+                {
+                  "display_name": "Stefano Soatto",
+                  "id": 343589990,
+                  "slug": "stefano-soatto",
+                  "unique_id": "1yus8r7qyq",
+                  "full_slug": "stefano-soatto-1yus8r7qyq",
+                  "affiliation_full_slug": "university-of-california-los-angeles-3qypghuz"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "University of California, Los Angeles",
+                  "city": "Los Angeles",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 161318765,
+                  "slug": "university-of-california-los-angeles",
+                  "unique_id": "3qypghuz",
+                  "full_slug": "university-of-california-los-angeles-3qypghuz"
+                }
+              ]
+            },
+            "fulltext_url": "https://arxiv.org/pdf/1710.11029.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Pdf",
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://arxiv.org/abs/1710.11029"
+                ],
+                "Pdf": [
+                  "http://export.arxiv.org/pdf/1710.11029"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 146
+              }
+            },
+            "tldr": "This paper showed that the most likely trajectories of SGD for deep networks do not behave like Brownian motion around critical points, instead, they resemble closed loops with deterministic components, and showed that such \"out-of-equilibrium\" behavior is a consequence of highly nonisotropic gradient noise in SGD.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4037738984,
+            "title": "What is the long-run distribution of stochastic gradient descent? A\n  large deviations analysis",
+            "is_archived": false,
+            "full_slug": "what-is-the-long-run-distribution-of-stochastic-gradient-34m5rbv88j",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-06-13T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Preprint",
+            "doi": "10.48550/arxiv.2406.09241",
+            "unique_id": "34m5rbv88j",
+            "abstract": "In this paper, we examine the long-run distribution of stochastic gradient descent (SGD) in general, non-convex problems. Specifically, we seek to understand which regions of the problem's state space are more likely to be visited by SGD, and by how much. Using an approach based on the theory of large deviations and randomly perturbed dynamical systems, we show that the long-run distribution of SGD resembles the Boltzmann-Gibbs distribution of equilibrium thermodynamics with temperature equal to the method's step-size and energy levels determined by the problem's objective and the statistics of the noise. In particular, we show that, in the long run, (a) the problem's critical region is visited exponentially more often than any non-critical region; (b) the iterates of SGD are exponentially concentrated around the problem's minimum energy state (which does not always coincide with the global minimum of the objective); (c) all other connected components of critical points are visited with frequency that is exponentially proportional to their energy level; and, finally (d) any component of local maximizers or saddle points is \"dominated\" by a component of local minimizers which is visited exponentially more often. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Waïss Azizian",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Franck Iutzeler",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Jérôme Malick",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Panayotis Mertikopoulos",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/what-is-the-long-run-distribution-of-stochastic-gradient-34m5rbv88j.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2406.09241"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "The long-run distribution of SGD resembles the Boltzmann-Gibbs distribution of equilibrium thermodynamics with temperature equal to the step-size and energy levels determined by the problem's objective and the statistics of the noise.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

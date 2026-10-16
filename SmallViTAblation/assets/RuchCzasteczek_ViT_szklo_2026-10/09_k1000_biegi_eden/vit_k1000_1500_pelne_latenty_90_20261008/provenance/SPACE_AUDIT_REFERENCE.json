@@ -1,0 +1,55 @@
+{
+  "initial_audit": {
+    "report": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\audyt_miejsca_eden_20261008_latenty1500\\RAPORT.md",
+    "report_sha256": "a808ba20254cf481c34b2406380fd08e1fa740f2e7c1679cbb4df931e5d4a52e",
+    "observed_free_bytes": 21029957632,
+    "low_risk_reclaimable_bytes": 619900928,
+    "conditional_reclaimable_bytes": 2870177792,
+    "nothing_deleted_at_initial_audit": true
+  },
+  "expanded_audit": {
+    "root": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\outputs\\audyt_miejsca_eden_20261008_latenty1500\\plan_sprzatania_calosci",
+    "verification_status": "PASS",
+    "observed_free_bytes_before_cleanup": 21029957632,
+    "planned_reclaimable_file_blocks_bytes": 127652560896,
+    "planned_upper_free_bytes": 148682518528,
+    "active_jobs_at_audit_end": 0,
+    "files": {
+      "RAPORT_SZCZEGOLOWY.md": "fac920c8feab4244e41ce64832708d7b7992aed77e89e04febf979b2c0dcf06a",
+      "SUMMARY.json": "a18ab4d242348a6edfdfb0f95f9fadf7514a2f444ace5313017b5cfc97d79122",
+      "WERYFIKACJA.json": "d83e085744a39be101243c0e8b593645343974e10c13f200652e59facc72529e",
+      "ZACHOWAJ_MAPA.json": "f629b4d5ccf89a5e3ff6265666d1318556297285f13f2c64f083e297d08ae8b6",
+      "TABELA_UZYTKOWNIKA.md": "ecb3d75b0fe7179b989e90eddde38e4967f9ec5e2de220e4af9ad6788126d801"
+    }
+  },
+  "cleanup": {
+    "authorized_by_user": true,
+    "executor": "Nash",
+    "scope": "PLAN_USUNIECIA.csv only",
+    "status": "complete_and_independently_reverified",
+    "deleted_files": 35728,
+    "skipped_files": 0,
+    "nash_final_verification": true,
+    "direct_process_snapshot_has_active_cleanup": false,
+    "direct_df_free_bytes": 148682518528,
+    "our_pipeline_jobs_started": false,
+    "our_pipeline_remote_root_created": false
+  },
+  "pipeline_deploy_hold": false,
+  "post_cleanup_release_conditions": [
+    "cleanup completion reported and plan verification passed",
+    "current Eden df/quota satisfies the production threshold",
+    "K1000 weights SHA-256 reverified",
+    "full K1000 AdamW state SHA-256 reverified",
+    "exact COCO SHA-256 reverified",
+    "tracking_static36.tar SHA-256 and size reverified",
+    "exact corrected 1500-row manifest SHA-256 reproduced",
+    "selected Python runtime and required packages reverified",
+    "no duplicate remote root, ledger, or k1k1500 jobs"
+  ],
+  "raw_large_tensor_budget_bytes": 14610825216,
+  "smoke_and_small_artifacts_allowance_bytes": 800000000,
+  "operating_reserve_bytes": 5000000000,
+  "minimum_free_bytes_before_production": 20410825216,
+  "note": "Nie wolno traktowac planowanej ilosci odzyskanego miejsca jako stanu aktualnego. Deploy pozostaje zablokowany do pomiaru i pelnej weryfikacji po sprzataniu."
+}

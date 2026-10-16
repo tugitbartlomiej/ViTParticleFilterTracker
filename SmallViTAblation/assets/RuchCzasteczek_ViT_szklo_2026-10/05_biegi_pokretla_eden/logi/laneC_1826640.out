@@ -1,0 +1,124 @@
+pokrętła warstwy_lr_5e-4_rp: lr 5e-4, epoki 3, manifest MANIFEST_35000.jsonl, sondy /home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/wejscia/SONDY_100.jsonl n=8, extra: --rzut rp --warstwy --warstwy_n 4, analizy 300:2188, zostaw 0, warstwy 1, węzeł hopper-2, GPU NVIDIA H200, start Sun Oct 11 12:48:34 AM CEST 2026
+wolna kwota: 23.7 GB
+walidacja: 3000 klatek (usunięto 0 wspólnych z treningiem)
+klatki: 35000 z 117 archiwów w 22 s
+35000 klatek, 3 epok, 3282 kroków; końce epok: [1094, 2188, 3282]; zapisów wag: 126 (~1.5 GB)
+model vit (2926493 parametrów), adamw lr 0.0005 wd 0.05, paczka 32
+obserwator: 8 sond, losowy rzut 768 -> 128 (JL, ziarno 0), zapis f16, tokenów 600, krok 0, skan 6 warstw na 4 sondach
+krok 0: mAP@0,5 0.0000
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+krok 1000: mAP@0,5 0.3933
+krok 1094 (koniec epoki 1): mAP@0,5 0.4086
+epoka 1/3: krok 1094, wolna kwota 18.5 GB, 00:50:46
+krok 2000: mAP@0,5 0.4802
+krok 2188 (koniec epoki 2): mAP@0,5 0.4808
+epoka 2/3: krok 2188, wolna kwota 10.6 GB, 00:51:41
+krok 3000: mAP@0,5 0.5628
+krok 3282 (koniec epoki 3): mAP@0,5 0.5598
+epoka 3/3: krok 3282, wolna kwota 10.5 GB, 00:52:19
+KONIEC: krok 3282, 2 plików wag, 155 s
+TRENING KONIEC warstwy_lr_5e-4_rp Sun Oct 11 12:52:23 AM CEST 2026
+=== analiza warstwy_lr_5e-4_rp okno 300 2188 Sun Oct 11 12:52:23 AM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp gesty rekordów 2299 tokenów 4800 (600 na zdjęcie) kroki 0 3280 zapis f16 [11 s]
+S0 5 S1 8 Lindemann 0.482 c 0.407 τ_1e 228.0 β 0.82 E wykładnik 0.6649673207099718 [125 s]
+warstwy_lr_5e-4_rp S1 [blok]: C1 max 0.603 @τ=3 (null -0.022; surowe 0.664), powłoki ['0.603', '0.483', '0.378'], skupianie 3.06, cos sąsiedzi−losowe 0.045, cross C1 0.262 (null -0.003) [137 s]
+warstwy_lr_5e-4_rp S0 [blok]: C1 max 0.866 @τ=5 (null -0.007; surowe 0.901), powłoki ['0.866', '0.714', '0.558'], skupianie 5.57, cos sąsiedzi−losowe 0.831, cross C1 0.449 (null -0.007) [148 s]
+warstwy_lr_5e-4_rp S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.961 → ostatni 0.830; względny 0.957 → 0.818; zdjęcia 0.857 → 0.500 [152 s]
+warstwy_lr_5e-4_rp S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.881 → ostatni 0.580; względny 0.908 → 0.684; zdjęcia 0.622 → -0.524 [154 s]
+warstwy_lr_5e-4_rp korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.64, 0.721, 0.674, 0.592, 0.508, 0.382, 0.219, 0.085, -0.066, -0.176]; między zdjęciami [None, None, None, 0.368, 0.312, 0.242, 0.162, 0.085, -0.01, -0.089] [156 s]
+warstwy_lr_5e-4_rp rozbieganie par: r²/r0² [1.04, 1.1, 1.09, 1.11, 0.95, 0.94, 1.0, 0.96, 0.84, 0.93, 1.02, 1.22] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1888]; wykładnik (r²−r0²) ∝ lag^None [156 s]
+warstwy_lr_5e-4_rp cała oś rozbieganie par: r²/r0² [1.04, 1.11, 1.0, 0.93, 1.24, 1.45, 1.26, 1.36, 1.29, 1.31, 1.41, 1.65, 1.47, 1.48, 1.35, 1.22, 1.47, 1.38, 1.64, 1.44, 1.36, 1.38, 1.52, 1.45, 1.46, 1.34, 1.33, 1.7, 1.69, 1.78, 1.64, 1.48, 1.75, 1.74, 1.68, 1.74, 1.75, 1.84, 1.85, 1.81, 1.84] przy lagach [1, 5, 50, 500, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190, 2220, 2250, 2280, 2310, 2340, 2370, 2400, 2430, 2460, 2490, 2520, 2550, 2580, 2610, 2640, 2670, 2700, 2730, 2760, 2790, 2820, 2850, 2880, 2910, 2940, 2970]; wykładnik (r²−r0²) ∝ lag^None [156 s]
+warstwy_lr_5e-4_rp rozkład energii kroku: τ=1: wspólny 0.30 zdjęcie 0.17 sąsiedztwo 0.42 własny 0.10; τ=10: wspólny 0.22 zdjęcie 0.19 sąsiedztwo 0.48 własny 0.09; τ=100: wspólny 0.24 zdjęcie 0.17 sąsiedztwo 0.47 własny 0.10; τ=1000: wspólny 0.35 zdjęcie 0.15 sąsiedztwo 0.41 własny 0.07 [156 s]
+warstwy_lr_5e-4_rp [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.833, min -0.120 @τ=50, losowe w zdjęciu C(0) 0.002, inne zdjęcia C(0) 0.0001670247059640436; auto [1.0, 0.98, 0.93, 0.86, 0.71, 0.4, 0.09, -0.02, -0.15, -0.11] [193 s]
+warstwy_lr_5e-4_rp [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.870, min -0.123 @τ=50, losowe w zdjęciu C(0) 0.243, inne zdjęcia C(0) -0.03253265678261717; auto [1.0, 0.98, 0.93, 0.86, 0.7, 0.39, 0.09, -0.02, -0.14, -0.1] [228 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp/ANALIZA.json [228 s]
+=== analiza warstwy_lr_5e-4_rp okno 300 2188 warstwa w0 Sun Oct 11 12:56:12 AM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp gesty/w0 rekordów 2299 tokenów 2400 (600 na zdjęcie) kroki 0 3280 zapis f16 [6 s]
+S0 4 S1 7 Lindemann 0.339 c 0.359 τ_1e 640.0 β 0.76 E wykładnik 0.635308053381781 [65 s]
+warstwy_lr_5e-4_rp S1 [blok]: C1 max 0.665 @τ=3 (null 0.018; surowe 0.702), powłoki ['0.665', '0.538', '0.431'], skupianie 3.23, cos sąsiedzi−losowe 0.048, cross C1 0.255 (null 0.002) [71 s]
+warstwy_lr_5e-4_rp S0 [blok]: C1 max 0.864 @τ=5 (null -0.000; surowe 0.885), powłoki ['0.864', '0.691', '0.522'], skupianie 5.45, cos sąsiedzi−losowe 0.794, cross C1 0.338 (null 0.000) [77 s]
+warstwy_lr_5e-4_rp S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.987 → ostatni 0.928; względny 0.981 → 0.886; zdjęcia 1.000 → 1.000 [79 s]
+warstwy_lr_5e-4_rp S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.927 → ostatni 0.655; względny 0.931 → 0.677; zdjęcia 0.778 → 0.800 [80 s]
+warstwy_lr_5e-4_rp korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.919, 0.914, 0.811, 0.668, 0.548, 0.27, 0.003, -0.111, -0.17, -0.243]; między zdjęciami [None, None, None, 0.592, 0.513, 0.217, 0.018, -0.077, -0.118, -0.163] [81 s]
+warstwy_lr_5e-4_rp rozbieganie par: r²/r0² [1.01, 1.02, 1.02, 1.01, 0.97, 1.04, 0.97, 0.97, 0.91, 0.85, 0.87, 0.97] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1888]; wykładnik (r²−r0²) ∝ lag^None [81 s]
+warstwy_lr_5e-4_rp cała oś rozbieganie par: r²/r0² [1.01, 1.01, 0.97, 0.85, 0.98, 1.08, 1.02, 1.03, 0.99, 1.02, 1.05, 1.08, 1.03, 1.1, 1.02, 1.05, 1.15, 1.02, 1.05, 1.05, 1.0, 1.0, 1.09, 1.12, 1.07, 1.08, 1.08, 1.11, 1.12, 1.15, 1.08, 1.18, 1.19, 1.26, 1.22, 1.14, 1.17, 1.12, 1.2, 1.17, 1.18] przy lagach [1, 5, 50, 500, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190, 2220, 2250, 2280, 2310, 2340, 2370, 2400, 2430, 2460, 2490, 2520, 2550, 2580, 2610, 2640, 2670, 2700, 2730, 2760, 2790, 2820, 2850, 2880, 2910, 2940, 2970]; wykładnik (r²−r0²) ∝ lag^None [82 s]
+warstwy_lr_5e-4_rp rozkład energii kroku: τ=1: wspólny 0.20 zdjęcie 0.09 sąsiedztwo 0.55 własny 0.15; τ=10: wspólny 0.19 zdjęcie 0.09 sąsiedztwo 0.58 własny 0.12; τ=100: wspólny 0.19 zdjęcie 0.09 sąsiedztwo 0.56 własny 0.15; τ=1000: wspólny 0.21 zdjęcie 0.07 sąsiedztwo 0.53 własny 0.16 [82 s]
+warstwy_lr_5e-4_rp [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.796, min -0.136 @τ=50, losowe w zdjęciu C(0) -0.003, inne zdjęcia C(0) -0.0012244266236545323; auto [1.01, 0.99, 0.96, 0.91, 0.79, 0.48, 0.14, -0.0, -0.17, -0.13] [100 s]
+warstwy_lr_5e-4_rp [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.813, min -0.139 @τ=50, losowe w zdjęciu C(0) 0.105, inne zdjęcia C(0) -0.03619014701495568; auto [1.0, 0.99, 0.96, 0.91, 0.78, 0.48, 0.14, -0.01, -0.17, -0.13] [117 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp/ANALIZA_w0.json [117 s]
+=== analiza warstwy_lr_5e-4_rp okno 300 2188 warstwa w1 Sun Oct 11 12:58:10 AM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp gesty/w1 rekordów 2299 tokenów 2400 (600 na zdjęcie) kroki 0 3280 zapis f16 [6 s]
+S0 4 S1 7 Lindemann 0.38 c 0.373 τ_1e 382.0 β 0.76 E wykładnik 0.6358932137437487 [64 s]
+warstwy_lr_5e-4_rp S1 [blok]: C1 max 0.612 @τ=3 (null -0.007; surowe 0.655), powłoki ['0.612', '0.482', '0.373'], skupianie 2.95, cos sąsiedzi−losowe 0.058, cross C1 0.226 (null -0.003) [69 s]
+warstwy_lr_5e-4_rp S0 [blok]: C1 max 0.864 @τ=5 (null -0.003; surowe 0.886), powłoki ['0.864', '0.688', '0.512'], skupianie 5.50, cos sąsiedzi−losowe 0.815, cross C1 0.337 (null -0.001) [75 s]
+warstwy_lr_5e-4_rp S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.981 → ostatni 0.892; względny 0.973 → 0.838; zdjęcia 1.000 → 1.000 [78 s]
+warstwy_lr_5e-4_rp S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.911 → ostatni 0.623; względny 0.908 → 0.593; zdjęcia 0.778 → 0.800 [79 s]
+warstwy_lr_5e-4_rp korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.805, 0.829, 0.772, 0.678, 0.567, 0.354, 0.13, -0.024, -0.141, -0.196]; między zdjęciami [None, None, None, None, 0.423, 0.301, 0.126, -0.006, -0.096, -0.132] [80 s]
+warstwy_lr_5e-4_rp rozbieganie par: r²/r0² [1.01, 1.03, 1.03, 1.03, 0.97, 1.03, 0.99, 1.04, 0.87, 0.94, 0.96, 0.93] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1888]; wykładnik (r²−r0²) ∝ lag^None [80 s]
+warstwy_lr_5e-4_rp cała oś rozbieganie par: r²/r0² [1.01, 1.03, 0.99, 0.94, 0.93, 1.09, 0.94, 1.01, 0.95, 0.95, 0.99, 1.03, 0.94, 1.08, 1.04, 1.01, 1.16, 1.03, 1.06, 1.02, 1.02, 1.01, 1.12, 1.06, 1.05, 0.98, 1.0, 1.06, 1.12, 0.98, 0.99, 1.02, 1.01, 1.09, 1.14, 1.03, 1.02, 0.94, 1.03, 0.98, 1.09] przy lagach [1, 5, 50, 500, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190, 2220, 2250, 2280, 2310, 2340, 2370, 2400, 2430, 2460, 2490, 2520, 2550, 2580, 2610, 2640, 2670, 2700, 2730, 2760, 2790, 2820, 2850, 2880, 2910, 2940, 2970]; wykładnik (r²−r0²) ∝ lag^None [80 s]
+warstwy_lr_5e-4_rp rozkład energii kroku: τ=1: wspólny 0.22 zdjęcie 0.09 sąsiedztwo 0.55 własny 0.13; τ=10: wspólny 0.21 zdjęcie 0.10 sąsiedztwo 0.56 własny 0.10; τ=100: wspólny 0.21 zdjęcie 0.10 sąsiedztwo 0.54 własny 0.12; τ=1000: wspólny 0.21 zdjęcie 0.10 sąsiedztwo 0.53 własny 0.13 [81 s]
+warstwy_lr_5e-4_rp [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.807, min -0.131 @τ=50, losowe w zdjęciu C(0) -0.002, inne zdjęcia C(0) -0.0012219126166504188; auto [0.99, 0.98, 0.95, 0.89, 0.76, 0.45, 0.13, -0.02, -0.16, -0.12] [98 s]
+warstwy_lr_5e-4_rp [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.828, min -0.137 @τ=50, losowe w zdjęciu C(0) 0.130, inne zdjęcia C(0) -0.044424302565554775; auto [0.99, 0.98, 0.95, 0.89, 0.76, 0.45, 0.13, -0.02, -0.17, -0.12] [114 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp/ANALIZA_w1.json [114 s]
+=== analiza warstwy_lr_5e-4_rp okno 300 2188 warstwa w2 Sun Oct 11 01:00:05 AM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp gesty/w2 rekordów 2299 tokenów 2400 (600 na zdjęcie) kroki 0 3280 zapis f16 [6 s]
+S0 4 S1 9 Lindemann 0.474 c 0.387 τ_1e 136.0 β 0.75 E wykładnik 0.46583161761896014 [63 s]
+warstwy_lr_5e-4_rp S1 [blok]: C1 max 0.555 @τ=3 (null 0.002; surowe 0.596), powłoki ['0.555', '0.432', '0.337'], skupianie 2.71, cos sąsiedzi−losowe 0.055, cross C1 0.182 (null -0.003) [69 s]
+warstwy_lr_5e-4_rp S0 [blok]: C1 max 0.864 @τ=3 (null -0.009; surowe 0.881), powłoki ['0.864', '0.687', '0.514'], skupianie 5.48, cos sąsiedzi−losowe 0.821, cross C1 0.335 (null -0.006) [75 s]
+warstwy_lr_5e-4_rp S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.976 → ostatni 0.887; względny 0.965 → 0.834; zdjęcia 1.000 → 1.000 [77 s]
+warstwy_lr_5e-4_rp S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.902 → ostatni 0.622; względny 0.893 → 0.654; zdjęcia 0.622 → 1.000 [78 s]
+warstwy_lr_5e-4_rp korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.734, 0.781, 0.778, 0.713, 0.638, 0.502, 0.301, 0.144, -0.032, -0.145]; między zdjęciami [None, None, None, None, 0.421, 0.354, 0.219, 0.105, -0.015, -0.086] [79 s]
+warstwy_lr_5e-4_rp rozbieganie par: r²/r0² [1.02, 1.05, 1.04, 1.06, 0.96, 0.99, 1.03, 1.12, 0.96, 1.21, 1.38, 1.51] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1888]; wykładnik (r²−r0²) ∝ lag^0.7405380993341724 [80 s]
+warstwy_lr_5e-4_rp cała oś rozbieganie par: r²/r0² [1.02, 1.06, 1.03, 1.21, 1.53, 1.67, 1.47, 1.52, 1.44, 1.49, 1.59, 1.55, 1.49, 1.64, 1.7, 1.57, 1.68, 1.56, 1.68, 1.63, 1.61, 1.65, 1.82, 1.61, 1.65, 1.45, 1.61, 1.76, 1.84, 1.62, 1.72, 1.78, 1.83, 1.79, 1.85, 1.71, 1.73, 1.69, 1.64, 1.74, 1.81] przy lagach [1, 5, 50, 500, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190, 2220, 2250, 2280, 2310, 2340, 2370, 2400, 2430, 2460, 2490, 2520, 2550, 2580, 2610, 2640, 2670, 2700, 2730, 2760, 2790, 2820, 2850, 2880, 2910, 2940, 2970]; wykładnik (r²−r0²) ∝ lag^None [80 s]
+warstwy_lr_5e-4_rp rozkład energii kroku: τ=1: wspólny 0.23 zdjęcie 0.07 sąsiedztwo 0.55 własny 0.13; τ=10: wspólny 0.22 zdjęcie 0.09 sąsiedztwo 0.57 własny 0.10; τ=100: wspólny 0.21 zdjęcie 0.09 sąsiedztwo 0.55 własny 0.12; τ=1000: wspólny 0.25 zdjęcie 0.10 sąsiedztwo 0.52 własny 0.10 [80 s]
+warstwy_lr_5e-4_rp [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.808, min -0.132 @τ=50, losowe w zdjęciu C(0) -0.002, inne zdjęcia C(0) -0.0012747340612501528; auto [0.98, 0.97, 0.93, 0.88, 0.74, 0.42, 0.13, -0.01, -0.16, -0.12] [97 s]
+warstwy_lr_5e-4_rp [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.832, min -0.139 @τ=50, losowe w zdjęciu C(0) 0.128, inne zdjęcia C(0) -0.044522823331256706; auto [0.99, 0.97, 0.94, 0.88, 0.74, 0.43, 0.13, -0.01, -0.16, -0.12] [113 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp/ANALIZA_w2.json [113 s]
+=== analiza warstwy_lr_5e-4_rp okno 300 2188 warstwa w3 Sun Oct 11 01:02:00 AM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp gesty/w3 rekordów 2299 tokenów 2400 (600 na zdjęcie) kroki 0 3280 zapis f16 [7 s]
+S0 5 S1 8 Lindemann 0.469 c 0.397 τ_1e 295.0 β 0.79 E wykładnik 0.6039027564302801 [65 s]
+warstwy_lr_5e-4_rp S1 [blok]: C1 max 0.620 @τ=3 (null -0.010; surowe 0.673), powłoki ['0.620', '0.495', '0.394'], skupianie 3.13, cos sąsiedzi−losowe 0.066, cross C1 0.156 (null -0.003) [71 s]
+warstwy_lr_5e-4_rp S0 [blok]: C1 max 0.871 @τ=3 (null -0.003; surowe 0.893), powłoki ['0.871', '0.711', '0.550'], skupianie 5.63, cos sąsiedzi−losowe 0.824, cross C1 0.270 (null 0.000) [76 s]
+warstwy_lr_5e-4_rp S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.966 → ostatni 0.868; względny 0.961 → 0.823; zdjęcia 0.911 → 1.000 [78 s]
+warstwy_lr_5e-4_rp S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.864 → ostatni 0.609; względny 0.906 → 0.682; zdjęcia 0.489 → -0.400 [79 s]
+warstwy_lr_5e-4_rp korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.691, 0.694, 0.651, 0.586, 0.507, 0.365, 0.193, 0.06, -0.08, -0.183]; między zdjęciami [None, None, None, None, 0.26, 0.156, 0.071, 0.006, -0.063, -0.113] [81 s]
+warstwy_lr_5e-4_rp rozbieganie par: r²/r0² [1.03, 1.07, 1.05, 1.07, 0.93, 0.98, 0.98, 1.01, 0.86, 0.93, 0.9, 1.05] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1888]; wykładnik (r²−r0²) ∝ lag^None [81 s]
+warstwy_lr_5e-4_rp cała oś rozbieganie par: r²/r0² [1.03, 1.07, 0.98, 0.93, 1.06, 1.1, 1.05, 1.02, 0.94, 0.99, 1.04, 1.19, 1.11, 1.16, 1.05, 0.88, 1.15, 1.04, 1.23, 1.13, 1.02, 1.09, 1.21, 1.2, 1.17, 1.08, 1.15, 1.29, 1.3, 1.35, 1.22, 1.18, 1.39, 1.39, 1.33, 1.2, 1.07, 1.19, 1.23, 1.32, 1.27] przy lagach [1, 5, 50, 500, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190, 2220, 2250, 2280, 2310, 2340, 2370, 2400, 2430, 2460, 2490, 2520, 2550, 2580, 2610, 2640, 2670, 2700, 2730, 2760, 2790, 2820, 2850, 2880, 2910, 2940, 2970]; wykładnik (r²−r0²) ∝ lag^None [81 s]
+warstwy_lr_5e-4_rp rozkład energii kroku: τ=1: wspólny 0.27 zdjęcie 0.14 sąsiedztwo 0.46 własny 0.11; τ=10: wspólny 0.24 zdjęcie 0.13 sąsiedztwo 0.50 własny 0.10; τ=100: wspólny 0.25 zdjęcie 0.15 sąsiedztwo 0.47 własny 0.10; τ=1000: wspólny 0.36 zdjęcie 0.13 sąsiedztwo 0.41 własny 0.08 [81 s]
+warstwy_lr_5e-4_rp [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.820, min -0.114 @τ=50, losowe w zdjęciu C(0) 0.000, inne zdjęcia C(0) -0.0005979090319669922; auto [0.99, 0.97, 0.93, 0.87, 0.73, 0.42, 0.12, -0.01, -0.14, -0.11] [98 s]
+warstwy_lr_5e-4_rp [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.850, min -0.124 @τ=50, losowe w zdjęciu C(0) 0.203, inne zdjęcia C(0) -0.06916035407533248; auto [0.99, 0.97, 0.93, 0.87, 0.74, 0.43, 0.12, -0.02, -0.15, -0.11] [114 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp/ANALIZA_w3.json [114 s]
+=== analiza warstwy_lr_5e-4_rp okno 300 2188 warstwa w4 Sun Oct 11 01:03:54 AM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp gesty/w4 rekordów 2299 tokenów 2400 (600 na zdjęcie) kroki 0 3280 zapis f16 [6 s]
+S0 4 S1 7 Lindemann 0.505 c 0.408 τ_1e 228.0 β 0.81 E wykładnik 0.6090235542193814 [64 s]
+warstwy_lr_5e-4_rp S1 [blok]: C1 max 0.603 @τ=3 (null -0.014; surowe 0.663), powłoki ['0.603', '0.483', '0.384'], skupianie 3.08, cos sąsiedzi−losowe 0.066, cross C1 0.143 (null -0.002) [69 s]
+warstwy_lr_5e-4_rp S0 [blok]: C1 max 0.875 @τ=5 (null -0.017; surowe 0.902), powłoki ['0.875', '0.718', '0.560'], skupianie 5.71, cos sąsiedzi−losowe 0.835, cross C1 0.244 (null 0.002) [75 s]
+warstwy_lr_5e-4_rp S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.963 → ostatni 0.851; względny 0.957 → 0.811; zdjęcia 0.933 → 0.800 [77 s]
+warstwy_lr_5e-4_rp S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.860 → ostatni 0.494; względny 0.900 → 0.632; zdjęcia 0.356 → -0.600 [78 s]
+warstwy_lr_5e-4_rp korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.668, 0.661, 0.645, 0.569, 0.501, 0.375, 0.217, 0.091, -0.046, -0.163]; między zdjęciami [None, None, None, None, 0.171, 0.134, 0.062, 0.01, -0.046, -0.092] [79 s]
+warstwy_lr_5e-4_rp rozbieganie par: r²/r0² [1.04, 1.08, 1.07, 1.11, 0.94, 0.95, 0.95, 0.99, 0.81, 0.94, 1.03, 1.26] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1888]; wykładnik (r²−r0²) ∝ lag^None [79 s]
+warstwy_lr_5e-4_rp cała oś rozbieganie par: r²/r0² [1.04, 1.11, 0.95, 0.94, 1.29, 1.35, 1.28, 1.33, 1.24, 1.24, 1.25, 1.48, 1.35, 1.36, 1.26, 1.11, 1.34, 1.28, 1.56, 1.43, 1.27, 1.31, 1.47, 1.38, 1.42, 1.3, 1.22, 1.6, 1.55, 1.57, 1.47, 1.28, 1.67, 1.61, 1.5, 1.48, 1.32, 1.49, 1.49, 1.58, 1.44] przy lagach [1, 5, 50, 500, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190, 2220, 2250, 2280, 2310, 2340, 2370, 2400, 2430, 2460, 2490, 2520, 2550, 2580, 2610, 2640, 2670, 2700, 2730, 2760, 2790, 2820, 2850, 2880, 2910, 2940, 2970]; wykładnik (r²−r0²) ∝ lag^None [79 s]
+warstwy_lr_5e-4_rp rozkład energii kroku: τ=1: wspólny 0.28 zdjęcie 0.15 sąsiedztwo 0.45 własny 0.10; τ=10: wspólny 0.22 zdjęcie 0.16 sąsiedztwo 0.49 własny 0.09; τ=100: wspólny 0.22 zdjęcie 0.17 sąsiedztwo 0.48 własny 0.10; τ=1000: wspólny 0.27 zdjęcie 0.17 sąsiedztwo 0.45 własny 0.08 [80 s]
+warstwy_lr_5e-4_rp [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.848, min -0.121 @τ=50, losowe w zdjęciu C(0) 0.001, inne zdjęcia C(0) -0.000809625634913876; auto [1.01, 0.98, 0.94, 0.88, 0.73, 0.41, 0.1, -0.02, -0.14, -0.1] [96 s]
+warstwy_lr_5e-4_rp [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.876, min -0.132 @τ=50, losowe w zdjęciu C(0) 0.227, inne zdjęcia C(0) -0.07550650499761105; auto [1.0, 0.98, 0.94, 0.87, 0.72, 0.42, 0.1, -0.02, -0.15, -0.1] [113 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp/ANALIZA_w4.json [113 s]
+=== analiza warstwy_lr_5e-4_rp okno 300 2188 warstwa w5 Sun Oct 11 01:05:48 AM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp gesty/w5 rekordów 2299 tokenów 2400 (600 na zdjęcie) kroki 0 3280 zapis f16 [6 s]
+S0 4 S1 7 Lindemann 0.505 c 0.409 τ_1e 228.0 β 0.81 E wykładnik 0.6054300878611845 [64 s]
+warstwy_lr_5e-4_rp S1 [blok]: C1 max 0.605 @τ=3 (null -0.011; surowe 0.667), powłoki ['0.605', '0.478', '0.375'], skupianie 3.11, cos sąsiedzi−losowe 0.052, cross C1 0.126 (null -0.001) [69 s]
+warstwy_lr_5e-4_rp S0 [blok]: C1 max 0.874 @τ=5 (null -0.016; surowe 0.906), powłoki ['0.874', '0.721', '0.564'], skupianie 5.64, cos sąsiedzi−losowe 0.841, cross C1 0.253 (null -0.001) [75 s]
+warstwy_lr_5e-4_rp S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.965 → ostatni 0.860; względny 0.957 → 0.811; zdjęcia 0.933 → 0.800 [81 s]
+warstwy_lr_5e-4_rp S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.865 → ostatni 0.567; względny 0.899 → 0.638; zdjęcia 0.778 → 0.400 [82 s]
+warstwy_lr_5e-4_rp korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.666, 0.657, 0.635, 0.6, 0.52, 0.411, 0.253, 0.112, -0.044, -0.148]; między zdjęciami [None, None, None, None, None, 0.168, 0.107, 0.048, -0.036, -0.102] [83 s]
+warstwy_lr_5e-4_rp rozbieganie par: r²/r0² [1.04, 1.09, 1.08, 1.12, 0.93, 0.95, 0.99, 0.97, 0.85, 0.96, 1.04, 1.28] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1888]; wykładnik (r²−r0²) ∝ lag^None [83 s]
+warstwy_lr_5e-4_rp cała oś rozbieganie par: r²/r0² [1.04, 1.12, 0.99, 0.96, 1.3, 1.43, 1.26, 1.41, 1.29, 1.32, 1.43, 1.77, 1.48, 1.47, 1.36, 1.25, 1.56, 1.44, 1.69, 1.51, 1.43, 1.44, 1.61, 1.52, 1.59, 1.39, 1.28, 1.74, 1.72, 1.8, 1.68, 1.5, 1.79, 1.81, 1.75, 1.78, 1.82, 1.95, 1.93, 1.92, 1.9] przy lagach [1, 5, 50, 500, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190, 2220, 2250, 2280, 2310, 2340, 2370, 2400, 2430, 2460, 2490, 2520, 2550, 2580, 2610, 2640, 2670, 2700, 2730, 2760, 2790, 2820, 2850, 2880, 2910, 2940, 2970]; wykładnik (r²−r0²) ∝ lag^None [83 s]
+warstwy_lr_5e-4_rp rozkład energii kroku: τ=1: wspólny 0.31 zdjęcie 0.16 sąsiedztwo 0.42 własny 0.10; τ=10: wspólny 0.24 zdjęcie 0.18 sąsiedztwo 0.47 własny 0.08; τ=100: wspólny 0.25 zdjęcie 0.17 sąsiedztwo 0.46 własny 0.09; τ=1000: wspólny 0.35 zdjęcie 0.15 sąsiedztwo 0.41 własny 0.06 [84 s]
+warstwy_lr_5e-4_rp [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.846, min -0.123 @τ=50, losowe w zdjęciu C(0) -0.000, inne zdjęcia C(0) -0.000900868904360171; auto [1.0, 0.98, 0.94, 0.87, 0.71, 0.4, 0.1, -0.02, -0.15, -0.1] [101 s]
+warstwy_lr_5e-4_rp [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.877, min -0.126 @τ=50, losowe w zdjęciu C(0) 0.252, inne zdjęcia C(0) -0.08422806337475777; auto [1.0, 0.97, 0.93, 0.86, 0.71, 0.41, 0.09, -0.02, -0.14, -0.09] [118 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp/ANALIZA_w5.json [118 s]
+skasowano surowe gesty warstwy_lr_5e-4_rp (analizy OK)
+KONIEC warstwy_lr_5e-4_rp ok=1 Sun Oct 11 01:07:47 AM CEST 2026
+94M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/warstwy_lr_5e-4_rp
+      /mnt/evafs  151.3G    200G    220G       -  168289  200000  220000       -

@@ -1,0 +1,564 @@
+{
+  "question": "How does layer normalization constrain representation geometry and symmetries in residual transformers, and can apparent latent trajectory motion be caused by changing basis or normalization rather than changes in model function?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'How does layer normalization constrain representation geometry and symmetries in residual transformers, and can apparent latent trajectory motion be caused by changing basis or normalization rather than changes in model function?'.\n\n\n1. Traveling Words: A Geometric Interpretation of Transformers\n   ID: 1vh9s943hp\n   2023 · Raul Molina · arXiv.org\n   DOI: 10.48550/arxiv.2309.07315\n   Abstract: Transformers have significantly advanced the field of natural language processing, but comprehending their internal mechanisms remains a challenge. In this paper, we introduce a novel geometric perspective that elucidates the inner mechanisms of transformer operations. Our primary contribution is illustrating how layer normalization confines the latent features to a hyper-sphere, subsequently enabling attention to mold the semantic representation of words on this surface. This geometric viewpoint seamlessly connects established properties such as iterative refinement and contextual embeddings. We validate our insights by probing a pre-trained 124M parameter GPT-2 model. Our findings reveal clear query-key attention patterns in early layers and build upon prior observations regarding the subject-specific nature of attention heads at deeper layers. Harnessing these geometric insights, we present an intuitive understanding of transformers, depicting them as processes that model the trajectory of word particles along the hyper-sphere.\n\n2. Stability of Transformers under Layer Normalization\n   ID: pgr6kxdhwzeo\n   2025 · Kan, Kelvin, Li, Xingjian, Zhang, Benjamin J.\n   DOI: 10.48550/arxiv.2510.09904\n   Abstract: Despite their widespread use, training deep Transformers can be unstable. Layer normalization, a standard component, improves training stability, but its placement has often been ad-hoc. In this paper, we conduct a principled study on the forward (hidden states) and backward (gradient) stability of Transformers under different layer normalization placements. Our theory provides key insights into the training dynamics: whether training drives Transformers toward regular solutions or pathological behaviors. For forward stability, we derive explicit bounds on the growth of hidden states in trained Transformers. For backward stability, we analyze how layer normalization affects the backpropagation of gradients, thereby explaining the training dynamics of each layer normalization placement. Our analysis also guides the scaling of residual steps in Transformer blocks, where appropriate choices can further improve stability and performance. Our numerical results corroborate our theoretical findings. Beyond these results, our framework provides a principled way to sanity-check the stability of Transformers under new architectural modifications, offering guidance for future designs. \n\n3. Normalization in Attention Dynamics\n   ID: afwr44gpfenl\n   2025 · Karagodin, Nikita, Ge Shu, Polyanskiy, Yury\n   DOI: 10.48550/arxiv.2510.22026\n   Abstract: We study the effect of normalization schemes on token representations in deep transformers. Modeling their evolution as interacting particles on the sphere, we show that normalization acts as a form of speed regulation. This perspective enables a unified analysis of several schemes -- including Post-LN, Pre-LN, Mix-LN, Peri-LN, nGPT, and LN-Scaling -- revealing how they influence clustering dynamics and representation collapse. Our framework clarifies how different schemes shape token representations across layers and provides a principled basis for comparing them, identifying Peri-LN as a particularly effective choice. \n\n4. Re-Introducing LayerNorm: Geometric Meaning, Irreversibility and a Comparative Study with RMSNorm\n   ID: 2sh33ipk2ol6\n   2024 · Akshat Gupta, Atahan Ozdemir, Gopala Krishna Anumanchipalli · arXiv.org\n   DOI: 10.48550/arxiv.2409.12951\n   Abstract: Layer normalization is a pivotal step in the transformer architecture. This paper delves into the less explored geometric implications of this process, examining how LayerNorm influences the norm and orientation of hidden vectors in the representation space. We show that the definition of LayerNorm is innately linked to the uniform vector, defined as $\\boldsymbol{1} = [1, 1, 1, 1, \\cdots, 1]^T \\in \\mathbb{R}^d$. We then show that the standardization step in LayerNorm can be understood in three simple steps: (i) remove the component of a vector along the uniform vector, (ii) normalize the remaining vector, and (iii) scale the resultant vector by $\\sqrt{d}$, where $d$ is the dimensionality of the representation space. We also introduce the property of\"irreversibility\"for LayerNorm, where we show that the information lost during the normalization process cannot be recovered. In other words, unlike batch normalization, LayerNorm cannot learn an identity transform. While we present possible arguments for removing the component along the uniform vector, the choice of removing this component seems arbitrary and not well motivated by the original authors. To evaluate the usefulness of this step, we compare the hidden representations of LayerNorm-based LLMs with models trained using RMSNorm and show that all LLMs naturally align representations orthogonal to the uniform vector, presenting the first mechanistic evidence that removing the component along the uniform vector in LayerNorm is a redundant step. Our findings support the use of RMSNorm over LayerNorm as it is not only more computationally efficient with comparable downstream performance, but also learns a similar distribution of hidden representations that operate orthogonal to the uniform vector.\n\n5. Geometry and Dynamics of LayerNorm\n   ID: 55gcrlq2ip\n   2024 · Paul M. Riechers\n   DOI: 10.48550/arxiv.2405.04134\n   Abstract: A technical note aiming to offer deeper intuition for the LayerNorm function common in deep neural networks. LayerNorm is defined relative to a distinguished 'neural' basis, but it does more than just normalize the corresponding vector elements. Rather, it implements a composition -- of linear projection, nonlinear scaling, and then affine transformation -- on input activation vectors. We develop both a new mathematical expression and geometric intuition, to make the net effect more transparent. We emphasize that, when LayerNorm acts on an N-dimensional vector space, all outcomes of LayerNorm lie within the intersection of an (N-1)-dimensional hyperplane and the interior of an N-dimensional hyperellipsoid. This intersection is the interior of an (N-1)-dimensional hyperellipsoid, and typical inputs are mapped near its surface. We find the direction and length of the principal axes of this (N-1)-dimensional hyperellipsoid via the eigen-decomposition of a simply constructed matrix. \n\n6. Transformer Normalisation Layers and the Independence of Semantic\n  Subspaces\n   ID: j1mk57opwl\n   2024 · Stephen Menary, Samuel Kaski, André Victor Lucci Freitas\n   DOI: 10.48550/arxiv.2406.17837\n   Abstract: Recent works have shown that transformers can solve contextual reasoning tasks by internally executing computational graphs called circuits. Circuits often use attention to logically match information from subspaces of the representation, e.g. using position-in-sequence to identify the previous token. In this work, we consider a semantic subspace to be any independent subspace of the latent representation that can fully determine an attention distribution. We show that Pre-Norm, the placement of normalisation layer used by state-of-the-art transformers, violates this ability unless the model learns a strict representation structure of orthogonal spheres. This is because it causes linear subspaces to interfere through their common normalisation factor. Theoretically, we analyse circuit stability by modelling this interference as random noise on the $L_2$-norms of the query/key/value vectors, predicting a phenomenon of circuit collapse when sparse-attention shifts to a different token. Empirically, we investigate the sensitivity of real-world models trained for mathematical addition, observing a 1% rate of circuit collapse when the norms are artificially perturbed by $\\lesssim$10%. We contrast Pre-Norm with QKV-Norm, which places normalisation after the attention head's linear operators. Theoretically this relaxes the representational constraints. Empirically we observe comparable in-distribution but worse out-of-distribution performance. \n\n7. Geometric Phase Transitions in Transformers: The Instant Transformation from Euclidean to Hyperbolic Space\n   ID: ouu7edf7x9cm\n   2025 · Gardner, James\n   DOI: 10.5281/zenodo.16791643\n   Abstract: Abstract NOTE: This work is not peer reviewed. Please provide any feedback in the github linked below via an issue, or contacting me via email. We reveal that transformer networks undergo discrete geometric phase transitions, instantly converting Euclidean word embeddings into hyperbolic representations through self-attention. Layer-by-layer analysis shows embeddings start with 0% reverse triangle inequality violations (perfect Euclidean geometry) but after the first attention layer exhibit 100% violations, indicating complete hyperbolic structure. Key Findings: Instant phase transition: Layer 0 shows δ/⟨dist⟩ = 0.0000 (Euclidean), Layer 1 shows δ/⟨dist⟩ = 0.043 (hyperbolic) - a 4× jump with 95% confidence intervals [0.0398, 0.0468] Boundary avoidance mechanisms: Softmax prevents infinite distances, LayerNorm constrains radii (constant 2.647 ± 0.0004 across all layers), and residual connections limit drift Architectural explanation: This geometric transition explains both transformer capabilities (hierarchical reasoning native to hyperbolic space) and limitations (counting/iteration failures due to constrained helical navigation paths) Methodology: Rigorous statistical analysis with 1000 bootstrap iterations, proper hyperbolic metrics using Poincaré ball distances, and validation across multiple models (BERT, GPT-2, MiniLM). Robustness confirmed with and without normalization. This work provides the first systematic measurement of geometric structure in transformer layers, revealing fundamental architectural constraints that govern both the power and limitations of these models Complete reproducible code and data included. Research conducted with AI assistance. All results independently verified. --- Keywords: transformer networks, geometric phase transitions, hyperbolic geometry, attention mechanisms, neural architecture analysis \n\n8. Learning in Compact Spaces with Approximately Normalized Transformers\n   ID: i3532c1ollqu\n   2025 · Franke, Jörg K. H., Nezhurina, Marianna, Jitsev, Jenia\n   DOI: 10.48550/arxiv.2505.22014\n   Abstract: In deep learning, regularization and normalization are common solutions for challenges such as overfitting, numerical instabilities, and the increasing variance in the residual stream. An alternative approach is to force all parameters and representations to lie on a hypersphere. This removes the need for regularization and increases convergence speed, but comes with additional costs. In this work, we propose a more holistic but approximate normalization (anTransformer). Our approach constrains the norm of parameters and normalizes all representations via scalar multiplications motivated by the tight concentration of the norms of high-dimensional random vectors. When applied to GPT training, we observe a 40% faster convergence compared to models with QK normalization, with less than 3% additional runtime. Deriving scaling laws for anGPT, we found our method enables training with larger batch sizes and fewer hyperparameters, while matching the favorable scaling characteristics of classic GPT architectures. \n\n9. On Layer Normalizations and Residual Connections in Transformers\n   ID: 11huzop3\n   Sho Takase, Shun Kiyono, S. Kobayashi · arXiv.org\n   DOI: 10.48550/arXiv.2206.00330\n   Abstract: In the perspective of a layer normalization (LN) position, the architecture of Transformers can be categorized into two types: Post-LN and Pre-LN. Recent Transformers prefer to select Pre-LN because the training in Post-LN with deep Transformers, e.g., ten or more layers, often becomes unstable, resulting in useless models. However, in contrast, Post-LN has also consistently achieved better performance than Pre-LN in relatively shallow Transformers, e.g., six or fewer layers. This study ﬁrst investigates the reason for these discrepant observations empirically and theoretically and discovers 1, the LN in Post-LN is the source of the vanishing gradient problem that mainly leads the unstable training whereas Pre-LN prevents it, and 2, Post-LN tends to preserve larger gradient norms in higher layers during the back-propagation that may lead an effective training. Exploiting the new ﬁndings, we propose a method that can equip both higher stability and effective training by a simple modiﬁcation from Post-LN. We conduct experiments on a wide range of text generation tasks and demonstrate that our method outperforms Pre-LN, and stable training regardless of the shallow or deep layer settings.\n\n10. Geometric and Dynamic Scaling in Deep Transformers\n   ID: tijwkpcq9wr6\n   2026 · Haoran Su, Chenyu You\n   DOI: 10.48550/arxiv.2601.01014\n   Abstract: Despite their empirical success, pushing Transformer architectures to extreme depth often leads to a paradoxical failure: representations become increasingly redundant, lose rank, and ultimately collapse. Existing explanations largely attribute this phenomenon to optimization instability or vanishing gradients, yet such accounts fail to explain why collapse persists even under modern normalization and initialization schemes. In this paper, we argue that the collapse of deep Transformers is fundamentally a geometric problem. Standard residual updates implicitly assume that feature accumulation is always beneficial, but offer no mechanism to constrain update directions or to erase outdated information. As depth increases, this leads to systematic drift off the semantic manifold and monotonic feature accumulation, causing representational degeneracy. We propose a unified geometric framework that addresses these failures through two orthogonal principles. First, manifold-constrained hyper-connections restrict residual updates to valid local tangent directions, preventing uncontrolled manifold drift. Second, deep delta learning introduces data-dependent, non-monotonic updates that enable reflection and erasure of redundant features rather than their unconditional accumulation. Together, these mechanisms decouple the direction and sign of feature updates, yielding a stable geometric evolution across depth. We term the resulting architecture the Manifold-Geometric Transformer (MGT). Our analysis predicts that enforcing geometric validity while allowing dynamic erasure is essential for avoiding rank collapse in ultra-deep networks. We outline an evaluation protocol for Transformers exceeding 100 layers to test the hypothesis that geometry, rather than depth itself, is the key limiting factor in deep representation learning. "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "How does layer normalization constrain representation geometry and symmetries in residual transformers, and can apparent latent trajectory motion be caused by changing basis or normalization rather than changes in model function?",
+        "papers": [
+          {
+            "id": 4019451753,
+            "title": "Traveling Words: A Geometric Interpretation of Transformers",
+            "is_archived": false,
+            "full_slug": "traveling-words-a-geometric-interpretation-of-transformers-1vh9s943hp",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-09-13T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2309.07315",
+            "unique_id": "1vh9s943hp",
+            "abstract": "Transformers have significantly advanced the field of natural language processing, but comprehending their internal mechanisms remains a challenge. In this paper, we introduce a novel geometric perspective that elucidates the inner mechanisms of transformer operations. Our primary contribution is illustrating how layer normalization confines the latent features to a hyper-sphere, subsequently enabling attention to mold the semantic representation of words on this surface. This geometric viewpoint seamlessly connects established properties such as iterative refinement and contextual embeddings. We validate our insights by probing a pre-trained 124M parameter GPT-2 model. Our findings reveal clear query-key attention patterns in early layers and build upon prior observations regarding the subject-specific nature of attention heads at deeper layers. Harnessing these geometric insights, we present an intuitive understanding of transformers, depicting them as processes that model the trajectory of word particles along the hyper-sphere.",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Raul Molina",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/traveling-words-a-geometric-interpretation-of-transformers-1vh9s943hp.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2309.07315v1.pdf",
+                  "https://export.arxiv.org/pdf/2309.07315v2.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 3
+              }
+            },
+            "tldr": "A novel geometric perspective is introduced that elucidates the inner mechanisms of transformer operations, illustrating how layer normalization confines the latent features to a hyper-sphere, subsequently enabling attention to mold the semantic representation of words on this surface.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4094988928,
+            "title": "Stability of Transformers under Layer Normalization",
+            "is_archived": false,
+            "full_slug": "stability-of-transformers-under-layer-normalization-pgr6kxdhwzeo",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-14T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.09904",
+            "unique_id": "pgr6kxdhwzeo",
+            "abstract": "Despite their widespread use, training deep Transformers can be unstable. Layer normalization, a standard component, improves training stability, but its placement has often been ad-hoc. In this paper, we conduct a principled study on the forward (hidden states) and backward (gradient) stability of Transformers under different layer normalization placements. Our theory provides key insights into the training dynamics: whether training drives Transformers toward regular solutions or pathological behaviors. For forward stability, we derive explicit bounds on the growth of hidden states in trained Transformers. For backward stability, we analyze how layer normalization affects the backpropagation of gradients, thereby explaining the training dynamics of each layer normalization placement. Our analysis also guides the scaling of residual steps in Transformer blocks, where appropriate choices can further improve stability and performance. Our numerical results corroborate our theoretical findings. Beyond these results, our framework provides a principled way to sanity-check the stability of Transformers under new architectural modifications, offering guidance for future designs. ",
+            "authors": {
+              "total": 7,
+              "data": [
+                {
+                  "display_name": "Kan, Kelvin",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Li, Xingjian",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zhang, Benjamin J.",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Sahai, Tuhin",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Osher, Stanley",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Kumar Krishna",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Katsoulakis, Markos A.",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4091149043,
+            "title": "Normalization in Attention Dynamics",
+            "is_archived": false,
+            "full_slug": "normalization-in-attention-dynamics-afwr44gpfenl",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-28T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.22026",
+            "unique_id": "afwr44gpfenl",
+            "abstract": "We study the effect of normalization schemes on token representations in deep transformers. Modeling their evolution as interacting particles on the sphere, we show that normalization acts as a form of speed regulation. This perspective enables a unified analysis of several schemes -- including Post-LN, Pre-LN, Mix-LN, Peri-LN, nGPT, and LN-Scaling -- revealing how they influence clustering dynamics and representation collapse. Our framework clarifies how different schemes shape token representations across layers and provides a principled basis for comparing them, identifying Peri-LN as a particularly effective choice. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Karagodin, Nikita",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Ge Shu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Polyanskiy, Yury",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Rigollet, Philippe",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4048739818,
+            "title": "Re-Introducing LayerNorm: Geometric Meaning, Irreversibility and a Comparative Study with RMSNorm",
+            "is_archived": false,
+            "full_slug": "re-introducing-layernorm-geometric-meaning-irreversibility-2sh33ipk2ol6",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2024-09-19T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2409.12951",
+            "unique_id": "2sh33ipk2ol6",
+            "abstract": "Layer normalization is a pivotal step in the transformer architecture. This paper delves into the less explored geometric implications of this process, examining how LayerNorm influences the norm and orientation of hidden vectors in the representation space. We show that the definition of LayerNorm is innately linked to the uniform vector, defined as $\\boldsymbol{1} = [1, 1, 1, 1, \\cdots, 1]^T \\in \\mathbb{R}^d$. We then show that the standardization step in LayerNorm can be understood in three simple steps: (i) remove the component of a vector along the uniform vector, (ii) normalize the remaining vector, and (iii) scale the resultant vector by $\\sqrt{d}$, where $d$ is the dimensionality of the representation space. We also introduce the property of\"irreversibility\"for LayerNorm, where we show that the information lost during the normalization process cannot be recovered. In other words, unlike batch normalization, LayerNorm cannot learn an identity transform. While we present possible arguments for removing the component along the uniform vector, the choice of removing this component seems arbitrary and not well motivated by the original authors. To evaluate the usefulness of this step, we compare the hidden representations of LayerNorm-based LLMs with models trained using RMSNorm and show that all LLMs naturally align representations orthogonal to the uniform vector, presenting the first mechanistic evidence that removing the component along the uniform vector in LayerNorm is a redundant step. Our findings support the use of RMSNorm over LayerNorm as it is not only more computationally efficient with comparable downstream performance, but also learns a similar distribution of hidden representations that operate orthogonal to the uniform vector.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Akshat Gupta",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Atahan Ozdemir",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Gopala Krishna Anumanchipalli",
+                  "id": 2075297168,
+                  "slug": "gopala-krishna-anumanchipalli",
+                  "unique_id": "3vh1bqo28n",
+                  "full_slug": "gopala-krishna-anumanchipalli-3vh1bqo28n",
+                  "affiliation_full_slug": "university-of-california-san-francisco-3gqffdjl"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "University of California, San Francisco",
+                  "city": "San Francisco",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 180670191,
+                  "slug": "university-of-california-san-francisco",
+                  "unique_id": "3gqffdjl",
+                  "full_slug": "university-of-california-san-francisco-3gqffdjl"
+                }
+              ]
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper re-examines LayerNorm's geometric implications, revealing its link to the uniform vector and introducing \"irreversibility\", a property where information lost during normalization cannot be recovered, and compares its performance with RMSNorm, suggesting RMSNorm is more efficient and comparable in downstream performance.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4044203601,
+            "title": "Geometry and Dynamics of LayerNorm",
+            "is_archived": false,
+            "full_slug": "geometry-and-dynamics-of-layernorm-55gcrlq2ip",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-05-07T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Preprint",
+            "doi": "10.48550/arxiv.2405.04134",
+            "unique_id": "55gcrlq2ip",
+            "abstract": "A technical note aiming to offer deeper intuition for the LayerNorm function common in deep neural networks. LayerNorm is defined relative to a distinguished 'neural' basis, but it does more than just normalize the corresponding vector elements. Rather, it implements a composition -- of linear projection, nonlinear scaling, and then affine transformation -- on input activation vectors. We develop both a new mathematical expression and geometric intuition, to make the net effect more transparent. We emphasize that, when LayerNorm acts on an N-dimensional vector space, all outcomes of LayerNorm lie within the intersection of an (N-1)-dimensional hyperplane and the interior of an N-dimensional hyperellipsoid. This intersection is the interior of an (N-1)-dimensional hyperellipsoid, and typical inputs are mapped near its surface. We find the direction and length of the principal axes of this (N-1)-dimensional hyperellipsoid via the eigen-decomposition of a simply constructed matrix. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Paul M. Riechers",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/geometry-and-dynamics-of-layernorm-55gcrlq2ip.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2405.04134"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "LayerNorm implements a composition of linear projection, nonlinear scaling, and affine transformation on input activation vectors, resulting in an (N-1)-dimensional hyperellipsoid.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4044967297,
+            "title": "Transformer Normalisation Layers and the Independence of Semantic\n  Subspaces",
+            "is_archived": false,
+            "full_slug": "transformer-normalisation-layers-and-the-independence-of-j1mk57opwl",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-06-25T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Preprint",
+            "doi": "10.48550/arxiv.2406.17837",
+            "unique_id": "j1mk57opwl",
+            "abstract": "Recent works have shown that transformers can solve contextual reasoning tasks by internally executing computational graphs called circuits. Circuits often use attention to logically match information from subspaces of the representation, e.g. using position-in-sequence to identify the previous token. In this work, we consider a semantic subspace to be any independent subspace of the latent representation that can fully determine an attention distribution. We show that Pre-Norm, the placement of normalisation layer used by state-of-the-art transformers, violates this ability unless the model learns a strict representation structure of orthogonal spheres. This is because it causes linear subspaces to interfere through their common normalisation factor. Theoretically, we analyse circuit stability by modelling this interference as random noise on the $L_2$-norms of the query/key/value vectors, predicting a phenomenon of circuit collapse when sparse-attention shifts to a different token. Empirically, we investigate the sensitivity of real-world models trained for mathematical addition, observing a 1% rate of circuit collapse when the norms are artificially perturbed by $\\lesssim$10%. We contrast Pre-Norm with QKV-Norm, which places normalisation after the attention head's linear operators. Theoretically this relaxes the representational constraints. Empirically we observe comparable in-distribution but worse out-of-distribution performance. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Stephen Menary",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Samuel Kaski",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "André Victor Lucci Freitas",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/transformer-normalisation-layers-and-the-independence-of-j1mk57opwl.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2406.17837"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Pre-Norm violates the independence of semantic subspaces, causing linear subspaces to interfere through their common normalisation factor.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4094657737,
+            "title": "Geometric Phase Transitions in Transformers: The Instant Transformation from Euclidean to Hyperbolic Space",
+            "is_archived": false,
+            "full_slug": "geometric-phase-transitions-in-transformers-the-instant-ouu7edf7x9cm",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-08-11T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.5281/zenodo.16791643",
+            "unique_id": "ouu7edf7x9cm",
+            "abstract": "Abstract NOTE: This work is not peer reviewed. Please provide any feedback in the github linked below via an issue, or contacting me via email. We reveal that transformer networks undergo discrete geometric phase transitions, instantly converting Euclidean word embeddings into hyperbolic representations through self-attention. Layer-by-layer analysis shows embeddings start with 0% reverse triangle inequality violations (perfect Euclidean geometry) but after the first attention layer exhibit 100% violations, indicating complete hyperbolic structure. Key Findings: Instant phase transition: Layer 0 shows δ/⟨dist⟩ = 0.0000 (Euclidean), Layer 1 shows δ/⟨dist⟩ = 0.043 (hyperbolic) - a 4× jump with 95% confidence intervals [0.0398, 0.0468] Boundary avoidance mechanisms: Softmax prevents infinite distances, LayerNorm constrains radii (constant 2.647 ± 0.0004 across all layers), and residual connections limit drift Architectural explanation: This geometric transition explains both transformer capabilities (hierarchical reasoning native to hyperbolic space) and limitations (counting/iteration failures due to constrained helical navigation paths) Methodology: Rigorous statistical analysis with 1000 bootstrap iterations, proper hyperbolic metrics using Poincaré ball distances, and validation across multiple models (BERT, GPT-2, MiniLM). Robustness confirmed with and without normalization. This work provides the first systematic measurement of geometric structure in transformer layers, revealing fundamental architectural constraints that govern both the power and limitations of these models Complete reproducible code and data included. Research conducted with AI assistance. All results independently verified. --- Keywords: transformer networks, geometric phase transitions, hyperbolic geometry, attention mechanisms, neural architecture analysis ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Gardner, James",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4093508036,
+            "title": "Learning in Compact Spaces with Approximately Normalized Transformers",
+            "is_archived": false,
+            "full_slug": "learning-in-compact-spaces-with-approximately-normalized-i3532c1ollqu",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-05-29T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2505.22014",
+            "unique_id": "i3532c1ollqu",
+            "abstract": "In deep learning, regularization and normalization are common solutions for challenges such as overfitting, numerical instabilities, and the increasing variance in the residual stream. An alternative approach is to force all parameters and representations to lie on a hypersphere. This removes the need for regularization and increases convergence speed, but comes with additional costs. In this work, we propose a more holistic but approximate normalization (anTransformer). Our approach constrains the norm of parameters and normalizes all representations via scalar multiplications motivated by the tight concentration of the norms of high-dimensional random vectors. When applied to GPT training, we observe a 40% faster convergence compared to models with QK normalization, with less than 3% additional runtime. Deriving scaling laws for anGPT, we found our method enables training with larger batch sizes and fewer hyperparameters, while matching the favorable scaling characteristics of classic GPT architectures. ",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Franke, Jörg K. H.",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Nezhurina, Marianna",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Jitsev, Jenia",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Hutter, Frank",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Hefenbrock, Michael",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4005139327,
+            "title": "On Layer Normalizations and Residual Connections in Transformers",
+            "is_archived": false,
+            "full_slug": "on-layer-normalizations-and-residual-connections-in-11huzop3",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": null,
+            "is_oa": false,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arXiv.2206.00330",
+            "unique_id": "11huzop3",
+            "abstract": "In the perspective of a layer normalization (LN) position, the architecture of Transformers can be categorized into two types: Post-LN and Pre-LN. Recent Transformers prefer to select Pre-LN because the training in Post-LN with deep Transformers, e.g., ten or more layers, often becomes unstable, resulting in useless models. However, in contrast, Post-LN has also consistently achieved better performance than Pre-LN in relatively shallow Transformers, e.g., six or fewer layers. This study ﬁrst investigates the reason for these discrepant observations empirically and theoretically and discovers 1, the LN in Post-LN is the source of the vanishing gradient problem that mainly leads the unstable training whereas Pre-LN prevents it, and 2, Post-LN tends to preserve larger gradient norms in higher layers during the back-propagation that may lead an effective training. Exploiting the new ﬁndings, we propose a method that can equip both higher stability and effective training by a simple modiﬁcation from Post-LN. We conduct experiments on a wide range of text generation tasks and demonstrate that our method outperforms Pre-LN, and stable training regardless of the shallow or deep layer settings.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Sho Takase",
+                  "id": 2140893311,
+                  "slug": "sho-takase",
+                  "unique_id": "3d21hh1yu5",
+                  "full_slug": "sho-takase-3d21hh1yu5"
+                },
+                {
+                  "display_name": "Shun Kiyono",
+                  "id": 2776693833,
+                  "slug": "shun-kiyono",
+                  "unique_id": "3xatdumeyn",
+                  "full_slug": "shun-kiyono-3xatdumeyn"
+                },
+                {
+                  "display_name": "S. Kobayashi",
+                  "id": 3169236577,
+                  "slug": "s-kobayashi",
+                  "unique_id": "1pypz6ruuz",
+                  "full_slug": "s-kobayashi-1pypz6ruuz"
+                },
+                {
+                  "display_name": "Jun Suzuki",
+                  "id": 2937889983,
+                  "slug": "jun-suzuki",
+                  "unique_id": "2csv5e870j",
+                  "full_slug": "jun-suzuki-2csv5e870j"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": 8
+              }
+            },
+            "tldr": "This study investigates the reason for discrepant observations empirically and theoretically and proposes a method that can equip both higher stability and effective training by a simple modification from Post-LN, and demonstrates that the method outperforms Pre-Ln, and stable training regardless of the shallow or deep layer settings.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4107515441,
+            "title": "Geometric and Dynamic Scaling in Deep Transformers",
+            "is_archived": false,
+            "full_slug": "geometric-and-dynamic-scaling-in-deep-transformers-tijwkpcq9wr6",
+            "journal": null,
+            "conference_series": null,
+            "date": "2026-01-03T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2601.01014",
+            "unique_id": "tijwkpcq9wr6",
+            "abstract": "Despite their empirical success, pushing Transformer architectures to extreme depth often leads to a paradoxical failure: representations become increasingly redundant, lose rank, and ultimately collapse. Existing explanations largely attribute this phenomenon to optimization instability or vanishing gradients, yet such accounts fail to explain why collapse persists even under modern normalization and initialization schemes. In this paper, we argue that the collapse of deep Transformers is fundamentally a geometric problem. Standard residual updates implicitly assume that feature accumulation is always beneficial, but offer no mechanism to constrain update directions or to erase outdated information. As depth increases, this leads to systematic drift off the semantic manifold and monotonic feature accumulation, causing representational degeneracy. We propose a unified geometric framework that addresses these failures through two orthogonal principles. First, manifold-constrained hyper-connections restrict residual updates to valid local tangent directions, preventing uncontrolled manifold drift. Second, deep delta learning introduces data-dependent, non-monotonic updates that enable reflection and erasure of redundant features rather than their unconditional accumulation. Together, these mechanisms decouple the direction and sign of feature updates, yielding a stable geometric evolution across depth. We term the resulting architecture the Manifold-Geometric Transformer (MGT). Our analysis predicts that enforcing geometric validity while allowing dynamic erasure is essential for avoiding rank collapse in ultra-deep networks. We outline an evaluation protocol for Transformers exceeding 100 layers to test the hypothesis that geometry, rather than depth itself, is the key limiting factor in deep representation learning. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Haoran Su",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Chenyu You",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper proposes the Manifold-Geometric Transformer (MGT) to address the collapse of deep Transformers by introducing manifold-constrained updates and deep delta learning, decoupling feature update directions and signs, and preventing representational degeneracy.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

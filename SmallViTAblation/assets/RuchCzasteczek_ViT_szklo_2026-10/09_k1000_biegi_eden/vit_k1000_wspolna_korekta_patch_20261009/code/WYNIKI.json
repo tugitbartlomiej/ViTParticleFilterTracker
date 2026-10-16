@@ -1,0 +1,154 @@
+{
+  "rodzina": "vit_k1000_wspolna_korekta_patch_20261009",
+  "tag": "vit_k1000_wspolna_korekta_patch_20261009",
+  "klasa": "badawcza",
+  "status": "complete",
+  "ziarno": 20261009,
+  "pytanie": "Czy jedna macierz delta 600x768, uczona bezposrednio joint na naturalnych latentach dokladnych 1500 obrazow, poprawia treningowy mAP K1000?",
+  "inputs": {
+    "checkpoint_sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+    "manifest_sha256": "33caf6f005b3db0d091d6e9ba9a58cec141a859c66fcd7bd777d31e6fe1a80d7",
+    "count": 1500,
+    "precision": "FP32; TF32 disabled"
+  },
+  "jobs": {
+    "smoke": {
+      "id": "1825059",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "node": "hopper",
+      "elapsed": "00:01:12"
+    },
+    "production": {
+      "id": "1825061",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "node": "hopper",
+      "elapsed": "00:02:19"
+    },
+    "fresh_load_finalize": {
+      "id": "1825062",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "node": "hopper",
+      "elapsed": "00:00:23"
+    }
+  },
+  "smoke": {
+    "status": "pass",
+    "checks_passed": 8,
+    "checks_total": 8,
+    "objective_before": 41.61461639404297,
+    "objective_after_one_adam_step": 41.468933105564346,
+    "objective_improvement": 0.14568328847862233,
+    "gradient_microbatch_max_abs_error": 1.862645149230957e-9,
+    "gradient_microbatch_relative_error": 1.2446285720295492e-7,
+    "fast_tail_hook_max_abs_error": 1.430511474609375e-6,
+    "fresh_load_max_abs_error": 0.0
+  },
+  "optimization": {
+    "optimizer": "Adam",
+    "shared_delta_shape": [600, 768],
+    "initial_delta": "exact_zero",
+    "completed_passes": 100,
+    "optimizer_updates": 100,
+    "images_per_update": 1500,
+    "best_pass": 100,
+    "stop_reason": "max_passes",
+    "training_seconds": 114.48781413398683,
+    "cache_build_seconds": 13.766176270321012,
+    "gpu": "NVIDIA H100 PCIe",
+    "gpu_peak_reserved_bytes": 3913285632,
+    "disk_latent_cache": false
+  },
+  "baseline": {
+    "AP50": 0.626887827062123,
+    "AP75": 0.13109693084564492,
+    "mAP50_95": 0.24549623827449926,
+    "both90": 0,
+    "top1_is_target_token": 846,
+    "false_positives_score_0_5_iou_0_5": 493,
+    "objective": 13.224253377278647
+  },
+  "best_and_final": {
+    "pass": 100,
+    "AP50": 0.6734547748214411,
+    "AP75": 0.22171054002653443,
+    "mAP50_95": 0.2988348748525347,
+    "both90": 8,
+    "top1_is_target_token": 889,
+    "false_positives_score_0_5_iou_0_5": 675,
+    "objective": 11.618283274226348,
+    "delta_tensor_sha256": "9004495798a44ceaafca93f65943dc144166d66f824f83f134346c8bc4a8d777",
+    "delta_l2": 237.0675048828125,
+    "delta_rms": 0.3492334187030792,
+    "delta_max_abs": 0.6284838914871216,
+    "delta_nonzero_coordinates": 460800
+  },
+  "change_vs_baseline": {
+    "AP50": 0.0465669477593181,
+    "AP75": 0.09061360918088951,
+    "mAP50_95": 0.05333863657803544,
+    "mAP50_95_relative_fraction": 0.2172686481305397,
+    "confidence": {
+      "improved": 1454,
+      "unchanged": 0,
+      "worse": 46
+    },
+    "iou": {
+      "improved": 992,
+      "unchanged": 57,
+      "worse": 451
+    },
+    "joint": {
+      "pareto_improved": 1017,
+      "unchanged": 0,
+      "pareto_worse": 17,
+      "mixed": 466
+    },
+    "false_positives_score_0_5_iou_0_5": 182
+  },
+  "historical_controls": {
+    "mean_A": {
+      "mAP50_95": 0.23941124887643364,
+      "delta_vs_baseline": -0.006084989398065621,
+      "confidence_improved": 19,
+      "confidence_worse": 1481,
+      "used_for_training": false
+    },
+    "regime_B": {
+      "mAP50_95": 0.24448114390528236,
+      "delta_vs_baseline": -0.0010150943692169012,
+      "confidence_improved": 10,
+      "confidence_worse": 1490,
+      "training_assignment_accuracy_to_discovered_regime": 0.3605744444444444,
+      "used_for_training": false
+    }
+  },
+  "fresh_load": {
+    "status": "pass",
+    "all_1500_retested": true,
+    "mAP50_95": 0.2988348748525347,
+    "metrics_difference_vs_training_best": 0.0,
+    "two_independent_loads_bitwise_equal_first_batch": true,
+    "weights_buffers_unchanged": true,
+    "all_parameters_require_grad_false": true,
+    "elapsed_seconds": 16.994882785715163
+  },
+  "artifact": {
+    "local_package": "outputs/vit_k1000_wspolna_korekta_patch_20261009/eden/results/package",
+    "remote_root": "/home2/faculty/bpiotrowski/smallvit_runs/vit_k1000_wspolna_korekta_patch_20261009",
+    "package_manifest_sha256": "5aa4fdebbb53775fb543760b46319d0e30e2ead1e70b63846769382b0c89a35f",
+    "correction_file_sha256": "c46acd19a2247eead6209c700c910fdcfa42ecf66a434631c14e978d53171d71",
+    "model_file_sha256": "3df42a6adc1c47075a52f85641772e19be430280a7d27e0f6635b6753db4649e",
+    "all_package_hashes_verified": true,
+    "contains_images": false,
+    "contains_disk_latent_cache": false
+  },
+  "interpretation": {
+    "verdict": "Jedna wspolna delta poprawila zbiorczy treningowy mAP, lecz nie pomogla kazdemu obrazowi i zwiekszyla liczbe false positives.",
+    "in_sample": true,
+    "selection_on_training_data": true,
+    "generalization_claim": false
+  }
+}

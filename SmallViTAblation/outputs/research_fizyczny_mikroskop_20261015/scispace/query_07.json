@@ -1,0 +1,697 @@
+{
+  "question": "What did Mor Geva and colleagues establish in Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space, and how does neuron-level promotion or suppression explain additive MLP contributions?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'What did Mor Geva and colleagues establish in Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space, and how does neuron-level promotion or suppression explain additive MLP contributions?'.\n\n\n1. Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space\n   ID: 3xla36winz\n   2022 · Mor Geva, Avi Caciularu, Kevin I‐Kai Wang\n   DOI: 10.18653/v1/2022.emnlp-main.3\n   Abstract: Transformer-based language models (LMs) are at the core of modern NLP, but their internal prediction construction process is opaque and largely not understood.In this work, we make a substantial step towards unveiling this underlying prediction process, by reverseengineering the operation of the feed-forward network (FFN) layers, one of the building blocks of transformer models.We view the token representation as a changing distribution over the vocabulary, and the output from each FFN layer as an additive update to that distribution.Then, we analyze the FFN updates in the vocabulary space, showing that each update can be decomposed to sub-updates corresponding to single FFN parameter vectors, each promoting concepts that are often human-interpretable.We then leverage these findings for controlling LM predictions, where we reduce the toxicity of GPT2 by almost 50%, and for improving computation efficiency with a simple early exit rule, saving 20% of computation on average. \n\n2. Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space\n   ID: 1hy3f6d2\n   2022 · Mor Geva, Avi Caciularu, Ke Wang\n   DOI: 10.48550/arXiv.2203.14680\n   Abstract: Transformer-based language models (LMs) are at the core of modern NLP, but their internal prediction construction process is opaque and largely not understood. In this work, we make a substantial step towards unveiling this underlying prediction process, by reverse-engineering the operation of the feed-forward network (FFN) layers, one of the building blocks of transformer models. We view the token representation as a changing distribution over the vocabulary, and the output from each FFN layer as an additive update to that distribution. Then, we analyze the FFN updates in the vocabulary space, showing that each update can be decomposed to sub-updates corresponding to single FFN parameter vectors, each promoting concepts that are often human-interpretable. We then leverage these findings for controlling LM predictions, where we reduce the toxicity of GPT2 by almost 50%, and for improving computation efficiency with a simple early exit rule, saving 20% of computation on average.\n\n3. Transformer Feed-Forward Layers Build Predictions by Promoting Concepts\n  in the Vocabulary Space\n   ID: anetgwfy\n   2022\n   DOI: 10.48550/arxiv.2203.14680\n   Abstract: Transformer-based language models (LMs) are at the core of modern NLP, but their internal prediction construction process is opaque and largely not understood. In this work, we make a substantial step towards unveiling this underlying prediction process, by reverse-engineering the operation of the feed-forward network (FFN) layers, one of the building blocks of transformer models. We view the token representation as a changing distribution over the vocabulary, and the output from each FFN layer as an additive update to that distribution. Then, we analyze the FFN updates in the vocabulary space, showing that each update can be decomposed to sub-updates corresponding to single FFN parameter vectors, each promoting concepts that are often human-interpretable. We then leverage these findings for controlling LM predictions, where we reduce the toxicity of GPT2 by almost 50%, and for improving computation efficiency with a simple early exit rule, saving 20% of computation on average. \n\n4. Explaining How Transformers Use Context to Build Predictions\n   ID: 2nqax5q74y\n   2023 · Juan Ferrando, Gerard I. Gállego, Ioannis Tsiamas\n   DOI: 10.18653/v1/2023.acl-long.301\n   Abstract: Language Generation Models produce words based on the previous context.Although existing methods offer input attributions as explanations for a model's prediction, it is still unclear how prior words affect the model's decision throughout the layers.In this work, we leverage recent advances in explainability of the Transformer and present a procedure to analyze models for language generation.Using contrastive examples, we compare the alignment of our explanations with evidence of the linguistic phenomena, and show that our method consistently aligns better than gradient-based and perturbation-based baselines.Then, we investigate the role of MLPs inside the Transformer and show that they learn features that help the model predict words that are grammatically acceptable.Lastly, we apply our method to Neural Machine Translation models, and demonstrate that they generate human-like source-target alignments for building predictions. \n\n5. Explaining How Transformers Use Context to Build Predictions\n   ID: 1qvz3xz2\n   2023 · Javier Ferrando, Gerard I. Gállego, Ioannis Tsiamas\n   DOI: 10.48550/arXiv.2305.12535\n   Abstract: Language Generation Models produce words based on the previous context. Although existing methods offer input attributions as explanations for a model’s prediction, it is still unclear how prior words affect the model’s decision throughout the layers. In this work, we leverage recent advances in explainability of the Transformer and present a procedure to analyze models for language generation. Using contrastive examples, we compare the alignment of our explanations with evidence of the linguistic phenomena, and show that our method consistently aligns better than gradient-based and perturbation-based baselines. Then, we investigate the role of MLPs inside the Transformer and show that they learn features that help the model predict words that are grammatically acceptable. Lastly, we apply our method to Neural Machine Translation models, and demonstrate that they generate human-like source-target alignments for building predictions.\n\n6. Explaining How Transformers Use Context to Build Predictions\n   ID: 9hkcg7u0\n   2023\n   DOI: 10.48550/arxiv.2305.12535\n   Abstract: Language Generation Models produce words based on the previous context. Although existing methods offer input attributions as explanations for a model's prediction, it is still unclear how prior words affect the model's decision throughout the layers. In this work, we leverage recent advances in explainability of the Transformer and present a procedure to analyze models for language generation. Using contrastive examples, we compare the alignment of our explanations with evidence of the linguistic phenomena, and show that our method consistently aligns better than gradient-based and perturbation-based baselines. Then, we investigate the role of MLPs inside the Transformer and show that they learn features that help the model predict words that are grammatically acceptable. Lastly, we apply our method to Neural Machine Translation models, and demonstrate that they generate human-like source-target alignments for building predictions. \n\n7. Transformer Feed-Forward Layers Are Key-Value Memories\n   ID: 43k1jbril6\n   2020 · Mor Geva, Roei Schuster, Jonathan Berant · arXiv: Computation and Language\n   Abstract: Feed-forward layers constitute two-thirds of a transformer model's parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys' input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model's layers via residual connections to produce the final output distribution.\n\n8. Transformer Feed-Forward Layers Are Key-Value Memories\n   ID: 1rremy5lb3\n   2020 · Mor Geva, Roei Schuster, Jonathan Berant\n   Abstract: Feed-forward layers constitute two-thirds of a transformer model’s parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys’ input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model’s layers via residual connections to produce the final output distribution.\n\n9. Interpreting Context Look-ups in Transformers: Investigating Attention-MLP Interactions\n   ID: 49r18519bd\n   2024 · Clement Neo, Shay B. Cohen, Fazl Barez · arXiv.org\n   DOI: 10.48550/arxiv.2402.15055\n   Abstract: In this paper, we investigate the interplay between attention heads and specialized\"next-token\"neurons in the Multilayer Perceptron that predict specific tokens. By prompting an LLM like GPT-4 to explain these model internals, we can elucidate attention mechanisms that activate certain next-token neurons. Our analysis identifies attention heads that recognize contexts relevant to predicting a particular token, activating the associated neuron through the residual connection. We focus specifically on heads in earlier layers consistently activating the same next-token neuron across similar prompts. Exploring these differential activation patterns reveals that heads that specialize for distinct linguistic contexts are tied to generating certain tokens. Overall, our method combines neural explanations and probing isolated components to illuminate how attention enables context-dependent, specialized processing in LLMs.\n\n10. A Mathematical Explanation of Transformers for Large Language Models and GPTs\n   ID: p7obpvl4vtpa\n   2025 · Tai, Xue-Cheng, Liu Hao, Li Lingfeng\n   DOI: 10.48550/arxiv.2510.03989\n   Abstract: The Transformer architecture has revolutionized the field of sequence modeling and underpins the recent breakthroughs in large language models (LLMs). However, a comprehensive mathematical theory that explains its structure and operations remains elusive. In this work, we propose a novel continuous framework that rigorously interprets the Transformer as a discretization of a structured integro-differential equation. Within this formulation, the self-attention mechanism emerges naturally as a non-local integral operator, and layer normalization is characterized as a projection to a time-dependent constraint. This operator-theoretic and variational perspective offers a unified and interpretable foundation for understanding the architecture's core components, including attention, feedforward layers, and normalization. Our approach extends beyond previous theoretical analyses by embedding the entire Transformer operation in continuous domains for both token indices and feature dimensions. This leads to a principled and flexible framework that not only deepens theoretical insight but also offers new directions for architecture design, analysis, and control-based interpretations. This new interpretation provides a step toward bridging the gap between deep learning architectures and continuous mathematical modeling, and contributes a foundational perspective to the ongoing development of interpretable and theoretically grounded neural network models. "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "What did Mor Geva and colleagues establish in Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space, and how does neuron-level promotion or suppression explain additive MLP contributions?",
+        "papers": [
+          {
+            "id": 4036280829,
+            "title": "Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space",
+            "is_archived": false,
+            "full_slug": "transformer-feed-forward-layers-build-predictions-by-3xla36winz",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-01-01T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.18653/v1/2022.emnlp-main.3",
+            "unique_id": "3xla36winz",
+            "abstract": "Transformer-based language models (LMs) are at the core of modern NLP, but their internal prediction construction process is opaque and largely not understood.In this work, we make a substantial step towards unveiling this underlying prediction process, by reverseengineering the operation of the feed-forward network (FFN) layers, one of the building blocks of transformer models.We view the token representation as a changing distribution over the vocabulary, and the output from each FFN layer as an additive update to that distribution.Then, we analyze the FFN updates in the vocabulary space, showing that each update can be decomposed to sub-updates corresponding to single FFN parameter vectors, each promoting concepts that are often human-interpretable.We then leverage these findings for controlling LM predictions, where we reduce the toxicity of GPT2 by almost 50%, and for improving computation efficiency with a simple early exit rule, saving 20% of computation on average. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Mor Geva",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Avi Caciularu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Kevin I‐Kai Wang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yoav Goldberg",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/transformer-feed-forward-layers-build-predictions-by-3xla36winz.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://aclanthology.org/2022.emnlp-main.3.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 63
+              }
+            },
+            "tldr": "The feed-forward layers in transformer-based language models build predictions by promoting concepts in the vocabulary space.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4005751340,
+            "title": "Transformer Feed-Forward Layers Build Predictions by Promoting Concepts in the Vocabulary Space",
+            "is_archived": false,
+            "full_slug": "transformer-feed-forward-layers-build-predictions-by-1hy3f6d2",
+            "journal": null,
+            "conference_series": {
+              "display_name": "Conference on Empirical Methods in Natural Language Processing",
+              "id": 4000002497,
+              "slug": "conference-on-empirical-methods-in-natural-language",
+              "unique_id": "2mr6cpxz",
+              "full_slug": "conference-on-empirical-methods-in-natural-language-2mr6cpxz"
+            },
+            "date": "2022-03-28T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Proceedings Article",
+            "doi": "10.48550/arXiv.2203.14680",
+            "unique_id": "1hy3f6d2",
+            "abstract": "Transformer-based language models (LMs) are at the core of modern NLP, but their internal prediction construction process is opaque and largely not understood. In this work, we make a substantial step towards unveiling this underlying prediction process, by reverse-engineering the operation of the feed-forward network (FFN) layers, one of the building blocks of transformer models. We view the token representation as a changing distribution over the vocabulary, and the output from each FFN layer as an additive update to that distribution. Then, we analyze the FFN updates in the vocabulary space, showing that each update can be decomposed to sub-updates corresponding to single FFN parameter vectors, each promoting concepts that are often human-interpretable. We then leverage these findings for controlling LM predictions, where we reduce the toxicity of GPT2 by almost 50%, and for improving computation efficiency with a simple early exit rule, saving 20% of computation on average.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Mor Geva",
+                  "id": 2736090994,
+                  "slug": "mor-geva",
+                  "unique_id": "1gd7lwckoe",
+                  "full_slug": "mor-geva-1gd7lwckoe"
+                },
+                {
+                  "display_name": "Avi Caciularu",
+                  "id": 2990253534,
+                  "slug": "avi-caciularu",
+                  "unique_id": "1yyf70ozpf",
+                  "full_slug": "avi-caciularu-1yyf70ozpf"
+                },
+                {
+                  "display_name": "Ke Wang",
+                  "id": 2607401187,
+                  "slug": "ke-wang",
+                  "unique_id": "3skp7oc8qq",
+                  "full_slug": "ke-wang-3skp7oc8qq"
+                },
+                {
+                  "display_name": "Yoav Goldberg",
+                  "id": 2144962531,
+                  "slug": "yoav-goldberg",
+                  "unique_id": "48nrtug2rz",
+                  "full_slug": "yoav-goldberg-48nrtug2rz"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/transformer-feed-forward-layers-build-predictions-by-1hy3f6d2.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://www.aclanthology.org/2022.emnlp-main.3.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 179
+              }
+            },
+            "tldr": "This work reverse-engineering the operation of the feed-forward network layers, one of the building blocks of transformer models, shows that each update can be decomposed to sub-updates corresponding to single FFN parameter vectors, each promoting concepts that are often human-interpretable.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4015951553,
+            "title": "Transformer Feed-Forward Layers Build Predictions by Promoting Concepts\n  in the Vocabulary Space",
+            "is_archived": false,
+            "full_slug": "transformer-feed-forward-layers-build-predictions-by-anetgwfy",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-03-28T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2203.14680",
+            "unique_id": "anetgwfy",
+            "abstract": "Transformer-based language models (LMs) are at the core of modern NLP, but their internal prediction construction process is opaque and largely not understood. In this work, we make a substantial step towards unveiling this underlying prediction process, by reverse-engineering the operation of the feed-forward network (FFN) layers, one of the building blocks of transformer models. We view the token representation as a changing distribution over the vocabulary, and the output from each FFN layer as an additive update to that distribution. Then, we analyze the FFN updates in the vocabulary space, showing that each update can be decomposed to sub-updates corresponding to single FFN parameter vectors, each promoting concepts that are often human-interpretable. We then leverage these findings for controlling LM predictions, where we reduce the toxicity of GPT2 by almost 50%, and for improving computation efficiency with a simple early exit rule, saving 20% of computation on average. ",
+            "fulltext_url": "http://arxiv.org/pdf/2203.14680",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": 8
+              }
+            },
+            "tldr": "This article reverse-engineered the operation of the feed-forward network (FFN) layers, one of the building blocks of transformer models, showing that each update can be decomposed to sub-updates corresponding to single FFN parameter vectors, each promoting concepts that are often human-interpretable.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4035700160,
+            "title": "Explaining How Transformers Use Context to Build Predictions",
+            "is_archived": false,
+            "full_slug": "explaining-how-transformers-use-context-to-build-predictions-2nqax5q74y",
+            "journal": null,
+            "conference_series": null,
+            "date": "2023-01-01T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.18653/v1/2023.acl-long.301",
+            "unique_id": "2nqax5q74y",
+            "abstract": "Language Generation Models produce words based on the previous context.Although existing methods offer input attributions as explanations for a model's prediction, it is still unclear how prior words affect the model's decision throughout the layers.In this work, we leverage recent advances in explainability of the Transformer and present a procedure to analyze models for language generation.Using contrastive examples, we compare the alignment of our explanations with evidence of the linguistic phenomena, and show that our method consistently aligns better than gradient-based and perturbation-based baselines.Then, we investigate the role of MLPs inside the Transformer and show that they learn features that help the model predict words that are grammatically acceptable.Lastly, we apply our method to Neural Machine Translation models, and demonstrate that they generate human-like source-target alignments for building predictions. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Juan Ferrando",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Gerard I. Gállego",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Ioannis Tsiamas",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Marta R. Costa‐jussà",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/explaining-how-transformers-use-context-to-build-predictions-2nqax5q74y.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://aclanthology.org/2023.acl-long.301.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 6
+              }
+            },
+            "tldr": "The Transformer model uses context to build predictions by aligning explanations with linguistic phenomena and learning features that help predict grammatically acceptable words.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4001740513,
+            "title": "Explaining How Transformers Use Context to Build Predictions",
+            "is_archived": false,
+            "full_slug": "explaining-how-transformers-use-context-to-build-predictions-1qvz3xz2",
+            "journal": null,
+            "conference_series": {
+              "display_name": "Annual Meeting of the Association for Computational Linguistics",
+              "id": 4000002156,
+              "slug": "annual-meeting-of-the-association-for-computational",
+              "unique_id": "3uf4wsvk",
+              "full_slug": "annual-meeting-of-the-association-for-computational-3uf4wsvk"
+            },
+            "date": "2023-05-21T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Proceedings Article",
+            "doi": "10.48550/arXiv.2305.12535",
+            "unique_id": "1qvz3xz2",
+            "abstract": "Language Generation Models produce words based on the previous context. Although existing methods offer input attributions as explanations for a model’s prediction, it is still unclear how prior words affect the model’s decision throughout the layers. In this work, we leverage recent advances in explainability of the Transformer and present a procedure to analyze models for language generation. Using contrastive examples, we compare the alignment of our explanations with evidence of the linguistic phenomena, and show that our method consistently aligns better than gradient-based and perturbation-based baselines. Then, we investigate the role of MLPs inside the Transformer and show that they learn features that help the model predict words that are grammatically acceptable. Lastly, we apply our method to Neural Machine Translation models, and demonstrate that they generate human-like source-target alignments for building predictions.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Javier Ferrando",
+                  "id": 3034675797,
+                  "slug": "javier-ferrando",
+                  "unique_id": "11aio3pcx5",
+                  "full_slug": "javier-ferrando-11aio3pcx5"
+                },
+                {
+                  "display_name": "Gerard I. Gállego",
+                  "id": 4002552789,
+                  "slug": "gerard-i-gallego",
+                  "unique_id": "2ys7pg2s",
+                  "full_slug": "gerard-i-gallego-2ys7pg2s"
+                },
+                {
+                  "display_name": "Ioannis Tsiamas",
+                  "id": 2874403545,
+                  "slug": "ioannis-tsiamas",
+                  "unique_id": "3ultp0uuek",
+                  "full_slug": "ioannis-tsiamas-3ultp0uuek"
+                },
+                {
+                  "display_name": "Marta R. Costa-jussà",
+                  "id": 1335551265,
+                  "slug": "marta-r-costa-jussa",
+                  "unique_id": "195q7ykxf0",
+                  "full_slug": "marta-r-costa-jussa-195q7ykxf0"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/explaining-how-transformers-use-context-to-build-predictions-1qvz3xz2.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://www.aclanthology.org/2023.acl-long.301.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 15
+              }
+            },
+            "tldr": "The authors leverage recent advances in explainability of the Transformer and present a procedure to analyze models for language generation using contrastive examples, and show that their method consistently aligns better than gradient-based and perturbation-based baselines.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4014398956,
+            "title": "Explaining How Transformers Use Context to Build Predictions",
+            "is_archived": false,
+            "full_slug": "explaining-how-transformers-use-context-to-build-predictions-9hkcg7u0",
+            "journal": null,
+            "conference_series": null,
+            "date": "2023-05-21T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2305.12535",
+            "unique_id": "9hkcg7u0",
+            "abstract": "Language Generation Models produce words based on the previous context. Although existing methods offer input attributions as explanations for a model's prediction, it is still unclear how prior words affect the model's decision throughout the layers. In this work, we leverage recent advances in explainability of the Transformer and present a procedure to analyze models for language generation. Using contrastive examples, we compare the alignment of our explanations with evidence of the linguistic phenomena, and show that our method consistently aligns better than gradient-based and perturbation-based baselines. Then, we investigate the role of MLPs inside the Transformer and show that they learn features that help the model predict words that are grammatically acceptable. Lastly, we apply our method to Neural Machine Translation models, and demonstrate that they generate human-like source-target alignments for building predictions. ",
+            "fulltext_url": "/pdf/explaining-how-transformers-use-context-to-build-predictions-9hkcg7u0.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2305.12535"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "The authors leverage recent advances in explainability of the Transformer and present a procedure to analyze models for language generation, and compare the alignment of their explanations with evidence of the linguistic phenomena, and show that their method consistently aligns better than gradientbased and perturbation-based baselines.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3117576675,
+            "title": "Transformer Feed-Forward Layers Are Key-Value Memories",
+            "is_archived": false,
+            "full_slug": "transformer-feed-forward-layers-are-key-value-memories-43k1jbril6",
+            "journal": {
+              "display_name": "arXiv: Computation and Language",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2596401190,
+              "slug": "arxiv-computation-and-language",
+              "unique_id": "39f4jlbk",
+              "full_slug": "arxiv-computation-and-language-39f4jlbk"
+            },
+            "conference_series": null,
+            "date": "2020-12-29T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "43k1jbril6",
+            "abstract": "Feed-forward layers constitute two-thirds of a transformer model's parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys' input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model's layers via residual connections to produce the final output distribution.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Mor Geva",
+                  "id": 2736090994,
+                  "slug": "mor-geva",
+                  "unique_id": "1gd7lwckoe",
+                  "full_slug": "mor-geva-1gd7lwckoe",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Roei Schuster",
+                  "id": 2499484578,
+                  "slug": "roei-schuster",
+                  "unique_id": "31p2s8uzup",
+                  "full_slug": "roei-schuster-31p2s8uzup",
+                  "affiliation_full_slug": "cornell-university-azbw8aij"
+                },
+                {
+                  "display_name": "Jonathan Berant",
+                  "id": 86633810,
+                  "slug": "jonathan-berant",
+                  "unique_id": "xq0yi3eath",
+                  "full_slug": "jonathan-berant-xq0yi3eath",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Omer Levy",
+                  "id": 2250897584,
+                  "slug": "omer-levy",
+                  "unique_id": "3yyxn6iecc",
+                  "full_slug": "omer-levy-3yyxn6iecc",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Tel Aviv University",
+                  "city": "Tel Aviv",
+                  "region": null,
+                  "country": "Israel",
+                  "id": 16391192,
+                  "slug": "tel-aviv-university",
+                  "unique_id": "3moiq3qe",
+                  "full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Cornell University",
+                  "city": "Ithaca",
+                  "region": "New York",
+                  "country": "United States",
+                  "id": 205783295,
+                  "slug": "cornell-university",
+                  "unique_id": "azbw8aij",
+                  "full_slug": "cornell-university-azbw8aij"
+                }
+              ]
+            },
+            "fulltext_url": "http://arxiv.org/pdf/2012.14913.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://arxiv.org/pdf/2012.14913.pdf",
+                  "http://ui.adsabs.harvard.edu/abs/2020arXiv201214913G/abstract"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 17
+              }
+            },
+            "tldr": "This paper showed that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3214652767,
+            "title": "Transformer Feed-Forward Layers Are Key-Value Memories",
+            "is_archived": false,
+            "full_slug": "transformer-feed-forward-layers-are-key-value-memories-1rremy5lb3",
+            "journal": null,
+            "conference_series": {
+              "display_name": "Empirical Methods in Natural Language Processing",
+              "id": 1192655580,
+              "slug": "empirical-methods-in-natural-language-processing",
+              "unique_id": "24q1w44i",
+              "full_slug": "empirical-methods-in-natural-language-processing-24q1w44i"
+            },
+            "date": "2020-12-29T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Proceedings Article",
+            "doi": null,
+            "unique_id": "1rremy5lb3",
+            "abstract": "Feed-forward layers constitute two-thirds of a transformer model’s parameters, yet their role in the network remains under-explored. We show that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary. Our experiments show that the learned patterns are human-interpretable, and that lower layers tend to capture shallow patterns, while upper layers learn more semantic ones. The values complement the keys’ input patterns by inducing output distributions that concentrate probability mass on tokens likely to appear immediately after each pattern, particularly in the upper layers. Finally, we demonstrate that the output of a feed-forward layer is a composition of its memories, which is subsequently refined throughout the model’s layers via residual connections to produce the final output distribution.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Mor Geva",
+                  "id": 2736090994,
+                  "slug": "mor-geva",
+                  "unique_id": "1gd7lwckoe",
+                  "full_slug": "mor-geva-1gd7lwckoe",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Roei Schuster",
+                  "id": 2499484578,
+                  "slug": "roei-schuster",
+                  "unique_id": "31p2s8uzup",
+                  "full_slug": "roei-schuster-31p2s8uzup",
+                  "affiliation_full_slug": "cornell-university-azbw8aij"
+                },
+                {
+                  "display_name": "Jonathan Berant",
+                  "id": 86633810,
+                  "slug": "jonathan-berant",
+                  "unique_id": "xq0yi3eath",
+                  "full_slug": "jonathan-berant-xq0yi3eath",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Omer Levy",
+                  "id": 2250897584,
+                  "slug": "omer-levy",
+                  "unique_id": "3yyxn6iecc",
+                  "full_slug": "omer-levy-3yyxn6iecc",
+                  "affiliation_full_slug": "tel-aviv-university-3moiq3qe"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Tel Aviv University",
+                  "city": "Tel Aviv",
+                  "region": null,
+                  "country": "Israel",
+                  "id": 16391192,
+                  "slug": "tel-aviv-university",
+                  "unique_id": "3moiq3qe",
+                  "full_slug": "tel-aviv-university-3moiq3qe"
+                },
+                {
+                  "display_name": "Cornell University",
+                  "city": "Ithaca",
+                  "region": "New York",
+                  "country": "United States",
+                  "id": 205783295,
+                  "slug": "cornell-university",
+                  "unique_id": "azbw8aij",
+                  "full_slug": "cornell-university-azbw8aij"
+                }
+              ]
+            },
+            "fulltext_url": null,
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://dblp.uni-trier.de/db/conf/emnlp/emnlp2021-1.html#GevaSBL21",
+                  "https://arxiv.org/abs/2012.14913"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This article showed that feed-forward layers in transformer-based language models operate as key-value memories, where each key correlates with textual patterns in the training examples, and each value induces a distribution over the output vocabulary.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4023056651,
+            "title": "Interpreting Context Look-ups in Transformers: Investigating Attention-MLP Interactions",
+            "is_archived": false,
+            "full_slug": "interpreting-context-look-ups-in-transformers-investigating-49r18519bd",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2024-02-23T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2402.15055",
+            "unique_id": "49r18519bd",
+            "abstract": "In this paper, we investigate the interplay between attention heads and specialized\"next-token\"neurons in the Multilayer Perceptron that predict specific tokens. By prompting an LLM like GPT-4 to explain these model internals, we can elucidate attention mechanisms that activate certain next-token neurons. Our analysis identifies attention heads that recognize contexts relevant to predicting a particular token, activating the associated neuron through the residual connection. We focus specifically on heads in earlier layers consistently activating the same next-token neuron across similar prompts. Exploring these differential activation patterns reveals that heads that specialize for distinct linguistic contexts are tied to generating certain tokens. Overall, our method combines neural explanations and probing isolated components to illuminate how attention enables context-dependent, specialized processing in LLMs.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Clement Neo",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Shay B. Cohen",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Fazl Barez",
+                  "id": 4003336411,
+                  "slug": "fazl-barez",
+                  "unique_id": "cxsk04lj",
+                  "full_slug": "fazl-barez-cxsk04lj"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/interpreting-context-look-ups-in-transformers-investigating-49r18519bd.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2402.15055v2.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 2
+              }
+            },
+            "tldr": "This method combines neural explanations and probing isolated components to illuminate how attention enabling context-dependent, specialized processing in LLMs enables context-dependent, specialized processing in LLMs.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4091356489,
+            "title": "A Mathematical Explanation of Transformers for Large Language Models and GPTs",
+            "is_archived": false,
+            "full_slug": "a-mathematical-explanation-of-transformers-for-large-p7obpvl4vtpa",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-07T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.03989",
+            "unique_id": "p7obpvl4vtpa",
+            "abstract": "The Transformer architecture has revolutionized the field of sequence modeling and underpins the recent breakthroughs in large language models (LLMs). However, a comprehensive mathematical theory that explains its structure and operations remains elusive. In this work, we propose a novel continuous framework that rigorously interprets the Transformer as a discretization of a structured integro-differential equation. Within this formulation, the self-attention mechanism emerges naturally as a non-local integral operator, and layer normalization is characterized as a projection to a time-dependent constraint. This operator-theoretic and variational perspective offers a unified and interpretable foundation for understanding the architecture's core components, including attention, feedforward layers, and normalization. Our approach extends beyond previous theoretical analyses by embedding the entire Transformer operation in continuous domains for both token indices and feature dimensions. This leads to a principled and flexible framework that not only deepens theoretical insight but also offers new directions for architecture design, analysis, and control-based interpretations. This new interpretation provides a step toward bridging the gap between deep learning architectures and continuous mathematical modeling, and contributes a foundational perspective to the ongoing development of interpretable and theoretically grounded neural network models. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Tai, Xue-Cheng",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Liu Hao",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Li Lingfeng",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Chan, Raymond H.",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

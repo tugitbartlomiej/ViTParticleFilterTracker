@@ -1,0 +1,20 @@
+klasyfikacja test_klas: lr 5e-4, epoki 2, sondy n=16, extra: --proba --warstwy --warstwy_n 4 --zapis f32, analizy -, węzeł hopper-2, GPU NVIDIA H200, start Sun Oct 11 12:18:01 AM CEST 2026
+wolna kwota: 28.1 GB
+train: 512 obrazów 320×320, 10 klas, w 0 s
+val: 200 obrazów 320×320, 10 klas, w 0 s
+512 obrazów, 2 epok, 32 kroków; końce epok: [16, 32]
+model vit (2890402 parametrów), adamw lr 0.0005 wd 0.05, paczka 32
+Traceback (most recent call last):
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/trening_klasyfikacja.py", line 359, in <module>
+    main()
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/trening_klasyfikacja.py", line 335, in main
+    obs.start(u)
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/obserwator_rp.py", line 77, in start
+    json.dump(self._opis_sond(dict(warstwa=j, warstw=len(ws), sondy=self.sondy[:self.warstwy_n], pelne=[],
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/obserwator_rp.py", line 37, in _opis_sond
+    return dict(sondy=self.sondy, pelne=self.pelne, gesto_do=self.gesto_do, co_pozniej=self.co_pozniej, pelne_do=self.pelne_do,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: dict() got multiple values for keyword argument 'sondy'
+26K	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/test_klas
+      /mnt/evafs  171.9G    200G    220G       -  168045  200000  220000       -

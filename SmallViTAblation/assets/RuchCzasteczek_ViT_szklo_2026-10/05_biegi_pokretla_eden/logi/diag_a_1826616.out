@@ -1,0 +1,20 @@
+pokrętła test_a: lr 5e-4, epoki 2, manifest MANIFEST_35000.jsonl, sondy - n=24, węzeł dgx-4, GPU NVIDIA A100-SXM4-40GB, start Sun Oct 11 12:14:49 AM CEST 2026
+wolna kwota: 28.5 GB
+walidacja: 200 klatek (usunięto 0 wspólnych z treningiem)
+klatki: 512 z 116 archiwów w 3 s
+512 klatek, 2 epok, 32 kroków; końce epok: [16, 32]; zapisów wag: 9 (~0.1 GB)
+model vit (2926493 parametrów), adamw lr 0.0005 wd 0.05, paczka 32
+obserwator: 16 sond, losowy rzut 768 -> 128 (JL, ziarno 0), zapis f16, tokenów 600, krok 0
+krok 0: mAP@0,5 0.0000
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+krok 16 (koniec epoki 1): mAP@0,5 0.0053
+epoka 1/2: krok 16, wolna kwota 28.4 GB, 00:16:01
+krok 20: mAP@0,5 0.0152
+krok 32 (koniec epoki 2): mAP@0,5 0.0817
+epoka 2/2: krok 32, wolna kwota 28.3 GB, 00:16:03
+KONIEC: krok 32, 2 plików wag, 10 s
+KONIEC test_a Sun Oct 11 12:16:06 AM CEST 2026
+113M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/test_a
+      /mnt/evafs  171.7G    200G    220G       -  168018  200000  220000       -

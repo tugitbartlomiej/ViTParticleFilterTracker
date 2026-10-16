@@ -1,0 +1,556 @@
+{
+  "question": "Which representation similarity methods correctly account for rotations, scaling, neuron permutations, or gauge symmetries when comparing neural-network representations across training checkpoints, and what are the limitations of PCA and CKA?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'Which representation similarity methods correctly account for rotations, scaling, neuron permutations, or gauge symmetries when comparing neural-network representations across training checkpoints, and what are the limitations of PCA and CKA?'.\n\n\n1. Equivalence between representational similarity analysis, centered kernel alignment, and canonical correlations analysis\n   ID: 3adg2trnidbl\n   2024 · Alex H. Williams\n   DOI: 10.1101/2024.10.23.619871\n   Abstract: Centered kernel alignment (CKA) and representational similarity analysis (RSA) of dissimilarity matrices are two popular methods for comparing neural systems in terms of representational geometry. Although they follow a conceptually similar approach, typical implementations of CKA and RSA tend to result in numerically different outcomes. Here, I show that these two approaches are largely equivalent once one incorporates a mean-centering step into RSA. This equivalence holds for both linear and nonlinear variants of these methods. These connections are simple to derive, but appear to have been thus far overlooked in the context of comparing neural representations. By unifying these measures, this paper hopes to simplify a complex and fragmented literature on this subject. \n\n2. Duality of Bures and Shape Distances with Implications for Comparing Neural Representations\n   ID: 51kt65v5y3\n   2023 · Sarah E. Harvey, Brett W. Larsen, Alex H. Williams · arXiv.org\n   DOI: 10.48550/arxiv.2311.11436\n   Abstract: A multitude of (dis)similarity measures between neural network representations have been proposed, resulting in a fragmented research landscape. Most of these measures fall into one of two categories. First, measures such as linear regression, canonical correlations analysis (CCA), and shape distances, all learn explicit mappings between neural units to quantify similarity while accounting for expected invariances. Second, measures such as representational similarity analysis (RSA), centered kernel alignment (CKA), and normalized Bures similarity (NBS) all quantify similarity in summary statistics, such as stimulus-by-stimulus kernel matrices, which are already invariant to expected symmetries. Here, we take steps towards unifying these two broad categories of methods by observing that the cosine of the Riemannian shape distance (from category 1) is equal to NBS (from category 2). We explore how this connection leads to new interpretations of shape distances and NBS, and draw contrasts of these measures with CKA, a popular similarity measure in the deep learning literature.\n\n3. Deconfounded Representation Similarity for Comparison of Neural Networks\n   ID: 25dhym6i\n   2022 · Tianyu Cui, Yogesh Kumar, Pekka Marttinen\n   Abstract: Similarity metrics such as representational similarity analysis (RSA) and centered kernel alignment (CKA) have been used to compare layer-wise representations between neural networks. However, these metrics are confounded by the population structure of data items in the input space, leading to spuriously high similarity for even completely random neural networks and inconsistent domain relations in transfer learning. We introduce a simple and generally applicable fix to adjust for the confounder with covariate adjustment regression, which retains the intuitive invariance properties of the original similarity measures. We show that deconfounding the similarity metrics increases the resolution of detecting semantically similar neural networks. Moreover, in real-world applications, deconfounding improves the consistency of representation similarities with domain similarities in transfer learning, and increases correlation with out-of-distribution accuracy.\n\n4. Deconfounded Representation Similarity for Comparison of Neural Networks\n   ID: 2b22yxm4\n   2022\n   DOI: 10.48550/arxiv.2202.00095\n   Abstract: Similarity metrics such as representational similarity analysis (RSA) and centered kernel alignment (CKA) have been used to compare layer-wise representations between neural networks. However, these metrics are confounded by the population structure of data items in the input space, leading to spuriously high similarity for even completely random neural networks and inconsistent domain relations in transfer learning. We introduce a simple and generally applicable fix to adjust for the confounder with covariate adjustment regression, which retains the intuitive invariance properties of the original similarity measures. We show that deconfounding the similarity metrics increases the resolution of detecting semantically similar neural networks. Moreover, in real-world applications, deconfounding improves the consistency of representation similarities with domain similarities in transfer learning, and increases correlation with out-of-distribution accuracy. \n\n5. Representational Alignment Across Model Layers and Brain Regions with Hierarchical Optimal Transport\n   ID: h2jgcltmybfc\n   2025 · Shah, Shaan, Khosla, Meenakshi\n   DOI: 10.48550/arxiv.2510.01706\n   Abstract: Standard representational similarity methods align each layer of a network to its best match in another independently, producing asymmetric results, lacking a global alignment score, and struggling with networks of different depths. These limitations arise from ignoring global activation structure and restricting mappings to rigid one-to-one layer correspondences. We propose Hierarchical Optimal Transport (HOT), a unified framework that jointly infers soft, globally consistent layer-to-layer couplings and neuron-level transport plans. HOT allows source neurons to distribute mass across multiple target layers while minimizing total transport cost under marginal constraints. This yields both a single alignment score for the entire network comparison and a soft transport plan that naturally handles depth mismatches through mass distribution. We evaluate HOT on vision models, large language models, and human visual cortex recordings. Across all domains, HOT matches or surpasses standard pairwise matching in alignment quality. Moreover, it reveals smooth, fine-grained hierarchical correspondences: early layers map to early layers, deeper layers maintain relative positions, and depth mismatches are resolved by distributing representations across multiple layers. These structured patterns emerge naturally from global optimization without being imposed, yet are absent in greedy layer-wise methods. HOT thus enables richer, more interpretable comparisons between representations, particularly when networks differ in architecture or depth. \n\n6. What Representational Similarity Measures Imply about Decodable\n  Information\n   ID: 60li8h3blfcy\n   2024 · Sarah Harvey, David Lipshutz, Alex H. Williams\n   DOI: 10.48550/arxiv.2411.08197\n   Abstract: Neural responses encode information that is useful for a variety of downstream tasks. A common approach to understand these systems is to build regression models or ``decoders'' that reconstruct features of the stimulus from neural responses. Popular neural network similarity measures like centered kernel alignment (CKA), canonical correlation analysis (CCA), and Procrustes shape distance, do not explicitly leverage this perspective and instead highlight geometric invariances to orthogonal or affine transformations when comparing representations. Here, we show that many of these measures can, in fact, be equivalently motivated from a decoding perspective. Specifically, measures like CKA and CCA quantify the average alignment between optimal linear readouts across a distribution of decoding tasks. We also show that the Procrustes shape distance upper bounds the distance between optimal linear readouts and that the converse holds for representations with low participation ratio. Overall, our work demonstrates a tight link between the geometry of neural representations and the ability to linearly decode information. This perspective suggests new ways of measuring similarity between neural systems and also provides novel, unifying interpretations of existing measures. \n\n7. Empowering Networks With Scale and Rotation Equivariance Using A Similarity Convolution\n   ID: 3grnya1p\n   2023 · Zikai Sun, Thierry Blu\n   DOI: 10.48550/arXiv.2303.00326\n   Abstract: The translational equivariant nature of Convolutional Neural Networks (CNNs) is a reason for its great success in computer vision. However, networks do not enjoy more general equivariance properties such as rotation or scaling, ultimately limiting their generalization performance. To address this limitation, we devise a method that endows CNNs with simultaneous equivariance with respect to translation, rotation, and scaling. Our approach defines a convolution-like operation and ensures equivariance based on our proposed scalable Fourier-Argand representation. The method maintains similar efficiency as a traditional network and hardly introduces any additional learnable parameters, since it does not face the computational issue that often occurs in group-convolution operators. We validate the efficacy of our approach in the image classification task, demonstrating its robustness and the generalization ability to both scaled and rotated inputs.\n\n8. Empowering Networks With Scale and Rotation Equivariance Using A\n  Similarity Convolution\n   ID: gnaalkis\n   2023\n   DOI: 10.48550/arxiv.2303.00326\n   Abstract: The translational equivariant nature of Convolutional Neural Networks (CNNs) is a reason for its great success in computer vision. However, networks do not enjoy more general equivariance properties such as rotation or scaling, ultimately limiting their generalization performance. To address this limitation, we devise a method that endows CNNs with simultaneous equivariance with respect to translation, rotation, and scaling. Our approach defines a convolution-like operation and ensures equivariance based on our proposed scalable Fourier-Argand representation. The method maintains similar efficiency as a traditional network and hardly introduces any additional learnable parameters, since it does not face the computational issue that often occurs in group-convolution operators. We validate the efficacy of our approach in the image classification task, demonstrating its robustness and the generalization ability to both scaled and rotated inputs. \n\n9. ReSi: A Comprehensive Benchmark for Representational Similarity Measures\n   ID: 7jw8cefifr7o\n   2024 · Max Klabunde, Tassilo Wald, Tobias Schumacher\n   DOI: 10.48550/arxiv.2408.00531\n   Abstract: Measuring the similarity of different representations of neural architectures is a fundamental task and an open research challenge for the machine learning community. This paper presents the first comprehensive benchmark for evaluating representational similarity measures based on well-defined groundings of similarity. The representational similarity (ReSi) benchmark consists of (i) six carefully designed tests for similarity measures, (ii) 23 similarity measures, (iii) eleven neural network architectures, and (iv) six datasets, spanning over the graph, language, and vision domains. The benchmark opens up several important avenues of research on representational similarity that enable novel explorations and applications of neural architectures. We demonstrate the utility of the ReSi benchmark by conducting experiments on various neural network architectures, real world datasets and similarity measures. All components of the benchmark are publicly available and thereby facilitate systematic reproduction and production of research results. The benchmark is extensible, future research can build on and further expand it. We believe that the ReSi benchmark can serve as a sound platform catalyzing future research that aims to systematically evaluate existing and explore novel ways of comparing representations of neural architectures. \n\n10. Distilling Representational Similarity using Centered Kernel Alignment (CKA)\n   ID: 1lkdr58v\n   Aninda Saha, Alina Bialkowski, Sara Khalifa\n   Abstract: Representation distillation has emerged as an effective knowledge distillation (KD) technique, which involves the transfer of an inter-example similarity matrix. However, existing methods use inadequate normalisation techniques combined with euclidean distance-based loss functions to distill inter-example similarity matrices. Such approaches are not invariant to uniform feature scaling, which is a key property for neural network similarity metrics. Therefore, we propose a novel loss function for representation distillation by adapting Centered Kernel Alignment (CKA), which computes the cosine similarity between the student and teacher’s centered and normalised inter-example similarity matrices. We compare our proposed loss function against three popular representation distillation techniques, demonstrating CKA’s outperformance on three benchmark image classification datasets. Our results reveal that distilling a centered and normalised distribution of the similarity matrix using the proposed CKA-based loss function is more effective than existing representation distillation techniques."
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "Which representation similarity methods correctly account for rotations, scaling, neuron permutations, or gauge symmetries when comparing neural-network representations across training checkpoints, and what are the limitations of PCA and CKA?",
+        "papers": [
+          {
+            "id": 4048119891,
+            "title": "Equivalence between representational similarity analysis, centered kernel alignment, and canonical correlations analysis",
+            "is_archived": false,
+            "full_slug": "equivalence-between-representational-similarity-analysis-3adg2trnidbl",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-10-24T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.1101/2024.10.23.619871",
+            "unique_id": "3adg2trnidbl",
+            "abstract": "Centered kernel alignment (CKA) and representational similarity analysis (RSA) of dissimilarity matrices are two popular methods for comparing neural systems in terms of representational geometry. Although they follow a conceptually similar approach, typical implementations of CKA and RSA tend to result in numerically different outcomes. Here, I show that these two approaches are largely equivalent once one incorporates a mean-centering step into RSA. This equivalence holds for both linear and nonlinear variants of these methods. These connections are simple to derive, but appear to have been thus far overlooked in the context of comparing neural representations. By unifying these measures, this paper hopes to simplify a complex and fragmented literature on this subject. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Alex H. Williams",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": 2
+              }
+            },
+            "tldr": "This study demonstrates the equivalence between centered kernel alignment (CKA) and representational similarity analysis (RSA) of dissimilarity matrices, showing that incorporating a mean-centering step into RSA yields numerically equivalent outcomes to CKA, for both linear and nonlinear variants.",
+            "podcast": {
+              "unique_id": "1qeo2dpgwc52qqf",
+              "status": "SUCCESS",
+              "created_at": "2024-12-31T15:36:27.094Z",
+              "updated_at": "2024-12-31T15:36:33.357Z",
+              "audio_url": "https://scispace-production-podcasts.s3-accelerate.amazonaws.com/equivalence-between-representational-similarity-analysis-3adg2trnidbl_2024-12-31-15-36-27.mp3?AWSAccessKeyId=AKIARG2S6JBA67NXIGSE&Signature=pGHGL58ciw3NRCJoZB13t7voreo%3D&Expires=1792230083",
+              "length": 120346
+            },
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4020587747,
+            "title": "Duality of Bures and Shape Distances with Implications for Comparing Neural Representations",
+            "is_archived": false,
+            "full_slug": "duality-of-bures-and-shape-distances-with-implications-for-51kt65v5y3",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-11-19T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2311.11436",
+            "unique_id": "51kt65v5y3",
+            "abstract": "A multitude of (dis)similarity measures between neural network representations have been proposed, resulting in a fragmented research landscape. Most of these measures fall into one of two categories. First, measures such as linear regression, canonical correlations analysis (CCA), and shape distances, all learn explicit mappings between neural units to quantify similarity while accounting for expected invariances. Second, measures such as representational similarity analysis (RSA), centered kernel alignment (CKA), and normalized Bures similarity (NBS) all quantify similarity in summary statistics, such as stimulus-by-stimulus kernel matrices, which are already invariant to expected symmetries. Here, we take steps towards unifying these two broad categories of methods by observing that the cosine of the Riemannian shape distance (from category 1) is equal to NBS (from category 2). We explore how this connection leads to new interpretations of shape distances and NBS, and draw contrasts of these measures with CKA, a popular similarity measure in the deep learning literature.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Sarah E. Harvey",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Brett W. Larsen",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Alex H. Williams",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This work observation that the cosine of the Riemannian shape distance is equal to NBS is explored, which leads to new interpretations of shape distances and NBS, and draws contrasts of these measures with CKA, a popular similarity measure in the deep learning literature.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4005296833,
+            "title": "Deconfounded Representation Similarity for Comparison of Neural Networks",
+            "is_archived": false,
+            "full_slug": "deconfounded-representation-similarity-for-comparison-of-25dhym6i",
+            "journal": null,
+            "conference_series": {
+              "display_name": "Neural Information Processing Systems",
+              "id": 1127325140,
+              "slug": "neural-information-processing-systems",
+              "unique_id": "1mq696w2",
+              "full_slug": "neural-information-processing-systems-1mq696w2"
+            },
+            "date": "2022-01-31T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Proceedings Article",
+            "doi": null,
+            "unique_id": "25dhym6i",
+            "abstract": "Similarity metrics such as representational similarity analysis (RSA) and centered kernel alignment (CKA) have been used to compare layer-wise representations between neural networks. However, these metrics are confounded by the population structure of data items in the input space, leading to spuriously high similarity for even completely random neural networks and inconsistent domain relations in transfer learning. We introduce a simple and generally applicable fix to adjust for the confounder with covariate adjustment regression, which retains the intuitive invariance properties of the original similarity measures. We show that deconfounding the similarity metrics increases the resolution of detecting semantically similar neural networks. Moreover, in real-world applications, deconfounding improves the consistency of representation similarities with domain similarities in transfer learning, and increases correlation with out-of-distribution accuracy.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Tianyu Cui",
+                  "id": 2914041061,
+                  "slug": "tianyu-cui",
+                  "unique_id": "4cyq9aj7nh",
+                  "full_slug": "tianyu-cui-4cyq9aj7nh"
+                },
+                {
+                  "display_name": "Yogesh Kumar",
+                  "id": 4001612809,
+                  "slug": "yogesh-kumar",
+                  "unique_id": "2sgkahvz",
+                  "full_slug": "yogesh-kumar-2sgkahvz"
+                },
+                {
+                  "display_name": "Pekka Marttinen",
+                  "id": 2056869360,
+                  "slug": "pekka-marttinen",
+                  "unique_id": "45kestdpxf",
+                  "full_slug": "pekka-marttinen-45kestdpxf"
+                },
+                {
+                  "display_name": "Satu Kaski",
+                  "id": 2508461647,
+                  "slug": "satu-kaski",
+                  "unique_id": "3iyf20g2fz",
+                  "full_slug": "satu-kaski-3iyf20g2fz"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/deconfounded-representation-similarity-for-comparison-of-25dhym6i.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2202.00095v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 10
+              }
+            },
+            "tldr": "It is shown that deconfounding the similarity metrics increases the resolution of detecting semantically similar neural networks and improves the consistency of representation similarities with domain similarities in transfer learning, and increases correlation with out-of-distribution accuracy.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4014161030,
+            "title": "Deconfounded Representation Similarity for Comparison of Neural Networks",
+            "is_archived": false,
+            "full_slug": "deconfounded-representation-similarity-for-comparison-of-2b22yxm4",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-01-31T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2202.00095",
+            "unique_id": "2b22yxm4",
+            "abstract": "Similarity metrics such as representational similarity analysis (RSA) and centered kernel alignment (CKA) have been used to compare layer-wise representations between neural networks. However, these metrics are confounded by the population structure of data items in the input space, leading to spuriously high similarity for even completely random neural networks and inconsistent domain relations in transfer learning. We introduce a simple and generally applicable fix to adjust for the confounder with covariate adjustment regression, which retains the intuitive invariance properties of the original similarity measures. We show that deconfounding the similarity metrics increases the resolution of detecting semantically similar neural networks. Moreover, in real-world applications, deconfounding improves the consistency of representation similarities with domain similarities in transfer learning, and increases correlation with out-of-distribution accuracy. ",
+            "fulltext_url": "/pdf/deconfounded-representation-similarity-for-comparison-of-2b22yxm4.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2202.00095"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 3
+              }
+            },
+            "tldr": "In this paper , the authors propose to adjust for the confounder with covariate adjustment regression, which retains the intuitive invariance properties of the original similarity measures, and show that deconfounding the similarity metrics increases the resolution of detecting semantically similar neural networks.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4091439257,
+            "title": "Representational Alignment Across Model Layers and Brain Regions with Hierarchical Optimal Transport",
+            "is_archived": false,
+            "full_slug": "representational-alignment-across-model-layers-and-brain-h2jgcltmybfc",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-03T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.01706",
+            "unique_id": "h2jgcltmybfc",
+            "abstract": "Standard representational similarity methods align each layer of a network to its best match in another independently, producing asymmetric results, lacking a global alignment score, and struggling with networks of different depths. These limitations arise from ignoring global activation structure and restricting mappings to rigid one-to-one layer correspondences. We propose Hierarchical Optimal Transport (HOT), a unified framework that jointly infers soft, globally consistent layer-to-layer couplings and neuron-level transport plans. HOT allows source neurons to distribute mass across multiple target layers while minimizing total transport cost under marginal constraints. This yields both a single alignment score for the entire network comparison and a soft transport plan that naturally handles depth mismatches through mass distribution. We evaluate HOT on vision models, large language models, and human visual cortex recordings. Across all domains, HOT matches or surpasses standard pairwise matching in alignment quality. Moreover, it reveals smooth, fine-grained hierarchical correspondences: early layers map to early layers, deeper layers maintain relative positions, and depth mismatches are resolved by distributing representations across multiple layers. These structured patterns emerge naturally from global optimization without being imposed, yet are absent in greedy layer-wise methods. HOT thus enables richer, more interpretable comparisons between representations, particularly when networks differ in architecture or depth. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Shah, Shaan",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Khosla, Meenakshi",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/representational-alignment-across-model-layers-and-brain-h2jgcltmybfc.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2510.01706v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers propose Hierarchical Optimal Transport (HOT) to align model layers and brain regions, yielding a unified framework that infers soft, globally consistent couplings and neuron-level transport plans, outperforming standard methods in alignment quality and revealing hierarchical correspondences.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4048903403,
+            "title": "What Representational Similarity Measures Imply about Decodable\n  Information",
+            "is_archived": false,
+            "full_slug": "what-representational-similarity-measures-imply-about-60li8h3blfcy",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-11-12T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2411.08197",
+            "unique_id": "60li8h3blfcy",
+            "abstract": "Neural responses encode information that is useful for a variety of downstream tasks. A common approach to understand these systems is to build regression models or ``decoders'' that reconstruct features of the stimulus from neural responses. Popular neural network similarity measures like centered kernel alignment (CKA), canonical correlation analysis (CCA), and Procrustes shape distance, do not explicitly leverage this perspective and instead highlight geometric invariances to orthogonal or affine transformations when comparing representations. Here, we show that many of these measures can, in fact, be equivalently motivated from a decoding perspective. Specifically, measures like CKA and CCA quantify the average alignment between optimal linear readouts across a distribution of decoding tasks. We also show that the Procrustes shape distance upper bounds the distance between optimal linear readouts and that the converse holds for representations with low participation ratio. Overall, our work demonstrates a tight link between the geometry of neural representations and the ability to linearly decode information. This perspective suggests new ways of measuring similarity between neural systems and also provides novel, unifying interpretations of existing measures. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Sarah Harvey",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "David Lipshutz",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Alex H. Williams",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/what-representational-similarity-measures-imply-about-60li8h3blfcy.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2411.08197"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study reveals that popular neural network similarity measures can be motivated from a decoding perspective, highlighting a tight link between neural representation geometry and linear information decoding, with implications for measuring neural system similarity.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4001895956,
+            "title": "Empowering Networks With Scale and Rotation Equivariance Using A Similarity Convolution",
+            "is_archived": false,
+            "full_slug": "empowering-networks-with-scale-and-rotation-equivariance-3grnya1p",
+            "journal": null,
+            "conference_series": {
+              "display_name": "International Conference on Learning Representations",
+              "id": 2584161585,
+              "slug": "international-conference-on-learning-representations",
+              "unique_id": "3fuf27wk",
+              "full_slug": "international-conference-on-learning-representations-3fuf27wk"
+            },
+            "date": "2023-03-01T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Proceedings Article",
+            "doi": "10.48550/arXiv.2303.00326",
+            "unique_id": "3grnya1p",
+            "abstract": "The translational equivariant nature of Convolutional Neural Networks (CNNs) is a reason for its great success in computer vision. However, networks do not enjoy more general equivariance properties such as rotation or scaling, ultimately limiting their generalization performance. To address this limitation, we devise a method that endows CNNs with simultaneous equivariance with respect to translation, rotation, and scaling. Our approach defines a convolution-like operation and ensures equivariance based on our proposed scalable Fourier-Argand representation. The method maintains similar efficiency as a traditional network and hardly introduces any additional learnable parameters, since it does not face the computational issue that often occurs in group-convolution operators. We validate the efficacy of our approach in the image classification task, demonstrating its robustness and the generalization ability to both scaled and rotated inputs.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Zikai Sun",
+                  "id": 2794605804,
+                  "slug": "zikai-sun",
+                  "unique_id": "4w6hq2gfkc",
+                  "full_slug": "zikai-sun-4w6hq2gfkc"
+                },
+                {
+                  "display_name": "Thierry Blu",
+                  "id": 313653972,
+                  "slug": "thierry-blu",
+                  "unique_id": "59imy920vr",
+                  "full_slug": "thierry-blu-59imy920vr"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": 2
+              }
+            },
+            "tldr": "In this article , the Fourier-Argand representation is used to ensure simultaneous equivariance with respect to translation, rotation, and scaling of convolutional neural networks (CNNs).",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4017103874,
+            "title": "Empowering Networks With Scale and Rotation Equivariance Using A\n  Similarity Convolution",
+            "is_archived": false,
+            "full_slug": "empowering-networks-with-scale-and-rotation-equivariance-gnaalkis",
+            "journal": null,
+            "conference_series": null,
+            "date": "2023-03-01T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2303.00326",
+            "unique_id": "gnaalkis",
+            "abstract": "The translational equivariant nature of Convolutional Neural Networks (CNNs) is a reason for its great success in computer vision. However, networks do not enjoy more general equivariance properties such as rotation or scaling, ultimately limiting their generalization performance. To address this limitation, we devise a method that endows CNNs with simultaneous equivariance with respect to translation, rotation, and scaling. Our approach defines a convolution-like operation and ensures equivariance based on our proposed scalable Fourier-Argand representation. The method maintains similar efficiency as a traditional network and hardly introduces any additional learnable parameters, since it does not face the computational issue that often occurs in group-convolution operators. We validate the efficacy of our approach in the image classification task, demonstrating its robustness and the generalization ability to both scaled and rotated inputs. ",
+            "fulltext_url": "/pdf/empowering-networks-with-scale-and-rotation-equivariance-gnaalkis.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2303.00326"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 1
+              }
+            },
+            "tldr": "In this paper , the Fourier-Argand representation is used to ensure simultaneous equivariance with respect to translation, rotation, and scaling of convolutional neural networks (CNNs).",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4046603041,
+            "title": "ReSi: A Comprehensive Benchmark for Representational Similarity Measures",
+            "is_archived": false,
+            "full_slug": "resi-a-comprehensive-benchmark-for-representational-7jw8cefifr7o",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-08-01T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2408.00531",
+            "unique_id": "7jw8cefifr7o",
+            "abstract": "Measuring the similarity of different representations of neural architectures is a fundamental task and an open research challenge for the machine learning community. This paper presents the first comprehensive benchmark for evaluating representational similarity measures based on well-defined groundings of similarity. The representational similarity (ReSi) benchmark consists of (i) six carefully designed tests for similarity measures, (ii) 23 similarity measures, (iii) eleven neural network architectures, and (iv) six datasets, spanning over the graph, language, and vision domains. The benchmark opens up several important avenues of research on representational similarity that enable novel explorations and applications of neural architectures. We demonstrate the utility of the ReSi benchmark by conducting experiments on various neural network architectures, real world datasets and similarity measures. All components of the benchmark are publicly available and thereby facilitate systematic reproduction and production of research results. The benchmark is extensible, future research can build on and further expand it. We believe that the ReSi benchmark can serve as a sound platform catalyzing future research that aims to systematically evaluate existing and explore novel ways of comparing representations of neural architectures. ",
+            "authors": {
+              "total": 6,
+              "data": [
+                {
+                  "display_name": "Max Klabunde",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Tassilo Wald",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Tobias Schumacher",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Klaus H. Maier‐Hein",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Markus Strohmaier",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Florian Lemmerich",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/resi-a-comprehensive-benchmark-for-representational-7jw8cefifr7o.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2408.00531"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 2
+              }
+            },
+            "tldr": "This paper introduces ReSi, a comprehensive benchmark for evaluating representational similarity measures in neural architectures, comprising six tests, 23 measures, 11 architectures, and six datasets across graph, language, and vision domains.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4005043552,
+            "title": "Distilling Representational Similarity using Centered Kernel Alignment (CKA)",
+            "is_archived": false,
+            "full_slug": "distilling-representational-similarity-using-centered-kernel-1lkdr58v",
+            "journal": null,
+            "conference_series": {
+              "display_name": "British Machine Vision Conference",
+              "id": 1198654179,
+              "slug": "british-machine-vision-conference",
+              "unique_id": "1gt8zawu",
+              "full_slug": "british-machine-vision-conference-1gt8zawu"
+            },
+            "date": null,
+            "is_oa": false,
+            "publication_type": "Proceedings Article",
+            "doi": null,
+            "unique_id": "1lkdr58v",
+            "abstract": "Representation distillation has emerged as an effective knowledge distillation (KD) technique, which involves the transfer of an inter-example similarity matrix. However, existing methods use inadequate normalisation techniques combined with euclidean distance-based loss functions to distill inter-example similarity matrices. Such approaches are not invariant to uniform feature scaling, which is a key property for neural network similarity metrics. Therefore, we propose a novel loss function for representation distillation by adapting Centered Kernel Alignment (CKA), which computes the cosine similarity between the student and teacher’s centered and normalised inter-example similarity matrices. We compare our proposed loss function against three popular representation distillation techniques, demonstrating CKA’s outperformance on three benchmark image classification datasets. Our results reveal that distilling a centered and normalised distribution of the similarity matrix using the proposed CKA-based loss function is more effective than existing representation distillation techniques.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Aninda Saha",
+                  "id": 2800571311,
+                  "slug": "aninda-saha",
+                  "unique_id": "p3dn161qwj",
+                  "full_slug": "aninda-saha-p3dn161qwj"
+                },
+                {
+                  "display_name": "Alina Bialkowski",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Sara Khalifa",
+                  "id": 4003302340,
+                  "slug": "sara-khalifa",
+                  "unique_id": "3mmeq8vr",
+                  "full_slug": "sara-khalifa-3mmeq8vr"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study proposes a novel loss function for representation distillation using Centered Kernel Alignment (CKA), outperforming existing techniques on three image classification datasets by distilling a centered and normalised similarity matrix.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

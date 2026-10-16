@@ -1,0 +1,658 @@
+{
+  "question": "How can task-output sensitivity or Fisher information distinguish representation perturbations that affect classification logits from perturbations that affect bounding-box regression in vision transformers?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'How can task-output sensitivity or Fisher information distinguish representation perturbations that affect classification logits from perturbations that affect bounding-box regression in vision transformers?'.\n\n\n1. Fisher SAM: Information Geometry and Sharpness Aware Minimisation\n   ID: 1j01zhmo\n   2022 · Minyoung Kim, Da Li, Shell Xu Hu\n   DOI: 10.48550/arXiv.2206.04920\n   Abstract: Recent sharpness-aware minimisation (SAM) is known to find flat minima which is beneficial for better generalisation with improved robustness. SAM essentially modifies the loss function by reporting the maximum loss value within the small neighborhood around the current iterate. However, it uses the Euclidean ball to define the neighborhood, which can be inaccurate since loss functions for neural networks are typically defined over probability distributions (e.g., class predictive probabilities), rendering the parameter space non Euclidean. In this paper we consider the information geometry of the model parameter space when defining the neighborhood, namely replacing SAM's Euclidean balls with ellipsoids induced by the Fisher information. Our approach, dubbed Fisher SAM, defines more accurate neighborhood structures that conform to the intrinsic metric of the underlying statistical manifold. For instance, SAM may probe the worst-case loss value at either a too nearby or inappropriately distant point due to the ignorance of the parameter space geometry, which is avoided by our Fisher SAM. Another recent Adaptive SAM approach stretches/shrinks the Euclidean ball in accordance with the scale of the parameter magnitudes. This might be dangerous, potentially destroying the neighborhood structure. We demonstrate improved performance of the proposed Fisher SAM on several benchmark datasets/tasks.\n\n2. Fisher SAM: Information Geometry and Sharpness Aware Minimisation\n   ID: 20vu9s7q\n   2022\n   DOI: 10.48550/arxiv.2206.04920\n   Abstract: Recent sharpness-aware minimisation (SAM) is known to find flat minima which is beneficial for better generalisation with improved robustness. SAM essentially modifies the loss function by reporting the maximum loss value within the small neighborhood around the current iterate. However, it uses the Euclidean ball to define the neighborhood, which can be inaccurate since loss functions for neural networks are typically defined over probability distributions (e.g., class predictive probabilities), rendering the parameter space non Euclidean. In this paper we consider the information geometry of the model parameter space when defining the neighborhood, namely replacing SAM's Euclidean balls with ellipsoids induced by the Fisher information. Our approach, dubbed Fisher SAM, defines more accurate neighborhood structures that conform to the intrinsic metric of the underlying statistical manifold. For instance, SAM may probe the worst-case loss value at either a too nearby or inappropriately distant point due to the ignorance of the parameter space geometry, which is avoided by our Fisher SAM. Another recent Adaptive SAM approach stretches/shrinks the Euclidean ball in accordance with the scale of the parameter magnitudes. This might be dangerous, potentially destroying the neighborhood structure. We demonstrate improved performance of the proposed Fisher SAM on several benchmark datasets/tasks. \n\n3. Are Vision Transformers Robust to Patch Perturbations?\n   ID: 13bc7c3w\n   2022 · Jindong Gu · Lecture Notes in Computer Science\n   DOI: 10.1007/978-3-031-19775-8_24\n   Abstract: Recent advances in Vision Transformer (ViT) have demonstrated its impressive performance in image classification, which makes it a promising alternative to Convolutional Neural Network (CNN). Unlike CNNs, ViT represents an input image as a sequence of image patches. The patch-based input image representation makes the following question interesting: How does ViT perform when individual input image patches are perturbed with natural corruptions or adversarial perturbations, compared to CNNs? In this work, we study the robustness of ViT to patch-wise perturbations. Surprisingly, we find that ViTs are more robust to naturally corrupted patches than CNNs, whereas they are more vulnerable to adversarial patches. Furthermore, we discover that the attention mechanism greatly affects the robustness of vision transformers. Specifically, the attention module can help improve the robustness of ViT by effectively ignoring natural corrupted patches. However, when ViTs are attacked by an adversary, the attention mechanism can be easily fooled to focus more on the adversarially perturbed patches and cause a mistake. Based on our analysis, we propose a simple temperature-scaling based method to improve the robustness of ViT against adversarial patches. Extensive qualitative and quantitative experiments are performed to support our findings, understanding, and improvement of ViT robustness to patch-wise perturbations across a set of transformer-based architectures. \n\n4. LeGrad: An Explainability Method for Vision Transformers via Feature Formation Sensitivity\n   ID: 20phhhfza4\n   2024 · Walid Bousselham, Angie Boggust, Sofian Chaybouti · arXiv.org\n   DOI: 10.48550/arxiv.2404.03214\n   Abstract: Vision Transformers (ViTs), with their ability to model long-range dependencies through self-attention mechanisms, have become a standard architecture in computer vision. However, the interpretability of these models remains a challenge. To address this, we propose LeGrad, an explainability method specifically designed for ViTs. LeGrad computes the gradient with respect to the attention maps of ViT layers, considering the gradient itself as the explainability signal. We aggregate the signal over all layers, combining the activations of the last as well as intermediate tokens to produce the merged explainability map. This makes LeGrad a conceptually simple and an easy-to-implement tool for enhancing the transparency of ViTs. We evaluate LeGrad in challenging segmentation, perturbation, and open-vocabulary settings, showcasing its versatility compared to other SotA explainability methods demonstrating its superior spatial fidelity and robustness to perturbations. A demo and the code is available at https://github.com/WalBouss/LeGrad.\n\n5. Fisher-aware Quantization for DETR Detectors with Critical-category\n  Objectives\n   ID: 4t9zyh677r\n   2024 · Huanrui Yang, Yafeng Huang, Zhen Dong\n   DOI: 10.48550/arxiv.2407.03442\n   Abstract: The impact of quantization on the overall performance of deep learning models is a well-studied problem. However, understanding and mitigating its effects on a more fine-grained level is still lacking, especially for harder tasks such as object detection with both classification and regression objectives. This work defines the performance for a subset of task-critical categories, i.e. the critical-category performance, as a crucial yet largely overlooked fine-grained objective for detection tasks. We analyze the impact of quantization at the category-level granularity, and propose methods to improve performance for the critical categories. Specifically, we find that certain critical categories have a higher sensitivity to quantization, and are prone to overfitting after quantization-aware training (QAT). To explain this, we provide theoretical and empirical links between their performance gaps and the corresponding loss landscapes with the Fisher information framework. Using this evidence, we apply a Fisher-aware mixed-precision quantization scheme, and a Fisher-trace regularization for the QAT on the critical-category loss landscape. The proposed methods improve critical-category metrics of the quantized transformer-based DETR detectors. They are even more significant in case of larger models and higher number of classes where the overfitting becomes more severe. For example, our methods lead to 10.4% and 14.5% mAP gains for, correspondingly, 4-bit DETR-R50 and Deformable DETR on the most impacted critical classes in the COCO Panoptic dataset. \n\n6. Rethinking Robustness of Model Attributions\n   ID: 5av57bd7ox\n   2024 · Sandesh Kamath, Sankalp Mittal, Amit Deshpande · Proceedings of the ... AAAI Conference on Artificial Intelligence\n   DOI: 10.1609/aaai.v38i3.28047\n   Abstract: For machine learning models to be reliable and trustworthy, their decisions must be interpretable. As these models find increasing use in safety-critical applications, it is important that not just the model predictions but also their explanations (as feature attributions) be robust to small human-imperceptible input perturbations. Recent works have shown that many attribution methods are fragile and have proposed improvements in either these methods or the model training. We observe two main causes for fragile attributions: first, the existing metrics of robustness (e.g., top-k intersection) overpenalize even reasonable local shifts in attribution, thereby making random perturbations to appear as a strong attack, and second, the attribution can be concentrated in a small region even when there are multiple important parts in an image. To rectify this, we propose simple ways to strengthen existing metrics and attribution methods that incorporate locality of pixels in robustness metrics and diversity of pixel locations in attributions. Towards the role of model training in attributional robustness, we empirically observe that adversarially trained models have more robust attributions on smaller datasets, however, this advantage disappears in larger datasets. Code is made available at https://github.com/ksandeshk/LENS. \n\n7. Rethinking Robustness of Model Attributions\n   ID: 3s6j40sub2\n   2023 · Sandesh B. Kamath, Sankalp Mittal, Amit Deshpande · arXiv.org\n   DOI: 10.48550/arxiv.2312.10534\n   Abstract: For machine learning models to be reliable and trustworthy, their decisions must be interpretable. As these models find increasing use in safety-critical applications, it is important that not just the model predictions but also their explanations (as feature attributions) be robust to small human-imperceptible input perturbations. Recent works have shown that many attribution methods are fragile and have proposed improvements in either these methods or the model training. We observe two main causes for fragile attributions: first, the existing metrics of robustness (e.g., top-k intersection) over-penalize even reasonable local shifts in attribution, thereby making random perturbations to appear as a strong attack, and second, the attribution can be concentrated in a small region even when there are multiple important parts in an image. To rectify this, we propose simple ways to strengthen existing metrics and attribution methods that incorporate locality of pixels in robustness metrics and diversity of pixel locations in attributions. Towards the role of model training in attributional robustness, we empirically observe that adversarially trained models have more robust attributions on smaller datasets, however, this advantage disappears in larger datasets. Code is available at https://github.com/ksandeshk/LENS.\n\n8. The Box Size Confidence Bias Harms Your Object Detector\n   ID: 14obuywi\n   2023\n   DOI: 10.1109/wacv56688.2023.00152\n   Abstract: Countless applications depend on accurate predictions with reliable confidence estimates from modern object detectors. However, it is well known that neural networks, including object detectors, produce miscalibrated confidence estimates. Recent work even suggests that detectors’ confidence predictions are biased with respect to object size and position. In object detection, the issues of conditional biases, confidence calibration, and task performance are usually explored in isolation, but, as we aim to show, they are closely related. We formally prove that the conditional confidence bias harms the performance of object detectors and empirically validate these findings. Specifically, to quantify the performance impact of the confidence bias on object detectors, we modify the histogram binning calibration to avoid performance impairment and instead improve it through calibration conditioned on the bounding box size. We further find that the confidence bias is also present in detections generated on the training data of the detector, which can be leveraged to perform the de-biasing. Moreover, we show that Test Time Augmentation (TTA) confounds this bias, which results in even more significant performance impairments on the detectors. Finally, we use our proposed algorithm to analyze a diverse set of object detection architectures and show that the conditional confidence bias harms their performance by up to 0.6 mAP and 0.8 mAP <inf xmlns:mml=\"http://www.w3.org/1998/Math/MathML\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">50</inf> . Code available at https://github.com/Blueblue4/Object-Detection-Confidence-Bias. \n\n9. Decision-based Black-box Attack Against Vision Transformers Via Patch-wise Adversarial Removal\n   ID: miwausvssfgh\n   Yucheng Shi, Yahong Han, Yu-an Tan\n   DOI: 10.48550/arxiv.2112.03492\n   Abstract: Vision transformers (ViTs) have demonstrated impressive performance and stronger adversarial robustness compared to Convolutional Neural Networks (CNNs). On the one hand, ViTs' focus on global interaction between individual patches reduces the local noise sensitivity of images. On the other hand, the neglect of noise sensitivity differences between image regions by existing decision-based attacks further compromises the efficiency of noise compression, especially for ViTs. Therefore, validating the black-box adversarial robustness of ViTs when the target model can only be queried still remains a challenging problem. In this paper, we theoretically analyze the limitations of existing decision-based attacks from the perspective of noise sensitivity difference between regions of the image, and propose a new decision-based black-box attack against ViTs, termed Patch-wise Adversarial Removal (PAR). PAR divides images into patches through a coarse-to-fine search process and compresses the noise on each patch separately. PAR records the noise magnitude and noise sensitivity of each patch and selects the patch with the highest query value for noise compression. In addition, PAR can be used as a noise initialization method for other decision-based attacks to improve the noise compression efficiency on both ViTs and CNNs without introducing additional calculations. Extensive experiments on three datasets demonstrate that PAR achieves a much lower noise magnitude with the same number of queries.\n\n10. Vision Transformer-based recognition tasks: a critical review\n   ID: 4ef3sr6oax\n   Lijuan Zhou, Jianing Mao · Journal of image and graphics\n   DOI: 10.11834/jig.220895\n   Abstract: Transformer模型在自然语言处理领域取得了很好的效果，同时因其能够更好地连接视觉和语言，也激发了计算机视觉界的极大兴趣。本文总结了视觉Transformer处理多种识别任务的百余种代表性方法，并对比分析了不同任务内的模型表现，在此基础上总结了每类任务模型的优点、不足以及面临的挑战。根据识别粒度的不同，分别着眼于诸如图像分类、视频分类的基于全局识别的方法，以及目标检测、视觉分割的基于局部识别的方法。考虑到现有方法在3种具体识别任务的广泛流行，总结了在人脸识别、动作识别和姿态估计中的方法。同时，也总结了可用于多种视觉任务或领域无关的通用方法的研究现状。基于Transformer的模型实现了许多端到端的方法，并不断追求准确率与计算成本的平衡。全局识别任务下的Transformer模型对补丁序列切分和标记特征表示进行了探索，局部识别任务下的Transformer模型因能够更好地捕获全局信息而取得了较好的表现。在人脸识别和动作识别方面，注意力机制减少了特征表示的误差，可以处理丰富多样的特征。Transformer可以解决姿态估计中特征错位的问题，有利于改善基于回归的方法性能，还减少了三维估计时深度映射所产生的歧义。大量探索表明视觉Transformer在识别任务中的有效性，并且在特征表示或网络结构等方面的改进有利于提升性能。;Due to its ability to model long-distance dependencies,self-attention mechanism for adaptive computing,scalability for large models and big data,and better connection between vision and language,Transformer model is beneficial for natural language processing and computer vision apparently. To melt Transformer into vision tasks,such vision Transformer methods have been developing intensively. Current literatures can be summarized and analyzed for multiple applications-related methods. However,these different applications are often heterogeneous for various methods. In addition,comparative analysis is often focused on between Transformer and traditional convolution neural networks(CNNs), and multi-Transformer models are less involved in and linked mutually. We summarize and compare more than 100 popular methods of vision Transformer for various recognition tasks. Global recognition-based methods are reviewed for such classification of image and video contexts,and local recognition-based methods of object detection and vision segmentation. We summarize the methods in the context of face recognition,action recognition and pose estimation based on three specific recognition tasks mentioned above. Furthermore,solo task and independent domain methods are summarized,which can be used for image classification,object detection and other related vision tasks. The performance of these Transformerbased models are compared and analyzed on the public datasets as well. Image classification is mostly used to represent features in terms of visual and class tokens. The vision Transformer(ViT) and data-efficient image Transformers(DeiT)-illustrated models have its potentials for ImageNet datasets. Object detection tasks are required to detect targeted objects derived from input visual data,and the coordinates and labels of a series of bounding boxes are predictable as well. Object detection is illustrated by detection Transformer(DETR),which can alter the indirectness of previous classification and regression through proposals,anchors or windows. Subsequently,other related literatures are focused on improving the feature maps,computational complexity and convergence speed of DETR to a certain extent,such as conditional DETR, deformable DETR,unsupervised pre-training DETR(UP-DETR). Additionally,Transformer-based models have preferred relevant to such applications of salient object detection,point cloud 3D detection and few-shot object detection. Semantic segmentation tasks are required for an assignment from class label to each pixel in the image and the bounding box of the object like object detection can be predicted and optimized further. However,semantic segmentation can be used to determine pixel classes only,and it is still challenged to identify multiple instances-between similar pixels. Transformer is also paid attention to improve U-Net for medical image segmentation. It is possible to link the Transformer with pyramid network,or design different decoder structures for pixel-by-pixel segmentation,such as segmentation Transformer progressive upsampling(SETR-PUP) and segmentation Transformer multi-level feature aggregation(SETR-MLA). Mask classification methods are commonly used in instance segmentation and it can also be used for semantic segmentation via Transformer structure like a segmenter. Instance segmentation is similar to the combination of object detection and semantic segmentation. Compared to the bounding box of object detection,the output of instance segmentation is a mask,which can segment the edges of objects and distinguish different instances of similar objects. It can optimize the ability of semantic segmentation to some extent. Transformer can be used to melt more end-to-end methods into instance segmentation,and the quality of the masks can be used and improved during the segmentation process. Transformer can provide an alignment-free method for face recognition,and it can handle noises in related to facial expressions and racial bias. Action recognition tasks are required to classify videos-input human actions,which are similar to image classification tasks and additional processing of the temporal dimension is not avoidable. Transformer is developed for modeling long-term temporal and spatial dependencies for action recognition beyond two-stream network and three-dimensional convolution. Pose estimation is usually recognized as a human body keypoints-sorted problem and parts-between spatial relationship is identified. It consists of 2D pose estimation and 3D pose estimation. The former one is generally used to determine two-dimensional coordinates of body parts,while the latter one adds depth information on the basis of two-dimensional coordinates. Transformer is used to refine keypoint features for pose estimation,and the modeling of intra-frame node relationships and inter-frame temporal relationships are optimized as well. Multi-task models based Transformer research is focused on the integration of image classification,object detection and semantic segmentation tasks. Some other related popular models are also proposed that can be used in vision and language domains. Extensive research has shown the effectiveness of the vision Transformer in recognition tasks,and feature representation or network structure-relevant optimization is beneficial for its performance improvement. Future research direction are predicted in relevance to such effective and efficient methods for accuracy preservation in the context of positional encoding, self-supervised learning, multimodal integrating, and computational cost cutting. "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "How can task-output sensitivity or Fisher information distinguish representation perturbations that affect classification logits from perturbations that affect bounding-box regression in vision transformers?",
+        "papers": [
+          {
+            "id": 4003299829,
+            "title": "Fisher SAM: Information Geometry and Sharpness Aware Minimisation",
+            "is_archived": false,
+            "full_slug": "fisher-sam-information-geometry-and-sharpness-aware-1j01zhmo",
+            "journal": null,
+            "conference_series": {
+              "display_name": "International Conference on Machine Learning",
+              "id": 1180662882,
+              "slug": "international-conference-on-machine-learning",
+              "unique_id": "p7gcurns",
+              "full_slug": "international-conference-on-machine-learning-p7gcurns"
+            },
+            "date": "2022-06-10T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Proceedings Article",
+            "doi": "10.48550/arXiv.2206.04920",
+            "unique_id": "1j01zhmo",
+            "abstract": "Recent sharpness-aware minimisation (SAM) is known to find flat minima which is beneficial for better generalisation with improved robustness. SAM essentially modifies the loss function by reporting the maximum loss value within the small neighborhood around the current iterate. However, it uses the Euclidean ball to define the neighborhood, which can be inaccurate since loss functions for neural networks are typically defined over probability distributions (e.g., class predictive probabilities), rendering the parameter space non Euclidean. In this paper we consider the information geometry of the model parameter space when defining the neighborhood, namely replacing SAM's Euclidean balls with ellipsoids induced by the Fisher information. Our approach, dubbed Fisher SAM, defines more accurate neighborhood structures that conform to the intrinsic metric of the underlying statistical manifold. For instance, SAM may probe the worst-case loss value at either a too nearby or inappropriately distant point due to the ignorance of the parameter space geometry, which is avoided by our Fisher SAM. Another recent Adaptive SAM approach stretches/shrinks the Euclidean ball in accordance with the scale of the parameter magnitudes. This might be dangerous, potentially destroying the neighborhood structure. We demonstrate improved performance of the proposed Fisher SAM on several benchmark datasets/tasks.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Minyoung Kim",
+                  "id": 2305839646,
+                  "slug": "minyoung-kim",
+                  "unique_id": "2ncn6ni0hb",
+                  "full_slug": "minyoung-kim-2ncn6ni0hb"
+                },
+                {
+                  "display_name": "Da Li",
+                  "id": 2761309822,
+                  "slug": "da-li",
+                  "unique_id": "tgala6x4i8",
+                  "full_slug": "da-li-tgala6x4i8"
+                },
+                {
+                  "display_name": "Shell Xu Hu",
+                  "id": 2937147546,
+                  "slug": "shell-xu-hu",
+                  "unique_id": "4lvca1jqw9",
+                  "full_slug": "shell-xu-hu-4lvca1jqw9"
+                },
+                {
+                  "display_name": "Timothy M. Hospedales",
+                  "id": 678548578,
+                  "slug": "timothy-m-hospedales",
+                  "unique_id": "jjnvqt0hh6",
+                  "full_slug": "timothy-m-hospedales-jjnvqt0hh6"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper considers the information geometry of the model parameter space when defining the neighborhood, namely replacing SAM’s Euclidean balls with ellipsoids induced by the Fisher information, which defines more accurate neighborhood structures that conform to the intrinsic metric of the underlying statistical manifold.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4014981935,
+            "title": "Fisher SAM: Information Geometry and Sharpness Aware Minimisation",
+            "is_archived": false,
+            "full_slug": "fisher-sam-information-geometry-and-sharpness-aware-20vu9s7q",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-06-10T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2206.04920",
+            "unique_id": "20vu9s7q",
+            "abstract": "Recent sharpness-aware minimisation (SAM) is known to find flat minima which is beneficial for better generalisation with improved robustness. SAM essentially modifies the loss function by reporting the maximum loss value within the small neighborhood around the current iterate. However, it uses the Euclidean ball to define the neighborhood, which can be inaccurate since loss functions for neural networks are typically defined over probability distributions (e.g., class predictive probabilities), rendering the parameter space non Euclidean. In this paper we consider the information geometry of the model parameter space when defining the neighborhood, namely replacing SAM's Euclidean balls with ellipsoids induced by the Fisher information. Our approach, dubbed Fisher SAM, defines more accurate neighborhood structures that conform to the intrinsic metric of the underlying statistical manifold. For instance, SAM may probe the worst-case loss value at either a too nearby or inappropriately distant point due to the ignorance of the parameter space geometry, which is avoided by our Fisher SAM. Another recent Adaptive SAM approach stretches/shrinks the Euclidean ball in accordance with the scale of the parameter magnitudes. This might be dangerous, potentially destroying the neighborhood structure. We demonstrate improved performance of the proposed Fisher SAM on several benchmark datasets/tasks. ",
+            "fulltext_url": "/pdf/fisher-sam-information-geometry-and-sharpness-aware-20vu9s7q.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2206.04920"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 4
+              }
+            },
+            "tldr": "Fisher SAM as mentioned in this paper replaces the Euclidean balls with ellipsoids induced by the Fisher information to define more accurate neighborhood structures that conform to the intrinsic metric of the underlying statistical manifold.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4014098863,
+            "title": "Are Vision Transformers Robust to Patch Perturbations?",
+            "is_archived": false,
+            "full_slug": "are-vision-transformers-robust-to-patch-perturbations-13bc7c3w",
+            "journal": {
+              "display_name": "Lecture Notes in Computer Science",
+              "official_page": "http://www.springer.com/lncs",
+              "issn": "0302-9743",
+              "alias": [
+                "LNCS",
+                "0302-9743",
+                "Springer Series-ID 558",
+                "Springer Series 558",
+                "Springer Lecture Notes in Computer Science"
+              ],
+              "id": 106296714,
+              "slug": "lecture-notes-in-computer-science",
+              "unique_id": "toobp8l4",
+              "full_slug": "lecture-notes-in-computer-science-toobp8l4"
+            },
+            "conference_series": null,
+            "date": "2022-01-01T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Journal Article",
+            "doi": "10.1007/978-3-031-19775-8_24",
+            "unique_id": "13bc7c3w",
+            "abstract": "Recent advances in Vision Transformer (ViT) have demonstrated its impressive performance in image classification, which makes it a promising alternative to Convolutional Neural Network (CNN). Unlike CNNs, ViT represents an input image as a sequence of image patches. The patch-based input image representation makes the following question interesting: How does ViT perform when individual input image patches are perturbed with natural corruptions or adversarial perturbations, compared to CNNs? In this work, we study the robustness of ViT to patch-wise perturbations. Surprisingly, we find that ViTs are more robust to naturally corrupted patches than CNNs, whereas they are more vulnerable to adversarial patches. Furthermore, we discover that the attention mechanism greatly affects the robustness of vision transformers. Specifically, the attention module can help improve the robustness of ViT by effectively ignoring natural corrupted patches. However, when ViTs are attacked by an adversary, the attention mechanism can be easily fooled to focus more on the adversarially perturbed patches and cause a mistake. Based on our analysis, we propose a simple temperature-scaling based method to improve the robustness of ViT against adversarial patches. Extensive qualitative and quantitative experiments are performed to support our findings, understanding, and improvement of ViT robustness to patch-wise perturbations across a set of transformer-based architectures. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Jindong Gu",
+                  "id": 2786186765,
+                  "slug": "jindong-gu",
+                  "unique_id": "14u9egzjgt",
+                  "full_slug": "jindong-gu-14u9egzjgt",
+                  "affiliation_full_slug": "siemens-3dxdzp8k"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Siemens",
+                  "city": "Munich",
+                  "region": null,
+                  "country": "Germany",
+                  "id": 1325886976,
+                  "slug": "siemens",
+                  "unique_id": "3dxdzp8k",
+                  "full_slug": "siemens-3dxdzp8k"
+                }
+              ]
+            },
+            "fulltext_url": "/pdf/are-vision-transformers-robust-to-patch-perturbations-13bc7c3w.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2111.10659"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 2
+              }
+            },
+            "tldr": "Zhang et al. as mentioned in this paper studied the robustness of vision transformers to patch-wise perturbations and found that they are more robust to natural corrupted patches than CNNs.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4024080127,
+            "title": "LeGrad: An Explainability Method for Vision Transformers via Feature Formation Sensitivity",
+            "is_archived": false,
+            "full_slug": "legrad-an-explainability-method-for-vision-transformers-via-20phhhfza4",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2024-04-04T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2404.03214",
+            "unique_id": "20phhhfza4",
+            "abstract": "Vision Transformers (ViTs), with their ability to model long-range dependencies through self-attention mechanisms, have become a standard architecture in computer vision. However, the interpretability of these models remains a challenge. To address this, we propose LeGrad, an explainability method specifically designed for ViTs. LeGrad computes the gradient with respect to the attention maps of ViT layers, considering the gradient itself as the explainability signal. We aggregate the signal over all layers, combining the activations of the last as well as intermediate tokens to produce the merged explainability map. This makes LeGrad a conceptually simple and an easy-to-implement tool for enhancing the transparency of ViTs. We evaluate LeGrad in challenging segmentation, perturbation, and open-vocabulary settings, showcasing its versatility compared to other SotA explainability methods demonstrating its superior spatial fidelity and robustness to perturbations. A demo and the code is available at https://github.com/WalBouss/LeGrad.",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Walid Bousselham",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Angie Boggust",
+                  "id": 2966134638,
+                  "slug": "angie-boggust",
+                  "unique_id": "p7fagc5972",
+                  "full_slug": "angie-boggust-p7fagc5972",
+                  "affiliation_full_slug": "massachusetts-institute-of-technology-1y5l0xk3"
+                },
+                {
+                  "display_name": "Sofian Chaybouti",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Hendrik Strobelt",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Hilde Kuehne",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Massachusetts Institute of Technology",
+                  "city": "Cambridge",
+                  "region": "Massachusetts",
+                  "country": "United States",
+                  "id": 63966007,
+                  "slug": "massachusetts-institute-of-technology",
+                  "unique_id": "1y5l0xk3",
+                  "full_slug": "massachusetts-institute-of-technology-1y5l0xk3"
+                }
+              ]
+            },
+            "metrics": {
+              "citations": {
+                "total": 5
+              }
+            },
+            "tldr": "LeGrad is an explainability method for ViTs that computes the gradient with respect to attention maps, providing high spatial fidelity and robustness to perturbations.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4046113671,
+            "title": "Fisher-aware Quantization for DETR Detectors with Critical-category\n  Objectives",
+            "is_archived": false,
+            "full_slug": "fisher-aware-quantization-for-detr-detectors-with-critical-4t9zyh677r",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-07-03T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2407.03442",
+            "unique_id": "4t9zyh677r",
+            "abstract": "The impact of quantization on the overall performance of deep learning models is a well-studied problem. However, understanding and mitigating its effects on a more fine-grained level is still lacking, especially for harder tasks such as object detection with both classification and regression objectives. This work defines the performance for a subset of task-critical categories, i.e. the critical-category performance, as a crucial yet largely overlooked fine-grained objective for detection tasks. We analyze the impact of quantization at the category-level granularity, and propose methods to improve performance for the critical categories. Specifically, we find that certain critical categories have a higher sensitivity to quantization, and are prone to overfitting after quantization-aware training (QAT). To explain this, we provide theoretical and empirical links between their performance gaps and the corresponding loss landscapes with the Fisher information framework. Using this evidence, we apply a Fisher-aware mixed-precision quantization scheme, and a Fisher-trace regularization for the QAT on the critical-category loss landscape. The proposed methods improve critical-category metrics of the quantized transformer-based DETR detectors. They are even more significant in case of larger models and higher number of classes where the overfitting becomes more severe. For example, our methods lead to 10.4% and 14.5% mAP gains for, correspondingly, 4-bit DETR-R50 and Deformable DETR on the most impacted critical classes in the COCO Panoptic dataset. ",
+            "authors": {
+              "total": 9,
+              "data": [
+                {
+                  "display_name": "Huanrui Yang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yafeng Huang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zhen Dong",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Denis Gudovskiy",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "T. Okuno",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yohei Nakata",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yuan Du",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Kurt Keutzer",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Shanghang Zhang",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "https://arxiv.org/pdf/2407.03442",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This work proposes Fisher-aware quantization methods to improve critical-category performance in DETR detectors, mitigating overfitting and improving metrics by up to 14.5% on the COCO Panoptic dataset for larger models and higher class numbers.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4045304729,
+            "title": "Rethinking Robustness of Model Attributions",
+            "is_archived": false,
+            "full_slug": "rethinking-robustness-of-model-attributions-5av57bd7ox",
+            "journal": {
+              "display_name": "Proceedings of the ... AAAI Conference on Artificial Intelligence",
+              "official_page": "https://www.aaai.org/Library/AAAI/aaai-library.php",
+              "issn": "2159-5399",
+              "alias": [
+                "Innovative Applications of Artificial Intelligence Conference",
+                "AAAI Conference on Artificial Intelligence",
+                "Proceedings",
+                "AAAI conference on artificial intelligence",
+                "Proceedings of the ... AAAI Conference on Artificial Intelligence and the ... Innovative Applications of Artificial Intelligence Conference",
+                "AAAI / IAAI proceedings"
+              ],
+              "id": 4000076624,
+              "slug": "proceedings-of-the-aaai-conference-on-artificial",
+              "unique_id": "2fghwh0e",
+              "full_slug": "proceedings-of-the-aaai-conference-on-artificial-2fghwh0e"
+            },
+            "conference_series": null,
+            "date": "2024-03-24T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Proceedings Article",
+            "doi": "10.1609/aaai.v38i3.28047",
+            "unique_id": "5av57bd7ox",
+            "abstract": "For machine learning models to be reliable and trustworthy, their decisions must be interpretable. As these models find increasing use in safety-critical applications, it is important that not just the model predictions but also their explanations (as feature attributions) be robust to small human-imperceptible input perturbations. Recent works have shown that many attribution methods are fragile and have proposed improvements in either these methods or the model training. We observe two main causes for fragile attributions: first, the existing metrics of robustness (e.g., top-k intersection) overpenalize even reasonable local shifts in attribution, thereby making random perturbations to appear as a strong attack, and second, the attribution can be concentrated in a small region even when there are multiple important parts in an image. To rectify this, we propose simple ways to strengthen existing metrics and attribution methods that incorporate locality of pixels in robustness metrics and diversity of pixel locations in attributions. Towards the role of model training in attributional robustness, we empirically observe that adversarially trained models have more robust attributions on smaller datasets, however, this advantage disappears in larger datasets. Code is made available at https://github.com/ksandeshk/LENS. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Sandesh Kamath",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Sankalp Mittal",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Amit Deshpande",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Vineeth N Balasubramanian",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/rethinking-robustness-of-model-attributions-5av57bd7ox.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://ojs.aaai.org/index.php/AAAI/article/download/28047/28104"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 1
+              }
+            },
+            "tldr": "Rethinking robustness of model attributions focuses on improving the robustness of model attributions to small human-imperceptible input perturbations. The paper identifies two main causes for fragile attributions and proposes solutions to strengthen existing metrics and attribution methods.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4021888910,
+            "title": "Rethinking Robustness of Model Attributions",
+            "is_archived": false,
+            "full_slug": "rethinking-robustness-of-model-attributions-3s6j40sub2",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-12-16T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2312.10534",
+            "unique_id": "3s6j40sub2",
+            "abstract": "For machine learning models to be reliable and trustworthy, their decisions must be interpretable. As these models find increasing use in safety-critical applications, it is important that not just the model predictions but also their explanations (as feature attributions) be robust to small human-imperceptible input perturbations. Recent works have shown that many attribution methods are fragile and have proposed improvements in either these methods or the model training. We observe two main causes for fragile attributions: first, the existing metrics of robustness (e.g., top-k intersection) over-penalize even reasonable local shifts in attribution, thereby making random perturbations to appear as a strong attack, and second, the attribution can be concentrated in a small region even when there are multiple important parts in an image. To rectify this, we propose simple ways to strengthen existing metrics and attribution methods that incorporate locality of pixels in robustness metrics and diversity of pixel locations in attributions. Towards the role of model training in attributional robustness, we empirically observe that adversarially trained models have more robust attributions on smaller datasets, however, this advantage disappears in larger datasets. Code is available at https://github.com/ksandeshk/LENS.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Sandesh B. Kamath",
+                  "id": 2152584239,
+                  "slug": "sandesh-b-kamath",
+                  "unique_id": "3bnooa5rbw",
+                  "full_slug": "sandesh-b-kamath-3bnooa5rbw",
+                  "affiliation_full_slug": "central-food-technological-research-institute-nlvyyx1r"
+                },
+                {
+                  "display_name": "Sankalp Mittal",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Amit Deshpande",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Vineeth N. Balasubramanian",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Central Food Technological Research Institute",
+                  "city": "Mysore",
+                  "region": "Karnataka",
+                  "country": "India",
+                  "id": 150037166,
+                  "slug": "central-food-technological-research-institute",
+                  "unique_id": "nlvyyx1r",
+                  "full_slug": "central-food-technological-research-institute-nlvyyx1r"
+                }
+              ]
+            },
+            "fulltext_url": "pdf/rethinking-robustness-of-model-attributions-3s6j40sub2.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://ojs.aaai.org/index.php/AAAI/article/download/28047/28104"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This work empirically observes that adversarially trained models have more robust attributions on smaller datasets, however, this advantage disappears in larger datasets and proposes simple ways to strengthen existing metrics and attribution methods that incorporate locality of pixels in robustness metrics and diversity of pixel locations in attributions.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4014509995,
+            "title": "The Box Size Confidence Bias Harms Your Object Detector",
+            "is_archived": false,
+            "full_slug": "the-box-size-confidence-bias-harms-your-object-detector-14obuywi",
+            "journal": null,
+            "conference_series": {
+              "display_name": "2023 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV)",
+              "id": 4000000928,
+              "slug": "2023-ieee-cvf-winter-conference-on-applications-of-computer",
+              "unique_id": "3vfto7nt",
+              "full_slug": "2023-ieee-cvf-winter-conference-on-applications-of-computer-3vfto7nt"
+            },
+            "date": "2023-01-01T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Proceedings Article",
+            "doi": "10.1109/wacv56688.2023.00152",
+            "unique_id": "14obuywi",
+            "abstract": "Countless applications depend on accurate predictions with reliable confidence estimates from modern object detectors. However, it is well known that neural networks, including object detectors, produce miscalibrated confidence estimates. Recent work even suggests that detectors’ confidence predictions are biased with respect to object size and position. In object detection, the issues of conditional biases, confidence calibration, and task performance are usually explored in isolation, but, as we aim to show, they are closely related. We formally prove that the conditional confidence bias harms the performance of object detectors and empirically validate these findings. Specifically, to quantify the performance impact of the confidence bias on object detectors, we modify the histogram binning calibration to avoid performance impairment and instead improve it through calibration conditioned on the bounding box size. We further find that the confidence bias is also present in detections generated on the training data of the detector, which can be leveraged to perform the de-biasing. Moreover, we show that Test Time Augmentation (TTA) confounds this bias, which results in even more significant performance impairments on the detectors. Finally, we use our proposed algorithm to analyze a diverse set of object detection architectures and show that the conditional confidence bias harms their performance by up to 0.6 mAP and 0.8 mAP <inf xmlns:mml=\"http://www.w3.org/1998/Math/MathML\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">50</inf> . Code available at https://github.com/Blueblue4/Object-Detection-Confidence-Bias. ",
+            "fulltext_url": "/pdf/the-box-size-confidence-bias-harms-your-object-detector-14obuywi.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2112.01901"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "In this article , the authors show that the confidence bias is also present in detections generated on the training data of the detector, which can be leveraged to perform the de-biasing.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4057119343,
+            "title": "Decision-based Black-box Attack Against Vision Transformers Via Patch-wise Adversarial Removal",
+            "is_archived": false,
+            "full_slug": "decision-based-black-box-attack-against-vision-transformers-miwausvssfgh",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": null,
+            "publication_type": null,
+            "doi": "10.48550/arxiv.2112.03492",
+            "unique_id": "miwausvssfgh",
+            "abstract": "Vision transformers (ViTs) have demonstrated impressive performance and stronger adversarial robustness compared to Convolutional Neural Networks (CNNs). On the one hand, ViTs' focus on global interaction between individual patches reduces the local noise sensitivity of images. On the other hand, the neglect of noise sensitivity differences between image regions by existing decision-based attacks further compromises the efficiency of noise compression, especially for ViTs. Therefore, validating the black-box adversarial robustness of ViTs when the target model can only be queried still remains a challenging problem. In this paper, we theoretically analyze the limitations of existing decision-based attacks from the perspective of noise sensitivity difference between regions of the image, and propose a new decision-based black-box attack against ViTs, termed Patch-wise Adversarial Removal (PAR). PAR divides images into patches through a coarse-to-fine search process and compresses the noise on each patch separately. PAR records the noise magnitude and noise sensitivity of each patch and selects the patch with the highest query value for noise compression. In addition, PAR can be used as a noise initialization method for other decision-based attacks to improve the noise compression efficiency on both ViTs and CNNs without introducing additional calculations. Extensive experiments on three datasets demonstrate that PAR achieves a much lower noise magnitude with the same number of queries.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Yucheng Shi",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yahong Han",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yu-an Tan",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Xiaohui Kuang",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper proposes Patch-wise Adversarial Removal (PAR), a decision-based black-box attack against Vision Transformers, which improves noise compression efficiency by dividing images into patches and compressing noise separately, outperforming existing attacks on ViTs and CNNs.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4020033523,
+            "title": "Vision Transformer-based recognition tasks: a critical review",
+            "is_archived": false,
+            "full_slug": "vision-transformer-based-recognition-tasks-a-critical-review-4ef3sr6oax",
+            "journal": {
+              "display_name": "Journal of image and graphics",
+              "official_page": null,
+              "issn": "2301-3699",
+              "alias": [
+                "JOIG"
+              ],
+              "id": 4000051888,
+              "slug": "journal-of-image-and-graphics",
+              "unique_id": "2jn61q6b",
+              "full_slug": "journal-of-image-and-graphics-2jn61q6b"
+            },
+            "conference_series": null,
+            "date": null,
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.11834/jig.220895",
+            "unique_id": "4ef3sr6oax",
+            "abstract": "Transformer模型在自然语言处理领域取得了很好的效果，同时因其能够更好地连接视觉和语言，也激发了计算机视觉界的极大兴趣。本文总结了视觉Transformer处理多种识别任务的百余种代表性方法，并对比分析了不同任务内的模型表现，在此基础上总结了每类任务模型的优点、不足以及面临的挑战。根据识别粒度的不同，分别着眼于诸如图像分类、视频分类的基于全局识别的方法，以及目标检测、视觉分割的基于局部识别的方法。考虑到现有方法在3种具体识别任务的广泛流行，总结了在人脸识别、动作识别和姿态估计中的方法。同时，也总结了可用于多种视觉任务或领域无关的通用方法的研究现状。基于Transformer的模型实现了许多端到端的方法，并不断追求准确率与计算成本的平衡。全局识别任务下的Transformer模型对补丁序列切分和标记特征表示进行了探索，局部识别任务下的Transformer模型因能够更好地捕获全局信息而取得了较好的表现。在人脸识别和动作识别方面，注意力机制减少了特征表示的误差，可以处理丰富多样的特征。Transformer可以解决姿态估计中特征错位的问题，有利于改善基于回归的方法性能，还减少了三维估计时深度映射所产生的歧义。大量探索表明视觉Transformer在识别任务中的有效性，并且在特征表示或网络结构等方面的改进有利于提升性能。;Due to its ability to model long-distance dependencies,self-attention mechanism for adaptive computing,scalability for large models and big data,and better connection between vision and language,Transformer model is beneficial for natural language processing and computer vision apparently. To melt Transformer into vision tasks,such vision Transformer methods have been developing intensively. Current literatures can be summarized and analyzed for multiple applications-related methods. However,these different applications are often heterogeneous for various methods. In addition,comparative analysis is often focused on between Transformer and traditional convolution neural networks(CNNs), and multi-Transformer models are less involved in and linked mutually. We summarize and compare more than 100 popular methods of vision Transformer for various recognition tasks. Global recognition-based methods are reviewed for such classification of image and video contexts,and local recognition-based methods of object detection and vision segmentation. We summarize the methods in the context of face recognition,action recognition and pose estimation based on three specific recognition tasks mentioned above. Furthermore,solo task and independent domain methods are summarized,which can be used for image classification,object detection and other related vision tasks. The performance of these Transformerbased models are compared and analyzed on the public datasets as well. Image classification is mostly used to represent features in terms of visual and class tokens. The vision Transformer(ViT) and data-efficient image Transformers(DeiT)-illustrated models have its potentials for ImageNet datasets. Object detection tasks are required to detect targeted objects derived from input visual data,and the coordinates and labels of a series of bounding boxes are predictable as well. Object detection is illustrated by detection Transformer(DETR),which can alter the indirectness of previous classification and regression through proposals,anchors or windows. Subsequently,other related literatures are focused on improving the feature maps,computational complexity and convergence speed of DETR to a certain extent,such as conditional DETR, deformable DETR,unsupervised pre-training DETR(UP-DETR). Additionally,Transformer-based models have preferred relevant to such applications of salient object detection,point cloud 3D detection and few-shot object detection. Semantic segmentation tasks are required for an assignment from class label to each pixel in the image and the bounding box of the object like object detection can be predicted and optimized further. However,semantic segmentation can be used to determine pixel classes only,and it is still challenged to identify multiple instances-between similar pixels. Transformer is also paid attention to improve U-Net for medical image segmentation. It is possible to link the Transformer with pyramid network,or design different decoder structures for pixel-by-pixel segmentation,such as segmentation Transformer progressive upsampling(SETR-PUP) and segmentation Transformer multi-level feature aggregation(SETR-MLA). Mask classification methods are commonly used in instance segmentation and it can also be used for semantic segmentation via Transformer structure like a segmenter. Instance segmentation is similar to the combination of object detection and semantic segmentation. Compared to the bounding box of object detection,the output of instance segmentation is a mask,which can segment the edges of objects and distinguish different instances of similar objects. It can optimize the ability of semantic segmentation to some extent. Transformer can be used to melt more end-to-end methods into instance segmentation,and the quality of the masks can be used and improved during the segmentation process. Transformer can provide an alignment-free method for face recognition,and it can handle noises in related to facial expressions and racial bias. Action recognition tasks are required to classify videos-input human actions,which are similar to image classification tasks and additional processing of the temporal dimension is not avoidable. Transformer is developed for modeling long-term temporal and spatial dependencies for action recognition beyond two-stream network and three-dimensional convolution. Pose estimation is usually recognized as a human body keypoints-sorted problem and parts-between spatial relationship is identified. It consists of 2D pose estimation and 3D pose estimation. The former one is generally used to determine two-dimensional coordinates of body parts,while the latter one adds depth information on the basis of two-dimensional coordinates. Transformer is used to refine keypoint features for pose estimation,and the modeling of intra-frame node relationships and inter-frame temporal relationships are optimized as well. Multi-task models based Transformer research is focused on the integration of image classification,object detection and semantic segmentation tasks. Some other related popular models are also proposed that can be used in vision and language domains. Extensive research has shown the effectiveness of the vision Transformer in recognition tasks,and feature representation or network structure-relevant optimization is beneficial for its performance improvement. Future research direction are predicted in relevance to such effective and efficient methods for accuracy preservation in the context of positional encoding, self-supervised learning, multimodal integrating, and computational cost cutting. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Lijuan Zhou",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Jianing Mao",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": 2
+              }
+            },
+            "tldr": "This paper reviews over 100 vision Transformer methods for various recognition tasks, comparing global and local recognition-based methods, and summarizing their strengths, weaknesses, and challenges in image classification, object detection, semantic segmentation, face recognition, action recognition, and pose estimation.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

@@ -1,0 +1,20 @@
+tryb wznow, węzeł hopper, GPU NVIDIA H100 PCIe, start Fri Oct  9 06:10:57 PM CEST 2026
+df /dev/shm: tmpfs           504G  4.1G  500G   1% /dev/shm
+      /mnt/evafs  102.8G    200G    220G       -  115419  200000  220000       -
+wolna kwota: 97.2 GB
+walidacja: 3000 klatek (usunięto 0 wspólnych z treningiem)
+klatki: 35000 z 117 archiwów w 26 s
+35000 klatek, 60 epok, 65640 kroków; końce epok: [1094, 2188, 3282, 4376, 5470, 6564, 7658, 8752, 9846, 10940, 12034, 13128, 14222, 15316, 16410, 17504, 18598, 19692, 20786, 21880, 22974, 24068, 25162, 26256, 27350, 28444, 29538, 30632, 31726, 32820, 33914, 35008, 36102, 37196, 38290, 39384, 40478, 41572, 42666, 43760, 44854, 45948, 47042, 48136, 49230, 50324, 51418, 52512, 53606, 54700, 55794, 56888, 57982, 59076, 60170, 61264, 62358, 63452, 64546, 65640]; zapisów wag: 806 (~9.4 GB)
+Traceback (most recent call last):
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/trening35000.py", line 247, in <module>
+    main()
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/trening35000.py", line 186, in main
+    u.wczytaj(st); rng.bit_generator.state = st['rng']; torch.set_rng_state(st['torch_rng'])
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/torch/random.py", line 19, in set_rng_state
+    default_generator.set_state(new_state)
+TypeError: RNG state must be a torch.ByteTensor
+pliki w /tmp powstałe w czasie zadania (puste = czysto):
+moje wpisy w /dev/shm po sprzątaniu (puste = czysto):
+3.8G	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/wyniki/pelny
+      /mnt/evafs  102.8G    200G    220G       -  115420  200000  220000       -

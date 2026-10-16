@@ -1,0 +1,18 @@
+klasyfikacja klas_proba_historia_wag: lr 5e-4, epoki 2, sondy n=16, extra: --proba --historia_wag, analizy -, węzeł hopper-2, GPU NVIDIA H200, start Sun Oct 11 05:27:44 PM CEST 2026
+wolna kwota: 51.4 GB
+train: 512 obrazów 320×320, 10 klas, w 2 s
+val: 200 obrazów 320×320, 10 klas, w 0 s
+512 obrazów, 2 epok, 32 kroków; końce epok: [16, 32]
+model vit (2890402 parametrów), adamw lr 0.0005 wd 0.05, paczka 32
+obserwator: 16 sond, losowy rzut 768 -> 128 (JL, ziarno 0), zapis f16, tokenów 400, krok 0
+krok 0: acc 0.1050
+krok 16 (koniec epoki 1): acc 0.1700
+epoka 1/2: krok 16, wolna kwota 51.4 GB, 17:29:18
+krok 20: acc 0.1550
+krok 32 (koniec epoki 2): acc 0.1800
+epoka 2/2: krok 32, wolna kwota 51.4 GB, 17:29:19
+KONIEC: krok 32, 7 s
+TRENING KONIEC klas_proba_historia_wag Sun Oct 11 05:29:21 PM CEST 2026
+KONIEC klas_proba_historia_wag ok=1 Sun Oct 11 05:29:21 PM CEST 2026
+65M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/klas_proba_historia_wag
+      /mnt/evafs  148.6G    200G    220G       -  168413  200000  220000       -

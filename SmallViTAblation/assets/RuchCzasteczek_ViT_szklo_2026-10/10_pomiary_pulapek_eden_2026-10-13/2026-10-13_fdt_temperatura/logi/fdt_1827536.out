@@ -1,0 +1,22 @@
+FDT e61_lr5e-4: bieg okno60_rp, stan_e61.pt, lr 5e-4, argumenty --frac 0.001, węzeł dgx-1, GPU NVIDIA A100-SXM4-40GB, start Tue Oct 13 01:58:43 AM CEST 2026
+stan /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/okno60_rp/pelny/stan_e61.pt (krok 66734), lr 0.0005, β1 0.9, sondy [144, 448, 922, 2741, 2786, 3200, 3438, 3698, 4122, 5105, 5425, 5493] [1 s]
+klatki: 35000 z 117 archiwów w 28 s
+35000 klatek, 12 sond [52 s]
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+kalibracja: |∇L| 2.56, |∇L_pola(h=1)| 0.102 → h0 0.02505 [59 s]
+krok 100: strata 0.3397, χ śr 3.148, χ(3h)/χ(h) 1.061, |bliźniak| 0 vs |odpowiedź| 0.497, MSD_a 12.14, |a−b|² 19.66 [126 s]
+krok 200: strata 0.2256, χ śr 6.604, χ(3h)/χ(h) 1.274, |bliźniak| 0 vs |odpowiedź| 0.914, MSD_a 19.45, |a−b|² 34.6 [199 s]
+krok 300: strata 0.2649, χ śr 10.14, χ(3h)/χ(h) 1.758, |bliźniak| 0 vs |odpowiedź| 1.25, MSD_a 22.48, |a−b|² 44.51 [274 s]
+krok 400: strata 0.2269, χ śr 14.81, χ(3h)/χ(h) 2.323, |bliźniak| 0 vs |odpowiedź| 1.69, MSD_a 25.86, |a−b|² 32.85 [331 s]
+krok 500: strata 0.2665, χ śr 20.29, χ(3h)/χ(h) 3.098, |bliźniak| 0 vs |odpowiedź| 2.08, MSD_a 27.19, |a−b|² 38.21 [396 s]
+krok 600: strata 0.3144, χ śr 26.93, χ(3h)/χ(h) 4.519, |bliźniak| 0 vs |odpowiedź| 2.56, MSD_a 30.45, |a−b|² 47.5 [460 s]
+krok 700: strata 0.3224, χ śr 35.12, χ(3h)/χ(h) 6.457, |bliźniak| 0 vs |odpowiedź| 3.08, MSD_a 34.49, |a−b|² 52.27 [525 s]
+krok 800: strata 0.2961, χ śr 43.96, χ(3h)/χ(h) 8.042, |bliźniak| 0 vs |odpowiedź| 3.49, MSD_a 38.8, |a−b|² 56.2 [590 s]
+krok 900: strata 0.2435, χ śr 52.45, χ(3h)/χ(h) 9.308, |bliźniak| 0 vs |odpowiedź| 3.9, MSD_a 40.95, |a−b|² 58.75 [653 s]
+krok 1000: strata 0.2979, χ śr 66.45, χ(3h)/χ(h) 9.293, |bliźniak| 0 vs |odpowiedź| 4.72, MSD_a 40.77, |a−b|² 58.55 [716 s]
+krok 1100: strata 0.2441, χ śr 79.3, χ(3h)/χ(h) 9.406, |bliźniak| 0 vs |odpowiedź| 5.32, MSD_a 39.8, |a−b|² 61.29 [782 s]
+krok 1200: strata 0.2275, χ śr 99.78, χ(3h)/χ(h) 8.750, |bliźniak| 0 vs |odpowiedź| 6.39, MSD_a 44.12, |a−b|² 67.67 [848 s]
+krok 1300: strata 0.2934, χ śr 122, χ(3h)/χ(h) 8.126, |bliźniak| 0 vs |odpowiedź| 7.55, MSD_a 39.76, |a−b|² 54.75 [913 s]
+[2026-10-13T02:14:19.094] error: *** JOB 1827536 ON dgx-1 CANCELLED AT 2026-10-13T02:14:19 DUE to SIGNAL Terminated ***

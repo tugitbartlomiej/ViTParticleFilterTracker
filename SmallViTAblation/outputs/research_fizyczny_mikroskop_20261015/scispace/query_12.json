@@ -1,0 +1,586 @@
+{
+  "question": "What mechanistic interpretability research identifies prediction neurons, suppression neurons, self-repair, or destructive interference in Transformer feed-forward networks and tests their effects using causal ablation?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'What mechanistic interpretability research identifies prediction neurons, suppression neurons, self-repair, or destructive interference in Transformer feed-forward networks and tests their effects using causal ablation?'.\n\n\n1. Modeling Transformers as complex networks to analyze learning dynamics\n   ID: 92y7ks193b0y\n   2025\n   DOI: 10.48550/arxiv.2509.15269\n   Abstract: The process by which Large Language Models (LLMs) acquire complex capabilities during training remains a key open question in mechanistic interpretability. This project investigates whether these learning dynamics can be characterized through the lens of Complex Network Theory (CNT). I introduce a novel methodology to represent a Transformer-based LLM as a directed, weighted graph where nodes are the model's computational components (attention heads and MLPs) and edges represent causal influence, measured via an intervention-based ablation technique. By tracking the evolution of this component-graph across 143 training checkpoints of the Pythia-14M model on a canonical induction task, I analyze a suite of graph-theoretic metrics. The results reveal that the network's structure evolves through distinct phases of exploration, consolidation, and refinement. Specifically, I identify the emergence of a stable hierarchy of information spreader components and a dynamic set of information gatherer components, whose roles reconfigure at key learning junctures. This work demonstrates that a component-level network perspective offers a powerful macroscopic lens for visualizing and understanding the self-organizing principles that drive the formation of functional circuits in LLMs. \n\n2. Cracking the Circuits: Mechanistic Interpretability in Large Language Models\n   ID: i0s6ynco7t1q\n   2025 · Dost Muhammad, Muhammad Salman, Mushtaq Ali\n   DOI: 10.1109/inmic65900.2025.11348249\n   Abstract: Mechanistic interpretability aims to uncover how internal components of large language models (LLMs) contribute to their overall behaviour. While previous research has revealed interpretable circuits in small-scale transformers, the field still lacks a systematic and mathematically grounded framework for understanding, validating, and comparing interpretability techniques. In this paper, we introduce a unified formalism and taxonomy for mechanistic interpretability, defining core concepts such as modular circuits, representational superposition, and polysemantic neurons. We categorise interpretability methods based on granularity, causal influence, robustness to perturbation, and transferability across tasks. To demonstrate the utility of this framework, we analyse the GPT2-small model on the Indirect Object Identification (IOI) task using TransformerLens. Our findings reveal that attention heads 7.1 and 8.6 play a consistent and causal role in performing the name-mover function. Activation patching experiments show that restoring these components recovers over 90 % of performance lost due to input corruption, while ablating them results in a 27.3 % accuracy drop. These results provide empirical support for the existence of sparse, interpretable circuits that underpin model reasoning. Visualisations of patching curves and attention patterns further substantiate this behaviour. This study offers a principled methodology for mechanistic analysis in language models, bridging theoretical insights with empirical validation. The proposed framework supports the development of transparent, trustworthy, and controllable AI systems, with potential for extension to larger-scale models and safety-critical applications. \n\n3. Interpreting Transformers Through Attention Head Intervention\n   ID: jyh8tkieob14\n   2026 · Mason Kadem, Rong Zheng\n   DOI: 10.48550/arxiv.2601.04398\n   Abstract: Neural networks are growing more capable on their own, but we do not understand their neural mechanisms. Understanding these mechanisms' decision-making processes, or mechanistic interpretability, enables (1) accountability and control in high-stakes domains, (2) the study of digital brains and the emergence of cognition, and (3) discovery of new knowledge when AI systems outperform humans. This paper traces how attention head intervention emerged as a key method for causal interpretability of transformers. The evolution from visualization to intervention represents a paradigm shift from observing correlations to causally validating mechanistic hypotheses through direct intervention. Head intervention studies revealed robust empirical findings while also highlighting limitations that complicate interpretation. Recent work demonstrates that mechanistic understanding now enables targeted control of model behaviour, successfully suppressing toxic outputs and manipulating semantic content through selective attention head intervention, validating the practical utility of interpretability research for AI safety. \n\n4. Automatically Finding Rule-Based Neurons in OthelloGPT\n   ID: buoa3x397nwu\n   2025 · Singh Aditya, Rager, Can\n   DOI: 10.48550/arxiv.2511.00059\n   Abstract: OthelloGPT, a transformer trained to predict valid moves in Othello, provides an ideal testbed for interpretability research. The model is complex enough to exhibit rich computational patterns, yet grounded in rule-based game logic that enables meaningful reverse-engineering. We present an automated approach based on decision trees to identify and interpret MLP neurons that encode rule-based game logic. Our method trains regression decision trees to map board states to neuron activations, then extracts decision paths where neurons are highly active to convert them into human-readable logical forms. These descriptions reveal highly interpretable patterns; for instance, neurons that specifically detect when diagonal moves become legal. Our findings suggest that roughly half of the neurons in layer 5 can be accurately described by compact, rule-based decision trees ($R^2 &gt; 0.7$ for 913 of 2,048 neurons), while the remainder likely participate in more distributed or non-rule-based computations. We verify the causal relevance of patterns identified by our decision trees through targeted interventions. For a specific square, for specific game patterns, we ablate neurons corresponding to those patterns and find an approximately 5-10 fold stronger degradation in the model's ability to predict legal moves along those patterns compared to control patterns. To facilitate future work, we provide a Python tool that maps rule-based game behaviors to their implementing neurons, serving as a resource for researchers to test whether their interpretability methods recover meaningful computational structures. \n\n5. nnterp: A Standardized Interface for Mechanistic Interpretability of Transformers\n   ID: sh1wrlt0bjtn\n   2025 · Cl'ement Dumas · arXiv.org\n   DOI: 10.48550/arxiv.2511.14465\n   Abstract: Mechanistic interpretability research requires reliable tools for analyzing transformer internals across diverse architectures. Current approaches face a fundamental tradeoff: custom implementations like TransformerLens ensure consistent interfaces but require coding a manual adaptation for each architecture, introducing numerical mismatch with the original models, while direct HuggingFace access through NNsight preserves exact behavior but lacks standardization across models. To bridge this gap, we develop nnterp, a lightweight wrapper around NNsight that provides a unified interface for transformer analysis while preserving original HuggingFace implementations. Through automatic module renaming and comprehensive validation testing, nnterp enables researchers to write intervention code once and deploy it across 50+ model variants spanning 16 architecture families. The library includes built-in implementations of common interpretability methods (logit lens, patchscope, activation steering) and provides direct access to attention probabilities for models that support it. By packaging validation tests with the library, researchers can verify compatibility with custom models locally. nnterp bridges the gap between correctness and usability in mechanistic interpretability tooling.\n\n6. Mechanistic Interpretation through Contextual Decomposition in\n  Transformers\n   ID: 106fwmrrvi\n   2024 · Abigail Hsu, Yeshwanth Cherapanamjeri, Anobel Y. Odisho\n   DOI: 10.48550/arxiv.2407.00886\n   Abstract: Transformers exhibit impressive capabilities but are often regarded as black boxes due to challenges in understanding the complex nonlinear relationships between features. Interpreting machine learning models is of paramount importance to mitigate risks, and mechanistic interpretability is in particular of current interest as it opens up a window for guiding manual modifications and reverse-engineering solutions. In this work, we introduce contextual decomposition for transformers (CD-T), extending a prior work on CD for RNNs and CNNs, to address mechanistic interpretation computationally efficiently. CD-T is a flexible interpretation method for transformers. It can capture contributions of combinations of input features or source internal components (e.g. attention heads, feed-forward networks) to (1) final predictions or (2) the output of any target internal component. Using CD-T, we propose a novel algorithm for circuit discovery. On a real-world pathology report classification task: we show CD-T distills a more faithful circuit of attention heads with improved computational efficiency (speed up 2x) than a prior benchmark, path patching. As a versatile interpretation method, CD-T also exhibits exceptional capabilities for local interpretations. CD-T is shown to reliably find words and phrases of contrasting sentiment/topic on SST-2 and AGNews datasets. Through human experiments, we demonstrate CD-T enables users to identify the more accurate of two models and to better trust a model's outputs compared to alternative interpretation methods such as SHAP and LIME. \n\n7. Disentangling Recall and Reasoning in Transformer Models through Layer-wise Attention and Activation Analysis\n   ID: 9yqlnuwz315l\n   2025 · Raja Rahul, Vats, Arpita\n   DOI: 10.48550/arxiv.2510.03366\n   Abstract: Transformer-based language models excel at both recall (retrieving memorized facts) and reasoning (performing multi-step inference), but whether these abilities rely on distinct internal mechanisms remains unclear. Distinguishing recall from reasoning is crucial for predicting model generalization, designing targeted evaluations, and building safer interventions that affect one ability without disrupting the other.We approach this question through mechanistic interpretability, using controlled datasets of synthetic linguistic puzzles to probe transformer models at the layer, head, and neuron level. Our pipeline combines activation patching and structured ablations to causally measure component contributions to each task type. Across two model families (Qwen and LLaMA), we find that interventions on distinct layers and attention heads lead to selective impairments: disabling identified \"recall circuits\" reduces fact-retrieval accuracy by up to 15\\% while leaving reasoning intact, whereas disabling \"reasoning circuits\" reduces multi-step inference by a comparable margin. At the neuron level, we observe task-specific firing patterns, though these effects are less robust, consistent with neuronal polysemanticity.Our results provide the first causal evidence that recall and reasoning rely on separable but interacting circuits in transformer models. These findings advance mechanistic interpretability by linking circuit-level structure to functional specialization and demonstrate how controlled datasets and causal interventions can yield mechanistic insights into model cognition, informing safer deployment of large language models. \n\n8. Mechanistically Interpreting a Transformer-based 2-SAT Solver: An Axiomatic Approach\n   ID: 5j3t2s8h4adj\n   2024 · Nils Palumbo, Ravi Mangal, Zifan Wang · arXiv.org\n   DOI: 10.48550/arxiv.2407.13594\n   Abstract: Mechanistic interpretability aims to reverse engineer the computation performed by a neural network in terms of its internal components. Although there is a growing body of research on mechanistic interpretation of neural networks, the notion of a mechanistic interpretation itself is often ad-hoc. Inspired by the notion of abstract interpretation from the program analysis literature that aims to develop approximate semantics for programs, we give a set of axioms that formally characterize a mechanistic interpretation as a description that approximately captures the semantics of the neural network under analysis in a compositional manner. We use these axioms to guide the mechanistic interpretability analysis of a Transformer-based model trained to solve the well-known 2-SAT problem. We are able to reverse engineer the algorithm learned by the model -- the model first parses the input formulas and then evaluates their satisfiability via enumeration of different possible valuations of the Boolean input variables. We also present evidence to support that the mechanistic interpretation of the analyzed model indeed satisfies the stated axioms.\n\n9. Explorations of Self-Repair in Language Models\n   ID: 3bpslnxuk4\n   2024 · Cody Rushing, Neel Nanda · arXiv.org\n   DOI: 10.48550/arxiv.2402.15390\n   Abstract: Prior interpretability research studying narrow distributions has preliminarily identified self-repair, a phenomena where if components in large language models are ablated, later components will change their behavior to compensate. Our work builds off this past literature, demonstrating that self-repair exists on a variety of models families and sizes when ablating individual attention heads on the full training distribution. We further show that on the full training distribution self-repair is imperfect, as the original direct effect of the head is not fully restored, and noisy, since the degree of self-repair varies significantly across different prompts (sometimes overcorrecting beyond the original effect). We highlight two different mechanisms that contribute to self-repair, including changes in the final LayerNorm scaling factor (which can repair up to 30% of the direct effect) and sparse sets of neurons implementing Anti-Erasure. We additionally discuss the implications of these results for interpretability practitioners and close with a more speculative discussion on the mystery of why self-repair occurs in these models at all, highlighting evidence for the Iterative Inference hypothesis in language models, a framework that predicts self-repair.\n\n10. Towards Automated Circuit Discovery for Mechanistic Interpretability\n   ID: m2jjtay8\n   2023 · Arthur Conmy, Augustine N. Mavor-Parker, Aengus Lynch · arXiv.org\n   DOI: 10.48550/arXiv.2304.14997\n   Abstract: Through considerable effort and intuition, several recent works have reverse-engineered nontrivial behaviors of transformer models. This paper systematizes the mechanistic interpretability process they followed. First, researchers choose a metric and dataset that elicit the desired model behavior. Then, they apply activation patching to find which abstract neural network units are involved in the behavior. By varying the dataset, metric, and units under investigation, researchers can understand the functionality of each component. We automate one of the process' steps: to identify the circuit that implements the specified behavior in the model's computational graph. We propose several algorithms and reproduce previous interpretability results to validate them. For example, the ACDC algorithm rediscovered 5/5 of the component types in a circuit in GPT-2 Small that computes the Greater-Than operation. ACDC selected 68 of the 32,000 edges in GPT-2 Small, all of which were manually found by previous work. Our code is available at https://github.com/ArthurConmy/Automatic-Circuit-Discovery."
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "What mechanistic interpretability research identifies prediction neurons, suppression neurons, self-repair, or destructive interference in Transformer feed-forward networks and tests their effects using causal ablation?",
+        "papers": [
+          {
+            "id": 4094619800,
+            "title": "Modeling Transformers as complex networks to analyze learning dynamics",
+            "is_archived": false,
+            "full_slug": "modeling-transformers-as-complex-networks-to-analyze-92y7ks193b0y",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-09-22T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2509.15269",
+            "unique_id": "92y7ks193b0y",
+            "abstract": "The process by which Large Language Models (LLMs) acquire complex capabilities during training remains a key open question in mechanistic interpretability. This project investigates whether these learning dynamics can be characterized through the lens of Complex Network Theory (CNT). I introduce a novel methodology to represent a Transformer-based LLM as a directed, weighted graph where nodes are the model's computational components (attention heads and MLPs) and edges represent causal influence, measured via an intervention-based ablation technique. By tracking the evolution of this component-graph across 143 training checkpoints of the Pythia-14M model on a canonical induction task, I analyze a suite of graph-theoretic metrics. The results reveal that the network's structure evolves through distinct phases of exploration, consolidation, and refinement. Specifically, I identify the emergence of a stable hierarchy of information spreader components and a dynamic set of information gatherer components, whose roles reconfigure at key learning junctures. This work demonstrates that a component-level network perspective offers a powerful macroscopic lens for visualizing and understanding the self-organizing principles that drive the formation of functional circuits in LLMs. ",
+            "fulltext_url": "pdf/modeling-transformers-as-complex-networks-to-analyze-92y7ks193b0y.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2509.15269v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4111352325,
+            "title": "Cracking the Circuits: Mechanistic Interpretability in Large Language Models",
+            "is_archived": false,
+            "full_slug": "cracking-the-circuits-mechanistic-interpretability-in-large-i0s6ynco7t1q",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-12-23T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.1109/inmic65900.2025.11348249",
+            "unique_id": "i0s6ynco7t1q",
+            "abstract": "Mechanistic interpretability aims to uncover how internal components of large language models (LLMs) contribute to their overall behaviour. While previous research has revealed interpretable circuits in small-scale transformers, the field still lacks a systematic and mathematically grounded framework for understanding, validating, and comparing interpretability techniques. In this paper, we introduce a unified formalism and taxonomy for mechanistic interpretability, defining core concepts such as modular circuits, representational superposition, and polysemantic neurons. We categorise interpretability methods based on granularity, causal influence, robustness to perturbation, and transferability across tasks. To demonstrate the utility of this framework, we analyse the GPT2-small model on the Indirect Object Identification (IOI) task using TransformerLens. Our findings reveal that attention heads 7.1 and 8.6 play a consistent and causal role in performing the name-mover function. Activation patching experiments show that restoring these components recovers over 90 % of performance lost due to input corruption, while ablating them results in a 27.3 % accuracy drop. These results provide empirical support for the existence of sparse, interpretable circuits that underpin model reasoning. Visualisations of patching curves and attention patterns further substantiate this behaviour. This study offers a principled methodology for mechanistic analysis in language models, bridging theoretical insights with empirical validation. The proposed framework supports the development of transparent, trustworthy, and controllable AI systems, with potential for extension to larger-scale models and safety-critical applications. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Dost Muhammad",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Muhammad Salman",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Mushtaq Ali",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Malika Bendechache",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper introduces a unified framework for mechanistic interpretability in large language models, defining core concepts and categorizing methods based on granularity, causal influence, and robustness. It demonstrates the framework's utility on GPT2-small, revealing sparse, interpretable circuits that underpin model reasoning.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4109981193,
+            "title": "Interpreting Transformers Through Attention Head Intervention",
+            "is_archived": false,
+            "full_slug": "interpreting-transformers-through-attention-head-jyh8tkieob14",
+            "journal": null,
+            "conference_series": null,
+            "date": "2026-01-07T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2601.04398",
+            "unique_id": "jyh8tkieob14",
+            "abstract": "Neural networks are growing more capable on their own, but we do not understand their neural mechanisms. Understanding these mechanisms' decision-making processes, or mechanistic interpretability, enables (1) accountability and control in high-stakes domains, (2) the study of digital brains and the emergence of cognition, and (3) discovery of new knowledge when AI systems outperform humans. This paper traces how attention head intervention emerged as a key method for causal interpretability of transformers. The evolution from visualization to intervention represents a paradigm shift from observing correlations to causally validating mechanistic hypotheses through direct intervention. Head intervention studies revealed robust empirical findings while also highlighting limitations that complicate interpretation. Recent work demonstrates that mechanistic understanding now enables targeted control of model behaviour, successfully suppressing toxic outputs and manipulating semantic content through selective attention head intervention, validating the practical utility of interpretability research for AI safety. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Mason Kadem",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Rong Zheng",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper explores attention head intervention as a method for causal interpretability of transformers, enabling mechanistic understanding, accountability, and control in AI systems, and demonstrating practical utility for AI safety through targeted control of model behavior.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4085996838,
+            "title": "Automatically Finding Rule-Based Neurons in OthelloGPT",
+            "is_archived": false,
+            "full_slug": "automatically-finding-rule-based-neurons-in-othellogpt-buoa3x397nwu",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-11-04T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2511.00059",
+            "unique_id": "buoa3x397nwu",
+            "abstract": "OthelloGPT, a transformer trained to predict valid moves in Othello, provides an ideal testbed for interpretability research. The model is complex enough to exhibit rich computational patterns, yet grounded in rule-based game logic that enables meaningful reverse-engineering. We present an automated approach based on decision trees to identify and interpret MLP neurons that encode rule-based game logic. Our method trains regression decision trees to map board states to neuron activations, then extracts decision paths where neurons are highly active to convert them into human-readable logical forms. These descriptions reveal highly interpretable patterns; for instance, neurons that specifically detect when diagonal moves become legal. Our findings suggest that roughly half of the neurons in layer 5 can be accurately described by compact, rule-based decision trees ($R^2 &gt; 0.7$ for 913 of 2,048 neurons), while the remainder likely participate in more distributed or non-rule-based computations. We verify the causal relevance of patterns identified by our decision trees through targeted interventions. For a specific square, for specific game patterns, we ablate neurons corresponding to those patterns and find an approximately 5-10 fold stronger degradation in the model's ability to predict legal moves along those patterns compared to control patterns. To facilitate future work, we provide a Python tool that maps rule-based game behaviors to their implementing neurons, serving as a resource for researchers to test whether their interpretability methods recover meaningful computational structures. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Singh Aditya",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Rager, Can",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/automatically-finding-rule-based-neurons-in-othellogpt-buoa3x397nwu.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2511.00059"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers develop an automated approach to identify and interpret rule-based neurons in OthelloGPT, a transformer model, using decision trees, revealing interpretable patterns and demonstrating the causal relevance of identified neurons in predicting legal moves.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4111990057,
+            "title": "nnterp: A Standardized Interface for Mechanistic Interpretability of Transformers",
+            "is_archived": false,
+            "full_slug": "nnterp-a-standardized-interface-for-mechanistic-sh1wrlt0bjtn",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-11-18T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2511.14465",
+            "unique_id": "sh1wrlt0bjtn",
+            "abstract": "Mechanistic interpretability research requires reliable tools for analyzing transformer internals across diverse architectures. Current approaches face a fundamental tradeoff: custom implementations like TransformerLens ensure consistent interfaces but require coding a manual adaptation for each architecture, introducing numerical mismatch with the original models, while direct HuggingFace access through NNsight preserves exact behavior but lacks standardization across models. To bridge this gap, we develop nnterp, a lightweight wrapper around NNsight that provides a unified interface for transformer analysis while preserving original HuggingFace implementations. Through automatic module renaming and comprehensive validation testing, nnterp enables researchers to write intervention code once and deploy it across 50+ model variants spanning 16 architecture families. The library includes built-in implementations of common interpretability methods (logit lens, patchscope, activation steering) and provides direct access to attention probabilities for models that support it. By packaging validation tests with the library, researchers can verify compatibility with custom models locally. nnterp bridges the gap between correctness and usability in mechanistic interpretability tooling.",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Cl'ement Dumas",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "https://export.arxiv.org/pdf/2511.14465v2.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "nnterp is a standardized interface for transformer analysis, providing a unified interface for 50+ model variants while preserving original HuggingFace implementations, enabling researchers to write intervention code once and deploy it across diverse architectures.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4046140847,
+            "title": "Mechanistic Interpretation through Contextual Decomposition in\n  Transformers",
+            "is_archived": false,
+            "full_slug": "mechanistic-interpretation-through-contextual-decomposition-106fwmrrvi",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-06-30T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2407.00886",
+            "unique_id": "106fwmrrvi",
+            "abstract": "Transformers exhibit impressive capabilities but are often regarded as black boxes due to challenges in understanding the complex nonlinear relationships between features. Interpreting machine learning models is of paramount importance to mitigate risks, and mechanistic interpretability is in particular of current interest as it opens up a window for guiding manual modifications and reverse-engineering solutions. In this work, we introduce contextual decomposition for transformers (CD-T), extending a prior work on CD for RNNs and CNNs, to address mechanistic interpretation computationally efficiently. CD-T is a flexible interpretation method for transformers. It can capture contributions of combinations of input features or source internal components (e.g. attention heads, feed-forward networks) to (1) final predictions or (2) the output of any target internal component. Using CD-T, we propose a novel algorithm for circuit discovery. On a real-world pathology report classification task: we show CD-T distills a more faithful circuit of attention heads with improved computational efficiency (speed up 2x) than a prior benchmark, path patching. As a versatile interpretation method, CD-T also exhibits exceptional capabilities for local interpretations. CD-T is shown to reliably find words and phrases of contrasting sentiment/topic on SST-2 and AGNews datasets. Through human experiments, we demonstrate CD-T enables users to identify the more accurate of two models and to better trust a model's outputs compared to alternative interpretation methods such as SHAP and LIME. ",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Abigail Hsu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yeshwanth Cherapanamjeri",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Anobel Y. Odisho",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Peter R. Carroll",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Bin Yu",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/mechanistic-interpretation-through-contextual-decomposition-106fwmrrvi.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2407.00886"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This work introduces contextual decomposition for transformers (CD-T), a flexible interpretation method that computationally efficiently captures feature contributions to predictions or internal components, enabling mechanistic interpretation and improving model trustworthiness.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4097854958,
+            "title": "Disentangling Recall and Reasoning in Transformer Models through Layer-wise Attention and Activation Analysis",
+            "is_archived": false,
+            "full_slug": "disentangling-recall-and-reasoning-in-transformer-models-9yqlnuwz315l",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-07T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.03366",
+            "unique_id": "9yqlnuwz315l",
+            "abstract": "Transformer-based language models excel at both recall (retrieving memorized facts) and reasoning (performing multi-step inference), but whether these abilities rely on distinct internal mechanisms remains unclear. Distinguishing recall from reasoning is crucial for predicting model generalization, designing targeted evaluations, and building safer interventions that affect one ability without disrupting the other.We approach this question through mechanistic interpretability, using controlled datasets of synthetic linguistic puzzles to probe transformer models at the layer, head, and neuron level. Our pipeline combines activation patching and structured ablations to causally measure component contributions to each task type. Across two model families (Qwen and LLaMA), we find that interventions on distinct layers and attention heads lead to selective impairments: disabling identified \"recall circuits\" reduces fact-retrieval accuracy by up to 15\\% while leaving reasoning intact, whereas disabling \"reasoning circuits\" reduces multi-step inference by a comparable margin. At the neuron level, we observe task-specific firing patterns, though these effects are less robust, consistent with neuronal polysemanticity.Our results provide the first causal evidence that recall and reasoning rely on separable but interacting circuits in transformer models. These findings advance mechanistic interpretability by linking circuit-level structure to functional specialization and demonstrate how controlled datasets and causal interventions can yield mechanistic insights into model cognition, informing safer deployment of large language models. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Raja Rahul",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Vats, Arpita",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/disentangling-recall-and-reasoning-in-transformer-models-9yqlnuwz315l.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2510.03366"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4047022972,
+            "title": "Mechanistically Interpreting a Transformer-based 2-SAT Solver: An Axiomatic Approach",
+            "is_archived": false,
+            "full_slug": "mechanistically-interpreting-a-transformer-based-2-sat-5j3t2s8h4adj",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2024-07-18T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2407.13594",
+            "unique_id": "5j3t2s8h4adj",
+            "abstract": "Mechanistic interpretability aims to reverse engineer the computation performed by a neural network in terms of its internal components. Although there is a growing body of research on mechanistic interpretation of neural networks, the notion of a mechanistic interpretation itself is often ad-hoc. Inspired by the notion of abstract interpretation from the program analysis literature that aims to develop approximate semantics for programs, we give a set of axioms that formally characterize a mechanistic interpretation as a description that approximately captures the semantics of the neural network under analysis in a compositional manner. We use these axioms to guide the mechanistic interpretability analysis of a Transformer-based model trained to solve the well-known 2-SAT problem. We are able to reverse engineer the algorithm learned by the model -- the model first parses the input formulas and then evaluates their satisfiability via enumeration of different possible valuations of the Boolean input variables. We also present evidence to support that the mechanistic interpretation of the analyzed model indeed satisfies the stated axioms.",
+            "authors": {
+              "total": 6,
+              "data": [
+                {
+                  "display_name": "Nils Palumbo",
+                  "id": 3006018763,
+                  "slug": "nils-palumbo",
+                  "unique_id": "o5eqbthut8",
+                  "full_slug": "nils-palumbo-o5eqbthut8"
+                },
+                {
+                  "display_name": "Ravi Mangal",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zifan Wang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Saranya Vijayakumar",
+                  "id": 4003966893,
+                  "slug": "saranya-vijayakumar",
+                  "unique_id": "3p7cwylg",
+                  "full_slug": "saranya-vijayakumar-3p7cwylg"
+                },
+                {
+                  "display_name": "Corina S. Pasareanu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Somesh Jha",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study proposes axioms for mechanistic interpretability of neural networks, applying them to a Transformer-based 2-SAT solver, and demonstrates the model's computation can be reverse-engineered, revealing a parsing and enumeration algorithm for satisfiability evaluation.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4023100107,
+            "title": "Explorations of Self-Repair in Language Models",
+            "is_archived": false,
+            "full_slug": "explorations-of-self-repair-in-language-models-3bpslnxuk4",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2024-02-23T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2402.15390",
+            "unique_id": "3bpslnxuk4",
+            "abstract": "Prior interpretability research studying narrow distributions has preliminarily identified self-repair, a phenomena where if components in large language models are ablated, later components will change their behavior to compensate. Our work builds off this past literature, demonstrating that self-repair exists on a variety of models families and sizes when ablating individual attention heads on the full training distribution. We further show that on the full training distribution self-repair is imperfect, as the original direct effect of the head is not fully restored, and noisy, since the degree of self-repair varies significantly across different prompts (sometimes overcorrecting beyond the original effect). We highlight two different mechanisms that contribute to self-repair, including changes in the final LayerNorm scaling factor (which can repair up to 30% of the direct effect) and sparse sets of neurons implementing Anti-Erasure. We additionally discuss the implications of these results for interpretability practitioners and close with a more speculative discussion on the mystery of why self-repair occurs in these models at all, highlighting evidence for the Iterative Inference hypothesis in language models, a framework that predicts self-repair.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Cody Rushing",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Neel Nanda",
+                  "id": 4002889891,
+                  "slug": "neel-nanda",
+                  "unique_id": "1scd0u20",
+                  "full_slug": "neel-nanda-1scd0u20"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": 1
+              }
+            },
+            "tldr": "This work demonstrates that self-repair exists on a variety of models families and sizes when ablating individual attention heads on the full training distribution, and highlights two different mechanisms that contribute to self-repair, including changes in the final LayerNorm scaling factor and sparse sets of neurons implementing Anti-Erasure.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4001972629,
+            "title": "Towards Automated Circuit Discovery for Mechanistic Interpretability",
+            "is_archived": false,
+            "full_slug": "towards-automated-circuit-discovery-for-mechanistic-m2jjtay8",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-04-28T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arXiv.2304.14997",
+            "unique_id": "m2jjtay8",
+            "abstract": "Through considerable effort and intuition, several recent works have reverse-engineered nontrivial behaviors of transformer models. This paper systematizes the mechanistic interpretability process they followed. First, researchers choose a metric and dataset that elicit the desired model behavior. Then, they apply activation patching to find which abstract neural network units are involved in the behavior. By varying the dataset, metric, and units under investigation, researchers can understand the functionality of each component. We automate one of the process' steps: to identify the circuit that implements the specified behavior in the model's computational graph. We propose several algorithms and reproduce previous interpretability results to validate them. For example, the ACDC algorithm rediscovered 5/5 of the component types in a circuit in GPT-2 Small that computes the Greater-Than operation. ACDC selected 68 of the 32,000 edges in GPT-2 Small, all of which were manually found by previous work. Our code is available at https://github.com/ArthurConmy/Automatic-Circuit-Discovery.",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Arthur Conmy",
+                  "id": 4002955957,
+                  "slug": "arthur-conmy",
+                  "unique_id": "1hiod6uq",
+                  "full_slug": "arthur-conmy-1hiod6uq"
+                },
+                {
+                  "display_name": "Augustine N. Mavor-Parker",
+                  "id": 3093828532,
+                  "slug": "augustine-n-mavor-parker",
+                  "unique_id": "46qg095uah",
+                  "full_slug": "augustine-n-mavor-parker-46qg095uah"
+                },
+                {
+                  "display_name": "Aengus Lynch",
+                  "id": 4003048816,
+                  "slug": "aengus-lynch",
+                  "unique_id": "28de76v4",
+                  "full_slug": "aengus-lynch-28de76v4"
+                },
+                {
+                  "display_name": "Stefan Heimersheim",
+                  "id": 3067166140,
+                  "slug": "stefan-heimersheim",
+                  "unique_id": "zqk74d1y8c",
+                  "full_slug": "stefan-heimersheim-zqk74d1y8c"
+                },
+                {
+                  "display_name": "Adrià Garriga-Alonso",
+                  "id": 4000124215,
+                  "slug": "adria-garriga-alonso",
+                  "unique_id": "30b9er0t",
+                  "full_slug": "adria-garriga-alonso-30b9er0t"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/towards-automated-circuit-discovery-for-mechanistic-m2jjtay8.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2304.14997v3.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Automatic circuit discovery (ACDC) as mentioned in this paper uses activation patching to find which abstract neural network units are involved in the behavior of a transformer model and then identifies the circuit that implements the specified behavior in the model's computational graph.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

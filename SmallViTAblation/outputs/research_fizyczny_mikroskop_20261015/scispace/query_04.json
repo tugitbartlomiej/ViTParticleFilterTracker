@@ -1,0 +1,548 @@
+{
+  "question": "How do neuron value vectors in Transformer MLPs cancel or suppress one another, including prediction versus suppression neurons, negative GELU activations, superposition, and antiparallel output directions?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'How do neuron value vectors in Transformer MLPs cancel or suppress one another, including prediction versus suppression neurons, negative GELU activations, superposition, and antiparallel output directions?'.\n\n\n1. Hedonic Neurons: A Mechanistic Mapping of Latent Coalitions in Transformer MLPs\n   ID: vmwj53dazqar\n   2025 · Chowdhury, Tanya, Zick Yair, Allan James\n   DOI: 10.48550/arxiv.2509.23684\n   Abstract: Fine-tuned Large Language Models (LLMs) encode rich task-specific features, but the form of these representations, especially within MLP layers, remains unclear. Empirical inspection of LoRA updates shows that new features concentrate in mid-layer MLPs, yet the scale of these layers obscures meaningful structure. Prior probing suggests that statistical priors may strengthen, split, or vanish across depth, motivating the need to study how neurons work together rather than in isolation. We introduce a mechanistic interpretability framework based on coalitional game theory, where neurons mimic agents in a hedonic game whose preferences capture their synergistic contributions to layer-local computations. Using top-responsive utilities and the PAC-Top-Cover algorithm, we extract stable coalitions of neurons: groups whose joint ablation has non-additive effects. We then track their transitions across layers as persistence, splitting, merging, or disappearance. Applied to LLaMA, Mistral, and Pythia rerankers fine-tuned on scalar IR tasks, our method finds coalitions with consistently higher synergy than clustering baselines. By revealing how neurons cooperate to encode features, hedonic coalitions uncover higher-order structure beyond disentanglement and yield computational units that are functionally important, interpretable, and predictive across domains. \n\n2. The Lazy Neuron Phenomenon: On Emergence of Activation Sparsity in Transformers\n   ID: n0f21udi\n   2022 · Zong-xiao Li, Chong You, Srinadh Bhojanapalli\n   Abstract: This paper studies the curious phenomenon for machine learning models with Transformer architectures that their activation maps are sparse. By activation map we refer to the intermediate output of the multi-layer perceptrons (MLPs) after a ReLU activation function, and by sparse we mean that on average very few entries (e.g., 3.0% for T5-Base and 6.3% for ViT-B16) are nonzero for each input to MLP. Moreover, larger Transformers with more layers and wider MLP hidden dimensions are sparser as measured by the percentage of nonzero entries. Through extensive experiments we demonstrate that the emergence of sparsity is a prevalent phenomenon that occurs for both natural language processing and vision tasks, on both training and evaluation data, for Transformers of various configurations, at layers of all depth levels, as well as for other architectures including MLP-mixers and 2-layer MLPs. We show that sparsity also emerges using training datasets with random labels, or with random inputs, or with infinite amount of data, demonstrating that sparsity is not a result of a specific family of datasets. We discuss how sparsity immediately implies a way to significantly reduce the FLOP count and improve efficiency for Transformers. Moreover, we demonstrate perhaps surprisingly that enforcing an even sparser activation via Top-k thresholding with a small value of k brings a collection of desired but missing properties for Transformers, namely less sensitivity to noisy training data, more robustness to input corruptions, and better calibration for their prediction confidence.\n\n3. The Lazy Neuron Phenomenon: On Emergence of Activation Sparsity in\n  Transformers\n   ID: 2yd5g7ao\n   2022\n   DOI: 10.48550/arxiv.2210.06313\n   Abstract: This paper studies the curious phenomenon for machine learning models with Transformer architectures that their activation maps are sparse. By activation map we refer to the intermediate output of the multi-layer perceptrons (MLPs) after a ReLU activation function, and by sparse we mean that on average very few entries (e.g., 3.0% for T5-Base and 6.3% for ViT-B16) are nonzero for each input to MLP. Moreover, larger Transformers with more layers and wider MLP hidden dimensions are sparser as measured by the percentage of nonzero entries. Through extensive experiments we demonstrate that the emergence of sparsity is a prevalent phenomenon that occurs for both natural language processing and vision tasks, on both training and evaluation data, for Transformers of various configurations, at layers of all depth levels, as well as for other architectures including MLP-mixers and 2-layer MLPs. We show that sparsity also emerges using training datasets with random labels, or with random inputs, or with infinite amount of data, demonstrating that sparsity is not a result of a specific family of datasets. We discuss how sparsity immediately implies a way to significantly reduce the FLOP count and improve efficiency for Transformers. Moreover, we demonstrate perhaps surprisingly that enforcing an even sparser activation via Top-k thresholding with a small value of k brings a collection of desired but missing properties for Transformers, namely less sensitivity to noisy training data, more robustness to input corruptions, and better calibration for their prediction confidence. \n\n4. Ablation is Not Enough to Emulate DPO: How Neuron Dynamics Drive\n  Toxicity Reduction\n   ID: 4ofr0pp4a1zx\n   2024 · Jing Wang, Filip Sondej, Harry Mayne\n   DOI: 10.48550/arxiv.2411.06424\n   Abstract: Safety fine-tuning algorithms are commonly used to fine-tune language models to reduce harmful outputs, but the exact internal mechanisms of how those models achieve this remain unclear. In studying direct preference optimisation (DPO) for toxicity reduction, current explanations claim that DPO works by dampening the most toxic MLP neurons to learn an offset to avert toxic regions in the residual stream. However, by ablating the most toxic neurons and applying activation patching, we find this explanation incomplete. By projecting neuron activation changes onto a toxicity probe, we find that only 31.8\\% of toxicity reduction comes from dampened toxic neurons. Instead, DPO reduces toxicity by accumulating effects across multiple neuron groups, both reducing writing in the toxic direction and promoting anti-toxicity in the residual stream. Moreover, DPO gives noisy adjustments to neuron activations, with many neurons actually increasing toxicity. This indicates that DPO is a balancing process between opposing neuron effects to achieve toxicity reduction. \n\n5. Monosemantic Feature Neurons: A Sparse Autoencoding Layer for Interpretable, Steerable Transformer Features\n   ID: jxrqhcxtzexe\n   2025 · Roger Dev\n   DOI: 10.20944/preprints202510.2064.v1\n   Abstract: Large Language Models achieve remarkable results but remain opaque due to dense, entangled activations. This paper introduces Monosemantic Feature Neurons (MFNs) — a sparse autoencoding layer embedded inside Transformer blocks. MFNs encode residual streams into $K$-sparse codes, reconstruct them, and blend them back into the model so that downstream computation depends on a sparse, interpretable basis. Five complementary loss terms (reconstruction, sparsity, competition, stability, and utility) bias features toward functional monosemanticity. Unlike post-hoc sparse autoencoders, MFNs embed a causally entangled bottleneck directly within Transformer computation, bridging the gap between interpretability and train-time transparency. The work outlines falsifiable predictions, evaluation metrics, and practical training heuristics for future empirical validation. Accepted for presentation at LLM 2025 (Springer CCIS). \n\n6. Distributed Specialization: Rare-Token Neurons in Large Language Models\n   ID: cfqyu8vj3qkl\n   2025 · Liu, Jing, Wang Hao-zheng, Li Yueheng\n   DOI: 10.48550/arxiv.2509.21163\n   Abstract: Large language models (LLMs) struggle with representing and generating rare tokens despite their importance in specialized domains. We investigate whether LLMs develop internal specialization mechanisms through discrete modular architectures or distributed parameter-level differentiation. Through systematic analysis of final-layer MLP neurons across multiple model families, we discover that rare-token processing emerges via \\textit{distributed specialization}: functionally coordinated but spatially distributed subnetworks that exhibit three distinct organizational principles. First, we identify a reproducible three-regime influence hierarchy comprising highly influential plateau neurons(also termed as rare-token neurons), power-law decay neurons, and minimally contributing neurons, which is absent in common-token processing. Second, plateau neurons demonstrate coordinated activation patterns (reduced effective dimensionality) while remaining spatially distributed rather than forming discrete clusters. Third, these specialized mechanisms are universally accessible through standard attention pathways without requiring dedicated routing circuits. Training dynamics reveal that functional specialization emerges gradually through parameter differentiation, with specialized neurons developing increasingly heavy-tailed weight correlation spectra consistent with Heavy-Tailed Self-Regularization signatures. Our findings establish that LLMs process rare-tokens through distributed coordination within shared architectures rather than mixture-of-experts-style modularity. These results provide insights for interpretable model editing, computational efficiency optimization, and understanding emergent functional organization in transformer networks. \n\n7. Universal Neurons in GPT-2: Emergence, Persistence, and Functional Impact\n   ID: 69rnzc0gx3ya\n   2025 · Advey Nandan, Cheng-Ting Chou, Amrit Kurakula · arXiv.org\n   DOI: 10.48550/arxiv.2508.00903\n   Abstract: We investigate the phenomenon of neuron universality in independently trained GPT-2 Small models, examining how these universal neurons-neurons with consistently correlated activations across models-emerge and evolve throughout training. By analyzing five GPT-2 models at three checkpoints (100k, 200k, 300k steps), we identify universal neurons through pairwise correlation analysis of activations over a dataset of 5 million tokens. Ablation experiments reveal significant functional impacts of universal neurons on model predictions, measured via loss and KL divergence. Additionally, we quantify neuron persistence, demonstrating high stability of universal neurons across training checkpoints, particularly in deeper layers. These findings suggest stable and universal representational structures emerge during neural network training.\n\n8. Layer-0 Suppressors Ground Hallucination Inevitability: A Mechanistic Account of How Transformers Trade Factuality for Hedging\n   ID: y721hk0n7clf\n   2025\n   DOI: 10.5281/zenodo.17524770\n   Abstract: Layer-0 \"suppressor\" heads encode why language models trade factuality for hedging under uncertainty. In GPT-2 Medium, ablating heads {0:2, 0:4, 0:7} increases logit-difference (ΔLD) by 0.40–0.85 across factual, negation, counterfactual, and logic probes, and improves calibration (ECE 0.122 → 0.091). Path patching shows ≈67% of head 0:2's effect is mediated by the Layer-0 → Layer-11 residual pathway, establishing a stable hedging attractor. New: direct geometric measurements reveal that suppressors flatten output distributions (ΔH = −2.4 to −3.8 nats; p < 0.02 vs. random controls) and reduce early-layer trajectory curvature across all four tasks, consistent with information-theoretic constraint. Mistral-7B exhibits an architecture-adapted variant (heads 0:22/0:23) with task-contingent anti-suppressor behavior. We include multi-seed runs with bootstrap CIs over prompts, span-aware multi-token metrics, random head baselines at >99th percentile, and a minimal OV-steering intervention that smoothly modulates ΔLD/ECE without harming non-target probes. Analysis connects suppressors to training objectives: pure next-token pretraining induces baseline suppression; we propose that RLHF and Constitutional AI intensify rather than eliminate them. Scope: decoder-only models, short prompts, deterministic Mac MPS hardware with replication roadmap for CUDA backends. \n\n9. Layer-0 Suppressors Ground Hallucination Inevitability: A Mechanistic Account of How Transformers Trade Factuality for Hedging\n   ID: 0fgi4xf6fbfd\n   2025\n   DOI: 10.5281/zenodo.17535315\n   Abstract: &lt;p&gt;Layer-0 \"suppressor\" heads encode why language models trade factuality for hedging under uncertainty. In GPT-2 Medium, ablating heads {0:2, 0:4, 0:7} increases logit-difference (&Delta;LD) by 0.40&ndash;0.85 across factual, negation, counterfactual, and logic probes, and improves calibration (ECE 0.122 &rarr; 0.091). Path patching shows &asymp;67% of head 0:2's effect is mediated by the Layer-0 &rarr; Layer-11 residual pathway, establishing a stable hedging attractor. &lt;strong&gt;New:&lt;/strong&gt; direct geometric measurements reveal that suppressors flatten output distributions (&Delta;H = &minus;2.4 to &minus;3.8 nats; p &lt; 0.02 vs. random controls) and reduce early-layer trajectory curvature across all four tasks, consistent with information-theoretic constraint. Mistral-7B exhibits an architecture-adapted variant (heads 0:22/0:23) with task-contingent anti-suppressor behavior. We include multi-seed runs with bootstrap CIs over prompts, span-aware multi-token metrics, random head baselines at &gt;99th percentile, and a minimal OV-steering intervention that smoothly modulates &Delta;LD/ECE without harming non-target probes. Analysis connects suppressors to training objectives: pure next-token pretraining induces baseline suppression; we propose that RLHF and Constitutional AI intensify rather than eliminate them. &lt;strong&gt;Scope:&lt;/strong&gt; decoder-only models, short prompts, deterministic Mac MPS hardware with replication roadmap for CUDA backends.&lt;/p&gt; \n\n10. Layer-0 Suppressors Ground Hallucination Inevitability: A Mechanistic Account of How Transformers Trade Factuality for Hedging\n   ID: ppcedvhlvvkg\n   2025\n   DOI: 10.5281/zenodo.17505151\n   Abstract: &lt;p&gt;Layer-0 suppressor circuits mechanistically expose why language models trade factuality for hedging. Across four single-token probes, zeroing GPT-2 Medium heads {0:2, 0:4, 0:7} raises logit difference by 0.40&ndash;0.85 and improves expected calibration error from 0.122 to 0.091. Path patching reveals that 67% of the head 0:2 effect is mediated by the suppressor&rarr;layer-11 residual stream, aligning causal structure with the hallucination inevitability theorem of Kalai et al. (2025). Mistral-7B discovers an architecture-adapted variant. These results bridge statistical incentives and concrete circuits, motivating suppressor-aware interventions for truthful model behavior.&lt;/p&gt; "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "How do neuron value vectors in Transformer MLPs cancel or suppress one another, including prediction versus suppression neurons, negative GELU activations, superposition, and antiparallel output directions?",
+        "papers": [
+          {
+            "id": 4100719985,
+            "title": "Hedonic Neurons: A Mechanistic Mapping of Latent Coalitions in Transformer MLPs",
+            "is_archived": false,
+            "full_slug": "hedonic-neurons-a-mechanistic-mapping-of-latent-coalitions-vmwj53dazqar",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-09-30T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2509.23684",
+            "unique_id": "vmwj53dazqar",
+            "abstract": "Fine-tuned Large Language Models (LLMs) encode rich task-specific features, but the form of these representations, especially within MLP layers, remains unclear. Empirical inspection of LoRA updates shows that new features concentrate in mid-layer MLPs, yet the scale of these layers obscures meaningful structure. Prior probing suggests that statistical priors may strengthen, split, or vanish across depth, motivating the need to study how neurons work together rather than in isolation. We introduce a mechanistic interpretability framework based on coalitional game theory, where neurons mimic agents in a hedonic game whose preferences capture their synergistic contributions to layer-local computations. Using top-responsive utilities and the PAC-Top-Cover algorithm, we extract stable coalitions of neurons: groups whose joint ablation has non-additive effects. We then track their transitions across layers as persistence, splitting, merging, or disappearance. Applied to LLaMA, Mistral, and Pythia rerankers fine-tuned on scalar IR tasks, our method finds coalitions with consistently higher synergy than clustering baselines. By revealing how neurons cooperate to encode features, hedonic coalitions uncover higher-order structure beyond disentanglement and yield computational units that are functionally important, interpretable, and predictive across domains. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Chowdhury, Tanya",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zick Yair",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Allan James",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/hedonic-neurons-a-mechanistic-mapping-of-latent-coalitions-vmwj53dazqar.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2509.23684v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4000984857,
+            "title": "The Lazy Neuron Phenomenon: On Emergence of Activation Sparsity in Transformers",
+            "is_archived": false,
+            "full_slug": "the-lazy-neuron-phenomenon-on-emergence-of-activation-n0f21udi",
+            "journal": null,
+            "conference_series": {
+              "display_name": "International Conference on Learning Representations",
+              "id": 2584161585,
+              "slug": "international-conference-on-learning-representations",
+              "unique_id": "3fuf27wk",
+              "full_slug": "international-conference-on-learning-representations-3fuf27wk"
+            },
+            "date": "2022-10-12T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Proceedings Article",
+            "doi": null,
+            "unique_id": "n0f21udi",
+            "abstract": "This paper studies the curious phenomenon for machine learning models with Transformer architectures that their activation maps are sparse. By activation map we refer to the intermediate output of the multi-layer perceptrons (MLPs) after a ReLU activation function, and by sparse we mean that on average very few entries (e.g., 3.0% for T5-Base and 6.3% for ViT-B16) are nonzero for each input to MLP. Moreover, larger Transformers with more layers and wider MLP hidden dimensions are sparser as measured by the percentage of nonzero entries. Through extensive experiments we demonstrate that the emergence of sparsity is a prevalent phenomenon that occurs for both natural language processing and vision tasks, on both training and evaluation data, for Transformers of various configurations, at layers of all depth levels, as well as for other architectures including MLP-mixers and 2-layer MLPs. We show that sparsity also emerges using training datasets with random labels, or with random inputs, or with infinite amount of data, demonstrating that sparsity is not a result of a specific family of datasets. We discuss how sparsity immediately implies a way to significantly reduce the FLOP count and improve efficiency for Transformers. Moreover, we demonstrate perhaps surprisingly that enforcing an even sparser activation via Top-k thresholding with a small value of k brings a collection of desired but missing properties for Transformers, namely less sensitivity to noisy training data, more robustness to input corruptions, and better calibration for their prediction confidence.",
+            "authors": {
+              "total": 11,
+              "data": [
+                {
+                  "display_name": "Zong-xiao Li",
+                  "id": 4000244535,
+                  "slug": "zong-xiao-li",
+                  "unique_id": "2u8s87jc",
+                  "full_slug": "zong-xiao-li-2u8s87jc"
+                },
+                {
+                  "display_name": "Chong You",
+                  "id": 2137084973,
+                  "slug": "chong-you",
+                  "unique_id": "30012akb03",
+                  "full_slug": "chong-you-30012akb03"
+                },
+                {
+                  "display_name": "Srinadh Bhojanapalli",
+                  "id": 264277963,
+                  "slug": "srinadh-bhojanapalli",
+                  "unique_id": "38iuwi1gos",
+                  "full_slug": "srinadh-bhojanapalli-38iuwi1gos"
+                },
+                {
+                  "display_name": "Daliang Li",
+                  "id": 2106408995,
+                  "slug": "daliang-li",
+                  "unique_id": "256gmr1p22",
+                  "full_slug": "daliang-li-256gmr1p22"
+                },
+                {
+                  "display_name": "Ankit Singh Rawat",
+                  "id": 2122381750,
+                  "slug": "ankit-singh-rawat",
+                  "unique_id": "4f6gyfnpbg",
+                  "full_slug": "ankit-singh-rawat-4f6gyfnpbg"
+                },
+                {
+                  "display_name": "Sashank J. Reddi",
+                  "id": 2161691657,
+                  "slug": "sashank-j-reddi",
+                  "unique_id": "58nnlaxdl2",
+                  "full_slug": "sashank-j-reddi-58nnlaxdl2"
+                },
+                {
+                  "display_name": "Kenneth Q Ye",
+                  "id": 4001172011,
+                  "slug": "kenneth-q-ye",
+                  "unique_id": "2j2ypdxp",
+                  "full_slug": "kenneth-q-ye-2j2ypdxp"
+                },
+                {
+                  "display_name": "Felix R. Chern",
+                  "id": 2480354212,
+                  "slug": "felix-r-chern",
+                  "unique_id": "3po69c5n4r",
+                  "full_slug": "felix-r-chern-3po69c5n4r"
+                },
+                {
+                  "display_name": "Felix Yu",
+                  "id": 4001610533,
+                  "slug": "felix-yu",
+                  "unique_id": "12a13kx7",
+                  "full_slug": "felix-yu-12a13kx7"
+                },
+                {
+                  "display_name": "Ru Jiang Guo",
+                  "id": 2245664305,
+                  "slug": "ru-jiang-guo",
+                  "unique_id": "47zdriwkc4",
+                  "full_slug": "ru-jiang-guo-47zdriwkc4"
+                },
+                {
+                  "display_name": "Sanjay Kumar",
+                  "id": 2581106287,
+                  "slug": "sanjay-kumar",
+                  "unique_id": "sxbtbeex8o",
+                  "full_slug": "sanjay-kumar-sxbtbeex8o"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "In this article , the authors study the phenomenon of sparsity in the activation maps of machine learning models with Transformer architectures and demonstrate that sparsity is a prevalent phenomenon that occurs for both natural language processing and vision tasks.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4017988061,
+            "title": "The Lazy Neuron Phenomenon: On Emergence of Activation Sparsity in\n  Transformers",
+            "is_archived": false,
+            "full_slug": "the-lazy-neuron-phenomenon-on-emergence-of-activation-2yd5g7ao",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-10-12T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2210.06313",
+            "unique_id": "2yd5g7ao",
+            "abstract": "This paper studies the curious phenomenon for machine learning models with Transformer architectures that their activation maps are sparse. By activation map we refer to the intermediate output of the multi-layer perceptrons (MLPs) after a ReLU activation function, and by sparse we mean that on average very few entries (e.g., 3.0% for T5-Base and 6.3% for ViT-B16) are nonzero for each input to MLP. Moreover, larger Transformers with more layers and wider MLP hidden dimensions are sparser as measured by the percentage of nonzero entries. Through extensive experiments we demonstrate that the emergence of sparsity is a prevalent phenomenon that occurs for both natural language processing and vision tasks, on both training and evaluation data, for Transformers of various configurations, at layers of all depth levels, as well as for other architectures including MLP-mixers and 2-layer MLPs. We show that sparsity also emerges using training datasets with random labels, or with random inputs, or with infinite amount of data, demonstrating that sparsity is not a result of a specific family of datasets. We discuss how sparsity immediately implies a way to significantly reduce the FLOP count and improve efficiency for Transformers. Moreover, we demonstrate perhaps surprisingly that enforcing an even sparser activation via Top-k thresholding with a small value of k brings a collection of desired but missing properties for Transformers, namely less sensitivity to noisy training data, more robustness to input corruptions, and better calibration for their prediction confidence. ",
+            "fulltext_url": "/pdf/the-lazy-neuron-phenomenon-on-emergence-of-activation-2yd5g7ao.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2210.06313"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 7
+              }
+            },
+            "tldr": "In this paper , the authors study the phenomenon of sparsity in the activation maps of machine learning models with Transformer architectures and demonstrate that sparsity is a prevalent phenomenon that occurs for both natural language processing and vision tasks.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4048937331,
+            "title": "Ablation is Not Enough to Emulate DPO: How Neuron Dynamics Drive\n  Toxicity Reduction",
+            "is_archived": false,
+            "full_slug": "ablation-is-not-enough-to-emulate-dpo-how-neuron-dynamics-4ofr0pp4a1zx",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-11-10T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2411.06424",
+            "unique_id": "4ofr0pp4a1zx",
+            "abstract": "Safety fine-tuning algorithms are commonly used to fine-tune language models to reduce harmful outputs, but the exact internal mechanisms of how those models achieve this remain unclear. In studying direct preference optimisation (DPO) for toxicity reduction, current explanations claim that DPO works by dampening the most toxic MLP neurons to learn an offset to avert toxic regions in the residual stream. However, by ablating the most toxic neurons and applying activation patching, we find this explanation incomplete. By projecting neuron activation changes onto a toxicity probe, we find that only 31.8\\% of toxicity reduction comes from dampened toxic neurons. Instead, DPO reduces toxicity by accumulating effects across multiple neuron groups, both reducing writing in the toxic direction and promoting anti-toxicity in the residual stream. Moreover, DPO gives noisy adjustments to neuron activations, with many neurons actually increasing toxicity. This indicates that DPO is a balancing process between opposing neuron effects to achieve toxicity reduction. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Jing Wang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Filip Sondej",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Harry Mayne",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Adam Mahdi",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/ablation-is-not-enough-to-emulate-dpo-how-neuron-dynamics-4ofr0pp4a1zx.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2411.06424"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Direct preference optimisation (DPO) for toxicity reduction in language models is not solely achieved by dampening toxic neurons, but rather by a balancing process of opposing neuron effects, reducing toxicity through accumulated effects across multiple neuron groups.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4085701444,
+            "title": "Monosemantic Feature Neurons: A Sparse Autoencoding Layer for Interpretable, Steerable Transformer Features",
+            "is_archived": false,
+            "full_slug": "monosemantic-feature-neurons-a-sparse-autoencoding-layer-for-jxrqhcxtzexe",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-27T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Repository",
+            "doi": "10.20944/preprints202510.2064.v1",
+            "unique_id": "jxrqhcxtzexe",
+            "abstract": "Large Language Models achieve remarkable results but remain opaque due to dense, entangled activations. This paper introduces Monosemantic Feature Neurons (MFNs) — a sparse autoencoding layer embedded inside Transformer blocks. MFNs encode residual streams into $K$-sparse codes, reconstruct them, and blend them back into the model so that downstream computation depends on a sparse, interpretable basis. Five complementary loss terms (reconstruction, sparsity, competition, stability, and utility) bias features toward functional monosemanticity. Unlike post-hoc sparse autoencoders, MFNs embed a causally entangled bottleneck directly within Transformer computation, bridging the gap between interpretability and train-time transparency. The work outlines falsifiable predictions, evaluation metrics, and practical training heuristics for future empirical validation. Accepted for presentation at LLM 2025 (Springer CCIS). ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Roger Dev",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4097806627,
+            "title": "Distributed Specialization: Rare-Token Neurons in Large Language Models",
+            "is_archived": false,
+            "full_slug": "distributed-specialization-rare-token-neurons-in-large-cfqyu8vj3qkl",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-09-26T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2509.21163",
+            "unique_id": "cfqyu8vj3qkl",
+            "abstract": "Large language models (LLMs) struggle with representing and generating rare tokens despite their importance in specialized domains. We investigate whether LLMs develop internal specialization mechanisms through discrete modular architectures or distributed parameter-level differentiation. Through systematic analysis of final-layer MLP neurons across multiple model families, we discover that rare-token processing emerges via \\textit{distributed specialization}: functionally coordinated but spatially distributed subnetworks that exhibit three distinct organizational principles. First, we identify a reproducible three-regime influence hierarchy comprising highly influential plateau neurons(also termed as rare-token neurons), power-law decay neurons, and minimally contributing neurons, which is absent in common-token processing. Second, plateau neurons demonstrate coordinated activation patterns (reduced effective dimensionality) while remaining spatially distributed rather than forming discrete clusters. Third, these specialized mechanisms are universally accessible through standard attention pathways without requiring dedicated routing circuits. Training dynamics reveal that functional specialization emerges gradually through parameter differentiation, with specialized neurons developing increasingly heavy-tailed weight correlation spectra consistent with Heavy-Tailed Self-Regularization signatures. Our findings establish that LLMs process rare-tokens through distributed coordination within shared architectures rather than mixture-of-experts-style modularity. These results provide insights for interpretable model editing, computational efficiency optimization, and understanding emergent functional organization in transformer networks. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Liu, Jing",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Wang Hao-zheng",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Li Yueheng",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/distributed-specialization-rare-token-neurons-in-large-cfqyu8vj3qkl.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2509.21163v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4073268454,
+            "title": "Universal Neurons in GPT-2: Emergence, Persistence, and Functional Impact",
+            "is_archived": false,
+            "full_slug": "universal-neurons-in-gpt-2-emergence-persistence-and-69rnzc0gx3ya",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-07-28T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2508.00903",
+            "unique_id": "69rnzc0gx3ya",
+            "abstract": "We investigate the phenomenon of neuron universality in independently trained GPT-2 Small models, examining how these universal neurons-neurons with consistently correlated activations across models-emerge and evolve throughout training. By analyzing five GPT-2 models at three checkpoints (100k, 200k, 300k steps), we identify universal neurons through pairwise correlation analysis of activations over a dataset of 5 million tokens. Ablation experiments reveal significant functional impacts of universal neurons on model predictions, measured via loss and KL divergence. Additionally, we quantify neuron persistence, demonstrating high stability of universal neurons across training checkpoints, particularly in deeper layers. These findings suggest stable and universal representational structures emerge during neural network training.",
+            "authors": {
+              "total": 7,
+              "data": [
+                {
+                  "display_name": "Advey Nandan",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Cheng-Ting Chou",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Amrit Kurakula",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Cole Blondin",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Kevin Zhu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Vasu Sharma",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Sean O’brien",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/universal-neurons-in-gpt-2-emergence-persistence-and-69rnzc0gx3ya.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2508.00903v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study investigates universal neurons in GPT-2 Small models, examining their emergence, persistence, and functional impact on model predictions, revealing stable and universal representational structures that persist across training checkpoints.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4088453579,
+            "title": "Layer-0 Suppressors Ground Hallucination Inevitability: A Mechanistic Account of How Transformers Trade Factuality for Hedging",
+            "is_archived": false,
+            "full_slug": "layer-0-suppressors-ground-hallucination-inevitability-a-y721hk0n7clf",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-29T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.5281/zenodo.17524770",
+            "unique_id": "y721hk0n7clf",
+            "abstract": "Layer-0 \"suppressor\" heads encode why language models trade factuality for hedging under uncertainty. In GPT-2 Medium, ablating heads {0:2, 0:4, 0:7} increases logit-difference (ΔLD) by 0.40–0.85 across factual, negation, counterfactual, and logic probes, and improves calibration (ECE 0.122 → 0.091). Path patching shows ≈67% of head 0:2's effect is mediated by the Layer-0 → Layer-11 residual pathway, establishing a stable hedging attractor. New: direct geometric measurements reveal that suppressors flatten output distributions (ΔH = −2.4 to −3.8 nats; p < 0.02 vs. random controls) and reduce early-layer trajectory curvature across all four tasks, consistent with information-theoretic constraint. Mistral-7B exhibits an architecture-adapted variant (heads 0:22/0:23) with task-contingent anti-suppressor behavior. We include multi-seed runs with bootstrap CIs over prompts, span-aware multi-token metrics, random head baselines at >99th percentile, and a minimal OV-steering intervention that smoothly modulates ΔLD/ECE without harming non-target probes. Analysis connects suppressors to training objectives: pure next-token pretraining induces baseline suppression; we propose that RLHF and Constitutional AI intensify rather than eliminate them. Scope: decoder-only models, short prompts, deterministic Mac MPS hardware with replication roadmap for CUDA backends. ",
+            "fulltext_url": "pdf/layer-0-suppressors-ground-hallucination-inevitability-a-y721hk0n7clf.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2509.04664"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4102945211,
+            "title": "Layer-0 Suppressors Ground Hallucination Inevitability: A Mechanistic Account of How Transformers Trade Factuality for Hedging",
+            "is_archived": false,
+            "full_slug": "layer-0-suppressors-ground-hallucination-inevitability-a-0fgi4xf6fbfd",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-29T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.5281/zenodo.17535315",
+            "unique_id": "0fgi4xf6fbfd",
+            "abstract": "&lt;p&gt;Layer-0 \"suppressor\" heads encode why language models trade factuality for hedging under uncertainty. In GPT-2 Medium, ablating heads {0:2, 0:4, 0:7} increases logit-difference (&Delta;LD) by 0.40&ndash;0.85 across factual, negation, counterfactual, and logic probes, and improves calibration (ECE 0.122 &rarr; 0.091). Path patching shows &asymp;67% of head 0:2's effect is mediated by the Layer-0 &rarr; Layer-11 residual pathway, establishing a stable hedging attractor. &lt;strong&gt;New:&lt;/strong&gt; direct geometric measurements reveal that suppressors flatten output distributions (&Delta;H = &minus;2.4 to &minus;3.8 nats; p &lt; 0.02 vs. random controls) and reduce early-layer trajectory curvature across all four tasks, consistent with information-theoretic constraint. Mistral-7B exhibits an architecture-adapted variant (heads 0:22/0:23) with task-contingent anti-suppressor behavior. We include multi-seed runs with bootstrap CIs over prompts, span-aware multi-token metrics, random head baselines at &gt;99th percentile, and a minimal OV-steering intervention that smoothly modulates &Delta;LD/ECE without harming non-target probes. Analysis connects suppressors to training objectives: pure next-token pretraining induces baseline suppression; we propose that RLHF and Constitutional AI intensify rather than eliminate them. &lt;strong&gt;Scope:&lt;/strong&gt; decoder-only models, short prompts, deterministic Mac MPS hardware with replication roadmap for CUDA backends.&lt;/p&gt; ",
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study reveals that \"suppressor\" heads in transformers trade factuality for hedging under uncertainty, with ablation and path patching analyses showing a stable hedging attractor and reduced output distribution entropy.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4095359355,
+            "title": "Layer-0 Suppressors Ground Hallucination Inevitability: A Mechanistic Account of How Transformers Trade Factuality for Hedging",
+            "is_archived": false,
+            "full_slug": "layer-0-suppressors-ground-hallucination-inevitability-a-ppcedvhlvvkg",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-11-02T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.5281/zenodo.17505151",
+            "unique_id": "ppcedvhlvvkg",
+            "abstract": "&lt;p&gt;Layer-0 suppressor circuits mechanistically expose why language models trade factuality for hedging. Across four single-token probes, zeroing GPT-2 Medium heads {0:2, 0:4, 0:7} raises logit difference by 0.40&ndash;0.85 and improves expected calibration error from 0.122 to 0.091. Path patching reveals that 67% of the head 0:2 effect is mediated by the suppressor&rarr;layer-11 residual stream, aligning causal structure with the hallucination inevitability theorem of Kalai et al. (2025). Mistral-7B discovers an architecture-adapted variant. These results bridge statistical incentives and concrete circuits, motivating suppressor-aware interventions for truthful model behavior.&lt;/p&gt; ",
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

@@ -1806,3 +1806,215 @@ class PrzejscieGPU(_ElementGPU):
         self._addytywnie(False); GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
         self._ui('p', u_g=1, u_rozm=float(o['rozm']) * 4, u_ksztalt=1, u_kol=(1.0, 0.85, 0.2, 1.0))
         GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
+
+
+# ====================================================================== dolina pewności i IoU wybranej cząsteczki (okienko 12 i sfera)
+_SSBO_D = """
+layout(std430, binding = 0) readonly buffer BV { vec4 DV[]; };   // [2·G³] punkt przekroju (a, b, c) i pewność p; (IoU, 0, 0, 0)
+layout(std430, binding = 1) readonly buffer BT { vec4 DT[]; };   // [2·3n] obrys doliny: wierzchołek (a, b, c), normalna
+layout(std430, binding = 2) readonly buffer BL { vec4 DL[]; };   // [2·m] linie: osie przekroju i krawędzie sześcianu (położenie, kolor)
+"""
+VS_D = "#version 430\n" + _SSBO_D + """
+uniform mat4 u_mvp, u_M;                 // u_M: układ przekroju (192 wymiary, baza E) → scena
+uniform int u_tryb;
+uniform float u_pmin, u_imin, u_tlo, u_jas, u_rozm;
+uniform vec4 u_kol;
+out vec4 v_k; out vec3 v_n;
+const vec4 POZA = vec4(2.0, 2.0, 2.0, 1.0);
+void main() {
+    int v = gl_VertexID;
+    v_n = vec3(0.0, 0.0, 1.0);
+    if (u_tryb == 0) {                   // mgła doliny: punkty siatki, gdzie pewność i IoU są nad progami
+        vec4 a = DV[2 * v]; float p = a.w, q = DV[2 * v + 1].x;
+        bool op = p >= u_pmin, oi = q >= u_imin;
+        vec3 c; float al;
+        if (op && oi) {
+            float s = clamp(min((p - u_pmin) / max(1.0 - u_pmin, 1e-3), (q - u_imin) / max(1.0 - u_imin, 1e-3)), 0.0, 1.0);
+            c = mix(vec3(0.05, 0.45, 0.22), vec3(0.35, 1.0, 0.75), s); al = 0.2 + 0.8 * s;
+        } else if (u_tlo > 0.0 && (op || oi)) {   // tylko jedno z dwóch: pomarańczowe = sama pewność, niebieskie = samo IoU
+            c = op ? vec3(1.0, 0.55, 0.15) : vec3(0.25, 0.55, 1.0); al = u_tlo;
+        } else { gl_Position = POZA; return; }
+        v_k = vec4(c * al * u_jas, 1.0);
+        gl_Position = u_mvp * (u_M * vec4(a.xyz, 1.0)); gl_PointSize = u_rozm;
+    } else if (u_tryb == 1) {            // obrys doliny: trójkąty powierzchni p = p_min albo IoU = IoU_min
+        vec4 a = DT[2 * v];
+        v_n = normalize(mat3(u_M) * DT[2 * v + 1].xyz);
+        v_k = u_kol;
+        gl_Position = u_mvp * (u_M * vec4(a.xyz, 1.0));
+    } else if (u_tryb == 2) {            // osie i sześcian
+        v_k = DL[2 * v + 1];
+        gl_Position = u_mvp * (u_M * vec4(DL[2 * v].xyz, 1.0));
+    } else {                             // cząsteczka w środku przekroju
+        v_k = u_kol;
+        gl_Position = u_mvp * (u_M * vec4(0.0, 0.0, 0.0, 1.0)); gl_PointSize = u_rozm;
+    }
+}
+"""
+FS_D = "#version 430\n" + """
+uniform int u_punkty;                    // 0 linie, 1 mgła (miękka plama), 2 powierzchnia, 3 kropka z obwódką
+in vec4 v_k; in vec3 v_n; out vec4 o;
+void main() {
+    if (u_punkty == 0) { o = v_k; return; }
+    if (u_punkty == 2) {
+        float sw = 0.35 + 0.65 * abs(dot(normalize(v_n), normalize(vec3(0.35, 0.55, 0.75))));
+        o = vec4(v_k.rgb * sw, v_k.a); return;
+    }
+    vec2 d = gl_PointCoord * 2.0 - 1.0; float r = length(d);
+    if (r > 1.0) discard;
+    if (u_punkty == 1) { o = vec4(v_k.rgb * exp(-r * r * 3.0), 1.0); return; }
+    o = r > 0.7 ? vec4(0.0, 0.0, 0.0, 1.0) : v_k;
+}
+"""
+
+
+class DolinaGPU(_ElementGPU):
+    """Przekrój 3D doliny pewności i IoU wokół wybranej cząsteczki (dolina.py): mgła punktów siatki G³ nad progami, obrys doliny
+    (marching cubes), osie przekroju i sześcian. Progi p_min i IoU_min są w shaderze (mgła) i w obrysie (liczony od nowa na CPU).
+    Przekształcenie M (4 × 4): układ przekroju → scena (okienko 12: skala; sfera: p_j + M3 a w skali sfery)."""
+    BUFORY = ('DV', 'DT', 'DL')
+    KOL_OSI = ((1.0, 0.35, 0.3), (0.35, 1.0, 0.45), (0.4, 0.6, 1.0))
+
+    def __init__(self):
+        super().__init__()
+        self.opcje = dict(p_min=0.5, iou_min=0.5, mgla=True, obrys=True, tlo=0.0, jas=1.0, rozm=5.0, siatka=True,
+                          kol_obrysu=(0.3, 0.95, 0.6, 0.10), rozm_cz=14.0)
+        self.M = np.eye(4, dtype=np.float32)
+        self.n = self.n_tr = self.n_l = 0
+
+    def czysc(self):
+        self.K = 0
+        self.update()
+
+    def ustaw_dane(self, d):
+        G, Z = int(d['G']), float(d['Z'])
+        a = np.linspace(-Z, Z, G, dtype=np.float32)
+        A, B, C = np.meshgrid(a, a, a, indexing='ij')
+        DV = np.zeros((G ** 3, 2, 4), np.float32)
+        DV[:, 0, 0], DV[:, 0, 1], DV[:, 0, 2] = A.ravel(), B.ravel(), C.ravel()
+        DV[:, 0, 3] = d['p'].ravel(); DV[:, 1, 0] = d['iou'].ravel()
+        self.ustaw_bufor('DV', DV.reshape(-1, 4)); self.n = G ** 3
+        L = []
+        for k, kol in enumerate(self.KOL_OSI):                     # osie: od cząsteczki do brzegu sześcianu (+), słabiej w stronę −
+            e = np.zeros(3, np.float32); e[k] = Z
+            L += [(np.zeros(3), (*kol, 1.0)), (e, (*kol, 1.0)), (np.zeros(3), (*kol, 0.35)), (-e, (*kol, 0.35))]
+        r = np.array([[x, y, z] for x in (-Z, Z) for y in (-Z, Z) for z in (-Z, Z)], np.float32)
+        for i in range(8):
+            for j in range(i + 1, 8):
+                if np.count_nonzero(r[i] != r[j]) == 1:
+                    L += [(r[i], (0.6, 0.7, 0.8, 0.25)), (r[j], (0.6, 0.7, 0.8, 0.25))]
+        DL = np.zeros((len(L), 2, 4), np.float32)
+        for i, (p_, k_) in enumerate(L):
+            DL[i, 0, :3] = p_; DL[i, 1] = k_
+        self.ustaw_bufor('DL', DL.reshape(-1, 4)); self.n_l = len(L)
+        self.K = 2
+        self.update()
+
+    def ustaw_obrys(self, tr):
+        """tr = (wierzchołki (3n, 3), normalne (3n, 3)) albo None."""
+        if tr is None:
+            self.n_tr = 0
+        else:
+            T = np.zeros((len(tr[0]), 2, 4), np.float32); T[:, 0, :3] = tr[0]; T[:, 1, :3] = tr[1]
+            self.ustaw_bufor('DT', T.reshape(-1, 4)); self.n_tr = len(tr[0])
+        self.update()
+
+    def ustaw_przeksztalcenie(self, M):
+        self.M = np.asarray(M, np.float32)
+        self.update()
+
+    def _programy(self):
+        return dict(d=_program(VS_D, FS_D))
+
+    def _rysuj(self, mvp):
+        o = self.opcje
+        GL.glUseProgram(self._prog['d'])
+        self._ui('d', u_mvp=mvp, u_M=np.ascontiguousarray(self.M.T).reshape(-1), u_pmin=float(o['p_min']), u_imin=float(o['iou_min']),
+                 u_tlo=float(o['tlo']), u_jas=float(o['jas']), u_rozm=float(o['rozm']))
+        if o['mgla'] and self.n:                                     # mgła sumuje się wzdłuż promienia: jasność ~ 1/G
+            G = max(round(self.n ** (1 / 3)), 1)
+            self._ui('d', u_tryb=0, u_punkty=1, u_jas=float(o['jas']) * 10.0 / G); self._addytywnie(True)
+            GL.glDrawArrays(GL.GL_POINTS, 0, self.n)
+        if o['obrys'] and self.n_tr:
+            self._ui('d', u_tryb=1, u_punkty=2, u_kol=tuple(o['kol_obrysu'])); self._addytywnie(False)
+            GL.glDrawArrays(GL.GL_TRIANGLES, 0, self.n_tr)
+        if o['siatka'] and self.n_l:
+            self._ui('d', u_tryb=2, u_punkty=0); self._addytywnie(False); GL.glLineWidth(2.4)
+            GL.glDrawArrays(GL.GL_LINES, 0, self.n_l); GL.glLineWidth(1.0)
+        self._ui('d', u_tryb=3, u_punkty=3, u_rozm=float(o['rozm_cz']), u_kol=(1.0, 0.85, 0.3, 1.0)); self._addytywnie(False)
+        GL.glDrawArrays(GL.GL_POINTS, 0, 1)
+
+
+# ====================================================================== rysunek techniczny reflektora (okienko 13)
+_SSBO_R = """
+layout(std430, binding = 0) readonly buffer BL { vec4 RL[]; };   // [2·n] wierzchołki odcinków: położenie, kolor
+layout(std430, binding = 1) readonly buffer BP { vec4 RP[]; };   // [2·m] punkty: położenie i rozmiar (w), kolor
+"""
+VS_R = "#version 430\n" + _SSBO_R + """
+uniform mat4 u_mvp; uniform int u_tryb, u_start;
+out vec4 v_k;
+void main() {
+    int v = gl_VertexID + u_start;
+    if (u_tryb == 0) { v_k = RL[2 * v + 1]; gl_Position = u_mvp * vec4(RL[2 * v].xyz, 1.0); }
+    else { v_k = RP[2 * v + 1]; gl_Position = u_mvp * vec4(RP[2 * v].xyz, 1.0); gl_PointSize = RP[2 * v].w; }
+}
+"""
+FS_R = "#version 430\n" + """
+uniform int u_punkty; in vec4 v_k; out vec4 o;
+void main() {
+    if (u_punkty == 0) { o = v_k; return; }
+    vec2 d = gl_PointCoord * 2.0 - 1.0; float r = length(d);
+    if (r > 1.0) discard;
+    o = vec4(r > 0.72 ? vec3(0.0) : v_k.rgb, v_k.a * (1.0 - smoothstep(0.9, 1.0, r)));
+}
+"""
+
+
+class SchematGPU(_ElementGPU):
+    """Odcinki i punkty rysunku technicznego (reflektor_rysunek.Schemat), grupowane według grubości linii."""
+    BUFORY = ('RL', 'RP')
+
+    def __init__(self):
+        super().__init__()
+        self.grupy = []
+        self.n_p = 0
+
+    def ustaw_schemat(self, S):
+        if not S.seg:
+            self.K = 0; self.update(); return
+        szer = np.array([s[3] for s in S.seg]); porz = np.argsort(szer, kind='stable')
+        L = np.zeros((len(S.seg), 2, 2, 4), np.float32)
+        for k, i in enumerate(porz):
+            a, b, kol, _ = S.seg[i]
+            L[k, 0, 0, :3], L[k, 1, 0, :3] = a, b
+            L[k, 0, 1] = L[k, 1, 1] = kol
+        self.ustaw_bufor('RL', L.reshape(-1, 4))
+        self.grupy = []
+        sz = np.round(szer[porz], 1)
+        for w in np.unique(sz):
+            idx = np.flatnonzero(sz == w)
+            self.grupy.append((int(idx[0]) * 2, int(len(idx)) * 2, float(w)))
+        P = np.zeros((max(len(S.pkt), 1), 2, 4), np.float32)
+        for k, (p, kol, r) in enumerate(S.pkt):
+            P[k, 0, :3] = p; P[k, 0, 3] = r; P[k, 1] = kol
+        self.ustaw_bufor('RP', P.reshape(-1, 4)); self.n_p = len(S.pkt)
+        self.K = 2
+        self.update()
+
+    def czysc(self):
+        self.K = 0
+        self.update()
+
+    def _programy(self):
+        return dict(r=_program(VS_R, FS_R))
+
+    def _rysuj(self, mvp):
+        GL.glUseProgram(self._prog['r'])
+        self._ui('r', u_mvp=mvp)
+        self._addytywnie(False)
+        for start, n, w in self.grupy:
+            self._ui('r', u_tryb=0, u_start=start, u_punkty=0); GL.glLineWidth(w)
+            GL.glDrawArrays(GL.GL_LINES, 0, n)
+        GL.glLineWidth(1.0)
+        if self.n_p:
+            self._ui('r', u_tryb=1, u_start=0, u_punkty=1)
+            GL.glDrawArrays(GL.GL_POINTS, 0, self.n_p)

@@ -1,0 +1,722 @@
+{
+  "question": "What research tracks the representations of fixed images or fixed tokens across training checkpoints of vision transformers, distinguishing training-time trajectories from trajectories across network depth?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'What research tracks the representations of fixed images or fixed tokens across training checkpoints of vision transformers, distinguishing training-time trajectories from trajectories across network depth?'.\n\n\n1. Understanding contrastive versus reconstructive self-supervised learning of Vision Transformers\n   ID: 21mm18km\n   Shashank Shekhar, Florian Bordes, Pascal Vincent\n   Abstract: While self-supervised learning on Vision Transformers (ViTs) has led to state-of-the-art results on image classification benchmarks, there has been little research on understanding the differences in representations that arise from different training methods. We address this by utilizing Centred Kernel Alignment for comparing neural representations learned by contrastive learning and reconstructive learning, two leading paradigms for self-supervised learning. We find that the representations learned by reconstructive learning are significantly dissimilar from representations learned by contrastive learning. We analyze these differences, and find that they start to arise early in the network depth and are driven mostly by the attention and normalization layers in a transformer block. We also find that these representational differences translate to class predictions and linear separability of classes in the pre-trained models. Finally, we analyze how fine-tuning affects these representational differences, and discover that a fine-tuned reconstructive model becomes more similar to a pre-trained contrastive model.\n\n2. Two-Scale Latent Dynamics for Recurrent-Depth Transformers\n   ID: 8v8ps45czmbz\n   2025 · Crisostomi, Donato, Rodolà, Emanuele\n   DOI: 10.48550/arxiv.2509.23314\n   Abstract: Recurrent-depth transformers scale test-time compute by iterating latent computations before emitting tokens. We study the geometry of these iterates and argue for a simple, \\emph{two-scale} operational picture: (i) within a looped block, updates act as \\emph{small-scale refinements}; (ii) across consecutive blocks, states undergo a \\emph{larger-scale drift}. Across checkpoints, our measurements show that loop steps become \\emph{smaller} and increasingly \\emph{orthogonal} to one another, indicating better local modeling of fine structure rather than merely pushing in a single direction. These dynamics motivate an early-exit mechanism based on the model's second-order difference in step-size, which we show is superior in terms of performance, stability and time-efficiency, when compared to the KL-divergence exit strategy of Geiping et al. and its naive first-order counterpart. \n\n3. Depth-Wise Representation Development Under Blockwise Self-Supervised Learning for Video Vision Transformers\n   ID: wxbzkq6n5uyr\n   2026 · Jonas Romer, Timo Dickscheid\n   DOI: 10.48550/arxiv.2601.09040\n   Abstract: End-to-end backpropagation couples all layers through a global error signal, enabling coordinated learning but requiring long-range credit assignment. Motivated by recent progress in blockwise self-supervised learning (BWSSL), we ask whether masked video transformers can be trained without end-to-end backpropagation. Applying BWSSL to masked video modeling remains relatively underexplored and must handle spatiotemporal context and long-range temporal structure. More broadly, analyses that compare BWSSL and end-to-end training in terms of learning dynamics and depth-wise representation development remain sparse. We apply blockwise learning to a masked autoencoding video vision transformer by partitioning the encoder into blocks, each of which is optimized with a local masked reconstruction loss. Across model sizes and partition granularities, training converges and yields representations close to matched end-to-end baselines under linear-probe and retrieval proxies. In order to compare intermediate representations, we analyze depth-wise decodability, inter-block similarity, and patch-level diagnostics. Blockwise training exposes higher-level structure earlier, while later blocks saturate and operate in a more geometry-preserving regime. It can also induce token-level shifts consistent with stronger early mixing that pooled metrics can miss. These findings point to late-block saturation and interface formation as contributors to the remaining gap. \n\n4. The Triangle of Similarity: A Multi-Faceted Framework for Comparing Neural Network Representations\n   ID: uz2sck3hpl0m\n   2026 · Olha Sirikova, Alvin Chan\n   DOI: 10.48550/arxiv.2601.17093\n   Abstract: Comparing neural network representations is essential for understanding and validating models in scientific applications. Existing methods, however, often provide a limited view. We propose the Triangle of Similarity, a framework that combines three complementary perspectives: static representational similarity (CKA/Procrustes), functional similarity (Linear Mode Connectivity or Predictive Similarity), and sparsity similarity (robustness under pruning). Analyzing a range of CNNs, Vision Transformers, and Vision-Language Models using both in-distribution (ImageNetV2) and out-of-distribution (CIFAR-10) testbeds, our initial findings suggest that: (1) architectural family is a primary determinant of representational similarity, forming distinct clusters; (2) CKA self-similarity and task accuracy are strongly correlated during pruning, though accuracy often degrades more sharply; and (3) for some model pairs, pruning appears to regularize representations, exposing a shared computational core. This framework offers a more holistic approach for assessing whether models have converged on similar internal mechanisms, providing a useful tool for model selection and analysis in scientific research. \n\n5. Do Vision Transformers See Like Convolutional Neural Networks\n   ID: 1gbqw0e36w\n   2021 · Maithra Raghu, Thomas Unterthiner, Simon Kornblith\n   Abstract: Convolutional neural networks (CNNs) have so far been the de-facto model for visual data. Recent work has shown that (Vision) Transformer models (ViT) can achieve comparable or even superior performance on image classification tasks. This raises a central question: how are Vision Transformers solving these tasks? Are they acting like convolutional networks, or learning entirely different visual representations? Analyzing the internal representation structure of ViTs and CNNs on image classification benchmarks, we find striking differences between the two architectures, such as ViT having more uniform representations across all layers. We explore how these differences arise, finding crucial roles played by self-attention, which enables early aggregation of global information, and ViT residual connections, which strongly propagate features from lower to higher layers. We study the ramifications for spatial localization, demonstrating ViTs successfully preserve input spatial information, with noticeable effects from different classification methods. Finally, we study the effect of (pretraining) dataset scale on intermediate features and transfer learning, and conclude with a discussion on connections to new architectures such as the MLP-Mixer.\n\n6. Do Vision Transformers See Like Convolutional Neural Networks\n   ID: 36xbksimz6\n   2021 · Maithra Raghu, Thomas Unterthiner, Simon Kornblith · arXiv: Computer Vision and Pattern Recognition\n   Abstract: Convolutional neural networks (CNNs) have so far been the de-facto model for visual data. Recent work has shown that (Vision) Transformer models (ViT) can achieve comparable or even superior performance on image classification tasks. This raises a central question: how are Vision Transformers solving these tasks? Are they acting like convolutional networks, or learning entirely different visual representations? Analyzing the internal representation structure of ViTs and CNNs on image classification benchmarks, we find striking differences between the two architectures, such as ViT having more uniform representations across all layers. We explore how these differences arise, finding crucial roles played by self-attention, which enables early aggregation of global information, and ViT residual connections, which strongly propagate features from lower to higher layers. We study the ramifications for spatial localization, demonstrating ViTs successfully preserve input spatial information, with noticeable effects from different classification methods. Finally, we study the effect of (pretraining) dataset scale on intermediate features and transfer learning, and conclude with a discussion on connections to new architectures such as the MLP-Mixer.\n\n7. Class Separation Dynamics in Vision Transformers: An Empirical Study\n   ID: fs40z9mf736n\n   2025 · Dara Varam, Lujain Khalil, Mahmoud Darwish · IEEE Access\n   DOI: 10.1109/access.2025.3602733\n   Abstract: Vision Transformers (ViTs) have emerged in recent years as a powerful architecture for image classification tasks and beyond. However, due to their black-box nature, our understanding of their learning dynamics is minimal. In this work, we study ViT learning dynamics through the lens of class separation, tracking inter- and intra-class structure, propagating from the patch-embedding layer to the classifier head. Across four datasets and extensive hyper-parameter configurations, we characterize two primary regularities. Firstly, we observe a layer-wise consistency, where separation fuzziness spikes between the input projection and the first transformer block, then decays exponentially with depth. Secondly, provided that the first law holds, fuzziness at the final layer also decays exponentially as a function of the training epochs. The persistence of these laws across datasets and hyper-parameters suggests an intrinsic relationship to ViT training. Our study supplies a quantitative foundation for interpreting the design of transformer-based vision models. Code and reproducibility scripts are available through https://github.com/DaraVaram/vit-data-separation\n\n8. Discrete Representations Strengthen Vision Transformer Robustness\n   ID: n8fw5r6qag\n   2021 · Chengzhi Mao, Lu Jiang, Mostafa Dehghani · arXiv: Computer Vision and Pattern Recognition\n   Abstract: Vision Transformer (ViT) is emerging as the state-of-the-art architecture for image recognition. While recent studies suggest that ViTs are more robust than their convolutional counterparts, our experiments find that ViTs are overly reliant on local features (e.g., nuisances and texture) and fail to make adequate use of global context (e.g., shape and structure). As a result, ViTs fail to generalize to out-of-distribution, real-world data. To address this deficiency, we present a simple and effective architecture modification to ViT's input layer by adding discrete tokens produced by a vector-quantized encoder. Different from the standard continuous pixel tokens, discrete tokens are invariant under small perturbations and contain less information individually, which promote ViTs to learn global information that is invariant. Experimental results demonstrate that adding discrete representation on four architecture variants strengthens ViT robustness by up to 12% across seven ImageNet robustness benchmarks while maintaining the performance on ImageNet.\n\n9. How Does Perfect Fitting Affect Representation Learning? On the Training\n  Dynamics of Representations in Deep Neural Networks\n   ID: 274joddn7x\n   2024 · Yuval Sharon, Yehuda Dar\n   DOI: 10.48550/arxiv.2405.17377\n   Abstract: In this paper, we elucidate how representations in deep neural networks (DNNs) evolve during training. We focus on overparameterized learning settings where the training continues much after the trained DNN starts to perfectly fit its training data. We examine the evolution of learned representations along the entire training process, including its perfect fitting regime, and with respect to the epoch-wise double descent phenomenon. We explore the representational similarity of DNN layers, each layer with respect to its own representations throughout the training process. For this, we use two similarity metrics: (1) The centered kernel alignment (CKA) similarity; (2) Similarity of decision regions of linear classifier probes that we train for the DNN layers. Our extensive experiments discover training dynamics patterns that can emerge in layers depending on the relative layer-depth, DNN width, and architecture. We show that representations at the deeper layers evolve much more in the training when an epoch-wise double descent occurs. For Vision Transformer, we show that the perfect fitting threshold creates a transition in the evolution of representations across all the encoder blocks. \n\n10. Rethinking Vision Transformer Depth via Structural Reparameterization\n   ID: 97ipbtyzdkb1\n   2025 · Chengwei Zhou, Vipin Chaudhary, Gourav Datta · arXiv.org\n   DOI: 10.48550/arxiv.2511.19718\n   Abstract: The computational overhead of Vision Transformers in practice stems fundamentally from their deep architectures, yet existing acceleration strategies have primarily targeted algorithmic-level optimizations such as token pruning and attention speedup. This leaves an underexplored research question: can we reduce the number of stacked transformer layers while maintaining comparable representational capacity? To answer this, we propose a branch-based structural reparameterization technique that operates during the training phase. Our approach leverages parallel branches within transformer blocks that can be systematically consolidated into streamlined single-path models suitable for inference deployment. The consolidation mechanism works by gradually merging branches at the entry points of nonlinear components, enabling both feed-forward networks (FFN) and multi-head self-attention (MHSA) modules to undergo exact mathematical reparameterization without inducing approximation errors at test time. When applied to ViT-Tiny, the framework successfully reduces the original 12-layer architecture to 6, 4, or as few as 3 layers while maintaining classification accuracy on ImageNet-1K. The resulting compressed models achieve inference speedups of up to 37% on mobile CPU platforms. Our findings suggest that the conventional wisdom favoring extremely deep transformer stacks may be unnecessarily restrictive, and point toward new opportunities for constructing efficient vision transformers."
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "What research tracks the representations of fixed images or fixed tokens across training checkpoints of vision transformers, distinguishing training-time trajectories from trajectories across network depth?",
+        "papers": [
+          {
+            "id": 4002999632,
+            "title": "Understanding contrastive versus reconstructive self-supervised learning of Vision Transformers",
+            "is_archived": false,
+            "full_slug": "understanding-contrastive-versus-reconstructive-self-21mm18km",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": false,
+            "publication_type": null,
+            "doi": null,
+            "unique_id": "21mm18km",
+            "abstract": "While self-supervised learning on Vision Transformers (ViTs) has led to state-of-the-art results on image classification benchmarks, there has been little research on understanding the differences in representations that arise from different training methods. We address this by utilizing Centred Kernel Alignment for comparing neural representations learned by contrastive learning and reconstructive learning, two leading paradigms for self-supervised learning. We find that the representations learned by reconstructive learning are significantly dissimilar from representations learned by contrastive learning. We analyze these differences, and find that they start to arise early in the network depth and are driven mostly by the attention and normalization layers in a transformer block. We also find that these representational differences translate to class predictions and linear separability of classes in the pre-trained models. Finally, we analyze how fine-tuning affects these representational differences, and discover that a fine-tuned reconstructive model becomes more similar to a pre-trained contrastive model.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Shashank Shekhar",
+                  "id": 2053249860,
+                  "slug": "shashank-shekhar",
+                  "unique_id": "1lxqfd9lnj",
+                  "full_slug": "shashank-shekhar-1lxqfd9lnj"
+                },
+                {
+                  "display_name": "Florian Bordes",
+                  "id": 2604896517,
+                  "slug": "florian-bordes",
+                  "unique_id": "19p6yzsqkb",
+                  "full_slug": "florian-bordes-19p6yzsqkb"
+                },
+                {
+                  "display_name": "Pascal Vincent",
+                  "id": 2397241174,
+                  "slug": "pascal-vincent",
+                  "unique_id": "1cagq9vkjv",
+                  "full_slug": "pascal-vincent-1cagq9vkjv"
+                },
+                {
+                  "display_name": "Ari S. Morcos",
+                  "id": 2787479181,
+                  "slug": "ari-s-morcos",
+                  "unique_id": "2nd7g60bij",
+                  "full_slug": "ari-s-morcos-2nd7g60bij"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "The authors used centred kernel alignment to compare neural representations learned by contrastive learning and reconstructive learning, two leading paradigms for self-supervised learning, and found that the representations obtained by reconstructive and contrastive methods are significantly dissimilar.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4092758655,
+            "title": "Two-Scale Latent Dynamics for Recurrent-Depth Transformers",
+            "is_archived": false,
+            "full_slug": "two-scale-latent-dynamics-for-recurrent-depth-transformers-8v8ps45czmbz",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-09-30T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2509.23314",
+            "unique_id": "8v8ps45czmbz",
+            "abstract": "Recurrent-depth transformers scale test-time compute by iterating latent computations before emitting tokens. We study the geometry of these iterates and argue for a simple, \\emph{two-scale} operational picture: (i) within a looped block, updates act as \\emph{small-scale refinements}; (ii) across consecutive blocks, states undergo a \\emph{larger-scale drift}. Across checkpoints, our measurements show that loop steps become \\emph{smaller} and increasingly \\emph{orthogonal} to one another, indicating better local modeling of fine structure rather than merely pushing in a single direction. These dynamics motivate an early-exit mechanism based on the model's second-order difference in step-size, which we show is superior in terms of performance, stability and time-efficiency, when compared to the KL-divergence exit strategy of Geiping et al. and its naive first-order counterpart. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Crisostomi, Donato",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Rodolà, Emanuele",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/two-scale-latent-dynamics-for-recurrent-depth-transformers-8v8ps45czmbz.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2509.23314v1.pdf",
+                  "https://arxiv.org/pdf/2509.23314"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4110349231,
+            "title": "Depth-Wise Representation Development Under Blockwise Self-Supervised Learning for Video Vision Transformers",
+            "is_archived": false,
+            "full_slug": "depth-wise-representation-development-under-blockwise-self-wxbzkq6n5uyr",
+            "journal": null,
+            "conference_series": null,
+            "date": "2026-01-14T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2601.09040",
+            "unique_id": "wxbzkq6n5uyr",
+            "abstract": "End-to-end backpropagation couples all layers through a global error signal, enabling coordinated learning but requiring long-range credit assignment. Motivated by recent progress in blockwise self-supervised learning (BWSSL), we ask whether masked video transformers can be trained without end-to-end backpropagation. Applying BWSSL to masked video modeling remains relatively underexplored and must handle spatiotemporal context and long-range temporal structure. More broadly, analyses that compare BWSSL and end-to-end training in terms of learning dynamics and depth-wise representation development remain sparse. We apply blockwise learning to a masked autoencoding video vision transformer by partitioning the encoder into blocks, each of which is optimized with a local masked reconstruction loss. Across model sizes and partition granularities, training converges and yields representations close to matched end-to-end baselines under linear-probe and retrieval proxies. In order to compare intermediate representations, we analyze depth-wise decodability, inter-block similarity, and patch-level diagnostics. Blockwise training exposes higher-level structure earlier, while later blocks saturate and operate in a more geometry-preserving regime. It can also induce token-level shifts consistent with stronger early mixing that pooled metrics can miss. These findings point to late-block saturation and interface formation as contributors to the remaining gap. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Jonas Romer",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Timo Dickscheid",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study explores blockwise self-supervised learning for video vision transformers, partitioning the encoder into blocks to optimize local masked reconstruction loss, and finds that blockwise training exposes higher-level structure earlier and induces token-level shifts.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4111390140,
+            "title": "The Triangle of Similarity: A Multi-Faceted Framework for Comparing Neural Network Representations",
+            "is_archived": false,
+            "full_slug": "the-triangle-of-similarity-a-multi-faceted-framework-for-uz2sck3hpl0m",
+            "journal": null,
+            "conference_series": null,
+            "date": "2026-01-23T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2601.17093",
+            "unique_id": "uz2sck3hpl0m",
+            "abstract": "Comparing neural network representations is essential for understanding and validating models in scientific applications. Existing methods, however, often provide a limited view. We propose the Triangle of Similarity, a framework that combines three complementary perspectives: static representational similarity (CKA/Procrustes), functional similarity (Linear Mode Connectivity or Predictive Similarity), and sparsity similarity (robustness under pruning). Analyzing a range of CNNs, Vision Transformers, and Vision-Language Models using both in-distribution (ImageNetV2) and out-of-distribution (CIFAR-10) testbeds, our initial findings suggest that: (1) architectural family is a primary determinant of representational similarity, forming distinct clusters; (2) CKA self-similarity and task accuracy are strongly correlated during pruning, though accuracy often degrades more sharply; and (3) for some model pairs, pruning appears to regularize representations, exposing a shared computational core. This framework offers a more holistic approach for assessing whether models have converged on similar internal mechanisms, providing a useful tool for model selection and analysis in scientific research. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Olha Sirikova",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Alvin Chan",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study proposes the Triangle of Similarity framework, combining static, functional, and sparsity perspectives to compare neural network representations, revealing architectural family as a primary determinant of similarity and pruning's impact on model convergence.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3212880592,
+            "title": "Do Vision Transformers See Like Convolutional Neural Networks",
+            "is_archived": false,
+            "full_slug": "do-vision-transformers-see-like-convolutional-neural-1gbqw0e36w",
+            "journal": null,
+            "conference_series": {
+              "display_name": "Neural Information Processing Systems",
+              "id": 1127325140,
+              "slug": "neural-information-processing-systems",
+              "unique_id": "1mq696w2",
+              "full_slug": "neural-information-processing-systems-1mq696w2"
+            },
+            "date": "2021-12-06T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Proceedings Article",
+            "doi": null,
+            "unique_id": "1gbqw0e36w",
+            "abstract": "Convolutional neural networks (CNNs) have so far been the de-facto model for visual data. Recent work has shown that (Vision) Transformer models (ViT) can achieve comparable or even superior performance on image classification tasks. This raises a central question: how are Vision Transformers solving these tasks? Are they acting like convolutional networks, or learning entirely different visual representations? Analyzing the internal representation structure of ViTs and CNNs on image classification benchmarks, we find striking differences between the two architectures, such as ViT having more uniform representations across all layers. We explore how these differences arise, finding crucial roles played by self-attention, which enables early aggregation of global information, and ViT residual connections, which strongly propagate features from lower to higher layers. We study the ramifications for spatial localization, demonstrating ViTs successfully preserve input spatial information, with noticeable effects from different classification methods. Finally, we study the effect of (pretraining) dataset scale on intermediate features and transfer learning, and conclude with a discussion on connections to new architectures such as the MLP-Mixer.",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Maithra Raghu",
+                  "id": 2423978852,
+                  "slug": "maithra-raghu",
+                  "unique_id": "4n3jgj5uaf",
+                  "full_slug": "maithra-raghu-4n3jgj5uaf",
+                  "affiliation_full_slug": "cornell-university-azbw8aij"
+                },
+                {
+                  "display_name": "Thomas Unterthiner",
+                  "id": 94009313,
+                  "slug": "thomas-unterthiner",
+                  "unique_id": "4tjc694y90",
+                  "full_slug": "thomas-unterthiner-4tjc694y90",
+                  "affiliation_full_slug": "google-356oek4b"
+                },
+                {
+                  "display_name": "Simon Kornblith",
+                  "id": 1360729579,
+                  "slug": "simon-kornblith",
+                  "unique_id": "17jjanfp3w",
+                  "full_slug": "simon-kornblith-17jjanfp3w",
+                  "affiliation_full_slug": "google-356oek4b"
+                },
+                {
+                  "display_name": "Chiyuan Zhang",
+                  "id": 2238215317,
+                  "slug": "chiyuan-zhang",
+                  "unique_id": "333bj9xyci",
+                  "full_slug": "chiyuan-zhang-333bj9xyci",
+                  "affiliation_full_slug": "google-356oek4b"
+                },
+                {
+                  "display_name": "Alexey Dosovitskiy",
+                  "id": 1799886526,
+                  "slug": "alexey-dosovitskiy",
+                  "unique_id": "1kipzjz8w7",
+                  "full_slug": "alexey-dosovitskiy-1kipzjz8w7",
+                  "affiliation_full_slug": "google-356oek4b"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Cornell University",
+                  "city": "Ithaca",
+                  "region": "New York",
+                  "country": "United States",
+                  "id": 205783295,
+                  "slug": "cornell-university",
+                  "unique_id": "azbw8aij",
+                  "full_slug": "cornell-university-azbw8aij"
+                },
+                {
+                  "display_name": "Google",
+                  "city": "Mountain View",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 1291425158,
+                  "slug": "google",
+                  "unique_id": "356oek4b",
+                  "full_slug": "google-356oek4b"
+                }
+              ]
+            },
+            "fulltext_url": "/pdf/do-vision-transformers-see-like-convolutional-neural-1gbqw0e36w.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf",
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://dblp.uni-trier.de/db/journals/corr/corr2108.html#abs-2108-08810",
+                  "https://papers.nips.cc/paper/2021/hash/652cf38361a209088302ba2b8b7f51e0-Abstract.html"
+                ],
+                "Pdf": [
+                  "https://proceedings.neurips.cc/paper/2021/file/652cf38361a209088302ba2b8b7f51e0-Paper.pdf",
+                  "https://openreview.net/pdf?id=R-616EWWKF5"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 1
+              }
+            },
+            "tldr": "In this article, the internal representation structure of ViTs and convolutional neural networks (CNNs) is compared, and it is shown that ViTs have more uniform representations across all layers.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3195830874,
+            "title": "Do Vision Transformers See Like Convolutional Neural Networks",
+            "is_archived": false,
+            "full_slug": "do-vision-transformers-see-like-convolutional-neural-36xbksimz6",
+            "journal": {
+              "display_name": "arXiv: Computer Vision and Pattern Recognition",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2597175965,
+              "slug": "arxiv-computer-vision-and-pattern-recognition",
+              "unique_id": "mt7czp8d",
+              "full_slug": "arxiv-computer-vision-and-pattern-recognition-mt7czp8d"
+            },
+            "conference_series": null,
+            "date": "2021-08-19T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "36xbksimz6",
+            "abstract": "Convolutional neural networks (CNNs) have so far been the de-facto model for visual data. Recent work has shown that (Vision) Transformer models (ViT) can achieve comparable or even superior performance on image classification tasks. This raises a central question: how are Vision Transformers solving these tasks? Are they acting like convolutional networks, or learning entirely different visual representations? Analyzing the internal representation structure of ViTs and CNNs on image classification benchmarks, we find striking differences between the two architectures, such as ViT having more uniform representations across all layers. We explore how these differences arise, finding crucial roles played by self-attention, which enables early aggregation of global information, and ViT residual connections, which strongly propagate features from lower to higher layers. We study the ramifications for spatial localization, demonstrating ViTs successfully preserve input spatial information, with noticeable effects from different classification methods. Finally, we study the effect of (pretraining) dataset scale on intermediate features and transfer learning, and conclude with a discussion on connections to new architectures such as the MLP-Mixer.",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Maithra Raghu",
+                  "id": 2423978852,
+                  "slug": "maithra-raghu",
+                  "unique_id": "4n3jgj5uaf",
+                  "full_slug": "maithra-raghu-4n3jgj5uaf",
+                  "affiliation_full_slug": "cornell-university-azbw8aij"
+                },
+                {
+                  "display_name": "Thomas Unterthiner",
+                  "id": 94009313,
+                  "slug": "thomas-unterthiner",
+                  "unique_id": "4tjc694y90",
+                  "full_slug": "thomas-unterthiner-4tjc694y90",
+                  "affiliation_full_slug": "google-356oek4b"
+                },
+                {
+                  "display_name": "Simon Kornblith",
+                  "id": 1360729579,
+                  "slug": "simon-kornblith",
+                  "unique_id": "17jjanfp3w",
+                  "full_slug": "simon-kornblith-17jjanfp3w",
+                  "affiliation_full_slug": "google-356oek4b"
+                },
+                {
+                  "display_name": "Chiyuan Zhang",
+                  "id": 2238215317,
+                  "slug": "chiyuan-zhang",
+                  "unique_id": "333bj9xyci",
+                  "full_slug": "chiyuan-zhang-333bj9xyci",
+                  "affiliation_full_slug": "google-356oek4b"
+                },
+                {
+                  "display_name": "Alexey Dosovitskiy",
+                  "id": 1799886526,
+                  "slug": "alexey-dosovitskiy",
+                  "unique_id": "1kipzjz8w7",
+                  "full_slug": "alexey-dosovitskiy-1kipzjz8w7",
+                  "affiliation_full_slug": "google-356oek4b"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Cornell University",
+                  "city": "Ithaca",
+                  "region": "New York",
+                  "country": "United States",
+                  "id": 205783295,
+                  "slug": "cornell-university",
+                  "unique_id": "azbw8aij",
+                  "full_slug": "cornell-university-azbw8aij"
+                },
+                {
+                  "display_name": "Google",
+                  "city": "Mountain View",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 1291425158,
+                  "slug": "google",
+                  "unique_id": "356oek4b",
+                  "full_slug": "google-356oek4b"
+                }
+              ]
+            },
+            "fulltext_url": "https://arxiv.org/pdf/2108.08810.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://arxiv.org/abs/2108.08810",
+                  "http://ui.adsabs.harvard.edu/abs/2021arXiv210808810R/abstract"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 12
+              }
+            },
+            "tldr": "In this paper, the internal representation structure of ViTs and convolutional neural networks (CNNs) is compared, and it is shown that ViTs have more uniform representations across all layers.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4072479654,
+            "title": "Class Separation Dynamics in Vision Transformers: An Empirical Study",
+            "is_archived": false,
+            "full_slug": "class-separation-dynamics-in-vision-transformers-an-fs40z9mf736n",
+            "journal": {
+              "display_name": "IEEE Access",
+              "official_page": "http://ieeexplore.ieee.org/servlet/opac?punumber=6287639",
+              "issn": "2169-3536",
+              "alias": [
+                "IEEE access : practical innovations, open solutions"
+              ],
+              "id": 2485537415,
+              "slug": "ieee-access",
+              "unique_id": "5c9gw2v4",
+              "full_slug": "ieee-access-5c9gw2v4"
+            },
+            "conference_series": null,
+            "date": "2025-01-01T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.1109/access.2025.3602733",
+            "unique_id": "fs40z9mf736n",
+            "abstract": "Vision Transformers (ViTs) have emerged in recent years as a powerful architecture for image classification tasks and beyond. However, due to their black-box nature, our understanding of their learning dynamics is minimal. In this work, we study ViT learning dynamics through the lens of class separation, tracking inter- and intra-class structure, propagating from the patch-embedding layer to the classifier head. Across four datasets and extensive hyper-parameter configurations, we characterize two primary regularities. Firstly, we observe a layer-wise consistency, where separation fuzziness spikes between the input projection and the first transformer block, then decays exponentially with depth. Secondly, provided that the first law holds, fuzziness at the final layer also decays exponentially as a function of the training epochs. The persistence of these laws across datasets and hyper-parameters suggests an intrinsic relationship to ViT training. Our study supplies a quantitative foundation for interpreting the design of transformer-based vision models. Code and reproducibility scripts are available through https://github.com/DaraVaram/vit-data-separation",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Dara Varam",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Lujain Khalil",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Mahmoud Darwish",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Mohamed I. AlHajri",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study examines Vision Transformer (ViT) learning dynamics through class separation analysis, revealing layer-wise consistency and exponential decay of separation fuzziness with depth and training epochs, across four datasets and hyper-parameter configurations.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3217023900,
+            "title": "Discrete Representations Strengthen Vision Transformer Robustness",
+            "is_archived": false,
+            "full_slug": "discrete-representations-strengthen-vision-transformer-n8fw5r6qag",
+            "journal": {
+              "display_name": "arXiv: Computer Vision and Pattern Recognition",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2597175965,
+              "slug": "arxiv-computer-vision-and-pattern-recognition",
+              "unique_id": "mt7czp8d",
+              "full_slug": "arxiv-computer-vision-and-pattern-recognition-mt7czp8d"
+            },
+            "conference_series": null,
+            "date": "2021-11-20T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "n8fw5r6qag",
+            "abstract": "Vision Transformer (ViT) is emerging as the state-of-the-art architecture for image recognition. While recent studies suggest that ViTs are more robust than their convolutional counterparts, our experiments find that ViTs are overly reliant on local features (e.g., nuisances and texture) and fail to make adequate use of global context (e.g., shape and structure). As a result, ViTs fail to generalize to out-of-distribution, real-world data. To address this deficiency, we present a simple and effective architecture modification to ViT's input layer by adding discrete tokens produced by a vector-quantized encoder. Different from the standard continuous pixel tokens, discrete tokens are invariant under small perturbations and contain less information individually, which promote ViTs to learn global information that is invariant. Experimental results demonstrate that adding discrete representation on four architecture variants strengthens ViT robustness by up to 12% across seven ImageNet robustness benchmarks while maintaining the performance on ImageNet.",
+            "authors": {
+              "total": 6,
+              "data": [
+                {
+                  "display_name": "Chengzhi Mao",
+                  "id": 2903726649,
+                  "slug": "chengzhi-mao",
+                  "unique_id": "2wxh6hranr",
+                  "full_slug": "chengzhi-mao-2wxh6hranr"
+                },
+                {
+                  "display_name": "Lu Jiang",
+                  "id": 3214919996,
+                  "slug": "lu-jiang",
+                  "unique_id": "45a4fjnolp",
+                  "full_slug": "lu-jiang-45a4fjnolp"
+                },
+                {
+                  "display_name": "Mostafa Dehghani",
+                  "id": 2112331270,
+                  "slug": "mostafa-dehghani",
+                  "unique_id": "40jmmx291e",
+                  "full_slug": "mostafa-dehghani-40jmmx291e"
+                },
+                {
+                  "display_name": "Carl Vondrick",
+                  "id": 2024800887,
+                  "slug": "carl-vondrick",
+                  "unique_id": "2afm8a3y21",
+                  "full_slug": "carl-vondrick-2afm8a3y21"
+                },
+                {
+                  "display_name": "Rahul Sukthankar",
+                  "id": 1436821675,
+                  "slug": "rahul-sukthankar",
+                  "unique_id": "hhv6gfk0jl",
+                  "full_slug": "rahul-sukthankar-hhv6gfk0jl"
+                },
+                {
+                  "display_name": "Irfan Essa",
+                  "id": 2799030117,
+                  "slug": "irfan-essa",
+                  "unique_id": "ilmihbr390",
+                  "full_slug": "irfan-essa-ilmihbr390"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "http://arxiv.org/pdf/2111.10493.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html",
+                "Others"
+              ],
+              "data": {
+                "Html": [
+                  "https://arxiv.org/abs/2111.10493",
+                  "https://dblp.uni-trier.de/db/journals/corr/corr2111.html#abs-2111-10493"
+                ],
+                "Others": [
+                  "https://arxiv.org/pdf/2111.10493.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 8
+              }
+            },
+            "tldr": "In this paper, the authors propose to add discrete tokens produced by a vector-quantized encoder to the input layer of the vision transformer to improve the robustness of the transform.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4037572624,
+            "title": "How Does Perfect Fitting Affect Representation Learning? On the Training\n  Dynamics of Representations in Deep Neural Networks",
+            "is_archived": false,
+            "full_slug": "how-does-perfect-fitting-affect-representation-learning-on-274joddn7x",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-05-27T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Preprint",
+            "doi": "10.48550/arxiv.2405.17377",
+            "unique_id": "274joddn7x",
+            "abstract": "In this paper, we elucidate how representations in deep neural networks (DNNs) evolve during training. We focus on overparameterized learning settings where the training continues much after the trained DNN starts to perfectly fit its training data. We examine the evolution of learned representations along the entire training process, including its perfect fitting regime, and with respect to the epoch-wise double descent phenomenon. We explore the representational similarity of DNN layers, each layer with respect to its own representations throughout the training process. For this, we use two similarity metrics: (1) The centered kernel alignment (CKA) similarity; (2) Similarity of decision regions of linear classifier probes that we train for the DNN layers. Our extensive experiments discover training dynamics patterns that can emerge in layers depending on the relative layer-depth, DNN width, and architecture. We show that representations at the deeper layers evolve much more in the training when an epoch-wise double descent occurs. For Vision Transformer, we show that the perfect fitting threshold creates a transition in the evolution of representations across all the encoder blocks. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Yuval Sharon",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yehuda Dar",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/how-does-perfect-fitting-affect-representation-learning-on-274joddn7x.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2405.17377"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "How perfect fitting affects representation learning on training dynamics of representations in deep neural networks. The study explores the evolution of representations in DNNs during training, including perfect fitting and double descent phenomena. The results reveal patterns in the training dynamics of representations across different layers and architectures.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4112273569,
+            "title": "Rethinking Vision Transformer Depth via Structural Reparameterization",
+            "is_archived": false,
+            "full_slug": "rethinking-vision-transformer-depth-via-structural-97ipbtyzdkb1",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-11-24T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2511.19718",
+            "unique_id": "97ipbtyzdkb1",
+            "abstract": "The computational overhead of Vision Transformers in practice stems fundamentally from their deep architectures, yet existing acceleration strategies have primarily targeted algorithmic-level optimizations such as token pruning and attention speedup. This leaves an underexplored research question: can we reduce the number of stacked transformer layers while maintaining comparable representational capacity? To answer this, we propose a branch-based structural reparameterization technique that operates during the training phase. Our approach leverages parallel branches within transformer blocks that can be systematically consolidated into streamlined single-path models suitable for inference deployment. The consolidation mechanism works by gradually merging branches at the entry points of nonlinear components, enabling both feed-forward networks (FFN) and multi-head self-attention (MHSA) modules to undergo exact mathematical reparameterization without inducing approximation errors at test time. When applied to ViT-Tiny, the framework successfully reduces the original 12-layer architecture to 6, 4, or as few as 3 layers while maintaining classification accuracy on ImageNet-1K. The resulting compressed models achieve inference speedups of up to 37% on mobile CPU platforms. Our findings suggest that the conventional wisdom favoring extremely deep transformer stacks may be unnecessarily restrictive, and point toward new opportunities for constructing efficient vision transformers.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Chengwei Zhou",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Vipin Chaudhary",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Gourav Datta",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "https://export.arxiv.org/pdf/2511.19718v1.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers propose a structural reparameterization technique to reduce Vision Transformer depth while maintaining representational capacity, achieving 37% inference speedup on mobile CPUs by compressing 12-layer ViT-Tiny to 3-6 layers with minimal accuracy loss.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

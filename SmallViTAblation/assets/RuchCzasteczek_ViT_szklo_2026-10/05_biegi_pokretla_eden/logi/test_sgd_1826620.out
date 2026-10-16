@@ -1,0 +1,20 @@
+pokrętła test_sgd: lr 0.1, epoki 2, manifest MANIFEST_35000.jsonl, sondy - n=24, extra: --proba --rzut rp --opt sgd --zapis f32 --warstwy --warstwy_n 4, analizy -, zostaw 1, warstwy 0, węzeł hopper-2, GPU NVIDIA H200, start Sun Oct 11 12:18:01 AM CEST 2026
+wolna kwota: 28.1 GB
+walidacja: 200 klatek (usunięto 0 wspólnych z treningiem)
+klatki: 512 z 116 archiwów w 4 s
+512 klatek, 2 epok, 32 kroków; końce epok: [16, 32]; zapisów wag: 9 (~0.1 GB)
+model vit (2926493 parametrów), sgd lr 0.1 wd 0.0 pęd 0.9, paczka 32
+Traceback (most recent call last):
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/trening_pokretla.py", line 331, in <module>
+    main()
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/trening_pokretla.py", line 306, in main
+    obs.start(u)
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/obserwator_rp.py", line 77, in start
+    json.dump(self._opis_sond(dict(warstwa=j, warstw=len(ws), sondy=self.sondy[:self.warstwy_n], pelne=[],
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/obserwator_rp.py", line 37, in _opis_sond
+    return dict(sondy=self.sondy, pelne=self.pelne, gesto_do=self.gesto_do, co_pozniej=self.co_pozniej, pelne_do=self.pelne_do,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: dict() got multiple values for keyword argument 'sondy'
+26K	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/test_sgd
+      /mnt/evafs  171.9G    200G    220G       -  168047  200000  220000       -

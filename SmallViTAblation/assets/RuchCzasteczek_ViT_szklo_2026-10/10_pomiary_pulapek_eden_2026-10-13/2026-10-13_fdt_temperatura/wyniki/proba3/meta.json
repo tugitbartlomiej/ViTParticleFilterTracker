@@ -1,0 +1,97 @@
+{
+ "opis": "FDT wzdłuż kierunku szumu (2026-10-13): czy token ma pułapkę tam, gdzie pcha go szum paczek?\n\nWyniki fal 1–2: odpowiedź χ na stałe pole w losowym kierunku (i osobno w widocznej i niewidocznej podprzestrzeni fc2) rośnie\nliniowo bez nasycenia, a przemieszczenie z szumu się nasyca; T_eff = Δ/χ spada jak ~1/t. W układzie liniowym ta sama siła zwrotna\ndziała na przesunięcie z szumu i od pola, więc szum musi omijać kierunki płaskie (kowariancja szumu ≈ hesjan/Fisher: temperatura\nkierunku ∝ jego sztywność). Test: pole wzdłuż głównego kierunku szumu każdego tokenu (S) wobec losowego (L).\nPrzewidywanie hipotezy: χ_S nasyca się (pułapka), T_S prawie stałe; χ_L rośnie liniowo, T_L → 0.\n\nFaza wstępna (--pilot kroków, strumienie paczek C i D — inne niż A i B pomiaru, żeby kierunek nie był dopasowany do szumu pomiaru):\ndwie repliki bez pola, różnica z_C − z_D co krok → SVD na token (kroki × 768) → ε_S,j = pierwszy prawy wektor osobliwy\n(znak losowy), udział pierwszej składowej w wariancji szumu zapisany. Potem wszystkie repliki wracają do stanu t_w.\nRepliki pomiaru: a0, b0, ±S, ±3S, ±L (L: losowy Gauss na token, jak fala 1).\n",
+ "stan": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/dlugi_lr_5e-4_rp/pelny/stan_e12.pt",
+ "bieg": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/dlugi_lr_5e-4_rp",
+ "krok_tw": 13128,
+ "lr": 0.0005,
+ "beta1": 0.9,
+ "wd": null,
+ "h0": {
+  "S": 0.001148084749543505,
+  "L": 0.009134396207141534
+ },
+ "frac": {
+  "S": 0.0003,
+  "L": 0.0003
+ },
+ "grad_strata": 3.6874284744262695,
+ "grad_pol_h1": {
+  "S": 0.9635425806045532,
+  "L": 0.12110581994056702
+ },
+ "sondy": [
+  144,
+  448,
+  922,
+  2741,
+  2786,
+  3200,
+  3438,
+  3698,
+  4122,
+  5105,
+  5425,
+  5493
+ ],
+ "pilot": 20,
+ "udzial1_szumu_sr": 0.7621073126792908,
+ "cos_S_L": 0.028756380081176758,
+ "udzial_S_widoczna": 0.46216198801994324,
+ "kroki": 40,
+ "gesto": 20,
+ "co": 5,
+ "ziarno": 1013,
+ "plan": [
+  [
+   "a0",
+   null,
+   0.0,
+   "A"
+  ],
+  [
+   "b0",
+   null,
+   0.0,
+   "B"
+  ],
+  [
+   "pS",
+   "S",
+   1.0,
+   "A"
+  ],
+  [
+   "mS",
+   "S",
+   -1.0,
+   "A"
+  ],
+  [
+   "pS3",
+   "S",
+   3.0,
+   "A"
+  ],
+  [
+   "mS3",
+   "S",
+   -3.0,
+   "A"
+  ],
+  [
+   "pL",
+   "L",
+   1.0,
+   "A"
+  ],
+  [
+   "mL",
+   "L",
+   -1.0,
+   "A"
+  ]
+ ],
+ "proba": true,
+ "gpu": "NVIDIA H200 MIG 3g.71gb",
+ "czas_s": 42
+}

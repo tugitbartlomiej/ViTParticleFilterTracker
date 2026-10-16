@@ -1,0 +1,694 @@
+{
+  "schema_version": 1,
+  "protocol_version": "1.2",
+  "campaign_id": "vit_mechanism_20261016",
+  "status": "draft_specification_not_runnable",
+  "execution_authorized_by_this_file": false,
+  "description": "Kontrakt do implementacji runnera. Null oznacza brak zamrożonej decyzji; nie uruchamiać confirmation z nieuzupełnionymi wymaganymi polami.",
+  "authoritative_protocol": "PROTOKOL.md",
+  "test_catalog": "TESTY.json",
+  "output_root": "F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/outputs",
+  "lock": {
+    "timestamp": null,
+    "config_sha256": null,
+    "code_commit": null,
+    "source_snapshot_sha256": null,
+    "analysis_sha256": null,
+    "review_passed": null
+  },
+  "model": {
+    "source": "../maly_vit_od_zera_35000_21epok_20261009/kod/model.py",
+    "source_sha256": null,
+    "input_width": 480,
+    "input_height": 320,
+    "token_count": 600,
+    "residual_dim": 192,
+    "mlp_hidden_dim": 768,
+    "ln_shift_quotient_dim": 191,
+    "blocks_zero_based": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "branches": [
+      "attention",
+      "mlp"
+    ],
+    "heads_default": 3,
+    "forward_mode": "eval",
+    "batchnorm_buffers_required": true,
+    "layernorm_eps_from_runtime": true,
+    "layernorm_affine_from_runtime": true,
+    "quotient_basis_sha256": null,
+    "primary_metric": "native_residual_Euclidean_on_LN_quotient"
+  },
+  "decoder": {
+    "source_function": "dekoduj",
+    "peak_neighborhood": [
+      3,
+      3
+    ],
+    "top_k": 10,
+    "stride_pixels": 16,
+    "box_parameterization": "anchor +- exp(ltrb)*16",
+    "anchor_pixels": "((col+0.5)*16,(row+0.5)*16)",
+    "primary_readout": "fixed_clean_candidate",
+    "final_decoder_also_required": true,
+    "confidence_threshold": null,
+    "tie_policy": null,
+    "object_assignment_policy_sha256": null,
+    "fixed_candidate_scope": "seed_checkpoint_image_target_object; same index for all paired arms"
+  },
+  "data": {
+    "dataset_name": "Cataract-LMM",
+    "source_manifest_sha256": null,
+    "operation_groups_expected": {
+      "train": 117,
+      "val": 25,
+      "test": 25
+    },
+    "patient_disjointness_verified": false,
+    "patient_mapping_sha256": null,
+    "test_access_audit_passed": null,
+    "prior_test_access_ledger": null,
+    "near_duplicate_audit_sha256": null,
+    "missing_labels_policy_sha256": null
+  },
+  "seeds": {
+    "existing_discovery": [
+      47
+    ],
+    "new_discovery_proposed": [
+      1047,
+      2047
+    ],
+    "new_confirmation_proposed": [
+      3047,
+      4047,
+      5047
+    ],
+    "collision_audit_passed": null,
+    "planned_confirmation_count_initial": 3,
+    "confirmation_count_locked": null,
+    "initialization_rng_ids": null,
+    "sampler_rng_ids": null,
+    "augmentation_rng_ids": null,
+    "power_grid_confirmation_counts": [
+      3,
+      5,
+      8
+    ]
+  },
+  "sampling": {
+    "e0": {
+      "seed": 47,
+      "frames": 4,
+      "checkpoint_steps": [
+        0,
+        33000,
+        65640
+      ],
+      "blocks_count": 6,
+      "exact_mlp_tokens_per_frame": 12,
+      "exact_mlp_jacobians": 864
+    },
+    "pilot": {
+      "seed": 47,
+      "frames": 24,
+      "val_videos": 12,
+      "frames_per_video": 2,
+      "checkpoint_steps": [
+        0,
+        1000,
+        5000,
+        15000,
+        33000,
+        55000,
+        65640
+      ],
+      "blocks_count": 6,
+      "exact_mlp_tokens_per_frame": 12,
+      "exact_mlp_jacobians": 12096
+    },
+    "t09_initial": {
+      "seed": 47,
+      "frames": 24,
+      "checkpoint_steps": [
+        0,
+        33000,
+        65640
+      ],
+      "blocks_zero_based": [
+        0,
+        2,
+        5
+      ],
+      "alpha_grid": [
+        0,
+        0.5,
+        1
+      ],
+      "source_jacobians_at_i0": 216,
+      "other_costs_excluded_from_count": [
+        "validation",
+        "suffix",
+        "shams",
+        "additional_anchors",
+        "attention",
+        "baselines"
+      ]
+    },
+    "atlas": {
+      "frames": 250,
+      "videos": 25,
+      "frames_per_video": 10,
+      "checkpoint_steps": [
+        0,
+        300,
+        1000,
+        3000,
+        6000,
+        10000,
+        16000,
+        24000,
+        33000,
+        44000,
+        55000,
+        65640
+      ],
+      "blocks_count": 6,
+      "exact_mlp_tokens_per_frame": 24,
+      "exact_mlp_jacobians_per_seed": 432000,
+      "required_for_every_confirmation": false
+    },
+    "checkpoint_fallback": {
+      "allowed_for": "historical_only",
+      "method": "nearest_step",
+      "tie": "earlier",
+      "maximum_absolute_difference": 50,
+      "out_of_range": "missing_checkpoint"
+    },
+    "token_regions": [
+      "bbox_interior",
+      "bbox_boundary",
+      "far_background"
+    ],
+    "tokens_per_region_atlas": 8,
+    "token_shortage_policy": "all_available_without_duplication_report_coverage",
+    "cheap_aggregates_all_tokens": true,
+    "frame_manifest_sha256": null,
+    "token_manifest_sha256": null,
+    "frame_rng": null,
+    "token_rng": null,
+    "region_definition_sha256": null,
+    "confirmation_measurement_profile_sha256": null
+  },
+  "derivatives": {
+    "residual_map": "I+DF",
+    "full_attention_qkv_required": true,
+    "full_attention_dense_matrix_allowed": false,
+    "method": "jvp_vjp_and_selected_blocks",
+    "probes_initial": 16,
+    "probe_convergence_grid": [
+      8,
+      16,
+      32
+    ],
+    "probes_locked": null,
+    "reference_dtype": "float64",
+    "campaign_dtype": null,
+    "tf32": null,
+    "autocast": null,
+    "numerical_tolerances": null,
+    "local_radius_validation_report_sha256": null
+  },
+  "intervention": {
+    "expression": "F_alpha(x)=F(x)-alpha*U*B0*U^T*(x-x0)",
+    "preserves_clean_center": true,
+    "preserves_ln_shift_gauge": true,
+    "full_downstream": true,
+    "center_source": "original_clean_forward",
+    "candidates": [
+      "A_bar",
+      "S_bar",
+      "S_bar_positive",
+      "S_bar_negative"
+    ],
+    "primary_operator": null,
+    "primary_blocks_zero_based": null,
+    "primary_checkpoint_weights": null,
+    "primary_alpha": null,
+    "primary_sham": "finite_correction_norm_matched",
+    "secondary_sham": "spectral_structure_preserving_O_B_Ot",
+    "sham_draws_initial": 8,
+    "sham_convergence_grid": [
+      8,
+      16,
+      32
+    ],
+    "sham_draws_locked": null,
+    "sham_rng_ids": null,
+    "norm_matching_tolerance": null,
+    "small_norm_threshold": null,
+    "matching_failure_policy_sha256": null,
+    "cutoff_radius_policy_sha256": null,
+    "perturbation_families_pilot": [
+      "brightness",
+      "contrast",
+      "translation",
+      "scale"
+    ],
+    "severity_levels_initial": 3,
+    "perturbation_manifest_sha256": null,
+    "primary_family": null,
+    "primary_family_recommendation": "brightness_or_contrast",
+    "geometric_fixed_anchor_rule": "preregistered eligibility: anchor inside original and transformed GT with margin; report coverage and retain out-of-support cases for full decoder",
+    "geometric_anchor_margin_pixels": null,
+    "geometric_alternative_endpoint": "separate deterministic transformed-anchor mapping with grid quantization reported",
+    "geometric_endpoint_locked": null,
+    "primary_token_rule": "j_equals_clean_candidate_i0",
+    "cross_token_interventions_separate": true,
+    "last_mlp_other_token_control": "zero_fixed_candidate_coordinates_but_final_decoder_may_switch",
+    "heldout_layer_policy_sha256": null,
+    "token_selection_manifest_sha256": null
+  },
+  "endpoints": {
+    "P1": {
+      "enabled": true,
+      "formula": "RMS(box_edges-GT_edges)/max(GT_diagonal,d_min)",
+      "contrast": "error_target - mean(error_norm_matched_sham)",
+      "positive_means": "targeted intervention causes greater error than control",
+      "aggregation": "within paired frame/perturbation then equal video then equal seed",
+      "d_min_pixels": null,
+      "direction_locked": null,
+      "practical_delta_min": null,
+      "standalone_interpretation": "directional_susceptibility_not_sufficient_mechanistic_explanation"
+    },
+    "P2": {
+      "enabled_if": "claim_learned_organization",
+      "contrast": "P1_late - P1_initialization",
+      "late_steps_locked": null,
+      "practical_delta_min": null,
+      "common_gt_anchor_policy_sha256": null,
+      "same_eligible_images_and_anchor_control_required": true
+    },
+    "P3": {
+      "enabled_if": "claim_task_selectivity",
+      "contrast_definition_sha256": null,
+      "requires_both_geometry_and_nuisance": true,
+      "practical_delta_min": null
+    },
+    "Q1": {
+      "enabled_if": "T25_quality_prediction_claim",
+      "definition_sha256": null,
+      "primary_metric": null,
+      "risk_label": null,
+      "gt_free_features_required": true
+    },
+    "secondary": [
+      "pixel_edge_RMS",
+      "fixed_candidate_IoU",
+      "actual_decoder_IoU",
+      "global_AP_on_locked_set",
+      "recall",
+      "peak_mask_switch",
+      "ranking_switch",
+      "confidence",
+      "margin"
+    ],
+    "all_failed_detections_retained": true,
+    "missingness_policy_sha256": null
+  },
+  "statistics": {
+    "independent_factors": [
+      "training_seed",
+      "video_or_patient_if_verified"
+    ],
+    "crossed_resampling": true,
+    "paired_arms": true,
+    "whole_checkpoint_trajectories": true,
+    "bootstrap_draws_initial": 10000,
+    "bootstrap_draws_locked": null,
+    "statistical_rng": null,
+    "fw_alpha": 0.05,
+    "primary_family_locked": null,
+    "multiplicity_method": null,
+    "per_seed_reporting": true,
+    "leave_one_seed_out": true,
+    "power_simulated_campaigns_per_key_scenario": 2000,
+    "power_simulation_report_sha256": null,
+    "target_precision": null,
+    "optional_stopping": "none_unless_preregistered_valid_sequential_design"
+  },
+  "baselines": {
+    "required": [
+      "full_downstream_JVP",
+      "F_J_norms",
+      "singular_gains_I_plus_J",
+      "gradient_times_activation",
+      "margin_sensitivity",
+      "matched_random_groups_directions",
+      "initialization",
+      "Aubry_v4_whole_block_coupling",
+      "Patrawala_response_for_correction_claim"
+    ],
+    "aubry_version": "arXiv:2407.07810v4",
+    "aubry_block_operator": "(I+J_M)*(I+J_A)-I",
+    "aubry_K": null,
+    "aubry_p": null,
+    "aubry_degeneracy_policy_sha256": null,
+    "cka_role": "descriptive_similarity",
+    "caap_prisma_role": "prior_art_and_relevant_tooling"
+  },
+  "ln_correction_control": {
+    "required_for_T14": true,
+    "freeze_to_unperturbed_forward_statistics": true,
+    "preserve_affine": true,
+    "interpretation": "diagnostic intervention separates normalization response; frozen LN is not the original model"
+  },
+  "stages": [
+    {
+      "id": "A",
+      "tests": [
+        "T00",
+        "T01",
+        "T02",
+        "T03",
+        "T04",
+        "T05",
+        "T10",
+        "T28"
+      ],
+      "gate": "measurement_and_data_audits_pass"
+    },
+    {
+      "id": "B",
+      "tests": [
+        "T06",
+        "T07",
+        "T08",
+        "T09",
+        "T11",
+        "T15",
+        "T16",
+        "T20",
+        "T26"
+      ],
+      "gate": "falsifiable_effect_and_controls_on_discovery"
+    },
+    {
+      "id": "C",
+      "tests": [
+        "T21",
+        "T27"
+      ],
+      "conditional_tests": [
+        "T12",
+        "T13",
+        "T14",
+        "T17",
+        "T18",
+        "T19"
+      ],
+      "gate": "discovery_done_protocol_locked"
+    },
+    {
+      "id": "D",
+      "tests": [
+        "T09",
+        "T11",
+        "T15",
+        "T16",
+        "T20",
+        "T21",
+        "T26",
+        "T27"
+      ],
+      "gate": "locked_confirmation_complete_without_selective_missingness"
+    },
+    {
+      "id": "E",
+      "tests": [
+        "T29"
+      ],
+      "conditional_tests": [
+        "T22",
+        "T23",
+        "T24",
+        "T25"
+      ],
+      "gate": "claim_scope_and_reproducibility_verified"
+    }
+  ],
+  "transfer": {
+    "factor_bridge": [
+      "A1_D1",
+      "A2_D1",
+      "A1_D2"
+    ],
+    "second_architecture": null,
+    "second_detection_dataset": null,
+    "local_dataset_copy_verified": false,
+    "adapter_validated": false,
+    "seeds_locked": null
+  },
+  "execution": {
+    "runner_implemented": false,
+    "jobs_submitted": 0,
+    "live_eden_preflight_sha256": null,
+    "benchmark_report_sha256": null,
+    "gpu_model": null,
+    "vram_bytes": null,
+    "walltime_limit_minutes": null,
+    "disk_quota_bytes": null,
+    "max_concurrent_gpu_shards": null,
+    "output_run_directory": null,
+    "retention_policy_sha256": null,
+    "atomic_shards": true,
+    "resume_requires_hash_and_completeness": true
+  },
+  "required_before_confirmation": [
+    "lock.timestamp",
+    "lock.config_sha256",
+    "lock.code_commit",
+    "lock.source_snapshot_sha256",
+    "lock.analysis_sha256",
+    "lock.review_passed",
+    "model.source_sha256",
+    "model.quotient_basis_sha256",
+    "decoder.confidence_threshold",
+    "decoder.tie_policy",
+    "decoder.object_assignment_policy_sha256",
+    "data.source_manifest_sha256",
+    "data.test_access_audit_passed",
+    "data.prior_test_access_ledger",
+    "data.near_duplicate_audit_sha256",
+    "data.missing_labels_policy_sha256",
+    "seeds.collision_audit_passed",
+    "seeds.confirmation_count_locked",
+    "seeds.initialization_rng_ids",
+    "seeds.sampler_rng_ids",
+    "seeds.augmentation_rng_ids",
+    "sampling.frame_manifest_sha256",
+    "sampling.token_manifest_sha256",
+    "sampling.frame_rng",
+    "sampling.token_rng",
+    "sampling.region_definition_sha256",
+    "derivatives.probes_locked",
+    "derivatives.campaign_dtype",
+    "derivatives.tf32",
+    "derivatives.autocast",
+    "derivatives.numerical_tolerances",
+    "derivatives.local_radius_validation_report_sha256",
+    "intervention.primary_operator",
+    "intervention.primary_blocks_zero_based",
+    "intervention.primary_checkpoint_weights",
+    "intervention.primary_alpha",
+    "intervention.sham_draws_locked",
+    "intervention.sham_rng_ids",
+    "intervention.norm_matching_tolerance",
+    "intervention.small_norm_threshold",
+    "intervention.matching_failure_policy_sha256",
+    "intervention.cutoff_radius_policy_sha256",
+    "intervention.perturbation_manifest_sha256",
+    "intervention.primary_family",
+    "endpoints.P1.d_min_pixels",
+    "endpoints.P1.direction_locked",
+    "endpoints.P1.practical_delta_min",
+    "endpoints.missingness_policy_sha256",
+    "statistics.bootstrap_draws_locked",
+    "statistics.statistical_rng",
+    "statistics.primary_family_locked",
+    "statistics.multiplicity_method",
+    "statistics.power_simulation_report_sha256",
+    "statistics.target_precision",
+    "baselines.aubry_K",
+    "baselines.aubry_p",
+    "baselines.aubry_degeneracy_policy_sha256",
+    "execution.live_eden_preflight_sha256",
+    "execution.benchmark_report_sha256",
+    "execution.gpu_model",
+    "execution.vram_bytes",
+    "execution.walltime_limit_minutes",
+    "execution.disk_quota_bytes",
+    "execution.max_concurrent_gpu_shards",
+    "execution.output_run_directory",
+    "execution.retention_policy_sha256",
+    "workflow.export_schema_version",
+    "workflow.export_schema_sha256",
+    "workflow.package_scope_manifest_sha256",
+    "workflow.local_reader_environment_sha256",
+    "workflow.transfer_size_budget_bytes",
+    "workflow.packages.viewer.dense_probe_manifest_sha256",
+    "workflow.packages.viewer.dense_cache_stride_steps_locked",
+    "workflow.E0_readback_report_sha256",
+    "intervention.heldout_layer_policy_sha256",
+    "intervention.token_selection_manifest_sha256",
+    "sampling.confirmation_measurement_profile_sha256",
+    "mechanism_review.mechanism_card_sha256",
+    "mechanism_review.prospective_prediction_rule_sha256",
+    "mechanism_review.mediator_selector_manifest_sha256",
+    "mechanism_review.donor_selector_manifest_sha256",
+    "mechanism_review.patch_budget_manifest_sha256",
+    "mechanism_review.cross_seed_selection_rule_sha256"
+  ],
+  "conditional_locks": {
+    "P2": [
+      "endpoints.P2.late_steps_locked",
+      "endpoints.P2.practical_delta_min",
+      "endpoints.P2.common_gt_anchor_policy_sha256"
+    ],
+    "P3": [
+      "endpoints.P3.contrast_definition_sha256",
+      "endpoints.P3.practical_delta_min",
+      "intervention.geometric_anchor_margin_pixels",
+      "intervention.geometric_endpoint_locked"
+    ],
+    "Q1": [
+      "endpoints.Q1.definition_sha256",
+      "endpoints.Q1.primary_metric",
+      "endpoints.Q1.risk_label"
+    ],
+    "task_specificity": [
+      "training_budget.conditional_null_training_manifest_sha256",
+      "training_budget.null_seed_count_locked",
+      "training_budget.null_steps_or_matched_windows_locked"
+    ]
+  },
+  "note": "Obowiązek wypełnienia i poprawnych wartości pól musi egzekwować przyszły walidator. Ten plik nie jest wykonaniem T27 ani zgodą na automatyczne joby.",
+  "workflow": {
+    "user_preference_date": "2026-10-16",
+    "heavy_compute_default": "eden",
+    "execution_mode": "headless_configured_jobs",
+    "stages": [
+      "compute",
+      "export",
+      "download_verify",
+      "local_analyze_view"
+    ],
+    "ordinary_local_review_requires_gpu": false,
+    "ordinary_local_review_requires_model_forward": false,
+    "ordinary_local_review_requires_eden_connection": false,
+    "new_unrecorded_interventions": "new_versioned_eden_job",
+    "package_specification": "EDEN_I_STATYSTYKA.md",
+    "local_run_layout": "outputs/<campaign_id>/<run_id>/{analysis,viewer,replay,manifests}",
+    "packages": {
+      "analysis": {
+        "default_download": "complete",
+        "raw_paired_records_required": true,
+        "all_planned_arms_and_failures": true,
+        "preserve_validated_numerical_precision": true,
+        "local_cpu_reaggregation_required": true
+      },
+      "viewer": {
+        "separate_resumable_download": true,
+        "requires_checkpoint_to_play": false,
+        "token_ids": "0..599",
+        "substep_ids": "0..12",
+        "axes": [
+          "seed",
+          "image_id",
+          "checkpoint_step",
+          "substep",
+          "token_id",
+          "xyz"
+        ],
+        "fixed_projection_with_provenance": true,
+        "source_rgb_or_verified_lossless_input_required": true,
+        "image_coordinate_transform_required": true,
+        "all_intervention_conditions_labeled": true,
+        "full_beam_inspection_sample_preregistered": true,
+        "full_beam_inputs": [
+          "signed_post_GELU_activations",
+          "W2_and_bias",
+          "residual_state",
+          "matching_projection_basis"
+        ],
+        "attention_edge_coverage_explicit": true,
+        "unrecorded_data_is_not_zero": true,
+        "dense_probe_manifest_sha256": null,
+        "dense_cache_stride_steps_proposed": 100,
+        "dense_cache_stride_steps_locked": null,
+        "sparse_atlas_is_not_dense_motion": true,
+        "interpolation_labeled": true,
+        "full_history_projection_retrospective_only": true,
+        "cache_observer_must_preserve_training_rng_and_buffers": true
+      },
+      "replay": {
+        "separate_resumable_download": true,
+        "retain_all_scheduled_weight_checkpoints_and_bn": true,
+        "full_restart_states_at_planned_steps": true,
+        "T19_requires_exact_optimizer_rng_sampler_batch": true,
+        "new_heavy_measurements_default": "eden"
+      }
+    },
+    "export_schema_version": null,
+    "export_schema_sha256": null,
+    "package_scope_manifest_sha256": null,
+    "local_reader_environment_sha256": null,
+    "transport_tool": null,
+    "remote_location": null,
+    "transfer_size_budget_bytes": null,
+    "resumable_transfer": true,
+    "atomic_completed_packages": true,
+    "verify_sha256_and_record_counts": true,
+    "verify_shapes_dtypes_units_pairing_coverage": true,
+    "E0_requires_export_download_and_offline_cpu_readback": true,
+    "E0_readback_report_sha256": null,
+    "viewer_adapter_implemented": false,
+    "automatic_remote_deletion": false,
+    "retain_remote_until_local_verified": true
+  },
+  "mechanism_review": {
+    "report": "../../outputs/protokol_testow_vit_iclr_neurips_20261016/RECENZJA_PRZEDPUBLIKACYJNA.md",
+    "mechanism_card_sha256": null,
+    "prospective_prediction_rule_sha256": null,
+    "prediction_records_before_intervention_required": true,
+    "baseline_M0": "local_suffix_Cq_and_actual_decoder",
+    "M1_evaluation": "falsifiable_compact_explanation_with_linked_mediation_not_extra_information_beyond_J",
+    "mediator_selector_manifest_sha256": null,
+    "donor_selector_manifest_sha256": null,
+    "patch_budget_manifest_sha256": null,
+    "cross_seed_selection_rule_sha256": null,
+    "same_process_required_for_T09_T11_T15": true,
+    "exact_undo_and_full_state_restore_positive_controls_only": true,
+    "confirmation_viewer_must_not_retune_selectors": true,
+    "signed_practical_CI_rule": "lower(sP1)>delta_min: supports size; upper(sP1)<delta_min: rejects size; otherwise inconclusive",
+    "final_review_of_downloaded_results_required": true,
+    "final_review_completed": false
+  },
+  "training_budget": {
+    "core_new_discovery_initial": 2,
+    "core_new_confirmation_initial": 3,
+    "confirmation_count_subject_to_prelocked_precision": true,
+    "conditional_nulls_included_in_core_count": false,
+    "conditional_null_training_manifest_sha256": null,
+    "null_seed_count_locked": null,
+    "null_steps_or_matched_windows_locked": null,
+    "task_specificity_claim_requires_appropriate_task_control": true,
+    "short_null_not_equivalent_to_full_training": true
+  }
+}

@@ -1,0 +1,13 @@
+# Ruch cząsteczek a jakość detekcji — protokół opisowego pilota
+
+15 października 2026. Analiza już zapisanych danych, bez zmian aplikacji i modelu.
+Próg jakości i sześć miar określono przed obliczeniem ich powiązań z jakością.
+
+- Te same trzy obrazy i dokładne checkpointy 1000–65600 co 100 kroków (647 stanów). Ruch jest różnicą od stanu 100 kroków wcześniej, przypisaną końcowi przedziału. Prędkość podajemy na krok optymalizatora, nie na zapis ani sekundę.
+- Wysoka jakość: jednocześnie IoU >= 0,8 oraz wynik pewności >= 0,8. Wiadomo już, że obraz 3 nie spełnia tego warunku ani razu; nie zmieniamy progu, aby uzyskać przykłady. Kontrole progu 0,75 i 0,85 tylko opisowo.
+- Miary główne: średnia prędkość ośmiu stałych tokenów najbliższych środkowi GT w przestrzeni residual-pre 192D; stosunek tej prędkości do ośmiu stałych tokenów tła; zgodność ruchu centrum ||suma Δx||/suma ||Δx||; średnie `vib` centrum w aplikacji; średnia prędkość `wezly` centrum w 3D aplikacji; średnia aktywnego η=||suma u_c||²/suma ||u_c||² w centrum.
+- Miary dodatkowe: prędkość tła, dryf środka grupy, lokalne przesunięcie aplikacji, globalny ruch, prędkość krawędzi ramki. Osiem tokenów centrum to wybór geometryczny wokół środka GT, nie segmentacja narzędzia ani gwarancja bycia zwycięskim tokenem.
+- Porównanie high/reszta osobno dla obrazu: opis surowy i pary najbliższe czasowo, bez powtarzania checkpointów. Hungarian maksymalizuje liczbę par w promieniu <=1000 kroków, następnie minimalizuje sumę odległości; kontrola promienia 2000. Nie traktujemy par ani tokenów jako niezależnych replik treningu.
+- Związki ciągłe z IoU i pewnością dla wszystkich trzech obrazów: Pearson surowy, po odjęciu sześciennego spline czasu z sześcioma węzłami (kontrola 4/10), oraz dla przyrostów. Korelacja reszt także ze Spearmanem jako kontrola. Brak p-values dla niezależnych obserwacji; orientacyjne przedziały z bootstrapu blokowego reszt, bloki 20 i 50 stanów, nie uwzględniają niepewności między treningami.
+- `wezly` to wygładzona aktywacja z symetrycznego okna ±300 kroków i projekcji dopasowanej do całej historii. `vib` to odległość od tego wygładzenia w 2D po Prokrustesie. To nie pomiar potencjału, fizycznej pułapki ani równowagi. Miary te zawierają przyszłe stany i nie służą do prognozy online. Surowy residual-pre ma 192 wymiary; aktywacje MLP mają 768.
+- Jeśli brak zgodnego znaku/rozmiaru związku między obrazami i kontrolami czasu, nie ogłaszamy wizualnej sygnatury wysokiej jakości. Przykład ilustracyjny wybieramy z dopasowanych par o najmniejszej odległości czasu, a przy remisie z największą różnicą IoU, jawnie opisując go jako ilustrację.

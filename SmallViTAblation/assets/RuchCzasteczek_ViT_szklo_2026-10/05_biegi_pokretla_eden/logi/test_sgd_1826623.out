@@ -1,0 +1,21 @@
+pokrętła test_sgd: lr 0.1, epoki 2, manifest MANIFEST_35000.jsonl, sondy - n=24, extra: --proba --rzut rp --opt sgd --zapis f32 --warstwy --warstwy_n 4, analizy -, zostaw 1, warstwy 0, węzeł hopper-2, GPU NVIDIA H200, start Sun Oct 11 12:19:49 AM CEST 2026
+wolna kwota: 28.5 GB
+walidacja: 200 klatek (usunięto 0 wspólnych z treningiem)
+klatki: 512 z 116 archiwów w 4 s
+512 klatek, 2 epok, 32 kroków; końce epok: [16, 32]; zapisów wag: 9 (~0.1 GB)
+model vit (2926493 parametrów), sgd lr 0.1 wd 0.0 pęd 0.9, paczka 32
+obserwator: 16 sond, losowy rzut 768 -> 128 (JL, ziarno 0), zapis f32, tokenów 600, krok 0, skan 6 warstw na 4 sondach
+krok 0: mAP@0,5 0.0000
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+krok 16 (koniec epoki 1): mAP@0,5 0.0293
+epoka 1/2: krok 16, wolna kwota 28.3 GB, 00:20:14
+krok 20: mAP@0,5 0.0724
+krok 32 (koniec epoki 2): mAP@0,5 0.0593
+epoka 2/2: krok 32, wolna kwota 28.3 GB, 00:20:15
+KONIEC: krok 32, 2 plików wag, 4 s
+TRENING KONIEC test_sgd Sun Oct 11 12:20:16 AM CEST 2026
+KONIEC test_sgd ok=1 Sun Oct 11 12:20:16 AM CEST 2026
+129M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/test_sgd
+      /mnt/evafs  171.8G    200G    220G       -  168110  200000  220000       -

@@ -1,0 +1,20 @@
+koop_lok lokalny, węzeł dgx-4, start Tue Oct 13 11:07:31 AM CEST 2026
+gęsty lr_5e-4_rp_300_2188: (1889, 12, 600, 128) [13 s]
+Traceback (most recent call last):
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-13_koopman_pulapki/kod/koopman_lokalny.py", line 218, in <module>
+    main()
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-13_koopman_pulapki/kod/koopman_lokalny.py", line 192, in main
+    per.append(analiza(Xr, 1.0, rng, a.L, a.H, a.krok, w_lista=(5, 10, 25), B_lista=(5, 10, 25), u_raw=u_raw))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-13_koopman_pulapki/kod/koopman_lokalny.py", line 135, in analiza
+    E, ile = okna_prognoz(C, L, H, krok, U=U)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-13_koopman_pulapki/kod/koopman_lokalny.py", line 74, in okna_prognoz
+    Mo = np.linalg.solve(Go, O.T @ q[1:])
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/linalg/_linalg.py", line 471, in solve
+    r = gufunc(a, b, signature=signature)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/linalg/_linalg.py", line 163, in _raise_linalgerror_singular
+    raise LinAlgError("Singular matrix")
+numpy.linalg.LinAlgError: Singular matrix

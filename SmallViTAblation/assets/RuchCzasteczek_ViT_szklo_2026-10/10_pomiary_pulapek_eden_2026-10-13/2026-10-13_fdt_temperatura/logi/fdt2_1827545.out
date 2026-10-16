@@ -1,0 +1,30 @@
+FDT v_e12_lr2e-3: bieg dlugi_lr_2e-3_rp, stan_e12.pt, lr 2e-3, argumenty --frac_v 1e-3 --frac_n 1e-4, węzeł dgx-1, GPU NVIDIA A100-SXM4-40GB, start Tue Oct 13 02:15:32 AM CEST 2026
+stan /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/dlugi_lr_2e-3_rp/pelny/stan_e12.pt (krok 13128), lr 0.002, β1 0.9, wd None, sondy [144, 448, 922, 2741, 2786, 3200, 3438, 3698, 4122, 5105, 5425, 5493] [1 s]
+klatki: 35000 z 117 archiwów w 26 s
+35000 klatek, 12 sond [51 s]
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+kalibracja: |∇L| 2.17, |∇L_V(h=1)| 0.0543, |∇L_N(h=1)| 0.0382 → h0 {'V': 0.03999774055772982, 'N': 0.005681775592302242} [60 s]
+krok 100: strata 0.4632 | χ_V 12.82 Δ_V 0.03101 T_V 0.002419 | χ_N 9.824 Δ_N 0.002989 T_N 0.0003043 χ3/χ 1.380 | MSD V 12.13 N 3.432 [153 s]
+krok 200: strata 0.5277 | χ_V 32.39 Δ_V 0.03379 T_V 0.001043 | χ_N 8.951 Δ_N 0.004038 T_N 0.0004511 χ3/χ 1.792 | MSD V 13.02 N 4.58 [245 s]
+krok 300: strata 0.5967 | χ_V 173.3 Δ_V 0.03687 T_V 0.0002127 | χ_N 13.69 Δ_N 0.003986 T_N 0.0002911 χ3/χ 2.130 | MSD V 14.25 N 4.703 [335 s]
+krok 400: strata 0.6864 | χ_V 1279 Δ_V 0.06005 T_V 4.696e-05 | χ_N 20.56 Δ_N 0.006183 T_N 0.0003007 χ3/χ 2.102 | MSD V 22.78 N 7.195 [415 s]
+krok 500: strata 0.5273 | χ_V 3550 Δ_V 0.0455 T_V 1.282e-05 | χ_N 23.36 Δ_N 0.005316 T_N 0.0002275 χ3/χ 2.861 | MSD V 17.41 N 5.957 [489 s]
+krok 600: strata 0.4984 | χ_V 5618 Δ_V 0.05116 T_V 9.106e-06 | χ_N 31.59 Δ_N 0.005263 T_N 0.0001666 χ3/χ 3.281 | MSD V 19.67 N 6.115 [569 s]
+krok 700: strata 0.6845 | χ_V 6748 Δ_V 0.04669 T_V 6.919e-06 | χ_N 25.46 Δ_N 0.005676 T_N 0.0002229 χ3/χ 7.201 | MSD V 18 N 6.49 [652 s]
+krok 800: strata 0.5590 | χ_V 8758 Δ_V 0.05558 T_V 6.347e-06 | χ_N 34.99 Δ_N 0.006585 T_N 0.0001882 χ3/χ 11.544 | MSD V 21.98 N 7.654 [731 s]
+krok 900: strata 0.4190 | χ_V 9838 Δ_V 0.05149 T_V 5.233e-06 | χ_N 41.31 Δ_N 0.005952 T_N 0.0001441 χ3/χ 19.480 | MSD V 19.72 N 6.789 [810 s]
+krok 1000: strata 0.6513 | χ_V 1.173e+04 Δ_V 0.05258 T_V 4.483e-06 | χ_N 46.9 Δ_N 0.004888 T_N 0.0001042 χ3/χ 32.216 | MSD V 19.82 N 5.627 [889 s]
+krok 1100: strata 0.5688 | χ_V 1.457e+04 Δ_V 0.04422 T_V 3.034e-06 | χ_N 49.6 Δ_N 0.005327 T_N 0.0001074 χ3/χ 62.700 | MSD V 16.97 N 6.13 [965 s]
+krok 1200: strata 0.4959 | χ_V 1.678e+04 Δ_V 0.05836 T_V 3.479e-06 | χ_N 58.93 Δ_N 0.005476 T_N 9.293e-05 χ3/χ 106.830 | MSD V 21.78 N 6.145 [1043 s]
+krok 1300: strata 0.6473 | χ_V 1.894e+04 Δ_V 0.04683 T_V 2.472e-06 | χ_N 63.82 Δ_N 0.005726 T_N 8.971e-05 χ3/χ 167.407 | MSD V 18.05 N 6.494 [1120 s]
+krok 1400: strata 0.5602 | χ_V 2.037e+04 Δ_V 0.04636 T_V 2.276e-06 | χ_N 70.09 Δ_N 0.005853 T_N 8.35e-05 χ3/χ 223.029 | MSD V 18.06 N 6.771 [1202 s]
+krok 1500: strata 0.7027 | χ_V 1.996e+04 Δ_V 0.07665 T_V 3.839e-06 | χ_N 75.22 Δ_N 0.007361 T_N 9.787e-05 χ3/χ 287.521 | MSD V 29.72 N 8.601 [1279 s]
+krok 1600: strata 0.5219 | χ_V 2.297e+04 Δ_V 0.05153 T_V 2.244e-06 | χ_N 80.3 Δ_N 0.00637 T_N 7.933e-05 χ3/χ 362.856 | MSD V 19.79 N 7.324 [1360 s]
+krok 1700: strata 0.5289 | χ_V 2.451e+04 Δ_V 0.05318 T_V 2.17e-06 | χ_N 84.28 Δ_N 0.006154 T_N 7.302e-05 χ3/χ 441.272 | MSD V 20.22 N 7.185 [1442 s]
+krok 1800: strata 0.5920 | χ_V 2.59e+04 Δ_V 0.05487 T_V 2.118e-06 | χ_N 93.93 Δ_N 0.006472 T_N 6.891e-05 χ3/χ 487.281 | MSD V 20.7 N 7.448 [1523 s]
+krok 1900: strata 0.4229 | χ_V 3.026e+04 Δ_V 0.05151 T_V 1.702e-06 | χ_N 101.7 Δ_N 0.005734 T_N 5.638e-05 χ3/χ 544.740 | MSD V 19.52 N 6.741 [1599 s]
+krok 2000: strata 0.5129 | χ_V 3.332e+04 Δ_V 0.06187 T_V 1.857e-06 | χ_N 115.1 Δ_N 0.006559 T_N 5.699e-05 χ3/χ 584.012 | MSD V 23.82 N 7.505 [1679 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_fdt_temperatura/wyniki/v_e12_lr2e-3 [1680 s]
+KONIEC v_e12_lr2e-3 Tue Oct 13 02:43:49 AM CEST 2026

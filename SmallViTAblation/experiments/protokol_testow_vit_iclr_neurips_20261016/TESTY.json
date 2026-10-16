@@ -1,0 +1,738 @@
+{
+  "protocol_version": "1.2",
+  "created": "2026-10-16",
+  "status": "research_protocol_not_execution",
+  "source_plan": "../plan_publikacji_neurips_20261016/PLAN.md",
+  "note": "Katalog testów do jawnej tezy mechanistycznej. Nie jest oficjalną listą wymagań ICLR/NeurIPS. Budżety i progi zamrozić przed confirmation. Wszystkie pozycje są specyfikacjami, nie wykonanymi testami.",
+  "tests": [
+    {
+      "id": "T00",
+      "title": "Pochodzenie danych i niezależność oceny",
+      "requirement": "obowiązkowy",
+      "depends_on": [],
+      "references": [
+        "R14",
+        "R15"
+      ],
+      "hypothesis": "Ocena dotyczy nowych filmów/zabiegów, a dane i etykiety są zgodne z rzeczywistym wejściem.",
+      "procedure": "Zbudować manifest obrazu, filmu, zabiegu/pacjenta jeśli dostępny, czasu, bbox, splitu i hash. Zweryfikować 117/25/25 filmów, historię użycia TEST, duplikaty exact/perceptual i klatki sąsiednie. Ustalić rozdział discovery/confirmation przed odczytem metryk.",
+      "controls": "Kontrola nazw plików nie wystarcza: porównać zawartość i źródłowe operacje. Trzy dotychczasowe ilustracje zostają discovery. Brak identyfikatorów pacjenta oznaczyć unknown.",
+      "metrics": "Liczba niezależnych filmów/zabiegów; duplikaty i konflikty etykiet; pokrycie metadanych.",
+      "falsification_or_limit": "Przeciek lub nieudokumentowane wcześniejsze strojenie TEST uniemożliwia nazywanie go ślepym testem; wymaga nowego splitu lub ograniczenia twierdzenia.",
+      "starting_scope_and_cost": "CPU; wszystkie manifesty; ręczny przegląd wylosowanej próbki i konfliktów.",
+      "planned_output": "dataset_audit.json",
+      "status": "planned_not_executed",
+      "independent_units": "film/zabieg/pacjent, zależnie od potwierdzonych metadanych",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T01",
+      "title": "Tożsamość forward i dekodera",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T00"
+      ],
+      "references": [
+        "R13",
+        "R22"
+      ],
+      "hypothesis": "Mikroskop mierzy rzeczywisty forward konkretnego checkpointu.",
+      "procedure": "Rejestrować wejście residualu i 12 wyjść attention/MLP, wejście LN, 768 aktywacji GELU i wyjście w 192D. Odtworzyć F_M z podpisanych wkładów wraz z biasem. Porównać pięć surowych wyjść, sigmoid, maskę maksimów 3×3, top-k i ramki exp(ltrb) z modelem źródłowym.",
+      "controls": "Hooki off/on, powtórzony eval, batch1/batchN, CPU/GPU na podpróbie; nie włączać treningowego BN/dropout.",
+      "metrics": "Maxabs i względny błąd stanów, raw outputs, ramek; identyczność indeksów z osobną obsługą remisów.",
+      "falsification_or_limit": "Błąd większy od tolerancji lub badanego efektu zatrzymuje analizę; różnic dekodera nie wolno przypisać polu.",
+      "starting_scope_and_cost": "E0: 3 checkpointy × 4 obrazy × 6 bloków; mały benchmark GPU.",
+      "planned_output": "forward_audit.json",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T02",
+      "title": "Pochodne MLP i pełnego attention",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T01"
+      ],
+      "references": [
+        "R01",
+        "R02",
+        "R22"
+      ],
+      "hypothesis": "Analityczny Jacobian i pochodne liczone bez materializacji macierzy zgadzają się z funkcją.",
+      "procedure": "Porównać J_MLP z autodiff float64 i centralnymi różnicami w szeregu kroków. Attention: pełne Q/K/V/LN/softmax/proj; sprawdzić JVP, VJP i iloczyn 12 pochodnych względem end-to-end JVP.",
+      "controls": "Tożsamość adjoint <v,Ju>=<J^Tv,u>; jawny vs fused attention; osobno frozenKV i pełna pochodna; fallback ma odtwarzać forward.",
+      "metrics": "Błędy Jv/finite differences, adjoint, chain rule; zakres stabilnych epsilon.",
+      "falsification_or_limit": "Zgodność tylko query-only nie waliduje pełnej uwagi; brak plateau błędu oznacza niewiarygodny instrument.",
+      "starting_scope_and_cost": "E0; J192×192 dla 12 tokenów na obraz; attention przez 16 sond, kontrola zbieżności na 8/16/32.",
+      "planned_output": "derivative_audit.json",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T03",
+      "title": "Pola o znanym zachowaniu i kontrprzykłady",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T02"
+      ],
+      "references": [
+        "R01",
+        "R02",
+        "R21"
+      ],
+      "hypothesis": "Mierniki rozpoznają zdefiniowane obiekty, bez nadinterpretacji wiru i siodła.",
+      "procedure": "Sprawdzić gradient funkcji kwadratowej, obrót, ścinanie, macierz nienormalną, mieszany układ liniowy i residual o kroku 1. Porównać J, S, A, I+J oraz dokładne przesunięcia.",
+      "controls": "Shear z A≠0 bez orbit; F(x0)≠0 mimo mieszanego S; ujemne S przy kroku dyskretnym bez kontrakcji.",
+      "metrics": "Zgodność dokładnych wartości, singular values i przyrostu normy; błędy nazw klasyfikacji.",
+      "falsification_or_limit": "Jeżeli implementacja utożsamia A≠0 z orbitą albo S<0 z kontrakcją każdego kroku, trzeba poprawić interpretację.",
+      "starting_scope_and_cost": "CPU; syntetyczne macierze 2D/192D; test poprawności metody, nie dowód uczenia.",
+      "planned_output": "known_fields.json",
+      "status": "planned_not_executed",
+      "independent_units": "znana funkcja syntetyczna; brak wnioskowania populacyjnego",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T04",
+      "title": "LayerNorm, współrzędne i projekcja",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T02",
+        "T03"
+      ],
+      "references": [
+        "R02",
+        "R12",
+        "R21",
+        "R22"
+      ],
+      "hypothesis": "Wniosek nie zależy od arbitralnej projekcji ani dokładnej symetrii LN.",
+      "procedure": "Sprawdzić F(x+c1)=F(x) oraz J1=0; zbudować Q i bazę U191. Raportować surowy J oraz U^TJU. Sprawdzić ortogonalną zmianę współrzędnych mierzonej funkcji i PCA 3D zamrożoną na discovery; odrębnie kontrolować centrowanie po tokenach.",
+      "controls": "Permutacje i obroty współrzędnych z poprawnym przepisaniem całej funkcji, nie dowolna rotacja samych wag LN. Przy eps>0 kierunek radialny nie jest dokładnie zerowy. Metryka główna: natywna euklidesowa residualu na ilorazie LN. Nie deklarować niezależności S/A od dowolnej metryki lub nieortogonalnej parametryzacji.",
+      "metrics": "Stabilność widm i norm pod ortogonalną zmianą; część efektu zachowana w 3D; błędy symetrii LN.",
+      "falsification_or_limit": "Efekt obecny wyłącznie po projekcji lub znikający po poprawnej kontroli LN nie wspiera pełnowymiarowej tezy.",
+      "starting_scope_and_cost": "E0+pilot; koszt mały względem Jacobianów.",
+      "planned_output": "coordinates_audit.json",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T05",
+      "title": "Zakres lokalnego przybliżenia",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T02",
+        "T04"
+      ],
+      "references": [
+        "R01",
+        "R02"
+      ],
+      "hypothesis": "Lokalny operator trafnie przewiduje odpowiedź w zadeklarowanej skali.",
+      "procedure": "Zbadać względne promienie 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2 normy Qx; kierunki losowe, własne S, singularne I+J oraz zmiany wywołane edycją obrazu. Porównać F i downstream z ich JVP.",
+      "controls": "Oba znaki perturbacji; inicjalizacja; te same promienie i normy. Przypadki z Qx bliskim zeru analizować oddzielnie, ze skalą odniesienia ustaloną przed testem.",
+      "metrics": "Błąd Taylora vs promień, kosinus i względny błąd predykcji wyjść; brak gwarancji monotoniczności.",
+      "falsification_or_limit": "Jeśli realistyczne zaburzenia wykraczają poza zwalidowany zakres, ograniczyć claim lokalny lub użyć rzeczywistych finite differences.",
+      "starting_scope_and_cost": "Pilot: 7 checkpointów × 24 obrazy; 12 tokenów × 6 MLP. Liczbę kierunków ustalić po benchmarku E0.",
+      "planned_output": "locality_curves.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T06",
+      "title": "Atlas geometrii w sześciu blokach",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T04",
+        "T05"
+      ],
+      "references": [
+        "R01",
+        "R03"
+      ],
+      "hypothesis": "Struktura pól ma powtarzalny przebieg po głębokości i treningu.",
+      "procedure": "Policzyć F, J, S, A, udział A, wartości singularne I+J i effective rank w 192D oraz ilorazie LN. Tanie agregaty dla wszystkich 600 tokenów, dokładne J na ustalonej próbce. Mapować wynik względem checkpointu, bloku i regionu.",
+      "controls": "Inicjalizacja, wcześniej wybrane tokeny, losowe projekcje, stała metryka; kontrola norm i etapu treningu. Nie traktować setek checkpointów jako niezależnych replik.",
+      "metrics": "Rozkłady i efekty seed×film; spektra, transient gain, nie tylko średnia.",
+      "falsification_or_limit": "Brak powtarzalności albo pełne wyjaśnienie normą/czasem ogranicza wniosek do opisu tej trajektorii.",
+      "starting_scope_and_cost": "Pilot: 12 096 Jacobianów; atlas: 12 checkpointów × 250 klatek × 6 bloków × 24 tokeny na seed. Agregować strumieniowo.",
+      "planned_output": "geometry_atlas.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T07",
+      "title": "Attention jako sprzężenie całego obrazu",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T02",
+        "T05"
+      ],
+      "references": [
+        "R02",
+        "R03"
+      ],
+      "hypothesis": "Za odpowiedź odpowiadają określone sprzężenia między tokenami, a nie wyłącznie lokalny MLP.",
+      "procedure": "Porównać pełny attention JVP, bloki J_ii/J_ij i wariant z zamrożonym K/V; sondy pojedynczego tokenu i grup obiektu/tła. Obliczyć osobno attention, MLP i rzeczywistą kompozycję na tej samej ścieżce.",
+      "controls": "Dopasowane normą perturbacje, background/foreground matched po odległości, dropout off; uwaga wagowa jako słaby baseline, nie siła przyciągania.",
+      "metrics": "Energia odpowiedzi tokenu źródłowego i pozostałych; wpływ na logit/krawędzie przez pełny downstream; błąd uproszczenia query-only.",
+      "falsification_or_limit": "Jeżeli frozenKV zmienia obraz efektu, nie wolno przedstawiać go jako pomiaru pełnego attention.",
+      "starting_scope_and_cost": "16 sond pełnego stanu; kontrola zbieżności 8/16/32; wybrane pary zamiast macierzy 115200×115200.",
+      "planned_output": "attention_coupling.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T08",
+      "title": "Kierunki istotne dla zadania i zakłócenia",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T05",
+        "T07",
+        "T10"
+      ],
+      "references": [
+        "R01",
+        "R03",
+        "R12"
+      ],
+      "hypothesis": "Wyuczona orientacja przekazuje pożądaną zmianę lokalizacji i ogranicza niepożądane zmiany od zakłóceń.",
+      "procedure": "Utworzyć pary obrazów z kontrolowaną translacją/skalą i przekształconym GT oraz jasnością/kontrastem z niezmienionym GT. Przenieść rzeczywiste δX przez pozostałe bloki. Zmierzyć odstępstwo od oczekiwanej ekwiwariancji ramki, nie tylko normę δ. Dla stałego kandydata geometryczny GT musi nadal zawierać jego kotwicę; alternatywą jest odrębny odczyt z deterministycznie przekształconą kotwicą.",
+      "controls": "Dopasowanie norm zmian latentu, stały kandydat i pełny dekoder oceniane oddzielnie, inicjalizacja, orientacja losowa, pełny JVP. Kierunki wybrać bez TEST. Zakres i regułę osiągalności GT ustalić przed interwencjami; przypadki poza wsparciem zachować w ocenie pełnego dekodera.",
+      "metrics": "Normalizowany błąd krawędzi, IoU, alignment predicted/observed Δbbox; gain w kierunkach nuisance/task.",
+      "falsification_or_limit": "Podobny efekt przy inicjalizacji lub po losowaniu orientacji nie wspiera wyuczonej roli orientacji. Brak transferu ogranicza wniosek do badanej rodziny. Błędu wynikającego z nieosiągalności GT przez stałą kotwicę nie przypisywać polu.",
+      "starting_scope_and_cost": "Pilot: 24 obrazy; 4 rodziny × 3 poziomy oraz clean, następnie odłożone filmy.",
+      "planned_output": "task_alignment.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T09",
+      "title": "Przyczynowa zmiana geometrii pola",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T05",
+        "T08",
+        "T26"
+      ],
+      "references": [
+        "R01",
+        "R06",
+        "R07"
+      ],
+      "hypothesis": "Wybrana składowa i jej orientacja mają specyficzny wpływ na lokalizację ponad siłę zaburzenia.",
+      "procedure": "Na czystym x0 zamrozić Jbar/Sbar/Abar; w zmienionym obrazie stosować F'(x)=F(x)−α U B U^T(x−x0), α∈{0,0.5,1}. B=Abar, Sbar lub jej dodatnia/ujemna część, wybrane na discovery. Jedno MLP na raz, pełny downstream; następnie ograniczona replikacja na grupie tokenów. Główną rodzinę nuisance zamrozić; geometria ma osobny endpoint z kontrolą kotwicy. Podstawowy token interwencji j=i0, ustalony z clean kandydata danego seed×checkpoint×obrazu/obiektu. Prognozę efektu zapisać przed odpowiedzią interwencyjną; kandydat jest stały tylko w obrębie tych ramion.",
+      "controls": "Primary sham dopasowany normą faktycznej poprawki Bδ. Oddzielnie sham OBO^T zachowujący strukturę i widmo; nie mieszać ich wyników. Zapisane RNG, zerowe δ, pełny JVP i kontrola kierunku. Normowanie per δ jest kontrolą dawki, nie jednym liniowym operatorem dla całego otoczenia. W ostatnim MLP j≠i0 jest kontrolą strukturalnego zera współrzędnych i0, choć ranking może się zmienić. Porównać Δy z Cq pełnego suffixu; równa norma q nie wyrównuje czułości Cq.",
+      "metrics": "P1: sparowana różnica normalizowanego błędu krawędzi target−średnia norm-matched sham, dla stałego clean kandydata; dawka i CI. IoU, maska maksimów i ranking końcowego dekodera równolegle.",
+      "falsification_or_limit": "Brak różnicy względem dopasowanego sham lub efekt wyłącznie dla skrajnych stanów poza zwalidowanym zakresem nie wspiera lokalnego mechanizmu. Znak, próg, operator i warstwę zamrozić przed confirmation. Efekt na clean jest zerowy konstrukcyjnie. Sam P1 pokazuje kierunkową podatność. Claim mechanistyczny wymaga zamrożonych przewidywań i zgodnych T11/T15 dla tego samego procesu. P2 ma dodatkową kontrolę wspólnej kotwicy GT przez porównywane modele/stany.",
+      "starting_scope_and_cost": "Pilot: 24 obrazy × 3 checkpointy × bloki 1/3/6, jeden i0: 216 źródłowych J. Nie obejmuje kosztu suffixu, sham, walidacji i dodatkowych kotwic. Start 8 orientacji sham, kontrola zbieżności 8/16/32; potem zamrożony zakres i odłożona warstwa.",
+      "planned_output": "field_interventions.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T10",
+      "title": "Semantyka regionów i realistyczność zmian",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T00",
+        "T01"
+      ],
+      "references": [
+        "R06",
+        "R10"
+      ],
+      "hypothesis": "Różnice obiekt/tło dotyczą treści obrazu, a nie wyłącznie pozycji lub artefaktu edycji.",
+      "procedure": "Regiony określić przez overlap patch–bbox, granicę i dalekie tło; uwzględnić konwolucyjny stem z zachodzącymi polami recepcyjnymi. Lokalne edycje tylko z maską lub ręcznym sprawdzeniem; zamiana tła/narzędzia z naturalnymi dawcami jako osobny test.",
+      "controls": "Dopasowanie powierzchni, położenia i jasności, sham compositing, stałe GT tylko wtedy, gdy pozostaje poprawne. Kontrola niedokładnych masek i osiągalności GT przez kotwicę w testach translacji.",
+      "metrics": "Poprawność adnotacji, udział obiektu, efekt treści wobec pozycji, jakość edycji; odległości aktywacji jako przybliżenie nietypowości stanu.",
+      "falsification_or_limit": "Sam bbox nie dowodzi semantyki neuronu; nierealistyczne edycje lub maski naruszające obiekt nie uzasadniają tezy o ignorowaniu nieistotnego zakłócenia.",
+      "starting_scope_and_cost": "CPU i ręczny audyt oraz GPU; obowiązkowo 24 obrazy pilota. Podpróbka masek wybierana przed wynikami.",
+      "planned_output": "perturbation_audit.json",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T11",
+      "title": "Szlak wpływu przez kolejne bloki",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T07",
+        "T09"
+      ],
+      "references": [
+        "R03",
+        "R04",
+        "R07",
+        "R16",
+        "R17",
+        "R20",
+        "R23"
+      ],
+      "hypothesis": "Efekt badanego MLP przechodzi przewidywalnym szlakiem attention/MLP do odczytu.",
+      "procedure": "Zapisać zmianę wszystkich późniejszych residuali po pojedynczej interwencji. Porównać end-to-end JVP, rzeczywisty forward i lokalne odczyty. Wybrane późniejsze stany przywracać z bazowego przebiegu według zamrożonego planu mediatorów. Zamrozić manifest selektora mediatorów, budżet i regułę dopasowania w nowym seedzie. Testować ten sam proces i przewidziany kierunek odpowiedzi co T09.",
+      "controls": "Sham i patching w obu kierunkach; pojedynczy mediator i grupy; przywracanie wybranych tokenów wobec reszty. Nie sumować efektów pośrednich tak, jakby były addytywne. Kontrole redundancji, normalizacji i nietypowych stanów po podmianie. Przywrócenie całego późnego stanu jest kontrolą dodatnią, nie dowodem małej ścieżki.",
+      "metrics": "Wzmocnienie, tłumienie i zmiana kierunku δX; zmiana efektu wyjściowego po przywróceniu stanu; interakcja między mediatorami.",
+      "falsification_or_limit": "Jeśli różne szlaki dają ten sam rescue lub występuje self-repair, ograniczyć wniosek do udziału szlaku, nie unikalnej konieczności.",
+      "starting_scope_and_cost": "Wybrane przypadki pilota oraz wcześniej określona próbka odłożona; wszystkie 12 punktów pomiaru.",
+      "planned_output": "downstream_paths.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T12",
+      "title": "Podpisane wkłady i współaktywacja neuronów",
+      "requirement": "dla_tezy_współdziałanie",
+      "depends_on": [
+        "T01",
+        "T06",
+        "T10"
+      ],
+      "references": [
+        "R05",
+        "R09"
+      ],
+      "hypothesis": "Przeciwne kierunki mają funkcjonalne współdziałanie zależne od treści ponad marginalne aktywacje.",
+      "procedure": "Liczyć u_c=z_c v_c, podpisane iloczyny skalarne wkładów par, współaktywację i q w residualu oraz odczycie. Jawny próg aktywności i analiza wrażliwości. Oddzielić przeciwne kierunki W2 od przeciwnych aktywnych wkładów u.",
+      "controls": "Inicjalizacja, losowe etykiety, wielokrotne permutacje aktywacji wewnątrz dopasowanego regionu/obrazu/checkpointu; losowe pary dopasowane normą i aktywnością. Selekcja wyłącznie na discovery.",
+      "metrics": "Iloczyn skalarny wkładów, udział znoszenia, q, częstość par i ich wpływ funkcjonalny z CI po filmach/seedach.",
+      "falsification_or_limit": "Efekt odtwarzany przy inicjalizacji lub znikający po kontroli norm nie dowodzi wyuczonej kooperacji. Współaktywacja sama nie dowodzi kompensacji.",
+      "starting_scope_and_cost": "Tanie agregaty 600×768; ograniczona liczba par, bez zapisu wszystkich tensorów 600×768×768.",
+      "planned_output": "signed_cooperation.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T13",
+      "title": "Ablacje pojedyncze, parowe i grupowe",
+      "requirement": "dla_tezy_współdziałanie",
+      "depends_on": [
+        "T12",
+        "T16"
+      ],
+      "references": [
+        "R05",
+        "R07",
+        "R08",
+        "R16"
+      ],
+      "hypothesis": "Wybrane grupy mają specyficzne wspólne działanie, którego nie wyjaśnia selekcja ani dekoder.",
+      "procedure": "Porównać baseline, A wyłączone, B wyłączone i oba wyłączone; grupy 2/8/16/32 na tych samych wejściach. Zerować wkład po GELU, zachować bias W2. Pełny downstream dla wcześniejszych MLP. Liczyć wspólną odpowiedź oraz rAB=ΔyAB−ΔyA−ΔyB.",
+      "controls": "Losowe grupy dopasowane normą, suma efektów pojedynczych ablacji i pełny JVP, inicjalizacja; ciągłe wyjścia stałego kandydata oddzielnie od top1 i maski maksimów.",
+      "metrics": "q oraz bezwzględny efekt w pikselach/normalizowanym błędzie; reszta nieliniowa rAB; IoU, logit, margines i wielkość grupy.",
+      "falsification_or_limit": "Małe q po selekcji na tym samym odczycie nie jest wynikiem potwierdzającym; skok argmax nie dowodzi synergii MLP.",
+      "starting_scope_and_cost": "Pilot stanów i obrazów zgodny z T09; zwiększać zakres po sprawdzeniu transferu T17.",
+      "planned_output": "group_ablation.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T14",
+      "title": "Czy następny blok koryguje poprzedni",
+      "requirement": "dla_tezy_korekta",
+      "depends_on": [
+        "T02",
+        "T07",
+        "T26"
+      ],
+      "references": [
+        "R04",
+        "R08",
+        "R19",
+        "R22"
+      ],
+      "hypothesis": "Kolejny blok adaptacyjnie odpowiada przeciwnie na zmianę rzeczywistego wkładu poprzednika.",
+      "procedure": "W jednym forwardzie zmieniać x_next=x_prev+a na x_next+αa; start α∈{0,±0.05,±0.1,±0.25}. Mierzyć b(x_next+αa)−b(x_next) i projekcję na a. Rozszerzenie do ±1 tylko jako test dużej dawki. Oddzielnie attention→MLP oraz MLP→attention/cały następny blok.",
+      "controls": "Losowe kierunki o tej samej normie, kierunki ortogonalne i pochodzące z niesąsiednich bloków, inicjalizacja, rzeczywiste wkłady zapisane hookami. Osobny przebieg z LN o średniej/odchyleniu zamrożonych na nieperturbowanym forward i zachowanym affine: to kontrola diagnostyczna, nie oryginalny model. Wspólny odejmowany stan i shuffle czasu jako kontrole pozornego opóźnienia.",
+      "metrics": "Nachylenie a·Δb/(α||a||²) dla α≠0, krzywa odpowiedzi i skutek na wyjściu; późniejsza korekta oddzielona od jednoczesnego znoszenia w jednym MLP.",
+      "falsification_or_limit": "Ujemny cosinus bez adaptacyjnej odpowiedzi nie potwierdza korekty. Efekt wyjaśniony renormalizacją zawęża tezę do LN. Wynik między blokami nie mówi o opóźnieniu między checkpointami.",
+      "starting_scope_and_cost": "5 przejść między 6 blokami i 6 przejść attention→MLP; pilot 7 checkpointów × 24 klatki, małe α.",
+      "planned_output": "cross_depth_correction.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T15",
+      "title": "Przywracanie poprawnego wyniku przez podmianę aktywacji",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T10",
+        "T11"
+      ],
+      "references": [
+        "R06",
+        "R07",
+        "R08",
+        "R10",
+        "R16",
+        "R17",
+        "R19",
+        "R23"
+      ],
+      "hypothesis": "Zidentyfikowany komponent przenosi informację potrzebną do obserwowanego zachowania.",
+      "procedure": "Zapisać clean i corrupted przebiegi. W obu kierunkach podmienić wybrane neurony/tokeny/podprzestrzenie, przeliczyć resztę sieci. Używać donorów naturalnych i dopasowanych; dla translacji wyrównać siatkę. Testować zachowanie tylko proponowanego obwodu oraz usunięcie go i podzbiory. Zamrozić selector komponentu i donorów oraz budżet podmiany. Rozdzielić postulowaną zmienną od kontekstu przez zwalidowane pary donorów; przewidzieć odzysk wybranej odpowiedzi i brak zmiany odpowiedzi kontrolnej.",
+      "controls": "Zero/mean/resample baseline, sham, dopasowane normą random directions, identyczny donor, błędny donor; dormant pathway i redundancja OR. Rozdzielić sterowanie wynikiem od odtworzenia normalnego obliczenia. Cofnięcie dokładnie własnej poprawki i przywrócenie całego stanu służą tylko kontroli dodatniej; główny rescue musi obejmować ograniczony wcześniej określony komponent.",
+      "metrics": "Bezwzględny odzysk E_edge/IoU i marginesu, noising i denoising, recovery ratio tylko przy ustalonym dolnym progu mianownika; wielkość minimalnego zestawu.",
+      "falsification_or_limit": "Rescue jedynie przy dużym sztucznym patchu albo dowolnym donorze nie potwierdza specyficznego mechanizmu; brak efektu pojedynczej ablacji nie dowodzi nieistotności przy redundancji.",
+      "starting_scope_and_cost": "Naturalne pary z pilota i niezależne filmy; pełne forwardy, nie sam ostatni head.",
+      "planned_output": "activation_rescue.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T16",
+      "title": "Rozdzielenie regresji ramki, maksimów i rankingu",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T01",
+        "T05"
+      ],
+      "references": [
+        "R05",
+        "R07"
+      ],
+      "hypothesis": "Efekty przypisywane polu nie są wyłącznie nieciągłością selekcji detekcji.",
+      "procedure": "Dla każdego wariantu zapisać wszystkie 600 logitów, raw ltrb, peak mask 3×3, top-k IDs i bbox. Porównać stałego kandydata z clean, tego samego przypisanego obiektu oraz rzeczywisty dekoder. Monitorować wejście/wyjście kandydatów z peak mask i zmianę zwycięzcy.",
+      "controls": "Gradient/JVP wszystkich konkurentów, nie tylko początkowego top2; tie handling i przypadki no-detection; nie wybierać ex post najlepszego kandydata według GT.",
+      "metrics": "Ciągły błąd krawędzi, margin crossing, peak change, winner switch, IoU finalnej ramki, częstość switchy szkodliwych/korzystnych/neutralnych.",
+      "falsification_or_limit": "Jeśli duży efekt w całości tłumaczy margines plus selekcja, claim dotyczy podatności dekodera, nie nieliniowej synergii neuronów.",
+      "starting_scope_and_cost": "Tani przegląd wszystkich 600; pełne interwencje dla z góry określonej populacji.",
+      "planned_output": "decoder_events.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T17",
+      "title": "Transfer zamrożonych selektorów",
+      "requirement": "dla_tezy_współdziałanie",
+      "depends_on": [
+        "T12",
+        "T13",
+        "T15",
+        "T26"
+      ],
+      "references": [
+        "R06",
+        "R09",
+        "R17",
+        "R20"
+      ],
+      "hypothesis": "Sposób wyboru ważnych par/kierunków działa poza próbką, na której go opracowano.",
+      "procedure": "Zamrozić algorytm, progi i budżet grup na discovery. Zastosować do nowych filmów, checkpointów i seedów. Osobno badać identyczne pary w jednym treningu oraz przenoszenie reguły wyboru między treningami.",
+      "controls": "Identyczny dostęp do danych i gradientów dla baseline; frozen i adaptive selectors raportowane osobno; bez przenoszenia surowego numeru neuronu między seedami.",
+      "metrics": "Held-out efekt interwencji, precision of harmful switch prediction, przewaga nad margin/pełny JVP/norm ranking.",
+      "falsification_or_limit": "Efekt wyłącznie w danych selekcji obala generalizację selektora; odtworzenie go po ponownym doborze na TEST nie jest transferem.",
+      "starting_scope_and_cost": "Discovery cross-validation po filmach; końcowa ocena nowych seedów×filmów.",
+      "planned_output": "selector_transfer.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T18",
+      "title": "Skąd zmienia się pole między checkpointami",
+      "requirement": "dla_tezy_uczenie",
+      "depends_on": [
+        "T01",
+        "T04",
+        "T06"
+      ],
+      "references": [
+        "R01",
+        "R03"
+      ],
+      "hypothesis": "Można oddzielić zmianę mierzonej funkcji od zmiany miejsca, w którym ją badamy.",
+      "procedure": "Dla t,t+1 wyliczyć cztery kombinacje F_t(x_t),F_t(x_t+1),F_t+1(x_t),F_t+1(x_t+1), analogicznie metrykę geometryczną. Użyć symetrycznego podziału wkładu zmiany wag i wejścia, oraz jawnej interakcji. Oddzielić bufory BN od parametrów.",
+      "controls": "Obie kolejności podstawienia, stała baza, kontrola OOD hybrydowego wejścia; gęste i rzadkie odstępy cp.",
+      "metrics": "Dokładna rekonstrukcja różnicy, udziały wejścia/wag/interakcji, brak narzuconej dodatniości udziałów.",
+      "falsification_or_limit": "Rozkład czterech rogów opisuje zależność algebraiczną; bez odtworzenia optymalizatora nie wyjaśnia przyczyny kroku treningowego.",
+      "starting_scope_and_cost": "Istniejące wagi; 6 wybranych sąsiedztw cp×24 obrazy; następnie nowy gęsty log.",
+      "planned_output": "checkpoint_factorial.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T19",
+      "title": "Rzeczywisty krok optymalizatora i ruch tokenu",
+      "requirement": "dla_tezy_uczenie",
+      "depends_on": [
+        "T18",
+        "T28"
+      ],
+      "references": [
+        "R11"
+      ],
+      "hypothesis": "Ruch między checkpointami wynika ilościowo ze zmian parametrów i buforów.",
+      "procedure": "W nowym krótkim biegu zapisać optimizer, scheduler, RNG, sampler, batch i BN przed/po krokach. Obliczyć faktyczne Δθ oraz Dθf Δθ i wkład buforów. Odtworzyć ten sam krok i krótkie kontynuacje z kontrolowaną zmianą batcha lub składnika loss.",
+      "controls": "Paired forks z pełnego tego samego stanu; identyczna kolejność danych dla porównań; weight decay i momentum AdamW osobno; mały krok vs Taylor remainder.",
+      "metrics": "Reconstruction error token motion, wkład parametrów/BN, cosine i norm predicted/actual; paired effect na sondach.",
+      "falsification_or_limit": "Jeśli brak stanów optymalizatora w starych cp, nie odtwarzać fikcyjnej historii AdamW. TracIn/gradient dot product nie jest dokładnym ruchem AdamW.",
+      "starting_scope_and_cost": "Nowe krótkie okna, np.3 etapy×100 kroków, ostateczny koszt po E0; nie pełna kampania od razu.",
+      "planned_output": "optimizer_replay.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T20",
+      "title": "Czy efekt jest wyuczony i zależny od zadania",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T06",
+        "T09",
+        "T15"
+      ],
+      "references": [
+        "R03",
+        "R04",
+        "R09"
+      ],
+      "hypothesis": "Efekt funkcjonalny przekracza geometrię inicjalizacji i uczenie niezwiązane z właściwym zadaniem.",
+      "procedure": "Porównać init, wytrenowany model, stopniową randomizację warstw i ograniczony trening z losowymi etykietami. Random bbox przypisać stałą permutacją między obrazami, zachowując dopuszczalne rozmiary; dodatkowo pomocnicze paired loss ablations heat/box, jeśli główna teza wymaga.",
+      "controls": "Takie same budżety kroków i preprocessing; raportować dopasowanie train loss osobno; losowe etykiety nie są równoważnym rozkładem zadania.",
+      "metrics": "Geometria i docelowy efekt interwencji, nie tylko accuracy; interakcja trained-vs-init × target-vs-sham.",
+      "falsification_or_limit": "Ten sam funkcjonalny efekt przy inicjalizacji lub po randomizacji nie potwierdza mechanizmu powstałego przez uczenie zadania. Bez odpowiedniej kontroli zadania ograniczyć claim do zmiany względem inicjalizacji. Krótki null nie kontroluje pełnego końcowego treningu.",
+      "starting_scope_and_cost": "Inicjalizacja bez treningu. Random-label/loss ablations po bramce pilota, w osobnym budżecie i manifeście liczby seedów oraz pełnych lub dopasowanych krótkich okien. Pięć podstawowych nowych treningów nie zawiera tych biegów.",
+      "planned_output": "learning_nulls.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T21",
+      "title": "Niezależne powtórzenia treningu",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T27",
+        "T28"
+      ],
+      "references": [
+        "R14",
+        "R15",
+        "R18"
+      ],
+      "hypothesis": "Efekt nie jest osobliwością pojedynczego treningu.",
+      "procedure": "Użyć s47 tylko discovery; dwa nowe pełne treningi rozwojowe, potem zamrozić protokół i wykonać trzy nowe confirmation. Rozdzielić seed inicjalizacji, danych i perturbacji; zapisywać pełny stan.",
+      "controls": "Zgodny przepis treningu i liczba ekspozycji, bez wznowienia z resetem samplera; historyczne z48/z49 tylko gdy zgodne i kompletne. Reguła clean-winner jest identyczna, lecz jego indeks może się różnić między seedami; nie utożsamiać tego z tą samą kotwicą. Dla P2 wspólna kotwica GT i populacja obrazów jako oddzielny pomiar mechanistyczny.",
+      "metrics": "Efekt każdego seeda, CI i wrażliwość leave-one-seed-out; ustalona precyzja głównego kontrastu.",
+      "falsification_or_limit": "Brak spójności lub przedziały zbyt szerokie oznaczają nierozstrzygnięcie; więcej klatek nie zastąpi treningów.",
+      "starting_scope_and_cost": "5 nowych pełnych biegów jako startowy budżet, nie wymaganie konferencji; liczba końcowa według precyzji przed testem.",
+      "planned_output": "seed_replication.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T22",
+      "title": "Druga architektura",
+      "requirement": "dla_tezy_ogólne_ViT",
+      "depends_on": [
+        "T09",
+        "T15",
+        "T21"
+      ],
+      "references": [
+        "R03",
+        "R13"
+      ],
+      "hypothesis": "Mechanizm przenosi się poza szczegóły s47.",
+      "procedure": "Po potwierdzeniu głównego efektu wybrać drugą szerokość/głębokość ViT albo odrębny transformerowy detektor. Przenieść definicję metryki i interwencji, nie numery neuronów. Przy odrębnej głowie jawnie dostosować readout.",
+      "controls": "Zgodny cel detekcji i jawny budżet; CNN/MLP-mixer tylko gdy claim wymaga specyficzności attention. Nowego modelu nie stroić na końcowym TEST.",
+      "metrics": "Ten sam znormalizowany kontrast, zakres perturbacji, effect size/CI i koszt; każda architektura osobno.",
+      "falsification_or_limit": "Brak transferu zawęża claim do rodziny architektury; sama druga liczba parametrów nie dowodzi ogólności wszystkich ViT.",
+      "starting_scope_and_cost": "Najpierw mały pilot drugiego modelu, potem niezależne seedy według T27; koszt benchmarkowany.",
+      "planned_output": "architecture_transfer.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T23",
+      "title": "Drugi zbiór z lokalizacją obiektu",
+      "requirement": "dla_tezy_ogólna_detekcja",
+      "depends_on": [
+        "T00",
+        "T09",
+        "T21"
+      ],
+      "references": [
+        "R05",
+        "R10"
+      ],
+      "hypothesis": "Mechanizm nie zależy wyłącznie od obrazów chirurgii zaćmy.",
+      "procedure": "Wybrać publiczny zbiór detekcji i zgodny odczyt przed wynikami. Dla COCO określić wieloobiektowe matching i metryki albo jawne single-object podzadanie z regułą wyboru niezależną od predykcji. Udokumentować licencję i split.",
+      "controls": "Nie zastępować replikacji IoU klasyfikacją CIFAR/Imagenette. Kontrola rozmiaru obiektu, rozdzielczości i tokenizacji.",
+      "metrics": "E_edge, IoU i standardowa metryka zbioru, replikacja target-vs-sham/rescue; oddzielne wyniki domen.",
+      "falsification_or_limit": "Transfer wyłącznie na klasyfikację potwierdza co najwyżej geometrię, nie mechanizm lokalizacji.",
+      "starting_scope_and_cost": "Dataset/adaptor obecnie do wyboru; najpierw zgodność zadania i budżet, potem replikacja.",
+      "planned_output": "dataset_transfer.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T24",
+      "title": "Nowe typy zaburzeń i przypadki trudne",
+      "requirement": "dla_tezy_odporność",
+      "depends_on": [
+        "T10",
+        "T15",
+        "T21"
+      ],
+      "references": [
+        "R02",
+        "R07"
+      ],
+      "hypothesis": "Wyjaśnienie działa poza perturbacjami użytymi do jego wyboru.",
+      "procedure": "Zamrozić interwencję na discovery jasność/translacja; odłożyć rodziny blur/kontrast/occlusion lub odwrotnie. Stratyfikować rozmiar i pozycję narzędzia, odblaski, zasłonięcia i błędne clean detekcje.",
+      "controls": "Severity ustalone przed TEST, audit GT po zmianach, te same grupy i shams; naturalne trudne obrazy oddzielnie od syntetycznych.",
+      "metrics": "Kontrast target-vs-sham i rescue per rodzina; degradation curves; liczność i niepewność rzadkich grup.",
+      "falsification_or_limit": "Efekt ograniczony do jednej rodziny nie uzasadnia ogólnej odporności; brak mocy w rzadkich grupach raportować.",
+      "starting_scope_and_cost": "Nowe perturbacje na zamkniętych filmach, bez nowego treningu jeśli wystarczy eval.",
+      "planned_output": "perturbation_transfer.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T25",
+      "title": "Prognozowanie jakości bez dostępu do GT",
+      "requirement": "opcjonalny_użytkowy",
+      "depends_on": [
+        "T16",
+        "T17",
+        "T21",
+        "T26"
+      ],
+      "references": [
+        "R14"
+      ],
+      "hypothesis": "Mikroskop dostarcza praktycznej informacji o ryzyku błędnej ramki ponad dostępne metryki.",
+      "procedure": "Wybrać jedno zdarzenie, np. IoU<0.5, i jedną miarę główną przed TEST. Uczyć predyktor na discovery; porównać confidence/margin/norm/JVP/augment consistency z dodatkiem geometrii i kooperacji.",
+      "controls": "Bez GT w cechach i wyborze tokenów; bez przyszłych cp, finalnych par, PCA przyszłości i okna±300; baseline o tym samym dostępie do danych i compute.",
+      "metrics": "AUPRC z prevalence, risk-coverage, Brier/calibration i GPUczas; AUROC pomocniczo.",
+      "falsification_or_limit": "Brak held-out przewagi przy uczciwym koszcie odrzuca użytkowy claim; nie odrzuca automatycznie mechanistycznego odkrycia.",
+      "starting_scope_and_cost": "Opcjonalna gałąź po głównym wyniku; nie konieczna do artykułu o mechanizmie.",
+      "planned_output": "quality_prediction.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T26",
+      "title": "Silne porównania i granica nowości",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T02",
+        "T06"
+      ],
+      "references": [
+        "R01",
+        "R02",
+        "R03",
+        "R04",
+        "R10",
+        "R12",
+        "R13",
+        "R17"
+      ],
+      "hypothesis": "Nowa interpretacja wnosi coś ponad znane miary i dokładny lokalny model.",
+      "procedure": "Implementować pełny JVP do wyjścia, normy J/F, wartości singularne I+J, gradient×activation, czułość marginesu, coupling Aubry v4 oraz odpowiedź korekcyjną Patrawala. Coupling podstawowy dotyczy całego bloku J_block=(I+J_M)(I+J_A)−I; warianty podkroków/ilorazu to rozszerzenia. Zamrozić K, p i obsługę zdegenerowanych podprzestrzeni SVD. CKA jako opis podobieństwa. CAAP/Prisma dla właściwego porównania atrybucji/infrastruktury. Zdefiniować kartę M1 z prospektywną podpisaną prognozą, zakresem i warunkiem małego efektu. M0 obejmuje lokalne Cq i rzeczywisty decoder. Wartość M1 oceniać jako sprawdzalne prostsze wyjaśnienie, nie przewagę informacyjną nad J.",
+      "controls": "Ten sam split, normy, liczba wybranych komponentów, cel i budżet; wstępna replikacja baseline na znanym przykładzie; kod autorów wersjonowany.",
+      "metrics": "Przewidywanie interwencji, prostota/reprodukowalność wyjaśnienia, efekt ponad dopasowane normą null; nie oczekiwać dodatkowej informacji ponad pełne J.",
+      "falsification_or_limit": "Jeżeli wynik redukuje się do znanej coupling/TLCM/linear sensitivity, ograniczyć nowość do zweryfikowanego rozszerzenia albo zmienić pytanie.",
+      "starting_scope_and_cost": "Mały benchmark baseline przed dużą kampanią; koszt osobno dla każdej metody.",
+      "planned_output": "baseline_comparison.parquet",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T27",
+      "title": "Zamrożenie analizy i wnioskowanie statystyczne",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T00"
+      ],
+      "references": [
+        "R14",
+        "R15",
+        "R18"
+      ],
+      "hypothesis": "Wniosek nie zależy od selekcji najładniejszej warstwy, seeda lub miary.",
+      "procedure": "Po discovery zamrozić komponent, kierunek hipotezy, główny endpoint, praktyczny próg, wykluczenia, agregację, liczbę seedów i brakujące dane. Agregować pary po filmie; resampling seed×film z zachowaniem całych sparowanych trajektorii. Parametry estymatora i plan mocy sprawdzić symulacją na pilocie. Lock także dla reguły tokenu, mediatorów, donorów, budżetów, odłożonej warstwy, wspólnej kotwicy P2 i karty przewidywań. Zablokować prognozy przed odczytem interwencji.",
+      "controls": "Holm dla kilku równorzędnych primary tests lub jeden primary kontrast; FDR opisowo dla atlasu. Raportować każdy seed i leave-one-out. Nie liczyć tokenów/cp jako niezależnego N. Dla prerejestrowanego znaku s i praktycznego δ*: dolna granica właściwego CI dla sP1 > δ* wspiera wielkość; górna < δ* ją odrzuca; pozostały wynik jest nierozstrzygający. Oglądanie confirmation nie zmienia selektorów.",
+      "metrics": "Wielkość efektu, 95% CI, simulation coverage/minimal detectable effect; equivalence margin dla negatywnego twierdzenia.",
+      "falsification_or_limit": "Brak significance nie dowodzi zera. Za mała liczba seedów wymaga szerszych CI lub jawnie wąskiego claimu; nie wolno zmieniać endpointu po TEST.",
+      "starting_scope_and_cost": "CPU; planowanie przed confirmation, bootstrap agregatów po zakończeniu.",
+      "planned_output": "preregistration_and_statistics.json",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T28",
+      "title": "Koszt, precyzja i deterministyczność",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T01",
+        "T02"
+      ],
+      "references": [
+        "R14",
+        "R15"
+      ],
+      "hypothesis": "Eksperyment jest wykonalny, a efekt przewyższa błąd numeryczny.",
+      "procedure": "Zmierz forward/JVP/VJP/J192/SVD/IO po rozgrzewce,co najmniej 3 powtórzenia; peak VRAM/RAM, dysk, GPUh. Porównaj float32/float64 referencyjnie, TF32/autocast kontrolowane, wersje torch/timm/CUDA utrwalone.",
+      "controls": "Ponowny shard z tym samym seedem; drugi backend podpróba; tolerancje bezwzględne i względne; diagnoza rozbieżności zamiast luzowania pod wynik.",
+      "metrics": "Runtime distribution, numerical error, resource manifests, accounting plan vs actual.",
+      "falsification_or_limit": "Efekt wielkości szumu numerycznego nie jest wynikiem; brak zasobów prowadzi do strumieniowania/próbkowania, nie fikcyjnej pełnej macierzy.",
+      "starting_scope_and_cost": "E0; brak materializacji pełnego attention115200²; plan kosztu z pomiaru.",
+      "planned_output": "resource_benchmark.json",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    },
+    {
+      "id": "T29",
+      "title": "Odtwarzalność i niezależny przegląd wyniku",
+      "requirement": "obowiązkowy",
+      "depends_on": [
+        "T21",
+        "T26",
+        "T27",
+        "T28"
+      ],
+      "references": [
+        "R14",
+        "R15"
+      ],
+      "hypothesis": "Osoba niezwiązana z analizą potrafi odtworzyć główną liczbę i ograniczenia claimu.",
+      "procedure": "Z nowego środowiska odtworzyć mini-zestaw liczb z publicznego/możliwego do udostępnienia przykładu, sprawdzić kod→tabela→figura. Zachować manifesty, hashy, seed, environment, checkpoint provenance, dostępność danych, negatywne wyniki. Po pobraniu rzeczywistych wyników wykonać ponowną recenzję według RECENZJA_PRZEDPUBLIKACYJNA.md: przewidywania, kontrola czułości/dekodera, nietautologiczny rescue, transfer, wyniki ujemne i zgodność zakresu artykułu z dowodami.",
+      "controls": "Review osoby/agenta niepiszącego miernika; wyniki raw vs agregaty; atomowe shardy i kontrola kompletności; anonimizacja pakietu zgłoszenia.",
+      "metrics": "Zgodność głównego kontrastu/CI, brak brakujących shardów, pełna ścieżka źródłowa każdej figury.",
+      "falsification_or_limit": "Brak odtwarzalnego głównego wyniku lub nieudokumentowane wykluczenia blokują gotowość do zgłoszenia.",
+      "starting_scope_and_cost": "Mały CPU/GPU reproduction subset; żadnej obietnicy akceptacji konferencji.",
+      "planned_output": "reproduction_report.json",
+      "status": "planned_not_executed",
+      "independent_units": "niezależny trening i film/zabieg; tokeny, obrazy, checkpointy i shams są pomiarami powtarzanymi",
+      "implementation": "specyfikacja; istniejące fragmenty wymagają audytu/adaptacji, brak nowego runnera"
+    }
+  ],
+  "review_report": "../../outputs/protokol_testow_vit_iclr_neurips_20261016/RECENZJA_PRZEDPUBLIKACYJNA.md"
+}

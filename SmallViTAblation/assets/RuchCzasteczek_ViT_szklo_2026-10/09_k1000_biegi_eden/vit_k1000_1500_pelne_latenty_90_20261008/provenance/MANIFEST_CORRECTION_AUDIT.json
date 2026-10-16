@@ -1,0 +1,39 @@
+{
+  "status": "corrected_before_any_eden_deploy",
+  "frames_unchanged": 1500,
+  "annotations_unchanged": 1500,
+  "coco_sha256": "3667dd12c8fddcb695c9ce6144ca4bf3f5300f70a47322a8da12b92de6d98f75",
+  "previous_manifest_sha256": "dd70797c916fe9223755db97b949b11f13709f45f1118e65c4fb3ab646d39ca0",
+  "corrected_manifest_sha256": "33caf6f005b3db0d091d6e9ba9a58cec141a859c66fcd7bd777d31e6fe1a80d7",
+  "issue": "The K1000 campaign data loader multiplied every COCO box by 2/3 although 203 source images were not 720x480; every image itself was resized to 480x320.",
+  "source_dimensions": {
+    "720x480": 1297,
+    "720x576": 97,
+    "640x432": 62,
+    "540x540": 44
+  },
+  "rows_with_different_correct_and_campaign_legacy_box": 203,
+  "oracle_ground_truth_policy": "Use geometrically correct per-axis transform x*480/source_width and y*320/source_height.",
+  "campaign_legacy_policy": "Retain bbox_xyxy_480_campaign_legacy in every manifest row for audit, but do not use it as GT.",
+  "source_dimensions_verified_against_decoded_image_bytes": true,
+  "remote_tar_crosscheck": {
+    "status": "pass",
+    "sample_covers_all_four_source_dimension_classes": true,
+    "sample_image_bytes_bitwise_equal_to_local_source": true,
+    "sample_names": [
+      "TR_0001_S1_P03_00000076.jpg",
+      "TR_0005_S1_P03_00000096.jpg",
+      "TR_0026_S1_P03_00000081.jpg",
+      "TR_0039_S1_P03_00000066.jpg"
+    ],
+    "full_1500_read_only_rebuild": {
+      "status": "pass",
+      "manifest_sha256": "33caf6f005b3db0d091d6e9ba9a58cec141a859c66fcd7bd777d31e6fe1a80d7",
+      "count": 1500,
+      "legacy_different_count": 203
+    },
+    "full_1500_remote_rebuild_repeated_by_preflight_before_smoke": true
+  },
+  "scientific_reason": "The requested success condition is IoU against the ground-truth object after resizing, not against a historical preprocessing error.",
+  "production_results_created_before_correction": false
+}

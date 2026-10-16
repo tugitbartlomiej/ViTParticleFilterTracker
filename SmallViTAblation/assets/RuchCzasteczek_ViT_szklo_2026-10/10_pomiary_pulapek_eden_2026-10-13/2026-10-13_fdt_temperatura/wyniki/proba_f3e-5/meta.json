@@ -1,0 +1,70 @@
+{
+ "opis": "FDT: temperatura efektywna tokenów w czasie uczenia (2026-10-13).\n\nPytanie: czy ruch tokenów wokół pułapek w czasie uczenia da się opisać równaniem Langevina z jedną temperaturą?\nSame drgania mówią tylko T/K (temperatura przez sztywność). Odpowiedź na małą siłę mówi 1/K. Razem dają T osobno.\nTest fluktuacyjno-dyssypacyjny (FDT) w postaci przemieszczeń (Cugliandolo–Kurchan–Parisi):\n    równowaga:            Δ(t, t_w) = ½⟨(m(t) − m(t_w))²⟩ = T · χ(t, t_w)       (prosta w wykresie χ od Δ, nachylenie 1/T)\n    dwie temperatury:     prosta łamie się: szybkie drgania przy T_szybka, wolny dryf przy T_wolna > T_szybka.\n\nProtokół (od zapisanego stanu biegu, w chwili t_w = krok stanu):\n  * kilka replik tej samej sieci (wagi + AdamW), te same paczki i augmentacje w każdym kroku (wspólny generator);\n  * repliki z polem: do straty dodane L_h = −h · (1/N) Σ_j ε_j · z_j, gdzie z_j to latent 768 (GELU MLP ostatniego bloku)\n    tokenu j sond (forward sond w trybie eval, z gradientem), ε_j losowy wektor jednostkowy, niezależny dla każdego tokenu;\n    pole działa od t_w do końca (protokół „pole włączone w t_w”);\n  * h = ±h0 i ±3·h0 (h0 tak, by gradient pola był ułamkiem `--frac` gradientu straty przed obcięciem);\n  * odpowiedź własna: χ_j(t) = [ε_j·z_j(+h) − ε_j·z_j(−h)] / (2h)  (składniki krzyżowe od pól innych tokenów znoszą się w średniej,\n    bo ε są niezależne); nieliniowość: (m(+h) + m(−h))/2 − m(0) oraz χ z 3·h0 wobec h0;\n  * bliźniak h = 0 z tymi samymi paczkami: poziom niedeterminizmu GPU;\n  * replika z innym strumieniem paczek (h = 0): rozkład przemieszczenia na szum (różnica replik) i dryf wspólny.\nZapis co krok do `--gesto`, potem co `--co`: liczby na token (float32), bez pełnych tensorów (mała kwota na Edenie).\nUruchomienie: python fdt_odpowiedz.py --stan <pelny/stan_eNN.pt> --bieg <katalog biegu> --lr <lr> --out <katalog> [--kroki 3000]\n",
+ "stan": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/dlugi_lr_5e-4_rp/pelny/stan_e12.pt",
+ "bieg": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/dlugi_lr_5e-4_rp",
+ "krok_tw": 13128,
+ "lr": 0.0005,
+ "beta1": 0.9,
+ "h0": 0.0009622683886316404,
+ "frac": 3e-05,
+ "grad_strata": 3.6874284744262695,
+ "grad_pola_h1": 0.11496049910783768,
+ "sondy": [
+  1,
+  8,
+  16,
+  49,
+  52,
+  63,
+  65,
+  69,
+  75,
+  90,
+  95,
+  96
+ ],
+ "kroki": 40,
+ "gesto": 20,
+ "co": 5,
+ "ziarno": 1013,
+ "plan": [
+  [
+   "a0",
+   0.0,
+   "A"
+  ],
+  [
+   "a0b",
+   0.0,
+   "A"
+  ],
+  [
+   "p1",
+   1.0,
+   "A"
+  ],
+  [
+   "m1",
+   -1.0,
+   "A"
+  ],
+  [
+   "p3",
+   3.0,
+   "A"
+  ],
+  [
+   "m3",
+   -3.0,
+   "A"
+  ],
+  [
+   "b0",
+   0.0,
+   "B"
+  ]
+ ],
+ "proba": true,
+ "gpu": "NVIDIA H200 MIG 4g.71gb",
+ "czas_s": 22
+}

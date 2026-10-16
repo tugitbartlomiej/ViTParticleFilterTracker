@@ -1,0 +1,593 @@
+{
+  "question": "How are finite-time Lyapunov exponents and Cauchy-Green strain tensors defined for discrete dynamical maps, and how have these methods been applied to neural-network residual streams or adversarial sensitivity?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'How are finite-time Lyapunov exponents and Cauchy-Green strain tensors defined for discrete dynamical maps, and how have these methods been applied to neural-network residual streams or adversarial sensitivity?'.\n\n\n1. Finite-time Lyapunov exponents of deep neural networks\n   ID: 1wd5v78b\n   2023 · Lance Storm, Hampus Linander, Jérémie Bec · arXiv.org\n   DOI: 10.48550/arXiv.2306.12548\n   Abstract: We compute how small input perturbations affect the output of deep neural networks, exploring an analogy between deep networks and dynamical systems, where the growth or decay of local perturbations is characterised by finite-time Lyapunov exponents. We show that the maximal exponent forms geometrical structures in input space, akin to coherent structures in dynamical systems. Ridges of large positive exponents divide input space into different regions that the network associates with different classes. These ridges visualise the geometry that deep networks construct in input space, shedding light on the fundamental mechanisms underlying their learning capabilities.\n\n2. Finite-time Lyapunov exponents of deep neural networks\n   ID: 1cvxqr3k\n   2023\n   DOI: 10.48550/arxiv.2306.12548\n   Abstract: We compute how small input perturbations affect the output of deep neural networks, exploring an analogy between deep networks and dynamical systems, where the growth or decay of local perturbations is characterised by finite-time Lyapunov exponents. We show that the maximal exponent forms geometrical structures in input space, akin to coherent structures in dynamical systems. Ridges of large positive exponents divide input space into different regions that the network associates with different classes. These ridges visualise the geometry that deep networks construct in input space, shedding light on the fundamental mechanisms underlying their learning capabilities. \n\n3. Finite-time Lyapunov Exponents of Deep Neural Networks\n   ID: vd5czs96ybqj\n   L. Storm, H. Linander, J. Bec\n   DOI: 10.1103/physrevlett.132.057301\n   Abstract: We compute how small input perturbations affect the output of deep neural networks, exploring an analogy between deep feed-forward networks and dynamical systems, where the growth or decay of local perturbations is characterized by finite-time Lyapunov exponents. We show that the maximal exponent forms geometrical structures in input space, akin to coherent structures in dynamical systems. Ridges of large positive exponents divide input space into different regions that the network associates with different classes. These ridges visualize the geometry that deep networks construct in input space, shedding light on the fundamental mechanisms underlying their learning capabilities.\n\n4. On Lyapunov Exponents for RNNs: Understanding Information Propagation Using Dynamical Systems Tools\n   ID: x160goww\n   2022 · Frontiers in Applied Mathematics and Statistics\n   DOI: 10.3389/fams.2022.818799\n   Abstract: Recurrent neural networks (RNNs) have been successfully applied to a variety of problems involving sequential data, but their optimization is sensitive to parameter initialization, architecture, and optimizer hyperparameters. Considering RNNs as dynamical systems, a natural way to capture stability, i.e., the growth and decay over long iterates, are the Lyapunov Exponents (LEs), which form the Lyapunov spectrum. The LEs have a bearing on stability of RNN training dynamics since forward propagation of information is related to the backward propagation of error gradients. LEs measure the asymptotic rates of expansion and contraction of non-linear system trajectories, and generalize stability analysis to the time-varying attractors structuring the non-autonomous dynamics of data-driven RNNs. As a tool to understand and exploit stability of training dynamics, the Lyapunov spectrum fills an existing gap between prescriptive mathematical approaches of limited scope and computationally-expensive empirical approaches. To leverage this tool, we implement an efficient way to compute LEs for RNNs during training, discuss the aspects specific to standard RNN architectures driven by typical sequential datasets, and show that the Lyapunov spectrum can serve as a robust readout of training stability across hyperparameters. With this exposition-oriented contribution, we hope to draw attention to this under-studied, but theoretically grounded tool for understanding training stability in RNNs. \n\n5. Determining the boundary of dynamical chaos in the generalized Chirikov map via machine learning\n   ID: ou586lz9qmuo\n   2025 · Shchur Lev\n   DOI: 10.48550/arxiv.2509.11593\n   Abstract: We investigate the boundary separating regular and chaotic dynamics in the generalized Chirikov map, an extension of the standard map with phase-shifted secondary kicks. Lyapunov maps were computed across the parameter space (K, Kα, τ ) and used to train a convolutional neural network (ResNet18) for binary classification of dynamical regimes. The model reproduces the known critical parameter for the onset of global chaos in the standard map and identifies two-dimensional boundaries in the generalized map for varying phase shifts τ . The results reveal systematic deformation of the boundary as τ increases, highlighting the sensitivity of the system to phase modulation and demonstrating the ability of machine learning to extract interpretable features of complex Hamiltonian dynamics. This framework allows precise characterization of stability boundaries in nontrivial nonlinear systems. \n\n6. NN-ResDMD: Learning Koopman Representations for Complex Dynamics with\n  Spectral Residuals\n   ID: 1lrug4m70ju6\n   2024 · Y. C. Xu, Kaidi Shao, Nikos K. Logothetis\n   DOI: 10.48550/arxiv.2501.00701\n   Abstract: Analyzing long-term behaviors in high-dimensional nonlinear dynamical systems remains a significant challenge. The Koopman operator framework has emerged as a powerful tool to address this issue by providing a globally linear perspective on nonlinear dynamics. However, existing methods for approximating the Koopman operator and its spectral components, particularly in large-scale systems, often lack robust theoretical guarantees. Residual Dynamic Mode Decomposition (ResDMD) introduces a spectral residual measure to assess the convergence of the estimated Koopman spectrum, which helps filter out spurious spectral components. Nevertheless, it depends on pre-computed spectra, thereby inheriting their inaccuracies. To overcome its limitations, we introduce the Neural Network-ResDMD (NN-ResDMD), a method that directly estimates Koopman spectral components by minimizing the spectral residual. By leveraging neural networks, NN-ResDMD automatically identifies the optimal basis functions of the Koopman invariant subspace, eliminating the need for manual selection and improving the reliability of the analysis. Experiments on physical and biological systems demonstrate that NN-ResDMD significantly improves both accuracy and scalability, making it an effective tool for analyzing complex dynamical systems. \n\n7. Lyapunov Spectra of Chaotic Recurrent Neural Networks\n   ID: 0ic9ygirdb0i\n   Rainer Engelken, Fred Wolf, L. F. Abbott\n   DOI: 10.1103/physrevresearch.5.043044\n   Abstract: Recurrent networks are widely used as models of biological neural circuits and in artificial intelligence applications. Mean-field theory has been used to uncover key properties of recurrent network models such as the onset of chaos and their largest Lyapunov exponents, but quantities such as attractor dimension and KolmogorovSinai entropy have thus far remained elusive. We calculate the complete Lyapunov spectrum of recurrent neural networks and show that chaos in these networks is extensive with a size-invariant Lyapunov spectrum and attractor dimensions much smaller than the number of phase space dimensions. The attractor dimension and entropy rate increase with coupling strength near the onset of chaos but decrease far from the onset, reflecting a reduction in the number of unstable directions. We analytically approximate the full Lyapunov spectrum using random matrix theory near the onset of chaos for strong coupling and discrete-time dynamics. We show that a generalized time-reversal symmetry of the network dynamics induces a point symmetry of the Lyapunov spectrum reminiscent of the symplectic structure of chaotic Hamiltonian systems. Temporally fluctuating input can drastically reduce both the entropy rate and the attractor dimension. We lay out a comprehensive set of controls for the accuracy and convergence of Lyapunov exponents. For trained recurrent networks, we find that Lyapunov spectrum analysis quantifies error propagation and stability achieved by different learning algorithms. Our methods apply to systems of arbitrary connectivity and highlight the potential of Lyapunov spectrum analysis as a diagnostic for machine learning applications of recurrent networks.\n\n8. Finite-Space Lyapunov Exponents and Pseudochaos\n   ID: 2pijcn82zf\n   2004 · Ljupco Kocarev, Janusz Szczepanski · Physical Review Letters\n   DOI: 10.1103/PHYSREVLETT.93.234101\n   Abstract: We propose a definition of finite-space Lyapunov exponent. For discrete-time dynamical systems, it measures the local (between neighboring points) average spreading of the system. We justify our definition by showing that, for large classes of chaotic maps, the corresponding finite-space Lyapunov exponent approaches the Lyapunov exponent of a chaotic map when M-->infinity, where M is the cardinality of the discrete phase space. In analogy with continuous systems, we say the system has pseudochaos if its finite-space Lyapunov exponent tends to a positive number (or to +infinity), when M-->infinity.\n\n9. Globally optimal stretching foliations of dynamical systems reveal the organizing skeleton of intensive instabilities\n   ID: 3434oshe6q\n   2021 · Sanjeeva Balasuriya, Erik M. Bollt · arXiv: Chaotic Dynamics\n   Abstract: Understanding instabilities in dynamical systems drives to the heart of modern chaos theory, whether forecasting or attempting to control future outcomes. Instabilities in the sense of locally maximal stretching in maps is well understood, and is connected to the concepts of Lyapunov exponents/vectors, Oseledec spaces and the Cauchy--Green tensor. In this paper, we extend the concept to global optimization of stretching, as this forms a skeleton organizing the general instabilities. The `map' is general but incorporates the inevitability of finite-time as in any realistic application: it can be defined via a finite sequence of discrete maps, or a finite-time flow associated with a continuous dynamical system. Limiting attention to two-dimensions, we formulate the global optimization problem as one over a restricted class of foliations, and establish the foliations which both maximize and minimize global stretching. A classification of nondegenerate singularities of the foliations is obtained. Numerical issues in computing optimal foliations are examined, in particular insights into special curves along which foliations appear to veer and/or do not cross, and foliation behavior near singularities. Illustrations and validations of the results to the Henon map, the double-gyre flow and the standard map are provided.\n\n10. Globally Optimal Stretching Foliations of Dynamical Systems Reveal the Organizing Skeleton of Intensive Instabilities\n   ID: fxda5in0tyfn\n   Sanjeeva Balasuriya, Erik Bollt\n   DOI: 10.48550/arxiv.2101.10387\n   Abstract: Understanding instabilities in dynamical systems drives to the heart of modern chaos theory, whether forecasting or attempting to control future outcomes. Instabilities in the sense of locally maximal stretching in maps is well understood, and is connected to the concepts of Lyapunov exponents/vectors, Oseledec spaces and the Cauchy--Green tensor. In this paper, we extend the concept to global optimization of stretching, as this forms a skeleton organizing the general instabilities. The `map' is general but incorporates the inevitability of finite-time as in any realistic application: it can be defined via a finite sequence of discrete maps, or a finite-time flow associated with a continuous dynamical system. Limiting attention to two-dimensions, we formulate the global optimization problem as one over a restricted class of foliations, and establish the foliations which both maximize and minimize global stretching. A classification of nondegenerate singularities of the foliations is obtained. Numerical issues in computing optimal foliations are examined, in particular insights into special curves along which foliations appear to veer and/or do not cross, and foliation behavior near singularities. Illustrations and validations of the results to the Hénon map, the double-gyre flow and the standard map are provided."
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "How are finite-time Lyapunov exponents and Cauchy-Green strain tensors defined for discrete dynamical maps, and how have these methods been applied to neural-network residual streams or adversarial sensitivity?",
+        "papers": [
+          {
+            "id": 4002911305,
+            "title": "Finite-time Lyapunov exponents of deep neural networks",
+            "is_archived": false,
+            "full_slug": "finite-time-lyapunov-exponents-of-deep-neural-networks-1wd5v78b",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-06-21T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arXiv.2306.12548",
+            "unique_id": "1wd5v78b",
+            "abstract": "We compute how small input perturbations affect the output of deep neural networks, exploring an analogy between deep networks and dynamical systems, where the growth or decay of local perturbations is characterised by finite-time Lyapunov exponents. We show that the maximal exponent forms geometrical structures in input space, akin to coherent structures in dynamical systems. Ridges of large positive exponents divide input space into different regions that the network associates with different classes. These ridges visualise the geometry that deep networks construct in input space, shedding light on the fundamental mechanisms underlying their learning capabilities.",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "Lance Storm",
+                  "id": 2321455396,
+                  "slug": "lance-storm",
+                  "unique_id": "4a4kl42ef7",
+                  "full_slug": "lance-storm-4a4kl42ef7"
+                },
+                {
+                  "display_name": "Hampus Linander",
+                  "id": 1981654519,
+                  "slug": "hampus-linander",
+                  "unique_id": "2kmk1p8ida",
+                  "full_slug": "hampus-linander-2kmk1p8ida"
+                },
+                {
+                  "display_name": "Jérémie Bec",
+                  "id": 2135262399,
+                  "slug": "jeremie-bec",
+                  "unique_id": "1ilk1knnue",
+                  "full_slug": "jeremie-bec-1ilk1knnue"
+                },
+                {
+                  "display_name": "Kristian Gustavsson",
+                  "id": 2160323418,
+                  "slug": "kristian-gustavsson",
+                  "unique_id": "rhfwt1yuv6",
+                  "full_slug": "kristian-gustavsson-rhfwt1yuv6"
+                },
+                {
+                  "display_name": "Bernhard Mehlig",
+                  "id": 35418433,
+                  "slug": "bernhard-mehlig",
+                  "unique_id": "49gtil0onr",
+                  "full_slug": "bernhard-mehlig-49gtil0onr"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/finite-time-lyapunov-exponents-of-deep-neural-networks-1wd5v78b.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2306.12548v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 1
+              }
+            },
+            "tldr": "The authors compute how small input perturbations affect the output of deep neural networks, exploring an analogy between deep networks and dynamical systems, where the growth or decay of local perturbation is characterised by finite-time Lyapunov exponents.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4018221214,
+            "title": "Finite-time Lyapunov exponents of deep neural networks",
+            "is_archived": false,
+            "full_slug": "finite-time-lyapunov-exponents-of-deep-neural-networks-1cvxqr3k",
+            "journal": null,
+            "conference_series": null,
+            "date": "2023-06-21T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2306.12548",
+            "unique_id": "1cvxqr3k",
+            "abstract": "We compute how small input perturbations affect the output of deep neural networks, exploring an analogy between deep networks and dynamical systems, where the growth or decay of local perturbations is characterised by finite-time Lyapunov exponents. We show that the maximal exponent forms geometrical structures in input space, akin to coherent structures in dynamical systems. Ridges of large positive exponents divide input space into different regions that the network associates with different classes. These ridges visualise the geometry that deep networks construct in input space, shedding light on the fundamental mechanisms underlying their learning capabilities. ",
+            "fulltext_url": "/pdf/finite-time-lyapunov-exponents-of-deep-neural-networks-1cvxqr3k.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2306.12548"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 3
+              }
+            },
+            "tldr": "The authors compute how small input perturbations affect the output of deep neural networks, exploring an analogy between deep networks and dynamical systems, where the growth or decay of local perturbation is characterised by finite-time Lyapunov exponents.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4052232039,
+            "title": "Finite-time Lyapunov Exponents of Deep Neural Networks",
+            "is_archived": false,
+            "full_slug": "finite-time-lyapunov-exponents-of-deep-neural-networks-vd5czs96ybqj",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": null,
+            "publication_type": null,
+            "doi": "10.1103/physrevlett.132.057301",
+            "unique_id": "vd5czs96ybqj",
+            "abstract": "We compute how small input perturbations affect the output of deep neural networks, exploring an analogy between deep feed-forward networks and dynamical systems, where the growth or decay of local perturbations is characterized by finite-time Lyapunov exponents. We show that the maximal exponent forms geometrical structures in input space, akin to coherent structures in dynamical systems. Ridges of large positive exponents divide input space into different regions that the network associates with different classes. These ridges visualize the geometry that deep networks construct in input space, shedding light on the fundamental mechanisms underlying their learning capabilities.",
+            "authors": {
+              "total": 5,
+              "data": [
+                {
+                  "display_name": "L. Storm",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "H. Linander",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "J. Bec",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "K. Gustavsson",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "B. Mehlig",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study computes finite-time Lyapunov exponents of deep neural networks, revealing how input perturbations affect outputs and identifying geometrical structures in input space that underlie network learning capabilities, including ridges that divide input space into different regions.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4014520293,
+            "title": "On Lyapunov Exponents for RNNs: Understanding Information Propagation Using Dynamical Systems Tools",
+            "is_archived": false,
+            "full_slug": "on-lyapunov-exponents-for-rnns-understanding-information-x160goww",
+            "journal": {
+              "display_name": "Frontiers in Applied Mathematics and Statistics",
+              "official_page": "http://journal.frontiersin.org/journal/applied-mathematics-and-statistics#",
+              "issn": "2297-4687",
+              "alias": null,
+              "id": 2597085352,
+              "slug": "frontiers-in-applied-mathematics-and-statistics",
+              "unique_id": "12x3itqy",
+              "full_slug": "frontiers-in-applied-mathematics-and-statistics-12x3itqy"
+            },
+            "conference_series": null,
+            "date": "2022-03-02T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Journal Article",
+            "doi": "10.3389/fams.2022.818799",
+            "unique_id": "x160goww",
+            "abstract": "Recurrent neural networks (RNNs) have been successfully applied to a variety of problems involving sequential data, but their optimization is sensitive to parameter initialization, architecture, and optimizer hyperparameters. Considering RNNs as dynamical systems, a natural way to capture stability, i.e., the growth and decay over long iterates, are the Lyapunov Exponents (LEs), which form the Lyapunov spectrum. The LEs have a bearing on stability of RNN training dynamics since forward propagation of information is related to the backward propagation of error gradients. LEs measure the asymptotic rates of expansion and contraction of non-linear system trajectories, and generalize stability analysis to the time-varying attractors structuring the non-autonomous dynamics of data-driven RNNs. As a tool to understand and exploit stability of training dynamics, the Lyapunov spectrum fills an existing gap between prescriptive mathematical approaches of limited scope and computationally-expensive empirical approaches. To leverage this tool, we implement an efficient way to compute LEs for RNNs during training, discuss the aspects specific to standard RNN architectures driven by typical sequential datasets, and show that the Lyapunov spectrum can serve as a robust readout of training stability across hyperparameters. With this exposition-oriented contribution, we hope to draw attention to this under-studied, but theoretically grounded tool for understanding training stability in RNNs. ",
+            "fulltext_url": "https://www.frontiersin.org/articles/10.3389/fams.2022.818799/pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [],
+              "data": {}
+            },
+            "metrics": {
+              "citations": {
+                "total": 4
+              }
+            },
+            "tldr": "The Lyapunov Exponents (LE) as discussed by the authors measure the asymptotic rates of expansion and contraction of non-linear system trajectories, and generalize stability analysis to the time-varying attractors structuring the non-autonomous dynamics of data-driven RNNs.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4097259682,
+            "title": "Determining the boundary of dynamical chaos in the generalized Chirikov map via machine learning",
+            "is_archived": false,
+            "full_slug": "determining-the-boundary-of-dynamical-chaos-in-the-ou586lz9qmuo",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-09-16T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2509.11593",
+            "unique_id": "ou586lz9qmuo",
+            "abstract": "We investigate the boundary separating regular and chaotic dynamics in the generalized Chirikov map, an extension of the standard map with phase-shifted secondary kicks. Lyapunov maps were computed across the parameter space (K, Kα, τ ) and used to train a convolutional neural network (ResNet18) for binary classification of dynamical regimes. The model reproduces the known critical parameter for the onset of global chaos in the standard map and identifies two-dimensional boundaries in the generalized map for varying phase shifts τ . The results reveal systematic deformation of the boundary as τ increases, highlighting the sensitivity of the system to phase modulation and demonstrating the ability of machine learning to extract interpretable features of complex Hamiltonian dynamics. This framework allows precise characterization of stability boundaries in nontrivial nonlinear systems. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Shchur Lev",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/determining-the-boundary-of-dynamical-chaos-in-the-ou586lz9qmuo.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2509.11593"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4050146613,
+            "title": "NN-ResDMD: Learning Koopman Representations for Complex Dynamics with\n  Spectral Residuals",
+            "is_archived": false,
+            "full_slug": "nn-resdmd-learning-koopman-representations-for-complex-1lrug4m70ju6",
+            "journal": null,
+            "conference_series": null,
+            "date": "2024-12-31T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2501.00701",
+            "unique_id": "1lrug4m70ju6",
+            "abstract": "Analyzing long-term behaviors in high-dimensional nonlinear dynamical systems remains a significant challenge. The Koopman operator framework has emerged as a powerful tool to address this issue by providing a globally linear perspective on nonlinear dynamics. However, existing methods for approximating the Koopman operator and its spectral components, particularly in large-scale systems, often lack robust theoretical guarantees. Residual Dynamic Mode Decomposition (ResDMD) introduces a spectral residual measure to assess the convergence of the estimated Koopman spectrum, which helps filter out spurious spectral components. Nevertheless, it depends on pre-computed spectra, thereby inheriting their inaccuracies. To overcome its limitations, we introduce the Neural Network-ResDMD (NN-ResDMD), a method that directly estimates Koopman spectral components by minimizing the spectral residual. By leveraging neural networks, NN-ResDMD automatically identifies the optimal basis functions of the Koopman invariant subspace, eliminating the need for manual selection and improving the reliability of the analysis. Experiments on physical and biological systems demonstrate that NN-ResDMD significantly improves both accuracy and scalability, making it an effective tool for analyzing complex dynamical systems. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Y. C. Xu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Kaidi Shao",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Nikos K. Logothetis",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zhongwei Shen",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/nn-resdmd-learning-koopman-representations-for-complex-1lrug4m70ju6.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2501.00701"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "NN-ResDMD learns Koopman representations for complex dynamics by directly estimating spectral components with neural networks, eliminating manual basis function selection and improving accuracy and scalability in analyzing high-dimensional nonlinear systems.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4054247009,
+            "title": "Lyapunov Spectra of Chaotic Recurrent Neural Networks",
+            "is_archived": false,
+            "full_slug": "lyapunov-spectra-of-chaotic-recurrent-neural-networks-0ic9ygirdb0i",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": null,
+            "publication_type": null,
+            "doi": "10.1103/physrevresearch.5.043044",
+            "unique_id": "0ic9ygirdb0i",
+            "abstract": "Recurrent networks are widely used as models of biological neural circuits and in artificial intelligence applications. Mean-field theory has been used to uncover key properties of recurrent network models such as the onset of chaos and their largest Lyapunov exponents, but quantities such as attractor dimension and KolmogorovSinai entropy have thus far remained elusive. We calculate the complete Lyapunov spectrum of recurrent neural networks and show that chaos in these networks is extensive with a size-invariant Lyapunov spectrum and attractor dimensions much smaller than the number of phase space dimensions. The attractor dimension and entropy rate increase with coupling strength near the onset of chaos but decrease far from the onset, reflecting a reduction in the number of unstable directions. We analytically approximate the full Lyapunov spectrum using random matrix theory near the onset of chaos for strong coupling and discrete-time dynamics. We show that a generalized time-reversal symmetry of the network dynamics induces a point symmetry of the Lyapunov spectrum reminiscent of the symplectic structure of chaotic Hamiltonian systems. Temporally fluctuating input can drastically reduce both the entropy rate and the attractor dimension. We lay out a comprehensive set of controls for the accuracy and convergence of Lyapunov exponents. For trained recurrent networks, we find that Lyapunov spectrum analysis quantifies error propagation and stability achieved by different learning algorithms. Our methods apply to systems of arbitrary connectivity and highlight the potential of Lyapunov spectrum analysis as a diagnostic for machine learning applications of recurrent networks.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Rainer Engelken",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Fred Wolf",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "L. F. Abbott",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study calculates the complete Lyapunov spectrum of chaotic recurrent neural networks, revealing extensive chaos with a size-invariant spectrum, and demonstrates its application in quantifying error propagation and stability in machine learning algorithms.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 2001426628,
+            "title": "Finite-Space Lyapunov Exponents and Pseudochaos",
+            "is_archived": false,
+            "full_slug": "finite-space-lyapunov-exponents-and-pseudochaos-2pijcn82zf",
+            "journal": {
+              "display_name": "Physical Review Letters",
+              "official_page": "http://journals.aps.org/prl/",
+              "issn": "0031-9007",
+              "alias": [
+                "Phys. Rev. Lett.",
+                "PRL",
+                "Phys Rev Lett"
+              ],
+              "id": 24807848,
+              "slug": "physical-review-letters",
+              "unique_id": "3av85aju",
+              "full_slug": "physical-review-letters-3av85aju"
+            },
+            "conference_series": null,
+            "date": "2004-12-01T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Journal Article",
+            "doi": "10.1103/PHYSREVLETT.93.234101",
+            "unique_id": "2pijcn82zf",
+            "abstract": "We propose a definition of finite-space Lyapunov exponent. For discrete-time dynamical systems, it measures the local (between neighboring points) average spreading of the system. We justify our definition by showing that, for large classes of chaotic maps, the corresponding finite-space Lyapunov exponent approaches the Lyapunov exponent of a chaotic map when M-->infinity, where M is the cardinality of the discrete phase space. In analogy with continuous systems, we say the system has pseudochaos if its finite-space Lyapunov exponent tends to a positive number (or to +infinity), when M-->infinity.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Ljupco Kocarev",
+                  "id": 2124312922,
+                  "slug": "ljupco-kocarev",
+                  "unique_id": "4wnegn0urf",
+                  "full_slug": "ljupco-kocarev-4wnegn0urf",
+                  "affiliation_full_slug": "university-of-california-san-diego-wdy3fmoa"
+                },
+                {
+                  "display_name": "Janusz Szczepanski",
+                  "id": 2125620061,
+                  "slug": "janusz-szczepanski",
+                  "unique_id": "1u4xrx43ul",
+                  "full_slug": "janusz-szczepanski-1u4xrx43ul"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "University of California, San Diego",
+                  "city": "San Diego",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 36258959,
+                  "slug": "university-of-california-san-diego",
+                  "unique_id": "wdy3fmoa",
+                  "full_slug": "university-of-california-san-diego-wdy3fmoa"
+                }
+              ]
+            },
+            "fulltext_url": null,
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html",
+                "Others"
+              ],
+              "data": {
+                "Html": [
+                  "https://www.ncbi.nlm.nih.gov/pubmed/15601163",
+                  "https://ui.adsabs.harvard.edu/abs/2004PhRvL..93w4101K/abstract"
+                ],
+                "Others": [
+                  "https://link.aps.org/doi/10.1103/PhysRevLett.93.234101"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 21
+              }
+            },
+            "tldr": "A definition of finite-space Lyapunov exponent is proposed, which measures the local (between neighboring points) average spreading of the system for discrete-time dynamical systems and says the system has pseudochaos if its finite- space Lyapinov exponent tends to a positive number (or to +infinity), when M-->infinity.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3124468304,
+            "title": "Globally optimal stretching foliations of dynamical systems reveal the organizing skeleton of intensive instabilities",
+            "is_archived": false,
+            "full_slug": "globally-optimal-stretching-foliations-of-dynamical-systems-3434oshe6q",
+            "journal": {
+              "display_name": "arXiv: Chaotic Dynamics",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2596994788,
+              "slug": "arxiv-chaotic-dynamics",
+              "unique_id": "itv7hyuj",
+              "full_slug": "arxiv-chaotic-dynamics-itv7hyuj"
+            },
+            "conference_series": null,
+            "date": "2021-01-25T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "3434oshe6q",
+            "abstract": "Understanding instabilities in dynamical systems drives to the heart of modern chaos theory, whether forecasting or attempting to control future outcomes. Instabilities in the sense of locally maximal stretching in maps is well understood, and is connected to the concepts of Lyapunov exponents/vectors, Oseledec spaces and the Cauchy--Green tensor. In this paper, we extend the concept to global optimization of stretching, as this forms a skeleton organizing the general instabilities. The `map' is general but incorporates the inevitability of finite-time as in any realistic application: it can be defined via a finite sequence of discrete maps, or a finite-time flow associated with a continuous dynamical system. Limiting attention to two-dimensions, we formulate the global optimization problem as one over a restricted class of foliations, and establish the foliations which both maximize and minimize global stretching. A classification of nondegenerate singularities of the foliations is obtained. Numerical issues in computing optimal foliations are examined, in particular insights into special curves along which foliations appear to veer and/or do not cross, and foliation behavior near singularities. Illustrations and validations of the results to the Henon map, the double-gyre flow and the standard map are provided.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Sanjeeva Balasuriya",
+                  "id": 2017274113,
+                  "slug": "sanjeeva-balasuriya",
+                  "unique_id": "2qf0kcnvhz",
+                  "full_slug": "sanjeeva-balasuriya-2qf0kcnvhz"
+                },
+                {
+                  "display_name": "Erik M. Bollt",
+                  "id": 2227460361,
+                  "slug": "erik-m-bollt",
+                  "unique_id": "3otyl7gcyn",
+                  "full_slug": "erik-m-bollt-3otyl7gcyn"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "https://arxiv.org/pdf/2101.10387",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Pdf",
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://arxiv.org/abs/2101.10387",
+                  "http://ui.adsabs.harvard.edu/abs/2021arXiv210110387B/abstract"
+                ],
+                "Pdf": [
+                  "http://export.arxiv.org/pdf/2101.10387"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "In this article, the authors formulate the global optimization problem as one over a restricted class of foliations, and establish the foliations which both maximize and minimize global stretching, and provide insights into special curves along which foliations appear to veer and/or do not cross.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4059427823,
+            "title": "Globally Optimal Stretching Foliations of Dynamical Systems Reveal the Organizing Skeleton of Intensive Instabilities",
+            "is_archived": false,
+            "full_slug": "globally-optimal-stretching-foliations-of-dynamical-systems-fxda5in0tyfn",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": null,
+            "publication_type": null,
+            "doi": "10.48550/arxiv.2101.10387",
+            "unique_id": "fxda5in0tyfn",
+            "abstract": "Understanding instabilities in dynamical systems drives to the heart of modern chaos theory, whether forecasting or attempting to control future outcomes. Instabilities in the sense of locally maximal stretching in maps is well understood, and is connected to the concepts of Lyapunov exponents/vectors, Oseledec spaces and the Cauchy--Green tensor. In this paper, we extend the concept to global optimization of stretching, as this forms a skeleton organizing the general instabilities. The `map' is general but incorporates the inevitability of finite-time as in any realistic application: it can be defined via a finite sequence of discrete maps, or a finite-time flow associated with a continuous dynamical system. Limiting attention to two-dimensions, we formulate the global optimization problem as one over a restricted class of foliations, and establish the foliations which both maximize and minimize global stretching. A classification of nondegenerate singularities of the foliations is obtained. Numerical issues in computing optimal foliations are examined, in particular insights into special curves along which foliations appear to veer and/or do not cross, and foliation behavior near singularities. Illustrations and validations of the results to the Hénon map, the double-gyre flow and the standard map are provided.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Sanjeeva Balasuriya",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Erik Bollt",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper extends chaos theory by globally optimizing stretching in dynamical systems, revealing an organizing skeleton of intensive instabilities via optimal foliations, and provides a classification of singularities and numerical insights for computing optimal foliations in 2D systems.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

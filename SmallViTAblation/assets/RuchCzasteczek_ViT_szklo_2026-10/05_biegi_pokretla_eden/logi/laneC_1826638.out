@@ -1,0 +1,40 @@
+pokrętła cnn_lr_1.25e-4_rp: lr 1.25e-4, epoki 3, manifest MANIFEST_35000.jsonl, sondy /home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/wejscia/SONDY_100.jsonl n=12, extra: --rzut rp --model cnn, analizy 300:2188, zostaw 0, warstwy 0, węzeł hopper-2, GPU NVIDIA H200, start Sun Oct 11 12:30:35 AM CEST 2026
+wolna kwota: 20.9 GB
+walidacja: 3000 klatek (usunięto 0 wspólnych z treningiem)
+klatki: 35000 z 117 archiwów w 20 s
+35000 klatek, 3 epok, 3282 kroków; końce epok: [1094, 2188, 3282]; zapisów wag: 126 (~1.5 GB)
+model cnn (2289437 parametrów), adamw lr 0.000125 wd 0.05, paczka 32
+obserwator: 12 sond, losowy rzut 768 -> 128 (JL, ziarno 0), zapis f16, tokenów 600, krok 0
+krok 0: mAP@0,5 0.0000
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+krok 1000: mAP@0,5 0.4217
+krok 1094 (koniec epoki 1): mAP@0,5 0.4232
+epoka 1/3: krok 1094, wolna kwota 23.6 GB, 00:32:15
+krok 2000: mAP@0,5 0.5287
+krok 2188 (koniec epoki 2): mAP@0,5 0.5382
+epoka 2/3: krok 2188, wolna kwota 18.4 GB, 00:32:54
+krok 3000: mAP@0,5 0.5599
+krok 3282 (koniec epoki 3): mAP@0,5 0.5700
+epoka 3/3: krok 3282, wolna kwota 16.8 GB, 00:33:26
+KONIEC: krok 3282, 2 plików wag, 118 s
+TRENING KONIEC cnn_lr_1.25e-4_rp Sun Oct 11 12:33:28 AM CEST 2026
+=== analiza cnn_lr_1.25e-4_rp okno 300 2188 Sun Oct 11 12:33:28 AM CEST 2026
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/cnn_lr_1.25e-4_rp gesty rekordów 2299 tokenów 7200 (600 na zdjęcie) kroki 0 3280 zapis f16 [17 s]
+S0 6 S1 7 Lindemann 0.276 c 0.341 τ_1e 382.0 β 1.0 E wykładnik 0.1882997844939181 [193 s]
+cnn_lr_1.25e-4_rp S1 [blok]: C1 max 0.731 @τ=3 (null -0.044; surowe 0.755), powłoki ['0.731', '0.616', '0.506'], skupianie 3.72, cos sąsiedzi−losowe -0.025, cross C1 0.460 (null -0.012) [214 s]
+cnn_lr_1.25e-4_rp S0 [blok]: C1 max 0.837 @τ=3 (null -0.031; surowe 0.854), powłoki ['0.837', '0.672', '0.530'], skupianie 5.04, cos sąsiedzi−losowe 0.631, cross C1 0.534 (null -0.006) [235 s]
+cnn_lr_1.25e-4_rp S1 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.969 → ostatni 0.768; względny 0.968 → 0.754; zdjęcia 0.935 → 0.923 [240 s]
+cnn_lr_1.25e-4_rp S0 [blok] trwałość ruchliwości (τ=10, podokna 200): Spearman lag1 0.943 → ostatni 0.686; względny 0.945 → 0.672; zdjęcia 0.908 → 0.972 [243 s]
+cnn_lr_1.25e-4_rp korelacja przesunięć τ=1: wewnątrz zdjęcia (bez pola zdjęcia) [0.752, 0.768, 0.608, 0.389, 0.166, -0.011, -0.078, -0.079, None, None]; między zdjęciami [None, None, 0.486, 0.285, 0.141, 0.007, -0.06, -0.068, None, None] [245 s]
+cnn_lr_1.25e-4_rp rozbieganie par: r²/r0² [1.0, 1.01, 1.02, 1.03, 1.03, 1.09, 1.16, 1.13, 1.27, 1.29, 1.32, 1.4] przy lagach [1, 2, 3, 5, 10, 20, 50, 100, 200, 500, 1000, 1888]; wykładnik (r²−r0²) ∝ lag^0.4616077877848376 [245 s]
+cnn_lr_1.25e-4_rp cała oś rozbieganie par: r²/r0² [1.0, 1.03, 1.16, 1.29, 1.41, 1.42, 1.44, 1.47, 1.44, 1.48, 1.47, 1.49, 1.47, 1.48, 1.43, 1.45, 1.44, 1.47, 1.53, 1.5, 1.42, 1.4, 1.46, 1.45, 1.48, 1.45, 1.49, 1.52, 1.51, 1.38, 1.51, 1.43, 1.47, 1.5, 1.48, 1.44, 1.46, 1.46, 1.48, 1.56, 1.46] przy lagach [1, 5, 50, 500, 1890, 1920, 1950, 1980, 2010, 2040, 2070, 2100, 2130, 2160, 2190, 2220, 2250, 2280, 2310, 2340, 2370, 2400, 2430, 2460, 2490, 2520, 2550, 2580, 2610, 2640, 2670, 2700, 2730, 2760, 2790, 2820, 2850, 2880, 2910, 2940, 2970]; wykładnik (r²−r0²) ∝ lag^None [246 s]
+cnn_lr_1.25e-4_rp rozkład energii kroku: τ=1: wspólny 0.15 zdjęcie 0.03 sąsiedztwo 0.47 własny 0.34; τ=10: wspólny 0.16 zdjęcie 0.04 sąsiedztwo 0.51 własny 0.25; τ=100: wspólny 0.14 zdjęcie 0.04 sąsiedztwo 0.50 własny 0.29; τ=1000: wspólny 0.17 zdjęcie 0.02 sąsiedztwo 0.45 własny 0.32 [247 s]
+cnn_lr_1.25e-4_rp [blok] korelacja krzyżowa położeń: sąsiedzi C(0) 0.637, min -0.107 @τ=50, losowe w zdjęciu C(0) 0.001, inne zdjęcia C(0) 0.00014152540835160227; auto [0.99, 0.98, 0.95, 0.89, 0.76, 0.44, 0.13, 0.0, -0.17, -0.12] [306 s]
+cnn_lr_1.25e-4_rp [populacja] korelacja krzyżowa położeń: sąsiedzi C(0) 0.649, min -0.109 @τ=50, losowe w zdjęciu C(0) 0.042, inne zdjęcia C(0) -0.002743786317296326; auto [0.99, 0.98, 0.95, 0.89, 0.76, 0.44, 0.13, -0.0, -0.17, -0.12] [364 s]
+zapisano /home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/cnn_lr_1.25e-4_rp/ANALIZA.json [364 s]
+skasowano surowe gesty cnn_lr_1.25e-4_rp (analizy OK)
+KONIEC cnn_lr_1.25e-4_rp ok=1 Sun Oct 11 12:39:33 AM CEST 2026
+72M	/home2/faculty/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/wyniki/cnn_lr_1.25e-4_rp
+      /mnt/evafs  184.3G    200G    220G       -  168117  200000  220000       -

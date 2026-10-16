@@ -1,0 +1,893 @@
+{
+  "question": "How are Transformer residual blocks formally interpreted as numerical discretizations of interacting particle dynamical systems, including separate feed-forward drift and self-attention token interactions?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'How are Transformer residual blocks formally interpreted as numerical discretizations of interacting particle dynamical systems, including separate feed-forward drift and self-attention token interactions?'.\n\n\n1. Understanding and Improving Transformer From a Multi-Particle Dynamic System Point of View\n   ID: 3dyebnr7qc\n   2019 · Yiping Lu, Zhuohan Li, Di He · arXiv: Learning\n   Abstract: The Transformer architecture is widely used in natural language processing. Despite its success, the design principle of the Transformer remains elusive. In this paper, we provide a novel perspective towards understanding the architecture: we show that the Transformer can be mathematically interpreted as a numerical Ordinary Differential Equation (ODE) solver for a convection-diffusion equation in a multi-particle dynamic system. In particular, how words in a sentence are abstracted into contexts by passing through the layers of the Transformer can be interpreted as approximating multiple particles' movement in the space using the Lie-Trotter splitting scheme and the Euler's method. Given this ODE's perspective, the rich literature of numerical analysis can be brought to guide us in designing effective structures beyond the Transformer. As an example, we propose to replace the Lie-Trotter splitting scheme by the Strang-Marchuk splitting scheme, a scheme that is more commonly used and with much lower local truncation errors. The Strang-Marchuk splitting scheme suggests that the self-attention and position-wise feed-forward network (FFN) sub-layers should not be treated equally. Instead, in each layer, two position-wise FFN sub-layers should be used, and the self-attention sub-layer is placed in between. This leads to a brand new architecture. Such an FFN-attention-FFN layer is \"Macaron-like\", and thus we call the network with this new architecture the Macaron Net. Through extensive experiments, we show that the Macaron Net is superior to the Transformer on both supervised and unsupervised learning tasks. The reproducible codes and pretrained models can be found at this https URL\n\n2. Understanding and Improving Transformer From a Multi-Particle Dynamic System Point of View\n   ID: 14rcgz43li\n   2019 · Yiping Lu, Zhuohan Li, Di He\n   Abstract: The Transformer architecture is widely used in natural language processing. Despite its success, the design principle of the Transformer remains elusive. In this paper, we provide a novel perspective towards understanding the architecture: we show that the Transformer can be mathematically interpreted as a numerical Ordinary Differential Equation (ODE) solver for a convection-diffusion equation in a multi-particle dynamic system. In particular, how words in a sentence are abstracted into contexts by passing through the layers of the Transformer can be interpreted as approximating multiple particles' movement in the space using the Lie-Trotter splitting scheme and the Euler's method. Given this ODE's perspective, the rich literature of numerical analysis can be brought to guide us in designing effective structures beyond the Transformer. As an example, we propose to replace the Lie-Trotter splitting scheme by the Strang-Marchuk splitting scheme, a scheme that is more commonly used and with much lower local truncation errors. The Strang-Marchuk splitting scheme suggests that the self-attention and position-wise feed-forward network (FFN) sub-layers should not be treated equally. Instead, in each layer, two position-wise FFN sub-layers should be used, and the self-attention sub-layer is placed in between. This leads to a brand new architecture. Such an FFN-attention-FFN layer is \"Macaron-like\", and thus we call the network with this new architecture the Macaron Net. Through extensive experiments, we show that the Macaron Net is superior to the Transformer on both supervised and unsupervised learning tasks. The reproducible codes and pretrained models can be found at this https URL\n\n3. ODE Transformer: An Ordinary Differential Equation-Inspired Model for Neural Machine Translation.\n   ID: 476g43wg7i\n   2021 · Bei Li, Quan Du, Tao Zhou · arXiv: Computation and Language\n   Abstract: It has been found that residual networks are an Euler discretization of solutions to Ordinary Differential Equations (ODEs) In this paper, we explore a deeper relationship between Transformer and numerical methods of ODEs We show that a residual block of layers in Transformer can be described as a higher-order solution to ODEs This leads us to design a new architecture (call it ODE Transformer) analogous to the Runge-Kutta method that is well motivated in ODEs As a natural extension to Transformer, ODE Transformer is easy to implement and parameter efficient Our experiments on three WMT tasks demonstrate the genericity of this model, and large improvements in performance over several strong baselines It achieves 3076 and 4411 BLEU scores on the WMT'14 En-De and En-Fr test data This sets a new state-of-the-art on the WMT'14 En-Fr task\n\n4. Multi-Particle Dynamical Systems Modeling Transformers\n   ID: iypdw2v75n0r\n   2025 · Yuxuan Zhang · Theoretical and natural science\n   DOI: 10.54254/2753-8818/2025.dl27324\n   Abstract: Deep neural networks can be understood as discretizing a continuous dynamical system. This literature review analyzes how the multi-particle dynamical system formulation models the self-attention mechanism in transformers. We will discover how this formulation enables the systematic study of the system's convergence towards clusters and its relation with the Kuramoto oscillator. \n\n5. Understanding and Improving Transformer from a Multi-Particle Dynamic System Point of View.\n   ID: 9spkhi25qbbj\n   Yiping Lu, Zhuohan Li, Di He\n   DOI: 10.48550/arxiv.1906.02762\n   Abstract: The Transformer architecture is widely used in natural language processing. Despite its success, the design principle of the Transformer remains elusive. In this paper, we provide a novel perspective towards understanding the architecture: we show that the Transformer can be mathematically interpreted as a numerical Ordinary Differential Equation (ODE) solver for a convection-diffusion equation in a multi-particle dynamic system. In particular, how words in a sentence are abstracted into contexts by passing through the layers of the Transformer can be interpreted as approximating multiple particles' movement in the space using the Lie-Trotter splitting scheme and the Euler's method. Given this ODE's perspective, the rich literature of numerical analysis can be brought to guide us in designing effective structures beyond the Transformer. As an example, we propose to replace the Lie-Trotter splitting scheme by the Strang-Marchuk splitting scheme, a scheme that is more commonly used and with much lower local truncation errors. The Strang-Marchuk splitting scheme suggests that the self-attention and position-wise feed-forward network (FFN) sub-layers should not be treated equally. Instead, in each layer, two position-wise FFN sub-layers should be used, and the self-attention sub-layer is placed in between. This leads to a brand new architecture. Such an FFN-attention-FFN layer is \"Macaron-like\", and thus we call the network with this new architecture the Macaron Net. Through extensive experiments, we show that the Macaron Net is superior to the Transformer on both supervised and unsupervised learning tasks. The reproducible codes and pretrained models can be found at https://github.com/zhuohan123/macaron-net\n\n6. PDE-Transformer: A Continuous Dynamical Systems Approach to Sequence Modeling\n   ID: w0e3edui9yfy\n   2025 · Zhang Yukun, Zhou Xue-qing\n   DOI: 10.48550/arxiv.2510.03272\n   Abstract: We propose PDE-Transformer, a novel sequence modeling paradigm that casts the forward pass of a Transformer as the numerical discretization of a continuous reaction-diffusion system derived from a variational energy functional. In our framework, token embeddings evolve under a partial differential equation whose nonlocal integral term models self-attention, local reaction term models feed-forward layers, diffusion term encodes positional smoothing, and a stability control term corresponds to layer normalization. From this unifying perspective, we design an Adaptive PDE Diffusion Layer-an efficient, learnable finite-difference stencil that enforces local smoothness in feature space with linear time complexity and complements self-attention's global routing. Through a systematic theoretical analysis based on four pillars:stability, diffusion geometry, multi-scale dynamics, and component coupling, we derive principled guidelines for integrating the PDE layer at seven candidate points in the Transformer. Empirically, on the Long Range Arena benchmark, placing the layer immediately after embedding yields a 4.1 pp average accuracy gain over a strong baseline, and an adaptive multi-scale variant delivers further improvements. Our work thus offers a principled, lightweight mechanism to bolster long-range dependency modeling by harmonizing continuous PDE smoothing with discrete self-attention. \n\n7. A Mathematical Explanation of Transformers for Large Language Models and GPTs\n   ID: p7obpvl4vtpa\n   2025 · Tai, Xue-Cheng, Liu Hao, Li Lingfeng\n   DOI: 10.48550/arxiv.2510.03989\n   Abstract: The Transformer architecture has revolutionized the field of sequence modeling and underpins the recent breakthroughs in large language models (LLMs). However, a comprehensive mathematical theory that explains its structure and operations remains elusive. In this work, we propose a novel continuous framework that rigorously interprets the Transformer as a discretization of a structured integro-differential equation. Within this formulation, the self-attention mechanism emerges naturally as a non-local integral operator, and layer normalization is characterized as a projection to a time-dependent constraint. This operator-theoretic and variational perspective offers a unified and interpretable foundation for understanding the architecture's core components, including attention, feedforward layers, and normalization. Our approach extends beyond previous theoretical analyses by embedding the entire Transformer operation in continuous domains for both token indices and feature dimensions. This leads to a principled and flexible framework that not only deepens theoretical insight but also offers new directions for architecture design, analysis, and control-based interpretations. This new interpretation provides a step toward bridging the gap between deep learning architectures and continuous mathematical modeling, and contributes a foundational perspective to the ongoing development of interpretable and theoretically grounded neural network models. \n\n8. A mathematical perspective on Transformers\n   ID: 53eabnh0q2\n   2023 · Borjan Geshkovski, Cyril Letrouit, Yury Polyanskiy · arXiv.org\n   DOI: 10.48550/arxiv.2312.10794\n   Abstract: Transformers play a central role in the inner workings of large language models. We develop a mathematical framework for analyzing Transformers based on their interpretation as interacting particle systems, which reveals that clusters emerge in long time. Our study explores the underlying theory and offers new perspectives for mathematicians as well as computer scientists.\n\n9. ODE Transformer: An Ordinary Differential Equation-Inspired Model for\n  Sequence Generation\n   ID: 3ojcoa8d\n   2022\n   DOI: 10.48550/arxiv.2203.09176\n   Abstract: Residual networks are an Euler discretization of solutions to Ordinary Differential Equations (ODE). This paper explores a deeper relationship between Transformer and numerical ODE methods. We first show that a residual block of layers in Transformer can be described as a higher-order solution to ODE. Inspired by this, we design a new architecture, {\\it ODE Transformer}, which is analogous to the Runge-Kutta method that is well motivated in ODE. As a natural extension to Transformer, ODE Transformer is easy to implement and efficient to use. Experimental results on the large-scale machine translation, abstractive summarization, and grammar error correction tasks demonstrate the high genericity of ODE Transformer. It can gain large improvements in model performance over strong baselines (e.g., 30.77 and 44.11 BLEU scores on the WMT'14 English-German and English-French benchmarks) at a slight cost in inference efficiency. \n\n10. ODE Transformer: An Ordinary Differential Equation-Inspired Model for Sequence Generation\n   ID: 1hl058or\n   2022 · Bei Li, Quan Du, Tao Zhou\n   DOI: 10.48550/arXiv.2203.09176\n   Abstract: Residual networks are an Euler discretization of solutions to Ordinary Differential Equations (ODE). This paper explores a deeper relationship between Transformer and numerical ODE methods. We first show that a residual block of layers in Transformer can be described as a higher-order solution to ODE. Inspired by this, we design a new architecture, ODE Transformer, which is analogous to the Runge-Kutta method that is well motivated in ODE. As a natural extension to Transformer, ODE Transformer is easy to implement and efficient to use. Experimental results on the large-scale machine translation, abstractive summarization, and grammar error correction tasks demonstrate the high genericity of ODE Transformer. It can gain large improvements in model performance over strong baselines (e.g., 30.77 and 44.11 BLEU scores on the WMT’14 English-German and English-French benchmarks) at a slight cost in inference efficiency."
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "How are Transformer residual blocks formally interpreted as numerical discretizations of interacting particle dynamical systems, including separate feed-forward drift and self-attention token interactions?",
+        "papers": [
+          {
+            "id": 2948981900,
+            "title": "Understanding and Improving Transformer From a Multi-Particle Dynamic System Point of View",
+            "is_archived": false,
+            "full_slug": "understanding-and-improving-transformer-from-a-multi-3dyebnr7qc",
+            "journal": {
+              "display_name": "arXiv: Learning",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2597173376,
+              "slug": "arxiv-learning",
+              "unique_id": "2w4i5zua",
+              "full_slug": "arxiv-learning-2w4i5zua"
+            },
+            "conference_series": null,
+            "date": "2019-06-06T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "3dyebnr7qc",
+            "abstract": "The Transformer architecture is widely used in natural language processing. Despite its success, the design principle of the Transformer remains elusive. In this paper, we provide a novel perspective towards understanding the architecture: we show that the Transformer can be mathematically interpreted as a numerical Ordinary Differential Equation (ODE) solver for a convection-diffusion equation in a multi-particle dynamic system. In particular, how words in a sentence are abstracted into contexts by passing through the layers of the Transformer can be interpreted as approximating multiple particles' movement in the space using the Lie-Trotter splitting scheme and the Euler's method. Given this ODE's perspective, the rich literature of numerical analysis can be brought to guide us in designing effective structures beyond the Transformer. As an example, we propose to replace the Lie-Trotter splitting scheme by the Strang-Marchuk splitting scheme, a scheme that is more commonly used and with much lower local truncation errors. The Strang-Marchuk splitting scheme suggests that the self-attention and position-wise feed-forward network (FFN) sub-layers should not be treated equally. Instead, in each layer, two position-wise FFN sub-layers should be used, and the self-attention sub-layer is placed in between. This leads to a brand new architecture. Such an FFN-attention-FFN layer is \"Macaron-like\", and thus we call the network with this new architecture the Macaron Net. Through extensive experiments, we show that the Macaron Net is superior to the Transformer on both supervised and unsupervised learning tasks. The reproducible codes and pretrained models can be found at this https URL",
+            "authors": {
+              "total": 8,
+              "data": [
+                {
+                  "display_name": "Yiping Lu",
+                  "id": 3134298797,
+                  "slug": "yiping-lu",
+                  "unique_id": "4a8y2sxn7w",
+                  "full_slug": "yiping-lu-4a8y2sxn7w",
+                  "affiliation_full_slug": "stanford-university-24e5cwqm"
+                },
+                {
+                  "display_name": "Zhuohan Li",
+                  "id": 2787137077,
+                  "slug": "zhuohan-li",
+                  "unique_id": "1fcv94hpjz",
+                  "full_slug": "zhuohan-li-1fcv94hpjz",
+                  "affiliation_full_slug": "university-of-california-berkeley-24veh4gb"
+                },
+                {
+                  "display_name": "Di He",
+                  "id": 2619823137,
+                  "slug": "di-he",
+                  "unique_id": "as2nr5ffsi",
+                  "full_slug": "di-he-as2nr5ffsi",
+                  "affiliation_full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Zhiqing Sun",
+                  "id": 2910663314,
+                  "slug": "zhiqing-sun",
+                  "unique_id": "2o5pyfyox1",
+                  "full_slug": "zhiqing-sun-2o5pyfyox1",
+                  "affiliation_full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Bin Dong",
+                  "id": 1895920807,
+                  "slug": "bin-dong",
+                  "unique_id": "2am4c2ie6m",
+                  "full_slug": "bin-dong-2am4c2ie6m",
+                  "affiliation_full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Tao Qin",
+                  "id": 3214676511,
+                  "slug": "tao-qin",
+                  "unique_id": "80l5uvnack",
+                  "full_slug": "tao-qin-80l5uvnack",
+                  "affiliation_full_slug": "microsoft-2lvqci8u"
+                },
+                {
+                  "display_name": "Liwei Wang",
+                  "id": 2468122884,
+                  "slug": "liwei-wang",
+                  "unique_id": "5abaqlgess",
+                  "full_slug": "liwei-wang-5abaqlgess",
+                  "affiliation_full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Tie-Yan Liu",
+                  "id": 2108341226,
+                  "slug": "tie-yan-liu",
+                  "unique_id": "12tz6tann8",
+                  "full_slug": "tie-yan-liu-12tz6tann8",
+                  "affiliation_full_slug": "microsoft-2lvqci8u"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Stanford University",
+                  "city": "Stanford",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 97018004,
+                  "slug": "stanford-university",
+                  "unique_id": "24e5cwqm",
+                  "full_slug": "stanford-university-24e5cwqm"
+                },
+                {
+                  "display_name": "University of California, Berkeley",
+                  "city": "Berkeley",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 95457486,
+                  "slug": "university-of-california-berkeley",
+                  "unique_id": "24veh4gb",
+                  "full_slug": "university-of-california-berkeley-24veh4gb"
+                },
+                {
+                  "display_name": "Peking University",
+                  "city": "Beijing",
+                  "region": "Beijing",
+                  "country": "China",
+                  "id": 20231570,
+                  "slug": "peking-university",
+                  "unique_id": "10cwb2i2",
+                  "full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Microsoft",
+                  "city": "Redmond",
+                  "region": "Washington",
+                  "country": "United States",
+                  "id": 1290206253,
+                  "slug": "microsoft",
+                  "unique_id": "2lvqci8u",
+                  "full_slug": "microsoft-2lvqci8u"
+                }
+              ]
+            },
+            "fulltext_url": "pdf/understanding-and-improving-transformer-from-a-multi-3dyebnr7qc.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf",
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://arxiv.org/abs/1906.02762"
+                ],
+                "Pdf": [
+                  "https://arxiv.org/pdf/1906.02762",
+                  "https://arxiv.org/pdf/1906.02762v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 179
+              }
+            },
+            "tldr": "It is shown that the Transformer can be mathematically interpreted as a numerical Ordinary Differential Equation (ODE) solver for a convection-diffusion equation in a multi-particle dynamic system.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3115011379,
+            "title": "Understanding and Improving Transformer From a Multi-Particle Dynamic System Point of View",
+            "is_archived": false,
+            "full_slug": "understanding-and-improving-transformer-from-a-multi-14rcgz43li",
+            "journal": null,
+            "conference_series": {
+              "display_name": "International Conference on Learning Representations",
+              "id": 2584161585,
+              "slug": "international-conference-on-learning-representations",
+              "unique_id": "3fuf27wk",
+              "full_slug": "international-conference-on-learning-representations-3fuf27wk"
+            },
+            "date": "2019-06-06T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Proceedings Article",
+            "doi": null,
+            "unique_id": "14rcgz43li",
+            "abstract": "The Transformer architecture is widely used in natural language processing. Despite its success, the design principle of the Transformer remains elusive. In this paper, we provide a novel perspective towards understanding the architecture: we show that the Transformer can be mathematically interpreted as a numerical Ordinary Differential Equation (ODE) solver for a convection-diffusion equation in a multi-particle dynamic system. In particular, how words in a sentence are abstracted into contexts by passing through the layers of the Transformer can be interpreted as approximating multiple particles' movement in the space using the Lie-Trotter splitting scheme and the Euler's method. Given this ODE's perspective, the rich literature of numerical analysis can be brought to guide us in designing effective structures beyond the Transformer. As an example, we propose to replace the Lie-Trotter splitting scheme by the Strang-Marchuk splitting scheme, a scheme that is more commonly used and with much lower local truncation errors. The Strang-Marchuk splitting scheme suggests that the self-attention and position-wise feed-forward network (FFN) sub-layers should not be treated equally. Instead, in each layer, two position-wise FFN sub-layers should be used, and the self-attention sub-layer is placed in between. This leads to a brand new architecture. Such an FFN-attention-FFN layer is \"Macaron-like\", and thus we call the network with this new architecture the Macaron Net. Through extensive experiments, we show that the Macaron Net is superior to the Transformer on both supervised and unsupervised learning tasks. The reproducible codes and pretrained models can be found at this https URL",
+            "authors": {
+              "total": 8,
+              "data": [
+                {
+                  "display_name": "Yiping Lu",
+                  "id": 3134298797,
+                  "slug": "yiping-lu",
+                  "unique_id": "4a8y2sxn7w",
+                  "full_slug": "yiping-lu-4a8y2sxn7w",
+                  "affiliation_full_slug": "stanford-university-24e5cwqm"
+                },
+                {
+                  "display_name": "Zhuohan Li",
+                  "id": 2787137077,
+                  "slug": "zhuohan-li",
+                  "unique_id": "1fcv94hpjz",
+                  "full_slug": "zhuohan-li-1fcv94hpjz",
+                  "affiliation_full_slug": "university-of-california-berkeley-24veh4gb"
+                },
+                {
+                  "display_name": "Di He",
+                  "id": 2619823137,
+                  "slug": "di-he",
+                  "unique_id": "as2nr5ffsi",
+                  "full_slug": "di-he-as2nr5ffsi",
+                  "affiliation_full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Zhiqing Sun",
+                  "id": 2910663314,
+                  "slug": "zhiqing-sun",
+                  "unique_id": "2o5pyfyox1",
+                  "full_slug": "zhiqing-sun-2o5pyfyox1",
+                  "affiliation_full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Bin Dong",
+                  "id": 1895920807,
+                  "slug": "bin-dong",
+                  "unique_id": "2am4c2ie6m",
+                  "full_slug": "bin-dong-2am4c2ie6m",
+                  "affiliation_full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Tao Qin",
+                  "id": 3214676511,
+                  "slug": "tao-qin",
+                  "unique_id": "80l5uvnack",
+                  "full_slug": "tao-qin-80l5uvnack",
+                  "affiliation_full_slug": "microsoft-2lvqci8u"
+                },
+                {
+                  "display_name": "Liwei Wang",
+                  "id": 2468122884,
+                  "slug": "liwei-wang",
+                  "unique_id": "5abaqlgess",
+                  "full_slug": "liwei-wang-5abaqlgess",
+                  "affiliation_full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Tie-Yan Liu",
+                  "id": 2108341226,
+                  "slug": "tie-yan-liu",
+                  "unique_id": "12tz6tann8",
+                  "full_slug": "tie-yan-liu-12tz6tann8",
+                  "affiliation_full_slug": "microsoft-2lvqci8u"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Stanford University",
+                  "city": "Stanford",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 97018004,
+                  "slug": "stanford-university",
+                  "unique_id": "24e5cwqm",
+                  "full_slug": "stanford-university-24e5cwqm"
+                },
+                {
+                  "display_name": "University of California, Berkeley",
+                  "city": "Berkeley",
+                  "region": "California",
+                  "country": "United States",
+                  "id": 95457486,
+                  "slug": "university-of-california-berkeley",
+                  "unique_id": "24veh4gb",
+                  "full_slug": "university-of-california-berkeley-24veh4gb"
+                },
+                {
+                  "display_name": "Peking University",
+                  "city": "Beijing",
+                  "region": "Beijing",
+                  "country": "China",
+                  "id": 20231570,
+                  "slug": "peking-university",
+                  "unique_id": "10cwb2i2",
+                  "full_slug": "peking-university-10cwb2i2"
+                },
+                {
+                  "display_name": "Microsoft",
+                  "city": "Redmond",
+                  "region": "Washington",
+                  "country": "United States",
+                  "id": 1290206253,
+                  "slug": "microsoft",
+                  "unique_id": "2lvqci8u",
+                  "full_slug": "microsoft-2lvqci8u"
+                }
+              ]
+            },
+            "fulltext_url": "/pdf/understanding-and-improving-transformer-from-a-multi-14rcgz43li.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf",
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://openreview.net/forum?id=SJl1o2NFwS",
+                  "https://dblp.uni-trier.de/db/journals/corr/corr1906.html#abs-1906-02762"
+                ],
+                "Pdf": [
+                  "https://openreview.net/pdf?id=pxlqJa21C"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 6
+              }
+            },
+            "tldr": "The authors showed that the Transformer can be interpreted as a numerical Ordinary Differential Equation (ODE) solver for a convection-diffusion equation in a multi-particle dynamic system.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 3144827309,
+            "title": "ODE Transformer: An Ordinary Differential Equation-Inspired Model for Neural Machine Translation.",
+            "is_archived": false,
+            "full_slug": "ode-transformer-an-ordinary-differential-equation-inspired-476g43wg7i",
+            "journal": {
+              "display_name": "arXiv: Computation and Language",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2596401190,
+              "slug": "arxiv-computation-and-language",
+              "unique_id": "39f4jlbk",
+              "full_slug": "arxiv-computation-and-language-39f4jlbk"
+            },
+            "conference_series": null,
+            "date": "2021-04-06T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "476g43wg7i",
+            "abstract": "It has been found that residual networks are an Euler discretization of solutions to Ordinary Differential Equations (ODEs) In this paper, we explore a deeper relationship between Transformer and numerical methods of ODEs We show that a residual block of layers in Transformer can be described as a higher-order solution to ODEs This leads us to design a new architecture (call it ODE Transformer) analogous to the Runge-Kutta method that is well motivated in ODEs As a natural extension to Transformer, ODE Transformer is easy to implement and parameter efficient Our experiments on three WMT tasks demonstrate the genericity of this model, and large improvements in performance over several strong baselines It achieves 3076 and 4411 BLEU scores on the WMT'14 En-De and En-Fr test data This sets a new state-of-the-art on the WMT'14 En-Fr task",
+            "authors": {
+              "total": 7,
+              "data": [
+                {
+                  "display_name": "Bei Li",
+                  "id": 2903342304,
+                  "slug": "bei-li",
+                  "unique_id": "nbru85mxx0",
+                  "full_slug": "bei-li-nbru85mxx0"
+                },
+                {
+                  "display_name": "Quan Du",
+                  "id": 3067631148,
+                  "slug": "quan-du",
+                  "unique_id": "37cubjz39n",
+                  "full_slug": "quan-du-37cubjz39n"
+                },
+                {
+                  "display_name": "Tao Zhou",
+                  "id": 3120981010,
+                  "slug": "tao-zhou",
+                  "unique_id": "sm6ufg9s8o",
+                  "full_slug": "tao-zhou-sm6ufg9s8o"
+                },
+                {
+                  "display_name": "Shuhan Zhou",
+                  "id": 3121127267,
+                  "slug": "shuhan-zhou",
+                  "unique_id": "50hse2o0m0",
+                  "full_slug": "shuhan-zhou-50hse2o0m0"
+                },
+                {
+                  "display_name": "Xin Zeng",
+                  "id": 3118295111,
+                  "slug": "xin-zeng",
+                  "unique_id": "2fneko0n8z",
+                  "full_slug": "xin-zeng-2fneko0n8z"
+                },
+                {
+                  "display_name": "Tong Xiao",
+                  "id": 2776674136,
+                  "slug": "tong-xiao",
+                  "unique_id": "311jxe5mbp",
+                  "full_slug": "tong-xiao-311jxe5mbp"
+                },
+                {
+                  "display_name": "Jingbo Zhu",
+                  "id": 3106874903,
+                  "slug": "jingbo-zhu",
+                  "unique_id": "3ntjkqaw6c",
+                  "full_slug": "jingbo-zhu-3ntjkqaw6c"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "https://arxiv.org/pdf/2104.02308.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://dblp.uni-trier.de/db/journals/corr/corr2104.html#abs-2104-02308",
+                  "https://arxiv.org/abs/2104.02308"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 11
+              }
+            },
+            "tldr": "ODE Transformer as mentioned in this paper explores a deeper relationship between Transformer and numerical methods of ODEs and shows that a residual block of layers in Transformer can be described as a higher-order solution to ODE.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4086452709,
+            "title": "Multi-Particle Dynamical Systems Modeling Transformers",
+            "is_archived": false,
+            "full_slug": "multi-particle-dynamical-systems-modeling-transformers-iypdw2v75n0r",
+            "journal": {
+              "display_name": "Theoretical and natural science",
+              "official_page": null,
+              "issn": "2753-8818",
+              "alias": null,
+              "id": 4000215493,
+              "slug": "theoretical-and-natural-science",
+              "unique_id": "3lc5qq1g56",
+              "full_slug": "theoretical-and-natural-science-3lc5qq1g56"
+            },
+            "conference_series": null,
+            "date": "2025-10-02T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.54254/2753-8818/2025.dl27324",
+            "unique_id": "iypdw2v75n0r",
+            "abstract": "Deep neural networks can be understood as discretizing a continuous dynamical system. This literature review analyzes how the multi-particle dynamical system formulation models the self-attention mechanism in transformers. We will discover how this formulation enables the systematic study of the system's convergence towards clusters and its relation with the Kuramoto oscillator. ",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Yuxuan Zhang",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": false,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4056374729,
+            "title": "Understanding and Improving Transformer from a Multi-Particle Dynamic System Point of View.",
+            "is_archived": false,
+            "full_slug": "understanding-and-improving-transformer-from-a-multi-9spkhi25qbbj",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": null,
+            "publication_type": null,
+            "doi": "10.48550/arxiv.1906.02762",
+            "unique_id": "9spkhi25qbbj",
+            "abstract": "The Transformer architecture is widely used in natural language processing. Despite its success, the design principle of the Transformer remains elusive. In this paper, we provide a novel perspective towards understanding the architecture: we show that the Transformer can be mathematically interpreted as a numerical Ordinary Differential Equation (ODE) solver for a convection-diffusion equation in a multi-particle dynamic system. In particular, how words in a sentence are abstracted into contexts by passing through the layers of the Transformer can be interpreted as approximating multiple particles' movement in the space using the Lie-Trotter splitting scheme and the Euler's method. Given this ODE's perspective, the rich literature of numerical analysis can be brought to guide us in designing effective structures beyond the Transformer. As an example, we propose to replace the Lie-Trotter splitting scheme by the Strang-Marchuk splitting scheme, a scheme that is more commonly used and with much lower local truncation errors. The Strang-Marchuk splitting scheme suggests that the self-attention and position-wise feed-forward network (FFN) sub-layers should not be treated equally. Instead, in each layer, two position-wise FFN sub-layers should be used, and the self-attention sub-layer is placed in between. This leads to a brand new architecture. Such an FFN-attention-FFN layer is \"Macaron-like\", and thus we call the network with this new architecture the Macaron Net. Through extensive experiments, we show that the Macaron Net is superior to the Transformer on both supervised and unsupervised learning tasks. The reproducible codes and pretrained models can be found at https://github.com/zhuohan123/macaron-net",
+            "authors": {
+              "total": 8,
+              "data": [
+                {
+                  "display_name": "Yiping Lu",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zhuohan Li",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Di He",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zhiqing Sun",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Bin Dong",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Tao Qin",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Liwei Wang",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Tie-Yan Liu",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This paper reinterprets the Transformer architecture as a numerical ODE solver for a convection-diffusion equation in a multi-particle dynamic system, proposing a novel \"Macaron Net\" architecture with improved performance on supervised and unsupervised tasks.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4086913367,
+            "title": "PDE-Transformer: A Continuous Dynamical Systems Approach to Sequence Modeling",
+            "is_archived": false,
+            "full_slug": "pde-transformer-a-continuous-dynamical-systems-approach-to-w0e3edui9yfy",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-07T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.03272",
+            "unique_id": "w0e3edui9yfy",
+            "abstract": "We propose PDE-Transformer, a novel sequence modeling paradigm that casts the forward pass of a Transformer as the numerical discretization of a continuous reaction-diffusion system derived from a variational energy functional. In our framework, token embeddings evolve under a partial differential equation whose nonlocal integral term models self-attention, local reaction term models feed-forward layers, diffusion term encodes positional smoothing, and a stability control term corresponds to layer normalization. From this unifying perspective, we design an Adaptive PDE Diffusion Layer-an efficient, learnable finite-difference stencil that enforces local smoothness in feature space with linear time complexity and complements self-attention's global routing. Through a systematic theoretical analysis based on four pillars:stability, diffusion geometry, multi-scale dynamics, and component coupling, we derive principled guidelines for integrating the PDE layer at seven candidate points in the Transformer. Empirically, on the Long Range Arena benchmark, placing the layer immediately after embedding yields a 4.1 pp average accuracy gain over a strong baseline, and an adaptive multi-scale variant delivers further improvements. Our work thus offers a principled, lightweight mechanism to bolster long-range dependency modeling by harmonizing continuous PDE smoothing with discrete self-attention. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Zhang Yukun",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Zhou Xue-qing",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/pde-transformer-a-continuous-dynamical-systems-approach-to-w0e3edui9yfy.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2510.03272v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4091356489,
+            "title": "A Mathematical Explanation of Transformers for Large Language Models and GPTs",
+            "is_archived": false,
+            "full_slug": "a-mathematical-explanation-of-transformers-for-large-p7obpvl4vtpa",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-07T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.03989",
+            "unique_id": "p7obpvl4vtpa",
+            "abstract": "The Transformer architecture has revolutionized the field of sequence modeling and underpins the recent breakthroughs in large language models (LLMs). However, a comprehensive mathematical theory that explains its structure and operations remains elusive. In this work, we propose a novel continuous framework that rigorously interprets the Transformer as a discretization of a structured integro-differential equation. Within this formulation, the self-attention mechanism emerges naturally as a non-local integral operator, and layer normalization is characterized as a projection to a time-dependent constraint. This operator-theoretic and variational perspective offers a unified and interpretable foundation for understanding the architecture's core components, including attention, feedforward layers, and normalization. Our approach extends beyond previous theoretical analyses by embedding the entire Transformer operation in continuous domains for both token indices and feature dimensions. This leads to a principled and flexible framework that not only deepens theoretical insight but also offers new directions for architecture design, analysis, and control-based interpretations. This new interpretation provides a step toward bridging the gap between deep learning architectures and continuous mathematical modeling, and contributes a foundational perspective to the ongoing development of interpretable and theoretically grounded neural network models. ",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Tai, Xue-Cheng",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Liu Hao",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Li Lingfeng",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Chan, Raymond H.",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4021707295,
+            "title": "A mathematical perspective on Transformers",
+            "is_archived": false,
+            "full_slug": "a-mathematical-perspective-on-transformers-53eabnh0q2",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2023-12-17T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2312.10794",
+            "unique_id": "53eabnh0q2",
+            "abstract": "Transformers play a central role in the inner workings of large language models. We develop a mathematical framework for analyzing Transformers based on their interpretation as interacting particle systems, which reveals that clusters emerge in long time. Our study explores the underlying theory and offers new perspectives for mathematicians as well as computer scientists.",
+            "authors": {
+              "total": 4,
+              "data": [
+                {
+                  "display_name": "Borjan Geshkovski",
+                  "id": 3047551496,
+                  "slug": "borjan-geshkovski",
+                  "unique_id": "3ttxjb2p9z",
+                  "full_slug": "borjan-geshkovski-3ttxjb2p9z",
+                  "affiliation_full_slug": "autonomous-university-of-madrid-2p62roku"
+                },
+                {
+                  "display_name": "Cyril Letrouit",
+                  "id": 4000620649,
+                  "slug": "cyril-letrouit",
+                  "unique_id": "4gwueu5x",
+                  "full_slug": "cyril-letrouit-4gwueu5x"
+                },
+                {
+                  "display_name": "Yury Polyanskiy",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Philippe Rigollet",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Autonomous University of Madrid",
+                  "city": "Madrid",
+                  "region": null,
+                  "country": "Spain",
+                  "id": 63634437,
+                  "slug": "autonomous-university-of-madrid",
+                  "unique_id": "2p62roku",
+                  "full_slug": "autonomous-university-of-madrid-2p62roku"
+                }
+              ]
+            },
+            "metrics": {
+              "citations": {
+                "total": 20
+              }
+            },
+            "tldr": "This study develops a mathematical framework for analyzing Transformers based on their interpretation as interacting particle systems, which reveals that clusters emerge in long time.",
+            "podcast": null,
+            "podcast_generation_allowed": false,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4016991323,
+            "title": "ODE Transformer: An Ordinary Differential Equation-Inspired Model for\n  Sequence Generation",
+            "is_archived": false,
+            "full_slug": "ode-transformer-an-ordinary-differential-equation-inspired-3ojcoa8d",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-03-17T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2203.09176",
+            "unique_id": "3ojcoa8d",
+            "abstract": "Residual networks are an Euler discretization of solutions to Ordinary Differential Equations (ODE). This paper explores a deeper relationship between Transformer and numerical ODE methods. We first show that a residual block of layers in Transformer can be described as a higher-order solution to ODE. Inspired by this, we design a new architecture, {\\it ODE Transformer}, which is analogous to the Runge-Kutta method that is well motivated in ODE. As a natural extension to Transformer, ODE Transformer is easy to implement and efficient to use. Experimental results on the large-scale machine translation, abstractive summarization, and grammar error correction tasks demonstrate the high genericity of ODE Transformer. It can gain large improvements in model performance over strong baselines (e.g., 30.77 and 44.11 BLEU scores on the WMT'14 English-German and English-French benchmarks) at a slight cost in inference efficiency. ",
+            "fulltext_url": "/pdf/ode-transformer-an-ordinary-differential-equation-inspired-3ojcoa8d.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2203.09176"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "ODE Transformer as mentioned in this paper is a higher-order solution to ODE, which can gain large improvements in model performance over strong baselines (e.g., 30.77 and 44.11 BLEU scores on the WMT'14 English-German and English-French benchmarks) at a slight cost in inference efficiency.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4001239907,
+            "title": "ODE Transformer: An Ordinary Differential Equation-Inspired Model for Sequence Generation",
+            "is_archived": false,
+            "full_slug": "ode-transformer-an-ordinary-differential-equation-inspired-1hl058or",
+            "journal": null,
+            "conference_series": {
+              "display_name": "Annual Meeting of the Association for Computational Linguistics",
+              "id": 4000002156,
+              "slug": "annual-meeting-of-the-association-for-computational",
+              "unique_id": "3uf4wsvk",
+              "full_slug": "annual-meeting-of-the-association-for-computational-3uf4wsvk"
+            },
+            "date": "2022-03-17T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Proceedings Article",
+            "doi": "10.48550/arXiv.2203.09176",
+            "unique_id": "1hl058or",
+            "abstract": "Residual networks are an Euler discretization of solutions to Ordinary Differential Equations (ODE). This paper explores a deeper relationship between Transformer and numerical ODE methods. We first show that a residual block of layers in Transformer can be described as a higher-order solution to ODE. Inspired by this, we design a new architecture, ODE Transformer, which is analogous to the Runge-Kutta method that is well motivated in ODE. As a natural extension to Transformer, ODE Transformer is easy to implement and efficient to use. Experimental results on the large-scale machine translation, abstractive summarization, and grammar error correction tasks demonstrate the high genericity of ODE Transformer. It can gain large improvements in model performance over strong baselines (e.g., 30.77 and 44.11 BLEU scores on the WMT’14 English-German and English-French benchmarks) at a slight cost in inference efficiency.",
+            "authors": {
+              "total": 10,
+              "data": [
+                {
+                  "display_name": "Bei Li",
+                  "id": 2903342304,
+                  "slug": "bei-li",
+                  "unique_id": "nbru85mxx0",
+                  "full_slug": "bei-li-nbru85mxx0"
+                },
+                {
+                  "display_name": "Quan Du",
+                  "id": 3067631148,
+                  "slug": "quan-du",
+                  "unique_id": "37cubjz39n",
+                  "full_slug": "quan-du-37cubjz39n"
+                },
+                {
+                  "display_name": "Tao Zhou",
+                  "id": 2497575280,
+                  "slug": "tao-zhou",
+                  "unique_id": "22xumbqo10",
+                  "full_slug": "tao-zhou-22xumbqo10"
+                },
+                {
+                  "display_name": "Yi Jing",
+                  "id": 3200791992,
+                  "slug": "yi-jing",
+                  "unique_id": "3a1ogql0cj",
+                  "full_slug": "yi-jing-3a1ogql0cj"
+                },
+                {
+                  "display_name": "Shuhan Zhou",
+                  "id": 3121127267,
+                  "slug": "shuhan-zhou",
+                  "unique_id": "50hse2o0m0",
+                  "full_slug": "shuhan-zhou-50hse2o0m0"
+                },
+                {
+                  "display_name": "Xin Zeng",
+                  "id": 3118295111,
+                  "slug": "xin-zeng",
+                  "unique_id": "2fneko0n8z",
+                  "full_slug": "xin-zeng-2fneko0n8z"
+                },
+                {
+                  "display_name": "Tongyang Xiao",
+                  "id": 3013042397,
+                  "slug": "tongyang-xiao",
+                  "unique_id": "29xuccah6l",
+                  "full_slug": "tongyang-xiao-29xuccah6l"
+                },
+                {
+                  "display_name": "Jingbo Zhu",
+                  "id": 3106874903,
+                  "slug": "jingbo-zhu",
+                  "unique_id": "3ntjkqaw6c",
+                  "full_slug": "jingbo-zhu-3ntjkqaw6c"
+                },
+                {
+                  "display_name": "Xuebo Liu",
+                  "id": 2168553999,
+                  "slug": "xuebo-liu",
+                  "unique_id": "1wcqrlrgu3",
+                  "full_slug": "xuebo-liu-1wcqrlrgu3"
+                },
+                {
+                  "display_name": "Min Zhang",
+                  "id": 2766437302,
+                  "slug": "min-zhang",
+                  "unique_id": "480h87qta8",
+                  "full_slug": "min-zhang-480h87qta8"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/ode-transformer-an-ordinary-differential-equation-inspired-1hl058or.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://www.aclanthology.org/2022.acl-long.571.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "A new architecture is designed, ODE Transformer, which is analogous to the Runge-Kutta method that is well motivated in ODE, and can gain large improvements in model performance over strong baselines at a slight cost in inference efficiency.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

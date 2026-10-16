@@ -1,0 +1,669 @@
+{
+  "question": "What does neural tangent kernel and finite-width feature-learning theory predict about changes of fixed-input representations during gradient-based training, and how are cross-token correlations induced by shared parameter updates?",
+  "result": {
+    "status": "fulfilled",
+    "value": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Found 10 relevant papers on 'What does neural tangent kernel and finite-width feature-learning theory predict about changes of fixed-input representations during gradient-based training, and how are cross-token correlations induced by shared parameter updates?'.\n\n\n1. On the Empirical Neural Tangent Kernel of Standard Finite-Width Convolutional Neural Network Architectures.\n   ID: 3xs6rymmy3\n   2020 · Maxim Samarin, Volker Roth, David Belius · arXiv: Learning\n   Abstract: The Neural Tangent Kernel (NTK) is an important milestone in the ongoing effort to build a theory for deep learning Its prediction that sufficiently wide neural networks behave as kernel methods, or equivalently as random feature models, has been confirmed empirically for certain wide architectures It remains an open question how well NTK theory models standard neural network architectures of widths common in practice, trained on complex datasets such as ImageNet We study this question empirically for two well-known convolutional neural network architectures, namely AlexNet and LeNet, and find that their behavior deviates significantly from their finite-width NTK counterparts For wider versions of these networks, where the number of channels and widths of fully-connected layers are increased, the deviation decreases\n\n2. A simple mean field model of feature learning\n   ID: envfajn8axxl\n   2025 · Mingard, Chris, Nam, Yoonsoo\n   DOI: 10.48550/arxiv.2510.15174\n   Abstract: Feature learning (FL), where neural networks adapt their internal representations during training, remains poorly understood. Using methods from statistical physics, we derive a tractable, self-consistent mean-field (MF) theory for the Bayesian posterior of two-layer non-linear networks trained with stochastic gradient Langevin dynamics (SGLD). At infinite width, this theory reduces to kernel ridge regression, but at finite width it predicts a symmetry breaking phase transition where networks abruptly align with target functions. While the basic MF theory provides theoretical insight into the emergence of FL in the finite-width regime, semi-quantitatively predicting the onset of FL with noise or sample size, it substantially underestimates the improvements in generalisation after the transition. We trace this discrepancy to a key mechanism absent from the plain MF description: \\textit{self-reinforcing input feature selection}. Incorporating this mechanism into the MF theory allows us to quantitatively match the learning curves of SGLD-trained networks and provides mechanistic insight into FL. \n\n3. Finite Depth and Width Corrections to the Neural Tangent Kernel\n   ID: 528co6f4ka\n   2020 · Boris Hanin, Mihai Nica\n   Abstract: We prove the precise scaling, at finite depth and width, for the mean and variance of the neural tangent kernel (NTK) in a randomly initialized ReLU network. The standard deviation is exponential in the ratio of network depth to width. Thus, even in the limit of infinite overparameterization, the NTK is not deterministic if depth and width simultaneously tend to infinity. Moreover, we prove that for such deep and wide networks, the NTK has a non-trivial evolution during training by showing that the mean of its first SGD update is also exponential in the ratio of network depth to width. This is sharp contrast to the regime where depth is fixed and network width is very large. Our results suggest that, unlike relatively shallow and wide networks, deep and wide ReLU networks are capable of learning data-dependent features even in the so-called lazy training regime.\n\n4. On the Empirical Neural Tangent Kernel of Standard Finite-Width Convolutional Neural Network Architectures.\n   ID: 7emunczdnamc\n   Maxim Samarin, Volker Roth, David Belius\n   DOI: 10.48550/arxiv.2006.13645\n   Abstract: The Neural Tangent Kernel (NTK) is an important milestone in the ongoing effort to build a theory for deep learning. Its prediction that sufficiently wide neural networks behave as kernel methods, or equivalently as random feature models, has been confirmed empirically for certain wide architectures. It remains an open question how well NTK theory models standard neural network architectures of widths common in practice, trained on complex datasets such as ImageNet. We study this question empirically for two well-known convolutional neural network architectures, namely AlexNet and LeNet, and find that their behavior deviates significantly from their finite-width NTK counterparts. For wider versions of these networks, where the number of channels and widths of fully-connected layers are increased, the deviation decreases.\n\n5. Finite Depth and Width Corrections to the Neural Tangent Kernel\n   ID: 5gj7g4p4i4\n   2019 · Boris Hanin, Mihai Nica · arXiv: Learning\n   Abstract: We prove the precise scaling, at finite depth and width, for the mean and variance of the neural tangent kernel (NTK) in a randomly initialized ReLU network. The standard deviation is exponential in the ratio of network depth to width. Thus, even in the limit of infinite overparameterization, the NTK is not deterministic if depth and width simultaneously tend to infinity. Moreover, we prove that for such deep and wide networks, the NTK has a non-trivial evolution during training by showing that the mean of its first SGD update is also exponential in the ratio of network depth to width. This is sharp contrast to the regime where depth is fixed and network width is very large. Our results suggest that, unlike relatively shallow and wide networks, deep and wide ReLU networks are capable of learning data-dependent features even in the so-called lazy training regime.\n\n6. Finite-Width Neural Tangent Kernels from Feynman Diagrams\n   ID: flrxh01ercyg\n   2025 · Max Guillen, Philipp Misof, Jan E. Gerken · arXiv.org\n   DOI: 10.48550/arxiv.2508.11522\n   Abstract: Neural tangent kernels (NTKs) are a powerful tool for analyzing deep, non-linear neural networks. In the infinite-width limit, NTKs can easily be computed for most common architectures, yielding full analytic control over the training dynamics. However, at infinite width, important properties of training such as NTK evolution or feature learning are absent. Nevertheless, finite width effects can be included by computing corrections to the Gaussian statistics at infinite width. We introduce Feynman diagrams for computing finite-width corrections to NTK statistics. These dramatically simplify the necessary algebraic manipulations and enable the computation of layer-wise recursive relations for arbitrary statistics involving preactivations, NTKs and certain higher-derivative tensors (dNTK and ddNTK) required to predict the training dynamics at leading order. We demonstrate the feasibility of our framework by extending stability results for deep networks from preactivations to NTKs and proving the absence of finite-width corrections for scale-invariant nonlinearities such as ReLU on the diagonal of the Gram matrix of the NTK. We validate our results with numerical experiments.\n\n7. Width neural networks that learn features\n   ID: 2u5hawns\n   Edward J. Hu\n   Abstract: While a popular limit of infinite-width neural networks, the Neural Tangent Kernel (NTK) often exhibits performance gaps from finite-width neural networks on standard datasets, due to lack of feature learning. Although the feature learning maximal update limit, or μ-limit (Yang and Hu, 2020) of wide networks has closed the gap for 1-hidden-layer linear models, no one has been able to demonstrate this for deep nonlinear multi-layer perceptrons (MLP) because of μ-limit’s computational difficulty in this setting. Here, we solve this problem by proposing a novel feature learning limit, the π-limit, that bypasses the computational issues. The π-limit, in short, is the limit of a form of projected gradient descent, and the π-limit of an MLP is roughly another MLP where gradients are appended to weights during training. We evaluate it on CIFAR10 and Omniglot against NTK as well as finite networks, finding the π-limit outperform finite-width models trained normally (without projection) in both settings, closing the performance gap between finiteand infinite-width neural networks previously left by NTK. Code for this work is available at github.com/santacml/pilim. NTK Finite-Width Network -Width -Limit (Ours) Figure 1: PCA of representations of images from 5 classes (= 5 colors) in Omniglot test set. We compare the representations from our best performing finite-width μ-parametrized network, our proposed∞-width π-limit, and NTK. The representations from former two form neat clusters according to their classes while those from the latter are mixed up together. See Appendix B.5.3.\n\n8. Fast Finite Width Neural Tangent Kernel\n   ID: 3hgkscdn\n   2022 · Roman Novak, Jascha Sohl-Dickstein, Samuel S. Schoenholz\n   DOI: 10.48550/arXiv.2206.08720\n   Abstract: The Neural Tangent Kernel (NTK), deﬁned as Θ fθ ( x 1 , x 2 ) = (cid:2) ∂f ( θ, x 1 ) (cid:14) ∂θ (cid:3) (cid:2) ∂f ( θ, x 2 ) (cid:14) ∂θ (cid:3) T where (cid:2) ∂f ( θ, · ) (cid:14) ∂θ (cid:3) is a neural network (NN) Jacobian, has emerged as a central object of study in deep learning. In the inﬁnite width limit, the NTK can sometimes be computed analytically and is useful for understanding training and generalization of NN architectures. At ﬁnite widths, the NTK is also used to better initialize NNs, compare the conditioning across models, perform architecture search, and do meta-learning. Unfortunately, the ﬁnite width NTK is notoriously expensive to compute, which severely limits its practical utility. We perform the ﬁrst in-depth analysis of the compute and memory requirements for NTK computation in ﬁnite width networks. Leveraging the structure of neural networks, we further propose two novel algorithms that change the ex-ponent of the compute and memory requirements of the ﬁnite width NTK, dramatically improving efﬁciency. Our algorithms can be applied in a black box fashion to any differentiable function, including those implementing neural networks. We open-source our implementations within the Neural Tangents package (Novak et al., 2020) at github.com/google/neural-tangents.\n\n9. Fast Finite Width Neural Tangent Kernel\n   ID: 40azj8ab\n   2022\n   DOI: 10.48550/arxiv.2206.08720\n   Abstract: The Neural Tangent Kernel (NTK), defined as $\\Theta_\\theta^f(x_1, x_2) = \\left[\\partial f(\\theta, x_1)\\big/\\partial \\theta\\right] \\left[\\partial f(\\theta, x_2)\\big/\\partial \\theta\\right]^T$ where $\\left[\\partial f(\\theta, \\cdot)\\big/\\partial \\theta\\right]$ is a neural network (NN) Jacobian, has emerged as a central object of study in deep learning. In the infinite width limit, the NTK can sometimes be computed analytically and is useful for understanding training and generalization of NN architectures. At finite widths, the NTK is also used to better initialize NNs, compare the conditioning across models, perform architecture search, and do meta-learning. Unfortunately, the finite width NTK is notoriously expensive to compute, which severely limits its practical utility. We perform the first in-depth analysis of the compute and memory requirements for NTK computation in finite width networks. Leveraging the structure of neural networks, we further propose two novel algorithms that change the exponent of the compute and memory requirements of the finite width NTK, dramatically improving efficiency. Our algorithms can be applied in a black box fashion to any differentiable function, including those implementing neural networks. We open-source our implementations within the Neural Tangents package (arXiv:1912.02803) at https://github.com/google/neural-tangents. \n\n10. Feature Learning and Generalization in Deep Networks with Orthogonal Weights\n   ID: z05q6dzmqeeq\n   2025 · Hannah Day, Yonatan Kahn, Daniel A. Roberts · Machine learning: science and technology\n   DOI: 10.1088/2632-2153/adf278\n   Abstract: Abstract Fully-connected deep neural networks with weights initialized from independent Gaussian distributions can be tuned to criticality, which prevents the exponential growth or decay of signals propagating through the network. However, such networks still exhibit fluctuations that grow linearly with the depth of the network, which may impair the training of networks with width comparable to depth. We show analytically that rectangular networks with tanh activations and weights initialized from the ensemble of orthogonal matrices have corresponding preactivation fluctuations which are independent of depth, to leading order in inverse width. Moreover, we demonstrate numerically that, at initialization, all correlators involving the neural tangent kernel (NTK) and its descendants at leading order in inverse width -- which govern the evolution of observables during training -- saturate at a depth of ~20, rather than growing without bound as in the case of Gaussian initializations. We speculate that this structure preserves finite-width feature learning while reducing overall noise, thus improving both generalization and training speed in deep networks with depth comparable to width. We provide some experimental justification by relating empirical measurements of the NTK to the superior performance of deep nonlinear orthogonal networks trained under full-batch gradient descent on the MNIST and CIFAR-10 classification tasks. "
+        }
+      ],
+      "structuredContent": {
+        "searchTerm": "What does neural tangent kernel and finite-width feature-learning theory predict about changes of fixed-input representations during gradient-based training, and how are cross-token correlations induced by shared parameter updates?",
+        "papers": [
+          {
+            "id": 3036998151,
+            "title": "On the Empirical Neural Tangent Kernel of Standard Finite-Width Convolutional Neural Network Architectures.",
+            "is_archived": false,
+            "full_slug": "on-the-empirical-neural-tangent-kernel-of-standard-finite-3xs6rymmy3",
+            "journal": {
+              "display_name": "arXiv: Learning",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2597173376,
+              "slug": "arxiv-learning",
+              "unique_id": "2w4i5zua",
+              "full_slug": "arxiv-learning-2w4i5zua"
+            },
+            "conference_series": null,
+            "date": "2020-06-24T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "3xs6rymmy3",
+            "abstract": "The Neural Tangent Kernel (NTK) is an important milestone in the ongoing effort to build a theory for deep learning Its prediction that sufficiently wide neural networks behave as kernel methods, or equivalently as random feature models, has been confirmed empirically for certain wide architectures It remains an open question how well NTK theory models standard neural network architectures of widths common in practice, trained on complex datasets such as ImageNet We study this question empirically for two well-known convolutional neural network architectures, namely AlexNet and LeNet, and find that their behavior deviates significantly from their finite-width NTK counterparts For wider versions of these networks, where the number of channels and widths of fully-connected layers are increased, the deviation decreases",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Maxim Samarin",
+                  "id": 2904220065,
+                  "slug": "maxim-samarin",
+                  "unique_id": "2mikxobl4l",
+                  "full_slug": "maxim-samarin-2mikxobl4l"
+                },
+                {
+                  "display_name": "Volker Roth",
+                  "id": 2236653542,
+                  "slug": "volker-roth",
+                  "unique_id": "55p2ljck5v",
+                  "full_slug": "volker-roth-55p2ljck5v"
+                },
+                {
+                  "display_name": "David Belius",
+                  "id": 2561174389,
+                  "slug": "david-belius",
+                  "unique_id": "3liu0jor3b",
+                  "full_slug": "david-belius-3liu0jor3b",
+                  "affiliation_full_slug": "university-of-basel-2rntcmwi"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "University of Basel",
+                  "city": "Basel",
+                  "region": "Basel-Stadt",
+                  "country": "Switzerland",
+                  "id": 1850255,
+                  "slug": "university-of-basel",
+                  "unique_id": "2rntcmwi",
+                  "full_slug": "university-of-basel-2rntcmwi"
+                }
+              ]
+            },
+            "fulltext_url": "https://arxiv.org/pdf/2006.13645.pdf",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Pdf",
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://dblp.uni-trier.de/db/journals/corr/corr2006.html#abs-2006-13645",
+                  "https://arxiv.org/abs/2006.13645"
+                ],
+                "Pdf": [
+                  "http://export.arxiv.org/pdf/2006.13645"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 3
+              }
+            },
+            "tldr": "This work studies how well NTK theory models standard neural network architectures of widths common in practice, trained on complex datasets such as ImageNet and LeNet, and finds that their behavior deviates significantly from their finite-width NTK counterparts.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4094315709,
+            "title": "A simple mean field model of feature learning",
+            "is_archived": false,
+            "full_slug": "a-simple-mean-field-model-of-feature-learning-envfajn8axxl",
+            "journal": null,
+            "conference_series": null,
+            "date": "2025-10-20T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2510.15174",
+            "unique_id": "envfajn8axxl",
+            "abstract": "Feature learning (FL), where neural networks adapt their internal representations during training, remains poorly understood. Using methods from statistical physics, we derive a tractable, self-consistent mean-field (MF) theory for the Bayesian posterior of two-layer non-linear networks trained with stochastic gradient Langevin dynamics (SGLD). At infinite width, this theory reduces to kernel ridge regression, but at finite width it predicts a symmetry breaking phase transition where networks abruptly align with target functions. While the basic MF theory provides theoretical insight into the emergence of FL in the finite-width regime, semi-quantitatively predicting the onset of FL with noise or sample size, it substantially underestimates the improvements in generalisation after the transition. We trace this discrepancy to a key mechanism absent from the plain MF description: \\textit{self-reinforcing input feature selection}. Incorporating this mechanism into the MF theory allows us to quantitatively match the learning curves of SGLD-trained networks and provides mechanistic insight into FL. ",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Mingard, Chris",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Nam, Yoonsoo",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "fulltext_url": "pdf/a-simple-mean-field-model-of-feature-learning-envfajn8axxl.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://arxiv.org/pdf/2510.15174"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": null,
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 2995443162,
+            "title": "Finite Depth and Width Corrections to the Neural Tangent Kernel",
+            "is_archived": false,
+            "full_slug": "finite-depth-and-width-corrections-to-the-neural-tangent-528co6f4ka",
+            "journal": null,
+            "conference_series": {
+              "display_name": "International Conference on Learning Representations",
+              "id": 2584161585,
+              "slug": "international-conference-on-learning-representations",
+              "unique_id": "3fuf27wk",
+              "full_slug": "international-conference-on-learning-representations-3fuf27wk"
+            },
+            "date": "2020-04-30T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Proceedings Article",
+            "doi": null,
+            "unique_id": "528co6f4ka",
+            "abstract": "We prove the precise scaling, at finite depth and width, for the mean and variance of the neural tangent kernel (NTK) in a randomly initialized ReLU network. The standard deviation is exponential in the ratio of network depth to width. Thus, even in the limit of infinite overparameterization, the NTK is not deterministic if depth and width simultaneously tend to infinity. Moreover, we prove that for such deep and wide networks, the NTK has a non-trivial evolution during training by showing that the mean of its first SGD update is also exponential in the ratio of network depth to width. This is sharp contrast to the regime where depth is fixed and network width is very large. Our results suggest that, unlike relatively shallow and wide networks, deep and wide ReLU networks are capable of learning data-dependent features even in the so-called lazy training regime.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Boris Hanin",
+                  "id": 2255191562,
+                  "slug": "boris-hanin",
+                  "unique_id": "15466qdwc7",
+                  "full_slug": "boris-hanin-15466qdwc7",
+                  "affiliation_full_slug": "texas-a-m-university-20g0chav"
+                },
+                {
+                  "display_name": "Mihai Nica",
+                  "id": 2040778057,
+                  "slug": "mihai-nica",
+                  "unique_id": "4vu8jzm7y9",
+                  "full_slug": "mihai-nica-4vu8jzm7y9",
+                  "affiliation_full_slug": "university-of-toronto-3dwwuuvf"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Texas A&M University",
+                  "city": "College Station",
+                  "region": "Texas",
+                  "country": "United States",
+                  "id": 91045830,
+                  "slug": "texas-a-m-university",
+                  "unique_id": "20g0chav",
+                  "full_slug": "texas-a-m-university-20g0chav"
+                },
+                {
+                  "display_name": "University of Toronto",
+                  "city": "Toronto",
+                  "region": "Ontario",
+                  "country": "Canada",
+                  "id": 185261750,
+                  "slug": "university-of-toronto",
+                  "unique_id": "3dwwuuvf",
+                  "full_slug": "university-of-toronto-3dwwuuvf"
+                }
+              ]
+            },
+            "fulltext_url": "/pdf/finite-depth-and-width-corrections-to-the-neural-tangent-528co6f4ka.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf",
+                "Html",
+                "Others"
+              ],
+              "data": {
+                "Html": [
+                  "https://arxiv.org/abs/1909.05989",
+                  "https://dblp.uni-trier.de/db/conf/iclr/iclr2020.html#HaninN20"
+                ],
+                "Pdf": [
+                  "https://arxiv.org/pdf/1909.05989.pdf",
+                  "https://openreview.net/pdf?id=SJgndT4KwB"
+                ],
+                "Others": [
+                  "http://dblp.uni-trier.de/db/journals/corr/corr1909.html#abs-1909-05989",
+                  "http://openreview.net/forum?id=SJgndT4KwB"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "The results suggest that, unlike relatively shallow and wide networks, deep and wide ReLU networks are capable of learning data-dependent features even in the so-called lazy training regime.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4055231229,
+            "title": "On the Empirical Neural Tangent Kernel of Standard Finite-Width Convolutional Neural Network Architectures.",
+            "is_archived": false,
+            "full_slug": "on-the-empirical-neural-tangent-kernel-of-standard-finite-7emunczdnamc",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": null,
+            "publication_type": null,
+            "doi": "10.48550/arxiv.2006.13645",
+            "unique_id": "7emunczdnamc",
+            "abstract": "The Neural Tangent Kernel (NTK) is an important milestone in the ongoing effort to build a theory for deep learning. Its prediction that sufficiently wide neural networks behave as kernel methods, or equivalently as random feature models, has been confirmed empirically for certain wide architectures. It remains an open question how well NTK theory models standard neural network architectures of widths common in practice, trained on complex datasets such as ImageNet. We study this question empirically for two well-known convolutional neural network architectures, namely AlexNet and LeNet, and find that their behavior deviates significantly from their finite-width NTK counterparts. For wider versions of these networks, where the number of channels and widths of fully-connected layers are increased, the deviation decreases.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Maxim Samarin",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Volker Roth",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "David Belius",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "This study empirically examines the Neural Tangent Kernel (NTK) theory on standard convolutional neural network architectures, finding significant deviations from NTK predictions for AlexNet and LeNet, which decrease with increasing network width.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 2972392510,
+            "title": "Finite Depth and Width Corrections to the Neural Tangent Kernel",
+            "is_archived": false,
+            "full_slug": "finite-depth-and-width-corrections-to-the-neural-tangent-5gj7g4p4i4",
+            "journal": {
+              "display_name": "arXiv: Learning",
+              "official_page": null,
+              "issn": null,
+              "alias": null,
+              "id": 2597173376,
+              "slug": "arxiv-learning",
+              "unique_id": "2w4i5zua",
+              "full_slug": "arxiv-learning-2w4i5zua"
+            },
+            "conference_series": null,
+            "date": "2019-09-13T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": null,
+            "unique_id": "5gj7g4p4i4",
+            "abstract": "We prove the precise scaling, at finite depth and width, for the mean and variance of the neural tangent kernel (NTK) in a randomly initialized ReLU network. The standard deviation is exponential in the ratio of network depth to width. Thus, even in the limit of infinite overparameterization, the NTK is not deterministic if depth and width simultaneously tend to infinity. Moreover, we prove that for such deep and wide networks, the NTK has a non-trivial evolution during training by showing that the mean of its first SGD update is also exponential in the ratio of network depth to width. This is sharp contrast to the regime where depth is fixed and network width is very large. Our results suggest that, unlike relatively shallow and wide networks, deep and wide ReLU networks are capable of learning data-dependent features even in the so-called lazy training regime.",
+            "authors": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Boris Hanin",
+                  "id": 2255191562,
+                  "slug": "boris-hanin",
+                  "unique_id": "15466qdwc7",
+                  "full_slug": "boris-hanin-15466qdwc7",
+                  "affiliation_full_slug": "texas-a-m-university-20g0chav"
+                },
+                {
+                  "display_name": "Mihai Nica",
+                  "id": 2040778057,
+                  "slug": "mihai-nica",
+                  "unique_id": "4vu8jzm7y9",
+                  "full_slug": "mihai-nica-4vu8jzm7y9",
+                  "affiliation_full_slug": "university-of-toronto-3dwwuuvf"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 2,
+              "data": [
+                {
+                  "display_name": "Texas A&M University",
+                  "city": "College Station",
+                  "region": "Texas",
+                  "country": "United States",
+                  "id": 91045830,
+                  "slug": "texas-a-m-university",
+                  "unique_id": "20g0chav",
+                  "full_slug": "texas-a-m-university-20g0chav"
+                },
+                {
+                  "display_name": "University of Toronto",
+                  "city": "Toronto",
+                  "region": "Ontario",
+                  "country": "Canada",
+                  "id": 185261750,
+                  "slug": "university-of-toronto",
+                  "unique_id": "3dwwuuvf",
+                  "full_slug": "university-of-toronto-3dwwuuvf"
+                }
+              ]
+            },
+            "fulltext_url": "https://arxiv.org/pdf/1909.05989",
+            "fulltext_url_no_follow": true,
+            "paper_urls": {
+              "order": [
+                "Html"
+              ],
+              "data": {
+                "Html": [
+                  "https://arxiv.org/abs/1909.05989"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 40
+              }
+            },
+            "tldr": "In this paper, the authors prove that the mean and variance of the neural tangent kernel (NTK) in a randomly initialized ReLU network is not deterministic if depth and width simultaneously tend to infinity.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4073278637,
+            "title": "Finite-Width Neural Tangent Kernels from Feynman Diagrams",
+            "is_archived": false,
+            "full_slug": "finite-width-neural-tangent-kernels-from-feynman-diagrams-flrxh01ercyg",
+            "journal": {
+              "display_name": "arXiv.org",
+              "official_page": null,
+              "issn": "2331-8422",
+              "alias": [
+                "ArXiv"
+              ],
+              "id": 4000147193,
+              "slug": "arxiv-org",
+              "unique_id": "bl5k1ptr",
+              "full_slug": "arxiv-org-bl5k1ptr"
+            },
+            "conference_series": null,
+            "date": "2025-08-15T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.48550/arxiv.2508.11522",
+            "unique_id": "flrxh01ercyg",
+            "abstract": "Neural tangent kernels (NTKs) are a powerful tool for analyzing deep, non-linear neural networks. In the infinite-width limit, NTKs can easily be computed for most common architectures, yielding full analytic control over the training dynamics. However, at infinite width, important properties of training such as NTK evolution or feature learning are absent. Nevertheless, finite width effects can be included by computing corrections to the Gaussian statistics at infinite width. We introduce Feynman diagrams for computing finite-width corrections to NTK statistics. These dramatically simplify the necessary algebraic manipulations and enable the computation of layer-wise recursive relations for arbitrary statistics involving preactivations, NTKs and certain higher-derivative tensors (dNTK and ddNTK) required to predict the training dynamics at leading order. We demonstrate the feasibility of our framework by extending stability results for deep networks from preactivations to NTKs and proving the absence of finite-width corrections for scale-invariant nonlinearities such as ReLU on the diagonal of the Gram matrix of the NTK. We validate our results with numerical experiments.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Max Guillen",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Philipp Misof",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Jan E. Gerken",
+                  "id": 2785709983,
+                  "slug": "jan-e-gerken",
+                  "unique_id": "37kz92p3pj",
+                  "full_slug": "jan-e-gerken-37kz92p3pj",
+                  "affiliation_full_slug": "max-planck-society-3o0xx7lg"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Max Planck Society",
+                  "city": "Munich",
+                  "region": null,
+                  "country": "Germany",
+                  "id": 149899117,
+                  "slug": "max-planck-society",
+                  "unique_id": "3o0xx7lg",
+                  "full_slug": "max-planck-society-3o0xx7lg"
+                }
+              ]
+            },
+            "fulltext_url": "pdf/finite-width-neural-tangent-kernels-from-feynman-diagrams-flrxh01ercyg.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "https://export.arxiv.org/pdf/2508.11522v1.pdf"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Researchers introduce Feynman diagrams to compute finite-width corrections to neural tangent kernels (NTKs), enabling layer-wise recursive relations and predicting training dynamics at leading order, with applications to stability results and numerical validation.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4001048502,
+            "title": "Width neural networks that learn features",
+            "is_archived": false,
+            "full_slug": "width-neural-networks-that-learn-features-2u5hawns",
+            "journal": null,
+            "conference_series": null,
+            "date": null,
+            "is_oa": false,
+            "publication_type": null,
+            "doi": null,
+            "unique_id": "2u5hawns",
+            "abstract": "While a popular limit of infinite-width neural networks, the Neural Tangent Kernel (NTK) often exhibits performance gaps from finite-width neural networks on standard datasets, due to lack of feature learning. Although the feature learning maximal update limit, or μ-limit (Yang and Hu, 2020) of wide networks has closed the gap for 1-hidden-layer linear models, no one has been able to demonstrate this for deep nonlinear multi-layer perceptrons (MLP) because of μ-limit’s computational difficulty in this setting. Here, we solve this problem by proposing a novel feature learning limit, the π-limit, that bypasses the computational issues. The π-limit, in short, is the limit of a form of projected gradient descent, and the π-limit of an MLP is roughly another MLP where gradients are appended to weights during training. We evaluate it on CIFAR10 and Omniglot against NTK as well as finite networks, finding the π-limit outperform finite-width models trained normally (without projection) in both settings, closing the performance gap between finiteand infinite-width neural networks previously left by NTK. Code for this work is available at github.com/santacml/pilim. NTK Finite-Width Network -Width -Limit (Ours) Figure 1: PCA of representations of images from 5 classes (= 5 colors) in Omniglot test set. We compare the representations from our best performing finite-width μ-parametrized network, our proposed∞-width π-limit, and NTK. The representations from former two form neat clusters according to their classes while those from the latter are mixed up together. See Appendix B.5.3.",
+            "authors": {
+              "total": 1,
+              "data": [
+                {
+                  "display_name": "Edward J. Hu",
+                  "id": 3172399589,
+                  "slug": "edward-j-hu",
+                  "unique_id": "2tst20xmhh",
+                  "full_slug": "edward-j-hu-2tst20xmhh"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "The π-limit is proposed, a novel feature learning limit that bypasses the computational issues of μ-limit, and found to outperform finite-width models trained normally (without projection) in both settings, closing the performance gap between finite and infinite-width neural networks previously left by NTK.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4003341982,
+            "title": "Fast Finite Width Neural Tangent Kernel",
+            "is_archived": false,
+            "full_slug": "fast-finite-width-neural-tangent-kernel-3hgkscdn",
+            "journal": null,
+            "conference_series": {
+              "display_name": "International Conference on Machine Learning",
+              "id": 1180662882,
+              "slug": "international-conference-on-machine-learning",
+              "unique_id": "p7gcurns",
+              "full_slug": "international-conference-on-machine-learning-p7gcurns"
+            },
+            "date": "2022-06-17T00:00:00Z",
+            "is_oa": false,
+            "publication_type": "Proceedings Article",
+            "doi": "10.48550/arXiv.2206.08720",
+            "unique_id": "3hgkscdn",
+            "abstract": "The Neural Tangent Kernel (NTK), deﬁned as Θ fθ ( x 1 , x 2 ) = (cid:2) ∂f ( θ, x 1 ) (cid:14) ∂θ (cid:3) (cid:2) ∂f ( θ, x 2 ) (cid:14) ∂θ (cid:3) T where (cid:2) ∂f ( θ, · ) (cid:14) ∂θ (cid:3) is a neural network (NN) Jacobian, has emerged as a central object of study in deep learning. In the inﬁnite width limit, the NTK can sometimes be computed analytically and is useful for understanding training and generalization of NN architectures. At ﬁnite widths, the NTK is also used to better initialize NNs, compare the conditioning across models, perform architecture search, and do meta-learning. Unfortunately, the ﬁnite width NTK is notoriously expensive to compute, which severely limits its practical utility. We perform the ﬁrst in-depth analysis of the compute and memory requirements for NTK computation in ﬁnite width networks. Leveraging the structure of neural networks, we further propose two novel algorithms that change the ex-ponent of the compute and memory requirements of the ﬁnite width NTK, dramatically improving efﬁciency. Our algorithms can be applied in a black box fashion to any differentiable function, including those implementing neural networks. We open-source our implementations within the Neural Tangents package (Novak et al., 2020) at github.com/google/neural-tangents.",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Roman Novak",
+                  "id": 2786378453,
+                  "slug": "roman-novak",
+                  "unique_id": "5glzqcabm4",
+                  "full_slug": "roman-novak-5glzqcabm4"
+                },
+                {
+                  "display_name": "Jascha Sohl-Dickstein",
+                  "id": 2724014709,
+                  "slug": "jascha-sohl-dickstein",
+                  "unique_id": "2yfmc9y53q",
+                  "full_slug": "jascha-sohl-dickstein-2yfmc9y53q"
+                },
+                {
+                  "display_name": "Samuel S. Schoenholz",
+                  "id": 2833214316,
+                  "slug": "samuel-s-schoenholz",
+                  "unique_id": "339oiacb3o",
+                  "full_slug": "samuel-s-schoenholz-339oiacb3o"
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Leveraging the structure of neural networks, two novel algorithms are proposed that change the ex-ponent of the compute and memory requirements of the NTK computation in ﬁnite width networks, dramatically improving efﬁciency.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4014280014,
+            "title": "Fast Finite Width Neural Tangent Kernel",
+            "is_archived": false,
+            "full_slug": "fast-finite-width-neural-tangent-kernel-40azj8ab",
+            "journal": null,
+            "conference_series": null,
+            "date": "2022-06-17T00:00:00Z",
+            "is_oa": true,
+            "publication_type": "Posted Content",
+            "doi": "10.48550/arxiv.2206.08720",
+            "unique_id": "40azj8ab",
+            "abstract": "The Neural Tangent Kernel (NTK), defined as $\\Theta_\\theta^f(x_1, x_2) = \\left[\\partial f(\\theta, x_1)\\big/\\partial \\theta\\right] \\left[\\partial f(\\theta, x_2)\\big/\\partial \\theta\\right]^T$ where $\\left[\\partial f(\\theta, \\cdot)\\big/\\partial \\theta\\right]$ is a neural network (NN) Jacobian, has emerged as a central object of study in deep learning. In the infinite width limit, the NTK can sometimes be computed analytically and is useful for understanding training and generalization of NN architectures. At finite widths, the NTK is also used to better initialize NNs, compare the conditioning across models, perform architecture search, and do meta-learning. Unfortunately, the finite width NTK is notoriously expensive to compute, which severely limits its practical utility. We perform the first in-depth analysis of the compute and memory requirements for NTK computation in finite width networks. Leveraging the structure of neural networks, we further propose two novel algorithms that change the exponent of the compute and memory requirements of the finite width NTK, dramatically improving efficiency. Our algorithms can be applied in a black box fashion to any differentiable function, including those implementing neural networks. We open-source our implementations within the Neural Tangents package (arXiv:1912.02803) at https://github.com/google/neural-tangents. ",
+            "fulltext_url": "/pdf/fast-finite-width-neural-tangent-kernel-40azj8ab.pdf",
+            "fulltext_url_no_follow": false,
+            "paper_urls": {
+              "order": [
+                "Pdf"
+              ],
+              "data": {
+                "Pdf": [
+                  "http://arxiv.org/pdf/2206.08720"
+                ]
+              },
+              "is_show": true
+            },
+            "metrics": {
+              "citations": {
+                "total": 5
+              }
+            },
+            "tldr": "In this paper , the authors perform an in-depth analysis of the compute and memory requirements for NTK computation in finite width networks and propose two algorithms that change the exponent of the finite width NTK, dramatically improving efficiency.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          },
+          {
+            "id": 4070645422,
+            "title": "Feature Learning and Generalization in Deep Networks with Orthogonal Weights",
+            "is_archived": false,
+            "full_slug": "feature-learning-and-generalization-in-deep-networks-with-z05q6dzmqeeq",
+            "journal": {
+              "display_name": "Machine learning: science and technology",
+              "official_page": "https://iopscience.iop.org/journal/2632-2153",
+              "issn": "2632-2153",
+              "alias": null,
+              "id": 4000063811,
+              "slug": "machine-learning-science-and-technology",
+              "unique_id": "edb23ky2",
+              "full_slug": "machine-learning-science-and-technology-edb23ky2"
+            },
+            "conference_series": null,
+            "date": "2025-07-21T00:00:00Z",
+            "is_oa": null,
+            "publication_type": "Journal Article",
+            "doi": "10.1088/2632-2153/adf278",
+            "unique_id": "z05q6dzmqeeq",
+            "abstract": "Abstract Fully-connected deep neural networks with weights initialized from independent Gaussian distributions can be tuned to criticality, which prevents the exponential growth or decay of signals propagating through the network. However, such networks still exhibit fluctuations that grow linearly with the depth of the network, which may impair the training of networks with width comparable to depth. We show analytically that rectangular networks with tanh activations and weights initialized from the ensemble of orthogonal matrices have corresponding preactivation fluctuations which are independent of depth, to leading order in inverse width. Moreover, we demonstrate numerically that, at initialization, all correlators involving the neural tangent kernel (NTK) and its descendants at leading order in inverse width -- which govern the evolution of observables during training -- saturate at a depth of ~20, rather than growing without bound as in the case of Gaussian initializations. We speculate that this structure preserves finite-width feature learning while reducing overall noise, thus improving both generalization and training speed in deep networks with depth comparable to width. We provide some experimental justification by relating empirical measurements of the NTK to the superior performance of deep nonlinear orthogonal networks trained under full-batch gradient descent on the MNIST and CIFAR-10 classification tasks. ",
+            "authors": {
+              "total": 3,
+              "data": [
+                {
+                  "display_name": "Hannah Day",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Yonatan Kahn",
+                  "full_slug": null
+                },
+                {
+                  "display_name": "Daniel A. Roberts",
+                  "full_slug": null
+                }
+              ]
+            },
+            "affiliations": {
+              "total": 0,
+              "data": []
+            },
+            "metrics": {
+              "citations": {
+                "total": null
+              }
+            },
+            "tldr": "Deep neural networks with orthogonal weights exhibit reduced preactivation fluctuations and saturating neural tangent kernel correlators, enabling finite-width feature learning and improved generalization and training speed in networks with depth comparable to width.",
+            "podcast": null,
+            "podcast_generation_allowed": true,
+            "entity_type": "PAPER"
+          }
+        ]
+      },
+      "isError": false
+    }
+  }
+}

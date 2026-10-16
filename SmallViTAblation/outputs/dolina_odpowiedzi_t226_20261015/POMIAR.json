@@ -1,0 +1,60 @@
+{
+  "checkpoint": "F:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\assets\\MalyViT_35000_od_zera_s47\\wagi\\k65640.pt",
+  "checkpoint_sha256": "09d3eddc44c4ea88dee32b1802197477f086c06da69024a3a2d9e60b70af477f",
+  "token": 226,
+  "step": 65640,
+  "state_dimension": 192,
+  "head_output_dimension": 5,
+  "layernorm_epsilon": 1e-05,
+  "rank": 5,
+  "null_dimension": 187,
+  "target_probability": 0.995,
+  "target_ltrb": [
+    4.375,
+    0.25,
+    4.416666030883789,
+    1.1666669845581055
+  ],
+  "display_probability_threshold": 0.99,
+  "display_iou_threshold": 0.9,
+  "baseline_probability": 0.9494512401970643,
+  "baseline_iou": 0.8858015045531378,
+  "constructed_shift": 21.178926646230618,
+  "constructed_shift_relative": 0.3744142243976179,
+  "singular_values": [
+    0.1439360400786177,
+    0.07903217896817818,
+    0.029870964249985962,
+    0.023321930994695737,
+    0.010321530790730865
+  ],
+  "max_JN_norm": 1.7619016342312717e-17,
+  "analytic_autograd_error": 2.0816681711721685e-17,
+  "centered_difference_null_norm": 0.0,
+  "module_error": 0.0,
+  "sheet_max_abs_output_error": 1.7763568394002505e-14,
+  "path_max_abs_output_error": 7.993605777301127e-14,
+  "sheet_p_range": [
+    0.9949999999999999,
+    0.9950000000000001
+  ],
+  "sheet_min_iou": 0.9999999999999977,
+  "normal_p_range": [
+    0.9756919321953647,
+    0.9984315077220802
+  ],
+  "normal_min_iou": 0.8172701447166332,
+  "straight_min_iou": 0.9960343083922568,
+  "straight_max_energy": 0.0115274520743663,
+  "projected_sheet_height_range": [
+    1.9079258608105893e-14,
+    2.1541180707083774
+  ],
+  "surface_tangent_coordinate_radius": 3.5,
+  "good_samples": 27056,
+  "total_volume_samples": 35937,
+  "surface_definition": "x*=p0.995, GT box; x(u,v)=x*+u*t1+v*t2+Q*c(u,v); head(x)=target; t1,t2 from curvature eigensystem in ker J(x*)",
+  "volume_definition": "x(u,v,delta)=x(u,v)+delta*n; 3-param family, not full192D volume",
+  "energy_definition": "(logit-logit*)^2 + sum(((ltrb-ltrb*)/ltrb*)^2); visualization discrepancy, not training loss",
+  "elapsed_seconds": 3.2629101276397705
+}

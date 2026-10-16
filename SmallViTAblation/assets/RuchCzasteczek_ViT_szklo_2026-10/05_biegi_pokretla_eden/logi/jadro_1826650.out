@@ -1,0 +1,52 @@
+jądro lr_1.25e-4_rp stan_e02.pt: 100 kierunków, 40 paczek, hopper-2, GPU NVIDIA H200, Sun Oct 11 12:28:55 AM CEST 2026
+bieg lr_1.25e-4_rp, stan krok 2188, model vit, opt adamw, lr 0.000125, tokenów 600 [1 s]
+klatki: 1292 z 117 archiwów w 4 s
+12 sond, 40 paczek × 32; parametrów 2926493 [6 s]
+/home2/faculty/bpiotrowski/smallvit_runs/2026-10-09_maly_vit_od_zera_35000_21epok/kod/model.py:114: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)
+  return l_heat + 2 * l_box, dict(heat=float(l_heat), box=float(l_box))
+paczki: 40, norma kroku AdamW 0.0421 (zapis PACZKI: patrz plik) [9 s]
+kierunki losowe: 100 prekondycjonowanych i izotropowych [12 s]
+zmierzone: 201 rekordów 1988–2188 [16 s]
+los_prek [blok]: C1 max 0.569 @τ=1 (null -0.007; surowe 0.598), powłoki ['0.569', '0.410', '0.279'], skupianie 2.75, cos sąsiedzi−losowe 0.734, cross C1 0.246 (null 0.001) [19 s]
+los_prek populacja [populacja]: C1 max 0.630 @τ=1 (null -0.014; surowe 0.669), powłoki ['0.630', '0.497', '0.388'], skupianie 3.13, cos sąsiedzi−losowe 0.563, cross C1 0.231 (null -0.007) [21 s]
+los_prek rozkład energii kroku: τ=1: wspólny 0.17 zdjęcie 0.19 sąsiedztwo 0.44 własny 0.16 [22 s]
+los_izo [blok]: C1 max 0.771 @τ=1 (null 0.006; surowe 0.806), powłoki ['0.771', '0.572', '0.395'], skupianie 4.34, cos sąsiedzi−losowe 0.733, cross C1 0.335 (null 0.002) [24 s]
+los_izo populacja [populacja]: C1 max 0.795 @τ=1 (null 0.016; surowe 0.835), powłoki ['0.795', '0.624', '0.471'], skupianie 4.63, cos sąsiedzi−losowe 0.563, cross C1 0.303 (null 0.007) [26 s]
+los_izo rozkład energii kroku: τ=1: wspólny 0.17 zdjęcie 0.19 sąsiedztwo 0.44 własny 0.16 [27 s]
+paczka [blok]: C1 max 0.834 @τ=1 (null 0.010; surowe 0.874), powłoki ['0.834', '0.660', '0.487'], skupianie 5.22, cos sąsiedzi−losowe 0.733, cross C1 0.448 (null 0.006) [28 s]
+paczka populacja [populacja]: C1 max 0.849 @τ=1 (null -0.044; surowe 0.891), powłoki ['0.849', '0.692', '0.537'], skupianie 5.38, cos sąsiedzi−losowe 0.577, cross C1 0.397 (null -0.017) [29 s]
+paczka rozkład energii kroku: τ=1: wspólny 0.20 zdjęcie 0.16 sąsiedztwo 0.44 własny 0.17 [29 s]
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/dh.py:108: RuntimeWarning: invalid value encountered in divide
+  mo = mo / np.repeat(np.nanmean(mo.reshape(-1, blok), 1), blok)      # względem średniej ruchliwości zdjęcia w tej chwili
+/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/dh.py:60: RuntimeWarning: Mean of empty slice.
+  a = a - a.mean(); b = b - b.mean()
+/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/_core/_methods.py:144: RuntimeWarning: invalid value encountered in divide
+  ret = ret.dtype.type(ret / rcount)
+/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/_core/_methods.py:144: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+Traceback (most recent call last):
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/jadro_pola.py", line 240, in <module>
+    main()
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/jadro_pola.py", line 208, in main
+    h = dh.analiza(P, kroki, (0, len(lista)), [1], N6, TOK, f'{nazwa}', pole='blok', N6_cross=N6x, W=0, max_pocz=len(lista))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/2026-10-10_szklo_pokretla/kod/dh.py", line 135, in analiza
+    ruchliwe = dM[o] >= np.quantile(dM[o], 1 - prog)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 4556, in quantile
+    return _quantile_unchecked(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 4569, in _quantile_unchecked
+    return _ureduce(a,
+           ^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 3914, in _ureduce
+    r = func(a, **kwargs)
+        ^^^^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 4744, in _quantile_ureduce_func
+    result = _quantile(arr,
+             ^^^^^^^^^^^^^^
+  File "/home2/faculty/bpiotrowski/venvs/rfdetr_nano_clean_1_10_1/lib/python3.11/site-packages/numpy/lib/_function_base_impl.py", line 4866, in _quantile
+    slices_having_nans = np.isnan(arr[-1, ...])
+                                  ~~~^^^^^^^^^
+IndexError: index -1 is out of bounds for axis 0 with size 0
