@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "experiment": "kanal_mar25l_checkpointy_20261020__18-38-50",
+  "remote_root": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/kanal_mar25l_checkpointy_20261020__18-38-50",
+  "source_root": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/kompensacja_funkcjonalna_dgx2_20261017",
+  "pruning_root": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/outputs/kompensacja_pruning_dynamics_20261018",
+  "python": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/przeciwstawne_eden_20261017/environment/venv/bin/python",
+  "seeds": [3047, 4047, 5047, 6047, 7047, 8047, 9047, 10047, 11047, 12047, 13047, 14047, 15047, 16047, 17047, 18047, 19047, 20047, 21047, 22047, 23047, 24047, 25047, 26047],
+  "steps": [0, 300, 1000, 3000, 6000, 10000, 16000, 24000, 33000, 44000, 55000, 65640],
+  "blocks": 6,
+  "hidden": 768,
+  "dim": 192,
+  "panels": {
+    "test": {"role": "evaluation", "positions": [5, 15], "films": 25, "frames_per_film": 20},
+    "val": {"role": "discovery", "positions": [5, 15], "films": 25, "frames_per_film": 20}
+  },
+  "sets": {
+    "opposed_cos_lt": -0.5,
+    "near_channel_cin_gt": 0.9,
+    "copies_cout_gt": 0.5,
+    "cap": 3000,
+    "twins_top": 1000,
+    "random_pairs": 2000,
+    "head_random": 500,
+    "head_cap": 4000
+  },
+  "literal": {"norm_gt": 1000.0, "cos_distance_lt": 0.001, "cout_lt": -0.9, "update_fraction_gt": 0.9},
+  "enrichment_taus": [0.5, 0.9, 0.99],
+  "coactivation_fraction_of_q95": 0.1,
+  "hist_bins": 80,
+  "pair_chunk": 4096,
+  "random_seed": 202610201,
+  "smoke": {"steps": [0, 300, 65640], "panels": ["val"], "images": 4, "seed": 3047},
+  "hypotheses": {
+    "primary_block": 5,
+    "primary_step": 65640,
+    "primary_panel": "test",
+    "replication_panel": "val",
+    "seeds_required": 20,
+    "H1_channel": {
+      "median_c_in_eff_opposed_final_ge": 0.9,
+      "enrichment_ratio_tau_0_9_ge": 5.0,
+      "median_kappa_opposed_final_le": 0.3,
+      "median_glu_error_opposed_final_le": 0.2
+    },
+    "H0_no_channel": {
+      "median_c_in_eff_opposed_final_le_random_quantile": 0.95,
+      "near_channel_fraction_of_opposed_lt": 0.01
+    },
+    "H1s_channel_subpopulation": {
+      "near_channel_nonempty": true,
+      "median_kappa_near_channel_le": 0.3
+    },
+    "literal_prediction": "0 par spelniajacych wszystkie cztery kryteria literalne (weight decay 0.05 ogranicza normy)"
+  },
+  "bootstrap": {"replicates": 5000, "seed": 20261020},
+  "slurm": {
+    "account": "transformers_vsc",
+    "partition": "hopper",
+    "gres": "gpu:h100:1",
+    "cpus": 4,
+    "mem": "48G",
+    "max_parallel": 8,
+    "time_smoke": "01:00:00",
+    "time_seed": "06:00:00",
+    "reduce_partition": "long",
+    "reduce_cpus": 8,
+    "reduce_mem": "64G",
+    "time_reduce": "06:00:00"
+  },
+  "training": false,
+  "exploratory": true
+}

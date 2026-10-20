@@ -1,0 +1,247 @@
+[
+  {
+    "number": 1,
+    "stem": "01_podsumowanie",
+    "title": "Podsumowanie treningu",
+    "note": "Mniej wiązek dominuje, a rozkład kątów się poszerza. Spadek liczby ponad progiem względnym nie oznacza wyzerowania. Stałe pary: wiązki >5% na początku i końcu, niezerowe w 11 checkpointach; ten sam obraz i token.",
+    "group": "Przegląd"
+  },
+  {
+    "number": 2,
+    "stem": "02_aktywnosc_wzgledna",
+    "title": "Ile wiązek przekracza próg względny?",
+    "note": "Próg jest liczony osobno dla każdego tokena. Silniejsza najsilniejsza wiązka podnosi próg dla pozostałych.",
+    "group": "Siła i aktywność"
+  },
+  {
+    "number": 3,
+    "stem": "03_aktywnosc_absolutna",
+    "title": "Czy wiązki naprawdę tracą siłę?",
+    "note": "Progi absolutne są stałe w całym treningu. Wynik pokazuje, dlaczego utrata znaczenia względnego nie jest równoważna wygaszeniu.",
+    "group": "Siła i aktywność"
+  },
+  {
+    "number": 4,
+    "stem": "04_efektywna_liczba",
+    "title": "Koncentracja siły bez wybierania progu",
+    "note": "N_eff = (suma sił)^2 / suma kwadratów sił. N równych wiązek daje N_eff=N. Wstęga: 95% bootstrap 25 filmów, dla jednego modelu.",
+    "group": "Siła i aktywność"
+  },
+  {
+    "number": 5,
+    "stem": "05_kwantyle_sily",
+    "title": "Jak zmieniają się słabe, typowe i silne wiązki?",
+    "note": "Kwantyle liczone wśród 768 wiązek osobno dla każdego tokena, następnie uśrednione. To nie trajektorie trzech konkretnych neuronów.",
+    "group": "Siła i aktywność"
+  },
+  {
+    "number": 6,
+    "stem": "06_suma_i_wypadkowa",
+    "title": "Suma sił a długość wypadkowego wkładu",
+    "note": "Suma norm nie uwzględnia kierunków. Norma sumy uwzględnia kierunki i znaki; bias fc2 jest wyłączony z obu miar.",
+    "group": "Siła i aktywność"
+  },
+  {
+    "number": 7,
+    "stem": "07_zera",
+    "title": "Ile wkładów jest zerowych?",
+    "note": "Zera dotyczą wyników obliczeń zmiennoprzecinkowych. Liczba zer jest znacznie mniejsza niż liczba wiązek, które spadły poniżej względnego progu 5%.",
+    "group": "Siła i aktywność"
+  },
+  {
+    "number": 8,
+    "stem": "08_przejscia",
+    "title": "Przejścia przez próg i rzeczywiste osłabienie",
+    "note": "Próg na obu końcach nie oznacza aktywności w każdym kroku pośrednim. W prawym panelu spadek co najmniej 10× jest podzbiorem wszystkich spadków.",
+    "group": "Siła i aktywność"
+  },
+  {
+    "number": 9,
+    "stem": "09_mean_angle",
+    "title": "Średni kąt: te same pary przez cały trening",
+    "note": "Wstęgi: 95% bootstrap 25 filmów; jeden seed. Punkty to zapisane checkpointy, linie tylko je łączą. Węższa oś Y ujawnia niewielkie zmiany średniej.",
+    "group": "Kąty"
+  },
+  {
+    "number": 10,
+    "stem": "10_mean_distance_from90",
+    "title": "Kąty oddalają się od 90° w obie strony",
+    "note": "Wstęgi: 95% bootstrap 25 filmów; jeden seed. Punkty to zapisane checkpointy, linie tylko je łączą. Węższa oś Y ujawnia niewielkie zmiany średniej.",
+    "group": "Kąty"
+  },
+  {
+    "number": 11,
+    "stem": "11_rozklad_katow",
+    "title": "Rozkłady kątów 0 i 55k",
+    "note": "Główna część rozkładu jest powiększona do 35-145°. Ogony poza kadrem pozostają w danych i na wykresie rzadkich kątów; histogram nie został renormalizowany po przycięciu.",
+    "group": "Kąty"
+  },
+  {
+    "number": 12,
+    "stem": "12_mapy_katow",
+    "title": "Mapy rozkładów kątów",
+    "note": "Wiersze mają równą wysokość, ale odstępy między krokami nie są równe. Wspólna skala kolorów. Zera są puste; dodatnie wartości poniżej 0,001% mają najciemniejszy kolor.",
+    "group": "Kąty"
+  },
+  {
+    "number": 13,
+    "stem": "13_rozklad_zmian_katow",
+    "title": "Rozkład zmian kąta tych samych par",
+    "note": "Ujemna zmiana: kierunki się zbliżają. Dodatnia: oddalają. Widok -70° do +70°; dane zawierają pełne -180° do +180° bez renormalizacji.",
+    "group": "Kąty"
+  },
+  {
+    "number": 14,
+    "stem": "14_kierunek_zmian",
+    "title": "Odsetki wzrostów i spadków kąta",
+    "note": "Oba kierunki zmian są częste. Niewielki spadek średniej nie oznacza, że wszystkie pary się zbliżają. Procenty mają równe wagi 25 filmów.",
+    "group": "Kąty"
+  },
+  {
+    "number": 15,
+    "stem": "15_progi_i_niepewnosc",
+    "title": "Czułość na próg i niepewność",
+    "note": "Po lewej zmiana progu zmienia też skład grupy. Po prawej próg 5%; przedziały opisują zróżnicowanie 25 filmów przy jednym seedzie, nie powtarzalność między treningami.",
+    "group": "Kontrole"
+  },
+  {
+    "number": 16,
+    "stem": "16_wagi_i_znaki",
+    "title": "Rola wag i znaku aktywacji",
+    "note": "Ujemna aktywacja GELU odwraca wkład neuronu. Kąty wkładów zależą od wag i znaków; kontrola nie jest osobnym treningiem ani dowodem przyczynowym.",
+    "group": "Kontrole"
+  },
+  {
+    "number": 17,
+    "stem": "17_rzadkie_katy",
+    "title": "Rzadkie kąty 120°, 135° i 150°",
+    "note": "Mianownik: obserwacje par dla tego samego tokena w stałej grupie. To nie liczba unikalnych par neuronów w modelu. Oś Y symlog pozwala pokazać również dokładne zera.",
+    "group": "Kąty"
+  },
+  {
+    "number": 18,
+    "stem": "18_porownanie_grup",
+    "title": "Porównanie definicji grup par",
+    "note": "Dwie pierwsze grupy zachowują tożsamości par między checkpointami. Trzecia zmienia skład, więc jej krzywa miesza zmianę kierunków i zmianę uczestniczących wiązek.",
+    "group": "Kontrole"
+  },
+  {
+    "number": 19,
+    "stem": "19_iou_score",
+    "title": "IoU i score w treningu",
+    "note": "IoU dotyczy ramki tokena z najwyższym logitem i najlepiej pasującego GT. Score to sigmoid tego logitu. Wstęgi: bootstrap 25 filmów; score nie jest skalibrowanym prawdopodobieństwem poprawności.",
+    "group": "Detekcja"
+  },
+  {
+    "number": 20,
+    "stem": "20_filmy",
+    "title": "Zmiany w 25 filmach",
+    "note": "Równe wagi filmów. Każdy pomiar dotyczy tego samego wytrenowanego modelu; obrazy i tokeny nie są niezależnymi treningami.",
+    "group": "Kontrole"
+  },
+  {
+    "number": 21,
+    "stem": "21_rozklad_sil",
+    "title": "Rozkłady bezwzględnej siły",
+    "note": "Zera nie mają położenia na osi logarytmicznej i są pokazane na osobnym wykresie. Odsetki odnoszą się do wszystkich wkładów; nie renormalizowano po odrzuceniu zer ani po powiększeniu osi.",
+    "group": "Siła i aktywność"
+  },
+  {
+    "number": 22,
+    "stem": "22_przejscia_krokowe",
+    "title": "Przejścia między checkpointami",
+    "note": "Każdy punkt porównuje bieżący zapis z poprzednim. Odstępy czasu są różne: to liczba zmian w przedziale, nie szybkość zmian na krok.",
+    "group": "Siła i aktywność"
+  },
+  {
+    "number": 23,
+    "stem": "23_blok_1_szczegoly",
+    "title": "Blok 1: szczegóły",
+    "note": "Blok 1: liczba >5% 554.8 -> 113.7; efektywna 334.2 -> 159.9; średni kąt 90.00° -> 89.41°.",
+    "group": "Blok 1"
+  },
+  {
+    "number": 24,
+    "stem": "24_blok_2_szczegoly",
+    "title": "Blok 2: szczegóły",
+    "note": "Blok 2: liczba >5% 587.6 -> 167.6; efektywna 360.8 -> 163.2; średni kąt 89.99° -> 89.31°.",
+    "group": "Blok 2"
+  },
+  {
+    "number": 25,
+    "stem": "25_blok_3_szczegoly",
+    "title": "Blok 3: szczegóły",
+    "note": "Blok 3: liczba >5% 565.2 -> 114.4; efektywna 341.1 -> 122.9; średni kąt 90.00° -> 88.65°.",
+    "group": "Blok 3"
+  },
+  {
+    "number": 26,
+    "stem": "26_blok_4_szczegoly",
+    "title": "Blok 4: szczegóły",
+    "note": "Blok 4: liczba >5% 588.7 -> 64.4; efektywna 353.2 -> 87.1; średni kąt 89.98° -> 87.28°.",
+    "group": "Blok 4"
+  },
+  {
+    "number": 27,
+    "stem": "27_blok_5_szczegoly",
+    "title": "Blok 5: szczegóły",
+    "note": "Blok 5: liczba >5% 581.5 -> 168.1; efektywna 351.5 -> 150.1; średni kąt 89.96° -> 89.52°.",
+    "group": "Blok 5"
+  },
+  {
+    "number": 28,
+    "stem": "28_blok_6_szczegoly",
+    "title": "Blok 6: szczegóły",
+    "note": "Blok 6: liczba >5% 573.2 -> 120.6; efektywna 344.6 -> 132.6; średni kąt 90.01° -> 89.24°.",
+    "group": "Blok 6"
+  },
+  {
+    "number": 29,
+    "stem": "29_blok_1_pojedyncze_wiazki",
+    "title": "Blok 1: pojedynczy token",
+    "note": "Stałe ID obrazu, tokena i neuronów. Trzy kryteria wyboru skrajnych par mogą wskazać tę samą parę. Ranking mapy ustalony raz w 55k. Pełne ID i pomiary: SINGLE_TOKEN_BEAMS.csv i SINGLE_TOKEN_PAIRS.csv.",
+    "group": "Blok 1"
+  },
+  {
+    "number": 30,
+    "stem": "30_blok_2_pojedyncze_wiazki",
+    "title": "Blok 2: pojedynczy token",
+    "note": "Stałe ID obrazu, tokena i neuronów. Trzy kryteria wyboru skrajnych par mogą wskazać tę samą parę. Ranking mapy ustalony raz w 55k. Pełne ID i pomiary: SINGLE_TOKEN_BEAMS.csv i SINGLE_TOKEN_PAIRS.csv.",
+    "group": "Blok 2"
+  },
+  {
+    "number": 31,
+    "stem": "31_blok_3_pojedyncze_wiazki",
+    "title": "Blok 3: pojedynczy token",
+    "note": "Stałe ID obrazu, tokena i neuronów. Trzy kryteria wyboru skrajnych par mogą wskazać tę samą parę. Ranking mapy ustalony raz w 55k. Pełne ID i pomiary: SINGLE_TOKEN_BEAMS.csv i SINGLE_TOKEN_PAIRS.csv.",
+    "group": "Blok 3"
+  },
+  {
+    "number": 32,
+    "stem": "32_blok_4_pojedyncze_wiazki",
+    "title": "Blok 4: pojedynczy token",
+    "note": "Stałe ID obrazu, tokena i neuronów. Trzy kryteria wyboru skrajnych par mogą wskazać tę samą parę. Ranking mapy ustalony raz w 55k. Pełne ID i pomiary: SINGLE_TOKEN_BEAMS.csv i SINGLE_TOKEN_PAIRS.csv.",
+    "group": "Blok 4"
+  },
+  {
+    "number": 33,
+    "stem": "33_blok_5_pojedyncze_wiazki",
+    "title": "Blok 5: pojedynczy token",
+    "note": "Stałe ID obrazu, tokena i neuronów. Trzy kryteria wyboru skrajnych par mogą wskazać tę samą parę. Ranking mapy ustalony raz w 55k. Pełne ID i pomiary: SINGLE_TOKEN_BEAMS.csv i SINGLE_TOKEN_PAIRS.csv.",
+    "group": "Blok 5"
+  },
+  {
+    "number": 34,
+    "stem": "34_blok_6_pojedyncze_wiazki",
+    "title": "Blok 6: pojedynczy token",
+    "note": "Stałe ID obrazu, tokena i neuronów. Trzy kryteria wyboru skrajnych par mogą wskazać tę samą parę. Ranking mapy ustalony raz w 55k. Pełne ID i pomiary: SINGLE_TOKEN_BEAMS.csv i SINGLE_TOKEN_PAIRS.csv.",
+    "group": "Blok 6"
+  },
+  {
+    "number": 35,
+    "stem": "35_mapy_tokenow",
+    "title": "Mapy przestrzenne 600 tokenów",
+    "note": "Ujemny wynik oznacza silniejszą koncentrację. Czarny kwadrat wskazuje stały token z poprzednich sześciu wykresów. Jest to pojedyncza klatka diagnostyczna.",
+    "group": "Pojedyncze tokeny"
+  }
+]

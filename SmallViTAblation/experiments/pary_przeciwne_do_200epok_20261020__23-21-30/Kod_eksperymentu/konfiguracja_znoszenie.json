@@ -1,0 +1,30 @@
+{
+  "question": "Do neurons 370 and 391 of block 6 (the only pair >=160 deg at epoch 200) cancel each other, and does removing them change detection?",
+  "block": 6,
+  "pair": [370, 391],
+  "history_steps": [0, 300, 1000, 3000, 6000, 10000, 16000, 24000, 33000, 44000, 55000],
+  "history_source": "common.weight_path(step): kompensacja_funkcjonalna_dgx2_20261017 replications/s3047/weights (SHA of every file recorded in PROVENANCE)",
+  "continuation_steps_from": "konfiguracja.json checkpoints (65640..218750)",
+  "control_step": 218750,
+  "uniform_random_pairs": 100,
+  "matched_pairs": 100,
+  "near_parallel_pairs": 100,
+  "matched_pool_size": 40,
+  "detection_splits": {"VAL": "discovery", "TEST": "evaluation"},
+  "detection_batch": 50,
+  "detection_source": "source_root/input/dataset.json rows (500 VAL + 500 TEST); 50 diagnostic TEST frames reported separately as DIAG50",
+  "parent_best_checkpoint_relative": "experiments/vit_wiazkiprzeciwstawne_20261020__18-10-00/Wyniki/Dane/BEST_CHECKPOINT.json",
+  "control_seed": 3047,
+  "nonzero_strength_threshold": 1e-12,
+  "active_relative_threshold": 0.05,
+  "residual_check_tolerance": 1e-4,
+  "metrics": {
+    "strength": "s = |z| * ||W2[:,c]||",
+    "kappa_token": "||u_a+u_b||^2 / (||u_a||^2+||u_b||^2): 2 aligned equal, 1 orthogonal, 0 perfect cancellation",
+    "cancellation_token": "1 - ||u_a+u_b|| / (s_a+s_b): 0 no cancellation, 1 perfect",
+    "share_of_mlp": "||u_a+u_b|| / ||z @ W2^T|| on the same token (fc2 bias excluded)",
+    "detection": "winner token = argmax logit per frame; IoU = max over GT boxes; score = sigmoid(winner logit); same as parent DETECTION",
+    "ablation": "zero GELU outputs of the given neurons in block 6 for all tokens; head logit change averaged over all tokens",
+    "interaction_ratio": "mean|dlogit| for the pair / max of the two single-neuron effects; <1 means the two partly cancel"
+  }
+}

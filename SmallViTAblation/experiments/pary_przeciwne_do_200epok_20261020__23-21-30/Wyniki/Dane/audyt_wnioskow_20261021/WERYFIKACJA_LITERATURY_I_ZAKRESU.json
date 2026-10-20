@@ -1,0 +1,467 @@
+{
+  "date": "2026-10-21",
+  "task": "Synthesis of saved ViT opposite-contribution measurements, 0–200 epochs",
+  "sources": [
+    {
+      "doi": "10.1609/aaai.v35i8.16853",
+      "title": "Frivolous Units: Wider Networks Are Not Really That Wide",
+      "year": 2021,
+      "authors": [
+        {
+          "authorName": "Xavier Boix"
+        },
+        {
+          "authorName": "Vanessa D’Amario"
+        },
+        {
+          "authorName": "Ling Guo"
+        }
+      ],
+      "editorialNoticesReturned": false,
+      "source": "Scite search_literature"
+    },
+    {
+      "doi": "10.18653/v1/2021.emnlp-main.446",
+      "title": "Transformer Feed-Forward Layers Are Key-Value Memories",
+      "year": 2021,
+      "authors": [
+        {
+          "authorName": "Mor Geva"
+        },
+        {
+          "authorName": "Roei Schuster"
+        },
+        {
+          "authorName": "Jonathan Berant"
+        }
+      ],
+      "editorialNoticesReturned": false,
+      "source": "Scite search_literature"
+    },
+    {
+      "doi": "10.48550/arxiv.1606.08415",
+      "title": "Gaussian Error Linear Units (GELUs)",
+      "year": 2016,
+      "authors": [
+        {
+          "authorName": "Dan Hendrycks"
+        },
+        {
+          "authorName": "Kevin Gimpel"
+        }
+      ],
+      "editorialNoticesReturned": false,
+      "source": "Scite search_literature"
+    },
+    {
+      "doi": "10.48550/arxiv.2210.06313",
+      "title": "The Lazy Neuron Phenomenon: On Emergence of Activation Sparsity in Transformers",
+      "year": 2022,
+      "authors": [
+        {
+          "authorName": "Zonglin Li"
+        },
+        {
+          "authorName": "Chong You"
+        },
+        {
+          "authorName": "Srinadh Bhojanapalli"
+        }
+      ],
+      "editorialNoticesReturned": false,
+      "source": "Scite search_literature"
+    },
+    {
+      "doi": "10.48550/arxiv.2209.10652",
+      "title": "Toy Models of Superposition",
+      "year": 2022,
+      "authors": [
+        {
+          "authorName": "Nelson Elhage"
+        }
+      ],
+      "editorialNoticesReturned": false,
+      "source": "Scite search_literature"
+    },
+    {
+      "doi": "10.48550/arxiv.2506.14951",
+      "title": "Flat Channels to Infinity in Neural Loss Landscapes",
+      "year": 2025,
+      "authors": [
+        {
+          "authorName": "Flavio Martinelli"
+        },
+        {
+          "authorName": "Alexander van Meegen"
+        },
+        {
+          "authorName": "Berfin Şimşek"
+        }
+      ],
+      "editorialNoticesReturned": false,
+      "source": "Scite search_literature"
+    }
+  ],
+  "undermind": {
+    "workspace": "40294fa6-c9a3-4469-9a61-d3eddeaee893",
+    "fulltext_verified": [
+      "Mar25l",
+      "Li22ap",
+      "Elh22",
+      "Cas19e"
+    ],
+    "first_batch_timeout": true,
+    "retry_smaller_batches_succeeded": true
+  },
+  "scite_fulltext_verified": [
+    "10.18653/v1/2021.emnlp-main.446",
+    "10.48550/arxiv.1606.08415"
+  ],
+  "skill_used": "C:/Users/bartl/.codex/plugins/cache/openai-curated-remote/app-6a314a73f8ac819195b0d55e36b9c609/2.5.0/skills/firecrawl-deep-research/SKILL.md",
+  "firecrawl_page_verified": "https://arxiv.org/abs/2506.14951",
+  "martinelli_version": "v4 2026-05-08; arXiv page says accepted to NeurIPS25",
+  "editorial_notice_check": {
+    "metadata_fields_omitted": true,
+    "retraction_filtered_hits": 0,
+    "concern_filtered_hits": 0,
+    "correction_filtered_hits": 0,
+    "limitation": "Filtered responses included a generic not-indexed message despite unfiltered records being retrieved. Absence of returned flags is not a comprehensive clearance."
+  },
+  "independent_validation": "Literature supports definitions and prior-art comparisons; local numerical verification comes from stored measurements and code, not citation tallies.",
+  "diagnostic_test_overlap": {
+    "diagnostic_frames": 50,
+    "test_frames": 500,
+    "common_frame_ids": 50,
+    "common_films": 25,
+    "consequence": "Post-hoc pair selection and TEST evaluation share data; fresh confirmation set is needed."
+  },
+  "scope_limitations": [
+    "one trajectory to 200 epochs",
+    "channel pilot: 3 seeds to ~60 epochs only",
+    "full activity distribution measured only to ~50.29 epochs",
+    "400-epoch continuation excluded",
+    "ablation of pair370/391 acts on all tokens; not token-local",
+    "bootstrap intervals conditional on training seed and pointwise"
+  ],
+  "corrections_to_previous_conclusion": [
+    "kappa0.185 is restricted to269 opposite-sign both-active tokens; all1789 opposite-sign tokens have aggregate kappa0.538",
+    "near-duplicate behavior, not exact copies",
+    "small nonzero ablation effects, not exact functional invariance",
+    "paired comparisons do not justify a plateau starting at40epochs",
+    "55k is best only in earlier checkpoint pool; maximum VAL over26 checkpoints at~130epochs"
+  ],
+  "citation_decisions": [
+    {
+      "source_ref": "10.48550/arxiv.1909.04810",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1109/iros45743.2020.9340777",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.71113/jcac.v1i1.304",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2108.01527",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2608.06687",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1007/978-1-4020-6754-9_958",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1016/s0140-6736(02)52582-4",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1002/smsc.202500487",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1103/physrevlett.124.060502",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.21236/ada216791",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2511.01885",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2009.02439",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2301.09785",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2003.10306",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2601.08558",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2602.12158",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2608.04451",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1049/cvi2.12208",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2602.07356",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.21203/rs.3.rs-10333402/v1",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.18653/v1/2021.emnlp-main.446",
+      "decision": "cited",
+      "source": "scite_mcp",
+      "reason_code": "relevant",
+      "reason": "Used for interpretation in the saved publication conclusion; not independent replication of local measurements.",
+      "stage": "full_text"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2012.14913",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "duplicate",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2209.10652",
+      "decision": "cited",
+      "source": "scite_mcp",
+      "reason_code": "relevant",
+      "reason": "Used for interpretation in the saved publication conclusion; not independent replication of local measurements.",
+      "stage": "full_text"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2310.06301",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2410.12101",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1007/s00020-006-1469-6",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1090/s0002-9939-02-06699-6",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1016/j.neunet.2004.11.006",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1109/apec.1991.146234",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.3390/biomedicines9111623",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1016/j.neuron.2020.04.004",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1016/j.neuron.2020.06.016",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1016/j.neuron.2020.06.013",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2609.39078",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.1186/s13024-020-00406-3",
+      "decision": "excluded",
+      "source": "scite_mcp",
+      "reason_code": "out_of_scope",
+      "reason": "Not needed for this ViT GELU neuron-pair conclusion.",
+      "stage": "title_abstract"
+    },
+    {
+      "source_ref": "10.48550/arxiv.1606.08415",
+      "decision": "cited",
+      "source": "scite_mcp",
+      "reason_code": "relevant",
+      "reason": "Used for interpretation in the saved publication conclusion; not independent replication of local measurements.",
+      "stage": "full_text"
+    },
+    {
+      "source_ref": "10.1609/aaai.v35i8.16853",
+      "decision": "cited",
+      "source": "scite_mcp",
+      "reason_code": "relevant",
+      "reason": "Used for interpretation in the saved publication conclusion; not independent replication of local measurements.",
+      "stage": "full_text"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2210.06313",
+      "decision": "cited",
+      "source": "scite_mcp",
+      "reason_code": "relevant",
+      "reason": "Used for interpretation in the saved publication conclusion; not independent replication of local measurements.",
+      "stage": "full_text"
+    },
+    {
+      "source_ref": "10.48550/arxiv.2506.14951",
+      "decision": "cited",
+      "source": "scite_mcp",
+      "reason_code": "relevant",
+      "reason": "Used for interpretation in the saved publication conclusion; not independent replication of local measurements.",
+      "stage": "full_text"
+    }
+  ]
+}

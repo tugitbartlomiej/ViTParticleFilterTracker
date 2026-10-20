@@ -1,0 +1,365 @@
+{
+  "input": "W:\\Studia\\PhD_projekt\\VIT\\ViTParticleFilterTracker\\SmallViTAblation\\experiments\\pary_przeciwne_do_200epok_20261020__23-21-30\\Wyniki\\Dane\\detekcja_0_200\\DETEKCJA_OBRAZY_0_200.csv",
+  "input_sha256": "844f880cd9b4d5a5e8ebacceea980c3253f74fb4dff95828bc99143c06bdd407",
+  "script_sha256": "61ab694266ee890cb0d5dd3aec30a0f013de64baf9f66723703630dab536c84a",
+  "method": {
+    "seed": 20261021,
+    "replicates": 2000,
+    "interval": "two-sided 95% percentile, pointwise; no multiplicity correction",
+    "unit": "whole film, sampled with replacement separately within VAL and TEST",
+    "estimand": "mean image-level paired difference, final minus baseline; eligible frames weighted equally",
+    "pairing": "exact split/image ID match and unchanged film and positive/empty status",
+    "joint_draws": "same film draws used for both baseline comparisons and all metrics within a split",
+    "positive_definition": "finite IoU in source CSV (including IoU=0); empty images have absent IoU",
+    "empty_score": "maximum-token sigmoid score on annotated empty frames; not a calibrated false-positive rate",
+    "scope": "one training seed3047; uncertainty over sampled films only; descriptive post-hoc contrasts"
+  },
+  "final_step": 218750,
+  "final_epoch": 200.0,
+  "pairing_checks": {
+    "VAL": {
+      "all_26_checkpoints_same_image_ids": true,
+      "film_and_positive_empty_status_match": true,
+      "images": 500,
+      "films": 25,
+      "positive_images": 466,
+      "empty_images": 34
+    },
+    "TEST": {
+      "all_26_checkpoints_same_image_ids": true,
+      "film_and_positive_empty_status_match": true,
+      "images": 500,
+      "films": 25,
+      "positive_images": 472,
+      "empty_images": 28
+    }
+  },
+  "comparisons": [
+    {
+      "split": "VAL",
+      "baseline_step": 55000,
+      "baseline_epoch": 50.285714285714285,
+      "positive_mean_top1_iou": {
+        "images": 466,
+        "films_with_eligible_images": 25,
+        "baseline_mean": 0.7618685007709332,
+        "final_mean": 0.7653673718861012,
+        "mean_paired_difference_final_minus_baseline": 0.003498871115167892,
+        "percentile_95_ci": [
+          -0.006313468801490223,
+          0.01364902853089248
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": true
+      },
+      "positive_mean_top1_score": {
+        "images": 466,
+        "films_with_eligible_images": 25,
+        "baseline_mean": 0.8633531467979316,
+        "final_mean": 0.8992334983448464,
+        "mean_paired_difference_final_minus_baseline": 0.03588035154691497,
+        "percentile_95_ci": [
+          0.01894526583648885,
+          0.05520705616201468
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": false
+      },
+      "empty_mean_top1_score": {
+        "images": 34,
+        "films_with_eligible_images": 11,
+        "baseline_mean": 0.6291548626175917,
+        "final_mean": 0.6747495932796196,
+        "mean_paired_difference_final_minus_baseline": 0.0455947306620281,
+        "percentile_95_ci": [
+          0.010321021886533884,
+          0.07994579045002882
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": false
+      }
+    },
+    {
+      "split": "VAL",
+      "baseline_step": 44000,
+      "baseline_epoch": 40.22857142857143,
+      "positive_mean_top1_iou": {
+        "images": 466,
+        "films_with_eligible_images": 25,
+        "baseline_mean": 0.7476824120428651,
+        "final_mean": 0.7653673718861012,
+        "mean_paired_difference_final_minus_baseline": 0.01768495984323592,
+        "percentile_95_ci": [
+          0.0015982914613231385,
+          0.03549071344332744
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": false
+      },
+      "positive_mean_top1_score": {
+        "images": 466,
+        "films_with_eligible_images": 25,
+        "baseline_mean": 0.8796568862404608,
+        "final_mean": 0.8992334983448464,
+        "mean_paired_difference_final_minus_baseline": 0.019576612104385806,
+        "percentile_95_ci": [
+          0.006268530783490228,
+          0.03666209366843029
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": false
+      },
+      "empty_mean_top1_score": {
+        "images": 34,
+        "films_with_eligible_images": 11,
+        "baseline_mean": 0.6730138971080661,
+        "final_mean": 0.6747495932796196,
+        "mean_paired_difference_final_minus_baseline": 0.001735696171553576,
+        "percentile_95_ci": [
+          -0.06389654007763042,
+          0.05351270753752455
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": true
+      }
+    },
+    {
+      "split": "TEST",
+      "baseline_step": 55000,
+      "baseline_epoch": 50.285714285714285,
+      "positive_mean_top1_iou": {
+        "images": 472,
+        "films_with_eligible_images": 25,
+        "baseline_mean": 0.7450188605057585,
+        "final_mean": 0.7559271093649689,
+        "mean_paired_difference_final_minus_baseline": 0.010908248859210339,
+        "percentile_95_ci": [
+          -0.00792997281729346,
+          0.029589480486504043
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": true
+      },
+      "positive_mean_top1_score": {
+        "images": 472,
+        "films_with_eligible_images": 25,
+        "baseline_mean": 0.8620441069787181,
+        "final_mean": 0.8867889805169344,
+        "mean_paired_difference_final_minus_baseline": 0.024744873538216267,
+        "percentile_95_ci": [
+          0.01113238643019583,
+          0.039523975022542915
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": false
+      },
+      "empty_mean_top1_score": {
+        "images": 28,
+        "films_with_eligible_images": 14,
+        "baseline_mean": 0.5406550568677467,
+        "final_mean": 0.5787041486741735,
+        "mean_paired_difference_final_minus_baseline": 0.03804909180642687,
+        "percentile_95_ci": [
+          -0.034050332626228134,
+          0.10991746709985012
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": true
+      }
+    },
+    {
+      "split": "TEST",
+      "baseline_step": 44000,
+      "baseline_epoch": 40.22857142857143,
+      "positive_mean_top1_iou": {
+        "images": 472,
+        "films_with_eligible_images": 25,
+        "baseline_mean": 0.7420507617650506,
+        "final_mean": 0.7559271093649689,
+        "mean_paired_difference_final_minus_baseline": 0.01387634759991827,
+        "percentile_95_ci": [
+          -0.00019536623435958172,
+          0.0265527128636362
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": true
+      },
+      "positive_mean_top1_score": {
+        "images": 472,
+        "films_with_eligible_images": 25,
+        "baseline_mean": 0.872175641879937,
+        "final_mean": 0.8867889805169344,
+        "mean_paired_difference_final_minus_baseline": 0.014613338636997458,
+        "percentile_95_ci": [
+          0.0037427661847210156,
+          0.02578776803866646
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": false
+      },
+      "empty_mean_top1_score": {
+        "images": 28,
+        "films_with_eligible_images": 14,
+        "baseline_mean": 0.5728356004209155,
+        "final_mean": 0.5787041486741735,
+        "mean_paired_difference_final_minus_baseline": 0.005868548253258011,
+        "percentile_95_ci": [
+          -0.050975716145247194,
+          0.07362139803011856
+        ],
+        "bootstrap_valid_replicates": 2000,
+        "bootstrap_replicates_without_eligible_images": 0,
+        "ci_contains_zero": true
+      }
+    }
+  ],
+  "highest_measured_VAL_mean_iou_among_26": {
+    "step": 142188,
+    "epoch": 130.00045714285713,
+    "mean_top1_iou_positive": 0.7753902349983873,
+    "note": "descriptive maximum on this VAL panel; no TEST checkpoint selection and no claim of statistical superiority",
+    "all_VAL_means": [
+      {
+        "step": 0,
+        "epoch": 0.0,
+        "mean_top1_iou_positive": 0.0019432118037304334
+      },
+      {
+        "step": 300,
+        "epoch": 0.2742857142857143,
+        "mean_top1_iou_positive": 0.3938886913614969
+      },
+      {
+        "step": 1000,
+        "epoch": 0.9142857142857143,
+        "mean_top1_iou_positive": 0.5272988004644493
+      },
+      {
+        "step": 3000,
+        "epoch": 2.742857142857143,
+        "mean_top1_iou_positive": 0.642030036871534
+      },
+      {
+        "step": 6000,
+        "epoch": 5.485714285714286,
+        "mean_top1_iou_positive": 0.692813386204958
+      },
+      {
+        "step": 10000,
+        "epoch": 9.142857142857142,
+        "mean_top1_iou_positive": 0.7207348014884928
+      },
+      {
+        "step": 16000,
+        "epoch": 14.628571428571428,
+        "mean_top1_iou_positive": 0.7353204957850561
+      },
+      {
+        "step": 24000,
+        "epoch": 21.942857142857143,
+        "mean_top1_iou_positive": 0.7452322390350701
+      },
+      {
+        "step": 33000,
+        "epoch": 30.17142857142857,
+        "mean_top1_iou_positive": 0.7458972741956635
+      },
+      {
+        "step": 44000,
+        "epoch": 40.22857142857143,
+        "mean_top1_iou_positive": 0.7476824120428651
+      },
+      {
+        "step": 55000,
+        "epoch": 50.285714285714285,
+        "mean_top1_iou_positive": 0.7618685007709333
+      },
+      {
+        "step": 65640,
+        "epoch": 60.013714285714286,
+        "mean_top1_iou_positive": 0.7600214998138062
+      },
+      {
+        "step": 76563,
+        "epoch": 70.00045714285714,
+        "mean_top1_iou_positive": 0.7599539932919023
+      },
+      {
+        "step": 87500,
+        "epoch": 80.0,
+        "mean_top1_iou_positive": 0.7632309020125377
+      },
+      {
+        "step": 98438,
+        "epoch": 90.00045714285714,
+        "mean_top1_iou_positive": 0.7605101699013743
+      },
+      {
+        "step": 109375,
+        "epoch": 100.0,
+        "mean_top1_iou_positive": 0.7555272090123963
+      },
+      {
+        "step": 120313,
+        "epoch": 110.00045714285714,
+        "mean_top1_iou_positive": 0.7737889885656918
+      },
+      {
+        "step": 131250,
+        "epoch": 120.0,
+        "mean_top1_iou_positive": 0.7572560109159233
+      },
+      {
+        "step": 142188,
+        "epoch": 130.00045714285713,
+        "mean_top1_iou_positive": 0.7753902349983873
+      },
+      {
+        "step": 153125,
+        "epoch": 140.0,
+        "mean_top1_iou_positive": 0.7702082818875823
+      },
+      {
+        "step": 164063,
+        "epoch": 150.00045714285713,
+        "mean_top1_iou_positive": 0.7722284733078221
+      },
+      {
+        "step": 175000,
+        "epoch": 160.0,
+        "mean_top1_iou_positive": 0.7629556744955354
+      },
+      {
+        "step": 185938,
+        "epoch": 170.00045714285713,
+        "mean_top1_iou_positive": 0.7608754114474472
+      },
+      {
+        "step": 196875,
+        "epoch": 180.0,
+        "mean_top1_iou_positive": 0.7735023149628854
+      },
+      {
+        "step": 207813,
+        "epoch": 190.00045714285713,
+        "mean_top1_iou_positive": 0.758871441433912
+      },
+      {
+        "step": 218750,
+        "epoch": 200.0,
+        "mean_top1_iou_positive": 0.7653673718861012
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "experiment_id": "vit_kontynuacja_do_200epok_20261020__19-06-42",
+  "parent_experiment_id": "vit_wiazkiprzeciwstawne_20261020__18-10-00",
+  "parent_relative_path": "../vit_wiazkiprzeciwstawne_20261020__18-10-00",
+  "motivation": "Extend the same trained model after the pair-angle analysis; preserve later checkpoints for future analysis.",
+  "source_training_experiment": "kompensacja_funkcjonalna_dgx2_20261017",
+  "source_training_root_eden": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/kompensacja_funkcjonalna_dgx2_20261017",
+  "inherited": {
+    "seed": 3047,
+    "train_images": 35000,
+    "train_manifest_sha256": "1c224daa64646802ec27b1cf14a5c0edb9f369866a5785503a509fe4df97daa8",
+    "model_sha256": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+    "start_step": 65640,
+    "start_epoch": 60.013714285714286,
+    "checkpoint_sha256": "5065c4185fe787098f547637623629ce0c202f0a3077670c657a1bcefc4893a9",
+    "full_restart_sha256": "8af1f3a13e8d7eaff6f327e839afa11cf08b93894269321bdeefa43685199486",
+    "optimizer": "AdamW resumed",
+    "sampler": "queue and generator state resumed",
+    "random_states": "torch CPU/CUDA, numpy global, Python and PCG64 resumed"
+  },
+  "changes": {
+    "target_epochs_total": 200,
+    "target_step_total": 218750,
+    "saving_every_epochs": 10,
+    "analysis_disabled": true
+  },
+  "note": "Starts from the FINAL checkpoint65640 as requested, not the validation-best checkpoint55000."
+}

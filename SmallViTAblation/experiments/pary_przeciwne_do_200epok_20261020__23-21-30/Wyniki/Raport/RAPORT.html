@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Przeciwne wiązki do epoki 200</title>
+<style>
+:root{--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#898781;--grid:#e1e0d9;--accent:#2a78d6;--warn:#eb6834}
+body{background:var(--surface);color:var(--ink);font:15px/1.55 "Segoe UI",system-ui,sans-serif;max-width:920px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:20px;margin:36px 0 8px;border-bottom:1px solid var(--grid);padding-bottom:4px}
+h3{font-size:16px;margin:24px 0 6px}p,li{color:var(--ink)}.sub{color:var(--ink2);margin:0 0 20px}
+.box{border-left:4px solid var(--accent);background:#f3f6fb;padding:12px 16px;margin:16px 0}
+.box.warn{border-color:var(--warn);background:#fdf3ee}
+table{border-collapse:collapse;width:100%;margin:10px 0 6px;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--grid);padding:5px 8px;text-align:right}th{color:var(--ink2);font-weight:600}
+td:first-child,th:first-child{text-align:left}tr.hl td{font-weight:600;background:#f3f6fb}
+figure{margin:14px 0 22px}figure img{width:100%;border:1px solid var(--grid)}figcaption{color:var(--ink2);font-size:13px;margin-top:4px}
+code{font-family:Consolas,monospace;font-size:13px;background:#f0efec;padding:1px 4px}.small{font-size:13px;color:var(--ink2)}
+@media print{body{max-width:none;font-size:11pt}figure{page-break-inside:avoid}h2{page-break-after:avoid}}
+</style>
+</head>
+<body>
+<h1>Przeciwne wiązki MLP w późnym treningu (epoki 0–200)</h1>
+<p class="sub">Eksperyment <code>pary_przeciwne_do_200epok_20261020__23-21-30</code> · MalyViT, seed 3047 · raport z 2026-10-21</p>
+
+<div class="box">
+<strong>Najważniejsze wyniki</strong>
+<ul>
+<li><strong>W epoce 200 przeciwnych par jest mniej niż w epoce 60,</strong> ale najbardziej przeciwna para jest ostrzejsza niż kiedykolwiek wcześniej. Par z kątem ≥150° jest 15 (w epoce 60: 24, szczyt: 30 w epokach 80–110). Pierwsza w historii para ≥170° pojawia się w epoce 170, a w epoce 200 ma 173,0°. Progu ≥175° nie osiąga żadna para.</li>
+<li><strong>Najbardziej przeciwna para (neurony 370 i 391, blok 6) to w rzeczywistości dwie kopie,</strong> a nie para przeciwników. Od epoki 100 ich wagi wejściowe zbiegają się (cos 0,31 → 0,96), a wyjściowe stają się prawie równoległe (72° → 7°). Na 94% tokenów ich wkłady się sumują. Przeciwne są tylko na 6% tokenów, gdy jeden neuron przekracza zero GELU, a drugi nie.</li>
+<li><strong>Na tych 6% tokenów para naprawdę się częściowo znosi</strong> (κ = 0,19, gdy obie wiązki są aktywne). Jej wkład to jednak tylko ok. 0,3–0,6% wyjścia MLP. Wyłączenie pary nie zmienia IoU ani pewności: zmiana wynosi 10⁻⁵, przedziały obejmują zero, a wynik mieści się w rozrzucie par kontrolnych. Na poziomie logitów efekty obu neuronów się sumują (iloraz 1,66), czyli zachowują się jak kopie.</li>
+<li><strong>IoU stoi w miejscu od ok. epoki 40, a pewność rośnie.</strong> VAL IoU: 0,762 w epoce 50 i 0,765 w epoce 200. Pewność na klatkach z narzędziem rośnie z 0,863 do 0,899, ale na klatkach bez narzędzia też, z 0,629 do 0,675. Dłuższy trening daje większą pewność bez lepszej lokalizacji.</li>
+</ul>
+</div>
+
+<h2>1. Pytania i zakres</h2>
+<ol>
+<li>Jaki jest poziom przeciwnych wiązek w ostatnich epokach, szczególnie w epoce 200?</li>
+<li>Czy para 370–391 (jedyna ≥160° w epoce 200) naprawdę się znosi? Jaki jest stosunek sił obu wiązek i co daje jej wyłączenie?</li>
+<li>Jak wyglądają IoU i pewność w epokach 0–200?</li>
+</ol>
+<p>Dane: jeden trening (seed 3047). Epoki 0–60 pochodzą z treningu źródłowego, a 70–200 z kontynuacji z pełnym stanem optimizera, samplera i RNG (<code>vit_kontynuacja_do_200epok_20261020__19-06-42</code>). Razem 26 checkpointów. Epoka to krok × 32 / 35 000. Nie było żadnego dodatkowego treningu, tylko inferencja: eval, FP32, bez TF32, algorytmy deterministyczne.</p>
+
+<h2>2. Metody</h2>
+<h3>2.1 Pary przeciwnych wiązek</h3>
+<p>Wiązka neuronu c na tokenie t to wektor <code>u[t,c] = z[t,c] · W2[:,c]</code> w pełnych 192 wymiarach, gdzie z jest wyjściem GELU. Parę ID neuronów liczymy raz na blok i checkpoint, jeśli na co najmniej jednym tym samym tokenie kąt jej wkładów osiąga próg 150°, 160°, 170°, 175°, 179° lub 179,999999°. Używamy 50 stałych klatek TEST (30 000 tokenów) i wszystkich 294 528 par w każdym z 6 bloków. Funkcja <code>count()</code> jest wczytywana bez zmian z kodu eksperymentu-rodzica, po kontroli SHA256. Przy kącie wag α możliwe kąty wkładów to α (gdy znaki GELU są zgodne) i 180° − α (gdy są przeciwne).</p>
+<h3>2.2 Para 370–391</h3>
+<p>Na każdym z 26 checkpointów liczymy:</p>
+<ul>
+<li>kąt kolumn W2 i cos wierszy W1 po złożeniu z LayerNorm;</li>
+<li>stosunek sił słabszej do silniejszej wiązki, min(s₁,s₂)/max(s₁,s₂), gdzie s = |z|·‖W2[:,c]‖;</li>
+<li>κ = ‖u₁+u₂‖² / (‖u₁‖²+‖u₂‖²): 2 oznacza wkłady zgodne i równe, 1 niezależne, 0 pełne znoszenie;</li>
+<li>udział pary w wyjściu MLP bloku 6.</li>
+</ul>
+<p>Każdą miarę liczymy osobno dla tokenów, na których znaki obu neuronów są zgodne, i dla tokenów, na których są przeciwne.</p>
+<p>Wyłączenie neuronu to wyzerowanie jego wyjścia GELU na wszystkich tokenach. Wyłączamy osobno 370, osobno 391 i obie razem. Kontrola: w ostatnim bloku wyłączenie pary musi przesunąć strumień resztkowy dokładnie o −(u₁+u₂). Kontrola przeszła na wszystkich 26 checkpointach, maksymalny błąd to 1,1·10⁻⁵.</p>
+<p>W epoce 200 porównujemy parę z 300 parami kontrolnymi z bloku 6, po 100 w każdej grupie: losowe, o podobnej sile oraz najbardziej równoległe w W2. Liczymy też wyłączenia wszystkich 768 neuronów pojedynczo.</p>
+<h3>2.3 Detekcja</h3>
+<p>Detekcję liczymy tą samą regułą co przy wyborze najlepszego checkpointu. Zwycięzcą jest token z najwyższym logitem, IoU to dopasowanie do najlepszej ramki GT, a pewność to sigmoid logitu zwycięzcy.</p>
+<p>Zbiory to pełne panele po 500 klatek. VAL (466 z narzędziem, 34 puste) służył wcześniej do wyboru checkpointu, a TEST (472 + 28) tylko do raportowania. Przedziały 95% liczymy bootstrapem po filmach, 2000 powtórzeń.</p>
+<p>Kontrola: VAL IoU dla epok 0–50 jest identyczne z zapisem rodzica, różnica wynosi 0,0.</p>
+
+<h2>3. Wyniki</h2>
+<h3>3.1 Poziom przeciwnych wiązek</h3>
+<table>
+<tr><th>Epoka</th><th>pary ≥150°</th><th>≥160°</th><th>≥170°</th><th>największy kąt</th><th>pary–tokeny ≥150°</th><th>to samo, obie aktywne ≥5%</th></tr>
+<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>110,2°</td><td>0</td><td>0</td></tr>
+<tr><td>30</td><td>18</td><td>1</td><td>0</td><td>162,0°</td><td>74 837</td><td>17 851</td></tr>
+<tr><td>50 (najlepszy VAL)</td><td>25</td><td>2</td><td>0</td><td>165,0°</td><td>89 059</td><td>12 994</td></tr>
+<tr><td>60 (koniec źródła)</td><td>24</td><td>2</td><td>0</td><td>164,2°</td><td>95 092</td><td>12 662</td></tr>
+<tr><td>80</td><td>30</td><td>2</td><td>0</td><td>165,8°</td><td>147 647</td><td>19 600</td></tr>
+<tr><td>110</td><td>30</td><td>4</td><td>0</td><td>164,5°</td><td>162 725</td><td>17 934</td></tr>
+<tr><td>120</td><td>21</td><td>2</td><td>0</td><td>162,8°</td><td>104 496</td><td>9 906</td></tr>
+<tr><td>150</td><td>21</td><td>3</td><td>0</td><td>165,0°</td><td>93 392</td><td>4 679</td></tr>
+<tr><td>170</td><td>18</td><td>2</td><td>1</td><td>170,4°</td><td>86 791</td><td>3 746</td></tr>
+<tr class="hl"><td>200</td><td>15</td><td>1</td><td>1</td><td>173,0°</td><td>86 808</td><td>4 249</td></tr>
+</table>
+<p class="small">Suma po 6 blokach. Kolumna „to samo, obie aktywne” wymaga, by obie wiązki przekraczały 5% maksimum siły na danym tokenie. Pełna tabela dla każdego bloku i progu: <code>Wyniki/Dane/polaczone_0_200/</code>.</p>
+<p>W epoce 200 pary ≥150° rozkładają się na bloki tak: 1, 0, 0, 2, 5 i 7 (bloki 1–6). Blok 1 tracił pary po epoce 90 (8 → 1), a blok 6 dominuje. Największy kąt w blokach 1–5 stoi w miejscu albo maleje (150,1°, 141,9°, 148,3°, 159,4°, 158,4°). Rośnie tylko w bloku 6, do 173,0°. Skład par się wymienia: z 24 par z epoki 60 do epoki 200 przetrwało 5.</p>
+<p>Żadna para nie ma przeciwnych wag W2: największy kąt kolumn W2 to ok. 142°. Wszystkie przeciwne wiązki biorą się z prawie równoległych W2 i przeciwnych znaków GELU.</p>
+<figure><img src="../Wykresy/01_pary_przeciwne_0_200_progi.png" alt="Liczba par przeciwnych wiązek w epokach 0–200 dla progów 150, 160 i 170 stopni"><figcaption>Rys. 1. Liczba par w 6 blokach dla trzech progów.</figcaption></figure>
+<figure><img src="../Wykresy/02_pary_przeciwne_bloki.png" alt="Liczba par ≥150 i ≥160 stopni w każdym z sześciu bloków"><figcaption>Rys. 2. Pary w każdym bloku.</figcaption></figure>
+<figure><img src="../Wykresy/03_maksymalny_kat_bloki.png" alt="Największy kąt pary w każdym bloku w epokach 0–200"><figcaption>Rys. 3. Największy kąt pary wkładów na tym samym tokenie, osobno dla bloków.</figcaption></figure>
+<figure><img src="../Wykresy/04_wystapienia_par_tokeny.png" alt="Liczba wystąpień par na tokenach, wszystkie i przy obu wiązkach aktywnych"><figcaption>Rys. 4. Jak często przeciwne pary występują na tokenach. Przy obu wiązkach aktywnych spadek po epoce 110 jest wyraźny.</figcaption></figure>
+
+<h3>3.2 IoU i pewność</h3>
+<table>
+<tr><th>Epoka</th><th>VAL IoU [95%]</th><th>VAL pewność (z narz.)</th><th>VAL pewność (puste)</th><th>TEST IoU [95%]</th><th>TEST pewność (z narz.)</th><th>TEST pewność (puste)</th></tr>
+<tr><td>9,1</td><td>0,721 [0,685; 0,753]</td><td>0,792</td><td>0,557</td><td>0,704 [0,666; 0,737]</td><td>0,776</td><td>0,434</td></tr>
+<tr><td>50 (najlepszy VAL)</td><td>0,762 [0,725; 0,795]</td><td>0,863</td><td>0,629</td><td>0,745 [0,712; 0,777]</td><td>0,862</td><td>0,541</td></tr>
+<tr><td>60</td><td>0,760 [0,723; 0,792]</td><td>0,881</td><td>0,650</td><td>0,747 [0,709; 0,783]</td><td>0,875</td><td>0,518</td></tr>
+<tr><td>110</td><td>0,774 [0,743; 0,800]</td><td>0,891</td><td>0,722</td><td>0,758 [0,720; 0,793]</td><td>0,884</td><td>0,627</td></tr>
+<tr><td>150</td><td>0,772 [0,735; 0,805]</td><td>0,896</td><td>0,676</td><td>0,745 [0,708; 0,778]</td><td>0,891</td><td>0,548</td></tr>
+<tr class="hl"><td>200</td><td>0,765 [0,730; 0,796]</td><td>0,899</td><td>0,675</td><td>0,756 [0,719; 0,791]</td><td>0,887</td><td>0,579</td></tr>
+</table>
+<p>Od epoki 40 do 200 IoU waha się w wąskim pasie: VAL 0,748–0,775, TEST 0,736–0,762. Przedziały wszystkich epok się nakładają. Odsetek klatek z IoU ≥ 0,5 na VAL to 0,925 w epoce 50 i 0,912 w epoce 200.</p>
+<p>Pewność rośnie. Na klatkach z narzędziem: 0,86 → 0,90 (VAL) i 0,86 → 0,89 (TEST). Rośnie też na klatkach bez narzędzia, gdzie wysoka pewność oznacza fałszywe wykrycie: 0,63 → 0,68 (VAL) i 0,54 → 0,58 (TEST). Pustych klatek jest jednak mało (34 i 28), więc ich przedziały są szerokie (Rys. 9).</p>
+<figure><img src="../Wykresy/08_iou_i_pewnosc_0_200.png" alt="IoU i pewność na VAL i TEST w epokach 0–200"><figcaption>Rys. 8. IoU i pewność na pełnej skali.</figcaption></figure>
+<figure><img src="../Wykresy/09_iou_i_pewnosc_od_40_epoki.png" alt="IoU i pewność od epoki 40 w przybliżeniu"><figcaption>Rys. 9. To samo od epoki 40, z dopasowaną osią. Pasma to 95% bootstrap po filmach.</figcaption></figure>
+
+<h3>3.3 Para 370–391 w bloku 6</h3>
+<p><strong>Historia wag.</strong> Do epoki 100 neurony są niezależne: kąt W2 wynosi 72–93°, a cos W1 nie przekracza 0,31. W epokach 100–150 kąt W2 spada do 15°, a cos W1 rośnie do 0,90. W epoce 200 kąt W2 to 7,0°, a cos W1 0,964. Normy W2 rosną w tym czasie z 0,60 i 0,89 do 2,14 i 1,82. Efektywne biasy przesuwają się w stronę ujemną, z −0,44 i −0,43 do −1,47 i −1,11. W epoce 200 oba neurony siedzą razem w ujemnym ogonie GELU na 91% tokenów (27 150 z 29 896), a korelacja ich aktywacji wynosi 0,80 (w epoce 60: 0,03).</p>
+<figure><img src="../Wykresy/05_para_370_391_historia.png" alt="Historia kątów, podobieństwa wejść, liczby tokenów i kappa dla pary 370–391"><figcaption>Rys. 5. Para 370–391 od epoki 0 do 200.</figcaption></figure>
+<p><strong>Tokeny w epoce 200</strong> (29 896 tokenów, na których obie wiązki są niezerowe):</p>
+<table>
+<tr><th>Tokeny</th><th>liczba</th><th>kąt</th><th>stosunek sił (mediana)</th><th>κ łącznie</th><th>co zostaje z sumy sił (mediana)</th><th>udział w wyjściu MLP (mediana)</th></tr>
+<tr><td>wszystkie</td><td>29 896</td><td>–</td><td>0,66</td><td>1,73</td><td>1,00</td><td>1,5%</td></tr>
+<tr><td>znaki zgodne</td><td>28 107 (94%)</td><td>7,0°</td><td>0,68</td><td>1,80</td><td>1,00</td><td>1,6%</td></tr>
+<tr><td>znaki przeciwne</td><td>1 789 (6%)</td><td>173,0°</td><td>0,38</td><td>0,54</td><td>0,45</td><td>0,56%</td></tr>
+<tr class="hl"><td>przeciwne, obie aktywne ≥5%</td><td>269</td><td>173,0°</td><td>0,75</td><td>0,19</td><td>0,16</td><td>0,32%</td></tr>
+</table>
+<p>Na tokenach przeciwnych ujemny jest prawie zawsze neuron 391: w 1718 z 1789 tokenów i we wszystkich 269 tokenach aktywnych. Te tokeny rzadko leżą w ramce narzędzia (1,3%, przy średniej 4,3%). Znoszenie jest więc prawdziwe, ale lokalne i małe. Tam, gdzie obie wiązki są aktywne, z ich sumy sił zostaje mediana 16%, ale cała para to i tak tylko ok. 2% wyjścia MLP na tym tokenie, a po zniesieniu 0,3%.</p>
+<figure><img src="../Wykresy/06_para_370_391_tokeny_epoka200.png" alt="Histogramy stosunku sił, pozostałej sumy i udziału pary w wyjściu MLP w epoce 200"><figcaption>Rys. 6. Rozkłady na tokenach w epoce 200. Środkowy panel ma oś logarytmiczną.</figcaption></figure>
+<p><strong>Wyłączenie w epoce 200:</strong></p>
+<table>
+<tr><th>Wyłączenie</th><th>ΔIoU VAL [95%]</th><th>ΔIoU TEST [95%]</th><th>Δpewność VAL</th><th>Δpewność TEST</th><th>zmiana zwycięskiego tokenu</th></tr>
+<tr><td>370</td><td>−1,0·10⁻⁵ [−2,1; −0,1]·10⁻⁵</td><td>+0,6·10⁻⁵ [−0,2; +1,9]·10⁻⁵</td><td>−2,1·10⁻⁵</td><td>−4,9·10⁻⁵</td><td>0 / 1000</td></tr>
+<tr><td>391</td><td>−0,6·10⁻⁵ [−3,6; +2,6]·10⁻⁵</td><td>+2,4·10⁻⁵ [−1,8; +8,9]·10⁻⁵</td><td>+0,1·10⁻⁵</td><td>−0,7·10⁻⁵</td><td>0 / 1000</td></tr>
+<tr class="hl"><td>370 i 391</td><td>−1,6·10⁻⁵ [−5,4; +2,2]·10⁻⁵</td><td>+3,1·10⁻⁵ [−2,1; +10,7]·10⁻⁵</td><td>−1,7·10⁻⁵</td><td>−6,7·10⁻⁵</td><td>1 / 1000</td></tr>
+</table>
+<p>Na tle 300 par kontrolnych ΔIoU pary mieści się w środku rozkładu: percentyle 20–34 na VAL i 75–77 na TEST. Iloraz efektu pary do większego z efektów pojedynczych (średnie |Δlogit| na 30 000 tokenach) wynosi 1,66. Mediany w grupach kontrolnych to 1,07 (losowe), 1,24 (o podobnej sile) i 1,29 (prawie równoległe), a para jest na ich 97., 99. i 86. percentylu. Iloraz poniżej 1 oznaczałby wzajemne znoszenie. Tu efekty się sumują, jak u kopii. W historii iloraz był poniżej 1 tylko w epokach 60, 80 i 90 (0,93–0,98), zanim neurony stały się kopiami. Pojedynczo 370 i 391 zajmują 253. i 341. miejsce z 768 neuronów pod względem wpływu na logity.</p>
+<figure><img src="../Wykresy/07_wylaczenie_pary_kontrola.png" alt="Iloraz interakcji i zmiany IoU po wyłączeniu pary na tle par kontrolnych"><figcaption>Rys. 7. Para 370–391 (pomarańczowy punkt) na tle 300 par kontrolnych.</figcaption></figure>
+
+<h2>4. Interpretacja</h2>
+<p>Część pomiarowa jest powyżej. Poniższa interpretacja nie była osobno testowana.</p>
+<ul>
+<li><strong>Kąt 173° nie oznacza tu przeciwników.</strong> Para powstaje, gdy dwa neurony zlewają się w kopie: wspólne wejście i prawie wspólny kierunek wyjścia. Przy ujemnych biasach oba przez większość czasu dają małe ujemne wyjścia GELU w tym samym kierunku. Tylko na nielicznych tokenach jeden przekracza zero, a drugi nie, i wtedy ich wkłady wskazują przeciwnie. Im bardziej równoległe stają się W2, tym bliżej 180° jest kąt na tych tokenach. Wzrost kąta to więc skutek zbiegania się kopii, a nie narastania przeciwieństwa.</li>
+<li><strong>Zgadza się to z pilotem kanału Mar25l.</strong> Pary o zbieżnych wejściach to kopie o zgodnych wyjściach, a nie kanały z przeciwnymi wyjściami. Prawdopodobnym mechanizmem jest weight decay: kara L2 woli dwie zgodne połówki niż dwie duże przeciwne wagi.</li>
+<li><strong>Poziom przeciwnych wiązek spada po epoce 110.</strong> Mniej par osiąga ≥150°, a jeszcze mniej robi to przy obu wiązkach aktywnych. Detekcja na tym nie traci, IoU stoi w miejscu. Przeciwne wiązki nie wyglądają na element, którego sieć potrzebuje do lokalizacji w późnym treningu.</li>
+<li><strong>Dłuższy trening zwiększa pewność bez poprawy lokalizacji,</strong> także na klatkach bez narzędzia. To typowy objaw przeuczenia kalibracji. Nie sprawdzaliśmy go osobno, na przykład ECE ani progami detekcji.</li>
+</ul>
+
+<h2>5. Ograniczenia</h2>
+<ul>
+<li>Jeden trening (seed 3047). Pary i ich historia mogą wyglądać inaczej w innych seedach.</li>
+<li>Pary liczone są na 50 klatkach TEST. Detekcja i wyłączenia działają na 500 + 500 klatkach, ale pustych klatek jest mało (34 i 28).</li>
+<li>Wyłączenie to wyzerowanie GELU, a nie zastąpienie średnią. Przy neuronach siedzących głównie w ujemnym ogonie GELU zero jest bliskie ich typowej wartości, więc to łagodna interwencja.</li>
+<li>Iloraz interakcji liczony jest na logitach 50 klatek, a nie na IoU. Na IoU efekty są zbyt małe, żeby zmierzyć interakcję.</li>
+<li>Stały lr po rozgrzewce i weight decay 0,05 pochodzą z treningu źródłowego. Przy innym harmonogramie dynamika może być inna.</li>
+</ul>
+
+<h2>6. Kontrola jakości</h2>
+<ul>
+<li>Krok 65640 policzony z checkpointu kontynuacji jest bitowo identyczny z rodzicem: wagi, maski znaków, liczby par i kąty (<code>QC_65640_VS_PARENT.json</code>).</li>
+<li>VAL IoU i pewność dla 11 checkpointów 0–55000 są identyczne z zapisem wyboru checkpointu u rodzica (<code>QC_VAL_VS_PARENT_SELECTION.json</code>).</li>
+<li>Przesunięcie residuum po wyłączeniu pary równa się −(u₁+u₂) na wszystkich 26 checkpointach, z maksymalnym błędem 1,1·10⁻⁵ (<code>znoszenie_370_391/QC.json</code>).</li>
+<li>Wszystkie pliki wyników mają sumy SHA256 w <code>DONE.json</code> i zostały sprawdzone po pobraniu z Edenu. Zadania Slurm: 1911518 (pary), 1911914 (smoke) i 1911919 (znoszenie i detekcja).</li>
+</ul>
+
+<h2>7. Pliki</h2>
+<ul class="small">
+<li>Kod: <code>Kod_eksperymentu/count_pairs_late.py</code>, <code>znoszenie_i_detekcja.py</code>, konfiguracje <code>konfiguracja*.json</code>, <code>pochodzenie.json</code>.</li>
+<li>Dane: <code>Wyniki/Dane/pary_epoki_60_200/</code>, <code>polaczone_0_200/</code>, <code>znoszenie_370_391/</code>, <code>detekcja_0_200/</code>. Stany aktywacji (289 MB) są tylko na Edenie.</li>
+<li>Analiza i wykresy: <code>Wyniki/Code_Interpretujacy_Wyniki/</code> (<code>polacz_0_200.py</code>, <code>analiza_detekcji_i_ablacji.py</code>, <code>rysuj_wykresy.py</code>).</li>
+<li>Dalszy trening do 400 epok działa w osobnym eksperymencie <code>vit_kontynuacja_do_400epok_20261020__23-50-57</code>.</li>
+</ul>
+</body>
+</html>

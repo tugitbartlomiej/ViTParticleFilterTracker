@@ -17,7 +17,7 @@ import numpy as np
 
 from wspolne import SZER, WYS   # wejście ViT 480 x 320
 
-ZBIOR = Path('F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Dataset/Cataract-LMM/3_Object_Tracking')
+ZBIOR = Path(__file__).resolve().parents[2] / 'Dataset' / 'Cataract-LMM' / '3_Object_Tracking'
 ADNOTACJE = ZBIOR / 'annotations'
 WIDEO = ZBIOR / 'videos'
 KATALOG_MP4 = ZBIOR / 'videos_mp4'

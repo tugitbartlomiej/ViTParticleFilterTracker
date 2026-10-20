@@ -1,0 +1,22 @@
+{
+  "name": "vit_kontynuacja_do_400epok_20261020__23-50-57",
+  "parent_experiment": "vit_kontynuacja_do_200epok_20261020__19-06-42",
+  "parent_local_relative": "../vit_kontynuacja_do_200epok_20261020__19-06-42",
+  "parent_remote": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/vit_kontynuacja_do_200epok_20261020__19-06-42",
+  "remote_root": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/vit_kontynuacja_do_400epok_20261020__23-50-57",
+  "source_restart": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/vit_kontynuacja_do_200epok_20261020__19-06-42/Wyniki/Dane/checkpoints/k218750.pt",
+  "source_restart_sha256": "bfa43a3ef0bf2d24aab72d3bb58e1ea01cf97bd0fd2b47850ccef25a2e44dd20",
+  "source_step": 218750,
+  "source_epoch_equivalent": 200.0,
+  "target_epochs": 400,
+  "target_step": 437500,
+  "additional_steps": 218750,
+  "epoch_equivalent_formula": "step * 32 / 35000",
+  "checkpoint_every_epochs": 10,
+  "checkpoint_step_formula": "ceil(epoch * 35000 / 32)",
+  "slurm": {"account": "transformers_vsc", "partition": "hopper", "gres": "gpu:h100:1", "cpus": 4, "mem": "48G", "time": "08:00:00", "signal": "B:USR1@180"},
+  "expected_runtime": "about 2 h on one H100 (parent: 153110 steps in 4718 s)",
+  "storage_estimate": "21 full checkpoints x 35 MB = ~0.74 GB in the group quota",
+  "requested_outputs": "checkpoints_only",
+  "eval": false
+}

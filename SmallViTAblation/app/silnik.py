@@ -15,13 +15,13 @@ import numpy as np
 
 # torch importowany dopiero w funkcjach: start okna nie czeka na PyTorch (kilka sekund na zimnym dysku)
 
-ROOT = Path('F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation')
+ROOT = Path(__file__).resolve().parent.parent          # .../ViTParticleFilterTracker/SmallViTAblation (dowolny dysk)
 EKSPERYMENT_SD = ROOT/'experiments/vit_sd_pelny_latent_filmy_eden_20261006'
 sys.path.insert(0, str(EKSPERYMENT_SD))
 
 CHECKPOINT = ROOT/'assets/StableDiffusionModel/best_checkpoint.pt'
-SD_ROOT = Path('F:/Studia/PhD_projekt/VIT/eden_archiwum/sd_modele/ema_020000')
-VAE_ROOT = Path('F:/Studia/PhD_projekt/VIT/eden_archiwum/sd_modele/sd-vae-ft-mse')
+SD_ROOT = ROOT.parents[1]/'eden_archiwum/sd_modele/ema_020000'
+VAE_ROOT = ROOT.parents[1]/'eden_archiwum/sd_modele/sd-vae-ft-mse'
 VIT_CHECKPOINT = ROOT/'outputs/vit_latent128_jedno_zdjecie_90/MODEL_VIT_K1000.pt'
 DOMYSLNY_LATENT = ROOT/'outputs/vit_latent128_jedno_zdjecie_90/LATENT_PELNY.npz'
 WYJSCIE = ROOT/'outputs/latent_editor_sd_20261006'

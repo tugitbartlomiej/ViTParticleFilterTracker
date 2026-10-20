@@ -20,7 +20,7 @@ import torch.nn.functional as F
 import silnik  # ustawia sys.path na eksperyment SD (model_snapshot.MalyViT)
 from model_snapshot import MalyViT, _giou, dekoduj
 
-ADNOTACJE = Path('F:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/Dataset/Cataract-LMM/3_Object_Tracking/annotations')
+ADNOTACJE = silnik.ROOT.parent / 'Dataset' / 'Cataract-LMM' / '3_Object_Tracking' / 'annotations'
 KROK = 16
 
 

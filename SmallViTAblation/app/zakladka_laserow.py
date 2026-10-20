@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt6.QtCore import QByteArray, Qt, QThread, QTimer, pyqtSignal
+from PyQt6.QtCore import QByteArray, QEvent, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDockWidget, QDoubleSpinBox, QFileDialog, QFormLayout, QGroupBox,
                              QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMenu, QProgressBar, QPushButton, QScrollArea, QSlider,
@@ -238,12 +238,35 @@ class Zwijana(QGroupBox):
                                     'QToolButton:hover { background: rgba(255, 255, 255, 0.07); }')
         self.naglowek.setToolTip('Kliknij, żeby zwinąć (▸) albo rozwinąć (▾) sekcję.')
         self.naglowek.toggled.connect(self._zwin)
-        self._wys = self.naglowek.sizeHint().height() + 2
-        self.setContentsMargins(0, self._wys, 0, 0)
+        self._wys = 0
+        self._przelicz()
+
+    def _przelicz(self):
+        """Wysokość nagłówka z jego faktycznego rozmiaru (pogrubiona czcionka, arkusz stylów, skalowanie DPI) i margines treści równy
+        tej wysokości. Liczona po nałożeniu stylu, nie w konstruktorze: tam sizeHint jest za mały i treść wchodziła pod nagłówek."""
+        self.naglowek.ensurePolished()
+        wys = self.naglowek.sizeHint().height() + 6
+        if wys != self._wys:
+            self._wys = wys
+            self.naglowek.setGeometry(3, 1, max(self.width() - 6, 10), wys - 2)
+            if self.naglowek.isChecked():
+                self.setContentsMargins(0, wys, 0, 0)
+            else:
+                self.setMaximumHeight(wys + 3)
+        elif self.contentsMargins().top() != wys and self.naglowek.isChecked():
+            self.setContentsMargins(0, wys, 0, 0)       # QGroupBox sam przelicza ramkę przy zmianie stylu i zeruje nasz margines
+
+    def event(self, ev):
+        wynik = super().event(ev)
+        if ev.type() in (QEvent.Type.Polish, QEvent.Type.StyleChange, QEvent.Type.FontChange, QEvent.Type.Show):
+            self._przelicz()
+        return wynik
 
     def resizeEvent(self, ev):
         super().resizeEvent(ev)
+        self._przelicz()
         self.naglowek.setGeometry(3, 1, max(self.width() - 6, 10), self._wys - 2)
+        self.naglowek.raise_()
 
     def zwinieta(self):
         return not self.naglowek.isChecked()

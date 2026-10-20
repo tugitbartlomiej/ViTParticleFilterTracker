@@ -1,0 +1,34 @@
+{
+  "experiment_id": "vit_kontynuacja_do_400epok_20261020__23-50-57",
+  "parent_experiment_id": "vit_kontynuacja_do_200epok_20261020__19-06-42",
+  "parent_relative_path": "../vit_kontynuacja_do_200epok_20261020__19-06-42",
+  "grandparent_experiment_id": "vit_wiazkiprzeciwstawne_20261020__18-10-00",
+  "motivation": "User asked to continue the same training further to 400 epochs, after the epoch 60-200 analysis of opposite beam pairs.",
+  "source_training_experiment": "kompensacja_funkcjonalna_dgx2_20261017 (seed 3047), continued to 200 epochs by the parent",
+  "inherited": {
+    "seed": 3047,
+    "train_images": 35000,
+    "train_manifest_sha256": "1c224daa64646802ec27b1cf14a5c0edb9f369866a5785503a509fe4df97daa8",
+    "model_sha256": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+    "batch": 32, "lr": 0.0005, "weight_decay": 0.05, "betas": [0.9, 0.999], "clip": 1.0, "amp": "bfloat16",
+    "augmentation_and_loss": "identical code path (train_continue.py once() unchanged)",
+    "start_step": 218750,
+    "start_epoch": 200.0,
+    "checkpoint": "parent Wyniki/Dane/checkpoints/k218750.pt",
+    "checkpoint_sha256": "bfa43a3ef0bf2d24aab72d3bb58e1ea01cf97bd0fd2b47850ccef25a2e44dd20",
+    "parent_config_sha256": "abb28243f63a971f88aca56afede498ca144cff3e54a27525651647de96d4296",
+    "optimizer": "AdamW resumed (moments and step counters)",
+    "sampler": "queue and PCG64 generator state resumed",
+    "random_states": "torch CPU/CUDA, numpy global, Python resumed",
+    "warmup": "not reset (already completed)",
+    "global_step_preserved": true
+  },
+  "changes": {
+    "target_epochs_total": 400,
+    "target_step_total": 437500,
+    "additional_steps": 218750,
+    "saving_every_epochs": 10,
+    "restore_accepts_parent_config_hash_for_source_only": true,
+    "analysis_disabled": true
+  }
+}

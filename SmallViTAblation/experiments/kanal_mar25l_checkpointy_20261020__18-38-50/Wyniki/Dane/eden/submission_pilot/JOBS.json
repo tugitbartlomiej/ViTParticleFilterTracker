@@ -1,0 +1,24 @@
+{
+ "schema": 1,
+ "created_utc": "2026-10-20T17:02:58.951688+00:00",
+ "mode": "pilot",
+ "seeds_by_array_index": {
+  "0": 3047,
+  "1": 4047,
+  "2": 5047
+ },
+ "pilot_images_per_panel": 10,
+ "steps": "all 12",
+ "ids": {
+  "pilot_array": "1906660",
+  "reduce": "1906661"
+ },
+ "commands": {
+  "pilot_array": "cd /mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/kanal_mar25l_checkpointy_20261020__18-38-50/Kod_eksperymentu && export PYTHONDONTWRITEBYTECODE=1 CUBLAS_WORKSPACE_CONFIG=:4096:8 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 && nvidia-smi --query-gpu=name --format=csv,noheader && /mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/przeciwstawne_eden_20261017/environment/venv/bin/python -B run_kanal.py --pilot-images 10",
+  "reduce": "cd /mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/kanal_mar25l_checkpointy_20261020__18-38-50/Kod_eksperymentu && export PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=4 && /mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/przeciwstawne_eden_20261017/environment/venv/bin/python -B reduce_kanal.py --pilot"
+ },
+ "slurm": {
+  "pilot": "--account=transformers_vsc --partition=hopper --gres=gpu:h100:1 --cpus-per-task=4 --mem=48G --time=01:00:00 --array=0-2",
+  "reduce": "--account=transformers_vsc --partition=long --cpus-per-task=4 --mem=16G --time=01:00:00 --dependency=afterok"
+ }
+}

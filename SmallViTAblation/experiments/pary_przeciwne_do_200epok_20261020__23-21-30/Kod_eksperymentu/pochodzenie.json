@@ -1,0 +1,26 @@
+{
+  "experiment_id": "pary_przeciwne_do_200epok_20261020__23-21-30",
+  "parents": [
+    {
+      "experiment_id": "vit_kontynuacja_do_200epok_20261020__19-06-42",
+      "relative_path": "../vit_kontynuacja_do_200epok_20261020__19-06-42",
+      "used": "15 checkpoints k065640..k218750 (every 10 epochs), SHA256 pinned in konfiguracja.json and equal to the CHECKPOINT lines of Wyniki/Dane/logi/train_1907130.log",
+      "final_checkpoint": {"file": "k218750.pt", "step": 218750, "epoch": 200.0, "sha256": "bfa43a3ef0bf2d24aab72d3bb58e1ea01cf97bd0fd2b47850ccef25a2e44dd20"}
+    },
+    {
+      "experiment_id": "vit_wiazkiprzeciwstawne_20261020__18-10-00",
+      "relative_path": "../vit_wiazkiprzeciwstawne_20261020__18-10-00",
+      "used": "count() from Kod_eksperymentu/count_opposite_pairs.py (SHA256 392e943a...), thresholds, and its step-65640 counts and states as a consistency check"
+    }
+  ],
+  "measurement_source": {
+    "code": "experiments/beam_survival_angles_training_20261020/run_v1/common.py (Eden)",
+    "frames": "50 frozen TEST frames, rows of outputs/beam_survival_angles_training_20261020/run_v1/config.json (Eden)"
+  },
+  "training_source": "kompensacja_funkcjonalna_dgx2_20261017, seed 3047, continued to 200 epochs",
+  "motivation": "User asked for the level of opposite beam pairs in the last epochs, especially epoch 200; the parent counts stop at epoch 60.",
+  "inherited": ["pair criterion", "thresholds 150/160/170/175/179/179.999999 deg", "50 TEST frames", "eval FP32 inference without TF32", "nonzero 1e-12 and active 5% thresholds", "epoch = step*32/35000"],
+  "changes": ["checkpoints from the continuation run (epochs 60-200) instead of the original run (epochs 0-60)"],
+  "resume": "No training. Only network weights ('net') are loaded from the continuation checkpoints; optimizer, sampler and RNG states stored in them are not used.",
+  "global_step_preserved": true
+}
