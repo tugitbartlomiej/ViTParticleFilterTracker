@@ -23,7 +23,7 @@ PLIK = Path(__file__).resolve().parent / 'ustawienia.json'
 # EDYTOR_BEZ_USTAWIEN=1: start na ustawieniach domyślnych, bez wczytywania i zapisu pliku (testy)
 WERSJA = 1
 MODULY = ('app', 'widzety_edytora', 'zakladka_detekcji', 'zakladka_filmu', 'czasteczki', 'czasteczki3d',
-          'przestrzen_makro', 'opcje_atencji', 'zakladka_ruchu', 'zakladka_laserow')
+          'przestrzen_makro', 'opcje_atencji', 'zakladka_ruchu', 'zakladka_laserow', 'rzuty_okienka')
 POMIN = {'okno', 'suwak', 'pasek'}            # odnośnik wstecz do okna, suwaki przebiegu, paski postępu
 
 

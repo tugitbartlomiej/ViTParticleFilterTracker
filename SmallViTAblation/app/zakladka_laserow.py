@@ -10,6 +10,8 @@ Okienka (każde można zamknąć, odpiąć jako osobne okno albo przesunąć; me
   10. Obrót igieł reflektorów (gradient, film 23); na sferze strzałki obrotu („Strzałki obrotu” w sekcji sfery)
   11. Pułapka optyczna (ogniskowa wiązek)     12. Dolina pewności i IoU wybranej cząsteczki (dolina.py; też na sferze)
   13. Reflektor: mechanika (reflektor_mechanika.py): odrzut wiązek i wykonany ruch igły, celownika i progu
+  R1–R8. Rzuty z 192 wymiarów z miernikiem wierności (sekcja „Rzuty z 192 wymiarów”, rzuty_okienka.py, rzuty_dane.py):
+      mapa klas, siły, wiązki ważone, rama siły, rama Schura, wędrówka w czasie uczenia, 7 widoków Fano i panel bez rzutu
 Wszystkie okienka pokazują tę samą chwilę osi czasu (suwak, odtwarzanie, klik w wykres). Rysują shadery (lasery_gpu.py).
 """
 from __future__ import annotations
@@ -27,6 +29,7 @@ from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDockWidget, QDoubleSpinBox, 
 import lasery_dane as LD
 import ogniskowa as OGN
 import przejscia_zapis as PZ
+import rzuty_okienka as RZO
 from lasery_gpu import DolinaGPU, MapyNaZdjeciu, PoleOgniskowej, PrzejscieGPU, RuchPlaski, SchematGPU, SferaReflektorow
 from uklad import WaskiCombo
 from widok_gl import WidokGL
@@ -650,6 +653,10 @@ class ZakladkaLaserow(QWidget):
         for w in (self.sp_od, self.sp_do, self.sp_co, self.sp_okno):
             w.valueChanged.connect(self._po_wyborze)
 
+        # --- rzuty z 192 wymiarów (okienka R1–R8, rzuty_okienka.py)
+        self.rzuty = RZO.Rzuty(self)
+        ll.addWidget(self.rzuty)
+
         # --- rzuty 2D
         g = Zwijana('Okienka 1–3: rzut płaski (film 2)'); f = QFormLayout(g)
         self.sp_rozm = _spin(1, 20, 3.0, 0.5, 1); self.sp_jas = _spin(0.05, 5, 1.0, 0.1, 2); self.sp_sig = _spin(0.05, 2, 0.26, 0.02, 2)
@@ -1169,8 +1176,10 @@ class ZakladkaLaserow(QWidget):
         self.watek_mech = MechanikaWatek(); self.watek_mech.gotowe.connect(self._mech_gotowe)
         self._dok('13', '13. Reflektor: mechanika — odrzut wiązek, sprężyny i wykonany ruch (blok 6)', self._z_napisem(self.vmech, 'lb13'))
         self.doki['13'].visibilityChanged.connect(lambda on: self._mech_zlec() if on else None)
+        self.rzuty.buduj_okienka()                                      # okienka R1–R8: rzuty z 192 wymiarów
         self._buduj_przejscie()
         self._uklad_domyslny()
+        self.rzuty.uklad_domyslny()
         m = QMenu(self)
         for k, d in self.doki.items():
             m.addAction(d.toggleViewAction())
@@ -1847,6 +1856,7 @@ class ZakladkaLaserow(QWidget):
         self._mech = None; self._mech_zlecony = None; self.emech.czysc()
         self._prz_opis()
         self._opcje()
+        self.rzuty.ustaw_historie(h)
         self.ustaw_czas(0.0)
         self._og_zlec()
 
@@ -2528,6 +2538,7 @@ class ZakladkaLaserow(QWidget):
         self._dol_czas(tryb_pod)
         if not tryb_pod and getattr(self, '_mech', None) is not None and self.doki['13'].isVisible():
             self._mech_zlec(); self._mech_rysuj()                   # ruch w obrębie checkpointu: u = t − i
+        self.rzuty.ustaw_czas(t)                                     # okienka R1–R8 (tylko widoczne)
         if tryb_pod:
             return
         if self.ch_kamera.isChecked() and hasattr(self, '_cz'):

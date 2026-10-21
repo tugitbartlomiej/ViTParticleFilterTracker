@@ -29,7 +29,7 @@ Claude Code przeniesiono 2026-10-20 do `W:\Chaty\Claude\CodeCLI` (`CLAUDE_CONFIG
    - 9 wykresów, RAPORT.html/.pdf, WNIOSEK.txt;
    - później: rzut 3D vs 192D, równowaga 768 sił (P3 z aplikacji), kopie neuronów, wejścia par T150 i ich los po epoce 110.
 5. Eksperyment `vit_kontynuacja_do_400epok_20261020__23-50-57`: pełne wznowienie z k218750 (preflight PASS). Job 1911922 ukończony: krok 437500, 6779 s, 21 checkpointów na Edenie.
-6. Deep research (skill deep-research): 4 wątki (nasze dowody, pary/kopie/weight decay, GELU/rzadkość/superpozycja, dynamika/kalibracja/ablacja) z Undermind (nowe deep searches) i Scite. Raport `reports/Przeciwne wiązki w treningu ViT.md` z poprawkami koordynatora.
+6. Deep research (skill deep-research): 4 wątki (nasze dowody, pary/kopie/weight decay, GELU/rzadkość/superpozycja, dynamika/kalibracja/ablacja) z Undermind (nowe deep searches) i Scite. Raport `SmallViTAblation/reports/Przeciwne wiązki w treningu ViT.md` z poprawkami koordynatora.
 7. Eksperyment `koloidy_wiazki_dynamika_0_200_20261021__01-48-10`, liczony lokalnie na RTX 3070, 26 checkpointów, 12 klatek: metryki komory, ruch, MSD, kopnięcie a rozdział, pojedyncze lasery, korelacje z IoU i temperaturą, migające lasery.
 8. Commit wyników tej sesji (bez plików ignorowanych `*.txt`, `*.npz`).
 
@@ -74,7 +74,7 @@ Claude Code przeniesiono 2026-10-20 do `W:\Chaty\Claude\CodeCLI` (`CLAUDE_CONFIG
 - `SmallViTAblation/experiments/koloidy_wiazki_dynamika_0_200_20261021__01-48-10/` (kod, dane, opis)
 - `SmallViTAblation/experiments/vit_kontynuacja_do_200epok_20261020__19-06-42/Wyniki/Dane/` (pobrane checkpointy, logi, manifest)
 - `SmallViTAblation/experiments/experiments_index.md`
-- `reports/Przeciwne wiązki w treningu ViT.md`, `research_notes/Przeciwne wiązki w treningu ViT/*.md`
+- `SmallViTAblation/reports/Przeciwne wiązki w treningu ViT.md`, `SmallViTAblation/research_notes/Przeciwne wiązki w treningu ViT/*.md`
 - pamięć: `W:\Chaty\Claude\CodeCLI\config\projects\...\memory\` (python-install-location, old-session-transcripts-location)
 
 ## Commands Used

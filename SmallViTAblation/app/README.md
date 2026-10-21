@@ -851,6 +851,40 @@ Potem dzieli ruch na trzy składowe jak `eden/szescian_prep.py` i film 2: losowy
 - **Panel 5:** mapa na zdjęciu (centra, drgania, atencja, natężenie wybranego reflektora).
 - **Wykresy 6–9:** trzy składowe ruchu, IoU, pewność, pary przeciwnych reflektorów.
 
+**Rzuty z 192 wymiarów: okienka R1–R8** (2026-10-21; `rzuty_dane.py`, `rzuty_okienka.py`, `rzuty_gpu.py`; uzasadnienie w
+`reports/Rzutowanie wielowymiarowego ruchu do 3D.md`). Zwijana sekcja „Rzuty z 192 wymiarów” w lewym panelu, zaraz pod „Dane”.
+„Policz / wczytaj stany 192D” robi raz na historię i zdjęcie jedno przejście w przód na checkpoint i zapisuje w katalogu historii
+`rzuty/`:
+- stany przed MLP bloku 6 (`X.npy`) i siły bloku 6, czyli sumy 768 wiązek (`F.npy`);
+- bazy rzutów i mierniki wierności (`dane.npz`);
+- kolumny fc2 w osobnym katalogu `cache_uczenia/lasery/_fc2_<skrót>/V.npy`, wspólnym dla wszystkich zdjęć tej historii.
+
+Wszystko liczy się w 192D, a 3D służy tylko do rysowania. Pod każdym okienkiem jest napis, ile ten rzut pokazuje: rozrzutu chmury,
+energii sił, energii wiązek, długości wektora narzędzie–tło Δ i ruchu. Obok jest zero dla losowego 3D: 1,6 % energii, 12,5 % długości.
+- **R1 A:** oś Δ narzędzie − tło (100 % separacji) i PCA reszty chmury; baza wspólna albo w każdym checkpoincie (Procrustes osi 2–3).
+- **R2 S:** 3 kierunki największej energii sił netto.
+- **R3 W:** wiązki ważone aktywacją (następca P3) i wiązki wybranej cząsteczki.
+- **R4 B:** rama siły wybranej cząsteczki: oś F̂ i płaszczyzna, w której jej wiązki się znoszą. Rysuje sieć silną (próg energii)
+  i resztę jako jedną szarą strzałkę. Kolor wiązki to cos z F̂ w 192D.
+- **R5 C:** rama Schura, czyli podprzestrzeń niezmiennicza pełnego jakobianu 192 × 192 (para zespolona i mod rzeczywisty). Pokazuje
+  pole lokalnej deformacji, płaszczyznę obrotu, kierunek własny i widmo z zerem Ginibre'a. Liczy się w tle.
+- **R6 D:** wędrówka w czasie uczenia (wszystkie, narzędzie, wybrane albo jedna cząsteczka) w bazie przemieszczeń albo w ramie
+  cząsteczki (start → koniec). Szare tory zerowe to błądzenie losowe o tych samych krokach.
+- **R7 F:** 7 widoków płaszczyzny Fano nad 7 kierunkami (Δ, reszta chmury, siły, wiązki); każda para kierunków jest razem dokładnie raz.
+- **R8:** panel bez rzutu: wierność widoków w czasie, separacja wobec permutacji etykiet, kosinusy w 192D, pary wiązek i widmo J.
+
+Ślady w okienkach globalnych pokazują wędrówkę przez checkpointy. Opcja „Wygładzanie śladu” uśrednia ostatnie checkpointy, żeby zamiast
+szumu SGD widać było dryf. Strzałki to siła netto bloku 6; krycie strzałki to część jej długości widoczna w rzucie. R1–R7 leżą w
+kartach obok sfery, R8 obok wykresu 6, a przyciski sekcji wyciągają je na wierzch.
+
+Rysowanie i liczenie są na karcie:
+- **Shadery GLSL 4.30 (`rzuty_gpu.RzutGPU`, SSBO jak `lasery_gpu.py`).** Cała historia położeń i sił w bazie okienka trafia do
+  bufora raz, przy zmianie bazy, środka, skali albo wygładzania. W klatce idzie tylko czas. Interpolację, ślady, groty strzałek
+  zwrócone do kamery i krycie liczy shader.
+- **Ramy lokalne R4 i R5** to elementy lokalne tego samego shadera, wysyłane raz na checkpoint i cząsteczkę.
+- **Rzutowanie 192D → 3D** całej historii liczy torch na karcie (`DaneRzutow.wsp`).
+Testy: `testy/test_rzuty_dane.py`.
+
 **Oś czasu.** Suwak, odtwarzanie (spacja) i strzałki ←/→ (checkpoint). Klik w wykres przenosi do danej chwili. Tempo „jak w filmie 16” to v = min(0,8 + krok/250, 150) kroków na klatkę; tempo stałe liczy się w checkpointach na sekundę.
 
 **Wybór cząsteczki.** Klik w cząsteczkę w panelach 1–3 albo na sferze wybiera patch. Przycisk „narzędzie” bierze patch w środku ramki, a „najzmienniejszy” reflektor o największej wariancji natężeń.

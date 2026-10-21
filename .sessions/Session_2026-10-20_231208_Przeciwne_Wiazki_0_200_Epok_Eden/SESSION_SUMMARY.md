@@ -10,7 +10,7 @@
    - para 370–391 (blok 6): historia wag, tokeny, wyłączenie na tle 300 par kontrolnych; detekcja IoU i pewność na 500 VAL + 500 TEST dla 26 checkpointów (job 1911919, 247 s);
    - wykresy 01–09, raport HTML/PDF, krótki wniosek (na zamówienie użytkownika).
 4. Eksperyment `vit_kontynuacja_do_400epok_20261020__23-50-57`: wznowienie z epoki 200 (pełny stan optimizera, samplera, RNG), job 1911922; PREFLIGHT zaliczony, trening był przy epoce ok. 203, kontynuacja nieweryfikowana po restarcie sesji.
-5. Przegląd literatury (Undermind, Scite) rozpoczęty przez 4 agentów badawczych; **nie ukończony** (agenci przerwani wraz z poprzednią sesją), notatki w `research_notes/` mogą być niepełne.
+5. Przegląd literatury (Undermind, Scite) rozpoczęty przez 4 agentów badawczych; **nie ukończony** (agenci przerwani wraz z poprzednią sesją), notatki w `SmallViTAblation/research_notes/` mogą być niepełne.
 
 ## Główne wyniki
 - Par ≥150°: 24 (epoka 60) → szczyt 30 (epoki 80–110) → 15 (epoka 200). Pierwsza para ≥170° w epoce 170, w epoce 200 kąt 173,0° (neurony 370 i 391, blok 6). Progu 175° nie osiąga żadna para.
