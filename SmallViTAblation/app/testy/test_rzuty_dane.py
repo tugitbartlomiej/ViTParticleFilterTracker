@@ -106,6 +106,20 @@ class TestRzutow(unittest.TestCase):
         self.assertEqual(int(RD.rdzen_narzedzia(narz, 0).sum()), 18)
         self.assertTrue(RD.rdzen_narzedzia(narz, 3).any())
 
+    def test_zero_z_refitem_i_cv(self):
+        rng = np.random.default_rng(8)
+        narz = np.zeros(600, bool); narz[200:218] = True
+        Xk = rng.standard_normal((12, 600, 192))
+        Xk[:, narz] += 4 * rng.standard_normal(192)
+        z = RD.zero_z_refitem_gpu(Xk[0], narz, 0.1, 0, 20)
+        # przy n < d dopasowanie do losowych etykiet daje wysoką separację: zero z refitem >> zero ze stałymi osiami
+        B, _ = RD.baza_L(Xk[0], narz, 0.1, 0)
+        z0 = RD.zero_separacji(Xk[0] @ B, int(narz.sum()), 20)
+        self.assertGreater(z['fisher'], z0['fisher'])
+        cv, wyn = RD.cv_blokowane_gpu(Xk, narz, 0.1, 0, 4)
+        self.assertEqual(len(wyn), 4)
+        self.assertGreater(cv['hit'], z0['hit'])                              # prawdziwy sygnał przeżywa walidację blokowaną
+
 
 if __name__ == '__main__':
     unittest.main()

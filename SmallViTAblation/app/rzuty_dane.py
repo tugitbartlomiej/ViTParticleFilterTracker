@@ -796,3 +796,170 @@ def zero_separacji(P, n_narz, n=100, ziarno=0, k=10):
         m = np.zeros(len(P), bool); m[rng.permutation(len(P))[:n_narz]] = True
         out.append(miary_separacji(P, m, k))
     return {kk: float(np.percentile([o[kk] for o in out], 95)) for kk in out[0]}
+
+
+def zero_z_refitem(X, m, lam=0.1, osie=0, n=100, ziarno=0, k=10):
+    """Zero w stylu DiProPerm: dla n losowych etykiet (tyle samo tokenów „narzędzia”) oś jest dopasowywana OD NOWA (baza_L) na tych
+    etykietach, a miary liczone w tym samym zbiorze co dla prawdziwych etykiet. Uczciwe zero dla widoków dopasowanych do etykiet:
+    przy n < d dopasowanie szumu samo daje wysoką separację (spiętrzanie danych), czego zero ze stałymi osiami nie widzi."""
+    rng = np.random.default_rng(ziarno)
+    X = np.asarray(X, np.float64)
+    out = []
+    for _ in range(n):
+        mp = np.zeros(len(X), bool); mp[rng.permutation(len(X))[:int(np.sum(m))]] = True
+        B, _ = baza_L(X, mp, lam, osie)
+        out.append(miary_separacji(X @ B, mp, k))
+    return {kk: float(np.percentile([o[kk] for o in out], 95)) for kk in out[0]}
+
+
+def cv_blokowane(Xk, m, lam=0.1, osie=0, bloki=5, k=10):
+    """Walidacja krzyżowa blokowana po checkpointach: Xk (K, 600, 192) to pula kolejnych checkpointów, m (600,) etykiety. Pula jest
+    dzielona na `bloki` ciągłych bloków; oś dopasowana na pozostałych blokach jest oceniana na środkowym checkpoincie bloku
+    wyłączonego. Zwraca średnie miar na wyłączonych checkpointach i same miary. Uwaga: te same 600 tokenów występuje we wszystkich
+    checkpointach, więc to walidacja w czasie, nie po tokenach (tę robi leave-one-tool-token-out, osobno)."""
+    K = len(Xk)
+    bloki = int(min(max(bloki, 2), K))
+    gr = np.array_split(np.arange(K), bloki)
+    wyn = []
+    for g in gr:
+        uczace = np.setdiff1d(np.arange(K), g)
+        Xs = np.asarray(Xk[uczace], np.float64).reshape(-1, Xk.shape[-1])
+        B, _ = baza_L(Xs, np.tile(m, len(uczace)), lam, osie)
+        t = g[len(g) // 2]
+        wyn.append(miary_separacji(np.asarray(Xk[t], np.float64) @ B, m, k))
+    return {kk: float(np.mean([w[kk] for w in wyn])) for kk in wyn[0]}, wyn
+
+
+# ------------------------------------------------------------------ separacja na karcie (torch): wsadowe dopasowanie LDA i miary
+def _dev():
+    import torch
+    if torch.cuda.is_available():
+        torch.backends.cuda.matmul.allow_tf32 = True                     # najszybsze mnożenia na rdzeniach tensorowych
+        torch.backends.cudnn.allow_tf32 = True
+    return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+
+def baza_L_t(X, M, lam=0.1, osie=0):
+    """To samo co baza_L, ale wsadowo na karcie: X (n, 192) wspólne, M (b, n) bool: b zestawów etykiet naraz.
+    Rozrzut wewnątrz klas z tożsamości Σ_c Σ(x − m_c)(x − m_c)ᵀ = XᵀX − Σ_c n_c m_c m_cᵀ; solve i eigh wsadowo. Zwraca (b, 192, 3)."""
+    import torch
+    dev = X.device
+    Mf = M.to(X.dtype)
+    n = X.shape[0]
+    nt, nb = Mf.sum(1), (1 - Mf).sum(1)
+    mt = (Mf @ X) / nt[:, None]
+    mb = ((1 - Mf) @ X) / nb[:, None]
+    XX = X.T @ X
+    St = torch.einsum('bn,nd,ne->bde', Mf, X, X)                          # Σ_tool xxᵀ
+    Sbg = XX[None] - St
+    Sw = (XX[None] - nt[:, None, None] * mt[:, :, None] * mt[:, None, :] - nb[:, None, None] * mb[:, :, None] * mb[:, None, :]) / max(n - 2, 1)
+    delta = mt - mb
+    D = X.shape[1]
+    eye = torch.eye(D, dtype=X.dtype, device=dev)
+    tr = torch.diagonal(Sw, dim1=1, dim2=2).sum(1) / D
+    w = torch.linalg.solve(Sw + lam * tr[:, None, None] * eye, delta[..., None])[..., 0]
+    w = w / w.norm(dim=1, keepdim=True).clamp_min(1e-30)
+    Q = eye[None] - w[:, :, None] * w[:, None, :]
+    if osie == 2:
+        C = (Sbg - nb[:, None, None] * mb[:, :, None] * mb[:, None, :]) / nb[:, None, None]
+    elif osie == 3:
+        C = (St - nt[:, None, None] * mt[:, :, None] * mt[:, None, :]) / nt[:, None, None]
+    else:
+        C = Sw
+    _, U = torch.linalg.eigh(Q @ C @ Q)
+    ost = [1, 2] if osie == 1 else [-1, -2]
+    return torch.cat([w[:, :, None], U[:, :, ost]], 2)
+
+
+def miary_separacji_t(P, M, k=10):
+    """Miary separacji dla b zestawów naraz na karcie: P (b, n, d), M (b, n) bool (stała liczba tokenów narzędzia w zestawie).
+    Zwraca słownik tensorów (b,): sil, hit, marg, fisher, tak jak miary_separacji."""
+    import torch
+    Mf = M.to(P.dtype)
+    nt, nb = Mf.sum(1), (1 - Mf).sum(1)
+    Dm = torch.cdist(P, P)
+    Mt, Mb = Mf[:, :, None], (1 - Mf)[:, :, None]
+    a = (Dm * Mt * Mf[:, None, :]).sum(2) / (nt[:, None] - 1).clamp_min(1)          # średnia odległość do reszty narzędzia
+    bq = (Dm * (1 - Mf)[:, None, :]).sum(2) / nb[:, None]                           # średnia odległość do tła
+    s = (bq - a) / torch.maximum(a, bq).clamp_min(1e-30)
+    sil = (s * Mf).sum(1) / nt
+    big = torch.finfo(P.dtype).max
+    Dtb = torch.where((Mt * (1 - Mf)[:, None, :]) > 0, Dm, torch.full_like(Dm, big))
+    dmin = Dtb.amin((1, 2))
+    Dbb = torch.where((Mb * (1 - Mf)[:, None, :]) > 0, Dm, torch.full_like(Dm, big))
+    Dbb = Dbb + torch.eye(Dm.shape[1], device=P.device, dtype=P.dtype)[None] * big * 0 + torch.diag_embed(torch.full(Dm.shape[:2], big, device=P.device, dtype=P.dtype))
+    Dbb = Dbb.clamp(max=big)
+    nn = Dbb.amin(2)
+    nn = torch.stack([torch.median(nn[i][(1 - Mf[i]) > 0]) for i in range(len(nn))])
+    Dk = Dm + torch.diag_embed(torch.full(Dm.shape[:2], big, device=P.device, dtype=P.dtype))
+    idx = Dk.topk(k, dim=2, largest=False).indices
+    same = torch.gather(Mf[:, None, :].expand(-1, Dm.shape[1], -1), 2, idx).mean(2)
+    hit = (same * Mf).sum(1) / nt
+    dm = (Mf[:, :, None] * P).sum(1) / nt[:, None] - ((1 - Mf)[:, :, None] * P).sum(1) / nb[:, None]
+    vt = (Mf[:, :, None] * (P - (Mf[:, :, None] * P).sum(1, keepdim=True) / nt[:, None, None]) ** 2).sum((1, 2))
+    vb = ((1 - Mf)[:, :, None] * (P - ((1 - Mf)[:, :, None] * P).sum(1, keepdim=True) / nb[:, None, None]) ** 2).sum((1, 2))
+    fisher = (dm ** 2).sum(1) / ((vt + vb) / P.shape[1]).clamp_min(1e-30)
+    return dict(sil=sil, hit=hit, marg=dmin / nn.clamp_min(1e-30), fisher=fisher)
+
+
+def zero_z_refitem_gpu(X, m, lam=0.1, osie=0, n=100, ziarno=0, k=10, paczka=50):
+    """Zero DiProPerm na karcie: n losowych etykiet, oś dopasowana od nowa dla każdej (wsadowo), miary w tej samej bazie. 95. percentyl."""
+    import torch
+    dev = _dev()
+    Xt = torch.as_tensor(np.asarray(X), dtype=torch.float32, device=dev)
+    nn_ = int(np.sum(m)); N = len(Xt)
+    g = torch.Generator(device='cpu').manual_seed(int(ziarno))
+    wyn = {kk: [] for kk in ('sil', 'hit', 'marg', 'fisher')}
+    for a in range(0, n, paczka):
+        b = min(paczka, n - a)
+        perm = torch.argsort(torch.rand(b, N, generator=g), 1)[:, :nn_]
+        M = torch.zeros(b, N, dtype=torch.bool).scatter_(1, perm, True).to(dev)
+        B = baza_L_t(Xt, M, lam, osie)
+        out = miary_separacji_t((Xt[None] @ B), M, k)
+        for kk in wyn:
+            wyn[kk].append(out[kk].double().cpu())
+    return {kk: float(torch.quantile(torch.cat(v), 0.95)) for kk, v in wyn.items()}
+
+
+def cv_blokowane_gpu(Xk, m, lam=0.1, osie=0, bloki=5, k=10):
+    """cv_blokowane na karcie: oś dopasowana na pozostałych blokach (baza_L_t), miary na środkowym checkpoincie wyłączonego bloku."""
+    import torch
+    dev = _dev()
+    Xk = torch.as_tensor(np.asarray(Xk), dtype=torch.float32, device=dev)
+    K, N, D = Xk.shape
+    M1 = torch.as_tensor(np.asarray(m, bool), device=dev)
+    gr = np.array_split(np.arange(K), int(min(max(bloki, 2), K)))
+    wyn = []
+    for g in gr:
+        uczace = torch.as_tensor(np.setdiff1d(np.arange(K), g), device=dev)
+        Xs = Xk[uczace].reshape(-1, D)
+        Ms = M1.repeat(len(uczace))[None]
+        B = baza_L_t(Xs, Ms, lam, osie)[0]
+        t = int(g[len(g) // 2])
+        o = miary_separacji_t((Xk[t] @ B)[None], M1[None], k)
+        wyn.append({kk: float(v[0]) for kk, v in o.items()})
+    return {kk: float(np.mean([w[kk] for w in wyn])) for kk in wyn[0]}, wyn
+
+
+def separacja_gpu(P, m, n_perm=100, ziarno=0, k=10, paczka=50):
+    """Miary separacji dla prawdziwych etykiet m w punktach P (n, d) i zero ze stałymi osiami (95. percentyl dla n_perm losowych
+    etykiet), wszystko na karcie. Zwraca (miary, zero albo None)."""
+    import torch
+    dev = _dev()
+    Pt = torch.as_tensor(np.asarray(P), dtype=torch.float64, device=dev)
+    M = torch.as_tensor(np.asarray(m, bool), device=dev)
+    o = miary_separacji_t(Pt[None], M[None], k)
+    miary = {kk: float(v[0]) for kk, v in o.items()}
+    if n_perm <= 0:
+        return miary, None
+    g = torch.Generator(device='cpu').manual_seed(int(ziarno))
+    N, nn_ = len(Pt), int(M.sum())
+    wyn = {kk: [] for kk in miary}
+    for a in range(0, n_perm, paczka):
+        b = min(paczka, n_perm - a)
+        perm = torch.argsort(torch.rand(b, N, generator=g), 1)[:, :nn_]
+        Mp = torch.zeros(b, N, dtype=torch.bool).scatter_(1, perm, True).to(dev)
+        out = miary_separacji_t(Pt[None].expand(b, -1, -1), Mp, k)
+        for kk in wyn:
+            wyn[kk].append(out[kk].double().cpu())
+    return miary, {kk: float(torch.quantile(torch.cat(v), 0.95)) for kk, v in wyn.items()}

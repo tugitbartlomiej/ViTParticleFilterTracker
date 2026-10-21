@@ -388,18 +388,26 @@ class Rzuty(QWidget):
         self.sp_L_brzeg.setToolTip('Pomiń tyle skrajnych kolumn i wierszy ramki przy dopasowaniu i w miarach: prostokątna ramka obejmuje\n'
                                    'na brzegach piksele tła. Pominięte tokeny są rysowane na żółto.')
         self.sp_L_perm = _spin(0, 500, 100, 50); self.sp_L_perm.setToolTip('Losowych etykiet do zera miar (95. percentyl); 0 = bez zera.')
+        self.ch_L_refit = QCheckBox('zero z ponownym dopasowaniem osi (DiProPerm)'); self.ch_L_refit.setChecked(True)
+        self.ch_L_refit.setToolTip('Dla każdej losowej etykiety oś jest dopasowywana od nowa (na bieżącym checkpoincie), więc zero obejmuje\n'
+                                   'przeuczenie 18 punktów w 192D. Uczciwsze od zera przy stałych osiach (dolne ograniczenie).')
+        self.ch_L_cv = QCheckBox('walidacja blokowana po checkpointach (oś z innych bloków)'); self.ch_L_cv.setChecked(True)
+        self.ch_L_cv.setToolTip('Pula checkpointów dzielona na bloki ciągłe; oś dopasowana bez bloku jest oceniana na jego środkowym checkpoincie.\n'
+                                'Chroni przed korelacją czasową; nie chroni przed tymi samymi tokenami (te są w każdym checkpoincie).')
+        self.sp_L_bl = _spin(2, 20, 5, 1, sufiks=' bloków')
         for nazwa, w in (('Skurcz λ', self.sp_L_lam), ('Pula dopasowania', self.sp_L_N), ('Kiedy', self.cb_L_kiedy),
                          ('Osie 2–3', self.cb_L_osie), ('Brzeg ramki', self.sp_L_brzeg), ('Permutacji', self.sp_L_perm)):
             fl.addRow(nazwa, w)
+        fl.addRow(self.ch_L_refit); fl.addRow(self.ch_L_cv); fl.addRow('Bloków CV', self.sp_L_bl)
         for z_ in (gw, ga, gb, gc, gd, gp, gl_):
             z_.naglowek.setChecked(False)                                  # podsekcje zwinięte: panel nie rośnie
         for w in (self.cb_kogo, self.cb_slad, self.cb_strz, self.cb_srodek, self.cb_skala, self.cb_A, self.cb_F, self.cb_D,
                   self.cb_L_kiedy, self.cb_L_osie):
             w.currentIndexChanged.connect(self._opcje)
         for w in (self.sp_slad, self.sp_wyg, self.sp_strz, self.sp_rozm, self.sp_B_prog, self.sp_B_skala, self.sp_C_strz, self.sp_D_zero,
-                  self.sp_L_lam, self.sp_L_N, self.sp_L_brzeg, self.sp_L_perm):
+                  self.sp_L_lam, self.sp_L_N, self.sp_L_brzeg, self.sp_L_perm, self.sp_L_bl):
             w.valueChanged.connect(self._opcje)
-        for w in (self.ch_rho, self.ch_kamera, self.ch_osie, self.ch_W, self.ch_D_zero):
+        for w in (self.ch_rho, self.ch_kamera, self.ch_osie, self.ch_W, self.ch_D_zero, self.ch_L_refit, self.ch_L_cv):
             w.toggled.connect(self._opcje)
         for w in (self.cb_C_para, self.cb_C_rzecz, self.cb_C_pole):
             w.currentIndexChanged.connect(lambda *_: self._rysuj_widoczne())
@@ -869,20 +877,55 @@ class Rzuty(QWidget):
                    f'(95 %: {pl(float(d.sep0[i, 1]))} R).')
         return s1 + ' Losowe 3D: 1,6 % energii, 12,5 % długości.' + sep
 
+    def _opis_separacji_podst(self, i, B):
+        """Podstawowe miary R9 (bez zera z refitem i walidacji blokowanej): szybkie, także podczas odtwarzania."""
+        d = self.dane
+        rdz = self._rdzen(); keep = ~(np.asarray(d.narz, bool) & ~rdz)
+        X = np.asarray(d.X[i], np.float64)[keep]; m = rdz[keep]
+        m3, z = RD.separacja_gpu(X @ B, m, int(self.sp_L_perm.value()))
+        m192, _ = RD.separacja_gpu(X, m, 0)
+        f = lambda n_: f'{pl(m3[n_])}' + ('' if z is None else f' (zero {pl(z[n_])})')
+        return (f'Separacja w tym rzucie, {int(m.sum())} tokenów narzędzia vs {int((~m).sum())} tła: sylwetka {f("sil")}, '
+                f'trafienia kNN {f("hit")}, margines {f("marg")} odstępu tła, Fisher {f("fisher")}; '
+                f'w 192D: {pl(m192["sil"])} / {pl(m192["hit"])} / {pl(m192["marg"])}.')
+
     def _opis_separacji(self, i):
         """R9: miary separacji rdzenia narzędzia od tła w tym rzucie i w 192D, z zerem dla losowych etykiet (raz na checkpoint)."""
         d = self.dane
         B, _ = self._baza_L()
-        klucz = ('Lm', i, B.tobytes(), int(self.sp_L_brzeg.value()), int(self.sp_L_perm.value()))
+        ciezkie = (self.ch_L_refit.isChecked() and self.sp_L_perm.value() > 0) or self.ch_L_cv.isChecked()
+        gra = self._z.bt_play.isChecked()
+        if ciezkie and gra and ('Lm', i, 'ciezkie') not in self._pam:
+            klucz_l = ('Lm', i, B.tobytes(), int(self.sp_L_brzeg.value()), int(self.sp_L_perm.value()), False, False, 0, 0, 0, 0)
+            if klucz_l not in self._pam:
+                self._pam[klucz_l] = self._opis_separacji_podst(i, B)
+            return self._pam[klucz_l] + ' Zero z refitem i walidacja blokowana (ok. 15 s) liczą się na pauzie.'
+        klucz = ('Lm', i, B.tobytes(), int(self.sp_L_brzeg.value()), int(self.sp_L_perm.value()), self.ch_L_refit.isChecked(),
+                 self.ch_L_cv.isChecked(), int(self.sp_L_bl.value()), int(self.sp_L_N.value()), round(float(self.sp_L_lam.value()), 3),
+                 self.cb_L_osie.currentIndex())
         if klucz not in self._pam:
             rdz = self._rdzen(); keep = ~(np.asarray(d.narz, bool) & ~rdz)
             X = np.asarray(d.X[i], np.float64)[keep]; m = rdz[keep]
-            m3, m192 = RD.miary_separacji(X @ B, m), RD.miary_separacji(X, m)
-            z = RD.zero_separacji(X @ B, int(m.sum()), int(self.sp_L_perm.value())) if self.sp_L_perm.value() > 0 else None
+            m3, z = RD.separacja_gpu(X @ B, m, int(self.sp_L_perm.value()))
+            m192, _ = RD.separacja_gpu(X, m, 0)
             f = lambda n_: f'{pl(m3[n_])}' + ('' if z is None else f' (zero {pl(z[n_])})')
-            self._pam[klucz] = (f'Separacja w tym rzucie, {int(m.sum())} tokenów narzędzia vs {int((~m).sum())} tła: sylwetka {f("sil")}, '
-                                f'trafienia kNN {f("hit")}, margines {f("marg")} odstępu tła, Fisher {f("fisher")}; '
-                                f'w 192D: {pl(m192["sil"])} / {pl(m192["hit"])} / {pl(m192["marg"])}.')
+            tekst = (f'Separacja w tym rzucie, {int(m.sum())} tokenów narzędzia vs {int((~m).sum())} tła: sylwetka {f("sil")}, '
+                     f'trafienia kNN {f("hit")}, margines {f("marg")} odstępu tła, Fisher {f("fisher")}; '
+                     f'w 192D: {pl(m192["sil"])} / {pl(m192["hit"])} / {pl(m192["marg"])}.')
+            lam, osie = float(self.sp_L_lam.value()), self.cb_L_osie.currentIndex()
+            if self.ch_L_refit.isChecked() and self.sp_L_perm.value() > 0:
+                zr = RD.zero_z_refitem_gpu(X, m, lam, osie, int(self.sp_L_perm.value()))
+                tekst += (f' Zero z ponownym dopasowaniem osi ({int(self.sp_L_perm.value())} perm.): sylwetka {pl(zr["sil"])}, '
+                          f'kNN {pl(zr["hit"])}, margines {pl(zr["marg"])}, Fisher {pl(zr["fisher"])}.')
+            if self.ch_L_cv.isChecked():
+                ks = np.arange(max(0, i - int(self.sp_L_N.value()) + 1), i + 1)
+                if len(ks) >= 4:
+                    cv, _ = RD.cv_blokowane_gpu(np.asarray(d.X[ks], np.float32)[:, keep], m, lam, osie, int(self.sp_L_bl.value()))
+                    tekst += (f' Walidacja blokowana po checkpointach ({int(self.sp_L_bl.value())} bloków z puli {len(ks)}): sylwetka '
+                              f'{pl(cv["sil"])}, kNN {pl(cv["hit"])}, margines {pl(cv["marg"])}, Fisher {pl(cv["fisher"])}.')
+                else:
+                    tekst += ' Walidacja blokowana: pula za krótka (zwiększ „Pulę dopasowania”).'
+            self._pam[klucz] = tekst
         return self._pam[klucz]
 
     def _opis_ruchu(self, pok):

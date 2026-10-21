@@ -1061,3 +1061,10 @@ ma kształt siodła z wirem (np. ściąga −0,19, obraca 0,21); liniowe oszacow
 - Okienko szczegółów podkroków dostaje dane tylko wtedy, gdy jest widoczne.
 
 Pomiar: około 45 kl/s, 95% klatek do 38 ms, przy zmianie checkpointu najwyżej około 60 ms.
+
+**R9: zero z ponownym dopasowaniem i walidacja blokowana (na karcie).** Dwie opcje sekcji R9. „Zero z ponownym dopasowaniem osi”
+(DiProPerm): dla każdej losowej etykiety oś LDA jest dopasowywana od nowa, więc zero obejmuje przeuczenie 18 punktów w 192D. „Walidacja
+blokowana po checkpointach”: pula jest dzielona na ciągłe bloki, oś z pozostałych bloków jest oceniana na checkpoincie wyłączonego bloku
+(chroni przed korelacją czasową, nie przed tymi samymi tokenami). Wszystko liczy karta: wsadowe `solve` i `eigh` w torch, miary z
+`cdist` na GPU, float32 i TF32 (zgodne z CPU float64 do 0,2° w osiach), ok. 0,5 s na checkpoint wobec 14 s w numpy. Podczas odtwarzania
+liczą się tylko szybkie miary podstawowe, ciężkie dopiero na pauzie.
