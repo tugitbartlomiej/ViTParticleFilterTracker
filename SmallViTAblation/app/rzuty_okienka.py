@@ -391,6 +391,10 @@ class Rzuty(QWidget):
                                   '(cienki cystotom: z 18 łat ramki 3 są w co najmniej połowie narzędziem).\n'
                                   'Grupa wykryta bez etykiet: TokenCut na aktywacjach MLP bloku 6 w danym checkpoincie (bez adnotacji);\n'
                                   'oś LDA dopasowana do tej grupy, obrys tylko do sprawdzenia (Dice, precyzja; żółte = narzędzie pominięte).')
+        self.cb_L_os = WaskiCombo(); self.cb_L_os.addItems(['oś LDA z etykiety (obrys)', 'oś LDA z wykrytej grupy (bez etykiet)'])
+        self.cb_L_os.setToolTip('Dla etykiety „grupa wykryta bez etykiet”: do czego dopasować oś LDA. Z obrysu: widok jak przy etykiecie,\n'
+                                'a kolor narzędzia = grupa wykryta bez etykiet, więc widać, czy grupa leży tam, gdzie oznaczone narzędzie.\n'
+                                'Z grupy: widok całkowicie bez etykiet. Przy innych etykietach oś zawsze z wybranej etykiety.')
         self.sp_L_prog = _spin(0.05, 1.0, 0.5, 0.05, 2)
         self.sp_L_prog.setToolTip('Próg udziału pikseli narzędzia w łacie (etykieta z obrysu).')
         self.ch_L_przestrz = QCheckBox('zero przestrzenne (ta sama maska w innych miejscach tła)'); self.ch_L_przestrz.setChecked(True)
@@ -409,14 +413,14 @@ class Rzuty(QWidget):
                                 'Chroni przed korelacją czasową; nie chroni przed tymi samymi tokenami (te są w każdym checkpoincie).')
         self.sp_L_bl = _spin(2, 20, 5, 1, sufiks=' bloków')
         for nazwa, w in (('Skurcz λ', self.sp_L_lam), ('Pula dopasowania', self.sp_L_N), ('Kiedy', self.cb_L_kiedy),
-                         ('Osie 2–3', self.cb_L_osie), ('Etykieta', self.cb_L_etyk), ('Próg udziału', self.sp_L_prog),
+                         ('Osie 2–3', self.cb_L_osie), ('Etykieta', self.cb_L_etyk), ('Oś LDA', self.cb_L_os), ('Próg udziału', self.sp_L_prog),
                          ('Brzeg ramki', self.sp_L_brzeg), ('Permutacji', self.sp_L_perm)):
             fl.addRow(nazwa, w)
         fl.addRow(self.ch_L_przestrz); fl.addRow(self.ch_L_refit); fl.addRow(self.ch_L_cv); fl.addRow('Bloków CV', self.sp_L_bl)
         for z_ in (gw, ga, gb, gc, gd, gp, gl_):
             z_.naglowek.setChecked(False)                                  # podsekcje zwinięte: panel nie rośnie
         for w in (self.cb_kogo, self.cb_slad, self.cb_strz, self.cb_srodek, self.cb_skala, self.cb_A, self.cb_F, self.cb_D,
-                  self.cb_L_kiedy, self.cb_L_osie, self.cb_L_etyk):
+                  self.cb_L_kiedy, self.cb_L_osie, self.cb_L_etyk, self.cb_L_os):
             w.currentIndexChanged.connect(self._opcje)
         for w in (self.sp_slad, self.sp_wyg, self.sp_strz, self.sp_rozm, self.sp_B_prog, self.sp_B_skala, self.sp_C_strz, self.sp_D_zero,
                   self.sp_L_lam, self.sp_L_N, self.sp_L_brzeg, self.sp_L_perm, self.sp_L_bl, self.sp_L_prog):
@@ -719,7 +723,17 @@ class Rzuty(QWidget):
         return rdz, ramka & ~rdz
 
     def _klucz_etyk(self):
-        return (self.cb_L_etyk.currentIndex(), round(float(self.sp_L_prog.value()), 3), int(self.sp_L_brzeg.value()))
+        return (self.cb_L_etyk.currentIndex(), self.cb_L_os.currentIndex(), round(float(self.sp_L_prog.value()), 3), int(self.sp_L_brzeg.value()))
+
+    def _etykieta_osi(self, kf):
+        """Etykieta do dopasowania osi LDA: przy grupie wykrytej bez etykiet i „oś z etykiety” – obrys (udział ≥ próg),
+        w pozostałych przypadkach ta sama co etykieta widoku."""
+        if self.cb_L_etyk.currentIndex() == 2 and self.cb_L_os.currentIndex() == 0:
+            u = np.asarray(getattr(self.dane, 'udzial', np.full(LD.TOK, np.nan)), np.float32)
+            if np.isfinite(u).all() and (u >= float(self.sp_L_prog.value())).sum() >= 2:
+                narz = u >= float(self.sp_L_prog.value())
+                return narz, (u > 0) & ~narz
+        return self._etykieta(kf)
 
     def _opis_etyk(self, rdz, mies):
         d = self.dane
@@ -753,7 +767,7 @@ class Rzuty(QWidget):
             if len(ks) > 200:
                 ks = np.unique(np.concatenate([np.linspace(ks[0], ks[-1], 200).astype(int), [kf]]))   # pula: najwyżej 200 checkpointów
             Xs = np.asarray(d.X[ks], np.float64).reshape(-1, RD.D)
-            rdz, mies = self._etykieta(kf)
+            rdz, mies = self._etykieta_osi(kf)
             keep = np.tile(~mies, len(ks))
             B, cosd = RD.baza_L(Xs[keep], np.tile(rdz, len(ks))[keep], float(self.sp_L_lam.value()), self.cb_L_osie.currentIndex())
             self._pam[klucz] = (B.astype(np.float32), f'L: LDA λ={pl(float(self.sp_L_lam.value()))}, pula {len(ks)} ckpt do {kf + 1}, '

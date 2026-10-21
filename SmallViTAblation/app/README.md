@@ -1093,3 +1093,5 @@ grupy, a obrys służy tylko do sprawdzenia: podpis podaje Dice, precyzję, czu�
 576 klatek) spośród 448 konfiguracji (cechy bloków 3–6 i MLP, kurtoza, odstawanie, TokenCut). Na filmach TEST (62 filmy, 692 klatki)
 dla seedu 3047, epoka 400: Dice 0,47 [0,44–0,50], precyzja 0,62, 94 % tokenów grupy w narzędziu lub ≤ 1 łatę od niego; wagi
 nieuczone: Dice 0,04. Eksperyment: `experiments/wykrywanie_grupy_narzedzia_bez_etykiet_20261021__21-42-46`.
+Opcja „Oś LDA” (przy tej etykiecie): oś z obrysu (domyślnie; kolor narzędzia = wykryta grupa, więc widać, czy grupa leży tam,
+gdzie oznaczone narzędzie) albo oś z wykrytej grupy (widok całkowicie bez etykiet).
