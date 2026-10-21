@@ -384,10 +384,13 @@ class Rzuty(QWidget):
         self.cb_L_osie = WaskiCombo()
         self.cb_L_osie.addItems(['osie 2–3: największy rozrzut wewnątrz klas', 'osie 2–3: najmniejszy rozrzut wewnątrz klas (klasy jak kropki)',
                                  'osie 2–3: PCA tła', 'osie 2–3: PCA narzędzia'])
-        self.cb_L_etyk = WaskiCombo(); self.cb_L_etyk.addItems(['obrys narzędzia (udział pikseli w łacie)', 'ramka GT (stara etykieta)'])
+        self.cb_L_etyk = WaskiCombo(); self.cb_L_etyk.addItems(['obrys narzędzia (udział pikseli w łacie)', 'ramka GT (stara etykieta)',
+                                 'grupa wykryta bez etykiet (TokenCut na latencie MLP 768D)'])
         self.cb_L_etyk.setToolTip('Obrys: wielokąty narzędzia z adnotacji Cataract-LMM; narzędzie = łaty z udziałem pikseli ≥ próg,\n'
                                   'mieszane (0 < udział < próg) na żółto, poza dopasowaniem i miarami. Ramka GT obejmuje głównie tło\n'
-                                  '(cienki cystotom: z 18 łat ramki 3 są w co najmniej połowie narzędziem).')
+                                  '(cienki cystotom: z 18 łat ramki 3 są w co najmniej połowie narzędziem).\n'
+                                  'Grupa wykryta bez etykiet: TokenCut na aktywacjach MLP bloku 6 w danym checkpoincie (bez adnotacji);\n'
+                                  'oś LDA dopasowana do tej grupy, obrys tylko do sprawdzenia (Dice, precyzja; żółte = narzędzie pominięte).')
         self.sp_L_prog = _spin(0.05, 1.0, 0.5, 0.05, 2)
         self.sp_L_prog.setToolTip('Próg udziału pikseli narzędzia w łacie (etykieta z obrysu).')
         self.ch_L_przestrz = QCheckBox('zero przestrzenne (ta sama maska w innych miejscach tła)'); self.ch_L_przestrz.setChecked(True)
@@ -691,10 +694,21 @@ class Rzuty(QWidget):
         B, nazwy, b, opis = self._baza_D()
         return d.wsp(B, 'X'), d.wsp(B, 'F'), nazwy, b, opis
 
-    def _etykieta(self):
+    def _grupa(self, i):
+        """Grupa tokenów wykryta bez etykiet w checkpoincie i (TokenCut na h.Z[i], aktywacje MLP bloku 6), raz na checkpoint."""
+        klucz = ('grupa', int(i))
+        if klucz not in self._pam:
+            self._pam[klucz] = RD.wykryj_grupe(np.asarray(self._h.Z[int(i)], np.float32))
+        return self._pam[klucz]
+
+    def _etykieta(self, i=None):
         """(narzędzie, mieszane) bool (600,) dla R9: z obrysu (udział pikseli ≥ próg) albo ze starej ramki GT bez `brzeg` skrajnych
         kolumn i wierszy; mieszane nie wchodzą ani do narzędzia, ani do tła."""
         d = self.dane
+        if self.cb_L_etyk.currentIndex() == 2:
+            G = self._grupa(self._indeksy()[3] if i is None else i)
+            if G.sum() >= 2:
+                return G, np.zeros(LD.TOK, bool)
         u = np.asarray(getattr(d, 'udzial', np.full(LD.TOK, np.nan)), np.float32)
         if self.cb_L_etyk.currentIndex() == 0 and np.isfinite(u).all():
             narz = u >= float(self.sp_L_prog.value())
@@ -709,6 +723,15 @@ class Rzuty(QWidget):
 
     def _opis_etyk(self, rdz, mies):
         d = self.dane
+        if self.cb_L_etyk.currentIndex() == 2 and rdz.sum() >= 2 and not mies.any():
+            u = np.asarray(getattr(d, 'udzial', np.full(LD.TOK, np.nan)), np.float32)
+            s_ = f'grupa wykryta bez etykiet (TokenCut, latent MLP), {int(rdz.sum())} tokenów'
+            if np.isfinite(u).all():
+                z = RD.zgodnosc_z_obrysem(rdz, u)
+                fp = lambda v: f'{v:.3f}'.replace('.', ',')
+                s_ += (f'; sprawdzenie z obrysem (nieużytym do wykrycia): Dice {pl(z["dice"])}, precyzja {pl(z["precyzja"])}, '
+                       f'czułość {pl(z["czulosc"])}, p przesunięć grupy = {fp(z["p"])}; żółte = narzędzie pominięte')
+            return s_
         u = np.asarray(getattr(d, 'udzial', [np.nan]), np.float32)
         obrys = self.cb_L_etyk.currentIndex() == 0 and np.isfinite(u).all()
         zrodlo = str(getattr(d, 'etykieta', 'obrys')) if obrys else 'ramka GT'
@@ -730,7 +753,7 @@ class Rzuty(QWidget):
             if len(ks) > 200:
                 ks = np.unique(np.concatenate([np.linspace(ks[0], ks[-1], 200).astype(int), [kf]]))   # pula: najwyżej 200 checkpointów
             Xs = np.asarray(d.X[ks], np.float64).reshape(-1, RD.D)
-            rdz, mies = self._etykieta()
+            rdz, mies = self._etykieta(kf)
             keep = np.tile(~mies, len(ks))
             B, cosd = RD.baza_L(Xs[keep], np.tile(rdz, len(ks))[keep], float(self.sp_L_lam.value()), self.cb_L_osie.currentIndex())
             self._pam[klucz] = (B.astype(np.float32), f'L: LDA λ={pl(float(self.sp_L_lam.value()))}, pula {len(ks)} ckpt do {kf + 1}, '
@@ -786,6 +809,9 @@ class Rzuty(QWidget):
         M[wyb, 1] = 1.0
         if k == 'R9':
             M[self._etykieta()[1], 1] = 1.0                                  # tokeny mieszane (albo pominięty brzeg ramki) na żółto
+            u_ = np.asarray(getattr(d, 'udzial', np.full(LD.TOK, np.nan)), np.float32)
+            if self.cb_L_etyk.currentIndex() == 2 and np.isfinite(u_).all():
+                M[(u_ >= 0.25) & ~self._etykieta()[0], 1] = 1.0              # narzędzie z obrysu pominięte przez grupę: na żółto
         if wybrane:
             M[wybrane[0], 1] = 2.0
         M[:, 2] = sl
@@ -915,7 +941,7 @@ class Rzuty(QWidget):
     def _opis_separacji_podst(self, i, B):
         """Podstawowe miary R9 (bez zera z refitem i walidacji blokowanej): szybkie, także podczas odtwarzania."""
         d = self.dane
-        rdz, mies = self._etykieta(); keep = ~mies
+        rdz, mies = self._etykieta(i); keep = ~mies
         X = np.asarray(d.X[i], np.float64)[keep]; m = rdz[keep]
         kk = RD.k_sasiadow(m.sum())
         m3, z = RD.separacja_gpu(X @ B, m, int(self.sp_L_perm.value()), k=kk)
@@ -940,7 +966,7 @@ class Rzuty(QWidget):
                  self.ch_L_cv.isChecked(), self.ch_L_przestrz.isChecked(), int(self.sp_L_bl.value()), int(self.sp_L_N.value()), round(float(self.sp_L_lam.value()), 3),
                  self.cb_L_osie.currentIndex())
         if klucz not in self._pam:
-            rdz, mies = self._etykieta(); keep = ~mies
+            rdz, mies = self._etykieta(i); keep = ~mies
             X = np.asarray(d.X[i], np.float64)[keep]; m = rdz[keep]
             kk = RD.k_sasiadow(m.sum())
             tekst = self._opis_separacji_podst(i, B)

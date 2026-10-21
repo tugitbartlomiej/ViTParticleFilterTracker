@@ -1084,3 +1084,12 @@ przesunięta w każde położenie siatki rozłączne z pikselami narzędzia, oś
 są podobne); zero z losowych, rozrzuconych tokenów (0,1) było zbyt łagodne wobec ramek tła (sylwetka ok. 0,7). Podpis podaje p =
 odsetek położeń tła z miarą ≥ narzędzia. Fisher (odległość klas względem rozrzutu) jest pierwszą liczbą, bo sylwetka nasyca się
 przy ok. 0,9 także dla tła. Trafienia kNN mają k = min(10, n_narz − 1): przy 3 łatach narzędzia k = 10 dawałoby najwyżej 0,2.
+
+**R9: grupa narzędzia wykryta bez etykiet (2026-10-21).** Trzecia etykieta w R9: „grupa wykryta bez etykiet”. `RD.wykryj_grupe`
+liczy TokenCut (graf kosinusowy aktywacji MLP bloku 6, 600 × 768, τ = 0,2, drugi wektor własny znormalizowanego laplasjanu,
+strona z największym |y|, największa spójna składowa) w danym checkpoincie z `h.Z`, bez adnotacji. Oś LDA jest dopasowana do tej
+grupy, a obrys służy tylko do sprawdzenia: podpis podaje Dice, precyzję, czułość i p przesunięć grupy po siatce
+(`RD.zgodnosc_z_obrysem`); łaty narzędzia z obrysu pominięte przez grupę są żółte. Konfigurację wybrano na filmach DEV (52 filmy,
+576 klatek) spośród 896 konfiguracji (cechy bloków 3–6 i MLP, kurtoza, odstawanie, TokenCut). Na filmach TEST (62 filmy, 692 klatki)
+dla seedu 3047, epoka 400: Dice 0,47 [0,44–0,50], precyzja 0,62, 94 % tokenów grupy w narzędziu lub ≤ 1 łatę od niego; wagi
+nieuczone: Dice 0,04. Eksperyment: `experiments/wykrywanie_grupy_narzedzia_bez_etykiet_20261021__21-42-46`.

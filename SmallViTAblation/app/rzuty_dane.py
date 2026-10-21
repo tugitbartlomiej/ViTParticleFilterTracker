@@ -1000,3 +1000,52 @@ def zero_przestrzenne_gpu(X, m, wyklucz, keep=None, lam=0.1, osie=0, k=10, paczk
     if len(R) < 19:
         return prawda, {}, len(R)
     return prawda, {kk: (float(np.percentile(v[1:], 95)), float((1 + (v[1:] >= v[0]).sum()) / (1 + len(R)))) for kk, v in wyn.items()}, len(R)
+
+
+# ------------------------------------------------------------------ wykrywanie grupy narzędzia bez etykiet (TokenCut na latencie MLP)
+TC_TAU = 0.2                                           # wybrane na filmach DEV (eksperyment wykrywanie_grupy_narzedzia_bez_etykiet_…)
+
+
+def wykryj_grupe(Z, tau=TC_TAU, spojna=True):
+    """Grupa tokenów wykryta BEZ etykiet: TokenCut (Wang i in. 2022) na aktywacjach MLP bloku 6 (600, 768) jednej klatki: graf
+    kosinusowy A = 1 dla cos ≥ τ (inaczej 1e-5), drugi wektor własny znormalizowanego laplasjanu, podział wg średniej, strona
+    z największym |y|; potem największa spójna składowa na siatce 20 × 30 (8-sąsiedztwo). Z może mieć wymiar (K, 600, 768)
+    – wtedy wsadowo, wynik (K, 600). Na filmach TEST grupa pokrywa obrys narzędzia z Dice ok. 0,4 (precyzja ok. 0,6)."""
+    import torch
+    from scipy.ndimage import label as etykietuj
+    dev = _dev()
+    F = torch.as_tensor(np.asarray(Z, np.float32), device=dev)
+    jedna = F.ndim == 2
+    F = F[None] if jedna else F
+    out = np.zeros(F.shape[:2], bool)
+    for a in range(0, len(F), 32):
+        Fb = F[a:a + 32]
+        Fn = Fb / Fb.norm(dim=2, keepdim=True).clamp_min(1e-12)
+        S = Fn @ Fn.transpose(1, 2)
+        A = torch.where(S >= tau, torch.ones_like(S), torch.full_like(S, 1e-5))
+        Dm = A.sum(2).rsqrt()
+        L = torch.eye(Fb.shape[1], device=dev)[None] - Dm[:, :, None] * A * Dm[:, None, :]
+        y = torch.linalg.eigh(L)[1][:, :, 1] * Dm
+        strona = y > y.mean(1, keepdim=True)
+        st = strona.gather(1, y.abs().argmax(1)[:, None])
+        out[a:a + len(Fb)] = torch.where(st, strona, ~strona).cpu().numpy()
+    if spojna:
+        for i, g in enumerate(out):
+            lab, n = etykietuj(g.reshape(LD.H, LD.W), structure=np.ones((3, 3)))
+            if n:
+                out[i] = (lab == 1 + np.bincount(lab.ravel())[1:].argmax()).ravel()
+    return out[0] if jedna else out
+
+
+def zgodnosc_z_obrysem(G, udzial, prog=0.25):
+    """Walidacja grupy wykrytej bez etykiet: Dice z rdzeniem obrysu (udział ≥ prog), precyzja (jakikolwiek piksel narzędzia),
+    czułość oraz zero przestrzenne Dice: ta sama grupa przesunięta po siatce (p = odsetek przesunięć z Dice ≥ prawdziwego)."""
+    import etykiety_narzedzia as EN
+    G = np.asarray(G, bool); u = np.asarray(udzial, np.float32); rdz = u >= prog
+    dice = lambda g: float(2 * (g & rdz).sum() / max(g.sum() + rdz.sum(), 1))
+    d = dice(G)
+    R = EN.przesuniecia(G, np.zeros_like(G)) if G.any() else np.zeros((0, len(G)), bool)
+    R = R[np.any(R != G, axis=1)] if len(R) else R
+    zd = np.array([dice(r) for r in R]) if len(R) else np.zeros(0)
+    return dict(dice=d, precyzja=float((u[G] > 0).mean()) if G.any() else np.nan, czulosc=float(G[rdz].mean()) if rdz.any() else np.nan,
+                n=int(G.sum()), p=float((1 + (zd >= d).sum()) / (1 + len(zd))) if len(zd) else np.nan, n_przes=len(zd))
