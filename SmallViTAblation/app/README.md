@@ -872,6 +872,13 @@ energii sił, energii wiązek, długości wektora narzędzie–tło Δ i ruchu. 
   cząsteczki (start → koniec). Szare tory zerowe to błądzenie losowe o tych samych krokach.
 - **R7 F:** 7 widoków płaszczyzny Fano nad 7 kierunkami (Δ, reszta chmury, siły, wiązki); każda para kierunków jest razem dokładnie raz.
 - **R8:** panel bez rzutu: wierność widoków w czasie, separacja wobec permutacji etykiet, kosinusy w 192D, pary wiązek i widmo J.
+- **R9 L (2026-10-21):** separacja narzędzia od tła z własną sekcją parametrów. Oś 1 = LDA ze skurczem, czyli różnica średnich
+  wybielona kowariancją wewnątrz klas: w ∝ (S_w + λ·tr(S_w)/192·I)⁻¹ Δ, dopasowana na puli ostatnich N checkpointów (stała kamera)
+  albo na bieżącym. Osie 2–3 do wyboru: największy lub najmniejszy rozrzut wewnątrz klas w dopełnieniu, PCA tła, PCA narzędzia.
+  „Brzeg ramki” pomija skrajne kolumny i wiersze prostokątnej ramki (to piksele tła; rysowane na żółto). W podpisie miary separacji
+  w tym rzucie i w 192D: sylwetka narzędzia, trafienia kNN (udział narzędzia wśród 10 sąsiadów), margines (najmniejsza odległość
+  narzędzie–tło w odstępach najbliższych sąsiadów tła) i stosunek Fishera, każda z zerem = 95. percentyl dla losowych etykiet
+  w tej samej bazie. Uzasadnienie i ograniczenia: `reports/Osie najlepszej separacji narzędzia od tła.md`.
 
 Ślady w okienkach globalnych pokazują wędrówkę przez checkpointy. Opcja „Wygładzanie śladu” uśrednia ostatnie checkpointy, żeby zamiast
 szumu SGD widać było dryf. Strzałki to siła netto bloku 6; krycie strzałki to część jej długości widoczna w rzucie. R1–R7 leżą w

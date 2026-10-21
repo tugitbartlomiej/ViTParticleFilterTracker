@@ -729,3 +729,70 @@ def kat_skretu(tor):
         return np.nan
     c = (k[1:] * k[:-1]).sum(1)[ok] / (n[1:] * n[:-1])[ok]
     return float(np.median(c))
+
+
+# ------------------------------------------------------------------ separacja narzędzia od tła (R9, L)
+def rdzen_narzedzia(narz, brzeg=0, W=LD.W):
+    """Maska tokenów narzędzia bez `brzeg` skrajnych kolumn i wierszy ramki (prostokątna ramka obejmuje piksele tła na brzegach)."""
+    narz = np.asarray(narz, bool)
+    if brzeg <= 0 or not narz.any():
+        return narz
+    idx = np.flatnonzero(narz)
+    r, c = np.divmod(idx, W)
+    ok = np.ones(len(idx), bool)
+    for v in (c, r):                                                     # kolumny i wiersze osobno; wymiar za wąski (np. 2 wiersze) zostaje
+        if v.max() - v.min() + 1 > 2 * brzeg:
+            ok &= (v >= v.min() + brzeg) & (v <= v.max() - brzeg)
+    out = np.zeros_like(narz)
+    out[idx[ok]] = True
+    return out if out.any() else narz
+
+
+def baza_L(Xs, m, lam=0.1, osie=0):
+    """Oś 1 = kierunek LDA ze skurczem: w ∝ (S_w + λ·tr(S_w)/D · I)⁻¹ Δ (Δ = średnia narzędzia − tła, S_w = kowariancja wewnątrz klas;
+    Xs (n, 192) może być pulą wielu checkpointów, m (n,) etykiety). Osie 2–3 w dopełnieniu w: 0 = największy rozrzut wewnątrz klas,
+    1 = najmniejszy, 2 = PCA tła, 3 = PCA narzędzia. Zwraca (B (192, 3), udział Δ w osi 1 = cos(w, Δ))."""
+    Xs = np.asarray(Xs, np.float64); m = np.asarray(m, bool)
+    Xt, Xb = Xs[m], Xs[~m]
+    delta = Xt.mean(0) - Xb.mean(0)
+    ct, cb = Xt - Xt.mean(0), Xb - Xb.mean(0)
+    Sw = (ct.T @ ct + cb.T @ cb) / max(len(Xs) - 2, 1)
+    w = np.linalg.solve(Sw + lam * np.trace(Sw) / len(Sw) * np.eye(len(Sw)), delta)
+    w /= max(np.linalg.norm(w), 1e-30)
+    Q = np.eye(len(w)) - np.outer(w, w)
+    C = (Sw, Sw, cb.T @ cb / max(len(cb), 1), ct.T @ ct / max(len(ct), 1))[int(osie)]
+    e, U = np.linalg.eigh(Q @ C @ Q)
+    kol = [U[:, 1], U[:, 2]] if osie == 1 else [U[:, -1], U[:, -2]]   # najmniejsze: pomijamy zerową wartość w kierunku w
+    B = np.stack(_dopisz([w], kol + list(np.eye(len(w))), 2), 1)
+    B = np.concatenate([B[:, :1], _znak(B[:, 1:])], 1)
+    return B, float(w @ delta / max(np.linalg.norm(delta), 1e-30))
+
+
+def miary_separacji(P, m, k=10):
+    """Separacja klasy m w punktach P (n, d): sylwetka narzędzia, trafienia kNN (udział narzędzia wśród k sąsiadów tokenu narzędzia),
+    margines = min odległość narzędzie–tło / mediana odstępu najbliższych sąsiadów tła, stosunek Fishera |Δ|²/wariancja wewnątrz."""
+    from scipy.spatial.distance import cdist
+    P = np.asarray(P, np.float64); m = np.asarray(m, bool)
+    t, b = P[m], P[~m]
+    if len(t) < 2 or len(b) < 2:
+        return dict(sil=np.nan, hit=np.nan, marg=np.nan, fisher=np.nan)
+    Dtb = cdist(t, b); Dtt = cdist(t, t); np.fill_diagonal(Dtt, np.nan)
+    a = np.nanmean(Dtt, 1); bq = Dtb.mean(1)
+    sil = float(np.mean((bq - a) / np.maximum(np.maximum(a, bq), 1e-30)))
+    Dbb = cdist(b, b); np.fill_diagonal(Dbb, np.inf)
+    nn = float(np.median(Dbb.min(1)))
+    Dall = cdist(P, P); np.fill_diagonal(Dall, np.inf)
+    nnk = np.argsort(Dall, 1)[:, :k]
+    dm = t.mean(0) - b.mean(0)
+    within = (t.var(0).sum() * len(t) + b.var(0).sum() * len(b)) / len(P)
+    return dict(sil=sil, hit=float(m[nnk][m].mean()), marg=float(Dtb.min() / max(nn, 1e-30)), fisher=float(dm @ dm / max(within, 1e-30)))
+
+
+def zero_separacji(P, n_narz, n=100, ziarno=0, k=10):
+    """95. percentyl miar separacji dla losowych etykiet (n_narz losowych tokenów jako „narzędzie”)."""
+    rng = np.random.default_rng(ziarno)
+    out = []
+    for _ in range(n):
+        m = np.zeros(len(P), bool); m[rng.permutation(len(P))[:n_narz]] = True
+        out.append(miary_separacji(P, m, k))
+    return {kk: float(np.percentile([o[kk] for o in out], 95)) for kk in out[0]}

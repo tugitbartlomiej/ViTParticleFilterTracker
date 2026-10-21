@@ -10,7 +10,9 @@ okienek i opcje. Jedno okienko = jeden rzut:
   R5 C — rama Schura: podprzestrzeń niezmiennicza pełnego jakobianu, pole lokalnej deformacji, płaszczyzna wiru i kierunek własny;
   R6 D — wędrówka w czasie uczenia: wszystkie, narzędzie, wybrane albo jedna cząsteczka, z torami zerowymi (błądzenie losowe);
   R7 F — 7 widoków płaszczyzny Fano nad 7 kierunkami (każda para kierunków razem w dokładnie jednym widoku);
-  R8 — bez rzutu: wierność widoków w czasie, separacja klas wobec permutacji etykiet, kosinusy w 192D, pary wiązek, widmo J.
+  R8 — bez rzutu: wierność widoków w czasie, separacja klas wobec permutacji etykiet, kosinusy w 192D, pary wiązek, widmo J;
+  R9 L — separacja narzędzia od tła: oś 1 = LDA ze skurczem (Δ wybielone kowariancją wewnątrz klas, dopasowane na puli ostatnich
+       checkpointów), osie 2–3 do wyboru; w podpisie sylwetka, trafienia kNN, margines i stosunek Fishera z zerem permutacyjnym.
 W okienkach globalnych (R1–R3, R6, R7) ślady to wędrówka cząsteczek przez checkpointy uczenia, a strzałki to siła netto bloku 6
 (dokładny rzut; krycie = widoczna część długości ρ = |Pu|/|u|). Wszystkie pokazują chwilę osi czasu zakładki.
 Rysowanie na karcie (rzuty_gpu.RzutGPU, GLSL 4.30): cała historia w bazie okienka idzie do bufora raz (przy zmianie bazy, środka,
@@ -47,7 +49,8 @@ OKIENKA = (('R1', 'A', 'R1. A — mapa klas: oś narzędzie–tło (100 % separa
            ('R5', 'C', 'R5. C — rama Schura: podprzestrzeń niezmiennicza jakobianu (lokalna)'),
            ('R6', 'D', 'R6. D — wędrówka w czasie uczenia'),
            ('R7', 'F', 'R7. F — 7 widoków Fano: każda para kierunków razem raz'),
-           ('R8', 'bez rzutu', 'R8. Bez rzutu: miary 192D i wierność widoków'))
+           ('R8', 'bez rzutu', 'R8. Bez rzutu: miary 192D i wierność widoków'),
+           ('R9', 'L', 'R9. L — separacja narzędzia od tła: oś LDA ze skurczem + własne parametry'))
 pl = lambda x, n=2: '—' if x is None or not np.isfinite(x) else f'{x:.{n}f}'.replace('.', ',')
 
 
@@ -369,11 +372,32 @@ class Rzuty(QWidget):
         self.cb_P.addItems(['wierność: rozrzut chmury', 'wierność: energia sił netto', 'wierność: energia wiązek',
                             'wierność: długość separacji Δ', 'wierność: ruch między checkpointami'])
         fp.addRow('Wykres wierności', self.cb_P)
-        for z_ in (gw, ga, gb, gc, gd, gp):
+
+        gl_ = Zwijana('R9 L: separacja narzędzia od tła'); fl = QFormLayout(gl_); f.addRow(gl_)
+        self.sp_L_lam = _spin(0.0, 10.0, 0.1, 0.05, 2)
+        self.sp_L_lam.setToolTip('Skurcz LDA: w ∝ (S_w + λ·tr(S_w)/192·I)⁻¹ Δ. 0 = czysta LDA (przy 18 tokenach narzędzia przeucza),\n'
+                                 'duże λ → sam kierunek Δ (jak oś 1 widoku A).')
+        self.sp_L_N = _spin(1, 2000, 100, 10, sufiks=' ckpt')
+        self.sp_L_N.setToolTip('Pula dopasowania: tyle ostatnich checkpointów (do checkpointu dopasowania) razem; więcej = stabilniejsza oś,\n'
+                               'mniej = lepiej dopasowana do jednej chwili. 1 = tylko checkpoint dopasowania.')
+        self.cb_L_kiedy = WaskiCombo(); self.cb_L_kiedy.addItems(['dopasuj na końcu uczenia (stała kamera)', 'dopasuj na bieżącym checkpoincie'])
+        self.cb_L_osie = WaskiCombo()
+        self.cb_L_osie.addItems(['osie 2–3: największy rozrzut wewnątrz klas', 'osie 2–3: najmniejszy rozrzut wewnątrz klas (klasy jak kropki)',
+                                 'osie 2–3: PCA tła', 'osie 2–3: PCA narzędzia'])
+        self.sp_L_brzeg = _spin(0, 3, 0, 1, sufiks=' kom.')
+        self.sp_L_brzeg.setToolTip('Pomiń tyle skrajnych kolumn i wierszy ramki przy dopasowaniu i w miarach: prostokątna ramka obejmuje\n'
+                                   'na brzegach piksele tła. Pominięte tokeny są rysowane na żółto.')
+        self.sp_L_perm = _spin(0, 500, 100, 50); self.sp_L_perm.setToolTip('Losowych etykiet do zera miar (95. percentyl); 0 = bez zera.')
+        for nazwa, w in (('Skurcz λ', self.sp_L_lam), ('Pula dopasowania', self.sp_L_N), ('Kiedy', self.cb_L_kiedy),
+                         ('Osie 2–3', self.cb_L_osie), ('Brzeg ramki', self.sp_L_brzeg), ('Permutacji', self.sp_L_perm)):
+            fl.addRow(nazwa, w)
+        for z_ in (gw, ga, gb, gc, gd, gp, gl_):
             z_.naglowek.setChecked(False)                                  # podsekcje zwinięte: panel nie rośnie
-        for w in (self.cb_kogo, self.cb_slad, self.cb_strz, self.cb_srodek, self.cb_skala, self.cb_A, self.cb_F, self.cb_D):
+        for w in (self.cb_kogo, self.cb_slad, self.cb_strz, self.cb_srodek, self.cb_skala, self.cb_A, self.cb_F, self.cb_D,
+                  self.cb_L_kiedy, self.cb_L_osie):
             w.currentIndexChanged.connect(self._opcje)
-        for w in (self.sp_slad, self.sp_wyg, self.sp_strz, self.sp_rozm, self.sp_B_prog, self.sp_B_skala, self.sp_C_strz, self.sp_D_zero):
+        for w in (self.sp_slad, self.sp_wyg, self.sp_strz, self.sp_rozm, self.sp_B_prog, self.sp_B_skala, self.sp_C_strz, self.sp_D_zero,
+                  self.sp_L_lam, self.sp_L_N, self.sp_L_brzeg, self.sp_L_perm):
             w.valueChanged.connect(self._opcje)
         for w in (self.ch_rho, self.ch_kamera, self.ch_osie, self.ch_W, self.ch_D_zero):
             w.toggled.connect(self._opcje)
@@ -406,7 +430,7 @@ class Rzuty(QWidget):
         """R1–R7 w kartach obok sfery reflektorów, R8 w karcie obok wykresu 6."""
         d, okna = self._z.doki, self._z.okna
         prev = d['s']
-        for k in ('R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'):
+        for k in ('R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R9'):
             okna.tabifyDockWidget(prev, d[k])
             prev = d[k]
         okna.tabifyDockWidget(d['6'], d['R8'])
@@ -523,7 +547,7 @@ class Rzuty(QWidget):
         self._rysuj_widoczne()
 
     def _opcje(self, *_):
-        for k in [k for k in self._pam if k[0] in ('D1', 'Dr', 'zero', 'zero3', 'ruch', 'ruchj')]:
+        for k in [k for k in self._pam if k[0] in ('D1', 'Dr', 'zero', 'zero3', 'ruch', 'ruchj', 'L', 'Lm')]:
             del self._pam[k]
         self._rysuj_widoczne()
 
@@ -642,8 +666,33 @@ class Rzuty(QWidget):
                                     np.ascontiguousarray(d.wsp(d.baza_F7, 'F')[..., list(tr)]))
             X3, F3 = self._pam[klucz]
             return X3, F3, [d.nazwy_F7[a] for a in tr], None, f'Fano {self.cb_F.currentIndex() + 1}'
+        if k == 'R9':
+            B, opis = self._baza_L()
+            return d.wsp(B, 'X'), d.wsp(B, 'F'), ['LDA narzędzie–tło', 'oś 2', 'oś 3'], None, opis
         B, nazwy, b, opis = self._baza_D()
         return d.wsp(B, 'X'), d.wsp(B, 'F'), nazwy, b, opis
+
+    def _rdzen(self):
+        return RD.rdzen_narzedzia(self.dane.narz, int(self.sp_L_brzeg.value()))
+
+    def _baza_L(self):
+        """Baza R9 (LDA ze skurczem na puli checkpointów), raz na parametry i checkpoint dopasowania."""
+        d = self.dane
+        _, _, _, ir = self._indeksy()
+        kf = ir if self.cb_L_kiedy.currentIndex() == 1 else d.K - 1
+        N = int(self.sp_L_N.value())
+        klucz = ('L', kf, N, round(float(self.sp_L_lam.value()), 3), self.cb_L_osie.currentIndex(), int(self.sp_L_brzeg.value()))
+        if klucz not in self._pam:
+            ks = np.arange(max(0, kf - N + 1), kf + 1)
+            if len(ks) > 200:
+                ks = np.unique(np.concatenate([np.linspace(ks[0], ks[-1], 200).astype(int), [kf]]))   # pula: najwyżej 200 checkpointów
+            Xs = np.asarray(d.X[ks], np.float64).reshape(-1, RD.D)
+            rdz = self._rdzen(); brzeg = np.asarray(d.narz, bool) & ~rdz
+            keep = np.tile(~brzeg, len(ks))
+            B, cosd = RD.baza_L(Xs[keep], np.tile(rdz, len(ks))[keep], float(self.sp_L_lam.value()), self.cb_L_osie.currentIndex())
+            self._pam[klucz] = (B.astype(np.float32), f'L: LDA λ={pl(float(self.sp_L_lam.value()))}, pula {len(ks)} ckpt do {kf + 1}, '
+                                                       f'cos(w, Δ) = {pl(cosd)}')
+        return self._pam[klucz]
 
     def _baza_D(self):
         d = self.dane
@@ -692,6 +741,8 @@ class Rzuty(QWidget):
         M[:, 0] = np.asarray(d.narz, bool)
         M[~pok & ~wyb, 0] = 2.0                                           # ukryte; wybrane widać zawsze
         M[wyb, 1] = 1.0
+        if k == 'R9':
+            M[np.asarray(d.narz, bool) & ~self._rdzen(), 1] = 1.0           # pominięty brzeg ramki na żółto
         if wybrane:
             M[wybrane[0], 1] = 2.0
         M[:, 2] = sl
@@ -713,7 +764,8 @@ class Rzuty(QWidget):
         else:
             sc.odcinki('zero', None, None)
         sc.podpisy(sc.osie(nazwy if self.ch_osie.isChecked() else None))
-        sc.kadruj(P[pok | wyb], (k, id(Cx), self.cb_skala.currentIndex(), self.cb_srodek.currentIndex()))
+        # kadr z całej historii (co ~50. checkpoint): kamera mieści każdy checkpoint i nie skacze w czasie
+        sc.kadruj(E[::max(1, d.K // 50)][:, pok | wyb].reshape(-1, 3), (k, id(Cx), self.cb_skala.currentIndex(), self.cb_srodek.currentIndex()))
         if self.ch_kamera.isChecked() and wybrane:
             sc.srodek(P[wybrane[0]])
         self._lb[k].setText(self._opis(k, b, ir, opis_bazy, pok))
@@ -809,11 +861,29 @@ class Rzuty(QWidget):
             s1 = f'{opis_bazy}, checkpoint {i + 1}/{d.K} (krok {kr}).'
         if k == 'R6':
             s1 += ' ' + self._opis_ruchu(pok)
+        if k == 'R9':
+            s1 += ' ' + self._opis_separacji(i)
         sep = ''
         if np.isfinite(d.sep[i]):
             sep = (f' Separacja w 192D: |Δ| = {pl(float(d.sep[i]))} R; losowe etykiety {pl(float(d.sep0[i, 0]))} R '
                    f'(95 %: {pl(float(d.sep0[i, 1]))} R).')
         return s1 + ' Losowe 3D: 1,6 % energii, 12,5 % długości.' + sep
+
+    def _opis_separacji(self, i):
+        """R9: miary separacji rdzenia narzędzia od tła w tym rzucie i w 192D, z zerem dla losowych etykiet (raz na checkpoint)."""
+        d = self.dane
+        B, _ = self._baza_L()
+        klucz = ('Lm', i, B.tobytes(), int(self.sp_L_brzeg.value()), int(self.sp_L_perm.value()))
+        if klucz not in self._pam:
+            rdz = self._rdzen(); keep = ~(np.asarray(d.narz, bool) & ~rdz)
+            X = np.asarray(d.X[i], np.float64)[keep]; m = rdz[keep]
+            m3, m192 = RD.miary_separacji(X @ B, m), RD.miary_separacji(X, m)
+            z = RD.zero_separacji(X @ B, int(m.sum()), int(self.sp_L_perm.value())) if self.sp_L_perm.value() > 0 else None
+            f = lambda n_: f'{pl(m3[n_])}' + ('' if z is None else f' (zero {pl(z[n_])})')
+            self._pam[klucz] = (f'Separacja w tym rzucie, {int(m.sum())} tokenów narzędzia vs {int((~m).sum())} tła: sylwetka {f("sil")}, '
+                                f'trafienia kNN {f("hit")}, margines {f("marg")} odstępu tła, Fisher {f("fisher")}; '
+                                f'w 192D: {pl(m192["sil"])} / {pl(m192["hit"])} / {pl(m192["marg"])}.')
+        return self._pam[klucz]
 
     def _opis_ruchu(self, pok):
         """R6: ile ruchu pokazanych cząsteczek widać w tym rzucie i porównanie toru wybranej z torami zerowymi (192D)."""

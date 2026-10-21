@@ -87,6 +87,25 @@ class TestRzutow(unittest.TestCase):
         p1, p3 = RD.udzialy_pca(Z[0])
         self.assertTrue(0 < p1 <= p3 <= 1)
 
+    def test_separacja_L(self):
+        rng = np.random.default_rng(7)
+        X = rng.standard_normal((600, 192))
+        narz = np.zeros(600, bool); narz[7 * 30 + 12:7 * 30 + 21] = True; narz[8 * 30 + 12:8 * 30 + 21] = True   # ramka 2 × 9
+        X[narz] += 3 * rng.standard_normal(192)
+        B, cosd = RD.baza_L(X, narz, 0.1, 0)
+        self.assertLess(np.abs(B.T @ B - np.eye(3)).max(), 1e-10)
+        self.assertGreater(cosd, 0.0)
+        m3 = RD.miary_separacji(X @ B, narz); z = RD.zero_separacji(X @ B, int(narz.sum()), 20)
+        self.assertGreater(m3['hit'], z['hit']); self.assertGreater(m3['sil'], z['sil'])
+        for osie in (1, 2, 3):
+            B2, _ = RD.baza_L(X, narz, 0.1, osie)
+            self.assertLess(np.abs(B2.T @ B2 - np.eye(3)).max(), 1e-10)
+            self.assertTrue(np.allclose(B2[:, 0], B[:, 0]))
+        r1 = RD.rdzen_narzedzia(narz, 1)
+        self.assertEqual(int(r1.sum()), 14)                                  # 2 wiersze zostają, kolumny 12 i 20 odpadają
+        self.assertEqual(int(RD.rdzen_narzedzia(narz, 0).sum()), 18)
+        self.assertTrue(RD.rdzen_narzedzia(narz, 3).any())
+
 
 if __name__ == '__main__':
     unittest.main()
