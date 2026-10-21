@@ -384,6 +384,16 @@ class Rzuty(QWidget):
         self.cb_L_osie = WaskiCombo()
         self.cb_L_osie.addItems(['osie 2–3: największy rozrzut wewnątrz klas', 'osie 2–3: najmniejszy rozrzut wewnątrz klas (klasy jak kropki)',
                                  'osie 2–3: PCA tła', 'osie 2–3: PCA narzędzia'])
+        self.cb_L_etyk = WaskiCombo(); self.cb_L_etyk.addItems(['obrys narzędzia (udział pikseli w łacie)', 'ramka GT (stara etykieta)'])
+        self.cb_L_etyk.setToolTip('Obrys: wielokąty narzędzia z adnotacji Cataract-LMM; narzędzie = łaty z udziałem pikseli ≥ próg,\n'
+                                  'mieszane (0 < udział < próg) na żółto, poza dopasowaniem i miarami. Ramka GT obejmuje głównie tło\n'
+                                  '(cienki cystotom: z 18 łat ramki 3 są w co najmniej połowie narzędziem).')
+        self.sp_L_prog = _spin(0.05, 1.0, 0.5, 0.05, 2)
+        self.sp_L_prog.setToolTip('Próg udziału pikseli narzędzia w łacie (etykieta z obrysu).')
+        self.ch_L_przestrz = QCheckBox('zero przestrzenne (ta sama maska w innych miejscach tła)'); self.ch_L_przestrz.setChecked(True)
+        self.ch_L_przestrz.setToolTip('Maska narzędzia przesunięta w każde położenie siatki rozłączne z narzędziem, LDA od nowa dla każdego.\n'
+                                      'Dowolny spójny kawałek tła też się „oddziela” (podobne sąsiednie łaty), więc to jest właściwe zero;\n'
+                                      'p = odsetek położeń tła z miarą ≥ narzędzia. Liczone na pauzie, LDA dopasowana na bieżącym checkpoincie.')
         self.sp_L_brzeg = _spin(0, 3, 0, 1, sufiks=' kom.')
         self.sp_L_brzeg.setToolTip('Pomiń tyle skrajnych kolumn i wierszy ramki przy dopasowaniu i w miarach: prostokątna ramka obejmuje\n'
                                    'na brzegach piksele tła. Pominięte tokeny są rysowane na żółto.')
@@ -396,18 +406,19 @@ class Rzuty(QWidget):
                                 'Chroni przed korelacją czasową; nie chroni przed tymi samymi tokenami (te są w każdym checkpoincie).')
         self.sp_L_bl = _spin(2, 20, 5, 1, sufiks=' bloków')
         for nazwa, w in (('Skurcz λ', self.sp_L_lam), ('Pula dopasowania', self.sp_L_N), ('Kiedy', self.cb_L_kiedy),
-                         ('Osie 2–3', self.cb_L_osie), ('Brzeg ramki', self.sp_L_brzeg), ('Permutacji', self.sp_L_perm)):
+                         ('Osie 2–3', self.cb_L_osie), ('Etykieta', self.cb_L_etyk), ('Próg udziału', self.sp_L_prog),
+                         ('Brzeg ramki', self.sp_L_brzeg), ('Permutacji', self.sp_L_perm)):
             fl.addRow(nazwa, w)
-        fl.addRow(self.ch_L_refit); fl.addRow(self.ch_L_cv); fl.addRow('Bloków CV', self.sp_L_bl)
+        fl.addRow(self.ch_L_przestrz); fl.addRow(self.ch_L_refit); fl.addRow(self.ch_L_cv); fl.addRow('Bloków CV', self.sp_L_bl)
         for z_ in (gw, ga, gb, gc, gd, gp, gl_):
             z_.naglowek.setChecked(False)                                  # podsekcje zwinięte: panel nie rośnie
         for w in (self.cb_kogo, self.cb_slad, self.cb_strz, self.cb_srodek, self.cb_skala, self.cb_A, self.cb_F, self.cb_D,
-                  self.cb_L_kiedy, self.cb_L_osie):
+                  self.cb_L_kiedy, self.cb_L_osie, self.cb_L_etyk):
             w.currentIndexChanged.connect(self._opcje)
         for w in (self.sp_slad, self.sp_wyg, self.sp_strz, self.sp_rozm, self.sp_B_prog, self.sp_B_skala, self.sp_C_strz, self.sp_D_zero,
-                  self.sp_L_lam, self.sp_L_N, self.sp_L_brzeg, self.sp_L_perm, self.sp_L_bl):
+                  self.sp_L_lam, self.sp_L_N, self.sp_L_brzeg, self.sp_L_perm, self.sp_L_bl, self.sp_L_prog):
             w.valueChanged.connect(self._opcje)
-        for w in (self.ch_rho, self.ch_kamera, self.ch_osie, self.ch_W, self.ch_D_zero, self.ch_L_refit, self.ch_L_cv):
+        for w in (self.ch_rho, self.ch_kamera, self.ch_osie, self.ch_W, self.ch_D_zero, self.ch_L_refit, self.ch_L_cv, self.ch_L_przestrz):
             w.toggled.connect(self._opcje)
         for w in (self.cb_C_para, self.cb_C_rzecz, self.cb_C_pole):
             w.currentIndexChanged.connect(lambda *_: self._rysuj_widoczne())
@@ -680,8 +691,32 @@ class Rzuty(QWidget):
         B, nazwy, b, opis = self._baza_D()
         return d.wsp(B, 'X'), d.wsp(B, 'F'), nazwy, b, opis
 
-    def _rdzen(self):
-        return RD.rdzen_narzedzia(self.dane.narz, int(self.sp_L_brzeg.value()))
+    def _etykieta(self):
+        """(narzędzie, mieszane) bool (600,) dla R9: z obrysu (udział pikseli ≥ próg) albo ze starej ramki GT bez `brzeg` skrajnych
+        kolumn i wierszy; mieszane nie wchodzą ani do narzędzia, ani do tła."""
+        d = self.dane
+        u = np.asarray(getattr(d, 'udzial', np.full(LD.TOK, np.nan)), np.float32)
+        if self.cb_L_etyk.currentIndex() == 0 and np.isfinite(u).all():
+            narz = u >= float(self.sp_L_prog.value())
+            if narz.sum() >= 2:
+                return narz, (u > 0) & ~narz
+        ramka = np.asarray(getattr(d, 'narz_ramka', d.narz), bool)
+        rdz = RD.rdzen_narzedzia(ramka, int(self.sp_L_brzeg.value()))
+        return rdz, ramka & ~rdz
+
+    def _klucz_etyk(self):
+        return (self.cb_L_etyk.currentIndex(), round(float(self.sp_L_prog.value()), 3), int(self.sp_L_brzeg.value()))
+
+    def _opis_etyk(self, rdz, mies):
+        d = self.dane
+        u = np.asarray(getattr(d, 'udzial', [np.nan]), np.float32)
+        obrys = self.cb_L_etyk.currentIndex() == 0 and np.isfinite(u).all()
+        zrodlo = str(getattr(d, 'etykieta', 'obrys')) if obrys else 'ramka GT'
+        if obrys and (u >= float(self.sp_L_prog.value())).sum() < 2:
+            zrodlo = 'ramka GT (przy tym progu < 2 łaty narzędzia)'
+        elif self.cb_L_etyk.currentIndex() == 0 and not obrys:
+            zrodlo = 'ramka GT (brak obrysu dla tej klatki)'
+        return f'{zrodlo}, {int(rdz.sum())} tokenów narzędzia, {int(mies.sum())} mieszanych (żółte, pominięte)'
 
     def _baza_L(self):
         """Baza R9 (LDA ze skurczem na puli checkpointów), raz na parametry i checkpoint dopasowania."""
@@ -689,14 +724,14 @@ class Rzuty(QWidget):
         _, _, _, ir = self._indeksy()
         kf = ir if self.cb_L_kiedy.currentIndex() == 1 else d.K - 1
         N = int(self.sp_L_N.value())
-        klucz = ('L', kf, N, round(float(self.sp_L_lam.value()), 3), self.cb_L_osie.currentIndex(), int(self.sp_L_brzeg.value()))
+        klucz = ('L', kf, N, round(float(self.sp_L_lam.value()), 3), self.cb_L_osie.currentIndex(), self._klucz_etyk())
         if klucz not in self._pam:
             ks = np.arange(max(0, kf - N + 1), kf + 1)
             if len(ks) > 200:
                 ks = np.unique(np.concatenate([np.linspace(ks[0], ks[-1], 200).astype(int), [kf]]))   # pula: najwyżej 200 checkpointów
             Xs = np.asarray(d.X[ks], np.float64).reshape(-1, RD.D)
-            rdz = self._rdzen(); brzeg = np.asarray(d.narz, bool) & ~rdz
-            keep = np.tile(~brzeg, len(ks))
+            rdz, mies = self._etykieta()
+            keep = np.tile(~mies, len(ks))
             B, cosd = RD.baza_L(Xs[keep], np.tile(rdz, len(ks))[keep], float(self.sp_L_lam.value()), self.cb_L_osie.currentIndex())
             self._pam[klucz] = (B.astype(np.float32), f'L: LDA λ={pl(float(self.sp_L_lam.value()))}, pula {len(ks)} ckpt do {kf + 1}, '
                                                        f'cos(w, Δ) = {pl(cosd)}')
@@ -746,11 +781,11 @@ class Rzuty(QWidget):
             sc.wgraj(kg, E, self._wygladz(E), Cf * s[:, None, None], rho)
         o_ = self.cb_strz.currentIndex()
         M = np.zeros((LD.TOK, 4), np.float32)
-        M[:, 0] = np.asarray(d.narz, bool)
+        M[:, 0] = np.asarray(self._etykieta()[0] if k == 'R9' else d.narz, bool)
         M[~pok & ~wyb, 0] = 2.0                                           # ukryte; wybrane widać zawsze
         M[wyb, 1] = 1.0
         if k == 'R9':
-            M[np.asarray(d.narz, bool) & ~self._rdzen(), 1] = 1.0           # pominięty brzeg ramki na żółto
+            M[self._etykieta()[1], 1] = 1.0                                  # tokeny mieszane (albo pominięty brzeg ramki) na żółto
         if wybrane:
             M[wybrane[0], 1] = 2.0
         M[:, 2] = sl
@@ -880,47 +915,57 @@ class Rzuty(QWidget):
     def _opis_separacji_podst(self, i, B):
         """Podstawowe miary R9 (bez zera z refitem i walidacji blokowanej): szybkie, także podczas odtwarzania."""
         d = self.dane
-        rdz = self._rdzen(); keep = ~(np.asarray(d.narz, bool) & ~rdz)
+        rdz, mies = self._etykieta(); keep = ~mies
         X = np.asarray(d.X[i], np.float64)[keep]; m = rdz[keep]
-        m3, z = RD.separacja_gpu(X @ B, m, int(self.sp_L_perm.value()))
-        m192, _ = RD.separacja_gpu(X, m, 0)
-        f = lambda n_: f'{pl(m3[n_])}' + ('' if z is None else f' (zero {pl(z[n_])})')
-        return (f'Separacja w tym rzucie, {int(m.sum())} tokenów narzędzia vs {int((~m).sum())} tła: sylwetka {f("sil")}, '
-                f'trafienia kNN {f("hit")}, margines {f("marg")} odstępu tła, Fisher {f("fisher")}; '
-                f'w 192D: {pl(m192["sil"])} / {pl(m192["hit"])} / {pl(m192["marg"])}.')
+        kk = RD.k_sasiadow(m.sum())
+        m3, z = RD.separacja_gpu(X @ B, m, int(self.sp_L_perm.value()), k=kk)
+        m192, _ = RD.separacja_gpu(X, m, 0, k=kk)
+        f = lambda n_: f'{pl(m3[n_])}' + ('' if z is None else f' (losowe etykiety {pl(z[n_])})')
+        return (f'Etykieta: {self._opis_etyk(rdz, mies)}. Separacja w tym rzucie: Fisher {f("fisher")}, sylwetka {f("sil")}, '
+                f'trafienia {kk}NN {f("hit")}, margines {f("marg")} odstępu tła; '
+                f'w 192D: Fisher {pl(m192["fisher"])}, sylwetka {pl(m192["sil"])}, kNN {pl(m192["hit"])}.')
 
     def _opis_separacji(self, i):
         """R9: miary separacji rdzenia narzędzia od tła w tym rzucie i w 192D, z zerem dla losowych etykiet (raz na checkpoint)."""
         d = self.dane
         B, _ = self._baza_L()
-        ciezkie = (self.ch_L_refit.isChecked() and self.sp_L_perm.value() > 0) or self.ch_L_cv.isChecked()
+        ciezkie = (self.ch_L_refit.isChecked() and self.sp_L_perm.value() > 0) or self.ch_L_cv.isChecked() or self.ch_L_przestrz.isChecked()
         gra = self._z.bt_play.isChecked()
         if ciezkie and gra and ('Lm', i, 'ciezkie') not in self._pam:
-            klucz_l = ('Lm', i, B.tobytes(), int(self.sp_L_brzeg.value()), int(self.sp_L_perm.value()), False, False, 0, 0, 0, 0)
+            klucz_l = ('Lm', i, B.tobytes(), self._klucz_etyk(), int(self.sp_L_perm.value()), False, False, False, 0, 0, 0, 0)
             if klucz_l not in self._pam:
                 self._pam[klucz_l] = self._opis_separacji_podst(i, B)
-            return self._pam[klucz_l] + ' Zero z refitem i walidacja blokowana (ok. 15 s) liczą się na pauzie.'
-        klucz = ('Lm', i, B.tobytes(), int(self.sp_L_brzeg.value()), int(self.sp_L_perm.value()), self.ch_L_refit.isChecked(),
-                 self.ch_L_cv.isChecked(), int(self.sp_L_bl.value()), int(self.sp_L_N.value()), round(float(self.sp_L_lam.value()), 3),
+            return self._pam[klucz_l] + ' Zero przestrzenne, zero z refitem i walidacja blokowana liczą się na pauzie.'
+        klucz = ('Lm', i, B.tobytes(), self._klucz_etyk(), int(self.sp_L_perm.value()), self.ch_L_refit.isChecked(),
+                 self.ch_L_cv.isChecked(), self.ch_L_przestrz.isChecked(), int(self.sp_L_bl.value()), int(self.sp_L_N.value()), round(float(self.sp_L_lam.value()), 3),
                  self.cb_L_osie.currentIndex())
         if klucz not in self._pam:
-            rdz = self._rdzen(); keep = ~(np.asarray(d.narz, bool) & ~rdz)
+            rdz, mies = self._etykieta(); keep = ~mies
             X = np.asarray(d.X[i], np.float64)[keep]; m = rdz[keep]
-            m3, z = RD.separacja_gpu(X @ B, m, int(self.sp_L_perm.value()))
-            m192, _ = RD.separacja_gpu(X, m, 0)
-            f = lambda n_: f'{pl(m3[n_])}' + ('' if z is None else f' (zero {pl(z[n_])})')
-            tekst = (f'Separacja w tym rzucie, {int(m.sum())} tokenów narzędzia vs {int((~m).sum())} tła: sylwetka {f("sil")}, '
-                     f'trafienia kNN {f("hit")}, margines {f("marg")} odstępu tła, Fisher {f("fisher")}; '
-                     f'w 192D: {pl(m192["sil"])} / {pl(m192["hit"])} / {pl(m192["marg"])}.')
+            kk = RD.k_sasiadow(m.sum())
+            tekst = self._opis_separacji_podst(i, B)
             lam, osie = float(self.sp_L_lam.value()), self.cb_L_osie.currentIndex()
+            if self.ch_L_przestrz.isChecked():
+                wyk = rdz | mies
+                u = np.asarray(getattr(d, 'udzial', np.full(LD.TOK, np.nan)), np.float32)
+                if np.isfinite(u).all():
+                    wyk |= u > 0                                          # żadnego piksela narzędzia w położeniach tła
+                pr, zp, n = RD.zero_przestrzenne_gpu(np.asarray(d.X[i], np.float32), rdz, wyk, keep, lam, osie, kk)
+                fp = lambda v: f'{v:.3f}'.replace('.', ',')
+                if zp:
+                    tekst += (f' Zero przestrzenne ({n} położeń tej maski w tle, LDA od nowa na tym checkpoincie): narzędzie Fisher '
+                              f'{pl(pr["fisher"])} (95 % tła {pl(zp["fisher"][0])}, p = {fp(zp["fisher"][1])}), sylwetka {pl(pr["sil"])} '
+                              f'({pl(zp["sil"][0])}, p = {fp(zp["sil"][1])}), {kk}NN {pl(pr["hit"])} ({pl(zp["hit"][0])}, p = {fp(zp["hit"][1])}).')
+                else:
+                    tekst += f' Zero przestrzenne: za mało położeń maski w tle ({n}).'
             if self.ch_L_refit.isChecked() and self.sp_L_perm.value() > 0:
-                zr = RD.zero_z_refitem_gpu(X, m, lam, osie, int(self.sp_L_perm.value()))
+                zr = RD.zero_z_refitem_gpu(X, m, lam, osie, int(self.sp_L_perm.value()), k=kk)
                 tekst += (f' Zero z ponownym dopasowaniem osi ({int(self.sp_L_perm.value())} perm.): sylwetka {pl(zr["sil"])}, '
                           f'kNN {pl(zr["hit"])}, margines {pl(zr["marg"])}, Fisher {pl(zr["fisher"])}.')
             if self.ch_L_cv.isChecked():
                 ks = np.arange(max(0, i - int(self.sp_L_N.value()) + 1), i + 1)
                 if len(ks) >= 4:
-                    cv, _ = RD.cv_blokowane_gpu(np.asarray(d.X[ks], np.float32)[:, keep], m, lam, osie, int(self.sp_L_bl.value()))
+                    cv, _ = RD.cv_blokowane_gpu(np.asarray(d.X[ks], np.float32)[:, keep], m, lam, osie, int(self.sp_L_bl.value()), k=kk)
                     tekst += (f' Walidacja blokowana po checkpointach ({int(self.sp_L_bl.value())} bloków z puli {len(ks)}): sylwetka '
                               f'{pl(cv["sil"])}, kNN {pl(cv["hit"])}, margines {pl(cv["marg"])}, Fisher {pl(cv["fisher"])}.')
                 else:

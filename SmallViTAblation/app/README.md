@@ -1068,3 +1068,19 @@ blokowana po checkpointach”: pula jest dzielona na ciągłe bloki, oś z pozos
 (chroni przed korelacją czasową, nie przed tymi samymi tokenami). Wszystko liczy karta: wsadowe `solve` i `eigh` w torch, miary z
 `cdist` na GPU, float32 i TF32 (zgodne z CPU float64 do 0,2° w osiach), ok. 0,5 s na checkpoint wobec 14 s w numpy. Podczas odtwarzania
 liczą się tylko szybkie miary podstawowe, ciężkie dopiero na pauzie.
+
+**Etykieta narzędzia z obrysu, nie z ramki (2026-10-21).** `etykiety_narzedzia.py` czyta wielokąty `<narzędzie>_seg` z
+annotation.csv Cataract-LMM 3_Object_Tracking i liczy udział pikseli narzędzia w każdej łacie 16 × 16. Historia (`lasery_dane.Historia`)
+odnajduje swoją klatkę po ramce GT (indeks ramek wszystkich filmów w `cache_uczenia/etykiety/indeks_ramek.npz`, przy kilku kandydatach
+rozstrzyga obraz) i ustawia `narz` = udział ≥ 0,5 (przy < 2 łatach próg 0,25), `mieszane` = 0 < udział < próg, a starą etykietę
+zachowuje jako `narz_ramka`. Bez obrysu zostaje ramka. Cienki cystotom zajmuje w ramce 2 × 9 tylko 3 łaty w co najmniej połowie,
+13 to łaty mieszane, a reszta to tło, więc etykieta z ramki była w większości tłem. Rzuty mają `WERSJA = 2` (przeliczają się raz)
+i liczą Δ narzędzie–tło bez łat mieszanych.
+
+**R9: etykieta, zero przestrzenne, Fisher jako główna miara.** Sekcja R9 ma wybór etykiety (obrys z progiem udziału albo stara ramka GT
+z „brzegiem ramki”). Łaty mieszane są żółte i nie wchodzą ani do dopasowania, ani do miar. „Zero przestrzenne”: ta sama maska narzędzia
+przesunięta w każde położenie siatki rozłączne z pikselami narzędzia, oś LDA dopasowana od nowa dla każdego położenia
+(`RD.zero_przestrzenne_gpu`, wsadowo na karcie). To właściwe zero, bo dowolny spójny kawałek tła też się „oddziela” (sąsiednie łaty
+są podobne); zero z losowych, rozrzuconych tokenów (0,1) było zbyt łagodne wobec ramek tła (sylwetka ok. 0,7). Podpis podaje p =
+odsetek położeń tła z miarą ≥ narzędzia. Fisher (odległość klas względem rozrzutu) jest pierwszą liczbą, bo sylwetka nasyca się
+przy ok. 0,9 także dla tła. Trafienia kNN mają k = min(10, n_narz − 1): przy 3 łatach narzędzia k = 10 dawałoby najwyżej 0,2.

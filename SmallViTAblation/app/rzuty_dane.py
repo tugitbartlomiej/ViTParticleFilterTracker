@@ -40,7 +40,7 @@ import numpy as np
 
 import lasery_dane as LD
 
-WERSJA = 1
+WERSJA = 2                                             # 2: etykieta narzędzia z obrysu (lasery_dane.Historia), tokeny mieszane poza tłem
 D = 192
 LOS_ENERGIA = 3 / D                                    # losowa podprzestrzeń 3D: oczekiwany udział energii (1,6 %)
 LOS_DLUGOSC = float(np.sqrt(3 / D))                    # i typowy udział długości (12,5 %)
@@ -236,7 +236,7 @@ class DaneRzutow:
     def srodek_tla(self):
         """Środek tła w każdym checkpoincie (K, 192), względem środka chmury (raz z całego X)."""
         if 'tlo' not in self._tlo:
-            m = ~np.asarray(self.narz, bool)
+            m = ~np.asarray(self.narz, bool) & ~np.asarray(getattr(self, 'mieszane', False), bool)
             if not m.any():
                 m[:] = True
             g = self.gpu('X')
@@ -304,7 +304,9 @@ def policz(h, postep=None, przerwij=None, urzadzenie='cuda'):
     Fm = np.lib.format.open_memmap(tmp / 'F.npy', 'w+', np.float16, (K, T, D))
     Vm = np.lib.format.open_memmap(pv_tmp, 'w+', np.float16, (K, D, LD.NK)) if pisz_V else None
     narz_np = np.asarray(h.narz, bool)
+    mies_np = np.asarray(getattr(h, 'mieszane', np.zeros(len(narz_np), bool)), bool)
     narz = torch.as_tensor(narz_np, device=dev)
+    tlo_t = torch.as_tensor(~narz_np & ~mies_np, device=dev)
     nt = int(narz_np.sum())
     klasy = 0 < nt < T
     f64 = dict(dtype=torch.float64, device=dev)
@@ -362,7 +364,7 @@ def policz(h, postep=None, przerwij=None, urzadzenie='cuda'):
                 R[i] = float(xc.pow(2).sum(1).mean().sqrt())
                 FN[i] = f.norm(dim=1).float().cpu().numpy()
                 if klasy:
-                    dl = xc[narz].mean(0) - xc[~narz].mean(0)
+                    dl = xc[narz].mean(0) - xc[tlo_t].mean(0)
                     DELTA[i] = dl.float().cpu().numpy()
                     SEP[i] = float(dl.norm()) / max(R[i], 1e-30)
                     dn = (MP @ xc).norm(dim=1) / max(R[i], 1e-30)
@@ -424,7 +426,11 @@ def policz(h, postep=None, przerwij=None, urzadzenie='cuda'):
             prevx = x
             if postep is not None and (i % 8 == 0 or i == K - 1):
                 postep(K + i + 1, 2 * K, f'rzuty: bazy i mierniki wierności, checkpoint {i + 1}/{K}')
-        np.savez(tmp / 'dane.npz', wersja=WERSJA, kroki=np.asarray(kroki, np.int64), narz=narz_np,
+        udz = getattr(h, 'udzial', None)
+        np.savez(tmp / 'dane.npz', wersja=WERSJA, kroki=np.asarray(kroki, np.int64), narz=narz_np, mieszane=mies_np,
+                 narz_ramka=np.asarray(getattr(h, 'narz_ramka', narz_np), bool),
+                 udzial=np.full(len(narz_np), np.nan, np.float32) if udz is None else np.asarray(udz, np.float32),
+                 etykieta=str(getattr(h, 'etykieta', 'ramka GT')),
                  baza_P3=P3, baza_A=A, baza_S=S, baza_W=W, baza_D=Dm, baza_F7=F7, A_t=A_T, nazwy_F7=np.array(NAZWY_F7),
                  mean=MEAN, delta=DELTA, R=R, PR=PR, own3=OWN3, FN=FN, sep=SEP, sep0=SEP0,
                  WX=WX, WF=WF, WW=WW, WS=WS, WD=WD, E7=E7, zgodnosc_P3=zgodnosc, plik_V=str(pv),
@@ -963,3 +969,34 @@ def separacja_gpu(P, m, n_perm=100, ziarno=0, k=10, paczka=50):
         for kk in wyn:
             wyn[kk].append(out[kk].double().cpu())
     return miary, {kk: float(torch.quantile(torch.cat(v), 0.95)) for kk, v in wyn.items()}
+
+
+def k_sasiadow(n_narz, k=10):
+    """kNN dla małej klasy: k = min(k, n_narz − 1), bo przy 3 tokenach narzędzia trafienie z k = 10 nie może przekroczyć 0,2."""
+    return int(max(1, min(k, int(n_narz) - 1)))
+
+
+def zero_przestrzenne_gpu(X, m, wyklucz, keep=None, lam=0.1, osie=0, k=10, paczka=64):
+    """Zero przestrzenne dla widoku LDA: maska tokenów narzędzia m (600,) przesunięta w każde położenie siatki rozłączne z `wyklucz`
+    (piksele narzędzia, w tym tokeny mieszane), dla każdego położenia oś LDA dopasowana od nowa, miary w tej samej chmurze.
+    Ostrzejsze od losowych etykiet: sąsiednie łaty są podobne (treść, pozycja), więc dowolny spójny kawałek tła też się
+    „oddziela”. keep (600,) = tokeny w chmurze (bez mieszanych). Zwraca (prawdziwe miary, {miara: (95. percentyl, p)}, n położeń);
+    p = (1 + #położeń ≥ prawdziwej) / (1 + n). Pusty słownik, gdy położeń < 19 (p nie zejdzie poniżej 0,05)."""
+    import torch
+    import etykiety_narzedzia as EN
+    dev = _dev()
+    m = np.asarray(m, bool); keep = np.ones(len(m), bool) if keep is None else np.asarray(keep, bool)
+    Xt = torch.as_tensor(np.asarray(X)[keep], dtype=torch.float32, device=dev)
+    R = EN.przesuniecia(m, np.asarray(wyklucz, bool) | m)
+    M = torch.as_tensor(np.vstack([m[None], R])[:, keep], device=dev)
+    wyn = {kk: [] for kk in ('sil', 'hit', 'marg', 'fisher')}
+    for a in range(0, len(M), paczka):
+        Mb = M[a:a + paczka]
+        o = miary_separacji_t(Xt[None] @ baza_L_t(Xt, Mb, lam, osie), Mb, k)
+        for kk in wyn:
+            wyn[kk].append(o[kk].double().cpu())
+    wyn = {kk: torch.cat(v).numpy() for kk, v in wyn.items()}
+    prawda = {kk: float(v[0]) for kk, v in wyn.items()}
+    if len(R) < 19:
+        return prawda, {}, len(R)
+    return prawda, {kk: (float(np.percentile(v[1:], 95)), float((1 + (v[1:] >= v[0]).sum()) / (1 + len(R)))) for kk, v in wyn.items()}, len(R)

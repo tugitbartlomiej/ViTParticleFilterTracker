@@ -496,6 +496,7 @@ class Historia:
         self.Z = np.load(self.katalog / 'Z.npy', mmap_mode='r')
         self.K = len(self.kroki)
         self.gt = None if np.isnan(self.gt).any() else [float(v) for v in self.gt]
+        self._etykieta_obrysu()
         self.lok_m, self.vib_m = self.lok.mean(1), self.vib.mean(1)
         n = self.narz
         self.narz_lok = self.lok[:, n].mean(1) / np.maximum(self.lok[:, ~n].mean(1), 1e-9) if n.any() else np.ones(self.K)
@@ -503,6 +504,31 @@ class Historia:
         self.fok = int(np.flatnonzero(n)[np.argmin(np.linalg.norm(self.g[n] - self.g[n].mean(0), axis=1))]) if n.any() \
             else int(np.argmax(self.vib.mean(0)))
         self.refl_pokaz = int(np.argmax(np.asarray(self.Z[-1], np.float32).var(0)))
+
+    def _etykieta_obrysu(self):
+        """Tokeny narzędzia z obrysu (udział pikseli narzędzia w łacie ≥ PROG, etykiety_narzedzia), nie z ramki GT: cienkie narzędzie
+        zajmuje w ramce kilka łat. narz_ramka = stara etykieta z ramki, mieszane = 0 < udział < PROG (ani narzędzie, ani tło).
+        Bez obrysu (klatka spoza Cataract-LMM) zostaje ramka."""
+        self.narz_ramka = np.asarray(self.narz, bool)
+        self.mieszane = np.zeros(TOK, bool)
+        self.udzial = None
+        self.etykieta = 'ramka GT'
+        try:
+            import etykiety_narzedzia as EN
+            e = EN.dla_historii(self)
+        except Exception:                                                # noqa: BLE001 (brak zipów adnotacji: ramka)
+            import traceback
+            traceback.print_exc()
+            e = None
+        if e is None:
+            return
+        narz, mies = EN.maski(e['udzial'])
+        if narz.sum() < 2:                                               # bardzo cienkie narzędzie: niższy próg
+            narz, mies = EN.maski(e['udzial'], 0.25)
+        if narz.sum() < 2:
+            return
+        self.narz, self.mieszane, self.udzial = narz, mies, np.asarray(e['udzial'], np.float32)
+        self.etykieta = f'obrys {e["film"]} kl. {e["klatka"]} ({", ".join(e["kategorie"])})'
 
     def indeks(self, krok):
         """Ułamkowy indeks checkpointu dla kroku (interpolacja liniowa w krokach)."""
