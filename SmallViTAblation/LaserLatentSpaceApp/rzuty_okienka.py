@@ -545,7 +545,8 @@ class Rzuty(QWidget):
         lb.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         lb.setFixedHeight(4 * lb.fontMetrics().height() + 10)              # stała wysokość: zmiana napisu nie przelicza doków
         lb.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        v.addWidget(lb)
+        from okna import bez_ukladu
+        v.addWidget(bez_ukladu(lb))                                         # setText nie przelicza układu okna (okna._Oslona)
         self._lb[k] = lb
         return w
 
@@ -914,9 +915,8 @@ class Rzuty(QWidget):
         self._rysuj_widoczne()
 
     def _rysuj_widoczne(self):
-        for k, _, _ in OKIENKA:
-            d = self._z.doki.get(k)
-            if d is not None and d.isVisible():
+        for k, _, _ in OKIENKA:                                          # okienka w nieaktywnych kartach nie liczą (widac)
+            if self._z.widac(k):
                 self._rysuj(k)
 
     def _wybor(self):
@@ -1476,9 +1476,9 @@ class Rzuty(QWidget):
         if self._h is None or klucz[0] != str(self._h.katalog):
             return
         self._C = (klucz, w)
-        if self._z.doki['R5'].isVisible():
+        if self._z.widac('R5'):
             self._rysuj_C(zlec=False)
-        if self._z.doki['R8'].isVisible():
+        if self._z.widac('R8'):
             self._panel_widmo()
 
     def _rysuj_C(self, zlec=True):

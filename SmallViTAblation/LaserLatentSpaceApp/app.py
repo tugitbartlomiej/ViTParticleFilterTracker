@@ -10,14 +10,21 @@ Oś czasu uczenia jednego zdjęcia przez checkpointy małego ViT: sfera reflekto
 Menu „Ustawienia” zapisuje stan kontrolek i układ okienek do `ustawienia.json` (wczytywany przy starcie).
 Uruchomienie: python start.py (okienko ładowania), „Lasery i koloidy.exe” albo python app.py.
 """
+import os
 import sys
 import traceback
 
-from PyQt6.QtCore import QCoreApplication, Qt
-from PyQt6.QtGui import QAction, QKeySequence
-from PyQt6.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox
+import OpenGL
 
-from styl import STYL
+# PyOpenGL domyślnie woła glGetError po KAŻDYM wywołaniu GL: każde czeka na kartę (synchronizacja CPU–GPU). W odtwarzaniu to było
+# ~50 tys. wywołań i połowa czasu klatki. Błędy shaderów i tak zgłasza kompilacja; LASERY_GL_DEBUG=1 włącza sprawdzanie z powrotem.
+OpenGL.ERROR_CHECKING = os.environ.get('LASERY_GL_DEBUG') == '1'
+
+from PyQt6.QtCore import QCoreApplication, Qt  # noqa: E402
+from PyQt6.QtGui import QAction, QKeySequence  # noqa: E402
+from PyQt6.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox  # noqa: E402
+
+from styl import STYL  # noqa: E402
 
 SKROTY = """<b>Oś czasu</b>: spacja odtwarza / zatrzymuje, strzałki ← → krok, Home początek.<br>
 <b>Widoki 3D</b> (okienko pod kursorem): LPM obrót, Ctrl+LPM albo ŚPM przesuwanie, kółko zbliża do kursora, PPM + przeciągnięcie zbliża,
@@ -48,21 +55,42 @@ class Okno(QMainWindow):
     def _menu(self):
         z = self.zakladka_laserow
         mb = self.menuBar()
-        m = mb.addMenu('Ustawienia')
-        m.setToolTipsVisible(True)
         import ustawienia as U
-        for nazwa, opis, fn in (
-                ('Zapisz ustawienia', f'Stan list, pól, opcji i układ okienek do {U.PLIK.name} (wczytywany przy starcie).',
-                 lambda: self._zapisz_ustawienia(U.PLIK)),
-                ('Zapisz ustawienia jako…', 'Zapis do wybranego pliku JSON.', lambda: self._zapisz_ustawienia(None)),
-                ('Wczytaj ustawienia…', 'Ustawia listy, pola, opcje i układ z wybranego pliku JSON.', self._wczytaj_ustawienia),
-                ('Przywróć domyślne', 'Wartości z chwili uruchomienia programu bez pliku ustawień.', self._przywroc_ustawienia)):
-            a = QAction(nazwa, self); a.setToolTip(opis); a.setStatusTip(opis); a.triggered.connect(fn); m.addAction(a)
-        m.addSeparator()
-        self.akcja_autozapis = QAction('Zapisuj przy zamknięciu', self); self.akcja_autozapis.setCheckable(True)
+
+        def akcja(menu, nazwa, fn, skrot=None, opis=''):
+            a = QAction(nazwa, self)
+            if skrot:
+                a.setShortcut(QKeySequence(skrot))
+            if opis:
+                a.setToolTip(opis); a.setStatusTip(opis)
+            a.triggered.connect(fn); menu.addAction(a)
+            return a
+
+        p = mb.addMenu('Plik'); p.setToolTipsVisible(True)
+        akcja(p, 'Policz / wczytaj historię', lambda: (self._pokaz_dane(), z._licz()), 'Ctrl+O',
+              'Historia i zdjęcie wybrane w „Parametry → Dane”: z cache od razu, inaczej liczenie na GPU.')
+        akcja(p, 'Przerwij liczenie', z._przerwij, 'Ctrl+.')
+        akcja(p, 'Inny katalog wag…', lambda: (self._pokaz_dane(), z._inny_katalog()))
+        akcja(p, 'Zdjęcie z pliku…', lambda: (self._pokaz_dane(), z._plik_zdjecia()))
+        p.addSeparator()
+        akcja(p, 'Zapisz ustawienia i układ okienek', lambda: self._zapisz_ustawienia(U.PLIK), 'Ctrl+S',
+              f'Stan list, pól, opcji, układ okienek i okna do {U.PLIK.name}; tak samo wystartuje następne uruchomienie.')
+        akcja(p, 'Zapisz ustawienia jako…', lambda: self._zapisz_ustawienia(None), 'Ctrl+Shift+S', 'Zapis do wybranego pliku JSON.')
+        akcja(p, 'Wczytaj ustawienia…', self._wczytaj_ustawienia, None, 'Listy, pola, opcje i układ z wybranego pliku JSON.')
+        p.addSeparator()
+        akcja(p, 'Zapisz obraz okienka pod kursorem (PNG)…', self._zapisz_obraz, 'Ctrl+E',
+              'Okienko pod kursorem myszy (albo całe okno) do pliku PNG.')
+        p.addSeparator()
+        akcja(p, 'Zamknij', self.close, 'Ctrl+Q', 'Zamyka aplikację (z zapisem ustawień, gdy włączony).')
+
+        m = mb.addMenu('Ustawienia'); m.setToolTipsVisible(True)
+        self.akcja_autozapis = QAction('Zapisuj ustawienia i układ przy zamknięciu', self); self.akcja_autozapis.setCheckable(True)
         self.akcja_autozapis.setChecked(True); m.addAction(self.akcja_autozapis)
+        akcja(m, 'Przywróć domyślne', self._przywroc_ustawienia, None,
+              'Wartości z chwili uruchomienia programu bez pliku ustawień i domyślny układ okienek.')
         m.addSeparator()
-        a = QAction('Zakończ', self); a.setShortcut(QKeySequence('Ctrl+Q')); a.triggered.connect(self.close); m.addAction(a)
+        a = QAction('Stereo 3D (SBS) we wszystkich widokach', self); a.setCheckable(True)
+        a.toggled.connect(z.ch_stereo.setChecked); z.ch_stereo.toggled.connect(a.setChecked); m.addAction(a)
 
         mb.addMenu(z.menu_okienek)
         w = mb.addMenu('Widok')
@@ -97,6 +125,28 @@ class Okno(QMainWindow):
                 return
         n = U.zapisz(self, plik)
         self.statusBar().showMessage(f'Zapisano {n} ustawień do {plik}', 8000)
+
+    def _pokaz_dane(self):
+        z = self.zakladka_laserow
+        z.dok_panel.show(); z.dok_panel.raise_(); z.panel.pokaz('dane')
+
+    def _zapisz_obraz(self):
+        """Okienko-dok pod kursorem (albo całe okno) do PNG; widoki OpenGL wchodzą w obraz (QWidget.grab)."""
+        from datetime import datetime
+        from pathlib import Path
+        from PyQt6.QtGui import QCursor
+        from PyQt6.QtWidgets import QApplication, QDockWidget
+        w = QApplication.widgetAt(QCursor.pos())
+        while w is not None and not isinstance(w, QDockWidget):
+            w = w.parentWidget()
+        cel = w.widget() if w is not None else self
+        nazwa = (w.objectName().replace('dok_lasery_', '') if w is not None else 'okno') + datetime.now().strftime('_%Y%m%d_%H%M%S.png')
+        kat = Path(__file__).resolve().parent / 'zrzuty'
+        kat.mkdir(exist_ok=True)
+        plik, _ = QFileDialog.getSaveFileName(self, 'Zapisz obraz', str(kat / nazwa), 'Obraz PNG (*.png)')
+        if plik:
+            ok = cel.grab().save(plik)
+            self.statusBar().showMessage(f'Zapisano {plik}' if ok else f'Nie zapisano {plik}', 8000)
 
     def _wczytaj_ustawienia(self):
         import ustawienia as U

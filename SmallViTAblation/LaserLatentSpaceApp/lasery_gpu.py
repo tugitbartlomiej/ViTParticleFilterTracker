@@ -81,6 +81,62 @@ class _ElementGPU(GLGraphicsItem):
         self._dane[nazwa] = np.ascontiguousarray(a)
         self.update()
 
+    # ------------------------------------------------------------------ duże bufory wysyłane porcjami (np. całe Z historii na GPU)
+    def wyslij_porcjami(self, nazwa, zrodlo, wierszy=16):
+        """Bufor `nazwa` = całe `zrodlo` (tablica albo mmap, pierwszy wymiar = wiersze) na GPU bez zatrzymania okna: wątek czyta
+        porcje po `wierszy` z dysku, a każde rysowanie wysyła gotowe porcje (glBufferSubData, do ~8 ms na klatkę) i prosi o
+        następną klatkę, aż całość jest na karcie (`duzy_gotowy`). Nowe wywołanie przerywa poprzednie wysyłanie tego bufora."""
+        import queue
+        import threading
+        stary = getattr(self, '_duze', {}).get(nazwa)
+        if stary is not None:
+            stary['stop'] = True
+        n = int(zrodlo.shape[0]); nb = int(np.prod(zrodlo.shape) * zrodlo.dtype.itemsize)
+        st = dict(nbytes=nb, kolejka=queue.Queue(maxsize=4), wyslane=0, przydzielony=False, gotowy=False, stop=False)
+
+        def czytaj():
+            for a in range(0, n, wierszy):
+                if st['stop']:
+                    return
+                kawalek = np.ascontiguousarray(zrodlo[a:a + wierszy]).reshape(-1).view(np.uint8)
+                while not st['stop']:
+                    try:
+                        st['kolejka'].put(kawalek, timeout=0.2); break
+                    except queue.Full:
+                        pass
+        self.__dict__.setdefault('_duze', {})[nazwa] = st
+        threading.Thread(target=czytaj, daemon=True, name=f'wysylka_{nazwa}').start()
+        self.update()
+
+    def duzy_gotowy(self, nazwa):
+        st = getattr(self, '_duze', {}).get(nazwa)
+        return bool(st and st['gotowy'])
+
+    def _wyslij_duze(self):
+        import queue
+        import time
+        t0 = time.perf_counter()
+        for nazwa, st in list(getattr(self, '_duze', {}).items()):
+            if st['gotowy'] or st['stop']:
+                continue
+            GL.glBindBuffer(GL.GL_SHADER_STORAGE_BUFFER, self._buf[nazwa])
+            if not st['przydzielony']:
+                GL.glBufferData(GL.GL_SHADER_STORAGE_BUFFER, st['nbytes'], None, GL.GL_STATIC_DRAW)
+                self._rozm[nazwa] = st['nbytes']; st['przydzielony'] = True
+            while time.perf_counter() - t0 < 0.008:
+                try:
+                    k = st['kolejka'].get_nowait()
+                except queue.Empty:
+                    break
+                GL.glBufferSubData(GL.GL_SHADER_STORAGE_BUFFER, st['wyslane'], k.nbytes, k)
+                st['wyslane'] += k.nbytes
+            GL.glBindBuffer(GL.GL_SHADER_STORAGE_BUFFER, 0)
+            if st['wyslane'] >= st['nbytes']:
+                st['gotowy'] = True
+            else:
+                from PyQt6.QtCore import QTimer
+                QTimer.singleShot(16, self.update)                        # następna porcja w następnej klatce
+
     def ustaw_teksture(self, nazwa, rgb):
         self._tex_dane[nazwa] = None if rgb is None else np.ascontiguousarray(rgb, np.uint8)
         self.update()
@@ -151,6 +207,8 @@ class _ElementGPU(GLGraphicsItem):
                 for n in self.BUFORY:
                     self._dane.setdefault(n, np.zeros((1, 4), np.float32))
             self._wyslij()
+            if getattr(self, '_duze', None):
+                self._wyslij_duze()
             for i, n in enumerate(self.BUFORY):
                 GL.glBindBufferBase(GL.GL_SHADER_STORAGE_BUFFER, i, self._buf[n])
             GL.glActiveTexture(GL.GL_TEXTURE1); GL.glBindTexture(GL.GL_TEXTURE_2D, self._tex.get('lut', 0))
@@ -346,6 +404,7 @@ layout(std430, binding = 9) readonly buffer BKR { float KR[]; };  // [K] krok uc
 layout(std430, binding = 10) readonly buffer BOD { vec4 OD[]; };  // [K*768] obrót igły, dryf netto (≥ 2000 kroków): xyz kierunek, w °/100 kroków
 layout(std430, binding = 11) readonly buffer BOJ { vec4 OJ[]; };  // [K*768] obrót igły, drganie (≥ 100 kroków)
 layout(std430, binding = 12) readonly buffer BW { float WY[]; };  // wybór: [768] maska reflektorów, [600] maska cząsteczek, listy indeksów
+layout(std430, binding = 13) readonly buffer BZH { uint ZH[]; };  // [K*600*768] całe natężenia z_jc historii, float16 parami (unpackHalf2x16)
 bool wyb_r(uint c) { return WY[c] > 0.5; }
 bool wyb_t(uint j) { return WY[768u + j] > 0.5; }
 uint lista_r(uint k) { return uint(WY[1368u + k]); }               // k-ty wybrany reflektor
@@ -367,7 +426,12 @@ vec3 dc(uint c) {                         // podkroki: kierunki bloku u_blokD (b
     if (u_blokD >= 0) return normalize(D[uint(u_blokD) * 768u + c].xyz);
     uint a, b; float f; para(a, b, f); return normalize(mix(D[a * 768u + c].xyz, D[b * 768u + c].xyz, f));
 }
-float nat(uint j, uint c) { return mix(I[j * 768u + c], I[460800u + j * 768u + c], u_pu); }
+uniform int u_zcale, u_ka, u_kb;          // u_zcale = 1: natężenia z ZH (cała historia na GPU), para checkpointów (u_ka, u_kb)
+float zh(uint k, uint j, uint c) { uint i = k * 460800u + j * 768u + c; vec2 h = unpackHalf2x16(ZH[i >> 1u]); return (i & 1u) == 0u ? h.x : h.y; }
+float nat(uint j, uint c) {
+    if (u_zcale == 1) return 0.5 * mix(zh(uint(u_ka), j, c), zh(uint(u_kb), j, c), u_pu);   // z / 2 jak film 12
+    return mix(I[j * 768u + c], I[460800u + j * 768u + c], u_pu);
+}
 vec3 w_chwili(uint j, float tt) {          // koloid (u_cel 0) albo pułapka (1) w ułamkowej chwili tt
     float t2 = clamp(tt, 0.0, float(u_K - 1)); uint a = uint(floor(t2)); uint b = min(a + 1u, uint(u_K - 1)); float f = t2 - float(a);
     return u_skala * (u_cel == 0 ? mix(P[a * 600u + j].xyz, P[b * 600u + j].xyz, f) : mix(C[a * 600u + j].xyz, C[b * 600u + j].xyz, f));
@@ -507,7 +571,7 @@ def siatka_sfery(R, co=12, n=96):
 
 
 class SferaReflektorow(_ElementGPU):
-    BUFORY = ('RF', 'KC', 'P', 'D', 'I', 'SF', 'AT', 'C', 'KP', 'KR', 'OD', 'OJ', 'WY')
+    BUFORY = ('RF', 'KC', 'P', 'D', 'I', 'SF', 'AT', 'C', 'KP', 'KR', 'OD', 'OJ', 'WY', 'ZH')
 
     def __init__(self, R=34.0):
         super().__init__()
@@ -548,7 +612,8 @@ class SferaReflektorow(_ElementGPU):
             w = h.obr_dryf[..., 3]
             self.obr_skala = (float(np.log10(max(np.percentile(w, 2), 1e-6))), float(np.log10(max(np.percentile(w, 99.5), 1e-6))))
         self.K = K
-        self.para = (-1, -1)
+        self.para = (-1, -1); self.zh_para = (0, min(1, K - 1))
+        self.wyslij_porcjami('ZH', h.Z, 16)     # całe natężenia historii na kartę (float16, ~0,9 MB na checkpoint), w tle porcjami
 
     def ustaw_skale(self, h, stala):
         r = (h.r99[-1] * np.ones(h.K) if stala else h.r99).astype(np.float32)
@@ -607,6 +672,9 @@ class SferaReflektorow(_ElementGPU):
         """Natężenia z_jc dla pary checkpointów wokół t (wysyłane tylko przy zmianie pary)."""
         a = int(np.clip(np.floor(t), 0, h.K - 1)); b = min(a + 1, h.K - 1)
         self.u_pary = float(t - a)
+        self.zh_para = (a, b)
+        if self.duzy_gotowy('ZH'):                                              # cała historia już na karcie: tylko numery checkpointów
+            self.update(); return
         if (a, b) != self.para:
             I = np.empty((2, TOK, NK), np.float32)
             I[0] = np.asarray(h.Z[a], np.float32) / 2.0                        # z / 2 jak film 12, ze znakiem: ujemna jasność
@@ -698,7 +766,8 @@ class SferaReflektorow(_ElementGPU):
         self._ui('s', u_mvp=mvp, u_t=self.t, u_K=self.K, u_R=self.R, u_gain=float(o['gain']), u_prog=float(o['prog']),
                  u_neg=float(o.get('neg', 1.0)),             # 1 = prawdziwa proporcja do dodatnich (zgodnie z ViT)
                  u_tok=int(o['tok']), u_refl=int(o['refl']), u_pu=0.0 if pod else self.u_pary, u_blokD=self.blok if pod else -1,
-                 u_skala=float(o.get('skala_chmury', 1.0)))
+                 u_skala=float(o.get('skala_chmury', 1.0)), u_zcale=int(not pod and self.duzy_gotowy('ZH')),
+                 u_ka=int(getattr(self, 'zh_para', (0, 0))[0]), u_kb=int(getattr(self, 'zh_para', (0, 0))[1]))
         if o['sfera'] > 0:
             self._ui('s', u_tryb=3, u_kol=(0.45, 0.6, 0.75, float(o['sfera'])), u_punkty=0)
             self._addytywnie(False); GL.glLineWidth(1.0)

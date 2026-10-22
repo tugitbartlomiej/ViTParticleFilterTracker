@@ -85,16 +85,29 @@ def zbior_uczacy():
     skalowana osobno w X i Y dokładnie jak w trening35000.wiersze_35000."""
     global _uczacy
     if _uczacy is None:
+        import pickle
+        st = MANIFEST_UCZACY.stat()
+        zapis = CACHE / f'_manifest_35000_{st.st_size}_{int(st.st_mtime)}.pkl'      # start aplikacji: 0,05 s zamiast ~1 s parsowania
+        try:
+            _uczacy = pickle.loads(zapis.read_bytes())
+            return _uczacy
+        except (OSError, pickle.UnpicklingError, EOFError):
+            pass
         out = []
         for linia in open(MANIFEST_UCZACY, encoding='utf-8'):
             r = json.loads(linia)
             sx, sy = W * KOMORKA / r['width'], H * KOMORKA / r['height']
             x, y, bw, bh = r['gt'][0]['bbox_xywh']
             out.append(dict(nr=len(out), film=r['film'], klatka=int(r['frame']), member=r['member'],
-                            archiwum=Path(r['archive'].replace(chr(92), '/')).name, sha=r['image_sha256'],
+                            archiwum=r['archive'].replace(chr(92), '/').rsplit('/', 1)[-1], sha=r['image_sha256'],
                             wh=(int(r['width']), int(r['height'])), ramka=[x * sx, y * sy, (x + bw) * sx, (y + bh) * sy],
                             kategoria=r['gt'][0]['category']))
         _uczacy = out
+        try:
+            CACHE.mkdir(parents=True, exist_ok=True)
+            zapis.write_bytes(pickle.dumps(out, protocol=pickle.HIGHEST_PROTOCOL))
+        except OSError:
+            pass
     return _uczacy
 
 

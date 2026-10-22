@@ -4,13 +4,18 @@ Okno startuje bez liczenia: jeżeli wybrana w ustawieniach historia jest już w 
 zaraz po pokazaniu okna. Każdy błąd startu trafia do okna z komunikatem i do `start.log`.
 Uruchomienie: python start.py (albo uruchom.bat, albo „Lasery i koloidy.exe”).
 """
+import os
 import sys
 import time
 import traceback
 from pathlib import Path
 
-from PyQt6.QtCore import QCoreApplication, Qt
-from PyQt6.QtWidgets import QApplication, QLabel, QMessageBox
+import OpenGL
+
+OpenGL.ERROR_CHECKING = os.environ.get('LASERY_GL_DEBUG') == '1'      # przed pierwszym importem OpenGL.GL (opis w app.py)
+
+from PyQt6.QtCore import QCoreApplication, Qt  # noqa: E402
+from PyQt6.QtWidgets import QApplication, QLabel, QMessageBox  # noqa: E402
 
 LOG = Path(__file__).with_name('start.log')
 KROKI = [('numpy', 'numpy'), ('pyqtgraph.opengl', 'OpenGL (pyqtgraph)'), ('lasery_gpu', 'shadery GPU'), ('zakladka_laserow', 'okienka')]

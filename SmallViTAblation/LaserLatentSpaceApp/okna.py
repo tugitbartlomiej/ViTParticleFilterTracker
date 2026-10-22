@@ -104,6 +104,37 @@ def przelacz(w):
     przelacz_okno(w)
 
 
+class _Oslona(QWidget):
+    """Pojemnik bez układu z jednym napisem w środku. QLabel.setText woła updateGeometry, a to przelicza układ rodzica aż do
+    QMainWindow; przy skalowaniu ekranu 150 % każde takie przeliczenie gubiło piksel na zaokrągleniach doków (doki pełzły o 1–4 px
+    na klatkę), a każdy widok OpenGL dostawał resize i nowy bufor ramki w każdej klatce odtwarzania. Pojemnik bez układu
+    przyjmuje to zgłoszenie i nic dalej nie przekazuje; jego rozmiar ustala układ, napis wypełnia go w resizeEvent."""
+
+    def __init__(self, lb, wys=None):
+        super().__init__()
+        self.lb = lb
+        lb.setParent(self)
+        self.setFixedHeight(int(wys if wys is not None else max(lb.height(), lb.minimumHeight(), lb.sizeHint().height())))
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+
+    def sizeHint(self):
+        from PyQt6.QtCore import QSize
+        return QSize(40, self.height())
+
+    def minimumSizeHint(self):
+        from PyQt6.QtCore import QSize
+        return QSize(10, self.height())
+
+    def resizeEvent(self, ev):
+        self.lb.setGeometry(self.rect())
+        super().resizeEvent(ev)
+
+
+def bez_ukladu(lb, wys=None):
+    """Napis zmieniany często (co klatkę) w osłonie, która nie przelicza układu okna (_Oslona); do layoutu dodaje się wynik."""
+    return _Oslona(lb, wys)
+
+
 class PasekDoku(QWidget):
     """Pasek tytułu okienka-doku: tytuł (nadąża za setWindowTitle) i przyciski ⛶, ❐, ✕."""
 
@@ -113,7 +144,7 @@ class PasekDoku(QWidget):
         lay = QHBoxLayout(self); lay.setContentsMargins(6, 1, 2, 1); lay.setSpacing(1)
         self.tytul = QLabel(dok.windowTitle())
         self.tytul.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)   # długi tytuł nie poszerza okienka
-        lay.addWidget(self.tytul, 1)
+        lay.addWidget(bez_ukladu(self.tytul, self.tytul.sizeHint().height() + 2), 1)   # tytuł zmieniany w czasie (11): bez przeliczeń
         for znak, opis, fn in (
                 ('⛶', 'Maksymalizuj na tym ekranie, na którym jest okienko (wyskakuje z układu i wypełnia ekran).\n'
                       'Drugie kliknięcie przypina je z powrotem. To samo: podwójne kliknięcie w pasek albo F11.',

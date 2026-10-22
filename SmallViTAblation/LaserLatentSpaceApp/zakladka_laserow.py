@@ -31,6 +31,7 @@ import ogniskowa as OGN
 import przejscia_zapis as PZ
 import rzuty_okienka as RZO
 from lasery_gpu import DolinaGPU, MapyNaZdjeciu, PoleOgniskowej, PrzejscieGPU, RuchPlaski, SchematGPU, SferaReflektorow
+from okna import bez_ukladu
 from uklad import WaskiCombo
 from widok_gl import WidokGL
 
@@ -1123,7 +1124,7 @@ class ZakladkaLaserow(QWidget):
         self.ch_petla.toggled.connect(lambda *_: self._ustaw_ab(-1))
         for w in (self.bt_okna, self.bt_start, self.bt_play, self.ch_petla, self.bt_a, self.bt_b, self.bt_ab0):
             ho.addWidget(w)
-        ho.addWidget(self.suwak, 3); ho.addWidget(self.cb_tempo); ho.addWidget(self.sp_tempo); ho.addWidget(self.lb_czas, 2)
+        ho.addWidget(self.suwak, 3); ho.addWidget(self.cb_tempo); ho.addWidget(self.sp_tempo); ho.addWidget(bez_ukladu(self.lb_czas), 2)
         self.suwak.valueChanged.connect(lambda v: None if self._blokada else self.ustaw_czas(v / 100.0))
         self.bt_play.toggled.connect(self._graj); self.bt_start.clicked.connect(lambda: self.ustaw_czas(self._zakres_ab()[0]))
 
@@ -1168,7 +1169,7 @@ class ZakladkaLaserow(QWidget):
         self.edol = DolinaGPU(); self.vdol.addItem(self.edol)
         self.watek_dol = DolinaWatek(); self.watek_dol.gotowe.connect(self._dol_gotowe)
         self._dol_obrot = QTimer(self); self._dol_obrot.setInterval(33)
-        self._dol_obrot.timeout.connect(lambda: self.vdol.orbit(0.25, 0) if self.doki['12'].isVisible() else None)
+        self._dol_obrot.timeout.connect(lambda: self.vdol.orbit(0.25, 0) if self.widac('12') else None)
         self._dok('12', '12. Dolina pewności i IoU: gdzie cząsteczka daje dobrą odpowiedź (192 wymiary, przekrój 3D)',
                   self._z_napisem(self.vdol, 'lb12'))
         self.doki['12'].visibilityChanged.connect(lambda on: self._dol_zlec() if on else None)
@@ -1216,8 +1217,7 @@ class ZakladkaLaserow(QWidget):
             a = QAction(f'Przywróć układ {i}', self); a.setShortcut(f'Ctrl+{i}')
             a.triggered.connect(lambda _=False, i=i: self._slot(i)); mu.addAction(a); self.addAction(a)
         self.bt_okna.setMenu(m)
-        self._stan_domyslny = None
-        QTimer.singleShot(0, lambda: setattr(self, '_stan_domyslny', self.okna.saveState()))
+        self._stan_domyslny = self.okna.saveState()                     # układ domyślny bez rozmiarów (rozmiary: _rozmiary_domyslne)
         # listy to WaskiCombo: długie pozycje nie wymuszają szerokości panelu ani okienek (wcześniej pasek „Przejścia”
         # trzymał 1700 px i ściskał sferę do 80 px); w rozwiniętej liście tekst jest cały
         for cb in self.findChildren(QComboBox):
@@ -1228,7 +1228,8 @@ class ZakladkaLaserow(QWidget):
     def _z_napisem(self, widok, nazwa):
         w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(0, 0, 0, 0); v.setSpacing(0)
         v.addWidget(widok, 1)
-        lb = QLabel(''); lb.setStyleSheet('color:#ffd166; padding:2px 6px; background:#0b1014'); _staly_uklad(lb); v.addWidget(lb)
+        lb = QLabel(''); lb.setStyleSheet('color:#ffd166; padding:2px 6px; background:#0b1014'); _staly_uklad(lb)
+        v.addWidget(bez_ukladu(lb))                                   # napis zmieniany co klatkę nie przelicza układu okna
         setattr(self, nazwa, lb)
         return w
 
@@ -1248,8 +1249,24 @@ class ZakladkaLaserow(QWidget):
         from panel_ustawien import podlacz_menu
         pasek_doku(d)                                   # ⛶: maksymalizacja na ekranie okienka (też dwuklik, F11)
         podlacz_menu(d, lambda pos, k=klucz: self.menu_okienka(k, pos))     # prawy klik: ustawienia tego okienka
+        d.visibilityChanged.connect(lambda on: self._odslonieto() if on else None)
         self.doki[klucz] = d
         return d
+
+    def widac(self, klucz):
+        """Czy okienko naprawdę widać: otwarte i (odpięte albo z niepustym widocznym obszarem). QDockWidget.isVisible() jest
+        prawdą także dla okienka w nieaktywnej karcie, więc samo isVisible() kazało liczyć i rysować schowane okienka."""
+        d = self.doki.get(klucz)
+        return d is not None and d.isVisible() and (d.isFloating() or not d.visibleRegion().isEmpty())
+
+    def _odslonieto(self):
+        """Okienko odsłonięte (karta, otwarcie, odpięcie): po chwili jedno odświeżenie bieżącej chwili (zbiorcze dla wielu naraz)."""
+        if self.h is None:
+            return
+        if not hasattr(self, '_odsl_timer'):
+            self._odsl_timer = QTimer(self); self._odsl_timer.setSingleShot(True); self._odsl_timer.setInterval(0)
+            self._odsl_timer.timeout.connect(lambda: self.ustaw_czas(self.t) if self.h is not None and not self.timer.isActive() else None)
+        self._odsl_timer.start()
 
     def _dok_sterowania(self, klucz, tytul, widget):
         """Okienko sterujące (parametry, podkroki): jak okienka widoków można je odpiąć i przesunąć, ale nie należy do self.doki
@@ -1446,6 +1463,11 @@ class ZakladkaLaserow(QWidget):
             QTimer.singleShot(0, self._rozmiary_domyslne)
 
     def _rozmiary_domyslne(self, zastosuj_zapis=True):
+        if zastosuj_zapis:
+            self._rozmiary_gotowe = True
+            if getattr(self, '_uklad_ok', False):                   # zapisany układ był już zastosowany przed pokazaniem okna:
+                self._zastosuj_uklad()                              # jeszcze raz, teraz z prawdziwą wielkością okna (rozmiary doków)
+                return
         d, s = self.doki, self.doki_ster
         Vt, Hz = Qt.Orientation.Vertical, Qt.Orientation.Horizontal
         W, H = max(self.okna.width() - 440, 700), max(self.okna.height(), 600)
@@ -1453,10 +1475,6 @@ class ZakladkaLaserow(QWidget):
         self.okna.resizeDocks([s['podkroki'], d['s'], d['1']], [s['podkroki'].sizeHint().height(), int(H * 0.66), int(H * 0.30)], Vt)
         self.okna.resizeDocks([d['s'], d['11']], [int(W * 0.60), int(W * 0.40)], Hz)
         self.okna.resizeDocks([d[k] for k in ('1', '2', '3', '4', '6')], [W // 5] * 5, Hz)
-        if zastosuj_zapis:
-            self._stan_domyslny = self.okna.saveState()
-            self._rozmiary_gotowe = True
-            self._zastosuj_uklad()                                      # zapisany układ okienek (ustawienia.json), jeśli jest
 
     def _uklad_gotowy(self, nazwa):
         """Gotowe układy z menu „Okienka → Układy okienek” (zaczynają od domyślnego)."""
@@ -1504,23 +1522,28 @@ class ZakladkaLaserow(QWidget):
 
     def uklad_okienek(self):
         """Układ okienek (doki: położenie, odpięcie, rozmiary) i zapamiętane sloty, do ustawienia.json (ustawienia.stan)."""
+        okno = self.window()
         return dict(okna=bytes(self.okna.saveState().toBase64()).decode('ascii'), wersja_ukladu=2,
-                    sloty={str(k): v for k, v in self._sloty.items()})
+                    sloty={str(k): v for k, v in self._sloty.items()},
+                    okno=bytes(okno.saveGeometry().toBase64()).decode('ascii') if okno is not self else None)
 
     def ustaw_uklad_okienek(self, v):
-        """Przywraca zapisany układ okienek; przed pierwszym pokazaniem czeka (rozmiary domyślne liczą się dopiero wtedy)."""
+        """Przywraca zapisany układ okienek od razu, także przed pierwszym pokazaniem okna: startują tylko okienka, które były
+        otwarte i widoczne przy zapisie (widoki w zamkniętych i schowanych w kartach okienkach nie tworzą kontekstu OpenGL ani
+        nie liczą). Po pokazaniu okna układ stosuje się jeszcze raz, żeby rozmiary doków pasowały do prawdziwej wielkości."""
         self._uklad_zapisany = v
-        if getattr(self, '_rozmiary_gotowe', False):
-            self._zastosuj_uklad()
+        self._zastosuj_uklad()
 
     def _zastosuj_uklad(self):
-        from PyQt6.QtCore import QByteArray
         v = getattr(self, '_uklad_zapisany', None)
         if not isinstance(v, dict) or v.get('wersja_ukladu') != 2:          # układ z dawnej zakładki (lewa kolumna): domyślny
             return
         try:
             self._sloty.update({int(k): s for k, s in (v.get('sloty') or {}).items()})
-            self.okna.restoreState(QByteArray.fromBase64(v['okna'].encode('ascii')))
+            okno = self.window()
+            if v.get('okno') and okno is not self and not getattr(self, '_rozmiary_gotowe', False):
+                okno.restoreGeometry(QByteArray.fromBase64(v['okno'].encode('ascii')))   # wielkość i ekran głównego okna
+            self._uklad_ok = bool(self.okna.restoreState(QByteArray.fromBase64(v['okna'].encode('ascii'))))
         except Exception:                                                # noqa: BLE001 (stary albo uszkodzony zapis: układ domyślny)
             import traceback
             traceback.print_exc()
@@ -1530,6 +1553,7 @@ class ZakladkaLaserow(QWidget):
             d.setFloating(False); d.show()
         if self._stan_domyslny is not None:
             self.okna.restoreState(self._stan_domyslny)
+            self._rozmiary_domyslne(zastosuj_zapis=False)
 
     # ------------------------------------------------------------------ okienko „Przejście przez sieć” (podkroki w głębokości)
     def _buduj_przejscie(self):
@@ -1564,7 +1588,7 @@ class ZakladkaLaserow(QWidget):
                                    'przy granicy. W połowie przenikania obie warstwy wiązek świecą po połowie.')
         # dwa wiersze, żeby nic nie wychodziło za prawą krawędź: [podkroki ▶ suwak tempo opis] i [synchronizacja, powrót, wypadkowe]
         for x in (self.ch_pod, self.bt_pod, self.suwak_pod, self.sp_pod_tempo, self.lb_podkrok):
-            rp.addWidget(x, 3 if x is self.suwak_pod else 2 if x is self.lb_podkrok else 0)
+            rp.addWidget(bez_ukladu(x) if x is self.lb_podkrok else x, 3 if x is self.suwak_pod else 2 if x is self.lb_podkrok else 0)
         rp2 = QHBoxLayout()
         for x in (self.ch_sync, self.sp_sync_co, QLabel('powrót'), self.sp_przejscie, self.ch_wyp, QLabel('długość'), self.sp_skala_wyp,
                   self.cb_plynnie, self.sp_plynnie):
@@ -1619,7 +1643,8 @@ class ZakladkaLaserow(QWidget):
         v.addWidget(self.vp, 1)
         self.lb_pod = QLabel('Przejście przez sieć liczy się dla bieżącego checkpointu osi czasu (po wczytaniu historii).')
         self.lb_pod.setWordWrap(True); self.lb_pod.setStyleSheet('color:#ffd166; padding:2px 6px; background:#0b1014')
-        v.addWidget(self.lb_pod)
+        self.lb_pod.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        v.addWidget(bez_ukladu(self.lb_pod, 3 * self.lb_pod.fontMetrics().height() + 10))   # 3 linie, bez przeliczania układu
         self._dok('p', 'Przejście przez sieć: podkroki (uwaga = siły między cząsteczkami, MLP = lasery)', w)
         self.d_pod = None; self.s_pod = 0.0; self._kamera_pod = False
         self._kol_cz = None
@@ -2541,6 +2566,8 @@ class ZakladkaLaserow(QWidget):
             self.lb11.setText('Podgląd ogniskowej wyłączony. Zaznacz „pokaż podgląd ogniskowej” albo kliknij „Wczytaj / policz” '
                               '(sekcja „Pułapka optyczna”).')
             return
+        if not self.widac('11') and not (self.ch_og_sfera.isChecked() and self.widac('s')):
+            return                                                        # pułapki nigdzie nie widać: nic nie liczymy (_odslonieto)
         if self._og_tryb_pod():
             self.es_og.setVisible(False)
             self._og_podkrok(self.s_pod)
@@ -2613,7 +2640,7 @@ class ZakladkaLaserow(QWidget):
                 int(self.sp_dol_G.value()), round(float(self.sp_dol_zas.value()), 3))
 
     def _dol_potrzebna(self):
-        return self.ch_dol.isChecked() and (self.doki['12'].isVisible() or self.ch_dol_sfera.isChecked())
+        return self.ch_dol.isChecked() and (self.widac('12') or (self.ch_dol_sfera.isChecked() and self.widac('s')))
 
     def _dol_zlec(self):
         """Zleca przekrój doliny dla bieżącego checkpointu i cząsteczki (tylko przy zmianie klucza; liczy się ostatnie zlecenie)."""
@@ -2688,7 +2715,7 @@ class ZakladkaLaserow(QWidget):
     def _mech_zlec(self):
         """Zleca mechanikę reflektora dla bieżącego checkpointu (tylko gdy okienko 13 widać i klucz się zmienił)."""
         h = self.h
-        if h is None or not self.ch_mech.isChecked() or not self.doki['13'].isVisible():
+        if h is None or not self.ch_mech.isChecked() or not self.widac('13'):
             return
         i = int(np.clip(np.floor(self.t), 0, h.K - 1))
         zr = ('sonda', 'zbior')[self.cb_mech_zr.currentIndex()]
@@ -2742,16 +2769,22 @@ class ZakladkaLaserow(QWidget):
             return
         self.t = t = float(np.clip(t, 0, h.K - 1))
         tryb_pod = self.ch_pod.isChecked() and getattr(self, '_pp', None) is not None
-        for e in ((self.e4, self.e5) if tryb_pod else (self.e1, self.e2, self.e3, self.e4, self.e5, self.es)):
-            e.ustaw_czas(t)
-        if self.es.opcje['wiazki'] and not tryb_pod:
+        # tylko okienka, które naprawdę widać (okienko w nieaktywnej karcie albo zamknięte nie liczy ani nie wysyła nic na GPU;
+        # po odsłonięciu dostaje bieżącą chwilę w _odslonieto)
+        para = (('4', self.e4), ('5', self.e5)) if tryb_pod else (('1', self.e1), ('2', self.e2), ('3', self.e3), ('4', self.e4),
+                                                                  ('5', self.e5), ('s', self.es))
+        for k, e in para:
+            if self.widac(k):
+                e.ustaw_czas(t)
+        if self.es.opcje['wiazki'] and not tryb_pod and self.widac('s'):
             self.es.ustaw_natezenia(h, t)
-        if self.e5.kafelki and self.e5.kafelki[0]['mapa'] == 9:
+        if self.e5.kafelki and self.e5.kafelki[0]['mapa'] == 9 and self.widac('5'):
             self.e5.ustaw_reflektor(h, t, self._wybrane_refl())
         self._blokada = True
         self.suwak.setValue(int(round(t * 100)))
-        for p in (self.p6, self.p7, self.p8, self.p9, self.p10):
-            p.kursor.setValue(t)
+        for k, p in (('6', self.p6), ('7', self.p7), ('8', self.p8), ('9', self.p9), ('10', self.p10)):
+            if self.widac(k):
+                p.kursor.setValue(t)
         self._blokada = False
         krok = h.krok(t)
         if not self.bt_play.isChecked():
@@ -2775,7 +2808,7 @@ class ZakladkaLaserow(QWidget):
         self.lb5.setText(f'{self.cb_mapa.currentText()}')
         self._og_czas(t)
         self._dol_czas(tryb_pod)
-        if not tryb_pod and getattr(self, '_mech', None) is not None and self.doki['13'].isVisible():
+        if not tryb_pod and getattr(self, '_mech', None) is not None and self.widac('13'):
             self._mech_zlec(); self._mech_rysuj()                   # ruch w obrębie checkpointu: u = t − i
         self.rzuty.ustaw_czas(t)                                     # okienka R1–R8 (tylko widoczne)
         if tryb_pod:

@@ -45,6 +45,15 @@ class PanelParametrow(QWidget):
         self._klucze = []
         self.lista.currentRowChanged.connect(self._wybrano)
 
+    # Stały rozmiar zalecany: QStackedWidget podaje maksimum ze wszystkich stron, a napisy zmieniane w czasie odtwarzania (pułapka,
+    # dolina, stan) powiększały je o kilka pikseli na klatkę; dok panelu rósł, a wszystkie widoki OpenGL dostawały resize (nowe
+    # bufory ramki) w każdej klatce. Szerokość panelu ustawia użytkownik (przeciągnięcie krawędzi doku), nie treść.
+    def sizeHint(self):
+        return QSize(440, 600)
+
+    def minimumSizeHint(self):
+        return QSize(260, 160)
+
     def dodaj_strone(self, klucz, nazwa, widgety, dymek=''):
         """Strona `klucz` z widżetami jeden pod drugim (na dole odstęp); zwraca jej układ (do dopisywania)."""
         tresc = QWidget(); v = QVBoxLayout(tresc); v.setContentsMargins(2, 2, 4, 2); v.setSpacing(4)
