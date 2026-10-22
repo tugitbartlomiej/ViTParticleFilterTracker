@@ -6,15 +6,45 @@ rzuty z 192 wymiarów, dolina pewności i IoU, mechanika reflektora (filmy 2, 12
 
 ## Uruchomienie
 
-- `Lasery i koloidy.exe` (dwuklik, bez konsoli): mały uruchamiacz (48 kB, źródło w `uruchamiacz/`), startuje
-  `W:\Python\3.11\pythonw.exe start.py`; inny Python: pełna ścieżka do `pythonw.exe` w `python.txt` obok exe.
-  Przebudowa: `csc.exe /codepage:65001 /target:winexe /win32icon:ikona.ico /r:System.Windows.Forms.dll "/out:..\Lasery i koloidy.exe" Uruchamiacz.cs`
-  (kompilator z .NET Framework 4 w Windows, `C:\Windows\Microsoft.NET\Framework64\v4.*\csc.exe`).
-- Z konsoli: `uruchom.bat` albo `python start.py` (okienko ładowania), `python app.py` (bez niego).
+- `Lasery i koloidy.exe` (dwuklik, bez konsoli): mały uruchamiacz (48 kB, źródło `launcher/Launcher.cs`, ikona
+  `launcher/icon.ico`), startuje `W:\Python.11\pythonw.exe run.py`; inny Python: pełna ścieżka do `pythonw.exe` w `python.txt`
+  obok exe. Przebudowa (PowerShell, z katalogu aplikacji):
+  `& C:\Windows\Microsoft.NET\Framework644.0.30319\csc.exe /nologo /codepage:65001 /target:winexe /win32icon:launcher\icon.ico /r:System.Windows.Forms.dll '/out:Lasery i koloidy.exe' launcher\Launcher.cs`.
+- Z konsoli: `run.bat` albo `python run.py` (okienko ładowania), `python -m laser_app` (bez niego).
 - Wymagania: torch + CUDA, timm, PyQt6, pyqtgraph, PyOpenGL, opencv-python, scipy, numpy. scikit-image jest opcjonalne
-  (obrysy 3D ogniska i doliny liczą się bez niego przez `pyqtgraph.isosurface`, `wspolne.izopowierzchnia`).
-- Błąd startu: okno z komunikatem i `start.log`; wyjście programu bez konsoli: `wyjscie.log`.
-- Testy: `set PYTHONPATH=. && python -m unittest testy.test_etykiety testy.test_rzuty_dane`.
+  (obrysy 3D ogniska i doliny liczą się bez niego przez `pyqtgraph.isosurface`, `common.izopowierzchnia`).
+- Błąd startu: okno z komunikatem i `run.log`; wyjście programu bez konsoli: `output.log`.
+- Testy (z katalogu aplikacji; `test_gui` osobno, na ekranie):
+  `$env:PYTHONPATH='.'; python -m unittest tests.test_modules tests.test_tool_labels tests.test_projections tests.test_tooltips`
+  i `python -m unittest tests.test_gui`.
+
+## Struktura (refaktor 2026-10-22: pakiet, angielskie nazwy plików i klas)
+
+```
+LaserLatentSpaceApp/
+  run.py, run.bat, Lasery i koloidy.exe     start (okienko ładowania), uruchamiacz
+  laser_app/                                pakiet aplikacji
+    __init__.py, __main__.py                PyOpenGL bez glGetError; python -m laser_app
+    main_window.py                          MainWindow: menu, ustawienia, zrzuty
+    settings.py, paths.py                   zapis ustawień (settings.json), ścieżki aplikacji i projektu
+    lasers_tab/                             główna zakładka: LasersTab (okienka 1–14, sfera, przejście), wątki
+    ui/                                     widżety Qt: panel parametrów i okienka ustawień, doki, GLView, dymki,
+                                            grupy parametrów, podgląd etykiety, okienka rzutów R0–R12, styl
+    gpu/                                    elementy OpenGL 4.3 (shadery, SSBO): sfera, pułapka, mapy, rzuty
+    compute/                                obliczenia bez Qt: historia uczenia, pułapka optyczna i mapa pułapek,
+                                            pole w podkrokach, rzuty, etykiety narzędzia, obszary oka, dolina, mechanika
+  tests/                                    unittest (conftest.py, _gui_common.py, test_*.py)
+  launcher/                                 źródło exe i ikona
+  sample_images/                            zdjęcia testowe
+  cache_uczenia/, settings.json, screenshots/, run.log    dane robocze (poza gitem)
+```
+
+- Nazwy plików, modułów i klas są angielskie (np. `zakladka_laserow.ZakladkaLaserow` → `lasers_tab/tab.py`, `LasersTab`;
+  `lasery_dane.Historia` → `compute/history.py`, `History`; `ogniskowa` → `compute/focal_trap.py`). Funkcje, zmienne, komentarze
+  i napisy w GUI zostały po polsku.
+- Ustawienia: klucze to nazwy atrybutów (np. `zakladka_laserow.cb_og_G`), więc dawne ustawienia działają; plik
+  `ustawienia.json` jest przy pierwszym starcie przenoszony do `settings.json`. Cache (`cache_uczenia/`, nazwy plików npz)
+  bez zmian (wskazują na niego junction-y starego edytora w `../app/cache_uczenia`).
 
 ## Układ okna (refaktor GUI 2026-10-22)
 
@@ -29,7 +59,7 @@ rzuty z 192 wymiarów, dolina pewności i IoU, mechanika reflektora (filmy 2, 12
 - **Podkroki sieci** (F3): osobne okienko z suwakiem przejścia sygnału przez 6 bloków, tempem, synchronizacją z osią
   czasu i przenikaniem uwaga ↔ MLP; można je odpiąć i postawić gdziekolwiek.
 - **Prawy klik w okienko** (bez przeciągania; w widokach 3D prawe przeciąganie dalej zbliża): ustawienia tego okienka przy
-  kursorze (`panel_ustawien.PopupUstawien`). To te same sekcje co w panelu (wypożyczone na czas otwarcia, w panelu stoi
+  kursorze (`settings_panel.SettingsPopup`). To te same sekcje co w panelu (wypożyczone na czas otwarcia, w panelu stoi
   zastępnik), więc wszystko działa i zapisuje się tak samo. Okienko ustawień jest od razu osobnym oknem (zostaje otwarte,
   swobodnie przesuwane, drugi prawy klik w to samo okienko tylko je przywołuje). Grupy ustawień zwija i rozwija klik w ich
   nagłówek (▾ / ▸); ⊟ zwija wszystkie, ⊞ rozwija wszystkie (te same przyciski pod listą stron panelu). Przyciski: ⇤ pokazuje
@@ -37,14 +67,14 @@ rzuty z 192 wymiarów, dolina pewności i IoU, mechanika reflektora (filmy 2, 12
   cząsteczki i reflektora, wykresy 6–10 sekcję „Dane”, okienka R — swoje podsekcje rzutów.
 - **Menu „Okienka”**: okienka pogrupowane (ruch i mapy, sfera i pułapka, rzuty), „Układy okienek”: domyślny, sfera +
   pułapka obok siebie, sfera + rzuty R1–R7 obok siebie, sfera na całe okno; Ctrl+Shift+1..3 zapamiętuje bieżący układ,
-  Ctrl+1..3 go przywraca (sloty w `ustawienia.json`).
-- **Ustawienia**: stan kontrolek i układ okienek w `ustawienia.json` (zapis przy zamknięciu, menu „Ustawienia”). Ustawienia
-  dawnej zakładki przeniesiono z `../app/ustawienia.json` (bez układu okienek, który ma nową postać).
+  Ctrl+1..3 go przywraca (sloty w `settings.json`).
+- **Ustawienia**: stan kontrolek i układ okienek w `settings.json` (zapis przy zamknięciu, menu „Ustawienia”). Ustawienia
+  dawnej zakładki przeniesiono z `../app/settings.json` (bez układu okienek, który ma nową postać).
 
 ## Etykiety: narzędzie i obszary oka (2026-10-22)
 
-Strona „Dane, etykiety”, sekcja „Etykiety”. Które z 600 patchy są narzędziem (`lasery_dane.Historia.ustaw_etykiete`,
-`etykiety_narzedzia.TRYBY`, `maski(..., tryb=...)`):
+Strona „Dane, etykiety”, sekcja „Etykiety”. Które z 600 patchy są narzędziem (`history.CheckpointHistory.ustaw_etykiete`,
+`tool_labels.TRYBY`, `maski(..., tryb=...)`):
 
 - **obrys: każda łata dotknięta (> 0 %)** — domyślnie: całe narzędzie, także patche w większości z tłem;
 - **obrys: pokrycie ≥ 50 % (jak dawniej, do 2026-10-21)** — patch, w którym co najmniej połowa pikseli to narzędzie
@@ -55,7 +85,7 @@ Strona „Dane, etykiety”, sekcja „Etykiety”. Które z 600 patchy są narz
 Przykłady (patche narzędzia: dotknięte / pokrycie ≥ 0,5 / środek / ramka): TR_0050 kl. 1629: 16 / 3 / 4 / 18;
 TR_0077 kl. 1113: 25 / 7 / 8 / 72; TR_0001 kl. 274: 17 / 2 / 5 / 20.
 
-**Podgląd łat na zdjęciu** (`podglad_etykiety.py`, pod wyborem trybu): siatka 30 × 20 łat na zdjęciu, zielone = narzędzie
+**Podgląd łat na zdjęciu** (`laser_app/ui/label_preview.py`, pod wyborem trybu): siatka 30 × 20 łat na zdjęciu, zielone = narzędzie
 w wybranym trybie (jaśniej = większy udział pikseli obrysu), żółta obwódka = mieszane (dotknięte obrysem, ale nie narzędzie
 w tym trybie), biała = wybrana cząsteczka; najechanie pokazuje udział, klik wybiera cząsteczkę. Nad podglądem liczby łat
 narzędzia we wszystkich trybach (np. TR_0077 kl. 1113: dotknięte 25 · ≥ 50 % 7 · środek 8 · ramka 72).
@@ -65,53 +95,53 @@ Etykieta działa we wszystkich miejscach, które czytają `h.narz`: przycisk „
 Rzuty R1–R12 używają etykiety z chwili liczenia stanów 192D (R9 ma własny próg).
 
 **Obszary oka** (źrenica, rogówka; ViT nie był na nich uczony): z obrysów `pupil_seg` i `cornea_seg` tej samej klatki
-Cataract-LMM (`etykieta_obrys.npz` w katalogu historii, `Historia.oko`, `Historia.obszary(prog_oka)`), pierwszeństwo
+Cataract-LMM (`etykieta_obrys.npz` w katalogu historii, `CheckpointHistory.oko`, `CheckpointHistory.obszary(prog_oka)`), pierwszeństwo
 narzędzie > źrenica > rogówka > tło. Kolor „obszary oka” w „Kolor ścieżek” (sfera) i „Kolor cząsteczek” (okienko P),
 „Zaznacz obszar ▾” przy wyborze cząsteczek wpisuje patche obszaru do „+ cząsteczki”.
 
 ## Wydajność: GPU i start (2026-10-22)
 
-- **Tylko widoczne okienka pracują.** `ZakladkaLaserow.widac(k)`: okienko otwarte i (odpięte albo z niepustym widocznym
+- **Tylko widoczne okienka pracują.** `LasersTab.widac(k)`: okienko otwarte i (odpięte albo z niepustym widocznym
   obszarem). Okienko w nieaktywnej karcie albo zamknięte nie liczy, nie wysyła buforów na GPU i nie rysuje; po odsłonięciu
   dostaje bieżącą chwilę (`_odslonieto`). Wcześniej `QDockWidget.isVisible()` było prawdą także dla schowanych kart i rzuty R
   liczyły co klatkę (75 ms CPU na klatkę).
 - **Całe natężenia Z na karcie.** Z (K × 600 × 768, float16, ~0,7 GB dla 806 checkpointów) trafia do SSBO `ZH` sfery
-  porcjami w tle po wczytaniu historii (`_ElementGPU.wyslij_porcjami`: wątek czyta z dysku, każda klatka wysyła do ~8 ms).
+  porcjami w tle po wczytaniu historii (`_GPUElement.wyslij_porcjami`: wątek czyta z dysku, każda klatka wysyła do ~8 ms).
   Shader sam wybiera parę checkpointów i interpoluje (`unpackHalf2x16`); do czasu wysłania działa dawna ścieżka (para
   checkpointów w buforze `I`). Sprawdzone: odczyt z karty = Z z dysku bit w bit.
-- **Bez synchronizacji CPU–GPU po każdym wywołaniu GL**: `OpenGL.ERROR_CHECKING = False` (app.py, start.py); szukanie błędów
+- **Bez synchronizacji CPU–GPU po każdym wywołaniu GL**: `OpenGL.ERROR_CHECKING = False` (laser_app/main_window.py, run.py); szukanie błędów
   GL: zmienna środowiskowa `LASERY_GL_DEBUG=1`.
-- **Napisy bez przeliczania układu** (`okna.bez_ukladu`): napisy zmieniane co klatkę (pod widokami, licznik czasu, tytuł
+- **Napisy bez przeliczania układu** (`dock_windows.bez_ukladu`): napisy zmieniane co klatkę (pod widokami, licznik czasu, tytuł
   okienka 11, podkroki) leżą w pojemniku bez układu. Przy skalowaniu ekranu 150 % każde przeliczenie układu gubiło piksel na
   zaokrągleniach doków: doki pełzły o 1–4 px na klatkę, a każdy widok OpenGL dostawał resize i nowy bufor ramki.
 - **Pomiar** (RTX 3070, 4K/150 %, historia 35 000, 806 checkpointów, tempo stałe): odtwarzanie 50–55 kl./s w układach
   domyślnym, „sfera na całe okno” i „sfera + rzuty” (przed zmianami 16–18, chwilami 1–3), z pułapką 11 ok. 40 kl./s (przed
   11–21); `ustaw_czas` 0,7 ms (przed 75 ms, p90 950 ms); sfera z 460 800 wiązkami ~5 ms na GPU.
-- **Start jak ostatnio**: zapisany układ okienek i położenie/rozmiar okna (`ustawienia.json`, Plik → Zapisz albo autozapis
+- **Start jak ostatnio**: zapisany układ okienek i położenie/rozmiar okna (`settings.json`, Plik → Zapisz albo autozapis
   przy zamknięciu) stosują się przed pierwszym pokazaniem okna, więc startują tylko okienka, które były otwarte i widoczne;
   widoki w zamkniętych i schowanych w kartach okienkach nie tworzą kontekstu OpenGL. Manifest zbioru uczącego (35 000
   wierszy) z pickla w `cache_uczenia/lasery` (~1 s mniej przy starcie).
 - **Menu Plik**: policz/wczytaj historię (Ctrl+O), przerwij liczenie (Ctrl+.), inny katalog wag, zdjęcie z pliku, zapis
   ustawień i układu (Ctrl+S), zapis jako (Ctrl+Shift+S), wczytanie ustawień, obraz okienka pod kursorem do PNG (Ctrl+E,
-  folder `zrzuty/`), Zamknij (Ctrl+Q). Menu Ustawienia: autozapis przy zamknięciu, przywróć domyślne, stereo 3D.
+  folder `screenshots/`), Zamknij (Ctrl+Q). Menu Ustawienia: autozapis przy zamknięciu, przywróć domyślne, stereo 3D.
 
 ## Kilka zdjęć naraz na sferze (2026-10-22)
 
 Strona „Kilka zdjęć”: zestaw zdjęć tej samej historii wag (te same checkpointy i okno), domyślny limit 5, najwyżej 32 (jak
 paczka uczenia). „+ bieżące zdjęcie” dodaje zdjęcie wybrane w „Dane”, „Policz / wczytaj zestaw” wczytuje historie z cache albo
-liczy brakujące po kolei (`ZestawLiczenie`; minuty na zdjęcie przy pierwszym liczeniu). Sfera reflektorów pokazuje wtedy
-600 koloidów każdego zdjęcia (`lasery_dane.HistoriaZestawu`: położenia sklejone, każde zdjęcie z własnym środkiem chmury;
+liczy brakujące po kolei (`ImageSetWorker`; minuty na zdjęcie przy pierwszym liczeniu). Sfera reflektorów pokazuje wtedy
+600 koloidów każdego zdjęcia (`history.ImageSetHistory`: położenia sklejone, każde zdjęcie z własnym środkiem chmury;
 rzut 3D P3 i reflektory zależą tylko od wag, więc są wspólne — sprawdzone: `dirs` identyczne dla różnych zdjęć) i
 600·n·768 wiązek (shader sfery ma `u_T` zamiast stałych 600). Pozostałe okienka (1–13, R, podkroki) i wybór cząsteczki
 dotyczą **aktywnego zdjęcia** (lista „Aktywne zdjęcie”; klik w koloid innego zdjęcia na sferze też je przełącza).
-Natężenia Z zestawu trafiają na kartę w całości do 3 GB (`lasery_gpu.LIMIT_ZH`, ok. 4 zdjęcia); większy zestaw wysyła przy
+Natężenia Z zestawu trafiają na kartę w całości do 3 GB (`lasers_gpu.LIMIT_ZH`, ok. 4 zdjęcia); większy zestaw wysyła przy
 każdej zmianie checkpointu tylko parę checkpointów. Zmiana aktywnego zdjęcia nie wysyła Z ponownie.
 Pomiar: 3 zdjęcia (1800 koloidów, 1,38 mln wiązek, Z 2,1 GB na karcie) ok. 32 kl./s przy odtwarzaniu.
-Lista zdjęć zestawu zapisuje się w `ustawienia.json` (liczy się dopiero na żądanie).
+Lista zdjęć zestawu zapisuje się w `settings.json` (liczy się dopiero na żądanie).
 
 ## Pułapka optyczna: obrys w tle, liczenie tylko widocznego
 
-- Obrys ogniska 3D (`lasery_gpu.siatka_obrysu`) liczy się w wątku w tle (`_LiczObrys`, zawsze ostatnie zlecenie): objętość
+- Obrys ogniska 3D (`lasers_gpu.siatka_obrysu`) liczy się w wątku w tle (`_OutlineWorker`, zawsze ostatnie zlecenie): objętość
   światła 33³ na GPU (PyTorch), izopowierzchnia, warstwice; klatka rysuje ostatni gotowy obrys przesunięty do bieżącego
   położenia koloidu. Wcześniej liczył się w każdej klatce i odtwarzanie z obrysem traciło płynność.
 - Obrys, światło ogniska i wkłady działają też przy wyłączonych liniach wiązek („768 wiązek zbiegających się…” steruje teraz
@@ -119,11 +149,11 @@ Lista zdjęć zestawu zapisuje się w `ustawienia.json` (liczy się dopiero na �
 - Pułapka (liczenie dla całej historii, potem z pliku) startuje dopiero, gdy okienko 11 albo pułapka na sferze jest widoczna.
 - Między checkpointami pułapka jest interpolowana na GPU (pole, kolory, wiązki, koloid: ułamek kroku), więc odtwarzanie
   jest płynne; powolne było tylko pierwsze liczenie z wag (i dawniej obrys w każdej klatce).
-- Liczenie przyspieszone (`ogniskowa.policz_wiele`): jakobian 3 × 3 w metodzie Newtona liczony analitycznie
-  (`ogniskowa._jakobian`: pochodna LayerNorm, GELU i rzutu; zgodny z autogradem do 1e-10, test `TestJakobianPulapki`)
+- Liczenie przyspieszone (`focal_trap.policz_wiele`): jakobian 3 × 3 w metodzie Newtona liczony analitycznie
+  (`focal_trap._jakobian`: pochodna LayerNorm, GELU i rzutu; zgodny z autogradem do 1e-10, test `TestJakobianPulapki`)
   zamiast `torch.autograd.functional.jacobian`. Siatka 17, RTX 3070: 68 ms na checkpoint (wcześniej 100 ms; pierwsze
   uruchomienie z rozgrzewką karty dłużej), ok. 1 min na 806 checkpointów. Wyniki identyczne ze starą wersją (różnice < 1e-3).
-- **Newton dla wielu cząsteczek naraz na GPU** (`ogniskowa.newton_wsadowo`, `checkpointy`, `_Parametry`): wspólna część
+- **Newton dla wielu cząsteczek naraz na GPU** (`focal_trap.newton_wsadowo`, `checkpointy`, `_Block6Params`): wspólna część
   (wagi z wyprzedzeniem, przejście sieci, rzut) to generator `checkpointy`; Newton liczy wszystkie cząsteczki jednocześnie
   w maskach (B × 3), jakobian wsadowo (`_jakobian_wsadowo`), układy 3 × 3 wzorem z dopełnień (`rozwiaz3`, bez SVD), a
   cząsteczki, które się zbiegły, wyszły z komórki albo krążą bez zera (po 15 iteracjach |f| > 1e-3 |f(0)|), przestają być
@@ -142,7 +172,7 @@ Lista zdjęć zestawu zapisuje się w `ustawienia.json` (liczy się dopiero na �
 
 ## Mapa pułapek: wszystkie 600 cząsteczek (okienko 14)
 
-`mapa_pulapek.py`, strona panelu „Mapa pułapek (14)”. Dla każdej cząsteczki i każdego checkpointu (bez siatki pola G³,
+`laser_app/compute/trap_map.py`, strona panelu „Mapa pułapek (14)”. Dla każdej cząsteczki i każdego checkpointu (bez siatki pola G³,
 ta zostaje w okienku 11): skok w bloku 6, zero pola w komórce (Newton wsadowo), wartości własne jakobianu w cząsteczce (λ₀)
 i w zerze (λ), liniowe oszacowanie zera, r_kom. Cała historia (806 checkpointów × 600 cząsteczek): ok. 104 s na RTX 3070
 (86 ms na checkpoint), wynik `mapa_pulapek_z<zasięg>.npz` (46 MB) obok historii, potem z pliku.
@@ -157,14 +187,14 @@ i w zerze (λ), liniowe oszacowanie zera, r_kom. Cała historia (806 checkpoint�
 
 ## Pomiar pułapki w podkrokach: szybciej
 
-`pulapka_obliczenia.policz_historie`: wagi wczytywane raz na checkpoint, z wyprzedzeniem w 4 wątkach (wcześniej dwa razy,
-osobno w `lasery_dane.podkroki` i `pole_podkrokow.policz`), bez obrazków łodygi (`podkroki(..., lodyga=False)`: 6 rozkładów
+`trap_measurements.policz_historie`: wagi wczytywane raz na checkpoint, z wyprzedzeniem w 4 wątkach (wcześniej dwa razy,
+osobno w `history.podkroki` i `substep_field.policz`), bez obrazków łodygi (`podkroki(..., lodyga=False)`: 6 rozkładów
 SVD, których pomiar nie używa). 184 → 89 ms na checkpoint (ok. 1,2 min na 806 checkpointów zamiast 2,5).
 
 ## R12 kNN 3D: bez skoków
 
 R12 liczył PCA3 od nowa w każdym checkpoincie (znaki i kolejność osi przeskakiwały) i brał najbliższy checkpoint. Teraz
-(`rzuty_dane.baza_pca3_wspolna_t`, `baza_pca3_ckpt_t`, `obroc_do_t`, `knn_t`): baza PCA wspólna dla całej historii
+(`projections.baza_pca3_wspolna_t`, `baza_pca3_ckpt_t`, `obroc_do_t`, `knn_t`): baza PCA wspólna dla całej historii
 (domyślnie), w każdym checkpoincie wyrównana Procrustesem 3 × 3 do wspólnej (z wygładzaniem ± n checkpointów) albo surowa
 (dawna); położenia i kolory interpolowane między checkpointami; metryka euklidesowa albo kosinusowa; ułamek sąsiadów
 wygładzany ± n checkpointów. Mediana przesunięcia tokenu na krok checkpointu: 0,68–1,03 → 0,14–0,20 promienia chmury.
@@ -172,52 +202,52 @@ wygładzany ± n checkpointów. Mediana przesunięcia tokenu na krok checkpointu
 ## Okna, dymki, grupy parametrów
 
 - Odpięte okienka (panel F2, podkroki F3, widoki) i okienka ustawień z prawego kliku to zwykłe okna, nie okna narzędziowe Qt: nie
-  leżą zawsze nad oknem głównym i nad sobą, można je schować pod inne i przełączać Alt+Tab (`okna._niezalezne`).
-- `dymki.py`: każdy parametr ma dymek z objaśnieniem (co to jest i co zmienia); ten sam dymek ma nazwa wiersza w panelu.
-- `grupy_parametrow.py`: nagłówki podgrup w długich sekcjach (pułapka: liczenie, wiązki, światło, obrys, wkłady, mgła pola,
+  leżą zawsze nad oknem głównym i nad sobą, można je schować pod inne i przełączać Alt+Tab (`dock_windows._niezalezne`).
+- `laser_app/ui/tooltips.py`: każdy parametr ma dymek z objaśnieniem (co to jest i co zmienia); ten sam dymek ma nazwa wiersza w panelu.
+- `laser_app/ui/parameter_groups.py`: nagłówki podgrup w długich sekcjach (pułapka: liczenie, wiązki, światło, obrys, wkłady, mgła pola,
   strzałki pola, oznaczenia, ślad i kadr; sfera, dane, dolina, podkroki, zapis).
-- Okienka sterujące (panel parametrów, podkroki) mają zawartość w przewijanym polu (`okna.Przewijane`): po włączeniu
+- Okienka sterujące (panel parametrów, podkroki) mają zawartość w przewijanym polu (`dock_windows.ScrollWrapper`): po włączeniu
   podkroków pasek podkroków (dwa wiersze opcji i schemat sieci, ponad 1100 px szerokości) nie rozpycha już okna i nie wchodzi
   na panel parametrów ani na widoki; gdy brakuje miejsca, przewija się. Wysokość okienka podkroków dopasowuje się do treści.
 
 ## Poprawki działania (2026-10-22)
 
 - Historie w cache liczone, gdy projekt był na `F:` (ścieżka wag `F:\...\SmallViTAblation\assets\...`): pułapka optyczna,
-  obrys ogniska 3D, dolina, mechanika i podkroki kończyły się błędem `PermissionError`. `lasery_dane.sciezka_lokalna`
+  obrys ogniska 3D, dolina, mechanika i podkroki kończyły się błędem `PermissionError`. `history.sciezka_lokalna`
   przenosi ścieżkę do bieżącej bazy projektu (tak jak już robiły to rzuty).
 - Obrys ogniska 3D i brzeg doliny wymagały scikit-image (brak w Pythonie 3.11): zapas `pyqtgraph.isosurface`.
 
 ## Pliki i dane
 
-- `app.py` okno, `start.py` start z okienkiem ładowania, `panel_ustawien.py` panel i popupy, `zakladka_laserow.py` cała
-  zawartość okna, `lasery_dane.py` obliczenia i `Historia`, `lasery_gpu.py` shadery, `rzuty_*.py` rzuty 192D,
-  `ogniskowa.py`, `pole_podkrokow.py`, `pulapka_obliczenia.py`, `dolina.py`, `reflektor_*.py`, `etykiety_narzedzia.py`,
-  `obszary_oka.py`; wspólne z edytorem (kopie): `film.py`, `detekcja.py`, `silnik.py`, `widok_gl.py`, `okna.py`, `uklad.py`,
-  `styl.py`, `wygoda.py`, `wspolne.py`, `ustawienia.py`, `historie_checkpointow.py`.
+- `laser_app/main_window.py` okno, `run.py` start z okienkiem ładowania, `laser_app/ui/settings_panel.py` panel i popupy, `laser_app/lasers_tab/tab.py` cała
+  zawartość okna, `laser_app/compute/history.py` obliczenia i `CheckpointHistory`, `laser_app/gpu/lasers_gpu.py` shadery, `rzuty_*.py` rzuty 192D,
+  `laser_app/compute/focal_trap.py`, `laser_app/compute/substep_field.py`, `laser_app/compute/trap_measurements.py`, `laser_app/compute/valley.py`, `reflektor_*.py`, `laser_app/compute/tool_labels.py`,
+  `laser_app/compute/eye_regions.py`; wspólne z edytorem (kopie): `laser_app/compute/video.py`, `laser_app/compute/detection.py`, `laser_app/compute/sd_engine.py`, `laser_app/ui/gl_view.py`, `laser_app/ui/dock_windows.py`, `laser_app/ui/layout_widgets.py`,
+  `laser_app/ui/style.py`, `laser_app/ui/input_comfort.py`, `laser_app/compute/common.py`, `laser_app/settings.py`, `laser_app/compute/checkpoint_histories.py`.
 - Cache: `cache_uczenia/lasery/<skrót>/` (dane.npz, Z.npy, rzuty/, przejscia/, etykieta_obrys.npz) i `cache_uczenia/etykiety/`.
   Przeniesione z `../app/cache_uczenia/`; tam zostały połączenia katalogów (junction) do tych samych danych, więc stare
   skrypty eksperymentów z ścieżką `app/cache_uczenia/lasery` działają dalej.
-- `../app/lasery_dane.py`, `rzuty_dane.py`, `etykiety_narzedzia.py` zostały w edytorze bez zmian jako biblioteka
+- `../app/lasery_dane.py`, `../app/rzuty_dane.py`, `../app/etykiety_narzedzia.py` (stare kopie) zostały w edytorze bez zmian jako biblioteka
   historycznych eksperymentów (`experiments/wykrywanie_grupy_narzedzia_bez_etykiet_*`, `wspoldzialanie_neuronow_*` itd.).
 
 Poniżej opis zakładki przeniesiony z `../app/README.md` (odwołania do „lewego panelu” = dziś strony panelu „Parametry”).
 
-## Opis zakładki „Lasery i koloidy” (2026-10-12; `zakladka_laserow.py`, `lasery_dane.py`, `lasery_gpu.py`)
+## Opis zakładki „Lasery i koloidy” (2026-10-12; `laser_app/lasers_tab/tab.py`, `laser_app/compute/history.py`, `laser_app/gpu/lasers_gpu.py`)
 
 Interaktywna wersja filmów 2, 12 i 16 z `outputs/porownanie_szklo_20261010/film_krysztal` (zasady w `ZASADY_LASER_KOLOID.md`).
 
 **Dane.** Wybierasz:
-- historię checkpointów (`historie_checkpointow.HISTORIE` albo dowolny katalog `k<krok>.pt`);
+- historię checkpointów (`checkpoint_histories.HISTORIE` albo dowolny katalog `k<krok>.pt`);
 - zakres kroków i co który checkpoint;
 - zdjęcie: „Film” (117 filmów zbioru uczącego biegu 35 000) i „Zdjęcie” (jego klatki), albo grupa „Pliki testowe”
-  (TRAIN 0 z filmów, `zdjeciatestowe/`, plik).
+  (TRAIN 0 z filmów, `sample_images/`, plik).
 
 Klatka zbioru uczącego (2026-10-13) jest czytana jak w `trening35000.py`: z wiersza `MANIFEST_35000.jsonl`, z archiwum zip
 (SHA-256 bajtów sprawdzane), rozciągnięta do 480 × 320 INTER_AREA, ramka z manifestu skalowana osobno w X i Y. Uwaga: 15 z 18
-plików `zdjeciatestowe/` (w tym całe TR_0077, TR_0127, TR_0140) NIE należy do zbioru uczącego; opis ramki to mówi.
+plików `sample_images/` (w tym całe TR_0077, TR_0127, TR_0140) NIE należy do zbioru uczącego; opis ramki to mówi.
 Ramka prawdziwa dla TRAIN 0 pochodzi z `atencja_train0.npz`, dla pozostałych plików `TR_*` z adnotacji.
 
-**Liczenie.** „Policz / wczytaj” uruchamia `lasery_dane.policz` w wątku, na GPU. Dla każdego checkpointu liczy:
+**Liczenie.** „Policz / wczytaj” uruchamia `history.policz` w wątku, na GPU. Dla każdego checkpointu liczy:
 - latent 600 × 768 (`Z.npy`, float16);
 - kierunki fc2 rzutowane na 3 główne kierunki z ostatniego checkpointu (d_c = P v̂_c) i położenia p_j = P W₂ (z − z̄);
 - atencję 6 bloków (definicja aplikacji i filmu 16);
@@ -235,7 +265,7 @@ Potem dzieli ruch na trzy składowe jak `eden/szescian_prep.py` i film 2: losowy
 - **Panel 5:** mapa na zdjęciu (centra, drgania, atencja, natężenie wybranego reflektora).
 - **Wykresy 6–9:** trzy składowe ruchu, IoU, pewność, pary przeciwnych reflektorów.
 
-**Rzuty z 192 wymiarów: okienka R1–R8** (2026-10-21; `rzuty_dane.py`, `rzuty_okienka.py`, `rzuty_gpu.py`; uzasadnienie w
+**Rzuty z 192 wymiarów: okienka R1–R8** (2026-10-21; `laser_app/compute/projections.py`, `laser_app/ui/projections_view.py`, `laser_app/gpu/projections_gpu.py`; uzasadnienie w
 `reports/Rzutowanie wielowymiarowego ruchu do 3D.md`). Zwijana sekcja „Rzuty z 192 wymiarów” w lewym panelu, zaraz pod „Dane”.
 „Policz / wczytaj stany 192D” robi raz na historię i zdjęcie jedno przejście w przód na checkpoint i zapisuje w katalogu historii
 `rzuty/`:
@@ -269,12 +299,12 @@ szumu SGD widać było dryf. Strzałki to siła netto bloku 6; krycie strzałki 
 kartach obok sfery, R8 obok wykresu 6, a przyciski sekcji wyciągają je na wierzch.
 
 Rysowanie i liczenie są na karcie:
-- **Shadery GLSL 4.30 (`rzuty_gpu.RzutGPU`, SSBO jak `lasery_gpu.py`).** Cała historia położeń i sił w bazie okienka trafia do
+- **Shadery GLSL 4.30 (`projections_gpu.ProjectionGPU`, SSBO jak `laser_app/gpu/lasers_gpu.py`).** Cała historia położeń i sił w bazie okienka trafia do
   bufora raz, przy zmianie bazy, środka, skali albo wygładzania. W klatce idzie tylko czas. Interpolację, ślady, groty strzałek
   zwrócone do kamery i krycie liczy shader.
 - **Ramy lokalne R4 i R5** to elementy lokalne tego samego shadera, wysyłane raz na checkpoint i cząsteczkę.
-- **Rzutowanie 192D → 3D** całej historii liczy torch na karcie (`DaneRzutow.wsp`).
-Testy: `testy/test_rzuty_dane.py`.
+- **Rzutowanie 192D → 3D** całej historii liczy torch na karcie (`ProjectionData.wsp`).
+Testy: `tests/test_projections.py`.
 
 **Oś czasu.** Suwak, odtwarzanie (spacja) i strzałki ←/→ (checkpoint). Klik w wykres przenosi do danej chwili. Tempo „jak w filmie 16” to v = min(0,8 + krok/250, 150) kroków na klatkę; tempo stałe liczy się w checkpointach na sekundę.
 
@@ -282,7 +312,7 @@ Testy: `testy/test_rzuty_dane.py`.
 
 **Rysowanie.** Robią je shadery GLSL 4.30 z buforów SSBO, a cała historia leży na karcie. W klatce CPU podaje tylko czas i opcje. Wyjątek to natężenia z_jc pary sąsiednich checkpointów dla wiązek (600 × 768), wysyłane przy zmianie pary.
 
-**Okienko „Przejście przez sieć: podkroki”** (`lasery_dane.podkroki`, `lasery_gpu.PrzejscieGPU`, `DiagramSieci`).
+**Okienko „Przejście przez sieć: podkroki”** (`history.podkroki`, `lasers_gpu.NetworkPassageGPU`, `NetworkDiagram`).
 
 Dla checkpointu bieżącej chwili osi czasu jedno przejście w przód jest rozłożone na 13 stanów strumienia rezydualnego: stan 0 to łodyga z kodowaniem pozycji, a każdy z 6 bloków dokłada dwa stany, po uwadze i po MLP. Czasem cząstki jest tu głębokość sieci. Rozkład jest dokładny (sprawdzany w każdym liczeniu, błąd około 5·10⁻⁵):
 - uwaga: Δx_i = Σ_j f_ij + b_o, gdzie f_ij = Σ_h A^h_ij · W_o v^h_j to siła cząsteczki j na cząsteczkę i;
@@ -353,7 +383,7 @@ Panel po lewej ma sekcje zwijane polem przy tytule, pionowe przewijanie i przeci
 
 **Pułapka optyczna: ogniskowa wiązek i okienko 11 (2026-10-14).**
 
-Sekcja „Pułapka optyczna” liczy (`ogniskowa.py`, w tle, z cache obok historii: `ogniskowa_t<tok>_G<G>_z<zasięg>.npz`)
+Sekcja „Pułapka optyczna” liczy (`laser_app/compute/focal_trap.py`, w tle, z cache obok historii: `ogniskowa_t<tok>_G<G>_z<zasięg>.npz`)
 pole wszystkich 768 wiązek bloku 6 wokół wybranej cząsteczki, w każdym checkpoincie, prosto z wag:
 - przekrój 3D przez koloid rozpięty rzutem sfery P3: `x(u) = x̃_j + P3ᵀu`, pole `f(u) = P3 Σ_c (z_c(x(u)) − z̄_c) v_c`;
   `f(0)` to dokładny skok koloidu w bloku 6 (pomarańczowa strzałka);
@@ -377,7 +407,7 @@ pochodzą z tensora kierunków. Czas okienka: oś uczenia (blok 6) albo podkroki
 cząsteczek), z kontrolą „suma wkładów = ruch” w opisie (błąd ~10⁻⁶). Domyślnie liczone są tylko wiązki wybranej cząsteczki
 (806 checkpointów w ~47 s); pole na siatce i szukanie zera to opcja „licz też lokalne pole”. Wkłady (z_jc − z̄_c)·P v_c jako strzałki od cząsteczki albo łańcuch głowa–ogon, którego koniec to dokładnie skok
 (pomarańczowa strzałka); długość łańcucha pokazuje, ile pchnięć się znosi. Pole na siatce (mgła, strzałki) jest opcją i domyślnie
-lokalne (zasięg 0,05 r99). Kamera domyślnie śledzi cząsteczkę. Dane wiązek zapisuje `ogniskowa.py` od wersji 2 (pv, zj, zbar).
+lokalne (zasięg 0,05 r99). Kamera domyślnie śledzi cząsteczkę. Dane wiązek zapisuje `laser_app/compute/focal_trap.py` od wersji 2 (pv, zj, zbar).
 Opcja „reflektory” pokazuje okienko 11 w skali sfery reflektorów (film 12): 768 reflektorów na zewnętrznej sferze, szklaną sferę
 i wiązkę każdego reflektora do wybranej cząsteczki (reflektor → punkt załamania na szkle → cząsteczka, ostatni odcinek wzdłuż
 kierunku wiązki). Kamera bierze kąty i skalę (piksele na jednostkę) z okna sfery i przestaje śledzić cząsteczkę. W podkrokach MLP
@@ -389,7 +419,7 @@ wzdłuż najdłuższej osi obrysu, białe = wzdłuż drugiej. Prawdziwy obrys ma
 z lupą (domyślnie ×20). Kształt pochodzi z danych (kierunki i jasności wiązek), rozmiar od parametrów rysunku (przewężenie,
 rozbieżność). Przykład (krok 65640, cząsteczka 226, poziom 0,5): blok 4 wydłużenie ×2,1, bloki 1 i 6 ×1,2.
 
-**Pole tylko w komórce tokenu i podgląd na żądanie (2026-10-15, `ogniskowa.py` wersja 4).** Lokalne pole wiązek liczy się tylko
+**Pole tylko w komórce tokenu i podgląd na żądanie (2026-10-15, `laser_app/compute/focal_trap.py` wersja 4).** Lokalne pole wiązek liczy się tylko
 w komórce tokenu: sześcian wokół koloidu o połowie boku r_kom = połowa odległości do najbliższego innego tokenu w rzucie 3D (w każdym
 checkpoincie osobno; pole „Zasięg siatki” to ułamek komórki, domyślnie 1). Żaden inny token nie leży w sześcianie (sprawdzone:
 0 w 806 checkpointach), siatka nie rośnie do pułapki, a zera pola szuka się tylko w komórce. Kamera „kadruje pole tokenu”: środek
@@ -421,7 +451,7 @@ zielony ruch to zmiana położenia między checkpointami (uczenie). Dla cząstec
 (kwartyle 55–117°), ruch ≈ 0,5 długości skoku. Po uruchomieniu programu ogniskowa nic nie wczytuje ani nie liczy, dopóki nie zaznaczysz
 „pokaż podgląd ogniskowej” albo nie klikniesz „Wczytaj / policz”.
 
-**Zapis przejść przez sieć na dysk (2026-10-15, `przejscia_zapis.py`, sekcja „Zapis przejść przez sieć”).** Policzone przejścia
+**Zapis przejść przez sieć na dysk (2026-10-15, `laser_app/compute/passage_store.py`, sekcja „Zapis przejść przez sieć”).** Policzone przejścia
 (podkroki jednego checkpointu) zapisują się do `cache_uczenia/lasery/<historia>/przejscia/k<krok>.npz` i potem wczytują się
 zamiast liczenia (0,07 s zamiast 0,1–0,7 s, pierwsze liczenie w sesji ~5 s). Wspólny rzut 3D i przypisanie reflektorów są w
 `baza.npz`, więc zapisane przejścia pasują do siebie także między sesjami. Przycisk „Zapisz przejścia wszystkich checkpointów”
@@ -453,8 +483,8 @@ blokowana po checkpointach”: pula jest dzielona na ciągłe bloki, oś z pozos
 `cdist` na GPU, float32 i TF32 (zgodne z CPU float64 do 0,2° w osiach), ok. 0,5 s na checkpoint wobec 14 s w numpy. Podczas odtwarzania
 liczą się tylko szybkie miary podstawowe, ciężkie dopiero na pauzie.
 
-**Etykieta narzędzia z obrysu, nie z ramki (2026-10-21).** `etykiety_narzedzia.py` czyta wielokąty `<narzędzie>_seg` z
-annotation.csv Cataract-LMM 3_Object_Tracking i liczy udział pikseli narzędzia w każdej łacie 16 × 16. Historia (`lasery_dane.Historia`)
+**Etykieta narzędzia z obrysu, nie z ramki (2026-10-21).** `laser_app/compute/tool_labels.py` czyta wielokąty `<narzędzie>_seg` z
+annotation.csv Cataract-LMM 3_Object_Tracking i liczy udział pikseli narzędzia w każdej łacie 16 × 16. Historia (`history.Historia`)
 odnajduje swoją klatkę po ramce GT (indeks ramek wszystkich filmów w `cache_uczenia/etykiety/indeks_ramek.npz`, przy kilku kandydatach
 rozstrzyga obraz) i ustawia `narz` = udział ≥ 0,5 (przy < 2 łatach próg 0,25), `mieszane` = 0 < udział < próg, a starą etykietę
 zachowuje jako `narz_ramka`. Bez obrysu zostaje ramka. Cienki cystotom zajmuje w ramce 2 × 9 tylko 3 łaty w co najmniej połowie,
@@ -480,7 +510,7 @@ nieuczone: Dice 0,04. Eksperyment: `experiments/wykrywanie_grupy_narzedzia_bez_e
 Opcja „Oś LDA” (przy tej etykiecie): oś z obrysu (domyślnie; kolor narzędzia = wykryta grupa, więc widać, czy grupa leży tam,
 gdzie oznaczone narzędzie) albo oś z wykrytej grupy (widok całkowicie bez etykiet).
 
-**Nawigacja myszą w widokach OpenGL (2026-10-22).** Wspólna dla wszystkich okien (`widok_gl.WidokGL`): LPM obraca (w widoku z góry
+**Nawigacja myszą w widokach OpenGL (2026-10-22).** Wspólna dla wszystkich okien (`gl_view.GLView`): LPM obraca (w widoku z góry
 przesuwa), ŚPM albo Ctrl+LPM przesuwa w płaszczyźnie widoku, Ctrl+ŚPM przesuwa w pionie, PPM + przeciągnięcie góra/dół zbliża i
 oddala, kółko zbliża do punktu pod kursorem, Ctrl+kółko zmienia pole widzenia, podwójny ŚPM wraca do kadru, Shift+LPM rysuje
 prostokąt zaznaczenia. Prawy klik bez przeciągania zgłasza sygnał `prawy_px`. Zakładka laserów ma przyciski „Zwiń wszystkie”
@@ -494,7 +524,7 @@ w podpisie p zera przestrzennego. Maska w tle liczy się na pauzie (ok. 1 s na G
 (etykieta, λ, osie).
 
 **Stereo 3D (SBS) dla monitorów 3D, np. Samsung Odyssey 3D (2026-10-22).** Pole „Stereo 3D (SBS)” nad sekcjami lewego panelu zakładki
-laserów przełącza wszystkie widoki OpenGL (`WidokGL.ustaw_stereo`) między zwykłym obrazem a half side-by-side: scena jest rysowana
+laserów przełącza wszystkie widoki OpenGL (`GLView.ustaw_stereo`) między zwykłym obrazem a half side-by-side: scena jest rysowana
 dwa razy (lewe oko w lewej, prawe w prawej połowie okna, każde zgniecione do połowy szerokości, z nożyczkami), z kamerą przesuniętą o
 ±połowę odstępu w układzie widoku i asymetrycznym frustumem (zerowy rozrzut na odległości środka widoku). „Odstęp” to ułamek tej
 odległości (domyślnie 0,035), „zamień oczy” odwraca głębię. Okno z widokiem rozwiń na cały ekran monitora 3D (⛶ albo F11). Napisy
