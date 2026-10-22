@@ -62,12 +62,65 @@ def przelacz_dok(d):
     d.raise_(); d.activateWindow()
 
 
+# Pełny ekran a nakładki (np. konwersja SBS → 3D w Odyssey 3D Hub): okno OpenGL bez ramki dokładnie na cały monitor sterownik
+# Windows bierze za pełny ekran na wyłączność (jak gra) i nic nie da się położyć nad nim, także okna zawsze-na-wierzchu innych
+# programów (YouTube w przeglądarce działa, bo przeglądarka składa obraz przez DWM). Dlatego domyślnie okienko nie przechodzi
+# w stan pełnego ekranu, tylko staje się oknem bez ramki o 2 px większym od ekranu (wystaje krawędzią, przy której nie ma
+# innego monitora; 1 px przy skalowaniu 150 % Qt zaokrągla do rozmiaru ekranu i sam przełącza okno w pełny ekran). Windows
+# dalej chowa pasek zadań, ale okno nie pokrywa się z monitorem co do piksela, więc zostaje zwykłym oknem składanym przez DWM
+# (SHQueryUserNotificationState: 2 = zwykły pełny ekran zamiast 3 = Direct3D na wyłączność). Ramka WS_BORDER, czyli Qt-owe
+# setHasBorderInFullScreen, w oknie bez ramki nie zmienia obszaru klienta, więc tu nie pomaga.
+# PELNY_DLA_NAKLADEK = False: klasyczny pełny ekran (showFullScreen).
+PELNY_DLA_NAKLADEK = True
+
+WYSTAJE = 2                                                       # o tyle pikseli logicznych okno wystaje poza ekran
+_KRAWEDZIE = ((0, 0, 0, WYSTAJE), (0, -WYSTAJE, 0, 0), (0, 0, WYSTAJE, 0), (-WYSTAJE, 0, 0, 0))   # dół, góra, prawa, lewa
+
+
+def krawedz_dla_nakladek(e):
+    """Krawędź ekranu e, przy której okno „pełny ekran dla nakładek” wystaje o WYSTAJE px: pierwsza (dół, góra, prawa, lewa),
+    za którą nie ma innego monitora; gdy wszystkie z kimś sąsiadują, dół. Najpierw dół i góra: obraz SBS nie przesuwa się
+    w poziomie, więc połówki oczu zostają na swoich miejscach. Zwraca przesunięcia rogów (x0, y0, x1, y1)."""
+    g = e.geometry(); n = WYSTAJE
+    inne = [s.geometry() for s in QGuiApplication.screens() if s is not e]
+    pasy = (QRect(g.left(), g.bottom() + 1, g.width(), n), QRect(g.left(), g.top() - n, g.width(), n),
+            QRect(g.right() + 1, g.top(), n, g.height()), QRect(g.left() - n, g.top(), n, g.height()))
+    for pas, k in zip(pasy, _KRAWEDZIE):
+        if not any(pas.intersects(x) for x in inne):
+            return k
+    return _KRAWEDZIE[0]
+
+
+def _pilnuj_nakladek(d):
+    """Okno „pełny ekran dla nakładek”, które Qt przełączył w stan pełnego ekranu (rozmiar równy ekranowi): z powrotem większe."""
+    if getattr(d, '_okna_pelny', None) is not None and PELNY_DLA_NAKLADEK and d.isFullScreen():
+        d.setWindowState(Qt.WindowState.WindowNoState)
+        d.setGeometry(d._okna_cel)
+
+
+def w_pelnym_ekranie(d):
+    """Czy okienko-dok jest w pełnym ekranie (w którymkolwiek trybie)."""
+    return d.isFullScreen() or getattr(d, '_okna_pelny', None) is not None
+
+
+def ustaw_pelny_dla_nakladek(wlacz):
+    """Przełącza tryb pełnego ekranu (dla nakładek albo klasyczny); okienka, które już są w pełnym ekranie, wchodzą w nowy tryb."""
+    global PELNY_DLA_NAKLADEK
+    if PELNY_DLA_NAKLADEK == bool(wlacz):
+        return
+    PELNY_DLA_NAKLADEK = bool(wlacz)
+    for w in QApplication.topLevelWidgets():
+        if isinstance(w, QDockWidget) and w_pelnym_ekranie(w):
+            _pelny_dok(w); _pelny_dok(w)
+
+
 def _pelny_dok(d):
-    """Okienko-dok w prawdziwym trybie pełnoekranowym (bez ramki i paska zadań) na ekranie, na którym leży; drugi raz wraca.
-    Wymagane m.in. do stereo SBS na monitorze 3D. Esc też wychodzi z pełnego ekranu."""
-    if d.isFullScreen():
+    """Okienko-dok na cały ekran, na którym leży (bez ramki i paska zadań); drugi raz wraca. Wymagane m.in. do stereo SBS
+    na monitorze 3D. Esc też wychodzi z pełnego ekranu. Tryb: PELNY_DLA_NAKLADEK (opis wyżej)."""
+    if w_pelnym_ekranie(d):
         m = getattr(d, '_okna_pelny', None)
-        d.showNormal()
+        if d.isFullScreen():
+            d.showNormal()
         pasek = d.titleBarWidget()
         if pasek is not None:
             pasek.show()
@@ -83,16 +136,23 @@ def _pelny_dok(d):
     if not d.isFloating():
         d.setFloating(True)
     d.show()
-    d.setGeometry(e.geometry())
     pasek = d.titleBarWidget()
     if pasek is not None:
         pasek.hide()
-    d.showFullScreen()
+    if PELNY_DLA_NAKLADEK:
+        d._okna_cel = e.geometry().adjusted(*krawedz_dla_nakladek(e))
+        d.setGeometry(d._okna_cel)
+        from PyQt6.QtCore import QTimer
+        for ms in (100, 500):                                        # Qt potrafi sam przełączyć okno na cały ekran: wtedy wraca
+            QTimer.singleShot(ms, lambda d=d: _pilnuj_nakladek(d))
+    else:
+        d.setGeometry(e.geometry())
+        d.showFullScreen()
     d.raise_(); d.activateWindow()
     if not hasattr(d, '_okna_esc'):
         d._okna_esc = QShortcut(QKeySequence(Qt.Key.Key_Escape), d)
         d._okna_esc.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        d._okna_esc.activated.connect(lambda d=d: _pelny_dok(d) if d.isFullScreen() else None)
+        d._okna_esc.activated.connect(lambda d=d: _pelny_dok(d) if w_pelnym_ekranie(d) else None)
 
 
 def przelacz(w):

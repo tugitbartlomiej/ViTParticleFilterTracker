@@ -135,6 +135,33 @@ class TestOknoMenu(BazaOkna):
                 skroty[nazwa].trigger(); gui.przetworz(5)
             self.assertTrue(dok.isVisible(), f'{nazwa} nie pokazał doku (okno aktywne: {aktywne})')
 
+    def test_05_pelny_ekran_pozwala_nakladkom(self):
+        """Pełny ekran okienka (🖵 / F11) dla nakładek (Odyssey 3D Hub): okno bez stanu pełnego ekranu, pokrywa cały ekran i wystaje
+        o WYSTAJE px, więc nie pokrywa się z monitorem co do piksela; pole w sekcji Stereo przełącza na klasyczny pełny ekran także
+        w trakcie; drugie przełączenie wraca do układu."""
+        from laser_app.ui import dock_windows as dw
+        z = self.z; d = z.doki['p']; d.show(); d.raise_(); gui.przetworz(3)
+        self.assertTrue(z.ch_pelny_nakladki.isChecked())
+        try:
+            dw._pelny_dok(d); gui.przetworz(8)
+            e = dw.ekran(d).geometry(); g = d.frameGeometry()
+            self.assertTrue(dw.w_pelnym_ekranie(d)); self.assertFalse(d.isFullScreen())
+            self.assertTrue(g.contains(e), (g, e))
+            self.assertEqual((g.width() - e.width()) + (g.height() - e.height()), dw.WYSTAJE, (g, e))   # wystaje jedną krawędzią
+            gui.przetworz(40)                                           # Qt nie przełącza go po chwili w stan pełnego ekranu
+            self.assertFalse(d.isFullScreen()); self.assertEqual(d.frameGeometry(), g)
+            z.ch_pelny_nakladki.setChecked(False); gui.przetworz(8)
+            self.assertTrue(d.isFullScreen())                           # klasyczny pełny ekran
+            z.ch_pelny_nakladki.setChecked(True); gui.przetworz(8)
+            self.assertTrue(dw.w_pelnym_ekranie(d)); self.assertFalse(d.isFullScreen())
+        finally:
+            z.ch_pelny_nakladki.setChecked(True)
+            if dw.w_pelnym_ekranie(d):
+                dw._pelny_dok(d)
+            gui.przetworz(5)
+        self.assertFalse(dw.w_pelnym_ekranie(d))
+        self.assertFalse(d.isFloating())
+
 
 # ====================================================================== 2. panel parametrów
 class TestPanel(BazaOkna):

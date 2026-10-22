@@ -239,6 +239,18 @@ ujemne), tylko N najsilniejszych (próg z |z| N-tego lasera, `NetworkPassageGPU.
 przesunięcia w podkroku. Tryb sił uwagi (`cb_sily`) jest wspólny ze sferą w trybie podkroków; pozostałe przełączniki
 dotyczą tylko okienka P.
 
+## Pełny ekran i Odyssey 3D Hub (konwersja SBS → 3D)
+
+Okno OpenGL bez ramki dokładnie na cały monitor sterownik Windows bierze za pełny ekran na wyłączność (SHQueryUserNotificationState
+= 3, Direct3D full screen): nic nie położy się nad nim, także Odyssey 3D Hub, który musi zakryć obraz SBS, żeby pokazać go w 3D
+(YouTube w przeglądarce działa, bo przeglądarka składa obraz przez DWM). Pełny ekran okienka (🖵, F11) jest więc domyślnie oknem
+bez ramki o 2 px większym od ekranu (`dock_windows.WYSTAJE`), wystającym poza dolną albo górną krawędź bez sąsiedniego monitora
+(poziomo obraz SBS się nie przesuwa): pasek zadań dalej znika, a Windows widzi zwykły pełny ekran (stan 2). 1 px nie wystarcza:
+przy skalowaniu 150 % Qt zaokrągla go do rozmiaru ekranu i sam przełącza okno w stan pełnego ekranu (`_pilnuj_nakladek` to
+cofa). Ramka WS_BORDER (Qt-owe setHasBorderInFullScreen) w oknie bez ramki nie zmienia obszaru klienta, więc nie pomaga.
+Sekcja Stereo 3D: pole „pełny ekran pozwala nakładkom” (wyłączone = klasyczny `showFullScreen`). Próba:
+`.sessions/Session_2026-10-22_172605/tools/proba_pelnego_ekranu.py 0|1`.
+
 ## R12 kNN 3D: bez skoków
 
 R12 liczył PCA3 od nowa w każdym checkpoincie (znaki i kolejność osi przeskakiwały) i brał najbliższy checkpoint. Teraz
