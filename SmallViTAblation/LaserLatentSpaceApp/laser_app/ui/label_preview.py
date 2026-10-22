@@ -5,7 +5,7 @@ Porównanie trybów („dotknięte”, „≥ 50 % jak dawniej”, własny próg
 from __future__ import annotations
 
 import numpy as np
-from PyQt6.QtCore import QRectF, QSize, Qt, pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QRectF, QSize, Qt
 from PyQt6.QtGui import QColor, QImage, QPainter, QPen
 from PyQt6.QtWidgets import QSizePolicy, QToolTip, QWidget
 

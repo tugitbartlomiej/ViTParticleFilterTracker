@@ -16,11 +16,11 @@ Wszystkie okienka pokazują tę samą chwilę osi czasu (suwak, odtwarzanie, kli
 """
 from __future__ import annotations
 
+import numpy as np
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow,
                              QMenu, QPushButton, QToolButton, QVBoxLayout, QWidget)
-import numpy as np
 
 from laser_app.compute import history as hist
 from laser_app.gpu import trap_map_gl
@@ -29,24 +29,23 @@ from laser_app.gpu.image_maps_gl import ImageMaps
 from laser_app.gpu.schematic_gl import SchematicGPU
 from laser_app.gpu.sphere_gl import ReflectorSphere
 from laser_app.gpu.valley_gl import ValleyGPU
-from laser_app.lasers_tab.shared import EP, pl, TLO
-from laser_app.lasers_tab.widgets import ABSlider, View2D
-from laser_app.lasers_tab.workers import MechanicsWorker, SubstepFieldWorker, ValleyWorker
-from laser_app.ui import projections_view
-from laser_app.ui.dock_windows import bez_ukladu
-from laser_app.ui.gl_view import GLView
-from laser_app.ui.layout_widgets import NarrowCombo
-from laser_app.ui.widgets import _spin, _staly_uklad, CollapsibleSection, lista_liczb
 from laser_app.lasers_tab.data_view import DataMixin
 from laser_app.lasers_tab.image_set_view import ImageSetMixin
 from laser_app.lasers_tab.labels_view import LabelsMixin
 from laser_app.lasers_tab.layout import LayoutMixin
 from laser_app.lasers_tab.mechanics_view import MechanicsMixin
 from laser_app.lasers_tab.playback import PlaybackMixin
+from laser_app.lasers_tab.shared import EP, pl, TLO
 from laser_app.lasers_tab.substeps_view import SubstepsMixin
 from laser_app.lasers_tab.trap_map_view import TrapMapMixin
 from laser_app.lasers_tab.trap_view import TrapMixin
 from laser_app.lasers_tab.valley_view import ValleyMixin
+from laser_app.lasers_tab.widgets import ABSlider, View2D
+from laser_app.lasers_tab.workers import MechanicsWorker, SubstepFieldWorker, ValleyWorker
+from laser_app.ui import projections_view
+from laser_app.ui.dock_windows import bez_ukladu
+from laser_app.ui.gl_view import GLView
+from laser_app.ui.widgets import CollapsibleSection, lista_liczb, NarrowCombo, _spin, _staly_uklad
 
 
 class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixin, TrapMixin, TrapMapMixin, ValleyMixin, MechanicsMixin, PlaybackMixin, QWidget):

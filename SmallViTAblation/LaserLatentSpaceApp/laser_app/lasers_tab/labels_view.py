@@ -1,13 +1,12 @@
 """Etykieta narzędzia (tryby, podgląd łat), obszary oka, wybór cząsteczek i kolory cząsteczek."""
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QCheckBox, QFormLayout, QLabel, QMenu, QToolButton
 import numpy as np
+from PyQt6.QtWidgets import QCheckBox, QFormLayout, QLabel, QMenu, QToolButton
 
 from laser_app.compute import history as hist
 from laser_app.lasers_tab.workers import plaski_podkrokow
-from laser_app.ui.layout_widgets import NarrowCombo
-from laser_app.ui.widgets import _spin, CollapsibleSection
+from laser_app.ui.widgets import CollapsibleSection, NarrowCombo, _spin
 
 
 class LabelsMixin:
@@ -46,7 +45,7 @@ class LabelsMixin:
                                 'Rzuty R1–R12 używają etykiety z chwili liczenia stanów 192D (R9 ma własny próg).')
         self.sp_etyk_prog = _spin(0.01, 1.0, 0.5, 0.05, 2); self.sp_etyk_prog.setToolTip('Próg pokrycia patcha dla trybu „pokrycie ≥ próg”.')
         self.sp_oko_prog = _spin(0.05, 1.0, 0.5, 0.05, 2)
-        self.sp_oko_prog.setToolTip('Patch należy do źrenicy / rogówki, gdy ich obrys pokrywa co najmniej tyle patcha (jak eye_regions.py).\n'
+        self.sp_oko_prog.setToolTip('Patch należy do źrenicy / rogówki, gdy ich obrys pokrywa co najmniej tyle patcha.\n'
                                     'Pierwszeństwo: narzędzie > źrenica > rogówka > tło. ViT nie był uczony na obszarach oka.')
         self.lb_etyk = QLabel('—'); self.lb_etyk.setWordWrap(True)
         from laser_app.ui.label_preview import LabelPreview

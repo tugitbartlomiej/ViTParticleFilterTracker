@@ -2,7 +2,7 @@
 import numpy as np
 from OpenGL import GL
 
-from laser_app.gpu.base import _CZAS, _GPUElement, _LUT, _program, NM, TOK
+from laser_app.gpu.base import _CZAS, _GPUElement, _LUT, NM, _program, TOK
 
 _SSBO_M = """
 layout(std430, binding = 0) readonly buffer BM { float M[]; };     // [K*NM*600] mapy

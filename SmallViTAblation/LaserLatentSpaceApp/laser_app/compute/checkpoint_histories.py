@@ -10,7 +10,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from laser_app.paths import PROJECT_ROOT as ROOT  # noqa: E402
+from laser_app.paths import PROJECT_ROOT as ROOT
 
 
 @dataclass(frozen=True)
@@ -67,18 +67,3 @@ HISTORIE = (
 )
 
 
-# Pojedyncze modele z assets zgodne z MalyViT (600 × 768, wczytanie strict=True): (klucz, nazwa, plik, krok, opis).
-MODELE = (
-    ('k1000_sd', 'K1000: model warunkujący SD (krok 1000)', ROOT / 'assets/MalyViT_K1000_SD_conditioning/MODEL_VIT_K1000.pt',
-     1000, 'Detector po 1000 aktualizacjach na bazie 1500 klatek; jego latenty warunkowały Stable Diffusion.'),
-    ('k8000_s47', 'K8000: ziarno 47, dobór losowy (krok 8000, mAP 0,611)',
-     ROOT / 'assets/MalyViT_K8000_s47_losowe/MALY_VIT_K8000_s47_losowe.pth', 8000,
-     'Pętla 43, bieg petla43b_s47, wariant losowe; zapisany bez numeru kroku (sam state_dict).'),
-)
-
-
-def historia(klucz):
-    for h in HISTORIE:
-        if h.klucz == klucz:
-            return h
-    raise KeyError(klucz)

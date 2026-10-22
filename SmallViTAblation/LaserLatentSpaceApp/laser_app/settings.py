@@ -15,7 +15,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from PyQt6.QtWidgets import QAbstractSpinBox, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QLineEdit, QWidget
+from PyQt6.QtWidgets import QAbstractSpinBox, QCheckBox, QComboBox, QDoubleSpinBox, QLineEdit, QSpinBox, QWidget
 
 from laser_app.paths import OLD_SETTINGS_FILE, SETTINGS_FILE
 

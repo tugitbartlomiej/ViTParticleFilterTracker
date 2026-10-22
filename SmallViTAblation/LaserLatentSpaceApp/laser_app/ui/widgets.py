@@ -1,9 +1,36 @@
-"""Proste widżety wspólne dla zakładki i rzutów: zwijana sekcja panelu (CollapsibleSection), pole liczbowe (_spin),
-lista liczb z tekstu (lista_liczb), napis o stałym układzie (_staly_uklad)."""
+"""Proste widżety wspólne dla zakładki i rzutów: zwijana sekcja panelu (CollapsibleSection), wąska lista wyboru (NarrowCombo),
+pole liczbowe (_spin), lista liczb z tekstu (lista_liczb), napis o stałym układzie (_staly_uklad)."""
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, Qt
-from PyQt6.QtWidgets import QDoubleSpinBox, QGroupBox, QSizePolicy, QSpinBox, QToolButton, QWidget
+from PyQt6.QtWidgets import (QComboBox, QDoubleSpinBox, QGroupBox, QSizePolicy, QSpinBox, QStyle, QStyleOptionComboBox,
+                             QStylePainter, QToolButton, QWidget)
+
+
+class NarrowCombo(QComboBox):
+    """Pole wyboru o stałej szerokości około `znaki` znaków: za długi wybrany tekst kończy się „…”, a rozwinięta
+    lista ma pełną szerokość. Długie opisy pozycji nie rozpychają wąskich kolumn (pełny opis w podpowiedzi)."""
+
+    def __init__(self, znaki=14):
+        super().__init__()
+        self.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.setMinimumContentsLength(znaki)
+
+    def showPopup(self):
+        fn = getattr(self, 'przed_otwarciem', None)                # lista budowana na bieżąco (np. pliki na dysku)
+        if fn is not None:
+            fn()
+        fm = self.view().fontMetrics()
+        self.view().setMinimumWidth(max([fm.horizontalAdvance(self.itemText(i)) for i in range(self.count())] + [0]) + 36)
+        super().showPopup()
+
+    def paintEvent(self, _):
+        p = QStylePainter(self)
+        opt = QStyleOptionComboBox(); self.initStyleOption(opt)
+        p.drawComplexControl(QStyle.ComplexControl.CC_ComboBox, opt)
+        r = self.style().subControlRect(QStyle.ComplexControl.CC_ComboBox, opt, QStyle.SubControl.SC_ComboBoxEditField, self)
+        opt.currentText = self.fontMetrics().elidedText(opt.currentText, Qt.TextElideMode.ElideRight, max(r.width() - 4, 10))
+        p.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, opt)
 
 
 class CollapsibleSection(QGroupBox):

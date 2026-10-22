@@ -7,21 +7,9 @@
   nie przeliczają się po każdej cyfrze; strzałki i kółko zmieniają wartość od razu.
 - Przytrzymana strzałka pola przyspiesza (setAccelerated).
 """
-import importlib
 
 from PyQt6.QtCore import QEvent, QObject, Qt
 from PyQt6.QtWidgets import QAbstractScrollArea, QAbstractSlider, QAbstractSpinBox, QComboBox, QScrollBar
-
-
-class LazyModule:
-    """Moduł importowany dopiero przy pierwszym użyciu atrybutu: `D = LazyModule('detekcja')`. Ciężkie biblioteki
-    (timm i torchvision w `detekcja`) nie spowalniają startu, dopóki nikt nie wykrywa narzędzia."""
-
-    def __init__(self, nazwa):
-        self.__dict__['_nazwa'] = nazwa
-
-    def __getattr__(self, atrybut):
-        return getattr(importlib.import_module(self._nazwa), atrybut)
 
 
 class _WheelOnlyWithFocus(QObject):

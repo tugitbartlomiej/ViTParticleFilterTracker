@@ -1,11 +1,10 @@
 """Okienko 12: dolina pewności i IoU wybranej cząsteczki (valley) i ta sama dolina na sferze."""
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QCheckBox, QFormLayout, QLabel
 import numpy as np
+from PyQt6.QtWidgets import QCheckBox, QFormLayout, QLabel
 
-from laser_app.ui.layout_widgets import NarrowCombo
-from laser_app.ui.widgets import _spin, CollapsibleSection
+from laser_app.ui.widgets import CollapsibleSection, NarrowCombo, _spin
 
 
 class ValleyMixin:

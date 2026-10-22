@@ -9,14 +9,17 @@ i zapisywany w cache_uczenia/etykiety); przy kilku kandydatach rozstrzyga podobi
 """
 from __future__ import annotations
 
+import csv
+import io
 import json
+import re
+import zipfile
 from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
 
-from laser_app.compute import video
-from laser_app.paths import CACHE_DIR
+from laser_app.paths import CACHE_DIR, DATASET_ROOT
 
 H, W, KOMORKA = 20, 30, 16
 SKALA = (W * KOMORKA / 720, H * KOMORKA / 480)            # natywne 720 × 480 → wejście 480 × 320
@@ -29,15 +32,55 @@ TRYBY = (('dotkniete', 'obrys: każda łata dotknięta obrysem (> 0 %)'),
          ('ramka', 'ramka GT: środek łaty w ramce'))
 KROTKO = {'dotkniete': 'dotknięte', 'pokrycie50': '≥ 50 %', 'pokrycie': 'własny ≥ {prog:.0%}', 'srodek': 'środek', 'ramka': 'ramka'}
 CACHE = CACHE_DIR / 'etykiety'
+ADNOTACJE = DATASET_ROOT / 'Cataract-LMM' / '3_Object_Tracking' / 'annotations'   # <film>.zip z annotation.csv
+
+
+def _json(t):
+    t = (t or '').strip()
+    if not t or t in ('[]', 'null'):
+        return None
+    return json.loads(t)
+
+
+def etykiety(film):
+    """frame_number → surowy wiersz annotation.csv filmu (napisy; ramki [x, y, w, h], wielokąty `<narzędzie>_seg`, cornea_seg,
+    pupil_seg w pikselach natywnej klatki 720 × 480; klatka MP4 i odpowiada frame_number i + 1)."""
+    p = ADNOTACJE / f'{film}.zip'
+    if not p.exists():
+        return {}
+    with zipfile.ZipFile(p) as z:
+        nazwa = next(n for n in z.namelist() if n.endswith('annotation.csv'))
+        tekst = z.read(nazwa).decode('utf-8-sig')
+    csv.field_size_limit(1 << 25)
+    return {int(w['frame_number']): w for w in csv.DictReader(io.StringIO(tekst))}
+
+
+def etykieta_dla_zdjecia(sciezka):
+    """Ramka cystotomu (xyxy w pikselach natywnej klatki) z annotation.csv filmu, jeśli nazwa pliku wskazuje film i klatkę
+    (TR_0001_S1_P03_klatka_000870.jpg albo TR_0001_S1_P03_000870.jpg). Zwraca (ramka albo None, opis)."""
+    m = re.search(r'(TR_\d+_S\d+_P\d+)\D*?(\d+)\.(?:jpg|jpeg|png)$', Path(sciezka).name, re.I)
+    if not m:
+        return None, 'brak etykiety: nazwa pliku nie wskazuje filmu i klatki'
+    film, klatka = m.group(1), int(m.group(2))
+    if not (ADNOTACJE / f'{film}.zip').exists():
+        return None, f'brak etykiety: nie ma {film}.zip'
+    w = etykiety(film).get(klatka)
+    if w is None:
+        return None, f'brak klatki {klatka} w {film}'
+    b = _json(w.get('cystotome_bbox'))
+    if b:
+        x, y, bw, bh = map(float, b)
+        return [x, y, x + bw, y + bh], f'etykieta: {film} kl. {klatka} (cystotom)'
+    return None, f'{film} kl. {klatka}: na tej klatce nie oznaczono narzędzia'
 
 
 def kategorie(wiersz):
     """Narzędzia oznaczone w wierszu annotation.csv (z niepustą ramką), bez rogówki i źrenicy."""
-    return [k[:-len('_bbox')] for k in wiersz if k.endswith('_bbox') and k[:-len('_bbox')] not in POMIJANE and video._json(wiersz[k])]
+    return [k[:-len('_bbox')] for k in wiersz if k.endswith('_bbox') and k[:-len('_bbox')] not in POMIJANE and _json(wiersz[k])]
 
 
 def _wielokaty(wiersz, kat):
-    v = video._json(wiersz.get(kat + '_seg'))
+    v = _json(wiersz.get(kat + '_seg'))
     if not v:
         return []
     if isinstance(v[0], (int, float)):
@@ -67,7 +110,7 @@ def srodek_z_wielokatow(wielokaty):
 
 @lru_cache(maxsize=8)
 def _etykiety_filmu(film):
-    return video.etykiety(film)
+    return etykiety(film)
 
 
 def etykieta(film, klatka):
@@ -82,7 +125,7 @@ def etykieta(film, klatka):
         return None
     ramki = {}
     for k in kat:
-        b = video._json(w[k + '_bbox'])
+        b = _json(w[k + '_bbox'])
         ramki[k] = [b[0] * SKALA[0], b[1] * SKALA[1], (b[0] + b[2]) * SKALA[0], (b[1] + b[3]) * SKALA[1]]
     u = udzial_z_wielokatow(wiel)
     oko = dict(rogowka=udzial_z_wielokatow(_wielokaty(w, 'cornea')), zrenica=udzial_z_wielokatow(_wielokaty(w, 'pupil')))
@@ -122,11 +165,11 @@ def _indeks():
         d = np.load(p, allow_pickle=False)
         return d['film'], d['klatka'], d['ramka']
     filmy, klatki, ramki = [], [], []
-    for z in sorted(video.ADNOTACJE.glob('*.zip')):
+    for z in sorted(ADNOTACJE.glob('*.zip')):
         f = z.stem
-        for kl, w in video.etykiety(f).items():
+        for kl, w in etykiety(f).items():
             for k in kategorie(w):
-                b = video._json(w[k + '_bbox'])
+                b = _json(w[k + '_bbox'])
                 filmy.append(f); klatki.append(kl)
                 ramki.append([b[0] * SKALA[0], b[1] * SKALA[1], (b[0] + b[2]) * SKALA[0], (b[1] + b[3]) * SKALA[1]])
     CACHE.mkdir(parents=True, exist_ok=True)
@@ -145,7 +188,7 @@ def znajdz(gt, rgb=None, tol=0.6):
     import zipfile, cv2
     best = None
     for film, kl in kand:
-        with zipfile.ZipFile(video.ADNOTACJE / f'{film}.zip') as z:
+        with zipfile.ZipFile(ADNOTACJE / f'{film}.zip') as z:
             raw = z.read(f'{film}/{film}_{kl:06d}.jpg')
         im = cv2.cvtColor(cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
         im = cv2.resize(im, (W * KOMORKA, H * KOMORKA), interpolation=cv2.INTER_AREA).astype(np.float32)
@@ -161,7 +204,7 @@ def _zapisz(p, e):
 
 
 def dla_historii(h):
-    """Etykieta z obrysu dla historii lasery_dane (po ramce GT i obrazie); wynik (film, klatka, udzial, kategorie, srodek, oko)
+    """Etykieta z obrysu dla historii (history.History; po ramce GT i obrazie); wynik (film, klatka, udzial, kategorie, srodek, oko)
     zapisywany w h.katalog/etykieta_obrys.npz. Stary plik bez środków i oka jest uzupełniany z annotation.csv. None, gdy brak."""
     p = Path(h.katalog) / 'etykieta_obrys.npz'
     if p.exists():

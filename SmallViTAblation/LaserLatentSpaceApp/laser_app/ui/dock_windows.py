@@ -10,7 +10,8 @@
 """
 from PyQt6.QtCore import QRect, QSize, Qt
 from PyQt6.QtGui import QCursor, QGuiApplication, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QApplication, QDockWidget, QFrame, QHBoxLayout, QLabel, QScrollArea, QSizePolicy, QToolButton, QWidget
+from PyQt6.QtWidgets import (QApplication, QDockWidget, QFrame, QHBoxLayout, QLabel, QScrollArea, QSizePolicy, QToolButton,
+                             QWidget)
 
 
 def ekran(w):

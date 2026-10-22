@@ -1,9 +1,9 @@
 """Okienka-doki zakładki: tworzenie, widoczność (liczymy tylko to, co widać), układy domyślne i gotowe, sloty, zapis układu w ustawieniach, panel parametrów i okienka ustawień pod prawym klikiem."""
 from __future__ import annotations
 
+import pyqtgraph as pg
 from PyQt6.QtCore import QByteArray, Qt, QTimer
 from PyQt6.QtWidgets import QDockWidget, QLabel, QVBoxLayout, QWidget
-import pyqtgraph as pg
 
 from laser_app.gpu.planar_gl import PlanarMotion
 from laser_app.lasers_tab.widgets import View2D

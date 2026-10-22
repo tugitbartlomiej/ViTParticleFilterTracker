@@ -1,4 +1,4 @@
-"""Testy modułów aplikacji bez GPU i bez pokazywania okien: common.izopowierzchnia, lasery_dane (sciezka_lokalna, zbior_uczacy,
+"""Testy modułów aplikacji bez GPU i bez pokazywania okien: common.izopowierzchnia, history (sciezka_lokalna, zbior_uczacy,
 Historia), tool_labels.maski, tab.lista_liczb, ustawienia, dock_windows.bez_ukladu, settings_panel.ParameterPanel,
 gpu.base._GPUElement.wyslij_porcjami. Widżety Qt tylko na QApplication z platformą offscreen (nic się nie wyświetla).
 
@@ -24,6 +24,7 @@ os.environ.setdefault('EDYTOR_BEZ_USTAWIEN', '1')
 os.environ.setdefault('EDYTOR_BEZ_AUTOSTARTU', '1')
 
 from laser_app.compute import tool_labels  # noqa: E402
+from laser_app import paths  # noqa: E402
 from laser_app.compute import history as hist  # noqa: E402
 from laser_app.compute import common  # noqa: E402
 
@@ -176,7 +177,7 @@ class TestIzopowierzchnia(unittest.TestCase):
 class TestSciezkaLokalna(unittest.TestCase):
     def test_istniejaca_sciezka_bez_zmian(self):
         """Ścieżka, która istnieje, wraca bez zmian (nawet z 'SmallViTAblation' w częściach)."""
-        for p in (hist.APP, hist.ROOT, hist.ROOT / 'assets', Path(tempfile.gettempdir())):
+        for p in (paths.APP_DIR, hist.ROOT, hist.ROOT / 'assets', Path(tempfile.gettempdir())):
             self.assertEqual(hist.sciezka_lokalna(p), Path(p))
             self.assertEqual(hist.sciezka_lokalna(str(p)), Path(p))
 
@@ -975,22 +976,22 @@ class TestWyslijPorcjami(unittest.TestCase):
     def setUpClass(cls):
         _qapp()
         try:
-            from laser_app.gpu import base as lasers_gpu
+            from laser_app.gpu import base as gpu_base
         except ImportError as e:                                       # noqa: BLE001 (brak PyOpenGL)
-            raise unittest.SkipTest(f'brak lasery_gpu: {e}')
-        cls.LG = lasers_gpu
+            raise unittest.SkipTest(f'brak gpu.base: {e}')
+        cls.LG = gpu_base
 
     def setUp(self):
         self._watki_przed = set(threading.enumerate())
         # _GPUElement dziedziczy po QObject: instancja bez __init__ nie pozwala nawet na getattr (sip), więc metody (zwykłe funkcje)
         # wołamy na zastępniku z samymi polami, których dotykają (`__dict__` na _duze oraz update)
-        lasers_gpu = self.LG
+        gpu_base = self.LG
 
         class Zastepca:
             def update(self):
                 pass
-        Zastepca.wyslij_porcjami = lasers_gpu._GPUElement.wyslij_porcjami
-        Zastepca.duzy_gotowy = lasers_gpu._GPUElement.duzy_gotowy
+        Zastepca.wyslij_porcjami = gpu_base._GPUElement.wyslij_porcjami
+        Zastepca.duzy_gotowy = gpu_base._GPUElement.duzy_gotowy
         self.el = Zastepca()
 
     def _drenuj(self, st, timeout=10):

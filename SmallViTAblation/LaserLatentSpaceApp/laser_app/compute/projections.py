@@ -4,7 +4,7 @@ Zasada: wszystko liczymy w pełnych 192 wymiarach, a w 3D tylko rysujemy. Każdy
 wierności), obok zera dla losowej podprzestrzeni 3D: 3/192 = 1,6 % energii, √(3/192) = 12,5 % długości.
 
 Koloid j w checkpoincie t: stan x̃_tj tuż przed MLP bloku 6, względem środka chmury tego zdjęcia, x_tj = x̃_tj − średnia_j x̃_tj
-(jak h.pos w lasery_dane, ale bez rzutu). Siła: przesunięcie przez MLP względem średniej po tokenach,
+(jak h.pos w history, ale bez rzutu). Siła: przesunięcie przez MLP względem średniej po tokenach,
 F_tj = Σ_c (z_tjc − z̄_tc) v_tc, czyli dokładnie suma 768 wiązek ze sfery (bias fc2 i część wspólna wszystkim tokenom znikają).
 Rzut liniowy zachowuje sumy: rzut F = suma rzutów wiązek, a rzut toru = tor rzutów (interpolacja między checkpointami też).
 
@@ -52,8 +52,6 @@ BAZY = ('P3', 'A', 'A_t', 'S', 'W', 'D')
 FANO = ((0, 1, 2), (0, 3, 4), (0, 5, 6), (1, 3, 5), (1, 4, 6), (2, 3, 6), (2, 4, 5))
 NAZWY_F7 = ('Δ narzędzie–tło', 'reszta chmury 1', 'reszta chmury 2', 'siły 1', 'siły 2', 'wiązki 1', 'wiązki 2')
 N_PERM = 200                                           # permutacje etykiet narzędzie/tło: zero dla odległości klas
-
-
 
 
 # ------------------------------------------------------------------ algebra
@@ -382,7 +380,7 @@ def policz(h, postep=None, przerwij=None, urzadzenie='cuda'):
             wersja_h = int(json.loads((Path(h.katalog) / 'opis.json').read_text(encoding='utf-8')).get('wersja', 1))
         except Exception:                                                # noqa: BLE001
             wersja_h = hist.WERSJA
-        ref = np.asarray(X[-1] if wersja_h >= 2 else Fm[-1], np.float64)  # wersja 1 lasery_dane: h.pos = rzut sumy wiązek, nie stanu
+        ref = np.asarray(X[-1] if wersja_h >= 2 else Fm[-1], np.float64)  # wersja 1 history: h.pos = rzut sumy wiązek, nie stanu
         pos = np.asarray(h.pos[-1], np.float64)
         P3 *= np.sign(np.sign(((ref @ P3) * pos).sum(0)) + 0.5)          # znaki osi zgodne ze sferą (h.pos)
         zgodnosc = float(np.abs(ref @ P3 - pos).max() / max(np.abs(pos).max(), 1e-30))
@@ -801,38 +799,6 @@ def zero_separacji(P, n_narz, n=100, ziarno=0, k=10):
         m = np.zeros(len(P), bool); m[rng.permutation(len(P))[:n_narz]] = True
         out.append(miary_separacji(P, m, k))
     return {kk: float(np.percentile([o[kk] for o in out], 95)) for kk in out[0]}
-
-
-def zero_z_refitem(X, m, lam=0.1, osie=0, n=100, ziarno=0, k=10):
-    """Zero w stylu DiProPerm: dla n losowych etykiet (tyle samo tokenów „narzędzia”) oś jest dopasowywana OD NOWA (baza_L) na tych
-    etykietach, a miary liczone w tym samym zbiorze co dla prawdziwych etykiet. Uczciwe zero dla widoków dopasowanych do etykiet:
-    przy n < d dopasowanie szumu samo daje wysoką separację (spiętrzanie danych), czego zero ze stałymi osiami nie widzi."""
-    rng = np.random.default_rng(ziarno)
-    X = np.asarray(X, np.float64)
-    out = []
-    for _ in range(n):
-        mp = np.zeros(len(X), bool); mp[rng.permutation(len(X))[:int(np.sum(m))]] = True
-        B, _ = baza_L(X, mp, lam, osie)
-        out.append(miary_separacji(X @ B, mp, k))
-    return {kk: float(np.percentile([o[kk] for o in out], 95)) for kk in out[0]}
-
-
-def cv_blokowane(Xk, m, lam=0.1, osie=0, bloki=5, k=10):
-    """Walidacja krzyżowa blokowana po checkpointach: Xk (K, 600, 192) to pula kolejnych checkpointów, m (600,) etykiety. Pula jest
-    dzielona na `bloki` ciągłych bloków; oś dopasowana na pozostałych blokach jest oceniana na środkowym checkpoincie bloku
-    wyłączonego. Zwraca średnie miar na wyłączonych checkpointach i same miary. Uwaga: te same 600 tokenów występuje we wszystkich
-    checkpointach, więc to walidacja w czasie, nie po tokenach (tę robi leave-one-tool-token-out, osobno)."""
-    K = len(Xk)
-    bloki = int(min(max(bloki, 2), K))
-    gr = np.array_split(np.arange(K), bloki)
-    wyn = []
-    for g in gr:
-        uczace = np.setdiff1d(np.arange(K), g)
-        Xs = np.asarray(Xk[uczace], np.float64).reshape(-1, Xk.shape[-1])
-        B, _ = baza_L(Xs, np.tile(m, len(uczace)), lam, osie)
-        t = g[len(g) // 2]
-        wyn.append(miary_separacji(np.asarray(Xk[t], np.float64) @ B, m, k))
-    return {kk: float(np.mean([w[kk] for w in wyn])) for kk in wyn[0]}, wyn
 
 
 # ------------------------------------------------------------------ separacja na karcie (torch): wsadowe dopasowanie LDA i miary

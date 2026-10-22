@@ -1,14 +1,13 @@
 """Okienko 14: mapa pułapek wszystkich 600 cząsteczek (trap_map) i nakładka na sferze."""
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QCheckBox, QFormLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton
 import numpy as np
+from PyQt6.QtWidgets import QCheckBox, QFormLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton
 
 from laser_app.compute import trap_map
 from laser_app.gpu import trap_map_gl
 from laser_app.lasers_tab.workers import TrapMapWorker
-from laser_app.ui.layout_widgets import NarrowCombo
-from laser_app.ui.widgets import _spin, CollapsibleSection
+from laser_app.ui.widgets import CollapsibleSection, NarrowCombo, _spin
 
 
 class TrapMapMixin:

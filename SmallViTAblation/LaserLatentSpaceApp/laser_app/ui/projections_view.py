@@ -26,15 +26,14 @@ import traceback
 import numpy as np
 import pyqtgraph as pg
 import pyqtgraph.opengl as gl
-from PyQt6.QtCore import QRectF, Qt, QThread, pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QRectF, Qt, QThread
 from PyQt6.QtGui import QVector3D
-from PyQt6.QtWidgets import (QCheckBox, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton, QSizePolicy,
-                             QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import (QCheckBox, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton,
+                             QSizePolicy, QVBoxLayout, QWidget)
 
-from laser_app.compute import history as hist
-from laser_app.compute import projections
-from laser_app.ui.layout_widgets import NarrowCombo
+from laser_app.compute import history as hist, projections
 from laser_app.ui.gl_view import GLView
+from laser_app.ui.widgets import NarrowCombo
 
 TLO = '#03060a'
 S_EKR = 10.0                                         # promień RMS chmury na ekranie (jednostki sceny)

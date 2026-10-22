@@ -3,15 +3,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PyQt6.QtWidgets import QFileDialog, QFormLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton
 import numpy as np
 import pyqtgraph as pg
+from PyQt6.QtWidgets import QFileDialog, QFormLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton
 
 from laser_app.compute import history as hist
 from laser_app.lasers_tab.shared import EP, pl
 from laser_app.lasers_tab.workers import HistoryWorker
-from laser_app.ui.layout_widgets import NarrowCombo
-from laser_app.ui.widgets import _spin, CollapsibleSection
+from laser_app.paths import SAMPLE_IMAGES_DIR
+from laser_app.ui.widgets import CollapsibleSection, NarrowCombo, _spin
 
 
 class DataMixin:
@@ -32,7 +32,7 @@ class DataMixin:
         f.addRow('Od kroku', self.sp_od); f.addRow('Do kroku', self.sp_do); f.addRow('Co n-ty checkpoint', self.sp_co)
         self.cb_film = NarrowCombo()
         self.cb_film.setToolTip('Film zbioru uczącego biegu 35 000 (MANIFEST_35000: 117 filmów, 35 000 klatek z ramką narzędzia)\n'
-                                'albo pliki z app/zdjeciatestowe (większość z nich NIE była w zbiorze uczącym).')
+                                'albo pliki z sample_images (większość z nich NIE była w zbiorze uczącym).')
         self.cb_zdjecie = NarrowCombo(); b2 = QPushButton('Zdjęcie z pliku…'); b2.clicked.connect(self._plik_zdjecia)
         self.cb_zdjecie.setToolTip('Klatka wybranego filmu: obraz z archiwum zip (SHA-256 z manifestu), rozciągnięty do 480 × 320\n'
                                    'i ramka z manifestu, dokładnie jak w treningu. „nr” = wiersz manifestu (0–34 999).')
@@ -83,7 +83,7 @@ class DataMixin:
         self.cb_film.clear()
         for film, w in self._filmy.items():
             self.cb_film.addItem(f'{film} ({len(w)} klatek, nr {w[0]["nr"]}–{w[-1]["nr"]})', film)
-        self.cb_film.addItem('Pliki testowe (app/zdjeciatestowe, poza zbiorem uczącym)', '')
+        self.cb_film.addItem('Pliki testowe (sample_images, poza zbiorem uczącym)', '')
         self.cb_film.blockSignals(False)
         self._klatki_filmu()
 
@@ -97,14 +97,14 @@ class DataMixin:
         else:
             if hist.ZDJECIE_FILMU.exists():
                 self.cb_zdjecie.addItem('TRAIN 0 (zdjęcie filmów 2, 12 i 16)', str(hist.ZDJECIE_FILMU))
-            for p in sorted((hist.APP / 'zdjeciatestowe').glob('*.jpg')):
+            for p in sorted((SAMPLE_IMAGES_DIR).glob('*.jpg')):
                 ucz = hist.czy_w_zbiorze_uczacym(p)
                 self.cb_zdjecie.addItem(p.name + (f'  (w zbiorze uczącym, nr {ucz["nr"]})' if ucz else ''), str(p))
         self.cb_zdjecie.blockSignals(False)
         self._po_wyborze()
 
     def _plik_zdjecia(self):
-        p, _ = QFileDialog.getOpenFileName(self, 'Zdjęcie', str(hist.APP / 'zdjeciatestowe'), 'Obrazy (*.jpg *.jpeg *.png)')
+        p, _ = QFileDialog.getOpenFileName(self, 'Zdjęcie', str(SAMPLE_IMAGES_DIR), 'Obrazy (*.jpg *.jpeg *.png)')
         if p:
             self.cb_film.setCurrentIndex(self.cb_film.count() - 1)        # grupa plików
             self.cb_zdjecie.addItem(Path(p).name, p)

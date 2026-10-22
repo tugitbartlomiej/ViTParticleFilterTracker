@@ -13,7 +13,7 @@ from laser_app.paths import LOG_FILE as LOG, OUTPUT_LOG_FILE
 from PyQt6.QtCore import QCoreApplication, Qt
 from PyQt6.QtWidgets import QApplication, QLabel, QMessageBox
 
-KROKI = [('numpy', 'numpy'), ('pyqtgraph.opengl', 'OpenGL (pyqtgraph)'), ('laser_app.gpu.lasers_gpu', 'shadery GPU'),
+KROKI = [('numpy', 'numpy'), ('pyqtgraph.opengl', 'OpenGL (pyqtgraph)'), ('laser_app.gpu.sphere_gl', 'shadery GPU'),
          ('laser_app.lasers_tab.tab', 'okienka')]
 
 

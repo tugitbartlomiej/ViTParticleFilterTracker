@@ -21,9 +21,7 @@ from pathlib import Path
 
 import numpy as np
 
-from laser_app.compute import history as hist
-from laser_app.compute import substep_field
-from laser_app.compute import passage_store
+from laser_app.compute import history as hist, passage_store, substep_field
 
 KOLUMNY = ('krok', 'podkrok', 'blok', 'rodzaj', 'skok', 'r_kom', 'r_kom_skok', 'R2_lin', 'kappa1', 'kappa2', 'kappa3', 'dywergencja',
            'wir', 'wir_siodlo', 'zero_r_kom', 'zero_skok', 'stabilna', 'promien_IJ', 'zespolone', 'lam1', 'lam2', 'lam3',

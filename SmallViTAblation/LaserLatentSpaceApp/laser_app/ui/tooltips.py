@@ -7,7 +7,8 @@ Dobre, już istniejące dymki (dłuższe niż `PROG_ZDAWKOWY` znaków albo wielo
 Słowniczek: lasery = 768 neuronów MLP bloku 6 (reflektory na szklanej sferze), koloidy = 600 tokenów (patchy zdjęcia),
 pułapka optyczna = ognisko wiązek wszystkich laserów wokół jednego koloidu, skok = pchnięcie koloidu przez MLP bloku 6
 w jednym kroku uczenia, checkpoint = zapisany stan wag (oś czasu uczenia)."""
-from PyQt6.QtWidgets import (QAbstractSpinBox, QCheckBox, QComboBox, QFormLayout, QLabel, QLineEdit, QPushButton, QToolButton, QWidget)
+from PyQt6.QtWidgets import (QAbstractSpinBox, QCheckBox, QComboBox, QFormLayout, QLabel, QLineEdit, QPushButton,
+                             QToolButton, QWidget)
 
 PROG_ZDAWKOWY = 55          # dymek jednoliniowy do tylu znaków uchodzi za zdawkowy (zostaje zastąpiony opisem z DYMKI)
 ZNACZNIK = 'dymek_z_dymki'      # właściwość widżetu, któremu tooltips.zastosuj już ustawiło opis (powtórne wywołanie go nie rusza)

@@ -1,9 +1,9 @@
 """Widżety zakładki: widok 2D okienek 1–3 (View2D), schemat sieci (NetworkDiagram), suwak osi czasu z punktami A–B (ABSlider)."""
 from __future__ import annotations
 
+import numpy as np
 from PyQt6.QtCore import pyqtSignal, QEvent, Qt
 from PyQt6.QtWidgets import QSlider, QWidget
-import numpy as np
 
 from laser_app.lasers_tab.shared import TLO
 from laser_app.ui.gl_view import GLView

@@ -1,10 +1,10 @@
 """Podkroki sieci: przejście sygnału przez 6 bloków (okienko P, pasek podkroków), zapis przejść na dysk, animacja i opis podkroków."""
 from __future__ import annotations
 
+import numpy as np
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton, QSizePolicy,
                              QSlider, QVBoxLayout, QWidget)
-import numpy as np
 
 from laser_app.compute import history as hist, passage_store
 from laser_app.gpu.network_passage_gl import NetworkPassageGPU
@@ -13,8 +13,7 @@ from laser_app.lasers_tab.widgets import NetworkDiagram
 from laser_app.lasers_tab.workers import AllPassagesWorker, plaski_podkrokow, statystyki_podkrokow, SubstepsWorker
 from laser_app.ui.dock_windows import bez_ukladu
 from laser_app.ui.gl_view import GLView
-from laser_app.ui.layout_widgets import NarrowCombo
-from laser_app.ui.widgets import _spin, _staly_uklad, CollapsibleSection
+from laser_app.ui.widgets import CollapsibleSection, NarrowCombo, _spin, _staly_uklad
 
 
 class SubstepsMixin:

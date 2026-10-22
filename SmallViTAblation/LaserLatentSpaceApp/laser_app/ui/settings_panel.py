@@ -11,10 +11,10 @@
 """
 from __future__ import annotations
 
-from PyQt6.QtCore import QEvent, QObject, QPoint, QSize, Qt, pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QEvent, QObject, QPoint, QSize, Qt
 from PyQt6.QtGui import QCursor, QGuiApplication
-from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QScrollArea, QSizePolicy, QStackedWidget,
-                             QToolButton, QVBoxLayout, QWidget)
+from PyQt6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QScrollArea, QSizePolicy,
+                             QStackedWidget, QToolButton, QVBoxLayout, QWidget)
 
 TLO_POPUPU = '#1b1e23'
 

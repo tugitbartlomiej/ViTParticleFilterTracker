@@ -9,7 +9,7 @@ Klik w nagłówek zwija (▸) i rozwija (▾) wiersze jego grupy (do następnego
 naraz dla wszystkich grup pod widżetem `korzen` (okienko ustawień z prawego kliku, strona panelu), a sekcje bez grup zwija
 w całości (nagłówek sekcji Zwijana)."""
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFormLayout, QLabel, QLayout, QWidget
+from PyQt6.QtWidgets import QFormLayout, QLabel, QWidget
 
 NAZWA_NAGLOWKA = 'naglowek_grupy'
 STYL_NAGLOWKA = 'color:#8fb8ff; font-weight:bold; padding:6px 0 2px 0; border-bottom:1px solid #2f3a4a;'

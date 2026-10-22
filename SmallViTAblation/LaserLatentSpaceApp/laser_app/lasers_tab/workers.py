@@ -2,8 +2,8 @@
 przejść przez sieć; oraz rzuty płaskie podkroków (plaski_podkrokow, statystyki_podkrokow)."""
 from __future__ import annotations
 
-from PyQt6.QtCore import pyqtSignal, QThread
 import numpy as np
+from PyQt6.QtCore import pyqtSignal, QThread
 
 from laser_app.compute import focal_trap, history as hist, passage_store, trap_map
 

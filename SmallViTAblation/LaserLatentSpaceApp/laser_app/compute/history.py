@@ -30,10 +30,11 @@ from pathlib import Path
 
 import numpy as np
 
-from laser_app.paths import APP_DIR as APP, PROJECT_ROOT as ROOT  # noqa: E402
 from laser_app.compute.common import Interrupted  # noqa: F401  (jedna klasa dla wszystkich liczeń; także jako <moduł>.Interrupted)
+from laser_app.paths import CACHE_DIR, PROJECT_ROOT as ROOT
+
 KOD_MODELU = ROOT / 'experiments/maly_vit_od_zera_35000_21epok_20261009/kod/model.py'
-CACHE = APP / 'cache_uczenia' / 'lasery'
+CACHE = CACHE_DIR / 'lasery'
 FILM = ROOT / 'outputs/porownanie_szklo_20261010/film_krysztal'
 ZDJECIE_FILMU = FILM / 'zdjecie_train0.jpg'
 H, W, TOK, NK, KOMORKA = 20, 30, 600, 768, 16
@@ -168,7 +169,7 @@ def ramka_prawdziwa(sciezka, rozmiar):
         if p.exists():
             return [float(v) for v in np.load(p)['gt']], 'ramka z filmów 2/16 (TRAIN 0)'
     try:
-        from laser_app.compute.detection import etykieta_dla_zdjecia
+        from laser_app.compute.tool_labels import etykieta_dla_zdjecia
         r, opis = etykieta_dla_zdjecia(sciezka)
     except Exception as e:                                          # brak adnotacji/zipów: bez ramki
         return None, f'brak ramki ({type(e).__name__})'

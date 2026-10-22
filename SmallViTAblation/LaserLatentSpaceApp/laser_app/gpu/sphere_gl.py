@@ -2,8 +2,8 @@
 import numpy as np
 from OpenGL import GL
 
-from laser_app.gpu.base import (_CZAS, _GPUElement, _KSZTALT, _LUT, _program, LIMIT_ZH, NK, przenikanie, reflektory_przejscia,
-                                siatka_sfery, TOK, W)
+from laser_app.gpu.base import (_CZAS, _GPUElement, _KSZTALT, LIMIT_ZH, _LUT, NK, _program, przenikanie,
+                                reflektory_przejscia, siatka_sfery, TOK, W)
 
 _SSBO_S = """
 layout(std430, binding = 0) readonly buffer BR { vec4 RF[]; };    // [768] stały reflektor (miejsce na sferze zewnętrznej)

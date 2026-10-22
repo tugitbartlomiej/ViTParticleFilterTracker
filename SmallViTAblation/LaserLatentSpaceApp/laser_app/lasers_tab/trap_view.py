@@ -1,16 +1,15 @@
 """Okienko 11: pułapka optyczna wybranej cząsteczki (focal_trap), jej wiązki, światło, obrys 3D, pole w podkrokach, gotowe pułapki z dysku i pomiar w podkrokach dla całej historii."""
 from __future__ import annotations
 
+import numpy as np
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QMenu, QProgressBar,
                              QPushButton, QToolButton, QWidget)
-import numpy as np
 
 from laser_app.compute import focal_trap
 from laser_app.lasers_tab.shared import pl
 from laser_app.lasers_tab.workers import FocalTrapWorker, TrapMeasurementsWorker
-from laser_app.ui.layout_widgets import NarrowCombo
-from laser_app.ui.widgets import _spin, CollapsibleSection, lista_liczb
+from laser_app.ui.widgets import CollapsibleSection, lista_liczb, NarrowCombo, _spin
 
 
 class TrapMixin:

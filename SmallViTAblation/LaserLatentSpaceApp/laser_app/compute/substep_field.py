@@ -12,8 +12,7 @@ reflektorów bloku, uwaga: kolory cząsteczek-źródeł). Wynik w postaci jak fo
 """
 import numpy as np
 
-from laser_app.compute import history as hist
-from laser_app.compute import passage_store
+from laser_app.compute import history as hist, passage_store
 
 
 def policz(wagi, krok, rgb, j, d, G=17, kol_cz=None, urzadzenie='cuda', zasieg=1.0, st=None):

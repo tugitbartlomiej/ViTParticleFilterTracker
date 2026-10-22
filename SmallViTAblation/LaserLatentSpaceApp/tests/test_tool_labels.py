@@ -3,8 +3,7 @@ import unittest
 
 import numpy as np
 
-from laser_app.compute import tool_labels
-from laser_app.compute import history as hist
+from laser_app.compute import history as hist, tool_labels
 
 H, W, TOK, K = 20, 30, 600, 5
 

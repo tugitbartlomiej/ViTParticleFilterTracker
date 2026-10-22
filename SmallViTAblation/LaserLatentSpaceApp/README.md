@@ -219,11 +219,14 @@ wygładzany ± n checkpointów. Mediana przesunięcia tokenu na krok checkpointu
 
 ## Pliki i dane
 
-- `laser_app/main_window.py` okno, `run.py` start z okienkiem ładowania, `laser_app/ui/settings_panel.py` panel i popupy, `laser_app/lasers_tab/tab.py` cała
-  zawartość okna, `laser_app/compute/history.py` obliczenia i `History`, pakiet `laser_app/gpu/` shadery, `projections.py` i `projections_view.py` rzuty 192D,
-  `laser_app/compute/focal_trap.py`, `laser_app/compute/substep_field.py`, `laser_app/compute/trap_measurements.py`, `laser_app/compute/valley.py`, `reflektor_*.py`, `laser_app/compute/tool_labels.py`,
-  `laser_app/compute/eye_regions.py`; wspólne z edytorem (kopie): `laser_app/compute/video.py`, `laser_app/compute/detection.py`, `laser_app/compute/sd_engine.py`, `laser_app/ui/gl_view.py`, `laser_app/ui/dock_windows.py`, `laser_app/ui/layout_widgets.py`,
-  `laser_app/ui/style.py`, `laser_app/ui/input_comfort.py`, `laser_app/compute/common.py`, `laser_app/settings.py`, `laser_app/compute/checkpoint_histories.py`.
+- Kod: pakiet `laser_app/` (opis w „Struktura” wyżej). Obliczenia bez Qt w `compute/`: `history.py` (historia uczenia,
+  `History`), `focal_trap.py` (pułapka optyczna, Newton wsadowo), `trap_map.py` (mapa pułapek), `substep_field.py` i
+  `trap_measurements.py` (pole i pomiary w podkrokach), `passage_store.py` (zapis przejść), `projections.py` (rzuty 192D),
+  `tool_labels.py` (etykieta narzędzia z obrysu, ramka GT, adnotacje Cataract-LMM), `valley.py`, `reflector_mechanics.py`,
+  `reflector_drawing.py`, `checkpoint_histories.py` (lista historii), `common.py` (stałe, kolory kanałów, izopowierzchnia,
+  `Interrupted`). Rysowanie w `gpu/`, widżety w `ui/`, zakładka w `lasers_tab/`.
+- Refaktor 2026-10-22 usunął kod po edytorze latentu, którego ta aplikacja nie używała (detektor, silnik SD, odczyt filmów MP4,
+  układ przepływowy, panele opcji, widok 3D makrowektorów; ok. 1300 wierszy).
 - Cache: `cache_uczenia/lasery/<skrót>/` (dane.npz, Z.npy, rzuty/, przejscia/, etykieta_obrys.npz) i `cache_uczenia/etykiety/`.
   Przeniesione z `../app/cache_uczenia/`; tam zostały połączenia katalogów (junction) do tych samych danych, więc stare
   skrypty eksperymentów z ścieżką `app/cache_uczenia/lasery` działają dalej.

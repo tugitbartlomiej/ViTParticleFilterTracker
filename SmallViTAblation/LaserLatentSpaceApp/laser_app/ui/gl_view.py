@@ -2,12 +2,10 @@
 import weakref
 
 import numpy as np
-from PyQt6.QtCore import QPoint, QRect, QSize, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QGuiApplication, QMatrix4x4, QVector4D
-
 import pyqtgraph.opengl as gl
+from PyQt6.QtCore import pyqtSignal, QPoint, QRect, QSize, Qt, QTimer
+from PyQt6.QtGui import QGuiApplication, QMatrix4x4
 
-from laser_app.compute.common import SZER, WYS
 
 
 class GLView(gl.GLViewWidget):
@@ -271,52 +269,3 @@ class GLView(gl.GLViewWidget):
                 QTimer.singleShot(30, self.update)
 
 
-class TransparentImage(gl.GLImageItem):
-    """Płaszczyzna obrazu z przezroczystością (kanał alfa tekstury), która nie zasłania tego, co leży nad nią,
-    i przepuszcza to, co leży pod nią. Rysowana po liniach (wysoka wartość głębi), z testem głębi, ale bez zapisu
-    do bufora głębi: wektory nad obrazem zostają ostre, wektory pod obrazem są przyciemnione o krycie obrazu."""
-
-    def __init__(self, dane):
-        super().__init__(dane, glOptions='translucent')
-        self.setDepthValue(10)
-
-    def paint(self):
-        from OpenGL import GL
-        GL.glDepthMask(GL.GL_FALSE)
-        try:
-            super().paint()
-        finally:
-            GL.glDepthMask(GL.GL_TRUE)
-
-
-class View3D(GLView):
-    """GLViewWidget, który zgłasza kliknięcie (bez przeciągania) jako punkt na płaszczyźnie obrazu z = 0."""
-    klik = pyqtSignal(float, float)
-
-    def mousePressEvent(self, ev):
-        self._start = ev.position().toPoint()
-        super().mousePressEvent(ev)
-
-    def mouseReleaseEvent(self, ev):
-        super().mouseReleaseEvent(ev)
-        p = ev.position().toPoint()
-        if ev.button() == Qt.MouseButton.LeftButton and (p - getattr(self, '_start', QPoint())).manhattanLength() < 4:
-            xy = self.punkt_na_obrazie(p.x(), p.y())
-            if xy is not None:
-                self.klik.emit(*xy)
-
-    def punkt_na_obrazie(self, px, py):
-        """Promień z kamery przez piksel (px, py) przecięty z płaszczyzną z = 0; None poza obrazem."""
-        w, h = self.width(), self.height()
-        m = self.projectionMatrix((0, 0, w, h), (0, 0, w, h)) * self.viewMatrix()
-        inv, ok = m.inverted()
-        if not ok:
-            return None
-        nx, ny = 2 * px / w - 1, 1 - 2 * py / h
-        a = inv.map(QVector4D(nx, ny, -1, 1)); b = inv.map(QVector4D(nx, ny, 1, 1))
-        a = np.array([a.x(), a.y(), a.z()]) / a.w(); b = np.array([b.x(), b.y(), b.z()]) / b.w()
-        if abs(b[2] - a[2]) < 1e-9:
-            return None
-        t = -a[2] / (b[2] - a[2])
-        x, y = (a + t * (b - a))[:2]
-        return (x, y) if 0 <= x < SZER and 0 <= y < WYS else None

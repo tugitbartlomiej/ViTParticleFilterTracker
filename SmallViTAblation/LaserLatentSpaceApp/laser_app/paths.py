@@ -11,6 +11,7 @@ PROJECT_ROOT = APP_DIR.parent
 DATASET_ROOT = PROJECT_ROOT.parent / 'Dataset'
 CACHE_DIR = APP_DIR / 'cache_uczenia'
 SCREENSHOTS_DIR = APP_DIR / 'screenshots'
+SAMPLE_IMAGES_DIR = APP_DIR / 'sample_images'            # zdjęcia testowe z filmów Cataract-LMM (lista „Zdjęcie”)
 SETTINGS_FILE = APP_DIR / 'settings.json'
 OLD_SETTINGS_FILE = APP_DIR / 'ustawienia.json'          # nazwa sprzed refaktoru: przenoszona przy pierwszym starcie
 LOG_FILE = APP_DIR / 'run.log'

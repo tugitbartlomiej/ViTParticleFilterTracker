@@ -1,8 +1,8 @@
 """Oś czasu: odtwarzanie, punkty A–B, tempo, synchronizacja z podkrokami, klawisze i kliknięcia w widoki (wybór cząsteczki)."""
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
 import numpy as np
+from PyQt6.QtCore import Qt
 
 from laser_app.compute import history as hist
 

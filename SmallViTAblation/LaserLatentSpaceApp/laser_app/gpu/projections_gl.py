@@ -10,7 +10,7 @@ zakotwiczone w cząsteczce (płyną z nią w czasie).
 import numpy as np
 from OpenGL import GL
 
-from laser_app.gpu.base import _CZAS, _KSZTALT, TOK, _GPUElement, _program
+from laser_app.gpu.base import _CZAS, _GPUElement, _KSZTALT, _program, TOK
 
 _SSBO = """
 layout(std430, binding = 0) readonly buffer BP { vec4 P[]; };   // [K*600] położenie w widoku (xyz)

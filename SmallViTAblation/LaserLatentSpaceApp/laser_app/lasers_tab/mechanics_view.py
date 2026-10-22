@@ -1,11 +1,10 @@
 """Okienko 13: mechanika wybranego reflektora (reflector_mechanics, reflector_drawing)."""
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QCheckBox, QFormLayout, QHBoxLayout, QLabel
 import numpy as np
+from PyQt6.QtWidgets import QCheckBox, QFormLayout, QHBoxLayout, QLabel
 
-from laser_app.ui.layout_widgets import NarrowCombo
-from laser_app.ui.widgets import _spin, CollapsibleSection
+from laser_app.ui.widgets import CollapsibleSection, NarrowCombo, _spin
 
 
 class MechanicsMixin:

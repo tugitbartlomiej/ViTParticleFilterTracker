@@ -7,8 +7,7 @@ from PyQt6.QtWidgets import QCheckBox, QFormLayout, QHBoxLayout, QLabel, QProgre
 
 from laser_app.compute import history as hist
 from laser_app.lasers_tab.workers import ImageSetWorker
-from laser_app.ui.layout_widgets import NarrowCombo
-from laser_app.ui.widgets import _spin, CollapsibleSection
+from laser_app.ui.widgets import CollapsibleSection, NarrowCombo, _spin
 
 
 class ImageSetMixin:

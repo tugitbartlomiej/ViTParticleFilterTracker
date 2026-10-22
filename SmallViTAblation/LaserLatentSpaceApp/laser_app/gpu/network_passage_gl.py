@@ -2,7 +2,7 @@
 import numpy as np
 from OpenGL import GL
 
-from laser_app.gpu.base import _GPUElement, _KSZTALT, _program, NK, przenikanie, TOK
+from laser_app.gpu.base import _GPUElement, _KSZTALT, NK, _program, przenikanie, TOK
 
 _SSBO_P = """
 layout(std430, binding = 0) readonly buffer BX { vec4 X[]; };     // [13*600] stan strumienia rezydualnego (rzut 3D)
