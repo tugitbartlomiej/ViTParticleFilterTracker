@@ -121,7 +121,7 @@ def naglowek(tekst):
 
 def zwin_wszystko(korzen, zwin=True):
     """Zwija (rozwija) wszystkie grupy pod `korzen`; sekcje Zwijana bez grup zwija (rozwija) w całości. Zwraca liczbę zmienionych."""
-    from laser_app.lasers_tab.tab import CollapsibleSection
+    from laser_app.ui.widgets import CollapsibleSection
     n = 0
     for g in korzen.findChildren(GroupHeader):
         if g.zwiniety != zwin:

@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (QAbstractSpinBox, QCheckBox, QComboBox, QFormLayout
 
 from laser_app.ui import tooltips  # noqa: E402
 from laser_app.ui import parameter_groups  # noqa: E402
-from laser_app.lasers_tab.tab import CollapsibleSection  # noqa: E402
+from laser_app.ui.widgets import CollapsibleSection  # noqa: E402
 
 KONTROLKI = (QComboBox, QAbstractSpinBox, QCheckBox, QLineEdit, QPushButton, QToolButton)
 APP = OKNO = Z = None

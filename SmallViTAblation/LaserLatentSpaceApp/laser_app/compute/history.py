@@ -31,6 +31,7 @@ from pathlib import Path
 import numpy as np
 
 from laser_app.paths import APP_DIR as APP, PROJECT_ROOT as ROOT  # noqa: E402
+from laser_app.compute.common import Interrupted  # noqa: F401  (jedna klasa dla wszystkich liczeń; także jako <moduł>.Interrupted)
 KOD_MODELU = ROOT / 'experiments/maly_vit_od_zera_35000_21epok_20261009/kod/model.py'
 CACHE = APP / 'cache_uczenia' / 'lasery'
 FILM = ROOT / 'outputs/porownanie_szklo_20261010/film_krysztal'
@@ -224,8 +225,6 @@ def klucz(wagi, kroki, rgb, gt, okno):
     return h.hexdigest()[:16]
 
 
-class Interrupted(Exception):
-    pass
 
 
 def policz(wagi, kroki, rgb, gt, okno=300, postep=None, przerwij=None, urzadzenie='cuda'):

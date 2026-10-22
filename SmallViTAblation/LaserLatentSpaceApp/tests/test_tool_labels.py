@@ -1,4 +1,4 @@
-"""Testy etykiet narzędzia i oka (tool_labels.py, CheckpointHistory.ustaw_etykiete / obszary): dane syntetyczne, bez zipów i GPU."""
+"""Testy etykiet narzędzia i oka (tool_labels.py, History.ustaw_etykiete / obszary): dane syntetyczne, bez zipów i GPU."""
 import unittest
 
 import numpy as np

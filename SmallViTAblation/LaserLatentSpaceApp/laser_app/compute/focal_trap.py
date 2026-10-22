@@ -29,12 +29,11 @@ from pathlib import Path
 import numpy as np
 
 from laser_app.compute import history as hist
+from laser_app.compute.common import Interrupted  # noqa: F401  (jedna klasa dla wszystkich liczeń; także jako <moduł>.Interrupted)
 
 WERSJA = 4                                   # 2: wiązki cząsteczki (P3 v_c, z_jc, z̄_c); 3: kontrola skoku, G = 1 = tylko wiązki; 4: pole tylko w komórce tokenu
 
 
-class Interrupted(Exception):
-    pass
 
 
 def plik(h, tok, G, zasieg):

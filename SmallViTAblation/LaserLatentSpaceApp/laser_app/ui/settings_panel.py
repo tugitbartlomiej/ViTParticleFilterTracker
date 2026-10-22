@@ -100,7 +100,7 @@ class _SectionLoan:
     """Widżet przeniesiony z układu do popupu; w układzie stoi zastępnik o tej samej szerokości."""
 
     def __init__(self, w):
-        from laser_app.lasers_tab.tab import CollapsibleSection
+        from laser_app.ui.widgets import CollapsibleSection
         self.w = w
         self.zastepnik = QLabel('↗ Ustawienia otwarte w okienku podręcznym (prawy klik w okienko).')
         self.zastepnik.setWordWrap(True); self.zastepnik.setStyleSheet('color:#8a8d93; padding:6px; font-style:italic;')

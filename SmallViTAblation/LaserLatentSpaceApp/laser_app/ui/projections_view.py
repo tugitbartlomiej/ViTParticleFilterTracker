@@ -15,7 +15,7 @@ okienek i opcje. Jedno okienko = jeden rzut:
        checkpointów), osie 2–3 do wyboru; w podpisie sylwetka, trafienia kNN, margines i stosunek Fishera z zerem permutacyjnym.
 W okienkach globalnych (R1–R3, R6, R7) ślady to wędrówka cząsteczek przez checkpointy uczenia, a strzałki to siła netto bloku 6
 (dokładny rzut; krycie = widoczna część długości ρ = |Pu|/|u|). Wszystkie pokazują chwilę osi czasu zakładki.
-Rysowanie na karcie (projections_gpu.ProjectionGPU, GLSL 4.30): cała historia w bazie okienka idzie do bufora raz (przy zmianie bazy, środka,
+Rysowanie na karcie (projections_gl.ProjectionGPU, GLSL 4.30): cała historia w bazie okienka idzie do bufora raz (przy zmianie bazy, środka,
 skali, wygładzania), w klatce tylko czas; ramy lokalne (wiązki, pole Schura) idą raz na checkpoint i cząsteczkę. Rzutowanie
 192D → 3D całej historii liczy karta (projections.ProjectionData.wsp, torch).
 """
@@ -173,11 +173,11 @@ class LocalSections:
 
 
 class Scene:
-    """Widok 3D jednego rzutu. Cząsteczki, ślady, strzałki sił i elementy lokalne rysują shadery (projections_gpu.ProjectionGPU: historia
+    """Widok 3D jednego rzutu. Cząsteczki, ślady, strzałki sił i elementy lokalne rysują shadery (projections_gl.ProjectionGPU: historia
     na karcie raz, w klatce tylko czas); osie, napisy i tory zerowe to lekkie elementy pyqtgraph."""
 
     def __init__(self):
-        from laser_app.gpu.projections_gpu import ProjectionGPU
+        from laser_app.gpu.projections_gl import ProjectionGPU
         self.v = GLView()
         self.v.setBackgroundColor(TLO)
         self.v.setCameraPosition(distance=48, elevation=18, azimuth=-55)
@@ -280,7 +280,7 @@ class ProjectionWindows(QWidget):
 
     def __init__(self, zakladka):
         super().__init__()
-        from laser_app.lasers_tab.tab import CollapsibleSection, _spin
+        from laser_app.ui.widgets import CollapsibleSection, _spin
         self._z = zakladka
         self.dane = None
         self._h = None

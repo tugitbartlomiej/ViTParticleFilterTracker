@@ -13,6 +13,11 @@ SZER, WYS = KOLUMNY * KOMORKA, WIERSZE * KOMORKA   # 480 x 320, wejście ViT
 KANALY = 768
 from laser_app.paths import PROJECT_ROOT  # noqa: E402
 
+
+
+class Interrupted(Exception):
+    """Liczenie przerwane na żądanie (przerwij() → True); nic nie zostaje zapisane."""
+
 WYNIKI = PROJECT_ROOT / 'outputs' / 'latent_editor_sd_20261006'
 
 PCA_SKLADOWE = (3, 4, 8, 16, 32, 128)          # wybór liczby wektorów po PCA w widokach 3D

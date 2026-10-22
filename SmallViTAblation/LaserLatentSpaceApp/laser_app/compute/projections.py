@@ -39,6 +39,7 @@ from pathlib import Path
 import numpy as np
 
 from laser_app.compute import history as hist
+from laser_app.compute.common import Interrupted  # noqa: F401  (jedna klasa dla wszystkich liczeń; także jako <moduł>.Interrupted)
 
 WERSJA = 2                                             # 2: etykieta narzędzia z obrysu (history.History), tokeny mieszane poza tłem
 D = 192
@@ -53,8 +54,6 @@ NAZWY_F7 = ('Δ narzędzie–tło', 'reszta chmury 1', 'reszta chmury 2', 'siły
 N_PERM = 200                                           # permutacje etykiet narzędzie/tło: zero dla odległości klas
 
 
-class Interrupted(Exception):
-    pass
 
 
 # ------------------------------------------------------------------ algebra

@@ -78,7 +78,7 @@ def ustawienia_startowe(plik):
 
 
 def zbuduj_okno(pokaz=True, plik_startowy=None):
-    """Nowe `main_window.Okno` bez automatycznego wczytywania historii z cache (testy wczytują ją same przez `_gotowe`)."""
+    """Nowe `main_window.MainWindow` bez automatycznego wczytywania historii z cache (testy wczytują ją same przez `_gotowe`)."""
     from laser_app.lasers_tab import tab as lasers_tab
     stara = lasers_tab.LasersTab._wczytaj_z_cache
     lasers_tab.LasersTab._wczytaj_z_cache = lambda self: None

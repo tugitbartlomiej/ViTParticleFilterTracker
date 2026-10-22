@@ -73,7 +73,7 @@ LaserLatentSpaceApp/
 
 ## Etykiety: narzędzie i obszary oka (2026-10-22)
 
-Strona „Dane, etykiety”, sekcja „Etykiety”. Które z 600 patchy są narzędziem (`history.CheckpointHistory.ustaw_etykiete`,
+Strona „Dane, etykiety”, sekcja „Etykiety”. Które z 600 patchy są narzędziem (`history.History.ustaw_etykiete`,
 `tool_labels.TRYBY`, `maski(..., tryb=...)`):
 
 - **obrys: każda łata dotknięta (> 0 %)** — domyślnie: całe narzędzie, także patche w większości z tłem;
@@ -95,7 +95,7 @@ Etykieta działa we wszystkich miejscach, które czytają `h.narz`: przycisk „
 Rzuty R1–R12 używają etykiety z chwili liczenia stanów 192D (R9 ma własny próg).
 
 **Obszary oka** (źrenica, rogówka; ViT nie był na nich uczony): z obrysów `pupil_seg` i `cornea_seg` tej samej klatki
-Cataract-LMM (`etykieta_obrys.npz` w katalogu historii, `CheckpointHistory.oko`, `CheckpointHistory.obszary(prog_oka)`), pierwszeństwo
+Cataract-LMM (`etykieta_obrys.npz` w katalogu historii, `History.oko`, `History.obszary(prog_oka)`), pierwszeństwo
 narzędzie > źrenica > rogówka > tło. Kolor „obszary oka” w „Kolor ścieżek” (sfera) i „Kolor cząsteczek” (okienko P),
 „Zaznacz obszar ▾” przy wyborze cząsteczek wpisuje patche obszaru do „+ cząsteczki”.
 
@@ -134,14 +134,14 @@ liczy brakujące po kolei (`ImageSetWorker`; minuty na zdjęcie przy pierwszym l
 rzut 3D P3 i reflektory zależą tylko od wag, więc są wspólne — sprawdzone: `dirs` identyczne dla różnych zdjęć) i
 600·n·768 wiązek (shader sfery ma `u_T` zamiast stałych 600). Pozostałe okienka (1–13, R, podkroki) i wybór cząsteczki
 dotyczą **aktywnego zdjęcia** (lista „Aktywne zdjęcie”; klik w koloid innego zdjęcia na sferze też je przełącza).
-Natężenia Z zestawu trafiają na kartę w całości do 3 GB (`lasers_gpu.LIMIT_ZH`, ok. 4 zdjęcia); większy zestaw wysyła przy
+Natężenia Z zestawu trafiają na kartę w całości do 3 GB (`gpu.base.LIMIT_ZH`, ok. 4 zdjęcia); większy zestaw wysyła przy
 każdej zmianie checkpointu tylko parę checkpointów. Zmiana aktywnego zdjęcia nie wysyła Z ponownie.
 Pomiar: 3 zdjęcia (1800 koloidów, 1,38 mln wiązek, Z 2,1 GB na karcie) ok. 32 kl./s przy odtwarzaniu.
 Lista zdjęć zestawu zapisuje się w `settings.json` (liczy się dopiero na żądanie).
 
 ## Pułapka optyczna: obrys w tle, liczenie tylko widocznego
 
-- Obrys ogniska 3D (`lasers_gpu.siatka_obrysu`) liczy się w wątku w tle (`_OutlineWorker`, zawsze ostatnie zlecenie): objętość
+- Obrys ogniska 3D (`focal_field_gl.siatka_obrysu`) liczy się w wątku w tle (`_OutlineWorker`, zawsze ostatnie zlecenie): objętość
   światła 33³ na GPU (PyTorch), izopowierzchnia, warstwice; klatka rysuje ostatni gotowy obrys przesunięty do bieżącego
   położenia koloidu. Wcześniej liczył się w każdej klatce i odtwarzanie z obrysem traciło płynność.
 - Obrys, światło ogniska i wkłady działają też przy wyłączonych liniach wiązek („768 wiązek zbiegających się…” steruje teraz
@@ -220,7 +220,7 @@ wygładzany ± n checkpointów. Mediana przesunięcia tokenu na krok checkpointu
 ## Pliki i dane
 
 - `laser_app/main_window.py` okno, `run.py` start z okienkiem ładowania, `laser_app/ui/settings_panel.py` panel i popupy, `laser_app/lasers_tab/tab.py` cała
-  zawartość okna, `laser_app/compute/history.py` obliczenia i `CheckpointHistory`, `laser_app/gpu/lasers_gpu.py` shadery, `rzuty_*.py` rzuty 192D,
+  zawartość okna, `laser_app/compute/history.py` obliczenia i `History`, pakiet `laser_app/gpu/` shadery, `projections.py` i `projections_view.py` rzuty 192D,
   `laser_app/compute/focal_trap.py`, `laser_app/compute/substep_field.py`, `laser_app/compute/trap_measurements.py`, `laser_app/compute/valley.py`, `reflektor_*.py`, `laser_app/compute/tool_labels.py`,
   `laser_app/compute/eye_regions.py`; wspólne z edytorem (kopie): `laser_app/compute/video.py`, `laser_app/compute/detection.py`, `laser_app/compute/sd_engine.py`, `laser_app/ui/gl_view.py`, `laser_app/ui/dock_windows.py`, `laser_app/ui/layout_widgets.py`,
   `laser_app/ui/style.py`, `laser_app/ui/input_comfort.py`, `laser_app/compute/common.py`, `laser_app/settings.py`, `laser_app/compute/checkpoint_histories.py`.
@@ -232,7 +232,7 @@ wygładzany ± n checkpointów. Mediana przesunięcia tokenu na krok checkpointu
 
 Poniżej opis zakładki przeniesiony z `../app/README.md` (odwołania do „lewego panelu” = dziś strony panelu „Parametry”).
 
-## Opis zakładki „Lasery i koloidy” (2026-10-12; `laser_app/lasers_tab/tab.py`, `laser_app/compute/history.py`, `laser_app/gpu/lasers_gpu.py`)
+## Opis zakładki „Lasery i koloidy” (2026-10-12; `laser_app/lasers_tab/tab.py`, `laser_app/compute/history.py`, pakiet `laser_app/gpu/`)
 
 Interaktywna wersja filmów 2, 12 i 16 z `outputs/porownanie_szklo_20261010/film_krysztal` (zasady w `ZASADY_LASER_KOLOID.md`).
 
@@ -265,7 +265,7 @@ Potem dzieli ruch na trzy składowe jak `eden/szescian_prep.py` i film 2: losowy
 - **Panel 5:** mapa na zdjęciu (centra, drgania, atencja, natężenie wybranego reflektora).
 - **Wykresy 6–9:** trzy składowe ruchu, IoU, pewność, pary przeciwnych reflektorów.
 
-**Rzuty z 192 wymiarów: okienka R1–R8** (2026-10-21; `laser_app/compute/projections.py`, `laser_app/ui/projections_view.py`, `laser_app/gpu/projections_gpu.py`; uzasadnienie w
+**Rzuty z 192 wymiarów: okienka R1–R8** (2026-10-21; `laser_app/compute/projections.py`, `laser_app/ui/projections_view.py`, `laser_app/gpu/projections_gl.py`; uzasadnienie w
 `reports/Rzutowanie wielowymiarowego ruchu do 3D.md`). Zwijana sekcja „Rzuty z 192 wymiarów” w lewym panelu, zaraz pod „Dane”.
 „Policz / wczytaj stany 192D” robi raz na historię i zdjęcie jedno przejście w przód na checkpoint i zapisuje w katalogu historii
 `rzuty/`:
@@ -299,7 +299,7 @@ szumu SGD widać było dryf. Strzałki to siła netto bloku 6; krycie strzałki 
 kartach obok sfery, R8 obok wykresu 6, a przyciski sekcji wyciągają je na wierzch.
 
 Rysowanie i liczenie są na karcie:
-- **Shadery GLSL 4.30 (`projections_gpu.ProjectionGPU`, SSBO jak `laser_app/gpu/lasers_gpu.py`).** Cała historia położeń i sił w bazie okienka trafia do
+- **Shadery GLSL 4.30 (`projections_gl.ProjectionGPU`, SSBO jak `laser_app/gpu/base.py`).** Cała historia położeń i sił w bazie okienka trafia do
   bufora raz, przy zmianie bazy, środka, skali albo wygładzania. W klatce idzie tylko czas. Interpolację, ślady, groty strzałek
   zwrócone do kamery i krycie liczy shader.
 - **Ramy lokalne R4 i R5** to elementy lokalne tego samego shadera, wysyłane raz na checkpoint i cząsteczkę.
@@ -312,7 +312,7 @@ Testy: `tests/test_projections.py`.
 
 **Rysowanie.** Robią je shadery GLSL 4.30 z buforów SSBO, a cała historia leży na karcie. W klatce CPU podaje tylko czas i opcje. Wyjątek to natężenia z_jc pary sąsiednich checkpointów dla wiązek (600 × 768), wysyłane przy zmianie pary.
 
-**Okienko „Przejście przez sieć: podkroki”** (`history.podkroki`, `lasers_gpu.NetworkPassageGPU`, `NetworkDiagram`).
+**Okienko „Przejście przez sieć: podkroki”** (`history.podkroki`, `network_passage_gl.NetworkPassageGPU`, `NetworkDiagram`).
 
 Dla checkpointu bieżącej chwili osi czasu jedno przejście w przód jest rozłożone na 13 stanów strumienia rezydualnego: stan 0 to łodyga z kodowaniem pozycji, a każdy z 6 bloków dokłada dwa stany, po uwadze i po MLP. Czasem cząstki jest tu głębokość sieci. Rozkład jest dokładny (sprawdzany w każdym liczeniu, błąd około 5·10⁻⁵):
 - uwaga: Δx_i = Σ_j f_ij + b_o, gdzie f_ij = Σ_h A^h_ij · W_o v^h_j to siła cząsteczki j na cząsteczkę i;

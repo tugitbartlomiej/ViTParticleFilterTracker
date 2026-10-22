@@ -1,6 +1,6 @@
 """Testy modułów aplikacji bez GPU i bez pokazywania okien: common.izopowierzchnia, lasery_dane (sciezka_lokalna, zbior_uczacy,
 Historia), tool_labels.maski, tab.lista_liczb, ustawienia, dock_windows.bez_ukladu, settings_panel.ParameterPanel,
-lasers_gpu._GPUElement.wyslij_porcjami. Widżety Qt tylko na QApplication z platformą offscreen (nic się nie wyświetla).
+gpu.base._GPUElement.wyslij_porcjami. Widżety Qt tylko na QApplication z platformą offscreen (nic się nie wyświetla).
 
 Dane rzeczywiste tylko do odczytu: historia `cache_uczenia/lasery/2cca2743e1c74b14` i manifest zbioru uczącego. Zapisy testów (pickle
 manifestu) idą do katalogu tymczasowego (LD.CACHE podmienione).
@@ -588,8 +588,8 @@ class TestListaLiczb(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         _qapp()
-        from laser_app.lasers_tab import tab as lasers_tab
-        cls.f = staticmethod(lasers_tab.lista_liczb)
+        from laser_app.ui import widgets
+        cls.f = staticmethod(widgets.lista_liczb)
 
     def test_przecinki_spacje_srednik(self):
         """Separatory: przecinek, spacja, średnik, ich mieszanki; kolejność wpisania zostaje."""
@@ -975,7 +975,7 @@ class TestWyslijPorcjami(unittest.TestCase):
     def setUpClass(cls):
         _qapp()
         try:
-            from laser_app.gpu import lasers_gpu
+            from laser_app.gpu import base as lasers_gpu
         except ImportError as e:                                       # noqa: BLE001 (brak PyOpenGL)
             raise unittest.SkipTest(f'brak lasery_gpu: {e}')
         cls.LG = lasers_gpu
