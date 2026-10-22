@@ -86,6 +86,38 @@ narzędzie > źrenica > rogówka > tło. Kolor „obszary oka” w „Kolor ści
   ustawień i układu (Ctrl+S), zapis jako (Ctrl+Shift+S), wczytanie ustawień, obraz okienka pod kursorem do PNG (Ctrl+E,
   folder `zrzuty/`), Zamknij (Ctrl+Q). Menu Ustawienia: autozapis przy zamknięciu, przywróć domyślne, stereo 3D.
 
+## Kilka zdjęć naraz na sferze (2026-10-22)
+
+Strona „Kilka zdjęć”: zestaw zdjęć tej samej historii wag (te same checkpointy i okno), domyślny limit 5, najwyżej 32 (jak
+paczka uczenia). „+ bieżące zdjęcie” dodaje zdjęcie wybrane w „Dane”, „Policz / wczytaj zestaw” wczytuje historie z cache albo
+liczy brakujące po kolei (`ZestawLiczenie`; minuty na zdjęcie przy pierwszym liczeniu). Sfera reflektorów pokazuje wtedy
+600 koloidów każdego zdjęcia (`lasery_dane.HistoriaZestawu`: położenia sklejone, każde zdjęcie z własnym środkiem chmury;
+rzut 3D P3 i reflektory zależą tylko od wag, więc są wspólne — sprawdzone: `dirs` identyczne dla różnych zdjęć) i
+600·n·768 wiązek (shader sfery ma `u_T` zamiast stałych 600). Pozostałe okienka (1–13, R, podkroki) i wybór cząsteczki
+dotyczą **aktywnego zdjęcia** (lista „Aktywne zdjęcie”; klik w koloid innego zdjęcia na sferze też je przełącza).
+Natężenia Z zestawu trafiają na kartę w całości do 3 GB (`lasery_gpu.LIMIT_ZH`, ok. 4 zdjęcia); większy zestaw wysyła przy
+każdej zmianie checkpointu tylko parę checkpointów. Zmiana aktywnego zdjęcia nie wysyła Z ponownie.
+Pomiar: 3 zdjęcia (1800 koloidów, 1,38 mln wiązek, Z 2,1 GB na karcie) ok. 32 kl./s przy odtwarzaniu.
+Lista zdjęć zestawu zapisuje się w `ustawienia.json` (liczy się dopiero na żądanie).
+
+## Pułapka optyczna: obrys w tle, liczenie tylko widocznego
+
+- Obrys ogniska 3D (`lasery_gpu.siatka_obrysu`) liczy się w wątku w tle (`_LiczObrys`, zawsze ostatnie zlecenie): objętość
+  światła 33³ na GPU (PyTorch), izopowierzchnia, warstwice; klatka rysuje ostatni gotowy obrys przesunięty do bieżącego
+  położenia koloidu. Wcześniej liczył się w każdej klatce i odtwarzanie z obrysem traciło płynność.
+- Obrys, światło ogniska i wkłady działają też przy wyłączonych liniach wiązek („768 wiązek zbiegających się…” steruje teraz
+  tylko liniami wiązek i wiązkami od reflektorów).
+- Pułapka (liczenie dla całej historii, ~0,2 s na checkpoint, ok. 2,6 min na cząsteczkę, potem z pliku) startuje dopiero,
+  gdy okienko 11 albo pułapka na sferze jest widoczna.
+
+## Okna, dymki, grupy parametrów
+
+- Odpięte okienka (panel F2, podkroki F3, widoki) i przypięty popup ustawień to zwykłe okna, nie okna narzędziowe Qt: nie
+  leżą zawsze nad oknem głównym i nad sobą, można je schować pod inne i przełączać Alt+Tab (`okna._niezalezne`).
+- `dymki.py`: każdy parametr ma dymek z objaśnieniem (co to jest i co zmienia); ten sam dymek ma nazwa wiersza w panelu.
+- `grupy_parametrow.py`: nagłówki podgrup w długich sekcjach (pułapka: liczenie, wiązki, światło, obrys, wkłady, pole,
+  oznaczenia, ślad i kadr; sfera, dane, dolina, podkroki, zapis).
+
 ## Poprawki działania (2026-10-22)
 
 - Historie w cache liczone, gdy projekt był na `F:` (ścieżka wag `F:\...\SmallViTAblation\assets\...`): pułapka optyczna,
