@@ -124,10 +124,17 @@ class SubstepsMixin:
                                  'W obu układach względem środka siły są wycentrowane tak samo (A_ij − ā_j, z_jc − z̄_c, biasy znikają), '
                                  'więc suma wektorów = przesunięcie cząsteczki. Surowy: pełny stan z biasami, widać wspólny dryf tokenów. '
                                  'Każdy układ ma własny rzut PCA 3D.')
+        self._buduj_widocznosc_p()
         # opcje okienka P są w panelu (strona „Podkroki”) i pod prawym klikiem w okienko; samo okienko to widok i opis
-        f_p.addRow('Siły uwagi', self.cb_sily); f_p.addRow('  jasność linii uwagi', self.sp_gain_a)
-        f_p.addRow('  długość sił', self.sp_skala_sil); f_p.addRow(self.ch_lasery); f_p.addRow('  długość laserów', self.sp_skala_l)
-        f_p.addRow('Tory', self.cb_tory); f_p.addRow('Układ', self.cb_uklad); f_p.addRow('Kolor cząsteczek', self.cb_kolor_cz)
+        f_p.addRow(self.ch_p_wiazki); f_p.addRow(self._p_przyciski); f_p.addRow(self._p_presety)
+        f_p.addRow(self._p_punkty); f_p.addRow('  grubość linii', self.sp_p_grub)
+        f_p.addRow('Siły uwagi', self.cb_sily); f_p.addRow(self._p_uwaga_wiersz); f_p.addRow('  głowa', self.cb_p_glowa)
+        f_p.addRow('  jasność linii uwagi', self.sp_gain_a); f_p.addRow('  próg atencji', self.sp_p_prog)
+        f_p.addRow('  długość sił', self.sp_skala_sil)
+        f_p.addRow(self.ch_lasery); f_p.addRow('  znak', self.cb_p_znak_l); f_p.addRow('  najsilniejsze', self.sp_p_top_l)
+        f_p.addRow('  próg |z|', self.sp_p_prog_l); f_p.addRow('  długość laserów', self.sp_skala_l); f_p.addRow('  krycie', self.sp_p_krycie_l)
+        f_p.addRow('Tory', self.cb_tory); f_p.addRow(self.ch_p_przes)
+        f_p.addRow('Układ', self.cb_uklad); f_p.addRow('Kolor cząsteczek', self.cb_kolor_cz)
         self.vp = GLView(); self.vp.setBackgroundColor(TLO); self.vp.setCameraPosition(distance=250, elevation=20, azimuth=-60)
         self.ep = NetworkPassageGPU(); self.vp.addItem(self.ep); self.vp.klik_px.connect(self._klik_przejscie)
         v.addWidget(self.vp, 1)
@@ -143,10 +150,75 @@ class SubstepsMixin:
         self.timer_pod.timeout.connect(self._klatka_podkrokow)
         for x in (self.cb_sily, self.cb_kolor_cz, self.cb_uklad, self.cb_tory):
             x.currentIndexChanged.connect(self._opcje_przejscia)
-        for x in (self.sp_gain_a, self.sp_skala_sil, self.sp_skala_l):
+        for x in (self.cb_p_glowa, self.cb_p_znak_l):
+            x.currentIndexChanged.connect(self._opcje_przejscia)
+        for x in (self.sp_gain_a, self.sp_skala_sil, self.sp_skala_l, self.sp_p_grub, self.sp_p_prog, self.sp_p_top_l, self.sp_p_prog_l,
+                  self.sp_p_krycie_l):
             x.valueChanged.connect(self._opcje_przejscia)
-        self.ch_lasery.toggled.connect(self._opcje_przejscia)
+        for x in (self.ch_lasery, self.ch_p_wiazki, self.ch_p_linie, self.ch_p_wektory, self.ch_p_przes, self.ch_p_czastki, self.ch_p_wybrana):
+            x.toggled.connect(self._opcje_przejscia)
         self.doki['p'].visibilityChanged.connect(self._p_widoczne)
+
+    def _buduj_widocznosc_p(self):
+        """Przełączniki widoczności okienka P: wszystkie wiązki naraz, gotowe zestawy, osobno każdy rodzaj wiązek i punktów."""
+        self.ch_p_wiazki = QCheckBox('wszystkie wiązki i linie (odznacz: chowa wszystkie naraz, ustawienia zostają)')
+        self.ch_p_wiazki.setChecked(True)
+        self.ch_p_wiazki.setToolTip('Jednym kliknięciem chowa albo pokazuje wszystkie wiązki okienka P: linie i wektory uwagi, lasery MLP, '
+                                    'przesunięcia w podkroku i tory. Pojedyncze przełączniki poniżej zostają takie, jakie były.')
+        przyciski = [('Włącz wszystkie', 'Wszystkie wiązki: linie i wektory uwagi, lasery, przesunięcia, tory.', self._p_wlacz_wszystkie),
+                     ('Wyłącz wszystkie', 'Chowa wszystkie wiązki (to samo co odznaczenie pola wyżej).', lambda: self.ch_p_wiazki.setChecked(False)),
+                     ('Tylko uwaga', 'Linie i wektory sił uwagi; bez laserów, przesunięć i torów.', lambda: self._p_zestaw(uwaga=True)),
+                     ('Tylko lasery', 'Lasery MLP; bez uwagi, przesunięć i torów.', lambda: self._p_zestaw(lasery=True)),
+                     ('Tylko ruch', 'Przesunięcia w podkroku i tory; bez uwagi i laserów.', lambda: self._p_zestaw(ruch=True))]
+        self._p_przyciski = QWidget(); self._p_presety = QWidget()
+        for kontener, lista in ((self._p_przyciski, przyciski[:2]), (self._p_presety, przyciski[2:])):
+            hb = QHBoxLayout(kontener); hb.setContentsMargins(0, 0, 0, 0)
+            for tekst, dymek, f in lista:
+                b = QPushButton(tekst); b.setToolTip(dymek); b.clicked.connect(f); hb.addWidget(b)
+        self.ch_p_czastki = QCheckBox('cząsteczki'); self.ch_p_czastki.setChecked(True)
+        self.ch_p_czastki.setToolTip('Punkty 600 cząsteczek w bieżącej chwili podkroku.')
+        self.ch_p_wybrana = QCheckBox('wybrana cząsteczka (duży punkt)'); self.ch_p_wybrana.setChecked(True)
+        self.ch_p_wybrana.setToolTip('Duży żółty punkt wybranej cząsteczki.')
+        self._p_punkty = QWidget(); hb = QHBoxLayout(self._p_punkty); hb.setContentsMargins(0, 0, 0, 0)
+        hb.addWidget(self.ch_p_czastki); hb.addWidget(self.ch_p_wybrana); hb.addStretch(1)
+        self.sp_p_grub = _spin(0.5, 8, 1.0, 0.5, 1, ' ×'); self.sp_p_grub.setToolTip('Grubość wszystkich linii okienka P (mnożnik).')
+        self.ch_p_linie = QCheckBox('linie uwagi (kogo słucha)'); self.ch_p_linie.setChecked(True)
+        self.ch_p_linie.setToolTip('Linie od wybranej cząsteczki do tych, których słucha (przy „wszystkie pary” także linie wszystkich par).')
+        self.ch_p_wektory = QCheckBox('wektory sił f_ij'); self.ch_p_wektory.setChecked(True)
+        self.ch_p_wektory.setToolTip('Wektory sił f_ij na wybraną cząsteczkę (kolor = kolor cząsteczki j, która ciągnie).')
+        self._p_uwaga_wiersz = QWidget(); hb = QHBoxLayout(self._p_uwaga_wiersz); hb.setContentsMargins(12, 0, 0, 0)
+        hb.addWidget(self.ch_p_linie); hb.addWidget(self.ch_p_wektory); hb.addStretch(1)
+        self.cb_p_glowa = NarrowCombo(); self.cb_p_glowa.addItems(['średnia 3 głów', 'głowa 1', 'głowa 2', 'głowa 3'])
+        self.cb_p_glowa.setToolTip('Linie i siły uwagi z jednej głowy albo wszystkich trzech (linie: średnia atencja, siły: suma głów).')
+        self.sp_p_prog = _spin(0.0, 1.0, 0.02, 0.005, 3)
+        self.sp_p_prog.setToolTip('Linie i siły słabsze niż ten próg (atencja × jasność) się nie rysują. 0 = wszystkie.')
+        self.cb_p_znak_l = NarrowCombo(); self.cb_p_znak_l.addItems(['wszystkie lasery', 'tylko dodatnie (z > 0, kolor lasera)',
+                                                                  'tylko ujemne (z < 0, błękitne)'])
+        self.cb_p_znak_l.setToolTip('Które lasery MLP rysować według znaku jasności z_jc: dodatnie pchają wzdłuż v_c, ujemne w stronę −v_c.')
+        self.sp_p_top_l = _spin(0, 768, 0, 5, sufiks=' laserów'); self.sp_p_top_l.setSpecialValueText('wszystkie ponad próg')
+        self.sp_p_top_l.setToolTip('Rysuje tylko tyle najsilniejszych laserów (największe |z|) wybranej cząsteczki; 0 = wszystkie ponad próg.')
+        self.sp_p_prog_l = _spin(0.0, 10.0, 0.05, 0.01, 3)
+        self.sp_p_prog_l.setToolTip('Lasery o |z| poniżej tego progu się nie rysują. 0 = wszystkie 768.')
+        self.sp_p_krycie_l = _spin(0.05, 1.0, 0.85, 0.05, 2); self.sp_p_krycie_l.setToolTip('Krycie (nieprzezroczystość) wiązek laserów.')
+        self.ch_p_przes = QCheckBox('przesunięcia w podkroku (stan k → k+1)'); self.ch_p_przes.setChecked(True)
+        self.ch_p_przes.setToolTip('Krótkie kreski: skąd i dokąd przesuwa się każda cząsteczka w bieżącym podkroku.')
+        self._p_tory = 1
+
+    def _p_wlacz_wszystkie(self):
+        """Wszystkie wiązki okienka P: uwaga, lasery, przesunięcia i tory."""
+        self._p_zestaw(uwaga=True, lasery=True, ruch=True)
+
+    def _p_zestaw(self, uwaga=False, lasery=False, ruch=False):
+        """Gotowy zestaw wiązek okienka P; włącza też bramkę „wszystkie wiązki”. Uwaga przy „siły uwagi: brak” przechodzi na
+        siły na wybraną cząsteczkę; tory wracają do ostatniego wybranego trybu."""
+        if uwaga and self.cb_sily.currentIndex() == 0:
+            self.cb_sily.setCurrentIndex(1)
+        if self.cb_tory.currentIndex() > 0:
+            self._p_tory = self.cb_tory.currentIndex()
+        for ch, on in ((self.ch_p_linie, uwaga), (self.ch_p_wektory, uwaga), (self.ch_lasery, lasery), (self.ch_p_przes, ruch),
+                       (self.ch_p_wiazki, True)):
+            ch.setChecked(on)
+        self.cb_tory.setCurrentIndex(self._p_tory if ruch else 0)
 
     def _widac_p(self):
         d = self.doki['p']
@@ -169,7 +241,13 @@ class SubstepsMixin:
         o = self.ep.opcje
         o.update(sily=self.cb_sily.currentIndex(), gain=self.sp_gain_a.value(), skala_sil=self.sp_skala_sil.value(),
                  lasery=self.ch_lasery.isChecked(), skala_l=self.sp_skala_l.value(), tory=self.cb_tory.currentIndex(),
-                 tok=self.sp_tok.value(), rozm=self.sp_rozm3.value())
+                 tok=self.sp_tok.value(), rozm=self.sp_rozm3.value(), wiazki=self.ch_p_wiazki.isChecked(),
+                 linie=self.ch_p_linie.isChecked(), wektory=self.ch_p_wektory.isChecked(), przes=self.ch_p_przes.isChecked(),
+                 czastki=self.ch_p_czastki.isChecked(), wybrana=self.ch_p_wybrana.isChecked(), grub=self.sp_p_grub.value(),
+                 glowa=self.cb_p_glowa.currentIndex(), prog=self.sp_p_prog.value(), znak_l=(0, 1, -1)[self.cb_p_znak_l.currentIndex()],
+                 top_l=self.sp_p_top_l.value(), prog_l=self.sp_p_prog_l.value(), alfa_l=self.sp_p_krycie_l.value())
+        if self.cb_tory.currentIndex() > 0:
+            self._p_tory = self.cb_tory.currentIndex()
         if self.sender() in (self.cb_kolor_cz, self.cb_uklad) and self.d_pod is not None:
             self._kolory_czastek(); self.ep.ustaw_podkroki(self.d_pod, self._kol_cz, self._uklad())
             if self.sender() is self.cb_uklad:

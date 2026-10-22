@@ -386,7 +386,7 @@ class TestHistoria(unittest.TestCase):
         self.assertTrue(Path(h.wagi).is_dir(), h.wagi)
         surowe = str(np.load(HISTORIA / 'dane.npz')['wagi'])
         self.assertEqual(Path(h.wagi), hist.sciezka_lokalna(surowe))
-        if not Path(surowe).exists():                               # inny komputer / dysk: zmapowane do ROOT
+        if not os.path.exists(surowe):                              # inny komputer / dysk (także niedostępny F:): zmapowane do ROOT
             self.assertTrue(Path(h.wagi).is_relative_to(hist.ROOT))
 
     def test_tryby_etykiety_spojne_liczby(self):

@@ -202,5 +202,59 @@ class TestGrupy(unittest.TestCase):
         finally:
             g.zwin(False)
 
+
+class TestWidocznoscOkienkaP(unittest.TestCase):
+    """Okienko P: wszystkie wiązki naraz, gotowe zestawy i filtry laserów trafiają do opcji elementu GPU."""
+
+    def setUp(self):
+        self.o = Z.ep.opcje
+
+    def tearDown(self):
+        Z._p_wlacz_wszystkie()
+        Z.sp_p_top_l.setValue(0); Z.cb_p_znak_l.setCurrentIndex(0)
+
+    def test_naglowki_grup(self):
+        naglowki = sorted(_naglowki_grup(Z._sek['przejscie']), key=lambda g: parameter_groups.wiersz(g.formularz, g))
+        tytuly = [g.tytul_grupy for g in naglowki]
+        self.assertEqual(tytuly, ['Widoczność: wszystkie wiązki naraz', 'Uwaga: siły między cząsteczkami', 'Lasery MLP',
+                                  'Tory, przesunięcia i kolory'])
+
+    def test_wylacz_i_wlacz_wszystkie(self):
+        """Odznaczenie bramki chowa wszystkie wiązki bez zmiany pojedynczych przełączników; „Włącz wszystkie” włącza każdy rodzaj."""
+        Z.cb_tory.setCurrentIndex(2)
+        Z.ch_p_wiazki.setChecked(False)
+        self.assertFalse(self.o['wiazki'])
+        self.assertTrue(self.o['lasery'] and self.o['linie'] and self.o['wektory'] and self.o['przes'])
+        Z.ch_lasery.setChecked(False); Z.cb_tory.setCurrentIndex(0); Z.ch_p_przes.setChecked(False)
+        Z._p_wlacz_wszystkie()
+        self.assertTrue(self.o['wiazki'] and self.o['lasery'] and self.o['linie'] and self.o['wektory'] and self.o['przes'])
+        self.assertEqual(self.o['tory'], 2)                    # tory wracają do ostatniego wybranego trybu
+
+    def test_zestawy(self):
+        Z._p_zestaw(lasery=True)
+        self.assertEqual((self.o['lasery'], self.o['linie'], self.o['wektory'], self.o['przes'], self.o['tory']), (True, False, False, False, 0))
+        Z.cb_sily.setCurrentIndex(0)
+        Z._p_zestaw(uwaga=True)
+        self.assertEqual((self.o['lasery'], self.o['linie'], self.o['wektory'], self.o['przes']), (False, True, True, False))
+        self.assertEqual(self.o['sily'], 1)                    # „brak” sił uwagi przechodzi na siły na wybraną cząsteczkę
+
+    def test_najsilniejsze_lasery(self):
+        """Próg laserów przy „najsilniejsze N” przepuszcza dokładnie N wiązek (po filtrze znaku)."""
+        import numpy as np
+        rng = np.random.default_rng(0)
+        z = rng.normal(size=(6, 600, 768)).astype(np.float32)
+        ep = Z.ep; stare = getattr(ep, '_z', None)
+        try:
+            ep._z = z
+            for znak, maska in ((0, np.ones(768, bool)), (1, z[2, 7] > 0), (-1, z[2, 7] < 0)):
+                ep.opcje.update(tok=7, top_l=25, znak_l=znak, prog_l=0.05, gain_l=1.0)
+                prog = ep._prog_laserow(2)
+                self.assertEqual(int(((np.abs(z[2, 7]) >= prog) & maska).sum()), 25, znak)
+            ep.opcje.update(top_l=0)
+            self.assertEqual(ep._prog_laserow(2), 0.05)
+        finally:
+            ep._z = stare; ep.opcje['tok'] = Z.sp_tok.value()
+
+
 if __name__ == '__main__':
     unittest.main()

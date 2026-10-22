@@ -25,7 +25,8 @@ GRUPY = {
                 ('Oznaczenia w kadrze: osie, skok, ruch, tło', 'ch_og_osie'), ('Ślad, kadr i odtwarzanie', 'cb_og_slad')],
     'mapa_pul': [('Liczenie mapy', 'ch_mp'), ('Wygląd mapy', 'cb_mp_kolor')],
     'dolina': [('Liczenie doliny', 'ch_dol'), ('Progi pewności i IoU', 'sp_dol_p'), ('Wygląd', 'ch_dol_mgla')],
-    'przejscie': [('Uwaga: siły między cząsteczkami', 'cb_sily'), ('Lasery MLP', 'ch_lasery'), ('Tory i kolory', 'cb_tory')],
+    'przejscie': [('Widoczność: wszystkie wiązki naraz', 'ch_p_wiazki'), ('Uwaga: siły między cząsteczkami', 'cb_sily'),
+                  ('Lasery MLP', 'ch_lasery'), ('Tory, przesunięcia i kolory', 'cb_tory')],
     'zapis': [('Zapis policzonych przejść', 'ch_prz_zapis'), ('Zapis wszystkich checkpointów', 'sp_prz_co')],
 }
 

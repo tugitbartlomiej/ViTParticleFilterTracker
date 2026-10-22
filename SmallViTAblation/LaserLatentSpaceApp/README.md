@@ -229,6 +229,16 @@ już jest, zamiast liczyć go od nowa.
 osobno w `history.podkroki` i `substep_field.policz`), bez obrazków łodygi (`podkroki(..., lodyga=False)`: 6 rozkładów
 SVD, których pomiar nie używa). 184 → 89 ms na checkpoint (ok. 1,2 min na 806 checkpointów zamiast 2,5).
 
+## Okienko P: widoczność wiązek
+
+Ustawienia okienka P (strona „Podkroki” i prawy klik w okienko), grupa „Widoczność: wszystkie wiązki naraz”: pole „wszystkie
+wiązki i linie” chowa naraz linie i wektory uwagi, lasery MLP, przesunięcia w podkroku i tory, a pojedyncze przełączniki zostają
+bez zmian. Przyciski: Włącz wszystkie, Wyłącz wszystkie, Tylko uwaga, Tylko lasery, Tylko ruch. Osobno: cząsteczki, wybrana
+cząsteczka, grubość linii; uwaga: linie / wektory sił, jedna głowa albo wszystkie, próg atencji; lasery: znak (dodatnie /
+ujemne), tylko N najsilniejszych (próg z |z| N-tego lasera, `NetworkPassageGPU._prog_laserow`), próg |z|, krycie;
+przesunięcia w podkroku. Tryb sił uwagi (`cb_sily`) jest wspólny ze sferą w trybie podkroków; pozostałe przełączniki
+dotyczą tylko okienka P.
+
 ## R12 kNN 3D: bez skoków
 
 R12 liczył PCA3 od nowa w każdym checkpoincie (znaki i kolejność osi przeskakiwały) i brał najbliższy checkpoint. Teraz

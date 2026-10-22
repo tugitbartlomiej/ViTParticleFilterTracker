@@ -18,6 +18,9 @@ VS_P = "#version 430\n" + _SSBO_P + """
 uniform mat4 u_mvp;
 uniform float u_s, u_gain, u_prog, u_skala_sil, u_rozm;
 uniform int u_tryb, u_tok, u_g;
+uniform int u_glowa;                       // uwaga: 0 = średnia 3 głów, 1..3 = jedna głowa
+uniform int u_znak;                        // lasery: 0 = wszystkie, 1 = tylko dodatnie z > 0, -1 = tylko ujemne
+uniform float u_alfa;                      // krycie laserów
 uniform int u_blok1;                       // płynne przejście: blok + 1 do narysowania (0 = blok bieżącego podkroku)
 uniform float u_zgas;                      // płynne przejście: 0 pełne siły / lasery, 1 zgaszone (krótsze i ciemniejsze)
 uniform vec4 u_kol;
@@ -25,10 +28,14 @@ out vec4 v_k;
 const vec4 POZA = vec4(2.0, 2.0, 2.0, 1.0);
 vec3 xs(uint s, uint i) { return X[min(s, 12u) * 600u + i].xyz; }
 vec3 teraz(uint i) { float s = clamp(u_s, 0.0, 12.0); uint a = uint(floor(s)); return mix(xs(a, i), xs(a + 1u, i), s - float(a)); }
-float att(uint b, uint i, uint j) { uint o = b * 1080000u + i * 600u + j; return (AH[o] + AH[o + 360000u] + AH[o + 720000u]) / 3.0; }
+float att(uint b, uint i, uint j) {
+    uint o = b * 1080000u + i * 600u + j;
+    if (u_glowa > 0) return AH[o + uint(u_glowa - 1) * 360000u];
+    return (AH[o] + AH[o + 360000u] + AH[o + 720000u]) / 3.0;
+}
 vec3 sila(uint b, uint i, uint j) {
     vec3 f = vec3(0.0);
-    for (uint h = 0u; h < 3u; h++) f += AF[(b * 3u + h) * 360000u + i * 600u + j] * UH[(b * 3u + h) * 600u + j].xyz;
+    for (uint h = 0u; h < 3u; h++) if (u_glowa == 0 || int(h) == u_glowa - 1) f += AF[(b * 3u + h) * 360000u + i * 600u + j] * UH[(b * 3u + h) * 600u + j].xyz;
     return f;
 }
 void main() {
@@ -64,8 +71,8 @@ void main() {
     } else if (u_tryb == 4) {                  // wektory laserów z_jc v_c na wybraną cząsteczkę (instancja = c)
         uint j = uint(u_tok), c = uint(gl_InstanceID);
         float z = Z[(b * 600u + j) * 768u + c];  // ze znakiem: wektor z_jc v_c, ujemny (błękitny) ciągnie w stronę −v_c
-        if (abs(z) * u_gain < u_prog) { gl_Position = POZA; return; }
-        v_k = z < 0.0 ? vec4(0.30, 0.85, 1.0, 0.85 * wz) : vec4(0.25 + 0.75 * KC[c].rgb, 0.85 * wz);
+        if (abs(z) * u_gain < u_prog || (u_znak == 1 && z <= 0.0) || (u_znak == -1 && z >= 0.0)) { gl_Position = POZA; return; }
+        v_k = z < 0.0 ? vec4(0.30, 0.85, 1.0, u_alfa * wz) : vec4(0.25 + 0.75 * KC[c].rgb, u_alfa * wz);
         vec3 p = teraz(j);
         gl_Position = u_mvp * vec4(v == 0 ? p : p + z * PV[b * 768u + c].xyz * u_skala_sil * wz, 1.0);
     } else if (u_tryb == 5) {                  // przesunięcie każdej cząsteczki w całym podkroku (stan k → k+1)
@@ -90,8 +97,12 @@ class NetworkPassageGPU(_GPUElement):
     def __init__(self):
         super().__init__()
         self.s = 0.0
+        # widoczność: wiazki = wszystkie wiązki i linie naraz (bramka nad pojedynczymi przełącznikami), linie / wektory = linie uwagi
+        # i wektory sił f_ij wybranej cząsteczki, przes = przesunięcia w podkroku, czastki / wybrana = punkty; top_l > 0 = tylko tyle
+        # najsilniejszych laserów (|z|), znak_l: 0 wszystkie, 1 dodatnie, -1 ujemne; glowa: 0 = średnia głów, 1..3 = jedna głowa
         self.opcje = dict(tok=0, sily=1, gain=1.0, prog=0.02, skala_sil=1.0, lasery=True, gain_l=1.0, prog_l=0.05, skala_l=1.0,
-                          tory=1, rozm=5.0, przes=True)
+                          tory=1, rozm=5.0, przes=True, wiazki=True, linie=True, wektory=True, czastki=True, wybrana=True,
+                          glowa=0, znak_l=0, top_l=0, alfa_l=0.85, grub=1.0)
         from laser_app.compute.common import kolory_kanalow
         self.ustaw_bufor('KC', kolory_kanalow().astype(np.float32))
         self._ostatnie = None
@@ -112,12 +123,27 @@ class NetworkPassageGPU(_GPUElement):
             dane += [('AF', (d['ah_c'] if srodek else d['ah']).reshape(-1)), ('Z', (d['z_c'] if srodek else d['z']).reshape(-1))]
         self._ostatnie = d
         self._ostatnie_sr = (id(d), srodek)
+        self._z = d['z_c'] if srodek else d['z']                     # do wyboru najsilniejszych laserów (top_l) na CPU
         for n, a in dane:
             self.ustaw_bufor(n, np.ascontiguousarray(a, np.float32))
         self.K = 13
 
     def ustaw_podkrok(self, s):
         self.s = float(s); self.update()
+
+    def _prog_laserow(self, b):
+        """Próg |z| laserów bloku b dla wybranej cząsteczki: opcja prog_l albo, przy top_l > 0, |z| top_l-tego najsilniejszego
+        lasera (po filtrze znaku), żeby świeciło najwyżej top_l wiązek."""
+        o = self.opcje; prog = float(o['prog_l']); n = int(o.get('top_l', 0))
+        z = getattr(self, '_z', None)
+        if n <= 0 or z is None:
+            return prog
+        z = np.asarray(z[b, int(o['tok'])], np.float64)
+        znak = int(o.get('znak_l', 0))
+        a = np.abs(z[z > 0] if znak == 1 else z[z < 0] if znak == -1 else z) * float(o['gain_l'])
+        if a.size <= n:
+            return prog
+        return max(prog, float(np.partition(a, a.size - n)[a.size - n]) * (1 - 1e-6))
 
     def _programy(self):
         return dict(p=_program(VS_P, FS_P))
@@ -130,30 +156,36 @@ class NetworkPassageGPU(_GPUElement):
         wm, bm, ba = przenikanie(self.s, float(o.get('plynnie', 0.0)))   # waga laserów MLP; uwaga ma 1 − wm
         uwaga = w_ruchu and wm < 0.999
         self._ui('p', u_blok1=ba + 1, u_zgas=wm)
-        if o['tory'] == 2:                            # tory w głębokości wszystkich cząsteczek (słabo)
-            self._ui('p', u_tryb=1, u_g=0, u_kol=(1, 1, 1, 0.10), u_punkty=0); self._addytywnie(False); GL.glLineWidth(1.0)
+        g = float(o.get('grub', 1.0)); wiazki = bool(o.get('wiazki', True))
+        self._ui('p', u_glowa=int(o.get('glowa', 0)))
+        if wiazki and o['tory'] == 2:                 # tory w głębokości wszystkich cząsteczek (słabo)
+            self._ui('p', u_tryb=1, u_g=0, u_kol=(1, 1, 1, 0.10), u_punkty=0); self._addytywnie(False); GL.glLineWidth(g)
             GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, 13, TOK)
-        if o['tory'] >= 1:                            # tor wybranej cząsteczki przez wszystkie podkroki
-            self._ui('p', u_tryb=1, u_g=1, u_kol=(1.0, 0.85, 0.2, 0.9), u_punkty=0); self._addytywnie(False); GL.glLineWidth(2.0)
+        if wiazki and o['tory'] >= 1:                 # tor wybranej cząsteczki przez wszystkie podkroki
+            self._ui('p', u_tryb=1, u_g=1, u_kol=(1.0, 0.85, 0.2, 0.9), u_punkty=0); self._addytywnie(False); GL.glLineWidth(2.0 * g)
             GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, 13, TOK)
-        if w_ruchu and o['przes']:
-            self._ui('p', u_tryb=5, u_punkty=0); self._addytywnie(False); GL.glLineWidth(1.0)
+        if wiazki and w_ruchu and o['przes']:
+            self._ui('p', u_tryb=5, u_punkty=0); self._addytywnie(False); GL.glLineWidth(g)
             GL.glDrawArrays(GL.GL_LINES, 0, 2 * TOK)
-        if uwaga and o['sily'] == 2:                  # wszystkie pary: linie atencji
+        uwaga = uwaga and wiazki
+        if uwaga and o['sily'] == 2 and o.get('linie', True):        # wszystkie pary: linie atencji
             self._ui('p', u_tryb=2, u_g=0, u_gain=float(o['gain']), u_prog=float(o['prog']), u_kol=(0.35, 0.8, 1.0, 1.0), u_punkty=0)
-            self._addytywnie(True); GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, TOK * TOK)
-        if uwaga and o['sily'] >= 1:                  # wybrana cząsteczka: kogo słucha (linie) i siły f_ij (wektory)
+            self._addytywnie(True); GL.glLineWidth(g); GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, TOK * TOK)
+        if uwaga and o['sily'] >= 1 and o.get('linie', True):        # wybrana cząsteczka: kogo słucha (linie)
             self._ui('p', u_tryb=2, u_g=1, u_gain=float(o['gain']) * 20, u_prog=float(o['prog']), u_kol=(0.35, 0.8, 1.0, 1.0), u_punkty=0)
-            self._addytywnie(True); GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, TOK)
-            self._ui('p', u_tryb=3, u_skala_sil=float(o['skala_sil']), u_gain=float(o['gain']) * 20)
-            self._addytywnie(False); GL.glLineWidth(1.8); GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, TOK)
-        if w_ruchu and wm > 1e-3 and o['lasery']:
-            self._ui('p', u_tryb=4, u_gain=float(o['gain_l']), u_prog=float(o['prog_l']), u_skala_sil=float(o['skala_l']), u_punkty=0,
-                     u_blok1=bm + 1, u_zgas=1.0 - wm)
-            self._addytywnie(False); GL.glLineWidth(1.5); GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, NK)
+            self._addytywnie(True); GL.glLineWidth(g); GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, TOK)
+        if uwaga and o['sily'] >= 1 and o.get('wektory', True):      # siły f_ij na wybraną cząsteczkę (wektory)
+            self._ui('p', u_tryb=3, u_skala_sil=float(o['skala_sil']), u_gain=float(o['gain']) * 20, u_prog=float(o['prog']), u_punkty=0)
+            self._addytywnie(False); GL.glLineWidth(1.8 * g); GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, TOK)
+        if wiazki and w_ruchu and wm > 1e-3 and o['lasery']:
+            self._ui('p', u_tryb=4, u_gain=float(o['gain_l']), u_prog=self._prog_laserow(bm), u_skala_sil=float(o['skala_l']), u_punkty=0,
+                     u_blok1=bm + 1, u_zgas=1.0 - wm, u_znak=int(o.get('znak_l', 0)), u_alfa=float(o.get('alfa_l', 0.85)))
+            self._addytywnie(False); GL.glLineWidth(1.5 * g); GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, NK)
         self._ui('p', u_blok1=0, u_zgas=0.0)
         GL.glLineWidth(1.0)
-        self._ui('p', u_tryb=0, u_g=0, u_rozm=float(o['rozm']), u_ksztalt=3, u_kol=(1, 1, 1, 1.0), u_punkty=1)
-        self._addytywnie(False); GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
-        self._ui('p', u_g=1, u_rozm=float(o['rozm']) * 4, u_ksztalt=1, u_kol=(1.0, 0.85, 0.2, 1.0))
-        GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
+        if o.get('czastki', True):
+            self._ui('p', u_tryb=0, u_g=0, u_rozm=float(o['rozm']), u_ksztalt=3, u_kol=(1, 1, 1, 1.0), u_punkty=1)
+            self._addytywnie(False); GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
+        if o.get('wybrana', True):
+            self._ui('p', u_tryb=0, u_g=1, u_rozm=float(o['rozm']) * 4, u_ksztalt=1, u_kol=(1.0, 0.85, 0.2, 1.0), u_punkty=1)
+            self._addytywnie(False); GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
