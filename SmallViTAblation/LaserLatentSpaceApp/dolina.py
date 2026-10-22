@@ -182,14 +182,14 @@ def pole_jakosci(d, p_min, iou_min):
 def obrys(d, p_min, iou_min):
     """Powierzchnia brzegu doliny (marching cubes pola jakości na poziomie 0, sześcian domknięty na brzegach przekroju).
     Zwraca (trójkąty (3n, 3) w układzie przekroju, normalne (3n, 3)) albo None, gdy w przekroju nie ma brzegu."""
-    from skimage.measure import marching_cubes
+    from wspolne import izopowierzchnia
     q = np.pad(pole_jakosci(d, p_min, iou_min), 1, constant_values=-1.0)
     if q.max() <= 0 or q.min() >= 0:
         return None
     G, Z = d['G'], d['Z']
     h_ = 2 * Z / (G - 1)
     try:
-        v, f, n, _ = marching_cubes(q, 0.0, spacing=(h_, h_, h_), gradient_direction='ascent')
+        v, f, n = izopowierzchnia(q, 0.0, h_, 'ascent')
     except (ValueError, RuntimeError):
         return None
     v = v - Z - h_                                                       # indeks 1 (po dopełnieniu) = −Z

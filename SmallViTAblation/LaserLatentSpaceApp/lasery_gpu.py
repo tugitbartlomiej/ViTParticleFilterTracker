@@ -1175,9 +1175,9 @@ class PoleOgniskowej(_ElementGPU):
             return None
         try:
             import torch
-            from skimage.measure import marching_cubes
         except ImportError:
             return None
+        from wspolne import izopowierzchnia
         dev = 'cuda' if torch.cuda.is_available() else 'cpu'
         m = jn > 1e-4 * float(jn.max())
         K = torch.as_tensor(kn[m], dtype=torch.float32, device=dev); J = torch.as_tensor(jn[m], dtype=torch.float32, device=dev)
@@ -1202,7 +1202,10 @@ class PoleOgniskowej(_ElementGPU):
             h *= 1.6
         if V.max() <= poz:
             return None
-        v, f, nrm, _ = marching_cubes(V, poz, spacing=(2 * h / (G - 1),) * 3)
+        try:
+            v, f, nrm = izopowierzchnia(V, poz, 2 * h / (G - 1))
+        except (ValueError, RuntimeError):
+            return None
         v = v - h
         L = np.array([0.35, 0.5, 0.8]); L /= np.linalg.norm(L)                  # cieniowanie: światło z ustalonego kierunku
         sz = 0.35 + 0.65 * np.abs(nrm @ L)

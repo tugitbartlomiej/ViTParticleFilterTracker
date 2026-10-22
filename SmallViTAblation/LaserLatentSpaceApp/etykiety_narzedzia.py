@@ -1,7 +1,9 @@
 """Etykieta narzędzia z obrysu (wielokąty `<narzędzie>_seg` w annotation.csv Cataract-LMM 3_Object_Tracking), nie z ramki.
 
 Dla klatki: udział pikseli narzędzia w każdej z 600 łat 16 × 16 wejścia 480 × 320 (wszystkie narzędzia oznaczone na klatce,
-bez rogówki i źrenicy). Tokeny narzędzia = udział ≥ próg (domyślnie 0,5), mieszane = 0 < udział < próg.
+bez rogówki i źrenicy), osobno udział rogówki i źrenicy (etykiety oka; ViT nie jest na nich trenowany) oraz środek każdej łaty
+w obrysie. Tryby wyboru tokenów narzędzia (TRYBY): łata dotknięta obrysem (domyślnie), udział ≥ próg, środek łaty w obrysie,
+środek łaty w ramce GT. Mieszane = dotknięte obrysem, ale nienależące do narzędzia w danym trybie.
 Historia aplikacji nie zna nazwy pliku, więc klatkę znajdujemy po ramce GT (indeks ramek wszystkich filmów, budowany raz
 i zapisywany w cache_uczenia/etykiety); przy kilku kandydatach rozstrzyga podobieństwo obrazu.
 """
@@ -19,6 +21,10 @@ H, W, KOMORKA = 20, 30, 16
 SKALA = (W * KOMORKA / 720, H * KOMORKA / 480)            # natywne 720 × 480 → wejście 480 × 320
 POMIJANE = ('cornea', 'pupil')
 PROG = 0.5
+TRYBY = (('dotkniete', 'obrys: każda łata dotknięta obrysem (> 0 %)'),
+         ('pokrycie', 'obrys: pokrycie łaty ≥ próg'),
+         ('srodek', 'obrys: środek łaty w obrysie'),
+         ('ramka', 'ramka GT: środek łaty w ramce'))
 CACHE = Path(__file__).resolve().parent / 'cache_uczenia' / 'etykiety'
 
 
@@ -36,14 +42,24 @@ def _wielokaty(wiersz, kat):
     return [np.asarray(p, np.float32).reshape(-1, 2) * SKALA for p in v if len(p) >= 6]
 
 
-def udzial_z_wielokatow(wielokaty):
-    """float32 (600,): ułamek pikseli każdej łaty pokryty wielokątami (w pikselach 480 × 320)."""
+def maska_pikseli(wielokaty):
+    """uint8 (320, 480): 1 w pikselach wewnątrz wielokątów (w pikselach 480 × 320)."""
     import cv2
     m = np.zeros((H * KOMORKA, W * KOMORKA), np.uint8)
     for p in wielokaty:
         if len(p) >= 3:
             cv2.fillPoly(m, [np.round(p).astype(np.int32).reshape(-1, 1, 2)], 1)
-    return m.reshape(H, KOMORKA, W, KOMORKA).mean((1, 3)).reshape(-1).astype(np.float32)
+    return m
+
+
+def udzial_z_wielokatow(wielokaty):
+    """float32 (600,): ułamek pikseli każdej łaty pokryty wielokątami (w pikselach 480 × 320)."""
+    return maska_pikseli(wielokaty).reshape(H, KOMORKA, W, KOMORKA).mean((1, 3)).reshape(-1).astype(np.float32)
+
+
+def srodek_z_wielokatow(wielokaty):
+    """bool (600,): piksel w środku każdej łaty (przy 16 px: [8, 8] w łacie) leży wewnątrz wielokątów."""
+    return maska_pikseli(wielokaty)[KOMORKA // 2::KOMORKA, KOMORKA // 2::KOMORKA].reshape(-1).astype(bool)
 
 
 @lru_cache(maxsize=8)
@@ -52,7 +68,8 @@ def _etykiety_filmu(film):
 
 
 def etykieta(film, klatka):
-    """dict: udzial (600,), kategorie, ramki {kat: xyxy w 480 × 320}, czubki, piksele; None, gdy klatka bez narzędzia/obrysu."""
+    """dict: udzial (600,), srodek (600,) bool, oko {rogowka, zrenica: udział (600,)}, kategorie, ramki {kat: xyxy w 480 × 320},
+    piksele; None, gdy klatka bez narzędzia/obrysu."""
     w = _etykiety_filmu(film).get(int(klatka))
     if w is None:
         return None
@@ -65,13 +82,30 @@ def etykieta(film, klatka):
         b = FI._json(w[k + '_bbox'])
         ramki[k] = [b[0] * SKALA[0], b[1] * SKALA[1], (b[0] + b[2]) * SKALA[0], (b[1] + b[3]) * SKALA[1]]
     u = udzial_z_wielokatow(wiel)
-    return dict(film=film, klatka=int(klatka), udzial=u, kategorie=kat, ramki=ramki, piksele=float(u.sum() * KOMORKA ** 2))
+    oko = dict(rogowka=udzial_z_wielokatow(_wielokaty(w, 'cornea')), zrenica=udzial_z_wielokatow(_wielokaty(w, 'pupil')))
+    return dict(film=film, klatka=int(klatka), udzial=u, srodek=srodek_z_wielokatow(wiel), oko=oko, kategorie=kat, ramki=ramki,
+                piksele=float(u.sum() * KOMORKA ** 2))
 
 
-def maski(udzial, prog=PROG):
-    """(narzędzie, mieszane) bool (600,) z udziału pikseli."""
+def maski(udzial, prog=PROG, tryb='pokrycie', srodek=None, ramka=None):
+    """(narzędzie, mieszane) bool (600,) z udziału pikseli obrysu wg trybu (TRYBY): 'dotkniete' udział > 0; 'pokrycie' udział ≥ prog
+    (mieszane 0 < udział < prog); 'srodek' środek łaty w obrysie (wymaga `srodek`, mieszane = dotknięte poza środkiem);
+    'ramka' środek łaty w ramce GT (wymaga `ramka` bool (600,), mieszane puste)."""
     u = np.asarray(udzial, np.float32)
-    return u >= prog, (u > 0) & (u < prog)
+    if tryb == 'pokrycie':
+        return u >= prog, (u > 0) & (u < prog)
+    if tryb == 'dotkniete':
+        return u > 0, np.zeros(u.shape, bool)
+    if tryb == 'srodek':
+        if srodek is None:
+            raise ValueError("tryb 'srodek' wymaga maski środków łat")
+        s = np.asarray(srodek, bool)
+        return s.copy(), (u > 0) & ~s
+    if tryb == 'ramka':
+        if ramka is None:
+            raise ValueError("tryb 'ramka' wymaga maski łat w ramce GT")
+        return np.asarray(ramka, bool).copy(), np.zeros(u.shape, bool)
+    raise ValueError(f'nieznany tryb etykiety: {tryb!r}')
 
 
 # ------------------------------------------------------------------ odnajdywanie klatki po ramce GT (historie aplikacji)
@@ -115,12 +149,29 @@ def znajdz(gt, rgb=None, tol=0.6):
     return best[1], best[2]
 
 
+def _zapisz(p, e):
+    np.savez(p, film=e['film'], klatka=e['klatka'], udzial=e['udzial'], kategorie=np.array(e['kategorie']), srodek=e['srodek'],
+             rogowka=e['oko']['rogowka'], zrenica=e['oko']['zrenica'])
+
+
 def dla_historii(h):
-    """Etykieta z obrysu dla historii lasery_dane (po ramce GT i obrazie); wynik zapisywany w h.katalog. None, gdy brak."""
+    """Etykieta z obrysu dla historii lasery_dane (po ramce GT i obrazie); wynik (film, klatka, udzial, kategorie, srodek, oko)
+    zapisywany w h.katalog/etykieta_obrys.npz. Stary plik bez środków i oka jest uzupełniany z annotation.csv. None, gdy brak."""
     p = Path(h.katalog) / 'etykieta_obrys.npz'
     if p.exists():
         d = np.load(p, allow_pickle=False)
-        return dict(film=str(d['film']), klatka=int(d['klatka']), udzial=d['udzial'], kategorie=[str(s) for s in d['kategorie']])
+        w = dict(film=str(d['film']), klatka=int(d['klatka']), udzial=d['udzial'], kategorie=[str(s) for s in d['kategorie']])
+        if all(k in d.files for k in ('srodek', 'rogowka', 'zrenica')):
+            w.update(srodek=d['srodek'].astype(bool), oko=dict(rogowka=d['rogowka'], zrenica=d['zrenica']))
+            return w
+        try:
+            e = etykieta(w['film'], w['klatka'])
+        except Exception:                                                # noqa: BLE001 (brak zipu adnotacji)
+            e = None
+        if e is None:                                                  # brak zipu adnotacji: zostaje sam udział
+            return dict(w, srodek=None, oko=None)
+        _zapisz(p, e)
+        return dict(e, kategorie=w['kategorie'], udzial=w['udzial'])
     if getattr(h, 'gt', None) is None:
         return None
     fk = znajdz(h.gt, getattr(h, 'rgb', None))
@@ -129,7 +180,7 @@ def dla_historii(h):
     e = etykieta(*fk)
     if e is None:
         return None
-    np.savez(p, film=e['film'], klatka=e['klatka'], udzial=e['udzial'], kategorie=np.array(e['kategorie']))
+    _zapisz(p, e)
     return e
 
 

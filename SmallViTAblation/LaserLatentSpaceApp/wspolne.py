@@ -18,6 +18,28 @@ PCA_SKLADOWE = (3, 4, 8, 16, 32, 128)          # wybór liczby wektorów po PCA 
 CZASTECZKI_CO = (1, 2, 3, 4, 5, 7, 10)         # wybór liczby cząsteczek: co n-ty patch w wierszach i kolumnach
 
 
+def izopowierzchnia(V, poziom, krok, kierunek='descent'):
+    """Powierzchnia V = poziom na regularnej siatce o boku `krok` (jak skimage.measure.marching_cubes): (wierzchołki (n, 3) od
+    rogu siatki, trójkąty (m, 3), normalne (n, 3)). Normalne wskazują spadek V ('descent') albo wzrost ('ascent').
+    Bez scikit-image: pyqtgraph.isosurface i normalne z gradientu V w najbliższym węźle (obrys ogniska 3D i doliny działa
+    w każdym Pythonie z pyqtgraph)."""
+    try:
+        from skimage.measure import marching_cubes
+        v, f, n, _ = marching_cubes(V, poziom, spacing=(krok,) * 3, gradient_direction=kierunek)
+        return v, f, n
+    except ImportError:
+        pass
+    import pyqtgraph as pg
+    v, f = pg.isosurface(np.ascontiguousarray(V, np.float64), float(poziom))
+    if len(f) == 0:
+        raise ValueError('brak powierzchni na tym poziomie')
+    g = np.stack(np.gradient(np.asarray(V, np.float64)), -1)
+    ix = np.clip(np.rint(v).astype(np.int64), 0, np.array(V.shape) - 1)
+    n = g[ix[:, 0], ix[:, 1], ix[:, 2]]
+    n = n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-30)
+    return v * krok, np.asarray(f, np.int64), (n if kierunek == 'ascent' else -n)
+
+
 def tokeny_co(n):
     """Tokeny co n-ty patch w wierszach i w kolumnach siatki, od środka pierwszego bloku n x n (równo po obrazie).
     n = 1: wszystkie 600; 2: 150; 3: 70; 4: 35; 5: 24; 7: 12; 10: 6."""

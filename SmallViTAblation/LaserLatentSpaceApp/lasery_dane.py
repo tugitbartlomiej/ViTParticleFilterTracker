@@ -484,6 +484,22 @@ def _rgb_pca(F, h, w):
     return (np.clip((Y - lo) / np.maximum(hi - lo, 1e-9), 0, 1) * 255).astype(np.uint8).reshape(h, w, 3)
 
 
+KLASY_OKA = ('tło', 'rogówka', 'źrenica', 'narzędzie')
+
+
+def sciezka_lokalna(p):
+    """Ścieżka zapisana w cache na innym dysku (np. F:\\...\\SmallViTAblation\\assets\\...) → ta sama ścieżka w bieżącej bazie projektu
+    (ROOT); bez zmian, gdy istnieje albo nie leży w SmallViTAblation."""
+    p = Path(str(p))
+    try:
+        if p.exists() or 'SmallViTAblation' not in p.parts:
+            return p
+    except OSError:                                                      # niedostępny dysk (brak uprawnień): szukamy w ROOT
+        pass
+    q = ROOT.joinpath(*p.parts[p.parts.index('SmallViTAblation') + 1:])
+    return q if q.exists() else p
+
+
 class Historia:
     """Wczytany wynik `policz` (tablice numpy; Z jako mmap)."""
 
@@ -494,25 +510,24 @@ class Historia:
             v = d[k]
             setattr(self, k, v.item() if v.ndim == 0 else v)
         self.Z = np.load(self.katalog / 'Z.npy', mmap_mode='r')
+        if hasattr(self, 'wagi'):
+            self.wagi = str(sciezka_lokalna(self.wagi))       # cache policzony na innym dysku (F:): pułapka, dolina, podkroki czytają wagi
         self.K = len(self.kroki)
         self.gt = None if np.isnan(self.gt).any() else [float(v) for v in self.gt]
         self._etykieta_obrysu()
         self.lok_m, self.vib_m = self.lok.mean(1), self.vib.mean(1)
-        n = self.narz
-        self.narz_lok = self.lok[:, n].mean(1) / np.maximum(self.lok[:, ~n].mean(1), 1e-9) if n.any() else np.ones(self.K)
         self.LOK99, self.VIB97 = float(np.percentile(self.lok, 99)), float(np.percentile(self.vib, 97))
-        self.fok = int(np.flatnonzero(n)[np.argmin(np.linalg.norm(self.g[n] - self.g[n].mean(0), axis=1))]) if n.any() \
-            else int(np.argmax(self.vib.mean(0)))
+        self.ustaw_etykiete()
         self.refl_pokaz = int(np.argmax(np.asarray(self.Z[-1], np.float32).var(0)))
 
     def _etykieta_obrysu(self):
-        """Tokeny narzędzia z obrysu (udział pikseli narzędzia w łacie ≥ PROG, etykiety_narzedzia), nie z ramki GT: cienkie narzędzie
-        zajmuje w ramce kilka łat. narz_ramka = stara etykieta z ramki, mieszane = 0 < udział < PROG (ani narzędzie, ani tło).
-        Bez obrysu (klatka spoza Cataract-LMM) zostaje ramka."""
+        """Wczytuje dane obrysu (etykiety_narzedzia): udzial, srodek, oko {rogowka, zrenica}, film_klatka. narz_ramka = stara etykieta
+        z ramki GT. Bez obrysu (klatka spoza Cataract-LMM, brak zipów) wszystko poza ramką jest puste (None)."""
         self.narz_ramka = np.asarray(self.narz, bool)
         self.mieszane = np.zeros(TOK, bool)
-        self.udzial = None
-        self.etykieta = 'ramka GT'
+        self.udzial = self.srodek = self.oko = self.film_klatka = None
+        self._kat_obrysu = []
+        self.etykieta, self.tryb_etykiety, self.prog_etykiety = 'ramka GT', 'ramka', 0.5
         try:
             import etykiety_narzedzia as EN
             e = EN.dla_historii(self)
@@ -522,13 +537,52 @@ class Historia:
             e = None
         if e is None:
             return
-        narz, mies = EN.maski(e['udzial'])
-        if narz.sum() < 2:                                               # bardzo cienkie narzędzie: niższy próg
-            narz, mies = EN.maski(e['udzial'], 0.25)
-        if narz.sum() < 2:
-            return
-        self.narz, self.mieszane, self.udzial = narz, mies, np.asarray(e['udzial'], np.float32)
-        self.etykieta = f'obrys {e["film"]} kl. {e["klatka"]} ({", ".join(e["kategorie"])})'
+        self.udzial = np.asarray(e['udzial'], np.float32)
+        self.srodek = None if e.get('srodek') is None else np.asarray(e['srodek'], bool)
+        self.oko = None if e.get('oko') is None else {k: np.asarray(v, np.float32) for k, v in e['oko'].items()}
+        self.film_klatka = (e['film'], int(e['klatka']))
+        self._kat_obrysu = list(e['kategorie'])
+
+    def ustaw_etykiete(self, tryb='dotkniete', prog=0.5):
+        """Wybiera tokeny narzędzia (self.narz, self.mieszane) z danych obrysu wg trybu z etykiety_narzedzia.TRYBY ('dotkniete',
+        'pokrycie' z progiem `prog`, 'srodek', 'ramka') i przelicza wszystko, co z nich wynika (narz_lok, fok). Bez obrysu albo gdy tryb
+        daje < 1 łaty, zostaje ramka GT (opis w self.etykieta). Zwraca opis etykiety."""
+        n_ramka = int(self.narz_ramka.sum())
+        narz, mies, opis, efektywny = self.narz_ramka, np.zeros(TOK, bool), 'ramka GT', 'ramka'
+        if tryb == 'ramka' and self.udzial is not None:
+            opis = f'ramka GT, środek łaty w ramce: {n_ramka} łat'
+        elif self.udzial is not None:
+            import etykiety_narzedzia as EN
+            nazwa = {'dotkniete': 'dotknięte', 'pokrycie': f'pokrycie ≥ {prog:g}', 'srodek': 'środek w obrysie'}.get(tryb, tryb)
+            try:
+                n, m = EN.maski(self.udzial, prog, tryb, srodek=self.srodek, ramka=self.narz_ramka)
+            except ValueError:                                           # np. brak środków łat w starym cache
+                n, m = np.zeros(TOK, bool), np.zeros(TOK, bool)
+            if n.sum() >= 1:
+                narz, mies, efektywny = n, m, tryb
+                opis = (f'obrys {self.film_klatka[0]} kl. {self.film_klatka[1]} ({", ".join(self._kat_obrysu)}), {nazwa}: '
+                        f'{int(n.sum())} łat')
+            else:
+                opis = f'ramka GT (obrys, {nazwa}: 0 łat): {n_ramka} łat'
+        self.narz, self.mieszane = np.asarray(narz, bool), np.asarray(mies, bool)
+        self.etykieta = opis
+        self.tryb_etykiety = efektywny                                   # 'ramka' także przy powrocie do ramki GT
+        self.prog_etykiety = float(prog)
+        n = self.narz
+        self.narz_lok = self.lok[:, n].mean(1) / np.maximum(self.lok[:, ~n].mean(1), 1e-9) if n.any() else np.ones(self.K)
+        self.fok = int(np.flatnonzero(n)[np.argmin(np.linalg.norm(self.g[n] - self.g[n].mean(0), axis=1))]) if n.any() \
+            else int(np.argmax(self.vib.mean(0)))
+        return opis
+
+    def obszary(self, prog_oka=0.5):
+        """uint8 (600,): klasy KLASY_OKA (0 tło, 1 rogówka, 2 źrenica, 3 narzędzie); pierwszeństwo narzędzie (self.narz) > źrenica >
+        rogówka, obszary oka = udział ≥ prog_oka. Bez danych oka tylko 0 i 3."""
+        k = np.zeros(TOK, np.uint8)
+        if self.oko is not None:
+            k[np.asarray(self.oko['rogowka']) >= prog_oka] = 1
+            k[np.asarray(self.oko['zrenica']) >= prog_oka] = 2
+        k[np.asarray(self.narz, bool)] = 3
+        return k
 
     def indeks(self, krok):
         """Ułamkowy indeks checkpointu dla kroku (interpolacja liniowa w krokach)."""

@@ -478,6 +478,9 @@ class Rzuty(QWidget):
         self.cb_L10.currentIndexChanged.connect(self._opcje)
         for z_ in (gw, ga, gb, gc, gd, gp, gl_, g0):
             z_.naglowek.setChecked(False)                                  # podsekcje zwinięte: panel nie rośnie
+        # okienko → podsekcje z jego ustawieniami (prawy klik w okienko R otwiera je w popupie, zakladka_laserow.menu_okienka)
+        self._sekcje_R = {'R0': (g0,), 'R1': (ga, gw), 'R2': (gw,), 'R3': (ga, gw), 'R4': (gb,), 'R5': (gc,), 'R6': (gd, gw),
+                          'R7': (ga, gw), 'R8': (gp,), 'R9': (gl_,), 'R10': (g0, gl_), 'R11': (gl_,), 'R12': (g0,)}
         for w in (self.cb_kogo, self.cb_slad, self.cb_strz, self.cb_srodek, self.cb_skala, self.cb_A, self.cb_F, self.cb_D,
                   self.cb_L_kiedy, self.cb_L_osie, self.cb_L_etyk, self.cb_L_os):
             w.currentIndexChanged.connect(self._opcje)
@@ -492,6 +495,10 @@ class Rzuty(QWidget):
             w.valueChanged.connect(lambda *_: self._rysuj_widoczne())
         self.ch_C.toggled.connect(lambda *_: self._rysuj_widoczne())
         self.cb_P.currentIndexChanged.connect(lambda *_: self._panel_wiernosc())
+
+    def sekcje_okienka(self, k):
+        """Podsekcje panelu z ustawieniami okienka k (R0–R12); pusta lista dla nieznanego."""
+        return list(self._sekcje_R.get(k, ()))
 
     # ------------------------------------------------------------------ budowa okienek
     def buduj_okienka(self):

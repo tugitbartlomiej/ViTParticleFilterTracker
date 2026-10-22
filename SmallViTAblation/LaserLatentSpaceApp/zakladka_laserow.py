@@ -23,7 +23,7 @@ import pyqtgraph as pg
 from PyQt6.QtCore import QByteArray, QEvent, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDockWidget, QDoubleSpinBox, QFileDialog, QFormLayout, QGroupBox,
-                             QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMenu, QProgressBar, QPushButton, QScrollArea, QSlider,
+                             QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMenu, QProgressBar, QPushButton, QSizePolicy, QSlider,
                              QSpinBox, QToolButton, QVBoxLayout, QWidget)
 
 import lasery_dane as LD
@@ -597,43 +597,16 @@ class ZakladkaLaserow(QWidget):
         self.timer.timeout.connect(self._klatka)
         QTimer.singleShot(50, self._wczytaj_z_cache)
 
-    def _zwin_sekcje(self, rozwin):
-        """Zwija wszystkie sekcje lewego panelu (rozwin=False) albo rozwija tylko główne, niezagnieżdżone (rozwin=True)."""
-        def zagniezdzona(w):
-            p = w.parentWidget()
-            while p is not None and p is not self._lewy_panel:
-                if isinstance(p, Zwijana):
-                    return True
-                p = p.parentWidget()
-            return False
-        for s in self._lewy_panel.findChildren(Zwijana):
-            if rozwin and zagniezdzona(s):
-                continue
-            s.naglowek.setChecked(bool(rozwin))
-
     # ------------------------------------------------------------------ UI
     def _buduj(self):
-        lay = QHBoxLayout(self); lay.setContentsMargins(4, 4, 4, 4)
-        lewy = QWidget(); ll = QVBoxLayout(lewy); ll.setContentsMargins(2, 2, 2, 2)
-        from PyQt6.QtWidgets import QSplitter
-        sc = QScrollArea(); sc.setWidget(lewy); sc.setWidgetResizable(True); sc.setMinimumWidth(300)
-        sc.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        sc.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        self.podzial = QSplitter(Qt.Orientation.Horizontal); self.podzial.setChildrenCollapsible(False)
-        self.podzial.addWidget(sc)
-        lay.addWidget(self.podzial)
-        prawy = QWidget(); pl_ = QVBoxLayout(prawy); pl_.setContentsMargins(0, 0, 0, 0)
-        self.podzial.addWidget(prawy); self.podzial.setStretchFactor(1, 1); self.podzial.setSizes([340, 1600])
+        """Układ: u góry pasek osi czasu, pod nim okienka (doki). Parametry nie zajmują już stałej kolumny: są w okienku
+        „Parametry” (lista sekcji + jedna strona naraz), które można odpiąć jak każde okienko albo schować (F2), a ustawienia
+        konkretnego okienka otwiera prawy klik w nie (panel_ustawien.PopupUstawien). Sekcje budują się jak dawniej
+        (Zwijana + QFormLayout) i trafiają do self._sek; strony panelu składa _buduj_panel."""
+        lay = QVBoxLayout(self); lay.setContentsMargins(2, 2, 2, 2); lay.setSpacing(2)
+        pl_ = lay
+        self._sek = {}
 
-        # --- zwijanie wszystkich sekcji panelu naraz (oszczędność miejsca)
-        wiersz_zw = QHBoxLayout()
-        self.bt_zwin = QPushButton('▸ Zwiń wszystkie'); self.bt_rozwin = QPushButton('▾ Rozwiń główne')
-        self.bt_zwin.setToolTip('Zwija wszystkie sekcje panelu (także zagnieżdżone) do samych nagłówków.')
-        self.bt_rozwin.setToolTip('Rozwija sekcje główne panelu; sekcje zagnieżdżone zostają zwinięte.')
-        self.bt_zwin.clicked.connect(lambda: self._zwin_sekcje(False))
-        self.bt_rozwin.clicked.connect(lambda: self._zwin_sekcje(True))
-        wiersz_zw.addWidget(self.bt_zwin); wiersz_zw.addWidget(self.bt_rozwin)
-        ll.addLayout(wiersz_zw)
         wiersz_st = QHBoxLayout()
         self.ch_stereo = QCheckBox('Stereo 3D (SBS)')
         self.ch_stereo.setToolTip('Przełącznik 2D ↔ 3D dla wszystkich widoków OpenGL (sfera, R1–R7, dolina…): lewe i prawe oko obok siebie,\n'
@@ -649,8 +622,9 @@ class ZakladkaLaserow(QWidget):
         self.ch_stereo_zam.toggled.connect(lambda on: WidokGL.ustaw_stereo(zamiana=on))
         for w_ in (self.ch_stereo, self.sp_stereo, self.ch_stereo_zam):
             wiersz_st.addWidget(w_)
-        ll.addLayout(wiersz_st)
-        self._lewy_panel = lewy
+        wiersz_st.addStretch(1)
+        g = Zwijana('Stereo 3D (monitor 3D, wszystkie widoki)'); f = QFormLayout(g); f.addRow(wiersz_st)
+        self._sek['stereo'] = g
 
         # --- dane
         g = Zwijana('Dane: historia uczenia i zdjęcie'); f = QFormLayout(g)
@@ -680,7 +654,7 @@ class ZakladkaLaserow(QWidget):
         self.pasek = QProgressBar(); self.pasek.setTextVisible(True); f.addRow(self.pasek)
         self.lb_stan = QLabel('Wybierz historię i zdjęcie, potem „Policz / wczytaj”. Wynik zostaje w cache_uczenia/lasery.')
         self.lb_stan.setWordWrap(True); f.addRow(self.lb_stan)
-        ll.addWidget(g)
+        self._sek['dane'] = g
         for w in (self.cb_historia, self.cb_zdjecie):
             w.currentIndexChanged.connect(self._po_wyborze)
         for w in (self.sp_od, self.sp_do, self.sp_co, self.sp_okno):
@@ -688,7 +662,7 @@ class ZakladkaLaserow(QWidget):
 
         # --- rzuty z 192 wymiarów (okienka R1–R8, rzuty_okienka.py)
         self.rzuty = RZO.Rzuty(self)
-        ll.addWidget(self.rzuty)
+        self._sek['rzuty'] = self.rzuty
 
         # --- rzuty 2D
         g = Zwijana('Okienka 1–3: rzut płaski (film 2)'); f = QFormLayout(g)
@@ -704,7 +678,7 @@ class ZakladkaLaserow(QWidget):
             w.setToolTip(dymek); f.addRow(nazwa, w); w.valueChanged.connect(self._opcje)
         f.addRow(self.ch_kamera); f.addRow(self.ch_narz2)
         self.ch_kamera.toggled.connect(self._opcje); self.ch_narz2.toggled.connect(self._opcje)
-        ll.addWidget(g)
+        self._sek['plaskie'] = g
 
         # --- sfera
         g = Zwijana('Sfera reflektorów (film 12)'); f = QFormLayout(g)
@@ -765,8 +739,8 @@ class ZakladkaLaserow(QWidget):
         for nazwa, w in (('Wiązki', self.cb_wiazki), ('Grubość wiązek', self.sp_grub_w), ('Wzmocnienie', self.sp_gain), ('Ekspozycja światła', self.sp_eksp), ('Próg', self.sp_prog),
                          ('Skala chmury', self.cb_skala)):
             f.addRow(nazwa, w)
-        f.addRow('Cząsteczka (patch)', h1); f.addRow('  + cząsteczki', self.ed_tok)
-        f.addRow('Reflektor (neuron)', h2); f.addRow('  + reflektory', self.ed_refl)
+        self._wiersze_wyboru = (('Cząsteczka (patch)', h1), ('  + cząsteczki', self.ed_tok), ('Reflektor (neuron)', h2),
+                                ('  + reflektory', self.ed_refl))                # osobna sekcja „wybor” (_buduj_wybor)
         self.cb_obrot = WaskiCombo(); self.cb_obrot.addItems(['brak', 'dryf netto (2000 kroków)', 'drganie (100 kroków)', 'dryf i drganie'])
         self.cb_obrot.setToolTip('Gdzie w układzie jest gradient (film 23). Przy każdym reflektorze igła = kierunek d_c, w który pchają jego wiązki; '
                                  'strzałka na końcu igły = dokąd i jak szybko igła się obraca w czasie uczenia. Kierunek = rzut obrotu na 3D, '
@@ -787,7 +761,7 @@ class ZakladkaLaserow(QWidget):
         f.addRow('Wektory dla', self.cb_wek_dla); f.addRow('Skala wektorów', self.sp_skala_wek)
         self.cb_kol_sciezki = WaskiCombo()
         self.cb_kol_sciezki.addItems(['jednolity (koloidy żółte, średnie skoków zielone)', 'kolor patcha ze zdjęcia', 'położenie patcha na obrazie (siatka 30 × 20: barwa = kolumna, jasność = wiersz)', 'narzędzie',
-                                      'odpływ od adresu (jak okienko 2, plasma)'])
+                                      'odpływ od adresu (jak okienko 2, plasma)', 'obszary oka: narzędzie, źrenica, rogówka, tło'])
         self.cb_kol_sciezki.setToolTip('Kolor drogi i wektorów koloidów i średnich skoków. „Odpływ od adresu”: każdy punkt drogi i koniec wektora ma kolor '
                                        'według odległości od położenia w kroku 0 (adres), skala plasma jak strzałki w okienku 2: '
                                        'ciemny fiolet = przy adresie, żółty = 99. percentyl odpływu.')
@@ -814,7 +788,7 @@ class ZakladkaLaserow(QWidget):
         for w in (self.ch_kier, self.ch_sfera):
             w.toggled.connect(self._opcje)
         self.ch_refl.toggled.connect(self._opcje)
-        ll.addWidget(g)
+        self._sek['sfera'] = g
 
         # --- zapis przejść przez sieć (podkroki) na dysk
         g = Zwijana('Zapis przejść przez sieć (podkroki) na dysk'); f = QFormLayout(g)
@@ -837,7 +811,7 @@ class ZakladkaLaserow(QWidget):
         f.addRow(self.ch_prz_zapis); f.addRow('Zapis', self.cb_prz_dokl); f.addRow('Limit katalogu', self.sp_prz_limit)
         f.addRow('Wszystkie: co', self.sp_prz_co); f.addRow(hb_); f.addRow(self.pasek_prz); f.addRow(self.lb_prz)
         self._prz_watek = None; self._prz_bajty = 0
-        ll.addWidget(g)
+        self._sek['zapis'] = g
 
         # --- pułapka optyczna (ogniskowa wiązek bloku 6)
         g = Zwijana('Pułapka optyczna: ogniskowa wiązek wokół koloidu (okienko 11)'); f = QFormLayout(g)
@@ -1022,7 +996,7 @@ class ZakladkaLaserow(QWidget):
         self.cb_og_czas.currentIndexChanged.connect(lambda *_: self._zlec_podkroki())
         self.cb_og_czas.currentIndexChanged.connect(self._og_czas_zmiana)
         self._og = None; self._og_watek = None; self._og_klucz = None
-        ll.addWidget(g)
+        self._sek['pulapka'] = g
 
         # --- mapy
         g = Zwijana('Okienka 4–5: mapy na zdjęciu'); f = QFormLayout(g)
@@ -1037,7 +1011,7 @@ class ZakladkaLaserow(QWidget):
         self.cb_mapa.currentIndexChanged.connect(self._opcje); self.sp_krycie.valueChanged.connect(self._opcje)
         for w in (self.ch_pierw, self.ch_rm, self.ch_rg):
             w.toggled.connect(self._opcje)
-        ll.addWidget(g)
+        self._sek['mapy'] = g
 
         # --- dolina pewności i IoU (okienko 12)
         g = Zwijana('Dolina pewności i IoU wybranej cząsteczki (okienko 12)'); f = QFormLayout(g)
@@ -1087,7 +1061,7 @@ class ZakladkaLaserow(QWidget):
         self.ch_dol_kamera.toggled.connect(lambda on: self._dol_obrot.start() if on else self._dol_obrot.stop())
         self.sp_tok.valueChanged.connect(lambda *_: self._dol_zlec())
         self._dol = None; self._dol_klucz = None
-        ll.addWidget(g)
+        self._sek['dolina'] = g
 
         # --- mechanika reflektora (okienko 13)
         g = Zwijana('Reflektor: mechanika — odrzut wiązek i ruch (okienko 13)'); f = QFormLayout(g)
@@ -1121,8 +1095,7 @@ class ZakladkaLaserow(QWidget):
         for w in (self.ch_mech_cel, self.ch_mech_prog, self.ch_mech_nap):
             w.toggled.connect(lambda *_: self._mech_rysuj())
         self._mech = None
-        ll.addWidget(g)
-        ll.addStretch(1)
+        self._sek['mech'] = g
 
         # --- pasek osi czasu
         os_ = QWidget(); ho = QHBoxLayout(os_); ho.setContentsMargins(4, 2, 4, 2)
@@ -1211,13 +1184,37 @@ class ZakladkaLaserow(QWidget):
         self.doki['13'].visibilityChanged.connect(lambda on: self._mech_zlec() if on else None)
         self.rzuty.buduj_okienka()                                      # okienka R1–R8: rzuty z 192 wymiarów
         self._buduj_przejscie()
+        self._buduj_panel()
         self._uklad_domyslny()
         self.rzuty.uklad_domyslny()
-        m = QMenu(self)
-        for k, d in self.doki.items():
+        self.menu_okienek = m = QMenu('Okienka', self)
+        m.setToolTipsVisible(True)
+        for d in self.doki_ster.values():
             m.addAction(d.toggleViewAction())
         m.addSeparator()
-        a = QAction('Układ domyślny (jak film 16 + sfera)', self); a.triggered.connect(self._przywroc_uklad); m.addAction(a)
+        grupy = (('Ruch i mapy (1–10)', ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10')),
+                 ('Sfera, pułapka, dolina, mechanika', ('s', '11', '12', '13', 'p')),
+                 ('Rzuty z 192 wymiarów (R0–R12)', tuple(k for k in self.doki if k.startswith('R'))))
+        for nazwa, klucze in grupy:
+            pm = m.addMenu(nazwa)
+            for k in klucze:
+                if k in self.doki:
+                    pm.addAction(self.doki[k].toggleViewAction())
+        m.addSeparator()
+        mu = m.addMenu('Układy okienek')
+        for nazwa, fn in (('Domyślny: sfera duża, rzuty i wykresy w kartach', self._przywroc_uklad),
+                          ('Sfera + pułapka optyczna obok siebie', lambda: self._uklad_gotowy('pulapka')),
+                          ('Sfera + rzuty R1–R7 obok siebie', lambda: self._uklad_gotowy('rzuty')),
+                          ('Sfera na całe okno (reszta w kartach)', lambda: self._uklad_gotowy('sfera'))):
+            a = QAction(nazwa, self); a.triggered.connect(fn); mu.addAction(a)
+        mu.addSeparator()
+        self._sloty = {}
+        for i in (1, 2, 3):
+            a = QAction(f'Zapamiętaj bieżący układ jako {i}', self); a.setShortcut(f'Ctrl+Shift+{i}')
+            a.triggered.connect(lambda _=False, i=i: self._slot(i, zapisz=True)); mu.addAction(a); self.addAction(a)
+        for i in (1, 2, 3):
+            a = QAction(f'Przywróć układ {i}', self); a.setShortcut(f'Ctrl+{i}')
+            a.triggered.connect(lambda _=False, i=i: self._slot(i)); mu.addAction(a); self.addAction(a)
         self.bt_okna.setMenu(m)
         self._stan_domyslny = None
         QTimer.singleShot(0, lambda: setattr(self, '_stan_domyslny', self.okna.saveState()))
@@ -1248,9 +1245,163 @@ class ZakladkaLaserow(QWidget):
                       | QDockWidget.DockWidgetFeature.DockWidgetFloatable)
         d.toggleViewAction().setText(tytul)
         from okna import pasek_doku
+        from panel_ustawien import podlacz_menu
         pasek_doku(d)                                   # ⛶: maksymalizacja na ekranie okienka (też dwuklik, F11)
+        podlacz_menu(d, lambda pos, k=klucz: self.menu_okienka(k, pos))     # prawy klik: ustawienia tego okienka
         self.doki[klucz] = d
         return d
+
+    def _dok_sterowania(self, klucz, tytul, widget):
+        """Okienko sterujące (parametry, podkroki): jak okienka widoków można je odpiąć i przesunąć, ale nie należy do self.doki
+        (nie jest widokiem osi czasu)."""
+        d = QDockWidget(tytul, self.okna); d.setObjectName(f'dok_lasery_ster_{klucz}'); d.setWidget(widget)
+        d.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetClosable | QDockWidget.DockWidgetFeature.DockWidgetMovable
+                      | QDockWidget.DockWidgetFeature.DockWidgetFloatable)
+        d.toggleViewAction().setText(tytul)
+        from okna import pasek_doku
+        pasek_doku(d)
+        if not hasattr(self, 'doki_ster'):
+            self.doki_ster = {}
+        self.doki_ster[klucz] = d
+        return d
+
+    # ------------------------------------------------------------------ panel parametrów i ustawienia okienek pod prawym klikiem
+    # okienko → sekcje panelu z jego ustawieniami (prawy klik w okienko wypożycza je do popupu); R* pyta rzuty_okienka
+    SEKCJE_OKIENEK = {'1': ('plaskie',), '2': ('plaskie',), '3': ('plaskie',), 's': ('sfera', 'wybor'), '4': ('mapy',), '5': ('mapy',),
+                      '11': ('pulapka',), '12': ('dolina',), '13': ('mech',), 'p': ('przejscie',),
+                      '6': ('dane',), '7': ('dane',), '8': ('dane',), '9': ('dane',), '10': ('dane',)}
+    # strony panelu: (klucz, nazwa na liście, sekcje, dymek)
+    STRONY = (('dane', 'Dane, etykiety', ('dane', 'etykiety'), 'Historia uczenia, zdjęcie, etykieta narzędzia i obszary oka'),
+              ('sfera', 'Sfera', ('wybor', 'sfera'), 'Sfera reflektorów, wybór cząsteczek i reflektorów'),
+              ('pulapka', 'Pułapka (11)', ('pulapka',), 'Pułapka optyczna: ogniskowa wiązek wokół koloidu, obrys ogniska 3D'),
+              ('podkroki', 'Podkroki (P)', ('przejscie', 'zapis'), 'Okienko P (przejście przez sieć) i zapis przejść na dysk'),
+              ('rzuty', 'Rzuty R0–R12', ('rzuty',), 'Rzuty z 192 wymiarów do 3D'),
+              ('plaskie', 'Ruch 1–3', ('plaskie',), 'Rzut płaski: ruch globalny, studnie, drgania'),
+              ('mapy', 'Mapy 4–5', ('mapy',), 'Atencja i mapy na zdjęciu'),
+              ('dolina', 'Dolina (12)', ('dolina',), 'Dolina pewności i IoU'),
+              ('mech', 'Mechanika (13)', ('mech',), 'Mechanika reflektora'),
+              ('widok', 'Widok', ('stereo',), 'Stereo 3D'))
+
+    def _buduj_panel(self):
+        from panel_ustawien import PanelParametrow
+        self._buduj_etykiety()
+        self._buduj_wybor()
+        self.panel = PanelParametrow()
+        self._strona_sekcji = {}
+        for klucz, nazwa, sekcje, dymek in self.STRONY:
+            self.panel.dodaj_strone(klucz, nazwa, [self._sek[s] for s in sekcje], dymek)
+            for s in sekcje:
+                self._strona_sekcji.setdefault(s, klucz)
+        self.panel.setMinimumWidth(330)
+        self.dok_panel = self._dok_sterowania('parametry', 'Parametry', self.panel)
+        self.dok_panel.setToolTip('F2 chowa i pokazuje, ❐ odpina jako osobne okno. Prawy klik w okienko: jego ustawienia przy kursorze.')
+
+    def _buduj_wybor(self):
+        """Wybór cząsteczki i reflektora: osobna sekcja (strona sfery i popup sfery), bo czyta go większość okienek."""
+        g = Zwijana('Wybrana cząsteczka i reflektor'); f = QFormLayout(g)
+        for etykieta, pole in self._wiersze_wyboru:
+            f.addRow(etykieta, pole)
+        bt = QToolButton(); bt.setText('Zaznacz obszar ▾'); bt.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        bt.setToolTip('Wpisuje do „+ cząsteczki” wszystkie patche wybranego obszaru (etykieta narzędzia z sekcji „Etykiety”,\n'
+                      'źrenica i rogówka z obrysów Cataract-LMM). Działa z „Wiązki: do wybranych cząsteczek” i „Wektory dla: wybranych”.')
+        m = QMenu(bt)
+        for kod, nazwa in ((3, 'narzędzie'), (2, 'źrenica'), (1, 'rogówka'), (0, 'tło'), (-1, 'wyczyść')):
+            a = m.addAction(nazwa); a.triggered.connect(lambda _=False, k=kod: self._zaznacz_obszar(k))
+        bt.setMenu(m)
+        f.addRow('', bt)
+        self._sek['wybor'] = g
+
+    def _buduj_etykiety(self):
+        import etykiety_narzedzia as EN
+        g = Zwijana('Etykiety: narzędzie (obrys) i obszary oka'); f = QFormLayout(g)
+        self.cb_etyk = WaskiCombo()
+        for k, opis in EN.TRYBY:
+            self.cb_etyk.addItem(opis, k)
+        self.cb_etyk.setToolTip('Które z 600 patchy są narzędziem (kolor „narzędzie”, „Wektory dla: narzędzia”, przycisk „narzędzie”,\n'
+                                'pierścienie w okienkach 1–3, okienko 2: narzędzie/reszta):\n'
+                                '• dotknięta obrysem: każdy patch, w który wchodzi choć jeden piksel obrysu narzędzia — całe narzędzie,\n'
+                                '  także patche w większości z tłem (domyślnie);\n'
+                                '• pokrycie ≥ próg: tylko patche w co najmniej „próg” wypełnione narzędziem (cienki cystotom: 2–3 patche);\n'
+                                '• środek łaty w obrysie: środkowy piksel patcha leży na narzędziu;\n'
+                                '• ramka GT: środek patcha w prostokącie ramki (dużo tła).\n'
+                                'Rzuty R1–R12 używają etykiety z chwili liczenia stanów 192D (R9 ma własny próg).')
+        self.sp_etyk_prog = _spin(0.01, 1.0, 0.5, 0.05, 2); self.sp_etyk_prog.setToolTip('Próg pokrycia patcha dla trybu „pokrycie ≥ próg”.')
+        self.sp_oko_prog = _spin(0.05, 1.0, 0.5, 0.05, 2)
+        self.sp_oko_prog.setToolTip('Patch należy do źrenicy / rogówki, gdy ich obrys pokrywa co najmniej tyle patcha (jak obszary_oka.py).\n'
+                                    'Pierwszeństwo: narzędzie > źrenica > rogówka > tło. ViT nie był uczony na obszarach oka.')
+        self.lb_etyk = QLabel('—'); self.lb_etyk.setWordWrap(True)
+        f.addRow('Narzędzie', self.cb_etyk); f.addRow('  próg pokrycia', self.sp_etyk_prog); f.addRow('Obszary oka: próg', self.sp_oko_prog)
+        f.addRow(self.lb_etyk)
+        self.cb_etyk.currentIndexChanged.connect(lambda *_: self._etykieta_zmiana())
+        self.sp_etyk_prog.valueChanged.connect(lambda *_: self._etykieta_zmiana() if self.cb_etyk.currentData() == 'pokrycie' else None)
+        self.sp_oko_prog.valueChanged.connect(lambda *_: self._etykieta_zmiana(tylko_oko=True))
+        self._sek['etykiety'] = g
+
+    def _etykieta_zmiana(self, tylko_oko=False):
+        """Nowa etykieta narzędzia (tryb z listy): przelicza h.narz i wszystko, co z niej wynika, i odświeża okienka."""
+        h = self.h
+        if h is None:
+            return
+        if not tylko_oko and hasattr(h, 'ustaw_etykiete'):
+            h.ustaw_etykiete(self.cb_etyk.currentData() or 'dotkniete', self.sp_etyk_prog.value())
+            for e in (self.e1, self.e2, self.e3):
+                e.ustaw_historie(h)
+            self.es.ustaw_skale(h, self.cb_skala.currentIndex() == 1)
+            cz = h.qc[:, h.narz].mean(1) if h.narz.any() else np.zeros((h.K, 2))
+            from scipy.ndimage import uniform_filter1d
+            self._cz = uniform_filter1d(cz, 9, axis=0, mode='nearest')
+            if self.d_pod is not None and '_pp' in self.d_pod:
+                self.d_pod['_pp'] = plaski_podkrokow(self.d_pod, h.g, h.narz)
+        self._opis_etykiety()
+        self._ks = None
+        self._kolory_czastek()
+        if self.d_pod is not None:
+            self.ep.ustaw_podkroki(self.d_pod, self._kol_cz, self._uklad())
+            if self.ch_pod.isChecked():
+                self.es.ustaw_podkroki(self.d_pod, h.narz)
+        self._opcje()
+
+    def _opis_etykiety(self):
+        h = self.h
+        if h is None:
+            self.lb_etyk.setText('—'); return
+        import lasery_dane as LD_
+        k = h.obszary(self.sp_oko_prog.value()) if hasattr(h, 'obszary') else h.narz.astype(np.uint8) * 3
+        ile = ', '.join(f'{LD_.KLASY_OKA[i]} {int((k == i).sum())}' for i in (3, 2, 1, 0)) if hasattr(LD_, 'KLASY_OKA') else ''
+        bez_oka = '' if getattr(h, 'oko', None) is not None else ' Brak obrysów oka dla tego zdjęcia.'
+        self.lb_etyk.setText(f'{h.etykieta}.  Patche: {ile}.{bez_oka}')
+
+    def _zaznacz_obszar(self, kod):
+        if kod < 0 or self.h is None:
+            self.ed_tok.setText(''); self.ed_tok.editingFinished.emit(); return
+        k = self.h.obszary(self.sp_oko_prog.value()) if hasattr(self.h, 'obszary') else self.h.narz.astype(np.uint8) * 3
+        tok = np.flatnonzero(k == kod)
+        self.ed_tok.setText(', '.join(str(int(t)) for t in tok)); self.ed_tok.editingFinished.emit()
+
+    def menu_okienka(self, klucz, pos):
+        """Prawy klik w okienko: popup z jego ustawieniami (sekcje panelu wypożyczone na czas otwarcia) i akcjami okienka."""
+        from okna import przelacz, przelacz_dok
+        from panel_ustawien import PopupUstawien
+        d = self.doki.get(klucz) or self.doki_ster.get(klucz)
+        if klucz.startswith('R') and hasattr(self.rzuty, 'sekcje_okienka'):
+            sekcje = self.rzuty.sekcje_okienka(klucz)
+            strona = 'rzuty'
+        else:
+            nazwy = self.SEKCJE_OKIENEK.get(klucz, ())
+            sekcje = [self._sek[n] for n in nazwy]
+            strona = self._strona_sekcji.get(nazwy[0]) if nazwy else None
+        akcje = []
+        if d is not None:
+            akcje = [('⧉', 'Odepnij okienko jako osobne okno albo przypnij z powrotem.', lambda: d.setFloating(not d.isFloating())),
+                     ('⛶', 'Maksymalizuj okienko na jego ekranie (drugi raz wraca).', lambda: przelacz_dok(d)),
+                     ('🖵', 'Pełny ekran okienka (Esc wraca), np. stereo na monitorze 3D.', lambda: przelacz(d.widget())),
+                     ('🗙', 'Zamknij okienko (wraca z menu „Okienka”).', d.close)]
+        tytul = d.windowTitle() if d is not None else klucz
+        p = PopupUstawien(tytul.split(':')[0], sekcje, akcje,
+                          na_panel=(lambda: (self.dok_panel.show(), self.dok_panel.raise_(), self.panel.pokaz(strona))) if strona else None)
+        from wygoda import ulatw
+        ulatw(p)
+        p.pokaz_przy(pos)
 
     def _wykres(self, klucz, tytul, os_y):
         p = pg.PlotWidget(); p.setBackground('#0b1014'); p.showGrid(x=True, y=True, alpha=0.25)
@@ -1264,47 +1415,97 @@ class ZakladkaLaserow(QWidget):
         return p
 
     def _uklad_domyslny(self):
-        d = self.doki
+        """Główne miejsce mają widoki: panel parametrów wąską kolumną po lewej (na całą wysokość), podkroki cienkim paskiem
+        u góry, pod nim duża sfera (z rzutami R w kartach) i obok pułapka optyczna (z doliną, mechaniką i okienkiem P w kartach),
+        na dole niższy wiersz: 1 | 2 | 3 | mapy 4–5 | wykresy 6–10."""
+        d, s = self.doki, self.doki_ster
         A, Hz, Vt = Qt.DockWidgetArea, Qt.Orientation.Horizontal, Qt.Orientation.Vertical
-        # trzy wiersze na całą szerokość: 1 | 2 | 3,   sfera | 4 | 5,   6 | 7 | 8 (+9 w karcie)
-        self.okna.addDockWidget(A.TopDockWidgetArea, d['1'], Vt)
-        self.okna.splitDockWidget(d['1'], d['2'], Hz); self.okna.splitDockWidget(d['2'], d['3'], Hz)
-        self.okna.addDockWidget(A.TopDockWidgetArea, d['s'], Vt)
-        self.okna.splitDockWidget(d['s'], d['4'], Hz); self.okna.splitDockWidget(d['4'], d['5'], Hz)
-        self.okna.addDockWidget(A.BottomDockWidgetArea, d['6'], Hz)
-        self.okna.splitDockWidget(d['6'], d['7'], Hz); self.okna.splitDockWidget(d['7'], d['8'], Hz)
-        self.okna.tabifyDockWidget(d['8'], d['9']); self.okna.tabifyDockWidget(d['9'], d['10']); d['8'].raise_()
-        self.okna.tabifyDockWidget(d['4'], d['p']); d['4'].raise_()
-        self.okna.tabifyDockWidget(d['5'], d['11']); d['11'].raise_()             # pułapka optyczna obok mapy 5
-        self.okna.tabifyDockWidget(d['11'], d['12'])                                # dolina pewności i IoU obok pułapki
-        self.okna.tabifyDockWidget(d['12'], d['13'])                                # mechanika reflektora obok doliny
-        self.okna.resizeDocks([d['1'], d['s'], d['6']], [270, 560, 190], Vt)
-        self.okna.resizeDocks([d['s'], d['4'], d['5']], [520, 620, 380], Hz)
+        o = self.okna
+        o.setCorner(Qt.Corner.TopLeftCorner, A.LeftDockWidgetArea); o.setCorner(Qt.Corner.BottomLeftCorner, A.LeftDockWidgetArea)
+        o.addDockWidget(A.LeftDockWidgetArea, s['parametry'])
+        o.addDockWidget(A.TopDockWidgetArea, s['podkroki'], Vt)
+        o.addDockWidget(A.TopDockWidgetArea, d['s'], Vt)
+        o.splitDockWidget(d['s'], d['11'], Hz)
+        for a, b in (('11', '12'), ('12', '13'), ('13', 'p')):
+            o.tabifyDockWidget(d[a], d[b])
+        d['11'].raise_()
+        o.addDockWidget(A.BottomDockWidgetArea, d['1'], Hz)
+        for a, b in (('1', '2'), ('2', '3'), ('3', '4'), ('4', '6')):
+            o.splitDockWidget(d[a], d[b], Hz)
+        o.tabifyDockWidget(d['4'], d['5']); d['4'].raise_()
+        for a, b in (('6', '7'), ('7', '8'), ('8', '9'), ('9', '10')):
+            o.tabifyDockWidget(d[a], d[b])
+        d['6'].raise_()
 
     def showEvent(self, ev):
-        """Przy pierwszym pokazaniu: rozmiary doków i panelu według prawdziwej wielkości okna (przed pokazaniem Qt je ignoruje
+        """Przy pierwszym pokazaniu: rozmiary doków według prawdziwej wielkości okna (przed pokazaniem Qt je ignoruje
         i sfera, główny widok, zostawała paskiem szerokości kilku centymetrów)."""
         super().showEvent(ev)
         if not getattr(self, '_rozmiary_ok', False):
             self._rozmiary_ok = True
             QTimer.singleShot(0, self._rozmiary_domyslne)
 
-    def _rozmiary_domyslne(self):
-        d = self.doki
+    def _rozmiary_domyslne(self, zastosuj_zapis=True):
+        d, s = self.doki, self.doki_ster
         Vt, Hz = Qt.Orientation.Vertical, Qt.Orientation.Horizontal
-        W, H = max(self.okna.width(), 900), max(self.okna.height(), 600)
-        self.podzial.setSizes([340, max(self.width() - 340, 600)])
-        self.okna.resizeDocks([d['1'], d['s'], d['6']], [int(H * 0.25), int(H * 0.53), int(H * 0.22)], Vt)
-        self.okna.resizeDocks([d['s'], d['4'], d['5']], [int(W * 0.46), int(W * 0.34), int(W * 0.20)], Hz)
-        self.okna.resizeDocks([d['1'], d['2'], d['3']], [W // 3] * 3, Hz)
-        self.okna.resizeDocks([d['6'], d['7'], d['8']], [W // 3] * 3, Hz)
-        self._stan_domyslny = self.okna.saveState()
-        self._rozmiary_gotowe = True
-        self._zastosuj_uklad()                                          # zapisany układ okienek (ustawienia.json), jeśli jest
+        W, H = max(self.okna.width() - 440, 700), max(self.okna.height(), 600)
+        self.okna.resizeDocks([s['parametry']], [440], Hz)
+        self.okna.resizeDocks([s['podkroki'], d['s'], d['1']], [s['podkroki'].sizeHint().height(), int(H * 0.66), int(H * 0.30)], Vt)
+        self.okna.resizeDocks([d['s'], d['11']], [int(W * 0.60), int(W * 0.40)], Hz)
+        self.okna.resizeDocks([d[k] for k in ('1', '2', '3', '4', '6')], [W // 5] * 5, Hz)
+        if zastosuj_zapis:
+            self._stan_domyslny = self.okna.saveState()
+            self._rozmiary_gotowe = True
+            self._zastosuj_uklad()                                      # zapisany układ okienek (ustawienia.json), jeśli jest
+
+    def _uklad_gotowy(self, nazwa):
+        """Gotowe układy z menu „Okienka → Układy okienek” (zaczynają od domyślnego)."""
+        self._przywroc_uklad()
+        d, o = self.doki, self.okna
+        Vt, Hz, A = Qt.Orientation.Vertical, Qt.Orientation.Horizontal, Qt.DockWidgetArea
+        W, H = max(o.width() - 440, 700), max(o.height(), 600)
+        if nazwa == 'pulapka':
+            d['s'].raise_(); d['11'].raise_()
+            o.resizeDocks([d['s'], d['11']], [W // 2, W // 2], Hz)
+            o.resizeDocks([d['s'], d['1']], [int(H * 0.78), int(H * 0.2)], Vt)
+        elif nazwa == 'rzuty':
+            r = [k for k in ('R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7') if k in d]
+            for k in r:                                          # z kart sfery do osobnej kolumny po prawej
+                o.removeDockWidget(d[k])
+            o.addDockWidget(A.RightDockWidgetArea, d[r[0]])
+            for a, b in zip(r, r[1:]):
+                o.tabifyDockWidget(d[a], d[b])
+            for k in r:
+                d[k].show()
+            d[r[0]].raise_(); d['s'].raise_()
+            o.resizeDocks([d[r[0]]], [int(W * 0.42)], Hz)
+            o.resizeDocks([d['s'], d['1']], [int(H * 0.75), int(H * 0.22)], Vt)
+        elif nazwa == 'sfera':
+            d['s'].raise_()
+            o.resizeDocks([d['s'], d['11']], [int(W * 0.86), int(W * 0.14)], Hz)
+            o.resizeDocks([d['s'], d['1']], [int(H * 0.86), int(H * 0.12)], Vt)
+
+    def _slot(self, i, zapisz=False):
+        """Ctrl+Shift+1..3 zapamiętuje bieżący układ okienek, Ctrl+1..3 go przywraca (sloty zapisują się w ustawienia.json)."""
+        if zapisz:
+            self._sloty[i] = bytes(self.okna.saveState().toBase64()).decode('ascii')
+            self._komunikat(f'Zapamiętano układ okienek {i} (Ctrl+{i} przywraca).')
+        elif i in self._sloty:
+            for d in list(self.doki.values()) + list(self.doki_ster.values()):
+                d.setFloating(False)
+            self.okna.restoreState(QByteArray.fromBase64(self._sloty[i].encode('ascii')))
+        else:
+            self._komunikat(f'Układ {i} nie jest zapamiętany: Ctrl+Shift+{i} zapisuje bieżący.')
+
+    def _komunikat(self, tekst, ms=6000):
+        okno = self.window()
+        if hasattr(okno, 'statusBar'):
+            okno.statusBar().showMessage(tekst, ms)
 
     def uklad_okienek(self):
-        """Układ okienek (doki: położenie, odpięcie, rozmiary) i podział panelu, do ustawienia.json (ustawienia.stan)."""
-        return dict(okna=bytes(self.okna.saveState().toBase64()).decode('ascii'), podzial=[int(x) for x in self.podzial.sizes()])
+        """Układ okienek (doki: położenie, odpięcie, rozmiary) i zapamiętane sloty, do ustawienia.json (ustawienia.stan)."""
+        return dict(okna=bytes(self.okna.saveState().toBase64()).decode('ascii'), wersja_ukladu=2,
+                    sloty={str(k): v for k, v in self._sloty.items()})
 
     def ustaw_uklad_okienek(self, v):
         """Przywraca zapisany układ okienek; przed pierwszym pokazaniem czeka (rozmiary domyślne liczą się dopiero wtedy)."""
@@ -1315,18 +1516,17 @@ class ZakladkaLaserow(QWidget):
     def _zastosuj_uklad(self):
         from PyQt6.QtCore import QByteArray
         v = getattr(self, '_uklad_zapisany', None)
-        if not isinstance(v, dict):
+        if not isinstance(v, dict) or v.get('wersja_ukladu') != 2:          # układ z dawnej zakładki (lewa kolumna): domyślny
             return
         try:
+            self._sloty.update({int(k): s for k, s in (v.get('sloty') or {}).items()})
             self.okna.restoreState(QByteArray.fromBase64(v['okna'].encode('ascii')))
-            if v.get('podzial'):
-                self.podzial.setSizes([int(x) for x in v['podzial']])
         except Exception:                                                # noqa: BLE001 (stary albo uszkodzony zapis: układ domyślny)
             import traceback
             traceback.print_exc()
 
     def _przywroc_uklad(self):
-        for d in self.doki.values():
+        for d in list(self.doki.values()) + list(self.doki_ster.values()):
             d.setFloating(False); d.show()
         if self._stan_domyslny is not None:
             self.okna.restoreState(self._stan_domyslny)
@@ -1381,9 +1581,13 @@ class ZakladkaLaserow(QWidget):
         self.diagram.setToolTip('Schemat MałegoViT (diagram_maly_vit.pdf). Klik w uwagę albo MLP bloku przechodzi do tego podkroku.')
         self.diagram.setVisible(False)
         pv.addWidget(self.diagram)
-        self._pl.insertWidget(1, pasek)
+        # podkroki sieci: osobne okienko (dok „Podkroki sieci”), które można odpiąć i postawić gdziekolwiek, także na drugim ekranie
+        pasek.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        self.dok_podkroki = self._dok_sterowania('podkroki', 'Podkroki sieci: przejście sygnału przez 6 bloków', pasek)
         self.ch_pod.toggled.connect(self._tryb_podkrokow)
         w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(0, 0, 0, 0); v.setSpacing(2)
+        g_p = Zwijana('Okienko P: przejście przez sieć (siły uwagi, lasery MLP, tory)'); f_p = QFormLayout(g_p)
+        self._sek['przejscie'] = g_p
         r = QHBoxLayout(); r.setContentsMargins(4, 0, 4, 0)
         self.cb_sily = WaskiCombo(); self.cb_sily.addItems(['siły uwagi: brak', 'siły na wybraną cząsteczkę', 'wszystkie pary (linie)'])
         self.cb_sily.setCurrentIndex(1)
@@ -1394,7 +1598,8 @@ class ZakladkaLaserow(QWidget):
         self.ch_lasery = QCheckBox('lasery MLP'); self.ch_lasery.setChecked(True)
         self.ch_lasery.setToolTip('Podkrok MLP: 768 wektorów z_jc · v_c na wybraną cząsteczkę (kolor = laser, błękit = ujemna jasność z < 0).')
         self.sp_skala_l = _spin(0.01, 1000, 3.0, 0.5, 2); self.sp_skala_l.setToolTip('Długość wektorów laserów na ekranie (mnożnik).')
-        self.cb_kolor_cz = WaskiCombo(); self.cb_kolor_cz.addItems(['kolor patcha ze zdjęcia', 'położenie patcha na obrazie (siatka 30 × 20: barwa = kolumna, jasność = wiersz)', 'narzędzie'])
+        self.cb_kolor_cz = WaskiCombo(); self.cb_kolor_cz.addItems(['kolor patcha ze zdjęcia', 'położenie patcha na obrazie (siatka 30 × 20: barwa = kolumna, jasność = wiersz)', 'narzędzie',
+                                                                    'obszary oka: narzędzie, źrenica, rogówka, tło'])
         self.cb_tory = WaskiCombo(); self.cb_tory.addItems(['tory: brak', 'tor wybranej cząsteczki', 'tory wszystkich'])
         self.cb_tory.setCurrentIndex(1); self.cb_tory.setToolTip('Droga cząsteczki przez kolejne podkroki (głębokość sieci).')
         self.cb_uklad = WaskiCombo(); self.cb_uklad.addItems(['względem środka, jedna skala na checkpoint (nie LayerNorm)', 'względem środka chmury',
@@ -1405,16 +1610,10 @@ class ZakladkaLaserow(QWidget):
                                  'W obu układach względem środka siły są wycentrowane tak samo (A_ij − ā_j, z_jc − z̄_c, biasy znikają), '
                                  'więc suma wektorów = przesunięcie cząsteczki. Surowy: pełny stan z biasami, widać wspólny dryf tokenów. '
                                  'Każdy układ ma własny rzut PCA 3D.')
-        # trzy krótkie wiersze (uwaga | lasery i tory | układ i kolor): okienko dzieli kartę z okienkiem 4 i nie może
-        # wymuszać szerokości, bo ściska sferę
-        for wiersz in ((self.cb_sily, QLabel('uwaga ×'), self.sp_gain_a, QLabel('siły ×'), self.sp_skala_sil),
-                       (self.ch_lasery, QLabel('lasery ×'), self.sp_skala_l, self.cb_tory),
-                       (QLabel('układ'), self.cb_uklad, QLabel('kolor'), self.cb_kolor_cz)):
-            r = QHBoxLayout(); r.setContentsMargins(4, 0, 4, 0)
-            for x in wiersz:
-                r.addWidget(x)
-            r.addStretch(1)
-            v.addLayout(r)
+        # opcje okienka P są w panelu (strona „Podkroki”) i pod prawym klikiem w okienko; samo okienko to widok i opis
+        f_p.addRow('Siły uwagi', self.cb_sily); f_p.addRow('  jasność linii uwagi', self.sp_gain_a)
+        f_p.addRow('  długość sił', self.sp_skala_sil); f_p.addRow(self.ch_lasery); f_p.addRow('  długość laserów', self.sp_skala_l)
+        f_p.addRow('Tory', self.cb_tory); f_p.addRow('Układ', self.cb_uklad); f_p.addRow('Kolor cząsteczek', self.cb_kolor_cz)
         self.vp = WidokGL(); self.vp.setBackgroundColor(TLO); self.vp.setCameraPosition(distance=250, elevation=20, azimuth=-60)
         self.ep = PrzejscieGPU(); self.vp.addItem(self.ep); self.vp.klik_px.connect(self._klik_przejscie)
         v.addWidget(self.vp, 1)
@@ -1457,7 +1656,8 @@ class ZakladkaLaserow(QWidget):
         self._kol_cz = self._kolory_tryb(self.cb_kolor_cz.currentIndex())
 
     def _kolory_tryb(self, tryb):
-        """[600, 4] kolory cząstek: 0 kolor patcha ze zdjęcia, 1 położenie na siatce (barwa = kolumna, jasność = wiersz), 2 narzędzie."""
+        """[600, 4] kolory cząstek: 0 kolor patcha ze zdjęcia, 1 położenie na siatce (barwa = kolumna, jasność = wiersz), 2 narzędzie,
+        3 obszary oka (narzędzie błękit, źrenica fiolet, rogówka zieleń, tło szare; etykieta i próg z sekcji „Etykiety”)."""
         h = self.h
         K = np.ones((LD.TOK, 4), np.float32)
         if tryb == 0:
@@ -1467,8 +1667,11 @@ class ZakladkaLaserow(QWidget):
             import colorsys
             r, c = np.divmod(np.arange(LD.TOK), LD.W)
             K[:, :3] = np.array([colorsys.hsv_to_rgb(cc / LD.W, 0.85, 0.45 + 0.55 * rr / (LD.H - 1)) for rr, cc in zip(r, c)])
-        else:
+        elif tryb == 2 or not hasattr(h, 'obszary'):
             K[:, :3] = np.where(h.narz[:, None], [0.29, 0.94, 1.0], [0.55, 0.6, 0.65])
+        else:
+            kol = np.array([[0.5, 0.53, 0.58], [0.35, 0.85, 0.45], [0.78, 0.45, 1.0], [0.29, 0.94, 1.0]], np.float32)
+            K[:, :3] = kol[h.obszary(self.sp_oko_prog.value())]
         return K
 
     def _opcje_przejscia(self, *_):
@@ -1862,6 +2065,9 @@ class ZakladkaLaserow(QWidget):
     def _gotowe(self, katalog):
         self.bt_licz.setEnabled(True); self.bt_stop.setEnabled(False)
         self.h = h = LD.Historia(katalog)
+        if hasattr(h, 'ustaw_etykiete') and (self.cb_etyk.currentData() or 'dotkniete') != 'dotkniete':
+            h.ustaw_etykiete(self.cb_etyk.currentData(), self.sp_etyk_prog.value())     # etykieta wybrana w sekcji „Etykiety”
+        self._opis_etykiety()
         self.lb_stan.setText(f'Wczytano {h.K} checkpointów (kroki {int(h.kroki[0])}–{int(h.kroki[-1])}), {Path(katalog).name}. '
                              f'Odstęp sąsiadów w kroku startu {pl(h.a0, 3)}; 3 kierunki rzutu niosą {h.udzial_D:.0%} energii przesunięć.')
         for e in (self.e1, self.e2, self.e3):
@@ -1951,8 +2157,8 @@ class ZakladkaLaserow(QWidget):
             if getattr(self.es, '_wyg', None) != wyg:
                 self.es.ustaw_wygladzanie(*wyg)
             ks = self.cb_kol_sciezki.currentIndex()
-            if getattr(self, '_ks', None) != (ks, id(self.h)) and 0 < ks < 4:
-                self._ks = (ks, id(self.h)); self.es.ustaw_kolory_sciezek(self._kolory_tryb(ks - 1))
+            if getattr(self, '_ks', None) != (ks, id(self.h)) and ks in (1, 2, 3, 5):
+                self._ks = (ks, id(self.h)); self.es.ustaw_kolory_sciezek(self._kolory_tryb(ks - 1 if ks < 4 else 3))
         if self.h is not None and getattr(self, '_skala', None) != self.cb_skala.currentIndex():
             self._skala = self.cb_skala.currentIndex(); self.es.ustaw_skale(self.h, self._skala == 1)
             if getattr(self, '_og', None) is not None:                     # pułapka w tej samej skali co sfera
