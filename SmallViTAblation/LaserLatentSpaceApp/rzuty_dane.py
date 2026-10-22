@@ -1091,6 +1091,57 @@ def pca3_t(X):
     return Xc @ torch.linalg.eigh(Xc.T @ Xc)[1][:, -3:]
 
 
+def osie3_z_kowariancji_t(C):
+    """Trzy główne osie z macierzy kowariancji C (192, 192) torch → (192, 3), od największej wariancji (oś 1) do trzeciej."""
+    import torch
+    return torch.linalg.eigh(C)[1][:, -3:].flip(1)
+
+
+def _kow_okna_t(Xw):
+    """Kowariancja (192, 192) uśredniona po checkpointach okna Xw (b, n, 192): w każdym checkpoincie chmura wyśrodkowana osobno."""
+    import torch
+    Xc = Xw - Xw.mean(1, keepdim=True)
+    return torch.einsum('bnd,bne->de', Xc, Xc) / (Xw.shape[0] * Xw.shape[1])
+
+
+def baza_pca3_wspolna_t(Xs):
+    """Wspólna baza PCA3 dla całej historii: osie z kowariancji zebranej po próbce checkpointów Xs (m, n, 192) torch, każdy
+    wyśrodkowany osobno (kształt chmury, nie jej dryf). Znak każdej osi: największa co do modułu składowa dodatnia (deterministyczny)."""
+    import torch
+    U = osie3_z_kowariancji_t(_kow_okna_t(Xs))
+    s = torch.sign(U.gather(0, U.abs().argmax(0, keepdim=True)))
+    return U * torch.where(s == 0, torch.ones_like(s), s)
+
+
+def obroc_do_t(V, U):
+    """Ortogonalny Procrustes dla torch: obrót/odbicie 3 × 3 kolumn V (192, 3) najbliższe kolumnom U (jak `obroc_do`, ale na GPU);
+    osie V nie zamieniają się miejscami ani nie odwracają znaku względem U, gdy tylko są do nich podobne."""
+    import torch
+    A, _, Bt = torch.linalg.svd(V.T @ U)
+    return V @ (A @ Bt)
+
+
+def baza_pca3_ckpt_t(Xw, U=None):
+    """Baza PCA3 jednego checkpointu z okna checkpointów Xw (b, n, 192): kowariancja uśredniona po oknie (b = 1: bez wygładzania),
+    potem osie; z U (192, 3) – wyrównane do niego Procrustesem 3 × 3 (bez skoków znaku i kolejności osi), bez U – surowe (skaczące)."""
+    V = osie3_z_kowariancji_t(_kow_okna_t(Xw))
+    return V if U is None else obroc_do_t(V, U)
+
+
+def knn_t(Q, k, metryka=0):
+    """Indeksy k najbliższych sąsiadów (b, n, k) w każdym z b zbiorów Q (b, n, d) torch (bez samego siebie): metryka 0 = euklidesowa,
+    1 = kosinusowa (największe cos)."""
+    import torch
+    if metryka == 1:
+        Qn = torch.nn.functional.normalize(Q, dim=-1)
+        S = Qn @ Qn.transpose(1, 2)
+        S.diagonal(dim1=1, dim2=2).fill_(-float('inf'))
+        return S.topk(k, dim=2).indices
+    Dm = torch.cdist(Q, Q)
+    Dm.diagonal(dim1=1, dim2=2).fill_(float('inf'))
+    return Dm.topk(k, dim=2, largest=False).indices
+
+
 MIARY_CZAS_WIDOKI = ('192D', 'PCA3', 'LDA')
 MIARY_CZAS_NAZWY = ('fisher', 'sil', 'hit')
 

@@ -120,6 +120,48 @@ class TestRzutow(unittest.TestCase):
         self.assertEqual(len(wyn), 4)
         self.assertGreater(cv['hit'], z0['hit'])                              # prawdziwy sygnał przeżywa walidację blokowaną
 
+    def test_baza_pca3_wyrownana_nie_skacze(self):
+        """R12: osie PCA3 liczone osobno w każdym checkpoincie zamieniają się miejscami i znakami, gdy wartości własne się mijają;
+        po Procrustesie 3 × 3 do bazy wspólnej rzut chmury zmienia się płynnie, a wspólna baza ma ortonormalne osie."""
+        import torch
+        rng = np.random.default_rng(5)
+        d, n = 24, 400
+        Z = torch.as_tensor(rng.standard_normal((n, d)), dtype=torch.float32)
+        # odchylenia osi 1 i 2 mijają się w okolicy t = 0,75 (inna oś na czele), reszta chmury wyraźnie słabsza
+        Xs = []
+        for t in np.linspace(0, 1, 9):
+            s = 0.3 * torch.ones(d); s[:3] = torch.tensor([3.0 - 1.2 * t, 1.2 + 1.2 * t, 0.7])
+            Xs.append(Z * s)
+        Xs = torch.stack(Xs)
+        U = RD.baza_pca3_wspolna_t(Xs)
+        self.assertLess(float((U.T @ U - torch.eye(3)).abs().max()), 1e-4)
+        surowe = [RD.baza_pca3_ckpt_t(Xs[i:i + 1]) for i in range(len(Xs))]
+        wyr = [RD.baza_pca3_ckpt_t(Xs[i:i + 1], U) for i in range(len(Xs))]
+
+        def krok(B):                                                 # największe przesunięcie osi między sąsiednimi checkpointami
+            return max(float((B[i + 1] - B[i]).abs().max()) for i in range(len(B) - 1))
+        self.assertGreater(krok(surowe), 0.8)                         # surowe: skok znaku/kolejności osi
+        self.assertLess(krok(wyr), 0.6)                               # wyrównane: ciągłe
+        self.assertLess(float((wyr[0].T @ wyr[0] - torch.eye(3)).abs().max()), 1e-4)   # nadal ortonormalne
+
+    def test_knn_t_metryki(self):
+        """knn_t: sąsiedzi euklidesowi i kosinusowi zgodni z siłowym liczeniem, bez samego siebie."""
+        import torch
+        rng = np.random.default_rng(6)
+        Q = torch.as_tensor(rng.standard_normal((2, 30, 5)), dtype=torch.float32)
+        for metryka in (0, 1):
+            nn = RD.knn_t(Q, 4, metryka)
+            for b in range(2):
+                q = Q[b].numpy()
+                if metryka == 0:
+                    M = np.linalg.norm(q[:, None] - q[None], axis=2); np.fill_diagonal(M, np.inf)
+                    ref = np.argsort(M, 1)[:, :4]
+                else:
+                    qn = q / np.linalg.norm(q, axis=1, keepdims=True); M = qn @ qn.T; np.fill_diagonal(M, -np.inf)
+                    ref = np.argsort(-M, 1)[:, :4]
+                self.assertTrue((np.sort(nn[b].numpy(), 1) == np.sort(ref, 1)).all())
+                self.assertFalse((nn[b].numpy() == np.arange(30)[:, None]).any())
+
 
 if __name__ == '__main__':
     unittest.main()

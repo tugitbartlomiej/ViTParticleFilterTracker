@@ -1125,5 +1125,44 @@ class TestJakobianPulapki(unittest.TestCase):
             self.assertLess(float((J - Ja).abs().max() / Ja.abs().max()), 1e-10)
 
 
+class TestPulapkiWsadowo(unittest.TestCase):
+    """ogniskowa.rozwiaz3 (odwracanie 3 × 3 na GPU), _jakobian_wsadowo = _jakobian dla każdej cząsteczki, mapa_pulapek.charakter."""
+
+    def test_rozwiaz3_jak_solve_i_osobliwe(self):
+        import torch
+        import ogniskowa as OGN
+        g = torch.Generator().manual_seed(1)
+        J = torch.randn(50, 3, 3, generator=g, dtype=torch.float64); f = torch.randn(50, 3, generator=g, dtype=torch.float64)
+        x = OGN.rozwiaz3(J, f)
+        self.assertLess(float((x - torch.linalg.solve(J, f)).abs().max()), 1e-9)
+        J[0] = torch.tensor([[1.0, 2.0, 3.0], [2.0, 4.0, 6.0], [0.0, 1.0, 1.0]], dtype=torch.float64)   # osobliwa: pseudoodwrotność
+        x = OGN.rozwiaz3(J, f)
+        self.assertTrue(bool(torch.isfinite(x).all()))
+        self.assertLess(float((x[0] - torch.linalg.pinv(J[0]) @ f[0]).abs().max()), 1e-9)
+
+    def test_jakobian_wsadowo_zgodny_z_pojedynczym(self):
+        import torch
+        import ogniskowa as OGN
+        g = torch.Generator().manual_seed(2)
+        d, n = 192, 768
+        r = lambda *s: torch.randn(*s, generator=g, dtype=torch.float64)
+        g_, be_, W1, b1, PV = 1 + 0.1 * r(d), 0.1 * r(d), r(n, d) / d ** 0.5, 0.1 * r(n), r(3, n)
+        P3 = torch.linalg.qr(r(d, 3))[0].T.contiguous()
+        X = r(7, d) * 2
+        Jw = OGN._jakobian_wsadowo(X, P3, g_, be_, 1e-6, W1, b1, PV)
+        for b in range(7):
+            Jb = OGN._jakobian(X[b], torch.zeros(3, dtype=torch.float64), P3, g_, be_, 1e-6, W1, b1, PV)
+            self.assertLess(float((Jw[b] - Jb).abs().max()), 1e-12)
+
+    def test_charakter_pulapki(self):
+        import mapa_pulapek as MP
+        lam = np.array([[[-1, -2, -3], [-1, 2, 3], [1, 2, 3], [-1 + 2j, -1 - 2j, -3]]], np.complex64)
+        typ, wir = MP.charakter(lam, np.ones((1, 4), bool))
+        self.assertEqual(typ[0].tolist(), [1, 2, 3, 1])                          # ściąga, siodło, wypycha, ściąga (spirala)
+        self.assertEqual(wir[0].tolist(), [False, False, False, True])
+        typ, _ = MP.charakter(lam, np.array([[True, False, True, True]]))
+        self.assertEqual(typ[0].tolist(), [1, 0, 3, 1])                          # bez zera w komórce: 0
+
+
 if __name__ == '__main__':
     unittest.main()

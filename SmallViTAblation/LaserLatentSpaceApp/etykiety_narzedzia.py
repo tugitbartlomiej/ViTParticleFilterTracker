@@ -22,9 +22,11 @@ SKALA = (W * KOMORKA / 720, H * KOMORKA / 480)            # natywne 720 × 480 �
 POMIJANE = ('cornea', 'pupil')
 PROG = 0.5
 TRYBY = (('dotkniete', 'obrys: każda łata dotknięta obrysem (> 0 %)'),
-         ('pokrycie', 'obrys: pokrycie łaty ≥ próg'),
+         ('pokrycie50', 'obrys: pokrycie łaty ≥ 50 % (jak dawniej, do 2026-10-21)'),
+         ('pokrycie', 'obrys: pokrycie łaty ≥ własny próg'),
          ('srodek', 'obrys: środek łaty w obrysie'),
          ('ramka', 'ramka GT: środek łaty w ramce'))
+KROTKO = {'dotkniete': 'dotknięte', 'pokrycie50': '≥ 50 %', 'pokrycie': 'własny ≥ {prog:.0%}', 'srodek': 'środek', 'ramka': 'ramka'}
 CACHE = Path(__file__).resolve().parent / 'cache_uczenia' / 'etykiety'
 
 
@@ -88,10 +90,13 @@ def etykieta(film, klatka):
 
 
 def maski(udzial, prog=PROG, tryb='pokrycie', srodek=None, ramka=None):
-    """(narzędzie, mieszane) bool (600,) z udziału pikseli obrysu wg trybu (TRYBY): 'dotkniete' udział > 0; 'pokrycie' udział ≥ prog
+    """(narzędzie, mieszane) bool (600,) z udziału pikseli obrysu wg trybu (TRYBY): 'dotkniete' udział > 0; 'pokrycie50' udział ≥ 0,5
+    (jak dawniej); 'pokrycie' udział ≥ prog
     (mieszane 0 < udział < prog); 'srodek' środek łaty w obrysie (wymaga `srodek`, mieszane = dotknięte poza środkiem);
     'ramka' środek łaty w ramce GT (wymaga `ramka` bool (600,), mieszane puste)."""
     u = np.asarray(udzial, np.float32)
+    if tryb == 'pokrycie50':                                            # stara etykieta (do 2026-10-21): połowa łaty to narzędzie
+        tryb, prog = 'pokrycie', 0.5
     if tryb == 'pokrycie':
         return u >= prog, (u > 0) & (u < prog)
     if tryb == 'dotkniete':

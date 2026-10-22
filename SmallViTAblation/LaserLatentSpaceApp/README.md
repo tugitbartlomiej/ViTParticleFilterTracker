@@ -47,11 +47,18 @@ Strona „Dane, etykiety”, sekcja „Etykiety”. Które z 600 patchy są narz
 `etykiety_narzedzia.TRYBY`, `maski(..., tryb=...)`):
 
 - **obrys: każda łata dotknięta (> 0 %)** — domyślnie: całe narzędzie, także patche w większości z tłem;
-- **obrys: pokrycie ≥ próg** — zachowanie z 2026-10-21 (próg 0,5): przy cienkim cystotomie zostają 2–7 patchy;
+- **obrys: pokrycie ≥ 50 % (jak dawniej, do 2026-10-21)** — patch, w którym co najmniej połowa pikseli to narzędzie
+  (przy cienkim cystotomie 2–7 patchy);
+- **obrys: pokrycie ≥ własny próg** — to samo z progiem z pola „próg pokrycia” (aktywne tylko w tym trybie);
 - **obrys: środek łaty w obrysie**; **ramka GT: środek łaty w ramce** (dawna etykieta sprzed obrysu, dużo tła).
 
 Przykłady (patche narzędzia: dotknięte / pokrycie ≥ 0,5 / środek / ramka): TR_0050 kl. 1629: 16 / 3 / 4 / 18;
 TR_0077 kl. 1113: 25 / 7 / 8 / 72; TR_0001 kl. 274: 17 / 2 / 5 / 20.
+
+**Podgląd łat na zdjęciu** (`podglad_etykiety.py`, pod wyborem trybu): siatka 30 × 20 łat na zdjęciu, zielone = narzędzie
+w wybranym trybie (jaśniej = większy udział pikseli obrysu), żółta obwódka = mieszane (dotknięte obrysem, ale nie narzędzie
+w tym trybie), biała = wybrana cząsteczka; najechanie pokazuje udział, klik wybiera cząsteczkę. Nad podglądem liczby łat
+narzędzia we wszystkich trybach (np. TR_0077 kl. 1113: dotknięte 25 · ≥ 50 % 7 · środek 8 · ramka 72).
 
 Etykieta działa we wszystkich miejscach, które czytają `h.narz`: przycisk „narzędzie” (cząsteczka w środku narzędzia),
 „Wektory dla: narzędzia”, kolor „narzędzie”, pierścienie w okienkach 1–3, okienko 2 (narzędzie/reszta), podkroki.
@@ -116,10 +123,51 @@ Lista zdjęć zestawu zapisuje się w `ustawienia.json` (liczy się dopiero na �
   (`ogniskowa._jakobian`: pochodna LayerNorm, GELU i rzutu; zgodny z autogradem do 1e-10, test `TestJakobianPulapki`)
   zamiast `torch.autograd.functional.jacobian`. Siatka 17, RTX 3070: 68 ms na checkpoint (wcześniej 100 ms; pierwsze
   uruchomienie z rozgrzewką karty dłużej), ok. 1 min na 806 checkpointów. Wyniki identyczne ze starą wersją (różnice < 1e-3).
+- **Newton dla wielu cząsteczek naraz na GPU** (`ogniskowa.newton_wsadowo`, `checkpointy`, `_Parametry`): wspólna część
+  (wagi z wyprzedzeniem, przejście sieci, rzut) to generator `checkpointy`; Newton liczy wszystkie cząsteczki jednocześnie
+  w maskach (B × 3), jakobian wsadowo (`_jakobian_wsadowo`), układy 3 × 3 wzorem z dopełnień (`rozwiaz3`, bez SVD), a
+  cząsteczki, które się zbiegły, wyszły z komórki albo krążą bez zera (po 15 iteracjach |f| > 1e-3 |f(0)|), przestają być
+  liczone. Pomiar na 30 checkpointach × 600 cząsteczek: 8 iteracji daje te same zera pola co 60.
+- **Dokładność** (lista „Dokładność” w sekcji pułapki): float32 (domyślnie) liczy jakobian, siatkę pola i kolory w float32,
+  a resztę f w Newtonie w float64 (w pułapce pchnięcia 768 wiązek się znoszą, więc f to mała różnica dużych liczb). Na
+  kartach GeForce float64 jest kilkadziesiąt razy wolniejszy. Porównanie na 12 000 parach checkpoint × cząsteczka: te same
+  zera pola co float64, położenia zer identyczne, wartości własne zgodne do 2·10⁻⁵; pole i tak jest zapisywane w float16.
+- **Gotowe (bez liczenia)**: lista pułapek już policzonych dla tej historii (pliki `ogniskowa_t…npz`); wybór ustawia
+  cząsteczkę, siatkę i zasięg i wczytuje pułapkę z dysku od razu.
 - **Licz razem z** (sekcja pułapki): dodatkowe cząsteczki (do 8) liczone w tym samym przejściu: wagi i przejście sieci są
-  wspólne, osobno tylko komórka każdej cząsteczki. 3 cząsteczki: 114 ms na checkpoint (38 ms na cząsteczkę). Każda trafia do
+  wspólne, osobno tylko komórka każdej cząsteczki. 3 cząsteczki: 73 ms na checkpoint (1 cząsteczka 68 ms; ok. 30 ms
+  to część wspólna: wczytanie wag, przejście sieci). Każda trafia do
   własnego pliku `ogniskowa_t<tok>_…npz`, więc przełączenie „Cząsteczka” albo „▾ policzone” pokazuje ją od razu; wybór
   cząsteczki liczonej właśnie razem z inną nie przerywa liczenia.
+
+## Mapa pułapek: wszystkie 600 cząsteczek (okienko 14)
+
+`mapa_pulapek.py`, strona panelu „Mapa pułapek (14)”. Dla każdej cząsteczki i każdego checkpointu (bez siatki pola G³,
+ta zostaje w okienku 11): skok w bloku 6, zero pola w komórce (Newton wsadowo), wartości własne jakobianu w cząsteczce (λ₀)
+i w zerze (λ), liniowe oszacowanie zera, r_kom. Cała historia (806 checkpointów × 600 cząsteczek): ok. 104 s na RTX 3070
+(86 ms na checkpoint), wynik `mapa_pulapek_z<zasięg>.npz` (46 MB) obok historii, potem z pliku.
+
+- Kolory: kształt pola w cząsteczce (λ₀: zielony ściąga, żółty siodło, czerwony wypycha, domieszka błękitu = wir), charakter
+  zera w komórce, siła skoku, odległość zera od cząsteczki / r_kom; „Wyróżnij” przyciemnia pozostałe (siodła, wiry…).
+- Linie od cząsteczek do zer pola w komórce (lupa), wektory skoku, wybrana cząsteczka w białej obwódce; położenia, odcinki i
+  kolory interpolowane między checkpointami. Ta sama mapa opcjonalnie na dużej sferze.
+- Co widać na historii `2cca2743e1c74b14`: zero pola wewnątrz komórki ma tylko 0,005 % par checkpoint × cząsteczka, więc
+  informacją jest kształt pola w samej cząsteczce. W checkpoincie 101 prawie wszystkie cząsteczki siedzą w siodle (585 z
+  600, 591 z wirem), w checkpoincie 701 większość pól już ściąga (481 ściąga, 119 siodło, 376 z wirem).
+
+## Pomiar pułapki w podkrokach: szybciej
+
+`pulapka_obliczenia.policz_historie`: wagi wczytywane raz na checkpoint, z wyprzedzeniem w 4 wątkach (wcześniej dwa razy,
+osobno w `lasery_dane.podkroki` i `pole_podkrokow.policz`), bez obrazków łodygi (`podkroki(..., lodyga=False)`: 6 rozkładów
+SVD, których pomiar nie używa). 184 → 89 ms na checkpoint (ok. 1,2 min na 806 checkpointów zamiast 2,5).
+
+## R12 kNN 3D: bez skoków
+
+R12 liczył PCA3 od nowa w każdym checkpoincie (znaki i kolejność osi przeskakiwały) i brał najbliższy checkpoint. Teraz
+(`rzuty_dane.baza_pca3_wspolna_t`, `baza_pca3_ckpt_t`, `obroc_do_t`, `knn_t`): baza PCA wspólna dla całej historii
+(domyślnie), w każdym checkpoincie wyrównana Procrustesem 3 × 3 do wspólnej (z wygładzaniem ± n checkpointów) albo surowa
+(dawna); położenia i kolory interpolowane między checkpointami; metryka euklidesowa albo kosinusowa; ułamek sąsiadów
+wygładzany ± n checkpointów. Mediana przesunięcia tokenu na krok checkpointu: 0,68–1,03 → 0,14–0,20 promienia chmury.
 
 ## Okna, dymki, grupy parametrów
 

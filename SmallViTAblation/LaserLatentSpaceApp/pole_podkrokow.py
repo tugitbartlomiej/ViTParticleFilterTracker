@@ -16,7 +16,7 @@ import lasery_dane as LD
 import przejscia_zapis as PZ
 
 
-def policz(wagi, krok, rgb, j, d, G=17, kol_cz=None, urzadzenie='cuda', zasieg=1.0):
+def policz(wagi, krok, rgb, j, d, G=17, kol_cz=None, urzadzenie='cuda', zasieg=1.0, st=None):
     """d: przejście tego checkpointu (lasery_dane.podkroki albo z dysku, z 'baza'); j: token; kol_cz (600, 3) kolory cząsteczek."""
     import torch
     import torch.nn.functional as Fn
@@ -41,7 +41,8 @@ def policz(wagi, krok, rgb, j, d, G=17, kol_cz=None, urzadzenie='cuda', zasieg=1
         if dev.type not in LD._siec:
             LD._siec[dev.type] = M.MalyViT().to(dev).eval().requires_grad_(False)
         net = LD._siec[dev.type]
-        st = torch.load(Path(wagi) / f'k{int(krok):05d}.pt', map_location=dev, weights_only=True)
+        if st is None:                                                             # st: wagi wczytane wcześniej (pomiar historii)
+            st = torch.load(Path(wagi) / f'k{int(krok):05d}.pt', map_location=dev, weights_only=True)
         net.load_state_dict(st.get('net', st), strict=True)
         with torch.no_grad():
             x = torch.from_numpy(np.ascontiguousarray(rgb)).permute(2, 0, 1)[None].float().div(255).to(dev)

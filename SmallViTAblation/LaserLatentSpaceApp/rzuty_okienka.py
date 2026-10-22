@@ -468,11 +468,37 @@ class Rzuty(QWidget):
                                           'mogą prowadzić do tokenów, które w rzucie są daleko).')
         self.sp_R12_k = _spin(0, 50, 0, 1); self.sp_R12_k.setSpecialValueText('auto (min(10, n − 1))')
         self.ch_R12_kr = QCheckBox('R12: linie do sąsiadów'); self.ch_R12_kr.setChecked(True)
+        self.cb_R12_baza = WaskiCombo()
+        self.cb_R12_baza.addItems(['baza PCA: wspólna dla całej historii (stabilna)',
+                                   'baza PCA: w każdym checkpoincie, wyrównana do wspólnej (Procrustes 3 × 3)',
+                                   'baza PCA: w każdym checkpoincie surowa (skacze)'])
+        self.cb_R12_baza.setToolTip('Dotyczy widoku „PCA3 chmury”. Wspólna: osie z kowariancji zebranej po próbce checkpointów całej historii, liczone\n'
+                                    'raz; kamera nie obraca się w czasie (domyślna, najstabilniejsza). W każdym checkpoincie wyrównana: osie PCA tego\n'
+                                    'checkpointu obrócone/odbite Procrustesem 3 × 3 do osi wspólnych (pokazuje kształt dopasowany na bieżąco, bez\n'
+                                    'przeskoków znaku i kolejności osi). Surowa: PCA od nowa w każdym checkpoincie, bez wyrównania; znaki osi i ich\n'
+                                    'kolejność przeskakują, gdy wartości własne się mijają, więc chmura skacze (stare zachowanie; bez interpolacji).')
+        self.sp_R12_bwyg = _spin(0, 50, 0, 1, sufiks=' ckpt'); self.sp_R12_bwyg.setSpecialValueText('wyłączone')
+        self.sp_R12_bwyg.setToolTip('Tylko dla bazy „w każdym checkpoincie” (wyrównanej albo surowej): kowariancja przed liczeniem osi uśredniana po\n'
+                                    'checkpointach od t − n do t + n, więc osie zmieniają się powoli. 0 = bez uśredniania.')
+        self.ch_R12_interp = QCheckBox('R12: interpolacja między checkpointami'); self.ch_R12_interp.setChecked(True)
+        self.ch_R12_interp.setToolTip('Położenie tokenu = (1 − f)·P_i + f·P_j między sąsiednimi checkpointami i i j (każdy w swojej bazie, więc bez\n'
+                                      'skoku przy zmianie checkpointu), a kolor mieszany tak samo z ułamków sąsiadów. Wyłączona: ruch skokowy co\n'
+                                      'checkpoint (najbliższy). Linie do sąsiadów zawsze z najbliższego checkpointu. Nie dotyczy bazy surowej.')
+        self.cb_R12_metryka = WaskiCombo(); self.cb_R12_metryka.addItems(['metryka sąsiadów: euklidesowa', 'metryka sąsiadów: kosinusowa'])
+        self.cb_R12_metryka.setToolTip('Jak mierzyć bliskość tokenów przy szukaniu sąsiadów: odległością euklidesową albo kosinusem kąta między\n'
+                                       'wektorami (w widoku 3D: współrzędnych wyśrodkowanych, w 192D: stanów tokenów; długość nie ma znaczenia).')
+        self.sp_R12_fwyg = _spin(0, 50, 0, 1, sufiks=' ckpt'); self.sp_R12_fwyg.setSpecialValueText('wyłączone')
+        self.sp_R12_fwyg.setToolTip('Ułamek sąsiadów-narzędzi (kolor tokenu) uśredniony po checkpointach od t − n do t + n: sąsiedzi liczeni w każdym\n'
+                                    'z nich osobno (w bieżącej bazie rzutu), potem średnia. Uspokaja migotanie koloru. 0 = bez uśredniania.')
         f0.addRow(self.ch_R0_grupa); f0.addRow(self.ch_R0_siatka); f0.addRow('R10', self.cb_L10); f0.addRow(self.ch_L10_tlo)
-        f0.addRow('R12 widok', self.cb_R12_widok); f0.addRow('R12 sąsiedzi', self.cb_R12_przestrzen); f0.addRow('R12 k', self.sp_R12_k); f0.addRow(self.ch_R12_kr)
-        for w_ in (self.cb_R12_widok, self.cb_R12_przestrzen):
+        f0.addRow('R12 widok', self.cb_R12_widok); f0.addRow('R12 baza PCA', self.cb_R12_baza); f0.addRow('R12 wygładzanie bazy ±', self.sp_R12_bwyg)
+        f0.addRow(self.ch_R12_interp); f0.addRow('R12 sąsiedzi', self.cb_R12_przestrzen); f0.addRow('R12 metryka', self.cb_R12_metryka)
+        f0.addRow('R12 k', self.sp_R12_k); f0.addRow('R12 wygładzanie ułamka ±', self.sp_R12_fwyg); f0.addRow(self.ch_R12_kr)
+        for w_ in (self.cb_R12_widok, self.cb_R12_przestrzen, self.cb_R12_baza, self.cb_R12_metryka):
             w_.currentIndexChanged.connect(self._opcje)
-        self.sp_R12_k.valueChanged.connect(self._opcje); self.ch_R12_kr.toggled.connect(self._opcje)
+        for w_ in (self.sp_R12_k, self.sp_R12_bwyg, self.sp_R12_fwyg):
+            w_.valueChanged.connect(self._opcje)
+        self.ch_R12_kr.toggled.connect(self._opcje); self.ch_R12_interp.toggled.connect(self._opcje)
         for w_ in (self.ch_R0_grupa, self.ch_R0_siatka, self.ch_L10_tlo):
             w_.toggled.connect(self._opcje)
         self.cb_L10.currentIndexChanged.connect(self._opcje)
@@ -770,39 +796,89 @@ class Rzuty(QWidget):
         for it in (self.sc12_tlo, self.kr12, self.sc12_nar):
             self.v12.addItem(it)
         self._kadr12 = None
+        self._pam12 = {}                                                     # bazy PCA R12 (wspólna, wyrównane): osobno od _pam, które _ekran czyści
         return self._z_napisem(self.v12, 'R12')
+
+    def _osie12(self, c, keep_t):
+        """Baza rzutu R12 (192, 3) torch dla checkpointu c i informacja, czy chmurę przed rzutem wyśrodkować (PCA tak, oś LDA nie).
+        Wspólna baza PCA liczona raz na historię (próbka 32 checkpointów), wyrównane i surowe osie raz na checkpoint, wszystko w `_pam`."""
+        import torch
+        d = self.dane
+        dev = RD._dev()
+        if self.cb_R12_widok.currentIndex() == 1:
+            B, _ = self._baza_L()
+            return torch.as_tensor(np.asarray(B, np.float32), device=dev), False
+        tryb = self.cb_R12_baza.currentIndex()
+        nb = 0 if tryb == 0 else int(self.sp_R12_bwyg.value())
+        ke = (str(self._h.katalog), d.K, self._klucz_etyk(), int(keep_t.sum()))
+        kU = ('R12U',) + ke
+        if kU not in self._pam12:
+            ks = np.unique(np.linspace(0, d.K - 1, min(d.K, 32)).round().astype(int))
+            Xs = torch.as_tensor(np.asarray(d.X[ks], np.float32), device=dev)[:, keep_t]
+            self._pam12[kU] = RD.baza_pca3_wspolna_t(Xs)
+        U = self._pam12[kU]
+        if tryb == 0:
+            return U, True
+        kV = ('R12V', tryb, nb, c) + ke
+        if kV not in self._pam12:
+            if len(self._pam12) > 3000:
+                self._pam12 = {k_: v_ for k_, v_ in self._pam12.items() if k_[0] == 'R12U'}   # ograniczenie pamięci: zostaje tylko baza wspólna
+            ks = np.arange(max(0, c - nb), min(d.K - 1, c + nb) + 1)               # okno ± nb checkpointów, obcięte na brzegach historii
+            Xw = torch.as_tensor(np.asarray(d.X[ks], np.float32), device=dev)[:, keep_t]
+            self._pam12[kV] = RD.baza_pca3_ckpt_t(Xw, U if tryb == 1 else None)
+        return self._pam12[kV], True
+
+    def _sasiedzi12(self, c, V, cen, keep_t, m_t, idx_t, k):
+        """(ułamek sąsiadów-narzędzi tokenów narzędzia, indeksy sąsiadów (n, k)) dla checkpointu c: sąsiedzi w każdym checkpoincie okna
+        ± „wygładzanie ułamka” osobno (w bazie V checkpointu c), ułamek uśredniony po oknie, indeksy z checkpointu c."""
+        import torch
+        d = self.dane
+        nsm = int(self.sp_R12_fwyg.value())
+        ks = np.arange(max(0, c - nsm), min(d.K - 1, c + nsm) + 1)
+        Xw = torch.as_tensor(np.asarray(d.X[ks], np.float32), device=RD._dev())[:, keep_t]
+        if self.cb_R12_przestrzen.currentIndex() == 0:
+            Q = (Xw - Xw.mean(1, keepdim=True) if cen else Xw) @ V
+        else:
+            Q = Xw
+        nn = RD.knn_t(Q, k, self.cb_R12_metryka.currentIndex())                  # (b, n, k)
+        fr = m_t[nn[:, idx_t]].float().mean(-1).mean(0)                          # (nt,) średnia po oknie
+        return fr.cpu().numpy(), nn[c - int(ks[0])].cpu().numpy()
 
     def _rysuj_knn(self):
         import torch
         d = self.dane
-        _, _, _, i = self._indeksy()
-        rdz, mies = self._etykieta(i)
+        ia, ja, f, wi = self._indeksy()
+        rdz, mies = self._etykieta(wi)
         keep = ~mies
-        X = np.asarray(d.X[i], np.float32)
-        Xk, m = X[keep], rdz[keep]
+        m = rdz[keep]
         nt = int(m.sum())
+        nk = int(keep.sum())
         if nt < 2:
             self._lb['R12'].setText('Za mało tokenów narzędzia w tej etykiecie.')
             return
         dev = RD._dev()
-        if self.cb_R12_widok.currentIndex() == 0:
-            P = RD.pca3_t(torch.as_tensor(Xk, device=dev)).cpu().numpy()
-            widok = 'PCA3 chmury (bez etykiet)'
-        else:
-            B, _ = self._baza_L()
-            P = Xk @ np.asarray(B, np.float32)
-            widok = 'oś LDA jak w R9'
-        P = np.asarray(P, np.float32)
-        k = int(self.sp_R12_k.value()) or RD.k_sasiadow(nt)
-        k = int(min(k, len(Xk) - 1))
-        Q = P if self.cb_R12_przestrzen.currentIndex() == 0 else Xk
-        Qt = torch.as_tensor(np.asarray(Q, np.float32), device=dev)
-        Dm = torch.cdist(Qt, Qt)
-        Dm.fill_diagonal_(float('inf'))
-        nn = Dm.topk(k, dim=1, largest=False).indices.cpu().numpy()           # (n, k) najbliżsi sąsiedzi każdego tokenu
+        pca = self.cb_R12_widok.currentIndex() == 0
+        tryb = self.cb_R12_baza.currentIndex()
+        # interpolacja między checkpointami; surowa baza PCA skacze, więc jej środek (średnia przeskoczonych osi) nie ma sensu
+        interp = self.ch_R12_interp.isChecked() and not (pca and tryb == 2) and ia != ja and f > 0
+        if not interp:
+            ia = ja = wi; f = 0.0
+        keep_t = torch.as_tensor(keep, device=dev)
+        m_t = torch.as_tensor(m, device=dev)
         idx_n = np.flatnonzero(m)
+        idx_t = torch.as_tensor(idx_n, device=dev)
+        k = int(self.sp_R12_k.value()) or RD.k_sasiadow(nt)
+        k = int(min(k, nk - 1))
+        P_c, fr_c, nn_c = {}, {}, {}
+        for c in sorted({ia, ja, wi}):
+            V, cen = self._osie12(c, keep_t)
+            X = torch.as_tensor(np.asarray(d.X[c], np.float32), device=dev)[keep_t]
+            P_c[c] = (X - X.mean(0, keepdim=True) if cen else X) @ V              # każdy checkpoint w swojej (wyrównanej) bazie: ciągłość przy zmianie i → j
+            fr_c[c], nn_c[c] = self._sasiedzi12(c, V, cen, keep_t, m_t, idx_t, k)
+        P = ((1 - f) * P_c[ia] + f * P_c[ja]).cpu().numpy().astype(np.float32)
+        frac = ((1 - f) * fr_c[ia] + f * fr_c[ja]).astype(np.float32)             # kolor też mieszany; linie z najbliższego checkpointu
+        nn = nn_c[wi]
         traf = m[nn[idx_n]]                                                    # (nt, k) czy sąsiad jest narzędziem
-        frac = traf.mean(1)
         # kolor tokenu narzędzia: czerwony (0) → żółty → zielony (1) wg ułamka sąsiadów będących narzędziem
         kol = np.stack([np.clip(2 - 2 * frac, 0, 1), np.clip(2 * frac, 0, 1), 0.15 * np.ones_like(frac), np.ones_like(frac)], 1).astype(np.float32)
         self.sc12_tlo.setData(pos=P[~m], size=3, color=(0.55, 0.62, 0.7, 0.55))
@@ -817,17 +893,28 @@ class Rzuty(QWidget):
         else:
             self.kr12.setVisible(False)
         r_ = float(np.linalg.norm(P, axis=1).max())                         # kadr mieści każdy token, także daleko leżące narzędzie
-        klucz = (str(self._h.katalog), self.cb_R12_widok.currentIndex())
+        klucz = (str(self._h.katalog), self.cb_R12_widok.currentIndex(), tryb)
         if self._kadr12 is None or self._kadr12[0] != klucz or r_ > self._kadr12[1] * 0.95 or r_ < self._kadr12[1] * 0.4:
             self._kadr12 = (klucz, r_)                                       # zmiana skali chmury w czasie: kadr z histerezą, bez skakania
             self.v12.opts['center'] = QVector3D(0, 0, 0)
             self.v12.setCameraPosition(distance=max(2.9 * r_, 3.0))
-        losowo = (nt - 1) / max(len(Xk) - 1, 1)
+        losowo = (nt - 1) / max(nk - 1, 1)
+        nb, nf = int(self.sp_R12_bwyg.value()), int(self.sp_R12_fwyg.value())
+        if pca:
+            widok = 'PCA3 chmury (bez etykiet), ' + ['baza wspólna dla całej historii',
+                                                    'baza w każdym checkpoincie wyrównana Procrustesem do wspólnej',
+                                                    'baza w każdym checkpoincie surowa (skacze)'][tryb]
+            if tryb and nb:
+                widok += f', kowariancja uśredniona ± {nb} ckpt'
+        else:
+            widok = 'oś LDA jak w R9'
+        czas = f'{pl(ia + f + 1)} (interpolacja)' if interp else f'{wi + 1}'
         self._lb['R12'].setText(
-            f'Checkpoint {i + 1}. Widok 3D: {widok}; sąsiedzi (k = {k}) liczeni {"w tym widoku 3D" if self.cb_R12_przestrzen.currentIndex() == 0 else "w pełnych 192D"}. '
-            f'Duże kule = tokeny narzędzia ({nt}), kolor = ułamek ich sąsiadów, którzy też są narzędziem (zielony 1, czerwony 0); średnio '
-            f'{pl(float(frac.mean()))} (losowo {pl(losowo, 3)}). Linie: zielone = sąsiad narzędzie, czerwone = sąsiad tło. Szare = tło '
-            f'({int((~m).sum())}); łaty mieszane pominięte ({int(mies.sum())}).')
+            f'Checkpoint {czas}. Widok 3D: {widok}; sąsiedzi (k = {k}, metryka {["euklidesowa", "kosinusowa"][self.cb_R12_metryka.currentIndex()]}) liczeni '
+            f'{"w tym widoku 3D" if self.cb_R12_przestrzen.currentIndex() == 0 else "w pełnych 192D"}. '
+            f'Duże kule = tokeny narzędzia ({nt}), kolor = ułamek ich sąsiadów, którzy też są narzędziem{f" (uśredniony ± {nf} ckpt)" if nf else ""} '
+            f'(zielony 1, czerwony 0); średnio {pl(float(frac.mean()))} (losowo {pl(losowo, 3)}). Linie: zielone = sąsiad narzędzie, czerwone = sąsiad tło. '
+            f'Szare = tło ({int((~m).sum())}); łaty mieszane pominięte ({int(mies.sum())}).')
 
     def _buduj_panel(self):
         w = pg.GraphicsLayoutWidget(); w.setBackground('#0b1014')

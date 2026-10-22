@@ -138,3 +138,45 @@ W:/Python/3.11/python.exe tools/nowa_pulapka.py stara.pkl       # nowa: czas i z
 - [ ] Kilka pułapek naraz w okienku 11 (kilka elementów PoleOgniskowej), jeśli użytkownik będzie chciał je porównywać obok siebie.
 - [ ] Obrys 3D w całości na GPU (raymarching objętości w shaderze zamiast izopowierzchni na CPU).
 - [ ] Ustabilizować test prawego kliku w pasek doku 11 w pełnym przebiegu.
+
+## Kontynuacja (18:00–18:45): pułapki wszystkich cząsteczek na GPU, mapa, etykiety, R12
+
+### Prośby
+Newton pola na GPU dla wszystkich 600 cząsteczek i mapa globalna; maksymalnie na GPU także siodła i wiry; czy wystarczy
+mniejsza dokładność niż float64; wybór cząsteczki z gotową pułapką (tylko wczytanie); stary tryb etykiety (≥ 50 % pikseli),
+obecny i własny próg z podglądem łat; R12 kNN 3D PCA skacze, więcej parametrów kNN.
+
+### Zrobione
+- `ogniskowa.py`: generator `checkpointy` (część wspólna), `_Parametry` (float64 do reszty f, float32 do jakobianu i siatki),
+  `_jakobian_wsadowo`, `rozwiaz3` (3 × 3 z dopełnień), `komorki`, `newton_wsadowo` (maski, aktywne cząsteczki, stop po 15
+  iteracjach gdy |f| > 1e-3 |f(0)|), `policz_wiele(..., dokladnosc)`, `gotowe(h)`.
+- `mapa_pulapek.py` (nowy): `policz` dla 600 cząsteczek, `charakter`, `kolory`, `maska_filtru`, `statystyki`, `MapaGL`;
+  okienko 14 i strona „Mapa pułapek (14)”, nakładka na sferze.
+- Sekcja pułapki: „Gotowe (bez liczenia)”, „Dokładność”.
+- `etykiety_narzedzia.TRYBY`: nowy `pokrycie50` (jak dawniej), `pokrycie` = własny próg; `podglad_etykiety.py` (podgląd łat
+  na zdjęciu, klik wybiera cząsteczkę), porównanie liczby łat we wszystkich trybach.
+- `pulapka_obliczenia`, `pole_podkrokow`, `lasery_dane.podkroki`: wagi raz na checkpoint z wyprzedzeniem, bez obrazków łodygi.
+- R12 (agent Sonnet): wspólna baza PCA, Procrustes, wygładzanie, interpolacja, metryka, wygładzanie ułamka.
+- Wyszukiwanie: batched `torch.linalg.solve`/`vmap+jacfwd` w PyTorch; mieszana precyzja (krok w niskiej, reszta w wysokiej).
+
+### Pomiary
+| Pomiar | Przed | Po |
+|---|---|---|
+| Mapa 600 cząsteczek | — | 86 ms / checkpoint, 104 s cała historia |
+| Newton 600 cząsteczek (pinv, 60 iteracji) | 373 ms / checkpoint | 86 ms (rozwiaz3, aktywne, stop) |
+| Pułapka 3 cząsteczki razem | 114 ms | 73 ms |
+| Pomiar w podkrokach | 184 ms / checkpoint | 89 ms |
+| R12: mediana przesunięcia na krok | 0,68–1,03 r | 0,14–0,20 r |
+| float32 vs float64 (12 000 par) | — | zera identyczne, λ do 2·10⁻⁵ |
+
+Obserwacja: zero pola w komórce ma 0,005 % par; kształt pola w cząsteczkach zmienia się z siodeł z wirem (ckpt 101: 585
+siodeł) w ściąganie (ckpt 701: 481 ściąga).
+
+### Uwaga o plikach
+Profilowanie pomiaru w podkrokach zapisało przez pomyłkę do `cache_uczenia/lasery/2cca2743e1c74b14` plik
+`pulapka_podkrokow_t226_G5.*` (6 checkpointów) i `przejscia/baza.npz`; oba usunięte (wcześniej katalog przejść był pusty,
+pełny pomiar użytkownika jest w historii `140854f7a6dbcbe5` i nie był ruszany). `mapa_pulapek_z100.npz` w `2cca…` zostaje
+(policzona mapa).
+
+### Testy
+153 testy w pełnym przebiegu OK (3 pominięte), `testy.test_gui` osobno na ekranie 38 OK, `testy.test_dymki` 14 OK.

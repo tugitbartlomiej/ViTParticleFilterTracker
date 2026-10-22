@@ -44,9 +44,9 @@ def _ognisko(wk):
         float(np.sort(dl)[::-1][:10].sum() / s)
 
 
-def pomiar(wagi, krok, rgb, j, d, G=5):
+def pomiar(wagi, krok, rgb, j, d, G=5, st=None):
     """Pomiary jednego checkpointu: słownik tablic (12, ...). d = przejście z 'baza' (P_n)."""
-    w = PP.policz(wagi, krok, rgb, j, d, G=G)
+    w = PP.policz(wagi, krok, rgb, j, d, G=G, st=st)
     lin = np.linspace(-1, 1, G); gz, gy, gx = np.meshgrid(lin, lin, lin, indexing='ij')
     S = np.stack([gx.ravel(), gy.ravel(), gz.ravel()], 1); kula = np.linalg.norm(S, axis=1) <= 1.0001
     pos = np.asarray(d['pos_n'], np.float64)
@@ -96,21 +96,34 @@ def policz_historie(h, tok=226, co=1, G=5, postep=None, przerwij=None):
     if idx[-1] != h.K - 1:
         idx.append(h.K - 1)
     wyn = []; t0 = time.time()
-    for i, ix in enumerate(idx):
-        if przerwij is not None and przerwij():
-            break
-        krok = int(h.kroki[ix])
-        d = PZ.wczytaj(kat, krok)
-        if d is None:
-            with PZ.ZAMEK_SIECI:
-                d = LD.podkroki(h.wagi, krok, h.rgb, baza=baza)
-            if baza is None:
-                baza = d['baza']; PZ.zapisz_baze(kat, baza)
-        d['baza'] = baza
-        wyn.append((krok, pomiar(h.wagi, krok, h.rgb, tok, d, G=G)))
-        if postep is not None:
-            tt = (time.time() - t0) / (i + 1) * (len(idx) - i - 1)
-            postep(i + 1, len(idx), f'krok {krok}: {i + 1}/{len(idx)}, zostało ~{tt / 60:.1f} min')
+    import torch
+    from concurrent.futures import ThreadPoolExecutor
+    pula = ThreadPoolExecutor(4)                                         # wagi wczytywane z wyprzedzeniem i raz na checkpoint
+    odczyt = lambda k: torch.load(Path(h.wagi) / f'k{int(k):05d}.pt', map_location='cpu', weights_only=True)
+    kolejka = [pula.submit(odczyt, int(h.kroki[ix])) for ix in idx[:6]]
+    try:
+        for i, ix in enumerate(idx):
+            if przerwij is not None and przerwij():
+                break
+            krok = int(h.kroki[ix])
+            st = kolejka.pop(0).result()
+            if i + 6 < len(idx):
+                kolejka.append(pula.submit(odczyt, int(h.kroki[idx[i + 6]])))
+            d = PZ.wczytaj(kat, krok)
+            if d is None:
+                with PZ.ZAMEK_SIECI:
+                    d = LD.podkroki(h.wagi, krok, h.rgb, baza=baza, st=st, lodyga=False)
+                if baza is None:
+                    baza = d['baza']; PZ.zapisz_baze(kat, baza)
+            d['baza'] = baza
+            wyn.append((krok, pomiar(h.wagi, krok, h.rgb, tok, d, G=G, st=st)))
+            if postep is not None:
+                tt = (time.time() - t0) / (i + 1) * (len(idx) - i - 1)
+                postep(i + 1, len(idx), f'krok {krok}: {i + 1}/{len(idx)}, zostało ~{tt / 60:.1f} min')
+    finally:
+        for f_ in kolejka:
+            f_.cancel()
+        pula.shutdown(wait=False)
     if not wyn:
         return None
     kroki = np.array([k for k, _ in wyn])

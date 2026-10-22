@@ -27,6 +27,7 @@ from PyQt6.QtWidgets import (QCheckBox, QComboBox, QDockWidget, QDoubleSpinBox, 
                              QSpinBox, QToolButton, QVBoxLayout, QWidget)
 
 import lasery_dane as LD
+import mapa_pulapek as MP
 import ogniskowa as OGN
 import przejscia_zapis as PZ
 import rzuty_okienka as RZO
@@ -129,17 +130,42 @@ class OgniskowaWatek(QThread):
     gotowe = pyqtSignal(object, object)
     blad = pyqtSignal(str)
 
-    def __init__(self, h, tok, G, zasieg, razem=()):
+    def __init__(self, h, tok, G, zasieg, razem=(), dokladnosc='float32'):
         super().__init__()
         self.h, self.args = h, (int(tok), int(G), float(zasieg))
         self.toki = list(dict.fromkeys([int(tok)] + [int(t) for t in razem]))
+        self.dokladnosc = dokladnosc
         self.stop = False
 
     def run(self):
         try:
             W = OGN.policz_wiele(self.h, self.toki, *self.args[1:], postep=lambda i, n, o: self.postep.emit(i, n, o),
-                                 przerwij=lambda: self.stop)
+                                 przerwij=lambda: self.stop, dokladnosc=self.dokladnosc)
             self.gotowe.emit(self.args, W)
+        except OGN.Przerwano:
+            self.blad.emit('przerwano')
+        except Exception as e:                                           # noqa: BLE001
+            import traceback
+            traceback.print_exc()
+            self.blad.emit(f'{type(e).__name__}: {e}')
+
+
+class MapaPulapekWatek(QThread):
+    """Mapa pułapek wszystkich 600 cząsteczek przez całą historię (mapa_pulapek.policz), w tle."""
+    postep = pyqtSignal(int, int, str)
+    gotowe = pyqtSignal(object)
+    blad = pyqtSignal(str)
+
+    def __init__(self, h, zasieg, dokladnosc):
+        super().__init__()
+        self.h, self.zasieg, self.dokladnosc = h, float(zasieg), dokladnosc
+        self.stop = False
+
+    def run(self):
+        try:
+            d = MP.policz(self.h, self.zasieg, postep=lambda i, n, o: self.postep.emit(i, n, o), przerwij=lambda: self.stop,
+                          dokladnosc=self.dokladnosc)
+            self.gotowe.emit(d)
         except OGN.Przerwano:
             self.blad.emit('przerwano')
         except Exception as e:                                           # noqa: BLE001
@@ -874,6 +900,16 @@ class ZakladkaLaserow(QWidget):
         self.sp_og_lupa.setToolTip('Promień pokazanej kuli pola (z lupą) jako ułamek długości wiązek okienka 11.')
         for w_ in (self.cb_og_lupa, self.sp_og_lupa):
             (w_.currentIndexChanged if w_ is self.cb_og_lupa else w_.valueChanged).connect(lambda *_: self._og_opcje())
+        self.cb_og_gotowe = WaskiCombo(); self.cb_og_gotowe.setPlaceholderText('— policzone pułapki tej historii —')
+        self.cb_og_gotowe.setToolTip('Pułapki już policzone dla tej historii (pliki ogniskowa_t…npz obok historii): wybór ustawia cząsteczkę,\n'
+                                     'siatkę i zasięg i wczytuje pułapkę z dysku od razu, bez liczenia. Lista odświeża się przy otwarciu.')
+        self.cb_og_gotowe.przed_otwarciem = self._og_lista_gotowych
+        self.cb_og_gotowe.activated.connect(self._og_wybierz_gotowa)
+        self.cb_og_dokl = WaskiCombo(); self.cb_og_dokl.addItems(['float32 na GPU (szybko; reszta pola w float64)', 'float64 (dokładnie, wolniej)'])
+        self.cb_og_dokl.setToolTip('Dokładność liczenia pułapki i mapy pułapek. float32: jakobian, siatka pola i kolory w float32 (karta GeForce liczy\n'
+                                   'float64 kilkadziesiąt razy wolniej), ale reszta pola f w Newtonie w float64, bo w pułapce pchnięcia 768 wiązek\n'
+                                   'się znoszą (mała różnica dużych liczb). Pomiar: te same zera pola co float64, wartości własne zgodne do 2·10⁻⁵;\n'
+                                   'pole i tak jest zapisywane w float16. Zmiana dotyczy nowych liczeń (gotowe pliki zostają).')
         self.ed_og_razem = QLineEdit(); self.ed_og_razem.setPlaceholderText('np. 12, 101 (najwyżej 8)')
         self.ed_og_razem.setToolTip('Pułapki tych cząsteczek liczą się RAZEM z wybraną, w jednym przejściu przez checkpointy: wczytanie wag\n'
                                     'i przejście sieci są wspólne, osobno liczy się tylko pole w komórce każdej cząsteczki. Trzy cząsteczki\n'
@@ -997,7 +1033,8 @@ class ZakladkaLaserow(QWidget):
                                     'pokazuje łańcuch: zmienione lasery → nowe pole → nowe położenie.')
         self.ch_og_sfera = QCheckBox('pokaż pułapkę także na dużej sferze'); self.ch_og_sfera.setChecked(False)
         self.lb_og = QLabel('—'); self.lb_og.setWordWrap(True)
-        f.addRow(self.ch_og); f.addRow('Czas okienka 11', self.cb_og_czas); f.addRow(self.ch_og_pole)
+        f.addRow(self.ch_og); f.addRow('Gotowe (bez liczenia)', self.cb_og_gotowe); f.addRow('Czas okienka 11', self.cb_og_czas)
+        f.addRow(self.ch_og_pole); f.addRow('Dokładność', self.cb_og_dokl)
         f.addRow('Siatka (węzłów na bok)', self.sp_og_G); f.addRow('Zasięg siatki', self.sp_og_zas)
         w_ = QWidget(); l_ = QHBoxLayout(w_); l_.setContentsMargins(0, 0, 0, 0); l_.addWidget(self.ed_og_razem, 1); l_.addWidget(self.bt_og_razem)
         f.addRow('Licz razem z', w_)
@@ -1044,6 +1081,50 @@ class ZakladkaLaserow(QWidget):
         self.cb_og_czas.currentIndexChanged.connect(self._og_czas_zmiana)
         self._og = None; self._og_watek = None; self._og_klucz = None
         self._sek['pulapka'] = g
+
+        # --- mapa pułapek wszystkich cząsteczek (okienko 14, mapa_pulapek.py)
+        g = Zwijana('Mapa pułapek: wszystkie 600 cząsteczek (okienko 14)'); f = QFormLayout(g)
+        self.ch_mp = QCheckBox('pokaż mapę pułapek (wczytaj albo policz)'); self.ch_mp.setChecked(False)
+        self.ch_mp.setToolTip('Pułapka optyczna KAŻDEJ z 600 cząsteczek w każdym checkpoincie (bez siatki pola, ta jest w okienku 11): skok\n'
+                              'w bloku 6, zero pola w komórce (Newton dla wszystkich cząsteczek naraz na GPU) i kształt pola w cząsteczce\n'
+                              'z wartości własnych jakobianu: ściąga, siodło, wypycha, wir. Liczy się raz (ok. 1–2 min), potem z pliku.')
+        self.bt_mp = QPushButton('Wczytaj / policz'); self.bt_mp_stop = QPushButton('Przerwij'); self.bt_mp_stop.setEnabled(False)
+        self.bt_mp.setToolTip('Wczytuje mapę z pliku obok historii albo liczy ją w tle (zasięg komórki jak w „Pułapka optyczna”).')
+        self.bt_mp_stop.setToolTip('Przerywa liczenie mapy (nic się nie zapisuje).')
+        self.bt_mp.clicked.connect(lambda: self._mp_zlec(wymus=True) if self.ch_mp.isChecked() else self.ch_mp.setChecked(True))
+        self.bt_mp_stop.clicked.connect(lambda: setattr(self._mp_watek, 'stop', True) if self._mp_watek is not None else None)
+        self.pasek_mp = QProgressBar(); self.pasek_mp.setTextVisible(True)
+        self.cb_mp_kolor = WaskiCombo(); self.cb_mp_kolor.addItems(MP.TRYBY_KOLORU)
+        self.cb_mp_kolor.setToolTip('Kolor cząsteczki: kształt pola w niej (wartości własne λ₀ jakobianu ∂f/∂u: zielony ściąga, żółty siodło,\n'
+                                    'czerwony wypycha, domieszka błękitu = wir, czyli para zespolona λ), charakter zera pola w komórce,\n'
+                                    'siła skoku albo odległość zera od cząsteczki w promieniach komórki.')
+        self.cb_mp_filtr = WaskiCombo(); self.cb_mp_filtr.addItems(['wyróżnij: wszystkie', 'wyróżnij: siodła', 'wyróżnij: ściągające',
+                                                                    'wyróżnij: wypychające', 'wyróżnij: z wirem', 'wyróżnij: z zerem w komórce'])
+        self.cb_mp_filtr.setToolTip('Pozostałe cząsteczki są przyciemnione (kształt pola w cząsteczce, λ₀).')
+        self.sp_mp_rozm = _spin(1, 30, 6, 1, 0, ' px'); self.sp_mp_rozm.setToolTip('Wielkość kropek cząsteczek na ekranie.')
+        self.ch_mp_pul = QCheckBox('linie od cząsteczek do zer pola w komórce'); self.ch_mp_pul.setChecked(True)
+        self.ch_mp_pul.setToolTip('Odcinek od cząsteczki do jej pułapki (zera pola), gdy zero leży w komórce; długość × lupa.')
+        self.sp_mp_lupa = _spin(1, 200, 5, 1, 0, ' ×'); self.sp_mp_lupa.setToolTip('Powiększenie odcinków do pułapek (komórka jest mała).')
+        self.ch_mp_skok = QCheckBox('wektory skoku w bloku 6'); self.ch_mp_skok.setChecked(False)
+        self.ch_mp_skok.setToolTip('Pchnięcie 768 wiązek bloku 6 na każdą cząsteczkę (f(0), względem środka chmury).')
+        self.sp_mp_skok = _spin(0.1, 100, 3, 0.5, 1, ' ×'); self.sp_mp_skok.setToolTip('Długość wektorów skoku na ekranie.')
+        self.ch_mp_sfera = QCheckBox('pokaż mapę także na dużej sferze'); self.ch_mp_sfera.setChecked(False)
+        self.ch_mp_sfera.setToolTip('Te same kropki, linie i wektory na sferze reflektorów (w jej skali i skali chmury).')
+        self.lb_mp = QLabel('—'); self.lb_mp.setWordWrap(True)
+        f.addRow(self.ch_mp)
+        hb = QHBoxLayout(); hb.addWidget(self.bt_mp); hb.addWidget(self.bt_mp_stop); f.addRow(hb); f.addRow(self.pasek_mp)
+        f.addRow('Kolor', self.cb_mp_kolor); f.addRow('Wyróżnij', self.cb_mp_filtr); f.addRow('Kropki', self.sp_mp_rozm)
+        f.addRow(self.ch_mp_pul); f.addRow('  lupa', self.sp_mp_lupa); f.addRow(self.ch_mp_skok); f.addRow('  długość', self.sp_mp_skok)
+        f.addRow(self.ch_mp_sfera); f.addRow(self.lb_mp)
+        self.ch_mp.toggled.connect(lambda on: (self._mp_zlec(), self._mp_czas(self.t)) if self.h is not None else None)
+        for w_ in (self.cb_mp_kolor, self.cb_mp_filtr):
+            w_.currentIndexChanged.connect(lambda *_: self._mp_czas(self.t) if self.h is not None else None)
+        for w_ in (self.sp_mp_rozm, self.sp_mp_lupa, self.sp_mp_skok):
+            w_.valueChanged.connect(lambda *_: self._mp_czas(self.t) if self.h is not None else None)
+        for w_ in (self.ch_mp_pul, self.ch_mp_skok, self.ch_mp_sfera):
+            w_.toggled.connect(lambda *_: (self._mp_zlec(), self._mp_czas(self.t)) if self.h is not None else None)
+        self._mp = None; self._mp_watek = None
+        self._sek['mapa_pul'] = g
 
         # --- mapy
         g = Zwijana('Okienka 4–5: mapy na zdjęciu'); f = QFormLayout(g)
@@ -1229,6 +1310,13 @@ class ZakladkaLaserow(QWidget):
         self.watek_mech = MechanikaWatek(); self.watek_mech.gotowe.connect(self._mech_gotowe)
         self._dok('13', '13. Reflektor: mechanika — odrzut wiązek, sprężyny i wykonany ruch (blok 6)', self._z_napisem(self.vmech, 'lb13'))
         self.doki['13'].visibilityChanged.connect(lambda on: self._mech_zlec() if on else None)
+        # okienko 14: mapa pułapek wszystkich cząsteczek (mapa_pulapek.py); ta sama mapa może być na dużej sferze
+        self.vmp = WidokGL(); self.vmp.setBackgroundColor(TLO); self.vmp.setCameraPosition(distance=95, elevation=18, azimuth=-50)
+        self.gl_mp = MP.MapaGL(); self.gl_mp.dodaj_do(self.vmp); self.gl_mp.widoczna(False)
+        self.gl_mp_s = MP.MapaGL(); self.gl_mp_s.dodaj_do(self.vs); self.gl_mp_s.widoczna(False)
+        self._dok('14', '14. Mapa pułapek: wszystkie 600 cząsteczek, kształt pola i zera pola w komórkach (blok 6)',
+                  self._z_napisem(self.vmp, 'lb14'))
+        self.doki['14'].visibilityChanged.connect(lambda on: self._mp_zlec() if on else None)
         self.rzuty.buduj_okienka()                                      # okienka R1–R8: rzuty z 192 wymiarów
         self._buduj_przejscie()
         self._buduj_panel()
@@ -1240,7 +1328,7 @@ class ZakladkaLaserow(QWidget):
             m.addAction(d.toggleViewAction())
         m.addSeparator()
         grupy = (('Ruch i mapy (1–10)', ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10')),
-                 ('Sfera, pułapka, dolina, mechanika', ('s', '11', '12', '13', 'p')),
+                 ('Sfera, pułapka, dolina, mechanika', ('s', '11', '14', '12', '13', 'p')),
                  ('Rzuty z 192 wymiarów (R0–R12)', tuple(k for k in self.doki if k.startswith('R'))))
         for nazwa, klucze in grupy:
             pm = m.addMenu(nazwa)
@@ -1324,6 +1412,7 @@ class ZakladkaLaserow(QWidget):
         if not self.timer.isActive():
             self.ustaw_czas(self.t)
         self._og_zlec()                                                  # pułapka czekała na widoczne okienko 11
+        self._mp_zlec()                                                  # mapa pułapek czekała na widoczne okienko 14
 
     def _dok_sterowania(self, klucz, tytul, widget):
         """Okienko sterujące (parametry, podkroki): jak okienka widoków można je odpiąć i przesunąć, ale nie należy do self.doki
@@ -1343,13 +1432,14 @@ class ZakladkaLaserow(QWidget):
     # ------------------------------------------------------------------ panel parametrów i ustawienia okienek pod prawym klikiem
     # okienko → sekcje panelu z jego ustawieniami (prawy klik w okienko wypożycza je do popupu); R* pyta rzuty_okienka
     SEKCJE_OKIENEK = {'1': ('plaskie',), '2': ('plaskie',), '3': ('plaskie',), 's': ('sfera', 'wybor'), '4': ('mapy',), '5': ('mapy',),
-                      '11': ('pulapka',), '12': ('dolina',), '13': ('mech',), 'p': ('przejscie',),
+                      '11': ('pulapka',), '14': ('mapa_pul',), '12': ('dolina',), '13': ('mech',), 'p': ('przejscie',),
                       '6': ('dane',), '7': ('dane',), '8': ('dane',), '9': ('dane',), '10': ('dane',)}
     # strony panelu: (klucz, nazwa na liście, sekcje, dymek)
     STRONY = (('dane', 'Dane, etykiety', ('dane', 'etykiety'), 'Historia uczenia, zdjęcie, etykieta narzędzia i obszary oka'),
               ('zestaw', 'Kilka zdjęć', ('zestaw',), 'Kilka zdjęć naraz na sferze reflektorów (600 koloidów na zdjęcie)'),
               ('sfera', 'Sfera', ('wybor', 'sfera'), 'Sfera reflektorów, wybór cząsteczek i reflektorów'),
               ('pulapka', 'Pułapka (11)', ('pulapka',), 'Pułapka optyczna: ogniskowa wiązek wokół koloidu, obrys ogniska 3D'),
+              ('mapa_pul', 'Mapa pułapek (14)', ('mapa_pul',), 'Pułapki wszystkich 600 cząsteczek: kształt pola, zera, wiry'),
               ('podkroki', 'Podkroki (P)', ('przejscie', 'zapis'), 'Okienko P (przejście przez sieć) i zapis przejść na dysk'),
               ('rzuty', 'Rzuty R0–R12', ('rzuty',), 'Rzuty z 192 wymiarów do 3D'),
               ('plaskie', 'Ruch 1–3', ('plaskie',), 'Rzut płaski: ruch globalny, studnie, drgania'),
@@ -1542,7 +1632,8 @@ class ZakladkaLaserow(QWidget):
                                 'pierścienie w okienkach 1–3, okienko 2: narzędzie/reszta):\n'
                                 '• dotknięta obrysem: każdy patch, w który wchodzi choć jeden piksel obrysu narzędzia — całe narzędzie,\n'
                                 '  także patche w większości z tłem (domyślnie);\n'
-                                '• pokrycie ≥ próg: tylko patche w co najmniej „próg” wypełnione narzędziem (cienki cystotom: 2–3 patche);\n'
+                                '• pokrycie ≥ 50 % (jak dawniej, do 2026-10-21): patch, w którym co najmniej połowa pikseli to narzędzie;\n'
+                                '• pokrycie ≥ własny próg: tylko patche w co najmniej „próg” wypełnione narzędziem (cienki cystotom: 2–3 patche);\n'
                                 '• środek łaty w obrysie: środkowy piksel patcha leży na narzędziu;\n'
                                 '• ramka GT: środek patcha w prostokącie ramki (dużo tła).\n'
                                 'Rzuty R1–R12 używają etykiety z chwili liczenia stanów 192D (R9 ma własny próg).')
@@ -1551,8 +1642,22 @@ class ZakladkaLaserow(QWidget):
         self.sp_oko_prog.setToolTip('Patch należy do źrenicy / rogówki, gdy ich obrys pokrywa co najmniej tyle patcha (jak obszary_oka.py).\n'
                                     'Pierwszeństwo: narzędzie > źrenica > rogówka > tło. ViT nie był uczony na obszarach oka.')
         self.lb_etyk = QLabel('—'); self.lb_etyk.setWordWrap(True)
+        from podglad_etykiety import PodgladEtykiety
+        self.ch_etyk_podglad = QCheckBox('podgląd łat narzędzia na zdjęciu'); self.ch_etyk_podglad.setChecked(True)
+        self.ch_etyk_podglad.setToolTip('Siatka 30 × 20 łat na zdjęciu: zielone = narzędzie w wybranym trybie (jaśniejsze = większy udział pikseli\n'
+                                        'obrysu), żółta obwódka = mieszane (dotknięte obrysem, ale w tym trybie nie narzędzie), biała = wybrana\n'
+                                        'cząsteczka. Najechanie pokazuje udział, klik wybiera cząsteczkę.')
+        self.podglad_etyk = PodgladEtykiety(); self.podglad_etyk.klik.connect(self.sp_tok.setValue)
+        self.podglad_etyk.setToolTip(self.ch_etyk_podglad.toolTip())
+        self.ch_etyk_podglad.toggled.connect(lambda on: (self.podglad_etyk.setVisible(on), self._opis_etykiety()))
+        self.lb_etyk_tryby = QLabel(''); self.lb_etyk_tryby.setWordWrap(True)
+        self.lb_etyk_tryby.setToolTip('Ile łat narzędzia daje każdy tryb etykiety dla tego zdjęcia (porównanie trybów).')
         f.addRow('Narzędzie', self.cb_etyk); f.addRow('  próg pokrycia', self.sp_etyk_prog); f.addRow('Obszary oka: próg', self.sp_oko_prog)
-        f.addRow(self.lb_etyk)
+        f.addRow(self.lb_etyk); f.addRow(self.lb_etyk_tryby); f.addRow(self.ch_etyk_podglad); f.addRow(self.podglad_etyk)
+        self.sp_etyk_prog.setEnabled(False)
+        self.cb_etyk.currentIndexChanged.connect(lambda *_: self.sp_etyk_prog.setEnabled(self.cb_etyk.currentData() == 'pokrycie'))
+        self.sp_tok.valueChanged.connect(lambda v: self.podglad_etyk.ustaw(None, self.podglad_etyk.udzial, self.podglad_etyk.narz,
+                                                                          self.podglad_etyk.mies, int(v)) if self.podglad_etyk.isVisible() else None)
         self.cb_etyk.currentIndexChanged.connect(lambda *_: self._etykieta_zmiana())
         self.sp_etyk_prog.valueChanged.connect(lambda *_: self._etykieta_zmiana() if self.cb_etyk.currentData() == 'pokrycie' else None)
         self.sp_oko_prog.valueChanged.connect(lambda *_: self._etykieta_zmiana(tylko_oko=True))
@@ -1595,6 +1700,14 @@ class ZakladkaLaserow(QWidget):
         ile = ', '.join(f'{LD_.KLASY_OKA[i]} {int((k == i).sum())}' for i in (3, 2, 1, 0)) if hasattr(LD_, 'KLASY_OKA') else ''
         bez_oka = '' if getattr(h, 'oko', None) is not None else ' Brak obrysów oka dla tego zdjęcia.'
         self.lb_etyk.setText(f'{h.etykieta}.  Patche: {ile}.{bez_oka}')
+        if getattr(h, 'udzial', None) is not None:
+            from podglad_etykiety import opis_trybow
+            self.lb_etyk_tryby.setText('Łaty narzędzia w trybach: ' + opis_trybow(h.udzial, self.sp_etyk_prog.value(), getattr(h, 'srodek', None),
+                                                                                   getattr(h, 'narz_ramka', None)))
+        else:
+            self.lb_etyk_tryby.setText('Brak obrysu narzędzia dla tego zdjęcia: etykieta z ramki GT.')
+        if self.ch_etyk_podglad.isChecked():
+            self.podglad_etyk.ustaw(h.rgb, getattr(h, 'udzial', None), h.narz, getattr(h, 'mieszane', None), int(self.sp_tok.value()))
 
     def _zaznacz_obszar(self, kod):
         if kod < 0 or self.h is None:
@@ -1656,7 +1769,7 @@ class ZakladkaLaserow(QWidget):
         o.addDockWidget(A.TopDockWidgetArea, s['podkroki'], Vt)
         o.addDockWidget(A.TopDockWidgetArea, d['s'], Vt)
         o.splitDockWidget(d['s'], d['11'], Hz)
-        for a, b in (('11', '12'), ('12', '13'), ('13', 'p')):
+        for a, b in (('11', '14'), ('14', '12'), ('12', '13'), ('13', 'p')):
             o.tabifyDockWidget(d[a], d[b])
         d['11'].raise_()
         o.addDockWidget(A.BottomDockWidgetArea, d['1'], Hz)
@@ -2348,6 +2461,8 @@ class ZakladkaLaserow(QWidget):
         self._kolory_czastek()
         self._og = None; self._og_klucz = None
         self.eog.czysc(); self.es_og.czysc()
+        self._mp = None; self.gl_mp.widoczna(False); self.gl_mp_s.widoczna(False)
+        self._og_lista_gotowych()
         self._dol = None; self._dol_zlecony = None; self.edol.czysc(); self.es_dol.czysc(); self.es_dol.setVisible(False)
         self._mech = None; self._mech_zlecony = None; self.emech.czysc()
         self._prz_opis()
@@ -2466,6 +2581,93 @@ class ZakladkaLaserow(QWidget):
             self.sp_refl.setValue(self.h.refl_pokaz)
 
     # ------------------------------------------------------------------ pułapka optyczna (ogniskowa wiązek, okienko 11)
+    def _mp_widac(self):
+        return self.widac('14') or (self.ch_mp_sfera.isChecked() and self.widac('s'))
+
+    def _mp_zlec(self, wymus=False):
+        """Mapa pułapek: z pliku od razu, inaczej liczenie w tle, gdy okienko 14 (albo mapa na sferze) jest widoczne."""
+        h = self.h
+        if h is None or not self.ch_mp.isChecked() or (self._mp is not None and not wymus):
+            return
+        if self._mp_watek is not None and self._mp_watek.isRunning():
+            return
+        zas = round(float(self.sp_og_zas.value()), 2)
+        d = MP.wczytaj(h, zas)
+        if d is not None:
+            self._mp_gotowe(d)
+            return
+        if not wymus and not self._mp_widac():
+            self.lb_mp.setText('Mapa policzy się, gdy okienko 14 (albo mapa na sferze) będzie widoczne.')
+            return
+        w = MapaPulapekWatek(h, zas, self._dokladnosc())
+        w.postep.connect(lambda i, n, o: (self.pasek_mp.setMaximum(n), self.pasek_mp.setValue(i), self.pasek_mp.setFormat(o)))
+        w.gotowe.connect(self._mp_gotowe)
+        w.blad.connect(lambda t: (self.bt_mp_stop.setEnabled(False), self.lb_mp.setText(f'Mapa pułapek: {t}')))
+        self._mp_watek = w; self.bt_mp_stop.setEnabled(True); self.pasek_mp.setValue(0)
+        self.lb_mp.setText(f'Liczę pułapki 600 cząsteczek we wszystkich {h.K} checkpointach (w tle, GPU)…')
+        w.start()
+
+    def _mp_gotowe(self, d):
+        self.bt_mp_stop.setEnabled(False)
+        h = self.h
+        if h is None or len(d['kroki']) != h.K:
+            return
+        self._mp = d
+        R_ = 0.55 * self.es.R * self.sp_skala_chm.value()                # chmura ma promień ~0,55 R sfery (r99 → 0,55 R)
+        self.vmp.opts['distance'] = 2.4 * R_ / np.tan(np.radians(self.vmp.opts['fov']) / 2) * 0.5
+        zb = np.asarray(d['zb'])
+        self.lb_mp.setText(f'Mapa pułapek: {h.K} checkpointów × {zb.shape[1]} cząsteczek ({d.get("dokladnosc", "?")}); zero pola w komórce '
+                           f'w {zb.mean():.2%} par checkpoint–cząsteczka.')
+        self._mp_czas(self.t)
+
+    def _mp_czas(self, t):
+        """Rysunek mapy w chwili t (położenia, odcinki do zer i skoki interpolowane między checkpointami; kolory przenikają)."""
+        d, h = self._mp, self.h
+        pokaz14 = d is not None and h is not None and self.ch_mp.isChecked()
+        self.gl_mp.widoczna(pokaz14)
+        self.gl_mp_s.widoczna(pokaz14 and self.ch_mp_sfera.isChecked())
+        if not pokaz14:
+            if h is not None and self.ch_mp.isChecked() and d is None:
+                self.lb14.setText('Mapa pułapek: kliknij „Wczytaj / policz” (sekcja „Mapa pułapek”).')
+            elif h is not None and not self.ch_mp.isChecked():
+                self.lb14.setText('Mapa pułapek wyłączona: zaznacz „pokaż mapę pułapek” (sekcja „Mapa pułapek”).')
+            return
+        if not self._mp_widac():
+            return
+        K = h.K
+        t = float(np.clip(t, 0, K - 1)); a = int(np.floor(t)); b = min(a + 1, K - 1); f = t - a
+        r = h.r99[-1] * np.ones(K) if self.cb_skala.currentIndex() == 1 else h.r99
+        s = 0.55 * self.es.R / np.maximum(np.asarray(r, np.float64), 1e-9) * self.sp_skala_chm.value()
+        pos = lambda k: np.asarray(h.pos[k], np.float64)
+        P = (1 - f) * pos(a) * s[a] + f * pos(b) * s[b]
+        tryb = self.cb_mp_kolor.currentIndex()
+        kol = (1 - f) * MP.kolory(d, a, tryb, pos(a)) + f * MP.kolory(d, b, tryb, pos(b))
+        filtr = self.cb_mp_filtr.currentIndex()
+        if filtr:
+            m = MP.maska_filtru(d, a if f < 0.5 else b, filtr)
+            kol[~m, :3] *= 0.25; kol[~m, 3] *= 0.35
+        Q = kq = None
+        if self.ch_mp_pul.isChecked():
+            zb = np.asarray(d['zb'][a if f < 0.5 else b], bool)
+            lu = self.sp_mp_lupa.value()
+            off = (1 - f) * (d['ogn'][a] - pos(a)) * s[a] + f * (d['ogn'][b] - pos(b)) * s[b]
+            Q = np.stack([P[zb], P[zb] + lu * off[zb]], 1); kq = kol[zb]
+        S = None
+        if self.ch_mp_skok.isChecked():
+            dl = self.sp_mp_skok.value()
+            sk = (1 - f) * d['skok'][a] * s[a] + f * d['skok'][b] * s[b]
+            S = np.stack([P, P + dl * sk], 1)
+        tok = int(self.sp_tok.value())
+        wyb = P[tok] if 0 <= tok < len(P) else None
+        rozm = self.sp_mp_rozm.value()
+        if self.widac('14'):
+            self.gl_mp.ustaw(P, kol, rozm, Q, kq, S, wyb)
+        if self.ch_mp_sfera.isChecked() and self.widac('s'):
+            self.gl_mp_s.ustaw(P, kol, rozm, Q, kq, S, wyb)
+        k = int(round(t))
+        self.lb14.setText(f'Checkpoint {k + 1}/{K} (krok {int(h.kroki[k])}): {MP.statystyki(d, k)}.  Zielony ściąga, żółty siodło, '
+                          f'czerwony wypycha, błękitny odcień = wir; biała obwódka = wybrana cząsteczka {tok}.')
+
     def _og_klucz_teraz(self):
         h = self.h
         G = int(self.sp_og_G.value()) if self.ch_og_pole.isChecked() else 1        # G = 1: tylko wiązki wybranej cząsteczki
@@ -2497,7 +2699,7 @@ class ZakladkaLaserow(QWidget):
             self._og_zastosuj(klucz, d)
             return
         razem = [t for t in lista_liczb(self.ed_og_razem.text(), self._n_tok()) if t != klucz[1]][:8]
-        w = OgniskowaWatek(h, *klucz[1:], razem=razem); w.klucz = klucz
+        w = OgniskowaWatek(h, *klucz[1:], razem=razem, dokladnosc=self._dokladnosc()); w.klucz = klucz
         w.postep.connect(self._og_postep)
         w.gotowe.connect(lambda args, W, k=klucz: self._og_gotowe(k, W))
         w.blad.connect(self._og_blad)
@@ -2517,6 +2719,47 @@ class ZakladkaLaserow(QWidget):
         self.bt_og_stop.setEnabled(False)
         self.lb_og.setText(f'Pułapka: {tekst}')
 
+    def _dokladnosc(self):
+        return 'float64' if self.cb_og_dokl.currentIndex() == 1 else 'float32'
+
+    def _og_lista_gotowych(self):
+        """Lista „Gotowe (bez liczenia)”: pułapki tej historii na dysku (cząsteczka, siatka, zasięg); wybrana pozycja zostaje."""
+        cb = self.cb_og_gotowe
+        cb.blockSignals(True); cb.clear()
+        if self.h is not None:
+            for tok, G, zas in OGN.gotowe(self.h):
+                opis = f'cząsteczka {tok}: ' + (f'pole na siatce {G}³, zasięg {pl(zas)}' if G > 1 else f'tylko wiązki, zasięg {pl(zas)}')
+                cb.addItem(opis, (tok, G, zas))
+        if self.h is not None:
+            teraz = self._og_klucz_teraz()[1:]
+            for i in range(cb.count()):
+                tok, G, zas = cb.itemData(i)
+                if (tok, G, round(zas, 2)) == (teraz[0], teraz[1], teraz[2]):
+                    cb.setCurrentIndex(i)
+                    break
+            else:
+                cb.setCurrentIndex(-1)
+        cb.blockSignals(False)
+
+    def _og_wybierz_gotowa(self, i):
+        dane = self.cb_og_gotowe.itemData(i)
+        if not dane:
+            return
+        tok, G, zas = dane
+        for w_ in (self.sp_tok, self.sp_og_G, self.sp_og_zas, self.ch_og_pole):
+            w_.blockSignals(True)
+        self.ch_og_pole.setChecked(G > 1)
+        if G > 1:
+            self.sp_og_G.setValue(G)
+        self.sp_og_zas.setValue(zas)
+        for w_ in (self.sp_og_G, self.sp_og_zas, self.ch_og_pole):
+            w_.blockSignals(False)
+        self.sp_tok.blockSignals(False)
+        if not self.ch_og.isChecked():
+            self.ch_og.blockSignals(True); self.ch_og.setChecked(True); self.ch_og.blockSignals(False)
+        self.sp_tok.setValue(tok)                                        # zmiana cząsteczki odświeża sferę, wybór i okienka
+        self._og_zlec(wymus=True)                                        # plik jest na dysku: wczytanie, bez liczenia
+
     def _og_gotowe(self, klucz, W):
         """W = {cząsteczka: wynik} (wybrana i liczone razem z nią); pokazujemy tę, która jest wybrana TERAZ (mogła się zmienić na
         jedną z liczonych razem w trakcie liczenia)."""
@@ -2524,6 +2767,7 @@ class ZakladkaLaserow(QWidget):
         if self.h is None:
             return
         teraz = self._og_klucz_teraz()
+        self._og_lista_gotowych()                                        # nowe pliki pułapek na liście „Gotowe”
         if (teraz[0], teraz[2], teraz[3]) == (klucz[0], klucz[2], klucz[3]) and teraz[1] in W:
             self._og_zastosuj(teraz, W[teraz[1]])
         elif teraz != self._og_klucz:
@@ -3072,6 +3316,7 @@ class ZakladkaLaserow(QWidget):
         self.lb4.setText('bloki 1 2 3 (góra), 4 5 6 (dół); ' + ('pierwiastek z mapy, ' if self.ch_pierw.isChecked() else '') + 'normowana w każdym bloku;  biała = prawdziwa ramka, błękitna = ramka modelu')
         self.lb5.setText(f'{self.cb_mapa.currentText()}')
         self._og_czas(t)
+        self._mp_czas(t)
         self._dol_czas(tryb_pod)
         if not tryb_pod and getattr(self, '_mech', None) is not None and self.widac('13'):
             self._mech_zlec(); self._mech_rysuj()                   # ruch w obrębie checkpointu: u = t − i

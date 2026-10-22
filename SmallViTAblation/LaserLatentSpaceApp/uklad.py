@@ -172,6 +172,9 @@ class WaskiCombo(QComboBox):
         self.setMinimumContentsLength(znaki)
 
     def showPopup(self):
+        fn = getattr(self, 'przed_otwarciem', None)                # lista budowana na bieżąco (np. pliki na dysku)
+        if fn is not None:
+            fn()
         fm = self.view().fontMetrics()
         self.view().setMinimumWidth(max([fm.horizontalAdvance(self.itemText(i)) for i in range(self.count())] + [0]) + 36)
         super().showPopup()

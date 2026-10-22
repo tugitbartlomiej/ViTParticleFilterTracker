@@ -75,7 +75,7 @@ class TestMaski(unittest.TestCase):
             EN.maski(self.u, tryb='cokolwiek')
 
     def test_tryby_kolejnosc(self):
-        self.assertEqual([k for k, _ in EN.TRYBY], ['dotkniete', 'pokrycie', 'srodek', 'ramka'])
+        self.assertEqual([k for k, _ in EN.TRYBY], ['dotkniete', 'pokrycie50', 'pokrycie', 'srodek', 'ramka'])
 
 
 class TestCienkiObrys(unittest.TestCase):
@@ -217,6 +217,15 @@ class TestHistoria(unittest.TestCase):
         k = h.obszary()
         self.assertEqual(set(np.unique(k)), {0, 3})
         self.assertEqual(int((k == 3).sum()), 1)
+
+
+class TestStaraEtykieta(unittest.TestCase):
+    def test_pokrycie50_to_pokrycie_z_progiem_pol(self):
+        """Tryb „≥ 50 % jak dawniej” = pokrycie z progiem 0,5, niezależnie od własnego progu."""
+        u = np.array([0.0, 0.1, 0.49, 0.5, 0.9], np.float32)
+        n, m = EN.maski(u, 0.2, 'pokrycie50')
+        self.assertEqual(n.tolist(), [False, False, False, True, True])
+        self.assertEqual(m.tolist(), [False, True, True, False, False])
 
 
 if __name__ == '__main__':

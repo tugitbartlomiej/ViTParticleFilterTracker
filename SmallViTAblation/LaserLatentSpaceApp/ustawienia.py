@@ -24,7 +24,7 @@ PLIK = Path(__file__).resolve().parent / 'ustawienia.json'
 WERSJA = 1
 MODULY = ('app', 'widzety_edytora', 'zakladka_detekcji', 'zakladka_filmu', 'czasteczki', 'czasteczki3d',
           'przestrzen_makro', 'opcje_atencji', 'zakladka_ruchu', 'zakladka_laserow', 'rzuty_okienka')
-POMIN = {'okno', 'suwak', 'pasek'}            # odnośnik wstecz do okna, suwaki przebiegu, paski postępu
+POMIN = {'okno', 'suwak', 'pasek', 'cb_og_gotowe'}   # odnośnik wstecz do okna, suwaki przebiegu, paski postępu, lista plików
 
 
 def _kontener(w):

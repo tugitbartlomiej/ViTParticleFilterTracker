@@ -379,7 +379,7 @@ def policz(wagi, kroki, rgb, gt, okno=300, postep=None, przerwij=None, urzadzeni
 _siec = {}
 
 
-def podkroki(wagi, krok, rgb, urzadzenie='cuda', baza=None):
+def podkroki(wagi, krok, rgb, urzadzenie='cuda', baza=None, st=None, lodyga=True):
     """Jedno przejście w przód checkpointu `krok`, rozłożone na podkroki strumienia rezydualnego (głębokość = czas cząstki):
     stan 0 = łodyga + kodowanie pozycji, potem dla bloku b: stan 2b+1 = po uwadze (x + attn(LN₁ x)), stan 2b+2 = po MLP (x + mlp(LN₂ x)).
     Rozkład dokładny (timm Block, ls = Identity):
@@ -387,14 +387,16 @@ def podkroki(wagi, krok, rgb, urzadzenie='cuda', baza=None):
       MLP:    Δx_j = Σ_c z_jc v_c + b₂                                         (768 laserów: natężenie z_jc, kierunek v_c)
     Wszystko rzutowane tym samym rzutem P (3 główne składowe 13 stanów × 600 tokenów), więc rzuty sił sumują się do rzutu przesunięcia.
     Zwraca słownik tablic float32 (pos (13,600,3), ah (6,3,600,600), uh (6,3,600,3), bo/b2 (6,3), z (6,600,768), pv (6,768,3),
-    mapa (600,), ramka, pewnosc, sprawdzenie = maks. błąd rozkładu w rzucie)."""
+    mapa (600,), ramka, pewnosc, sprawdzenie = maks. błąd rozkładu w rzucie). st: wagi już wczytane (słownik stanu, np. z wyprzedzeniem
+    w wątku); lodyga=False pomija obrazki łodygi (6 rozkładów SVD, zbędne w pomiarach)."""
     import torch
     dev = torch.device(urzadzenie if torch.cuda.is_available() else 'cpu')
     M = modul_modelu()
     if dev.type not in _siec:
         _siec[dev.type] = M.MalyViT().to(dev).eval().requires_grad_(False)
     net = _siec[dev.type]
-    st = torch.load(Path(wagi) / f'k{int(krok):05d}.pt', map_location=dev, weights_only=True)
+    if st is None:
+        st = torch.load(Path(wagi) / f'k{int(krok):05d}.pt', map_location=dev, weights_only=True)
     net.load_state_dict(st.get('net', st), strict=True)
     with torch.no_grad():
         x = torch.from_numpy(np.ascontiguousarray(rgb)).permute(2, 0, 1)[None].float().div(255).to(dev)
@@ -405,8 +407,11 @@ def podkroki(wagi, krok, rgb, urzadzenie='cuda', baza=None):
         B, C, h, w = f.shape
         pe = M.sincos_2d(h, w, C, dev)
         t = f.flatten(2).transpose(1, 2) + pe
-        lodyga = [_rgb_pca(e.reshape(e.shape[0], -1).T, e.shape[1], e.shape[2]) for e in etapy]
-        lodyga.append(_rgb_pca(pe, h, w)); lodyga.append(_rgb_pca(t[0], h, w))             # kodowanie pozycji i tokeny po jego dodaniu
+        if lodyga:
+            lodyga = [_rgb_pca(e.reshape(e.shape[0], -1).T, e.shape[1], e.shape[2]) for e in etapy]
+            lodyga.append(_rgb_pca(pe, h, w)); lodyga.append(_rgb_pca(t[0], h, w))         # kodowanie pozycji i tokeny po jego dodaniu
+        else:
+            lodyga = []
         stany, AH, U, BO, B2, Z, V2 = [t[0]], [], [], [], [], [], []
         for blk in net.bloki:
             at = blk.attn
@@ -568,7 +573,8 @@ class Historia:
             opis = f'ramka GT, środek łaty w ramce: {n_ramka} łat'
         elif self.udzial is not None:
             import etykiety_narzedzia as EN
-            nazwa = {'dotkniete': 'dotknięte', 'pokrycie': f'pokrycie ≥ {prog:g}', 'srodek': 'środek w obrysie'}.get(tryb, tryb)
+            nazwa = {'dotkniete': 'dotknięte', 'pokrycie50': 'pokrycie ≥ 50 % (jak dawniej)', 'pokrycie': f'pokrycie ≥ {prog:g}',
+                     'srodek': 'środek w obrysie'}.get(tryb, tryb)
             try:
                 n, m = EN.maski(self.udzial, prog, tryb, srodek=self.srodek, ramka=self.narz_ramka)
             except ValueError:                                           # np. brak środków łat w starym cache
