@@ -92,6 +92,36 @@ class Liczenie(QThread):
             self.blad.emit(f'{type(e).__name__}: {e}')
 
 
+class ZestawLiczenie(QThread):
+    """Historie kilku zdjęć tej samej historii wag (te same checkpointy): z cache od razu, inaczej `lasery_dane.policz` po kolei."""
+    postep = pyqtSignal(int, int, str)
+    gotowe = pyqtSignal(object)
+    blad = pyqtSignal(str)
+
+    def __init__(self, wagi, kroki, zdjecia, okno):
+        super().__init__()
+        self.args = (wagi, kroki, list(zdjecia), okno)
+        self.stop = False
+
+    def run(self):
+        wagi, kroki, zdjecia, okno = self.args
+        katalogi = []
+        try:
+            for i, zd in enumerate(zdjecia):
+                rgb, roz = LD.wczytaj_zdjecie(zd)
+                gt, _ = LD.ramka_prawdziwa(zd, roz)
+                out = LD.policz(wagi, kroki, rgb, gt, okno, przerwij=lambda: self.stop,
+                                postep=lambda a, b, o, i=i: self.postep.emit(a, b, f'zdjęcie {i + 1}/{len(zdjecia)}: {o}'))
+                katalogi.append(str(out))
+            self.gotowe.emit(katalogi)
+        except LD.Przerwano:
+            self.blad.emit('przerwano')
+        except Exception as e:                                           # noqa: BLE001
+            import traceback
+            traceback.print_exc()
+            self.blad.emit(f'{type(e).__name__}: {e}')
+
+
 class OgniskowaWatek(QThread):
     """Pułapka optyczna (ogniskowa.policz) dla jednej cząsteczki we wszystkich checkpointach historii, w tle."""
     postep = pyqtSignal(int, int, str)
@@ -559,16 +589,17 @@ class SuwakAB(QSlider):
 
 def lista_liczb(tekst, n):
     """'12, 40 100-105' → [12, 40, 100, …, 105] (bez powtórzeń, kolejność wpisania, tylko 0..n−1)."""
-    out = []
+    out, byly = [], set()
     for kaw in tekst.replace(';', ',').replace(',', ' ').split():
         a, _, b = kaw.partition('-')
         try:
             lo = int(a); hi = int(b) if b else lo
         except ValueError:
             continue
-        for x in range(min(lo, hi), max(lo, hi) + 1):
-            if 0 <= x < n and x not in out:
-                out.append(x)
+        lo, hi = min(lo, hi), max(lo, hi)
+        for x in range(max(lo, 0), min(hi, n - 1) + 1):                 # zakres przycięty do 0..n−1 (np. „0-100000000” bez zawieszenia)
+            if x not in byly:
+                byly.add(x); out.append(x)
     return out
 
 
@@ -1224,6 +1255,10 @@ class ZakladkaLaserow(QWidget):
             if not cb.toolTip():                                         # bez własnego dymka: dymek = pełny wybrany tekst
                 cb.setToolTip(cb.currentText())
                 cb.currentTextChanged.connect(cb.setToolTip)
+        import dymki
+        import grupy_parametrow
+        self._dymki_zmienione = dymki.zastosuj(self)   # dymki: co robi każdy parametr (także po najechaniu na nazwę wiersza)
+        grupy_parametrow.zastosuj(self)           # nagłówki podgrup w długich sekcjach (pułapka, sfera, dane, …)
 
     def _z_napisem(self, widok, nazwa):
         w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(0, 0, 0, 0); v.setSpacing(0)
@@ -1265,8 +1300,15 @@ class ZakladkaLaserow(QWidget):
             return
         if not hasattr(self, '_odsl_timer'):
             self._odsl_timer = QTimer(self); self._odsl_timer.setSingleShot(True); self._odsl_timer.setInterval(0)
-            self._odsl_timer.timeout.connect(lambda: self.ustaw_czas(self.t) if self.h is not None and not self.timer.isActive() else None)
+            self._odsl_timer.timeout.connect(self._po_odslonieciu)
         self._odsl_timer.start()
+
+    def _po_odslonieciu(self):
+        if self.h is None:
+            return
+        if not self.timer.isActive():
+            self.ustaw_czas(self.t)
+        self._og_zlec()                                                  # pułapka czekała na widoczne okienko 11
 
     def _dok_sterowania(self, klucz, tytul, widget):
         """Okienko sterujące (parametry, podkroki): jak okienka widoków można je odpiąć i przesunąć, ale nie należy do self.doki
@@ -1289,6 +1331,7 @@ class ZakladkaLaserow(QWidget):
                       '6': ('dane',), '7': ('dane',), '8': ('dane',), '9': ('dane',), '10': ('dane',)}
     # strony panelu: (klucz, nazwa na liście, sekcje, dymek)
     STRONY = (('dane', 'Dane, etykiety', ('dane', 'etykiety'), 'Historia uczenia, zdjęcie, etykieta narzędzia i obszary oka'),
+              ('zestaw', 'Kilka zdjęć', ('zestaw',), 'Kilka zdjęć naraz na sferze reflektorów (600 koloidów na zdjęcie)'),
               ('sfera', 'Sfera', ('wybor', 'sfera'), 'Sfera reflektorów, wybór cząsteczek i reflektorów'),
               ('pulapka', 'Pułapka (11)', ('pulapka',), 'Pułapka optyczna: ogniskowa wiązek wokół koloidu, obrys ogniska 3D'),
               ('podkroki', 'Podkroki (P)', ('przejscie', 'zapis'), 'Okienko P (przejście przez sieć) i zapis przejść na dysk'),
@@ -1303,6 +1346,7 @@ class ZakladkaLaserow(QWidget):
         from panel_ustawien import PanelParametrow
         self._buduj_etykiety()
         self._buduj_wybor()
+        self._buduj_zestaw()
         self.panel = PanelParametrow()
         self._strona_sekcji = {}
         for klucz, nazwa, sekcje, dymek in self.STRONY:
@@ -1327,6 +1371,150 @@ class ZakladkaLaserow(QWidget):
         bt.setMenu(m)
         f.addRow('', bt)
         self._sek['wybor'] = g
+
+    # ------------------------------------------------------------------ kilka zdjęć naraz (sfera reflektorów)
+    def _buduj_zestaw(self):
+        """Zestaw zdjęć tej samej historii wag: sfera pokazuje 600 koloidów każdego zdjęcia (600·n cząsteczek, 600·n·768 wiązek),
+        reszta okienek — aktywne zdjęcie. Domyślny limit 5, najwyżej 32 (jak paczka uczenia): każde zdjęcie to osobna historia
+        (pierwsze liczenie czyta wszystkie pliki wag), a sfera rysuje n razy więcej wiązek."""
+        from PyQt6.QtWidgets import QListWidget
+        g = Zwijana('Kilka zdjęć naraz na sferze reflektorów'); f = QFormLayout(g)
+        self._zestaw = []                                       # [(id zdjęcia jak cb_zdjecie.currentData(), opis)]
+        self.hz = None; self._zestaw_hs = []; self._zestaw_watek = None
+        self.ch_zestaw = QCheckBox('sfera pokazuje wszystkie zdjęcia zestawu'); self.ch_zestaw.setChecked(True)
+        self.ch_zestaw.setToolTip('Włączone: na sferze reflektorów są koloidy wszystkich policzonych zdjęć zestawu (każde ze swoim środkiem\n'
+                                  'chmury, wspólne reflektory i rzut 3D, bo zależą tylko od wag). Wyłączone: tylko aktywne zdjęcie.')
+        self.lw_zestaw = QListWidget(); self.lw_zestaw.setMaximumHeight(130)
+        self.lw_zestaw.setToolTip('Zdjęcia zestawu w kolejności dodania; numer = które z kolei 600 cząsteczek na sferze (0: 0–599, 1: 600–1199, …).')
+        self.sp_zestaw_limit = _spin(1, 32, 5, 1, sufiks=' zdjęć')
+        self.sp_zestaw_limit.setToolTip('Najwięcej zdjęć w zestawie. Domyślnie 5; do 32 (paczka uczenia), ale każde zdjęcie dokłada 460 800\n'
+                                        'wiązek na sferze i ~0,7 GB natężeń. Powyżej ok. 3 GB natężenia nie trafiają w całości na kartę\n'
+                                        '(sfera wysyła wtedy przy każdej zmianie checkpointu tylko parę checkpointów).')
+        b_dod = QPushButton('+ bieżące zdjęcie'); b_dod.clicked.connect(self._zestaw_dodaj)
+        b_dod.setToolTip('Dodaje zdjęcie wybrane w „Dane → Zdjęcie” (historia, zakres kroków i okno jak w sekcji Dane).')
+        b_us = QPushButton('− zaznaczone'); b_us.clicked.connect(self._zestaw_usun)
+        b_us.setToolTip('Usuwa z zestawu zdjęcia zaznaczone na liście (Ctrl/Shift + klik: kilka). Policzone historie zostają w cache.')
+        b_cz = QPushButton('wyczyść'); b_cz.clicked.connect(self._zestaw_czysc)
+        b_cz.setToolTip('Usuwa wszystkie zdjęcia z zestawu; sfera wraca do jednego, aktywnego zdjęcia.')
+        hb = QHBoxLayout(); hb.addWidget(b_dod); hb.addWidget(b_us); hb.addWidget(b_cz)
+        self.bt_zestaw = QPushButton('Policz / wczytaj zestaw'); self.bt_zestaw.clicked.connect(self._zestaw_licz)
+        self.bt_zestaw.setToolTip('Historia każdego zdjęcia z cache albo liczona na GPU (minuty na zdjęcie przy pierwszym liczeniu).')
+        self.bt_zestaw_stop = QPushButton('Przerwij'); self.bt_zestaw_stop.setEnabled(False)
+        self.bt_zestaw_stop.setToolTip('Przerywa liczenie zestawu; historie już policzone zostają w cache i wczytają się od razu.')
+        self.lw_zestaw.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
+        self.bt_zestaw_stop.clicked.connect(lambda: setattr(self._zestaw_watek, 'stop', True) if self._zestaw_watek else None)
+        hb2 = QHBoxLayout(); hb2.addWidget(self.bt_zestaw); hb2.addWidget(self.bt_zestaw_stop)
+        self.pasek_zestaw = QProgressBar(); self.pasek_zestaw.setTextVisible(True)
+        self.cb_zestaw_akt = WaskiCombo()
+        self.cb_zestaw_akt.setToolTip('Aktywne zdjęcie: jego historię pokazują okienka 1–13, rzuty R i podkroki; wybór cząsteczki dotyczy jego\n'
+                                      '600 koloidów. Klik w koloid innego zdjęcia na sferze też przełącza aktywne zdjęcie.')
+        self.cb_zestaw_akt.currentIndexChanged.connect(self._zestaw_aktywne)
+        self.lb_zestaw = QLabel('Dodaj zdjęcia (+), potem „Policz / wczytaj zestaw”.'); self.lb_zestaw.setWordWrap(True)
+        f.addRow(self.ch_zestaw); f.addRow(self.lw_zestaw); f.addRow(hb); f.addRow('Limit', self.sp_zestaw_limit)
+        f.addRow(hb2); f.addRow(self.pasek_zestaw); f.addRow('Aktywne zdjęcie', self.cb_zestaw_akt); f.addRow(self.lb_zestaw)
+        self.ch_zestaw.toggled.connect(lambda *_: self._zestaw_na_sferze())
+        self._sek['zestaw'] = g
+
+    def _zestaw_odswiez_liste(self):
+        self.lw_zestaw.clear()
+        for i, (_, opis) in enumerate(self._zestaw):
+            self.lw_zestaw.addItem(f'{i}. {opis}')
+
+    def _zestaw_dodaj(self):
+        zd = self.cb_zdjecie.currentData()
+        if not zd:
+            self.lb_zestaw.setText('Najpierw wybierz zdjęcie w „Dane”.'); return
+        if any(z == zd for z, _ in self._zestaw):
+            self.lb_zestaw.setText('To zdjęcie już jest w zestawie.'); return
+        if len(self._zestaw) >= self.sp_zestaw_limit.value():
+            self.lb_zestaw.setText(f'Limit {self.sp_zestaw_limit.value()} zdjęć (pole „Limit”, najwyżej 32).'); return
+        film = self.cb_film.currentData() or 'plik'
+        self._zestaw.append((str(zd), f'{film}  {self.cb_zdjecie.currentText()}'))
+        self._zestaw_odswiez_liste()
+
+    def _zestaw_usun(self):
+        rzedy = sorted({self.lw_zestaw.row(it) for it in self.lw_zestaw.selectedItems()}, reverse=True)
+        for r in rzedy:
+            del self._zestaw[r]
+        self._zestaw_odswiez_liste()
+
+    def _zestaw_czysc(self):
+        self._zestaw = []; self._zestaw_odswiez_liste()
+        self.hz = None; self._zestaw_hs = []
+        self.cb_zestaw_akt.blockSignals(True); self.cb_zestaw_akt.clear(); self.cb_zestaw_akt.blockSignals(False)
+        self._zestaw_na_sferze()
+
+    def _zestaw_licz(self):
+        if self._zestaw_watek is not None or not self._zestaw:
+            return
+        n = len(self._zestaw)
+        if n > 5:
+            from PyQt6.QtWidgets import QMessageBox
+            if QMessageBox.question(self, 'Dużo zdjęć', f'{n} zdjęć: sfera narysuje {n * 460800:,} wiązek, a każde niepoliczone zdjęcie to '
+                                    'minuty liczenia na GPU. Kontynuować?'.replace(',', ' ')) != QMessageBox.StandardButton.Yes:
+                return
+        wagi, kroki, _rgb, _gt, okno = self._wybor()
+        if len(kroki) < 2:
+            self.lb_zestaw.setText('Za mało checkpointów w zakresie (sekcja Dane).'); return
+        w = ZestawLiczenie(wagi, kroki, [z for z, _ in self._zestaw], okno)
+        w.postep.connect(lambda a, b, o: (self.pasek_zestaw.setRange(0, b), self.pasek_zestaw.setValue(a), self.lb_zestaw.setText(o)))
+        w.gotowe.connect(self._zestaw_gotowe)
+        w.blad.connect(lambda s: self.lb_zestaw.setText(f'Zestaw nie policzony: {s}'))
+        w.finished.connect(lambda: (setattr(self, '_zestaw_watek', None), self.bt_zestaw.setEnabled(True), self.bt_zestaw_stop.setEnabled(False)))
+        self._zestaw_watek = w; self.bt_zestaw.setEnabled(False); self.bt_zestaw_stop.setEnabled(True)
+        self.lb_zestaw.setText(f'Wczytuję / liczę {n} historii…')
+        w.start()
+
+    def _zestaw_gotowe(self, katalogi):
+        try:
+            hs = [LD.Historia(k) for k in katalogi]
+            for h_ in hs:
+                if (self.cb_etyk.currentData() or 'dotkniete') != 'dotkniete':
+                    h_.ustaw_etykiete(self.cb_etyk.currentData(), self.sp_etyk_prog.value())
+            self.hz = LD.HistoriaZestawu(hs)
+        except Exception as e:                                           # noqa: BLE001 (np. różne checkpointy)
+            self.lb_zestaw.setText(f'Zestaw nie wczytany: {e}'); return
+        self._zestaw_hs = hs
+        self.cb_zestaw_akt.blockSignals(True); self.cb_zestaw_akt.clear()
+        for i, (_, opis) in enumerate(self._zestaw[:len(hs)]):
+            self.cb_zestaw_akt.addItem(f'{i}. {opis}')
+        self.cb_zestaw_akt.blockSignals(False)
+        self.lb_zestaw.setText(f'Zestaw: {len(hs)} zdjęć, {self.hz.T} koloidów na sferze, {self.hz.T * 768:,} wiązek.'.replace(',', ' '))
+        self.cb_zestaw_akt.setCurrentIndex(0)
+        self._zestaw_aktywne(0)
+
+    def _zestaw_aktywne(self, i):
+        """Aktywne zdjęcie zestawu: wczytuje jego historię jak „Policz / wczytaj” (okienka 1–13, R, podkroki), sfera zostaje zestawem."""
+        if self.hz is None or not 0 <= i < len(self._zestaw_hs):
+            return
+        self._gotowe(str(self._zestaw_hs[i].katalog))
+
+    def _zestaw_idx(self):
+        """Numer aktywnego zdjęcia w zestawie (gdy sfera pokazuje zestaw i aktywna historia do niego należy), inaczej None."""
+        if self.hz is None or self.h is None or not self.ch_zestaw.isChecked():
+            return None
+        for i, h_ in enumerate(self.hz.hs):
+            if Path(h_.katalog) == Path(self.h.katalog):
+                return i
+        return None
+
+    def _h_sfery(self):
+        """Historia rysowana na sferze: zestaw zdjęć albo aktywna historia."""
+        return self.hz if self._zestaw_idx() is not None else self.h
+
+    def _tok_sfery(self, j):
+        """Numer cząsteczki aktywnego zdjęcia → numer na sferze (w zestawie: 600·i + j)."""
+        i = self._zestaw_idx()
+        return int(j) if i is None else i * LD.TOK + int(j)
+
+    def _zestaw_na_sferze(self):
+        """Przełącza sferę między zestawem a aktywnym zdjęciem (bez ponownego liczenia)."""
+        if self.h is None:
+            return
+        hs = self._h_sfery()
+        self.es.ustaw_historie(hs, self.cb_skala.currentIndex() == 1)
+        self._skala = None; self._ks = None
+        self._opcje()
 
     def _buduj_etykiety(self):
         import etykiety_narzedzia as EN
@@ -1363,7 +1551,11 @@ class ZakladkaLaserow(QWidget):
             h.ustaw_etykiete(self.cb_etyk.currentData() or 'dotkniete', self.sp_etyk_prog.value())
             for e in (self.e1, self.e2, self.e3):
                 e.ustaw_historie(h)
-            self.es.ustaw_skale(h, self.cb_skala.currentIndex() == 1)
+            if self.hz is not None:                                    # zestaw: ta sama etykieta we wszystkich zdjęciach
+                for h_ in self.hz.hs:
+                    h_.ustaw_etykiete(self.cb_etyk.currentData() or 'dotkniete', self.sp_etyk_prog.value())
+                self.hz.narz = np.concatenate([np.asarray(h_.narz, bool) for h_ in self.hz.hs])
+            self.es.ustaw_skale(self._h_sfery(), self.cb_skala.currentIndex() == 1)
             cz = h.qc[:, h.narz].mean(1) if h.narz.any() else np.zeros((h.K, 2))
             from scipy.ndimage import uniform_filter1d
             self._cz = uniform_filter1d(cz, 9, axis=0, mode='nearest')
@@ -1524,7 +1716,7 @@ class ZakladkaLaserow(QWidget):
         """Układ okienek (doki: położenie, odpięcie, rozmiary) i zapamiętane sloty, do ustawienia.json (ustawienia.stan)."""
         okno = self.window()
         return dict(okna=bytes(self.okna.saveState().toBase64()).decode('ascii'), wersja_ukladu=2,
-                    sloty={str(k): v for k, v in self._sloty.items()},
+                    sloty={str(k): v for k, v in self._sloty.items()}, zestaw=[list(z) for z in getattr(self, '_zestaw', [])],
                     okno=bytes(okno.saveGeometry().toBase64()).decode('ascii') if okno is not self else None)
 
     def ustaw_uklad_okienek(self, v):
@@ -1532,6 +1724,9 @@ class ZakladkaLaserow(QWidget):
         otwarte i widoczne przy zapisie (widoki w zamkniętych i schowanych w kartach okienkach nie tworzą kontekstu OpenGL ani
         nie liczą). Po pokazaniu okna układ stosuje się jeszcze raz, żeby rozmiary doków pasowały do prawdziwej wielkości."""
         self._uklad_zapisany = v
+        if isinstance(v, dict) and v.get('zestaw') and not self._zestaw:     # lista zdjęć zestawu (liczy się dopiero na żądanie)
+            self._zestaw = [(str(a), str(b)) for a, b in v['zestaw']][:32]
+            self._zestaw_odswiez_liste()
         self._zastosuj_uklad()
 
     def _zastosuj_uklad(self):
@@ -1680,10 +1875,10 @@ class ZakladkaLaserow(QWidget):
             return
         self._kol_cz = self._kolory_tryb(self.cb_kolor_cz.currentIndex())
 
-    def _kolory_tryb(self, tryb):
+    def _kolory_tryb(self, tryb, h=None):
         """[600, 4] kolory cząstek: 0 kolor patcha ze zdjęcia, 1 położenie na siatce (barwa = kolumna, jasność = wiersz), 2 narzędzie,
         3 obszary oka (narzędzie błękit, źrenica fiolet, rogówka zieleń, tło szare; etykieta i próg z sekcji „Etykiety”)."""
-        h = self.h
+        h = self.h if h is None else h
         K = np.ones((LD.TOK, 4), np.float32)
         if tryb == 0:
             K[:, :3] = h.rgb.reshape(LD.H, 16, LD.W, 16, 3).mean((1, 3)).reshape(-1, 3) / 255.0
@@ -1698,6 +1893,11 @@ class ZakladkaLaserow(QWidget):
             kol = np.array([[0.5, 0.53, 0.58], [0.35, 0.85, 0.45], [0.78, 0.45, 1.0], [0.29, 0.94, 1.0]], np.float32)
             K[:, :3] = kol[h.obszary(self.sp_oko_prog.value())]
         return K
+
+    def _kolory_sfery(self, tryb):
+        """Kolory cząsteczek sfery: zestaw = kolory każdego zdjęcia po kolei (600·n), inaczej aktywnego zdjęcia."""
+        hs = self._h_sfery()
+        return np.concatenate([self._kolory_tryb(tryb, h_) for h_ in hs.hs]) if hs is self.hz else self._kolory_tryb(tryb)
 
     def _opcje_przejscia(self, *_):
         o = self.ep.opcje
@@ -1847,7 +2047,7 @@ class ZakladkaLaserow(QWidget):
             self._pp = None
             for e in (self.e1, self.e2, self.e3):
                 e.ustaw_historie(h)
-            self.es.ustaw_historie(h, self.cb_skala.currentIndex() == 1)
+            self.es.ustaw_historie(self._h_sfery(), self.cb_skala.currentIndex() == 1)
             zakres = np.abs(np.concatenate([h.wezly[..., :2], h.atomy[..., :2], h.glb], 1)).max((0, 1)) + 1.5
             self.v1.kadruj(0, 0, 2 * zakres[0], 2 * zakres[1])
             for e in (self.e1, self.e2, self.e3):
@@ -2097,7 +2297,7 @@ class ZakladkaLaserow(QWidget):
                              f'Odstęp sąsiadów w kroku startu {pl(h.a0, 3)}; 3 kierunki rzutu niosą {h.udzial_D:.0%} energii przesunięć.')
         for e in (self.e1, self.e2, self.e3):
             e.ustaw_historie(h)
-        self.es.ustaw_historie(h, self.cb_skala.currentIndex() == 1)
+        self.es.ustaw_historie(self._h_sfery(), self.cb_skala.currentIndex() == 1)   # zestaw zdjęć albo to zdjęcie
         self.e4.ustaw_historie(h); self.e5.ustaw_historie(h)
         self.sp_tok.setValue(h.fok); self.sp_refl.setValue(h.refl_pokaz)
         self._wykresy()
@@ -2166,9 +2366,9 @@ class ZakladkaLaserow(QWidget):
                            pxc=v.px_na_komorke())
             e.update()
         o = self.es.opcje
-        self.es.ustaw_wybor(self._wybrane_refl(), self._wybrane_tok())
+        self.es.ustaw_wybor(self._wybrane_refl(), [self._tok_sfery(j) for j in self._wybrane_tok()])   # numery na sferze
         swiatlo = self.ch_swiatlo.isChecked()
-        o.update(wiazki=self.cb_wiazki.currentIndex() if swiatlo else 0, gain=self.sp_gain.value(), prog=self.sp_prog.value(), tok=self.sp_tok.value(),
+        o.update(wiazki=self.cb_wiazki.currentIndex() if swiatlo else 0, gain=self.sp_gain.value(), prog=self.sp_prog.value(), tok=self._tok_sfery(self.sp_tok.value()),
                  refl=self.sp_refl.value(), sfera=self.sp_sfera.value() if self.ch_sfera.isChecked() else 0.0,
                  grub_w=self.sp_grub_w.value(), kierunek=self.ch_kier.isChecked(), ekspozycja=self.sp_eksp.value(),
                  widok=self.cb_widok_s.currentIndex(), wek_kol=self.cb_wek_kol.currentIndex(), wek_pul=self.cb_wek_pul.currentIndex(),
@@ -2183,9 +2383,9 @@ class ZakladkaLaserow(QWidget):
                 self.es.ustaw_wygladzanie(*wyg)
             ks = self.cb_kol_sciezki.currentIndex()
             if getattr(self, '_ks', None) != (ks, id(self.h)) and ks in (1, 2, 3, 5):
-                self._ks = (ks, id(self.h)); self.es.ustaw_kolory_sciezek(self._kolory_tryb(ks - 1 if ks < 4 else 3))
+                self._ks = (ks, id(self.h)); self.es.ustaw_kolory_sciezek(self._kolory_sfery(ks - 1 if ks < 4 else 3))
         if self.h is not None and getattr(self, '_skala', None) != self.cb_skala.currentIndex():
-            self._skala = self.cb_skala.currentIndex(); self.es.ustaw_skale(self.h, self._skala == 1)
+            self._skala = self.cb_skala.currentIndex(); self.es.ustaw_skale(self._h_sfery(), self._skala == 1)
             if getattr(self, '_og', None) is not None:                     # pułapka w tej samej skali co sfera
                 self._og_zastosuj(self._og_klucz, self._og, kamera=False)
         if hasattr(self, 'eog'):
@@ -2247,6 +2447,9 @@ class ZakladkaLaserow(QWidget):
         klucz = self._og_klucz_teraz()
         if klucz == self._og_klucz and self._og is not None and not wymus:
             return
+        if not wymus and not (self.widac('11') or (self.ch_og_sfera.isChecked() and self.widac('s'))):
+            self.lb_og.setText('Pułapka policzy się, gdy okienko 11 (albo pułapka na sferze) będzie widoczne.')
+            return                                                       # nic nie liczymy dla niewidocznego okienka (_odslonieto)
         w = self._og_watek
         if w is not None and w.isRunning():
             if getattr(w, 'klucz', None) == klucz:
@@ -2353,7 +2556,7 @@ class ZakladkaLaserow(QWidget):
             self._og_anim.start()
         elif not anim and self._og_anim.isActive():
             self._og_anim.stop()
-        self.es_og.opcje.update(wspolne, slad=0, wsp=0, pudlo=False, wiazki=False, swiatlo=False)
+        self.es_og.opcje.update(wspolne, slad=0, wsp=0, pudlo=False, wiazki=False, swiatlo=False, obrys=False, wklady=0)  # na sferze bez ogniska
         if self.h is not None:
             self._og_czas(self.t)
 
@@ -2777,7 +2980,7 @@ class ZakladkaLaserow(QWidget):
             if self.widac(k):
                 e.ustaw_czas(t)
         if self.es.opcje['wiazki'] and not tryb_pod and self.widac('s'):
-            self.es.ustaw_natezenia(h, t)
+            self.es.ustaw_natezenia(self._h_sfery(), t)
         if self.e5.kafelki and self.e5.kafelki[0]['mapa'] == 9 and self.widac('5'):
             self.e5.ustaw_reflektor(h, t, self._wybrane_refl())
         self._blokada = True
@@ -3020,6 +3223,16 @@ class ZakladkaLaserow(QWidget):
         h = self.h
         if h is None:
             return
-        r = h.r99[-1] * np.ones(h.K) if self.cb_skala.currentIndex() == 1 else h.r99
-        P = h.interp(h.pos, self.t) / max(float(h.interp(r, self.t)), 1e-9) * 0.55 * self.es.R * self.sp_skala_chm.value()
-        self._wybierz_tok(self.vs, P, x, y)
+        hs = self._h_sfery()
+        r = hs.r99[-1] * np.ones(hs.K) if self.cb_skala.currentIndex() == 1 else hs.r99
+        P = h.interp(hs.pos, self.t) / max(float(h.interp(r, self.t)), 1e-9) * 0.55 * self.es.R * self.sp_skala_chm.value()
+        if hs is self.h:
+            self._wybierz_tok(self.vs, P, x, y); return
+        px, gl_ = self.vs.na_ekran(P)                                    # zestaw: koloid któregokolwiek zdjęcia
+        d = np.hypot(px[:, 0] - x, px[:, 1] - y); d[~np.isfinite(gl_)] = np.inf
+        j = int(np.argmin(d))
+        if d[j] < 25:
+            i, tok = divmod(j, LD.TOK)
+            if i != self._zestaw_idx():
+                self.cb_zestaw_akt.setCurrentIndex(i)                    # wczytuje historię tego zdjęcia
+            self.sp_tok.setValue(tok)

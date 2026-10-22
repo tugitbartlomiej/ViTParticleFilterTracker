@@ -162,9 +162,26 @@ class PasekDoku(QWidget):
 
 
 def pasek_doku(d):
-    """Ustawia okienku-dokowi pasek tytułu z maksymalizacją; zwraca okienko."""
+    """Ustawia okienku-dokowi pasek tytułu z maksymalizacją; zwraca okienko. Odpięte okienko jest zwykłym oknem (_niezalezne)."""
     d.setTitleBarWidget(PasekDoku(d))
+    d.topLevelChanged.connect(lambda plywa, d=d: _niezalezne(d, plywa))
     return d
+
+
+def _niezalezne(d, plywa):
+    """Odpięte okienko-dok: Qt robi z niego okno narzędziowe (Qt.Tool), które zawsze leży NAD oknem głównym i nad innymi odpiętymi
+    (panel parametrów i podkroki zasłaniały okno i siebie nawzajem). Zwykłe okno bez ramki systemu (pasek tytułu jest nasz): można
+    je schować pod inne, przełączać Alt+Tab, ma własną pozycję na pasku zadań. Ponowne przypięcie: ❐ albo przeciągnięcie paska."""
+    if not plywa or not d.isFloating() or d.windowType() != Qt.WindowType.Tool:
+        return
+    if QApplication.mouseButtons() != Qt.MouseButton.NoButton:          # w trakcie przeciągania: zmiana okna przerwałaby ruch
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(150, lambda d=d: _niezalezne(d, d.isFloating()))
+        return
+    g = d.geometry()
+    d.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint)
+    d.setGeometry(g)
+    d.show(); d.raise_(); d.activateWindow()
 
 
 def skrot_f11(okno):

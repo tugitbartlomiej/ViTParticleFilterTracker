@@ -60,6 +60,32 @@ Cataract-LMM (`etykieta_obrys.npz` w katalogu historii, `Historia.oko`, `Histori
 narzędzie > źrenica > rogówka > tło. Kolor „obszary oka” w „Kolor ścieżek” (sfera) i „Kolor cząsteczek” (okienko P),
 „Zaznacz obszar ▾” przy wyborze cząsteczek wpisuje patche obszaru do „+ cząsteczki”.
 
+## Wydajność: GPU i start (2026-10-22)
+
+- **Tylko widoczne okienka pracują.** `ZakladkaLaserow.widac(k)`: okienko otwarte i (odpięte albo z niepustym widocznym
+  obszarem). Okienko w nieaktywnej karcie albo zamknięte nie liczy, nie wysyła buforów na GPU i nie rysuje; po odsłonięciu
+  dostaje bieżącą chwilę (`_odslonieto`). Wcześniej `QDockWidget.isVisible()` było prawdą także dla schowanych kart i rzuty R
+  liczyły co klatkę (75 ms CPU na klatkę).
+- **Całe natężenia Z na karcie.** Z (K × 600 × 768, float16, ~0,7 GB dla 806 checkpointów) trafia do SSBO `ZH` sfery
+  porcjami w tle po wczytaniu historii (`_ElementGPU.wyslij_porcjami`: wątek czyta z dysku, każda klatka wysyła do ~8 ms).
+  Shader sam wybiera parę checkpointów i interpoluje (`unpackHalf2x16`); do czasu wysłania działa dawna ścieżka (para
+  checkpointów w buforze `I`). Sprawdzone: odczyt z karty = Z z dysku bit w bit.
+- **Bez synchronizacji CPU–GPU po każdym wywołaniu GL**: `OpenGL.ERROR_CHECKING = False` (app.py, start.py); szukanie błędów
+  GL: zmienna środowiskowa `LASERY_GL_DEBUG=1`.
+- **Napisy bez przeliczania układu** (`okna.bez_ukladu`): napisy zmieniane co klatkę (pod widokami, licznik czasu, tytuł
+  okienka 11, podkroki) leżą w pojemniku bez układu. Przy skalowaniu ekranu 150 % każde przeliczenie układu gubiło piksel na
+  zaokrągleniach doków: doki pełzły o 1–4 px na klatkę, a każdy widok OpenGL dostawał resize i nowy bufor ramki.
+- **Pomiar** (RTX 3070, 4K/150 %, historia 35 000, 806 checkpointów, tempo stałe): odtwarzanie 50–55 kl./s w układach
+  domyślnym, „sfera na całe okno” i „sfera + rzuty” (przed zmianami 16–18, chwilami 1–3), z pułapką 11 ok. 40 kl./s (przed
+  11–21); `ustaw_czas` 0,7 ms (przed 75 ms, p90 950 ms); sfera z 460 800 wiązkami ~5 ms na GPU.
+- **Start jak ostatnio**: zapisany układ okienek i położenie/rozmiar okna (`ustawienia.json`, Plik → Zapisz albo autozapis
+  przy zamknięciu) stosują się przed pierwszym pokazaniem okna, więc startują tylko okienka, które były otwarte i widoczne;
+  widoki w zamkniętych i schowanych w kartach okienkach nie tworzą kontekstu OpenGL. Manifest zbioru uczącego (35 000
+  wierszy) z pickla w `cache_uczenia/lasery` (~1 s mniej przy starcie).
+- **Menu Plik**: policz/wczytaj historię (Ctrl+O), przerwij liczenie (Ctrl+.), inny katalog wag, zdjęcie z pliku, zapis
+  ustawień i układu (Ctrl+S), zapis jako (Ctrl+Shift+S), wczytanie ustawień, obraz okienka pod kursorem do PNG (Ctrl+E,
+  folder `zrzuty/`), Zamknij (Ctrl+Q). Menu Ustawienia: autozapis przy zamknięciu, przywróć domyślne, stereo 3D.
+
 ## Poprawki działania (2026-10-22)
 
 - Historie w cache liczone, gdy projekt był na `F:` (ścieżka wag `F:\...\SmallViTAblation\assets\...`): pułapka optyczna,

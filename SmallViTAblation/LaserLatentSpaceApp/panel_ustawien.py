@@ -156,12 +156,13 @@ class PopupUstawien(QFrame):
         v.addWidget(self.sc, 1)
 
     def przypnij(self):
-        """Popup → zwykłe okienko narzędziowe z ramką (zostaje otwarte, można je przesunąć i zmienić mu rozmiar)."""
+        """Popup → zwykłe okno z ramką (zostaje otwarte, można je przesunąć, zmienić mu rozmiar i schować pod inne okna;
+        nie zawsze na wierzchu, żeby nie zasłaniało okna głównego)."""
         if self._przypiety:
             return
         g = self.geometry()
         self._przypiety = True
-        self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.WindowType.Window)
         self.bt_pin.setEnabled(False)
         PopupUstawien.otwarte.append(self)
         self.setGeometry(g)

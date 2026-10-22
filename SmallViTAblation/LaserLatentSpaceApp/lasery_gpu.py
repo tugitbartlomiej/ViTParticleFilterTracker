@@ -17,6 +17,7 @@ from OpenGL.GL.shaders import compileProgram, compileShader
 from pyqtgraph.opengl.GLGraphicsItem import GLGraphicsItem
 
 TOK, NK, H, W = 600, 768, 20, 30
+LIMIT_ZH = 3 * 2 ** 30          # najwięcej bajtów natężeń Z trzymanych w całości na karcie (zestaw > ~4 zdjęć: para checkpointów)
 LUTY = ('plasma', 'magma', 'inferno', 'viridis')
 NM = 9                                 # mapy: 0–5 atencja bloków, 6 średnia atencja, 7 centra (lok), 8 drgania (vib); 9 = reflektor (osobno)
 
@@ -404,11 +405,12 @@ layout(std430, binding = 9) readonly buffer BKR { float KR[]; };  // [K] krok uc
 layout(std430, binding = 10) readonly buffer BOD { vec4 OD[]; };  // [K*768] obrót igły, dryf netto (≥ 2000 kroków): xyz kierunek, w °/100 kroków
 layout(std430, binding = 11) readonly buffer BOJ { vec4 OJ[]; };  // [K*768] obrót igły, drganie (≥ 100 kroków)
 layout(std430, binding = 12) readonly buffer BW { float WY[]; };  // wybór: [768] maska reflektorów, [600] maska cząsteczek, listy indeksów
-layout(std430, binding = 13) readonly buffer BZH { uint ZH[]; };  // [K*600*768] całe natężenia z_jc historii, float16 parami (unpackHalf2x16)
+layout(std430, binding = 13) readonly buffer BZH { uint ZH[]; };  // [K*T*768] całe natężenia z_jc historii, float16 parami (unpackHalf2x16)
 bool wyb_r(uint c) { return WY[c] > 0.5; }
+uniform int u_T;                          // cząsteczek na sferze: 600 × liczba zdjęć zestawu (podkroki: 600)
 bool wyb_t(uint j) { return WY[768u + j] > 0.5; }
-uint lista_r(uint k) { return uint(WY[1368u + k]); }               // k-ty wybrany reflektor
-uint lista_t(uint k) { return uint(WY[2136u + k]); }               // k-ta wybrana cząsteczka
+uint lista_r(uint k) { return uint(WY[768u + uint(u_T) + k]); }   // k-ty wybrany reflektor
+uint lista_t(uint k) { return uint(WY[1536u + uint(u_T) + k]); }  // k-ta wybrana cząsteczka
 """
 VS_S = "#version 430\n" + _SSBO_S + _CZAS + _LUT + """
 uniform mat4 u_mvp;
@@ -421,20 +423,20 @@ uniform float u_olo, u_ohi, u_ola, u_oigla;   // strzałki obrotu: skala log10 p
 uniform vec4 u_kol;
 out vec4 v_k; out float v_t;
 const vec4 POZA = vec4(2.0, 2.0, 2.0, 1.0);
-vec3 pj(uint j) { uint a, b; float f; para(a, b, f); return u_skala * mix(P[a * 600u + j].xyz, P[b * 600u + j].xyz, f); }
+vec3 pj(uint j) { uint a, b; float f; para(a, b, f); return u_skala * mix(P[a * uint(u_T) + j].xyz, P[b * uint(u_T) + j].xyz, f); }
 vec3 dc(uint c) {                         // podkroki: kierunki bloku u_blokD (bez interpolacji między blokami)
     if (u_blokD >= 0) return normalize(D[uint(u_blokD) * 768u + c].xyz);
     uint a, b; float f; para(a, b, f); return normalize(mix(D[a * 768u + c].xyz, D[b * 768u + c].xyz, f));
 }
 uniform int u_zcale, u_ka, u_kb;          // u_zcale = 1: natężenia z ZH (cała historia na GPU), para checkpointów (u_ka, u_kb)
-float zh(uint k, uint j, uint c) { uint i = k * 460800u + j * 768u + c; vec2 h = unpackHalf2x16(ZH[i >> 1u]); return (i & 1u) == 0u ? h.x : h.y; }
+float zh(uint k, uint j, uint c) { uint i = (k * uint(u_T) + j) * 768u + c; vec2 h = unpackHalf2x16(ZH[i >> 1u]); return (i & 1u) == 0u ? h.x : h.y; }
 float nat(uint j, uint c) {
     if (u_zcale == 1) return 0.5 * mix(zh(uint(u_ka), j, c), zh(uint(u_kb), j, c), u_pu);   // z / 2 jak film 12
-    return mix(I[j * 768u + c], I[460800u + j * 768u + c], u_pu);
+    return mix(I[j * 768u + c], I[uint(u_T) * 768u + j * 768u + c], u_pu);
 }
 vec3 w_chwili(uint j, float tt) {          // koloid (u_cel 0) albo pułapka (1) w ułamkowej chwili tt
     float t2 = clamp(tt, 0.0, float(u_K - 1)); uint a = uint(floor(t2)); uint b = min(a + 1u, uint(u_K - 1)); float f = t2 - float(a);
-    return u_skala * (u_cel == 0 ? mix(P[a * 600u + j].xyz, P[b * 600u + j].xyz, f) : mix(C[a * 600u + j].xyz, C[b * 600u + j].xyz, f));
+    return u_skala * (u_cel == 0 ? mix(P[a * uint(u_T) + j].xyz, P[b * uint(u_T) + j].xyz, f) : mix(C[a * uint(u_T) + j].xyz, C[b * uint(u_T) + j].xyz, f));
 }
 bool odrzuc(uint j) { return (u_filtr == 1 && P[j].w < 0.5) || (u_filtr == 2 && !wyb_t(j)); }
 vec3 kolor_drogi(uint j, vec3 p, float tt) {  // u_kol_sciezki: 0 jednolity, 1 kolor cząsteczki, 2 odpływ od adresu (plasma)
@@ -448,8 +450,8 @@ void main() {
     if (u_tryb == 0) {                        // wiązki: odcinek reflektor → punkt załamania (u_seg 0) albo punkt → cząsteczka (1)
         int id = gl_InstanceID; uint j, c;
         if (u_wiazki == 2) { j = lista_t(uint(id / 768)); c = uint(id % 768); }        // do wybranych cząsteczek
-        else if (u_wiazki == 3) { c = lista_r(uint(id / 600)); j = uint(id % 600); }   // z wybranych reflektorów
-        else { c = uint(id / 600); j = uint(id % 600); }
+        else if (u_wiazki == 3) { c = lista_r(uint(id / u_T)); j = uint(id % u_T); }   // z wybranych reflektorów
+        else { c = uint(id / u_T); j = uint(id % u_T); }
         float zj = nat(j, c);                  // ze znakiem: ujemna jasność = ten sam laser słabo ciągnie (−v_c)
         float x = abs(zj) * u_gain * (zj < 0.0 ? u_neg : 1.0);
         if (x < u_prog) { gl_Position = POZA; return; }
@@ -478,9 +480,9 @@ void main() {
         gl_Position = u_mvp * vec4((v == 0 ? -u_R : u_R) * d, 1.0);
         v_k = vec4(0.25 + 0.75 * KC[c].rgb, 0.9);
     } else if (u_tryb == 5) {                 // podkrok uwagi: siły między cząsteczkami jako linie i – j (jasność = atencja)
-        uint i = uint(gl_InstanceID / 600), j = uint(gl_InstanceID % 600);
-        if (u_wiazki == 2) { i = lista_t(uint(gl_InstanceID / 600)); j = uint(gl_InstanceID % 600); }
-        float a = AT[i * 600u + j] * u_gain;
+        uint i = uint(gl_InstanceID / u_T), j = uint(gl_InstanceID % u_T);
+        if (u_wiazki == 2) { i = lista_t(uint(gl_InstanceID / u_T)); j = uint(gl_InstanceID % u_T); }
+        float a = AT[i * uint(u_T) + j] * u_gain;
         if (i == j || a < u_prog) { gl_Position = POZA; return; }
         v_k = vec4(vec3(0.35, 0.8, 1.0) * min(a, 4.0) * (1.0 - u_zgas), 1.0);
         gl_Position = u_mvp * vec4(pj(v == 0 ? i : j), 1.0);
@@ -533,7 +535,7 @@ void main() {
         uint j = uint(u_tryb == 6 ? gl_InstanceID : v);
         if (u_wiazki == 2 && !wyb_t(j)) { gl_Position = POZA; return; }
         uint a, b; float f; para(a, b, f);
-        vec3 p0 = u_skala * P[a * 600u + j].xyz, p1 = u_skala * P[b * 600u + j].xyz;
+        vec3 p0 = u_skala * P[a * uint(u_T) + j].xyz, p1 = u_skala * P[b * uint(u_T) + j].xyz;
         vec3 q = (u_tryb == 6 && v == 0) ? p0 : p0 + (p1 - p0) * u_gain;
         v_k = vec4(u_kol.rgb, u_kol.a * ((u_tryb == 6 && v == 0) ? 0.12 : 1.0));
         gl_Position = u_mvp * vec4(q, 1.0); gl_PointSize = u_rozm;
@@ -582,6 +584,7 @@ class SferaReflektorow(_ElementGPU):
                           widok=0, wek_kol=0, wek_pul=0, filtr=1, skala_wek=1.0)
         self.para = (-1, -1)
         self.u_pary = 0.0
+        self.T = TOK                              # cząsteczek na sferze (zestaw zdjęć: 600 × n)
         self._sf = siatka_sfery(self.R)
         self.n_sf = len(self._sf)
         self.ustaw_bufor('SF', self._sf)
@@ -589,10 +592,10 @@ class SferaReflektorow(_ElementGPU):
 
     def ustaw_wybor(self, refl, tok):
         """Wybrane reflektory i cząsteczki (listy indeksów, pierwszy = główny): maski i listy dla wiązek, punktów i wektorów."""
-        refl = [int(c) for c in refl if 0 <= c < NK] or [0]; tok = [int(j) for j in tok if 0 <= j < TOK] or [0]
-        WY = np.zeros(1368 + NK + TOK, np.float32)
-        WY[refl] = 1.0; WY[NK + np.asarray(tok)] = 1.0
-        WY[1368:1368 + len(refl)] = refl; WY[1368 + NK:1368 + NK + len(tok)] = tok
+        refl = [int(c) for c in refl if 0 <= c < NK] or [0]; T = self.T; tok = [int(j) for j in tok if 0 <= j < T] or [0]
+        WY = np.zeros(2 * NK + 2 * T, np.float32)
+        WY[refl] = 1.0; WY[NK + np.asarray(tok)] = 1.0                    # maski: [768 reflektorów][T cząsteczek]
+        WY[NK + T:NK + T + len(refl)] = refl; WY[2 * NK + T:2 * NK + T + len(tok)] = tok   # listy indeksów
         self.n_refl, self.n_tok = len(refl), len(tok)
         self.ustaw_bufor('WY', WY)
 
@@ -613,11 +616,20 @@ class SferaReflektorow(_ElementGPU):
             self.obr_skala = (float(np.log10(max(np.percentile(w, 2), 1e-6))), float(np.log10(max(np.percentile(w, 99.5), 1e-6))))
         self.K = K
         self.para = (-1, -1); self.zh_para = (0, min(1, K - 1))
-        self.wyslij_porcjami('ZH', h.Z, 16)     # całe natężenia historii na kartę (float16, ~0,9 MB na checkpoint), w tle porcjami
+        nb = int(np.prod(h.Z.shape)) * 2
+        if nb > LIMIT_ZH:                       # zestaw wielu zdjęć: całość nie mieści się rozsądnie na karcie, zostaje para checkpointów
+            st = getattr(self, '_duze', {}).pop('ZH', None)
+            if st is not None:
+                st['stop'] = True
+            self._zh_zrodlo = None
+        elif getattr(self, '_zh_zrodlo', None) is not h.Z:      # to samo Z (np. zmiana aktywnego zdjęcia zestawu): bez ponownej wysyłki
+            self.wyslij_porcjami('ZH', h.Z, max(1, 16 * TOK // int(h.Z.shape[1])))   # całe natężenia na kartę (float16), w tle porcjami
+            self._zh_zrodlo = h.Z
 
     def ustaw_skale(self, h, stala):
         r = (h.r99[-1] * np.ones(h.K) if stala else h.r99).astype(np.float32)
-        P = np.zeros((h.K, TOK, 4), np.float32)
+        self.T = T = int(h.pos.shape[1])                              # 600 × zdjęcia zestawu
+        P = np.zeros((h.K, T, 4), np.float32)
         P[..., :3] = h.pos / np.maximum(r, 1e-9)[:, None, None] * 0.55 * self.R
         P[..., 3] = h.narz
         self.ustaw_bufor('P', P.reshape(-1, 4))
@@ -676,7 +688,7 @@ class SferaReflektorow(_ElementGPU):
         if self.duzy_gotowy('ZH'):                                              # cała historia już na karcie: tylko numery checkpointów
             self.update(); return
         if (a, b) != self.para:
-            I = np.empty((2, TOK, NK), np.float32)
+            I = np.empty((2, self.T, NK), np.float32)
             I[0] = np.asarray(h.Z[a], np.float32) / 2.0                        # z / 2 jak film 12, ze znakiem: ujemna jasność
             I[1] = np.asarray(h.Z[b], np.float32) / 2.0                        # (GELU ≥ −0,17) rysowana na błękitno w shaderze
             self.ustaw_bufor('I', I.reshape(-1))
@@ -692,7 +704,7 @@ class SferaReflektorow(_ElementGPU):
 
     def ustaw_przejscie(self, Pa, Pb, narz):
         """Płynny powrót do wejścia sieci: 2 stany (wyjście poprzedniego checkpointu → wejście następnego), czas 0..1, bez wiązek."""
-        P = np.zeros((2, TOK, 4), np.float32); P[0, :, :3] = Pa; P[1, :, :3] = Pb; P[..., 3] = narz
+        self.T = TOK; P = np.zeros((2, TOK, 4), np.float32); P[0, :, :3] = Pa; P[1, :, :3] = Pb; P[..., 3] = narz
         self.ustaw_bufor('P', P.reshape(-1, 4)); self._C_surowe = P; self._wyslij_pulapki()
         self.pod = None; self.przejscie = True; self.K = 2; self.t = 0.0
         self.update()
@@ -702,7 +714,7 @@ class SferaReflektorow(_ElementGPU):
         w podkroku MLP bloku b reflektory i wiązki tego bloku, w podkroku uwagi linie atencji między cząsteczkami."""
         pos = d['pos_n']
         r = float(np.percentile(np.linalg.norm(pos, axis=2), 99))                  # jedna skala na checkpoint: ruch tylko od sił
-        P = np.zeros((13, TOK, 4), np.float32)
+        self.T = TOK; P = np.zeros((13, TOK, 4), np.float32)
         P[..., :3] = pos / max(r, 1e-9) * 0.55 * self.R
         P[..., 3] = narz
         Dd = np.zeros((6, NK, 4), np.float32); Dd[..., :3] = d['dirs_n']
@@ -766,7 +778,7 @@ class SferaReflektorow(_ElementGPU):
         self._ui('s', u_mvp=mvp, u_t=self.t, u_K=self.K, u_R=self.R, u_gain=float(o['gain']), u_prog=float(o['prog']),
                  u_neg=float(o.get('neg', 1.0)),             # 1 = prawdziwa proporcja do dodatnich (zgodnie z ViT)
                  u_tok=int(o['tok']), u_refl=int(o['refl']), u_pu=0.0 if pod else self.u_pary, u_blokD=self.blok if pod else -1,
-                 u_skala=float(o.get('skala_chmury', 1.0)), u_zcale=int(not pod and self.duzy_gotowy('ZH')),
+                 u_skala=float(o.get('skala_chmury', 1.0)), u_T=int(self.T), u_zcale=int(not pod and self.duzy_gotowy('ZH')),
                  u_ka=int(getattr(self, 'zh_para', (0, 0))[0]), u_kb=int(getattr(self, 'zh_para', (0, 0))[1]))
         if o['sfera'] > 0:
             self._ui('s', u_tryb=3, u_kol=(0.45, 0.6, 0.75, float(o['sfera'])), u_punkty=0)
@@ -777,7 +789,7 @@ class SferaReflektorow(_ElementGPU):
         if pod and wm < 1e-3:
             tryb_w = 0
         if tryb_w or tryb_a:
-            n = 600 * 768 if tryb_w == 1 else 768 * self.n_tok if tryb_w == 2 else 600 * self.n_refl
+            n = self.T * 768 if tryb_w == 1 else 768 * self.n_tok if tryb_w == 2 else self.T * self.n_refl
             vp = [int(v) for v in GL.glGetIntegerv(GL.GL_VIEWPORT)]
             stary = int(GL.glGetIntegerv(GL.GL_DRAW_FRAMEBUFFER_BINDING))
             self._hdr(vp[2], vp[3])
@@ -793,7 +805,7 @@ class SferaReflektorow(_ElementGPU):
                 ga = float(o.get('gain_a', 1.0)) * 12.0 * (20.0 if tryb_a == 1 else 1.0)
                 self._ui('s', u_tryb=5, u_wiazki=2 if tryb_a == 1 else 1, u_gain=ga, u_prog=float(o.get('prog_a', 0.02)), u_punkty=0,
                          u_zgas=wm)
-                GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, 600 * self.n_tok if tryb_a == 1 else 360000)
+                GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, self.T * self.n_tok if tryb_a == 1 else self.T * self.T)
             self._ui('s', u_zgas=0.0)
             GL.glLineWidth(1.0)
             GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, stary)
@@ -839,41 +851,41 @@ class SferaReflektorow(_ElementGPU):
                          u_kol_sciezki=self._tryb_koloru(o), u_zanik=float(o.get('zanik', 0.0)), u_lut=1,
                          u_dnorm=getattr(self, 'dnorm_p' if cel else 'dnorm_k', 1.0))
                 self._addytywnie(False); GL.glLineWidth(1.4 if filtr else 1.0)
-                GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, int(np.floor(self.t)) + 2, TOK)
+                GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, int(np.floor(self.t)) + 2, self.T)
         if widok in (1, 2):                                               # pułapki: zielona poświata studni
             self._ui('s', u_tryb=8, u_cel=1, u_filtr=0, u_rozm=float(o.get('rozm_pul', 13.0)), u_ksztalt=0,
                      u_kol=(0, 0, 0, float(o.get('jas_pul', 0.55))), u_punkty=1)
-            self._addytywnie(True); GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
+            self._addytywnie(True); GL.glDrawArrays(GL.GL_POINTS, 0, self.T)
         if widok in (0, 2):
             self._ui('s', u_tryb=1, u_wiazki=0, u_rozm=float(o['rozm']), u_ksztalt=3, u_kol=(1.0, 1.0, 1.0, 0.9), u_punkty=1)
-            self._addytywnie(True); GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
+            self._addytywnie(True); GL.glDrawArrays(GL.GL_POINTS, 0, self.T)
         self._addytywnie(False)
         for cel, wek in ((1, int(o.get('wek_pul', 0))), (0, int(o.get('wek_kol', 0)))):
             if wek in (1, 2):                                             # z kroku na krok albo od kroku 0
                 self._ui('s', u_tryb=9, u_cel=cel, u_filtr=filtr, u_seg=wek, u_gain=sk, u_kol=(*(KOL_P if cel else KOL_K), 1.0), u_punkty=0,
                          u_kol_sciezki=self._tryb_koloru(o), u_lut=1, u_dnorm=getattr(self, 'dnorm_p' if cel else 'dnorm_k', 1.0))
                 GL.glLineWidth(2.5 if filtr == 2 else 1.6)
-                GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, TOK)
+                GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, self.T)
         GL.glLineWidth(1.0)
         if o['narz']:
             if int(o.get('widok', 0)) == 1:                              # same pułapki: pierścienie na pułapkach narzędzia
                 self._ui('s', u_tryb=8, u_cel=1, u_filtr=1, u_rozm=float(o['rozm']) * 3.0, u_ksztalt=1, u_kol=(0.29, 0.94, 1.0, 1.0))
             else:
                 self._ui('s', u_tryb=1, u_wiazki=1, u_rozm=float(o['rozm']) * 3.0, u_ksztalt=1, u_kol=(0.29, 0.94, 1.0, 1.0))
-            GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
+            GL.glDrawArrays(GL.GL_POINTS, 0, self.T)
         if tryb_w == 2:
             self._ui('s', u_tryb=1, u_wiazki=2, u_rozm=float(o['rozm']) * 4.0, u_ksztalt=1, u_kol=(1.0, 0.85, 0.2, 1.0))
-            GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
+            GL.glDrawArrays(GL.GL_POINTS, 0, self.T)
         if pod and self.t < 12.0 and o.get('wypadkowe', True):   # wypadkowe wektory podkroku: uwaga niebieskie, MLP pomarańczowe
             kol = (0.35, 0.8, 1.0) if uwaga else (1.0, 0.62, 0.25)
             sk = float(o.get('skala_wyp', 1.0))
             self._addytywnie(False)
             self._ui('s', u_tryb=6, u_wiazki=0, u_gain=sk, u_kol=(*kol, 0.55), u_punkty=0); GL.glLineWidth(1.2)
-            GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, TOK)
+            GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, self.T)
             self._ui('s', u_wiazki=2, u_kol=(*kol, 1.0)); GL.glLineWidth(3.5)
-            GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, TOK)
+            GL.glDrawArraysInstanced(GL.GL_LINES, 0, 2, self.T)
             self._ui('s', u_tryb=7, u_wiazki=2, u_rozm=11.0, u_ksztalt=3, u_kol=(*kol, 1.0), u_punkty=1)
-            GL.glDrawArrays(GL.GL_POINTS, 0, TOK)
+            GL.glDrawArrays(GL.GL_POINTS, 0, self.T)
             GL.glLineWidth(1.0)
 
 
@@ -1030,6 +1042,109 @@ def reflektory_przejscia(d, s, f):
     return kierunki(False)[sl], kolory_kanalow()[:, :3][sl], (id(d), bm)
 
 
+def siatka_obrysu(kn, jn, Lb, w0, zR, poz, poziom_wzgl=0.5):
+    """Obrys ogniska w układzie cząsteczki (bez położenia i lupy): objętość światła wiązek gaussowskich na siatce 33³ liczona na
+    GPU (PyTorch), izopowierzchnia na poziomie `poz` (wspolne.izopowierzchnia), cieniowanie, osie i warstwice (przekroje ⟂ dwóch
+    najdłuższych osi). Zwraca dict(v, f, sz, kr, osie, kier, w0, poziom) albo None (brak powierzchni)."""
+    import torch
+    from wspolne import izopowierzchnia
+    dev = 'cuda' if torch.cuda.is_available() else 'cpu'
+    m = jn > 1e-4 * float(jn.max())
+    K = torch.as_tensor(kn[m], dtype=torch.float32, device=dev); J = torch.as_tensor(jn[m], dtype=torch.float32, device=dev)
+
+    def jasnosc(X):                                                             # suma wiązek w punktach X (względem cząsteczki)
+        x = torch.as_tensor(X, dtype=torch.float32, device=dev)
+        out = []
+        for i in range(0, len(x), 16384):
+            xi = x[i:i + 16384]
+            s = xi @ K.T; r2 = (xi * xi).sum(1, keepdim=True)
+            w2 = w0 * w0 * (1 + s * s / (zR * zR)); rho = (r2 - s * s).clamp_min(0)
+            out.append(((J * (w0 * w0 / w2) * torch.exp(-3 * rho / w2)) * (s.abs() <= Lb)).sum(1))
+        return torch.cat(out).cpu().numpy()                                     # jedna synchronizacja z kartą na objętość
+
+    G, h = 33, 2.0 * w0                                                          # pudło rośnie, aż obrys się w nim zmieści
+    while True:
+        ax = np.linspace(-h, h, G)
+        X = np.stack(np.meshgrid(ax, ax, ax, indexing='ij'), -1).reshape(-1, 3)
+        V = jasnosc(X).reshape(G, G, G)
+        brzeg = max(V[0].max(), V[-1].max(), V[:, 0].max(), V[:, -1].max(), V[:, :, 0].max(), V[:, :, -1].max())
+        if brzeg < poz or h >= Lb:
+            break
+        h *= 1.6
+    if V.max() <= poz:
+        return None
+    try:
+        v, f, nrm = izopowierzchnia(V, poz, 2 * h / (G - 1))
+    except (ValueError, RuntimeError):
+        return None
+    v = v - h
+    L = np.array([0.35, 0.5, 0.8]); L /= np.linalg.norm(L)                      # cieniowanie: światło z ustalonego kierunku
+    sz = 0.35 + 0.65 * np.abs(nrm @ L)
+    vc = v - v.mean(0)                                                           # osie obrysu: główne kierunki wierzchołków
+    lam, wek = np.linalg.eigh(vc.T @ vc / len(vc))
+    rz = vc @ wek; dl = rz.max(0) - rz.min(0)
+    o_ = np.argsort(-dl)
+    odc = []                                                                     # warstwice: przekroje płaszczyznami ⟂ osi 1 i 2
+    for e, kol_ in ((wek[:, o_[0]], (1.0, 0.82, 0.4)), (wek[:, o_[1]], (0.85, 0.9, 1.0))):
+        dd = v @ e
+        for l in np.linspace(dd.min(), dd.max(), 7)[1:-1]:
+            s = dd[f] - l                                                        # (F, 3) znak wierzchołków względem płaszczyzny
+            pk = []
+            for a_, b_ in ((0, 1), (1, 2), (2, 0)):
+                sa, sb = s[:, a_], s[:, b_]
+                t_ = np.where(sa * sb < 0, sa / np.where(sa - sb == 0, 1, sa - sb), np.nan)
+                pk.append(v[f[:, a_]] + t_[:, None] * (v[f[:, b_]] - v[f[:, a_]]))
+            pk = np.stack(pk, 1)                                                 # (F, 3 krawędzie, 3)
+            ok = ~np.isnan(pk[..., 0])
+            m2 = ok.sum(1) == 2
+            if m2.any():
+                odc.append((pk[m2][ok[m2]].reshape(-1, 2, 3), kol_))
+    if odc:
+        Kr = np.concatenate([np.concatenate([P.reshape(-1, 1, 3), np.zeros((P.size // 3, 1, 3))], 1) for P, _ in odc])
+        Kr = np.concatenate([Kr, np.zeros((len(Kr), 2, 1))], 2).astype(np.float32)
+        Kr[:, 1] = np.concatenate([np.tile([*k_, 0.55], (P.size // 3, 1)) for P, k_ in odc])
+    else:
+        Kr = np.zeros((0, 2, 4), np.float32)
+    return dict(v=v, f=np.asarray(f), sz=sz, kr=Kr, osie=dl[o_] / w0, kier=wek[:, o_], w0=w0, poziom=float(poziom_wzgl))
+
+
+try:
+    from PyQt6.QtCore import QObject as _QObject, pyqtSignal as _pyqtSignal
+
+    class _LiczObrys(_QObject):
+        """Wątek liczący obrys ogniska (siatka_obrysu) dla OSTATNIEGO zlecenia; wynik sygnałem `gotowe` w wątku okna. Dzięki temu
+        odtwarzanie z obrysem nie czeka na objętość i izopowierzchnię (wcześniej kilkanaście–kilkadziesiąt ms w każdej klatce)."""
+        gotowe = _pyqtSignal(object)
+
+        def __init__(self):
+            super().__init__()
+            import threading
+            self._zl = None
+            self._ev = threading.Event()
+            threading.Thread(target=self._petla, daemon=True, name='obrys_ogniska').start()
+
+        def zlec(self, args):
+            self._zl = args
+            self._ev.set()
+
+        def _petla(self):
+            while True:
+                self._ev.wait(); self._ev.clear()
+                args, self._zl = self._zl, None
+                if args is None:
+                    continue
+                try:
+                    kn, jn, Lb, w0, zR, poz = args
+                    w = siatka_obrysu(kn, jn, Lb, w0, zR, poz, poz / max(float(jn.sum()), 1e-30))
+                except Exception:                                                   # noqa: BLE001 (np. brak torch): bez obrysu
+                    import traceback
+                    traceback.print_exc()
+                    w = None
+                self.gotowe.emit(w)
+except ImportError:                                                               # bez Qt (testy obliczeń): tylko siatka_obrysu
+    pass
+
+
 class PoleOgniskowej(_ElementGPU):
     """Pułapka optyczna z laserów wokół wybranego koloidu (ogniskowa.policz): mgła pola w kolorach wiązek (jasna tam, gdzie
     pchnięcia się znoszą), strzałki pola albo kształtu pułapki (pole względem skoku koloidu), osie siodła i wir w koloidzie
@@ -1118,7 +1233,8 @@ class PoleOgniskowej(_ElementGPU):
         o, d = self.opcje, self.d
         if self.tryb_pod:
             return
-        if not o.get('wiazki', True) or d is None or 'pv' not in d or self.kol is None:
+        widac_cos = o.get('wiazki', True) or o.get('obrys', False) or o.get('swiatlo', True) or int(o.get('wklady', 1))
+        if not widac_cos or d is None or 'pv' not in d or self.kol is None:  # obrys, światło i wkłady działają też bez linii wiązek
             self._ognisko_czysc()
             return
         a, b, ff = self.ka, self.kb, self.ff
@@ -1167,9 +1283,10 @@ class PoleOgniskowej(_ElementGPU):
         self.Lb = Lb
         jn = (jas if jas_wzgl else jas / max(float(jas.max()), 1e-12)) * float(o.get('gain_w', 1.0))
         czesci = []
-        refl = bool(o.get('refl', False)) and zrodla is not None and len(zrodla) == n
+        wiazki = bool(o.get('wiazki', True))                                             # „768 wiązek…”: same linie wiązek
+        refl = wiazki and bool(o.get('refl', False)) and zrodla is not None and len(zrodla) == n
         self._reflektory(c, kn, jn, kol, zrodla if refl else None, prosto, refl_tlo if refl else None)
-        if o.get('linie_wiazek', True) and not refl:                                   # wiązki: źródło (ciemne) → cząsteczka
+        if wiazki and o.get('linie_wiazek', True) and not refl:                         # wiązki: źródło (ciemne) → cząsteczka
             W = np.zeros((n, 2, 2, 4), np.float32)
             W[:, 0, 0, :3] = c - Lb * kn; W[:, 1, 0, :3] = c
             W[:, 0, 1, :3] = kol * jn[:, None] * 0.08; W[:, 1, 1, :3] = kol * jn[:, None] * 0.7; W[:, :, 1, 3] = 1.0
@@ -1223,7 +1340,10 @@ class PoleOgniskowej(_ElementGPU):
         B = np.zeros((n, 2, 4), np.float32)                                             # światło ogniska: kierunek + jasność, kolor
         B[:, 0, :3] = kn; B[:, 0, 3] = jn; B[:, 1, :3] = kol
         self.ustaw_bufor('OB', B.reshape(-1, 4)); self.n_ob = n; self.c_ogn = c
-        obr = self._obrys(c, kn, jn, Lb) if o.get('obrys', False) else None
+        if o.get('obrys', False):
+            obr = self._obrys(c, kn, jn, Lb)
+        else:
+            obr = self._obrys_wynik = None
         top = np.argsort(-dl_w)[:3]
         self.info_wiazek = dict(info, n=n, suma=suma, wypadkowa=Ls, top=top, udzial=dl_w[top] / max(suma, 1e-12),
                                 ksztalt=lam, wydluzenie=float(np.sqrt((1 - lam[2]) / max(1 - lam[0], 1e-6))), obrys=obr,
@@ -1235,49 +1355,41 @@ class PoleOgniskowej(_ElementGPU):
         """Obrys 3D ogniska: powierzchnia, na której suma światła wiązek gaussowskich (te same co w rysowanym świetle:
         przewężenie w0, długość Rayleigha zR = w0 / rozbieżność, profil exp(−3ρ²/w²), jasność ∝ (w0/w)²) spada do ułamka
         `poziom_obr` jasności w cząsteczce (0,5 = połowa szczytu, jak FWHM objętości ogniska w optyce). Kształt zależy od danych
-        (kierunki i jasności wiązek), rozmiar od wybranego przewężenia. Zwraca osie obrysu (długości / w0, kierunki) albo None."""
+        (kierunki i jasności wiązek), rozmiar od wybranego przewężenia. Zwraca osie obrysu (długości / w0, kierunki) albo None.
+        Liczenie (objętość światła na GPU przez PyTorch + izopowierzchnia) idzie w wątku w tle (`_LiczObrys`, zawsze ostatnie
+        zlecenie), więc klatka nie czeka; rysowany jest ostatni gotowy obrys przesunięty do bieżącego położenia cząsteczki."""
         o = self.opcje
         w0 = float(o.get('szer_sw', 0.02)) * Lb; zR = w0 / max(float(o.get('rozb_sw', 0.15)), 1e-4)
-        szczyt = float(jn.sum()); poz = float(o.get('poziom_obr', 0.5)) * szczyt
-        self.n_of_tr = self.n_of_kr = 0
+        szczyt = float(jn.sum())
         if szczyt <= 0 or w0 <= 0:
+            self.n_of_tr = self.n_of_kr = 0
             return None
-        try:
-            import torch
-        except ImportError:
-            return None
-        from wspolne import izopowierzchnia
-        dev = 'cuda' if torch.cuda.is_available() else 'cpu'
-        m = jn > 1e-4 * float(jn.max())
-        K = torch.as_tensor(kn[m], dtype=torch.float32, device=dev); J = torch.as_tensor(jn[m], dtype=torch.float32, device=dev)
+        if getattr(self, '_licz_obrys', None) is None:
+            self._licz_obrys = _LiczObrys()
+            self._licz_obrys.gotowe.connect(self._obrys_gotowy)
+        self._licz_obrys.zlec((np.array(kn, np.float32), np.array(jn, np.float32), float(Lb), w0, zR,
+                               float(o.get('poziom_obr', 0.5)) * szczyt))
+        w = getattr(self, '_obrys_wynik', None)
+        return None if w is None else self._obrys_wstaw(c, w)
 
-        def jasnosc(X):                                                         # suma wiązek w punktach X (względem cząsteczki)
-            out = []
-            for i in range(0, len(X), 16384):
-                x = torch.as_tensor(X[i:i + 16384], dtype=torch.float32, device=dev)
-                s = x @ K.T; r2 = (x * x).sum(1, keepdim=True)
-                w2 = w0 * w0 * (1 + s * s / (zR * zR)); rho = (r2 - s * s).clamp_min(0)
-                out.append(((J * (w0 * w0 / w2) * torch.exp(-3 * rho / w2)) * (s.abs() <= Lb)).sum(1).cpu().numpy())
-            return np.concatenate(out)
+    def _obrys_gotowy(self, w):
+        """Wątek policzył obrys: zapamiętujemy (w układzie cząsteczki) i wstawiamy go w bieżące położenie."""
+        if not self.opcje.get('obrys', False):
+            return
+        self._obrys_wynik = w
+        info = self._obrys_wstaw(getattr(self, 'c_ogn', np.zeros(3)), w)
+        if isinstance(getattr(self, 'info_wiazek', None), dict):
+            self.info_wiazek['obrys'] = info
+        self.update()
 
-        G, h = 33, 2.0 * w0                                                      # pudło rośnie, aż obrys się w nim zmieści
-        while True:
-            ax = np.linspace(-h, h, G)
-            X = np.stack(np.meshgrid(ax, ax, ax, indexing='ij'), -1).reshape(-1, 3)
-            V = jasnosc(X).reshape(G, G, G)
-            brzeg = max(V[0].max(), V[-1].max(), V[:, 0].max(), V[:, -1].max(), V[:, :, 0].max(), V[:, :, -1].max())
-            if brzeg < poz or h >= Lb:
-                break
-            h *= 1.6
-        if V.max() <= poz:
+    def _obrys_wstaw(self, c, w):
+        """Bufor OF: trójkąty obrysu i warstwice w punkcie c (ekran), z lupą i kryciem z opcji. w = None: brak obrysu."""
+        o = self.opcje
+        if w is None:
+            self.n_of_tr = self.n_of_kr = 0
             return None
-        try:
-            v, f, nrm = izopowierzchnia(V, poz, 2 * h / (G - 1))
-        except (ValueError, RuntimeError):
-            return None
-        v = v - h
-        L = np.array([0.35, 0.5, 0.8]); L /= np.linalg.norm(L)                  # cieniowanie: światło z ustalonego kierunku
-        sz = 0.35 + 0.65 * np.abs(nrm @ L)
+        v, f, sz = w['v'], w['f'], w['sz']
+        c = np.asarray(c, np.float64)
         jo = float(o.get('jas_obr', 0.35))
         pw = float(o.get('pow_obr', 20.0))                                       # lupa: obrys powiększony wokół cząsteczki
         if o.get('przytnij', False) and not self.tryb_pod and self.d is not None and int(self.d['G']) > 1:
@@ -1286,36 +1398,11 @@ class PoleOgniskowej(_ElementGPU):
         Tr[:, 0, :3] = c + pw * v[f.reshape(-1)]
         Tr[:, 1, :3] = (sz[f.reshape(-1)][:, None] * np.array([1.0, 0.9, 0.62]))
         Tr[:, 1, 3] = 0.5 * jo                                                   # powierzchnia słabo, warstwice wyraźnie
-        vc = v - v.mean(0)                                                       # osie obrysu: główne kierunki wierzchołków
-        lam, wek = np.linalg.eigh(vc.T @ vc / len(vc))
-        rz = vc @ wek; dl = rz.max(0) - rz.min(0)
-        o_ = np.argsort(-dl)
-        odc = []                                                                 # warstwice: przekroje płaszczyznami ⟂ osi 1 i 2
-        for e, kol_ in ((wek[:, o_[0]], (1.0, 0.82, 0.4)), (wek[:, o_[1]], (0.85, 0.9, 1.0))):
-            dd = v @ e
-            for l in np.linspace(dd.min(), dd.max(), 7)[1:-1]:
-                s = dd[f] - l                                                    # (F, 3) znak wierzchołków względem płaszczyzny
-                pk = []
-                for a_, b_ in ((0, 1), (1, 2), (2, 0)):
-                    sa, sb = s[:, a_], s[:, b_]
-                    t_ = np.where(sa * sb < 0, sa / np.where(sa - sb == 0, 1, sa - sb), np.nan)
-                    pk.append(v[f[:, a_]] + t_[:, None] * (v[f[:, b_]] - v[f[:, a_]]))
-                pk = np.stack(pk, 1)                                             # (F, 3 krawędzie, 3)
-                ok = ~np.isnan(pk[..., 0])
-                m2 = ok.sum(1) == 2
-                if m2.any():
-                    P2 = pk[m2][ok[m2]].reshape(-1, 2, 3)
-                    odc.append((P2, kol_))
-        if odc:
-            Kr = np.concatenate([np.concatenate([P.reshape(-1, 1, 3), np.zeros((P.size // 3, 1, 3))], 1) for P, _ in odc])
-            Kr = np.concatenate([Kr, np.zeros((len(Kr), 2, 1))], 2).astype(np.float32)
-            Kr[:, 0, :3] = c + pw * Kr[:, 0, :3]
-            Kr[:, 1] = np.concatenate([np.tile([*k_, 0.55], (P.size // 3, 1)) for P, k_ in odc])
-        else:
-            Kr = np.zeros((0, 2, 4), np.float32)
+        Kr = w['kr'].copy()
+        Kr[:, 0, :3] = c + pw * Kr[:, 0, :3]
         self.n_of_tr, self.n_of_kr = len(Tr), len(Kr)
         self.ustaw_bufor('OF', np.concatenate([Tr.reshape(-1, 4), Kr.reshape(-1, 4)]))
-        return dict(osie=dl[o_] / w0, kier=wek[:, o_], poziom=float(o.get('poziom_obr', 0.5)), w0=w0, pow=pw)
+        return dict(osie=w['osie'], kier=w['kier'], poziom=w['poziom'], w0=w['w0'], pow=pw)
 
     def _reflektory(self, c, kn, jn, kol, zrodla, prosto, refl_tlo=None):
         """Widok w skali sfery (film 12): szklana sfera R, reflektory na zewnętrznej sferze i ich wiązki do cząsteczki.

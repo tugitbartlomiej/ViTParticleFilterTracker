@@ -94,7 +94,9 @@ def zbior_uczacy():
         except (OSError, pickle.UnpicklingError, EOFError):
             pass
         out = []
-        for linia in open(MANIFEST_UCZACY, encoding='utf-8'):
+        with open(MANIFEST_UCZACY, encoding='utf-8') as plik:
+            linie = plik.readlines()
+        for linia in linie:
             r = json.loads(linia)
             sx, sy = W * KOMORKA / r['width'], H * KOMORKA / r['height']
             x, y, bw, bh = r['gt'][0]['bbox_xywh']
@@ -605,5 +607,56 @@ class Historia:
         return float(np.interp(t, np.arange(self.K), self.kroki))
 
     def interp(self, X, t):
-        i = int(np.clip(np.floor(t), 0, self.K - 1)); j = min(i + 1, self.K - 1); u = float(t - i)
+        i = int(np.clip(np.floor(t), 0, self.K - 1)); j = min(i + 1, self.K - 1); u = float(np.clip(t - i, 0.0, 1.0))
         return X[i] * (1 - u) + X[j] * u
+
+
+# ------------------------------------------------------------------ zestaw kilku zdjęć na jednej sferze
+class ZZestawu:
+    """Z kilku historii jako jedna tablica (K, 600·n, 768) float16 bez kopiowania całości: z[k] albo z[a:b] skleja tylko żądane
+    checkpointy wszystkich zdjęć (tokeny zdjęcia i to i·600 … i·600+599). Rozumie ją SferaReflektorow (natężenia pary checkpointów
+    i wysyłka całości na GPU porcjami)."""
+
+    def __init__(self, hs):
+        self.hs = hs
+        self.shape = (hs[0].K, TOK * len(hs), NK)
+        self.dtype = np.dtype(np.float16)
+        self.ndim = 3
+
+    def __len__(self):
+        return self.shape[0]
+
+    def __getitem__(self, k):
+        os_ = 0 if isinstance(k, (int, np.integer)) else 1
+        return np.concatenate([np.asarray(h.Z[k], np.float16) for h in self.hs], axis=os_)
+
+
+class HistoriaZestawu:
+    """Kilka zdjęć tej samej historii wag (te same checkpointy) jako jedna chmura 600·n koloidów dla sfery reflektorów. Rzut 3D P3 i
+    reflektory zależą tylko od wag, więc są wspólne; każde zdjęcie ma własny środek chmury (położenia jak w jego historii).
+    Pozostałe okienka (1–5, 11–13, R, podkroki) pokazują jedno, aktywne zdjęcie zestawu."""
+
+    def __init__(self, hs):
+        hs = list(hs)
+        if not hs:
+            raise ValueError('pusty zestaw zdjęć')
+        h0 = hs[0]
+        for h in hs[1:]:
+            if len(h.kroki) != len(h0.kroki) or not np.array_equal(h.kroki, h0.kroki):
+                raise ValueError(f'zdjęcia zestawu mają różne checkpointy ({Path(h.katalog).name})')
+        self.hs, self.n = hs, len(hs)
+        self.K, self.kroki, self.okno, self.katalog, self.wagi = h0.K, h0.kroki, h0.okno, h0.katalog, h0.wagi
+        for a in ('rfix', 'kol', 'dirs', 'obr_dryf', 'obr_drg', 'obr_kat0'):                    # tylko z wag: wspólne
+            if hasattr(h0, a):
+                setattr(self, a, getattr(h0, a))
+        self.pos = np.concatenate([np.asarray(h.pos, np.float32) for h in hs], 1)              # (K, 600·n, 3)
+        self.r99 = np.max(np.stack([np.asarray(h.r99, np.float64) for h in hs]), 0)
+        self.narz = np.concatenate([np.asarray(h.narz, bool) for h in hs])
+        self.Z = ZZestawu(hs)
+        self.T = TOK * self.n
+
+    def indeks(self, krok):
+        return self.hs[0].indeks(krok)
+
+    def krok(self, t):
+        return self.hs[0].krok(t)
