@@ -82,10 +82,20 @@ class CollapsibleSection(QGroupBox):
         return not self.naglowek.isChecked()
 
     def _zwin(self, on):
+        """Zwinięcie chowa treść; rozwinięcie pokazuje tylko to, co było widoczne przed zwinięciem. Widżety ukryte celowo
+        (wiersze zwiniętych grup, opcje zależne od trybu) zostają ukryte: dawniej rozwinięcie pokazywało wszystko i wiersze
+        zwiniętych grup nakładały się na nagłówki."""
         self.naglowek.setArrowType(Qt.ArrowType.DownArrow if on else Qt.ArrowType.RightArrow)
-        for w in self.findChildren(QWidget, options=Qt.FindChildOption.FindDirectChildrenOnly):
-            if w is not self.naglowek:
-                w.setVisible(on)
+        dzieci = [w for w in self.findChildren(QWidget, options=Qt.FindChildOption.FindDirectChildrenOnly) if w is not self.naglowek]
+        if not on:
+            self._ukryte_przed = {id(w) for w in dzieci if w.isHidden()}
+            for w in dzieci:
+                w.setVisible(False)
+        else:
+            przed = getattr(self, '_ukryte_przed', set())
+            for w in dzieci:
+                if id(w) not in przed:
+                    w.setVisible(True)
         self.setMaximumHeight(16777215 if on else self._wys + 3)       # zwinięta: sam nagłówek (bez marginesów pustej treści)
 
 

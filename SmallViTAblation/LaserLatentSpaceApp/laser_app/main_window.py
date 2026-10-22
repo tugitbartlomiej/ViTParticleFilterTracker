@@ -72,6 +72,10 @@ class MainWindow(QMainWindow):
         akcja(p, 'Zapisz ustawienia jako…', lambda: self._zapisz_ustawienia(None), 'Ctrl+Shift+S', 'Zapis do wybranego pliku JSON.')
         akcja(p, 'Wczytaj ustawienia…', self._wczytaj_ustawienia, None, 'Listy, pola, opcje i układ z wybranego pliku JSON.')
         p.addSeparator()
+        akcja(p, 'Obliczenia: eksport i import…', lambda: z.okno_obliczen(), 'Ctrl+Shift+E',
+              'Lista policzonych obliczeń historii (pułapki, mapa, pomiary, rzuty…), eksport do pliku, wczytanie z pliku, '
+              'przebiegi cząsteczek na sferze do CSV.')
+        p.addSeparator()
         akcja(p, 'Zapisz obraz okienka pod kursorem (PNG)…', self._zapisz_obraz, 'Ctrl+E',
               'Okienko pod kursorem myszy (albo całe okno) do pliku PNG.')
         p.addSeparator()

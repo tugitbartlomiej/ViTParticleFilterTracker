@@ -228,6 +228,45 @@ def klucz(wagi, kroki, rgb, gt, okno):
 
 
 
+def klucz_przenosny(kroki, rgb, gt, okno, wagi, wersja=WERSJA):
+    """Klucz historii niezależny od dysku: wersja formatu danych, dwa ostatnie człony ścieżki wag (bieg uczenia, np.
+    MalyViT_35000_od_zera_s47/wagi), checkpointy, okno, ramka GT i zdjęcie. Historia policzona na innym dysku (F: zamiast W:)
+    albo zaimportowana z innego komputera ma inny `klucz`, ale ten sam klucz przenośny."""
+    from pathlib import PureWindowsPath
+    bieg = '/'.join(PureWindowsPath(str(wagi)).parts[-2:])               # ukośniki / i \ jednakowo
+    h = hashlib.sha1(json.dumps(dict(w=int(wersja), bieg=bieg, kroki=[int(k) for k in kroki], okno=int(okno),
+                                     gt=None if gt is None else [round(float(v), 3) for v in gt])).encode())
+    h.update(np.ascontiguousarray(np.asarray(rgb, np.uint8)).tobytes())
+    return h.hexdigest()[:16]
+
+
+def znajdz_przenosna(kp, katalog=None):
+    """Katalog historii w cache o kluczu przenośnym kp (albo None). Najpierw szybki filtr po opis.json (liczba kroków), potem
+    kroki i zdjęcie z dane.npz; wynik zapisywany w opis.json (`klucz_przenosny_v2`), żeby następnym razem wystarczył odczyt opisu."""
+    for kat in sorted(Path(katalog or CACHE).iterdir()):
+        if not (kat / 'dane.npz').exists() or kat.name.endswith('_tmp'):
+            continue
+        opis_p = kat / 'opis.json'
+        try:
+            opis = json.loads(opis_p.read_text(encoding='utf-8')) if opis_p.exists() else {}
+        except (OSError, ValueError):
+            opis = {}
+        if 'klucz_przenosny_v2' not in opis:
+            if 'wagi' not in opis:
+                continue
+            try:
+                with np.load(kat / 'dane.npz', allow_pickle=False) as d:
+                    opis['klucz_przenosny_v2'] = klucz_przenosny(d['kroki'], d['rgb'], opis.get('gt'), opis.get('okno', 300),
+                                                                 opis['wagi'], opis.get('wersja', 1))
+                if opis_p.exists():
+                    opis_p.write_text(json.dumps(opis, ensure_ascii=False, indent=1), encoding='utf-8')
+            except (OSError, KeyError, ValueError):
+                continue
+        if opis['klucz_przenosny_v2'] == kp and (kat / 'Z.npy').exists():
+            return kat
+    return None
+
+
 def policz(wagi, kroki, rgb, gt, okno=300, postep=None, przerwij=None, urzadzenie='cuda'):
     """Liczy (albo bierze z cache) historię zdjęcia rgb [320, 480, 3] dla checkpointów `kroki` z katalogu `wagi` (k<krok>.pt).
     Zwraca katalog wyniku. postep(i, n, opis) co checkpoint; przerwij() → True kończy (wyjątek Przerwano, nic nie zostaje)."""
@@ -238,6 +277,9 @@ def policz(wagi, kroki, rgb, gt, okno=300, postep=None, przerwij=None, urzadzeni
     out = CACHE / klucz(wagi, kroki, rgb, gt, okno)
     if (out / 'dane.npz').exists() and (out / 'Z.npy').exists():
         return out
+    inny = znajdz_przenosna(klucz_przenosny(kroki, rgb, gt, okno, wagi)) if CACHE.exists() else None
+    if inny is not None:                                                  # ta sama historia z inną ścieżką wag (import, inny dysk)
+        return inny
     tmp = out.with_name(out.name + '_tmp')
     shutil.rmtree(tmp, ignore_errors=True); tmp.mkdir(parents=True)
     dev = torch.device(urzadzenie if torch.cuda.is_available() else 'cpu')
@@ -368,7 +410,8 @@ def policz(wagi, kroki, rgb, gt, okno=300, postep=None, przerwij=None, urzadzeni
              r99=R99, rfix=RFIX, kol=KOL, slot=SLOT, pary=PARY, a0=a0, okno=okno, udzial_D=float((s_[:3] ** 2).sum() / (s_ ** 2).sum()),
              wagi=str(wagi), na_epoke=NA_EPOKE)
     (tmp / 'opis.json').write_text(json.dumps(dict(wagi=str(wagi), kroki=len(kroki), od=kroki[0], do=kroki[-1], okno=okno, gt=gt,
-                                                    czas_s=round(time.time() - t0), wersja=WERSJA), ensure_ascii=False, indent=1),
+                                                    czas_s=round(time.time() - t0), wersja=WERSJA,
+                                                    klucz_przenosny_v2=klucz_przenosny(kroki, rgb, gt, okno, wagi)), ensure_ascii=False, indent=1),
                                    encoding='utf-8')
     shutil.rmtree(out, ignore_errors=True)
     tmp.rename(out)

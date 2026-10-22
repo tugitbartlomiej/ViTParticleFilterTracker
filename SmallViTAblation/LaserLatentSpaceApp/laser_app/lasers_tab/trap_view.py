@@ -177,7 +177,12 @@ class TrapMixin:
                                     'pokazuje łańcuch: zmienione lasery → nowe pole → nowe położenie.')
         self.ch_og_sfera = QCheckBox('pokaż pułapkę także na dużej sferze'); self.ch_og_sfera.setChecked(False)
         self.lb_og = QLabel('—'); self.lb_og.setWordWrap(True)
-        f.addRow(self.ch_og); f.addRow('Gotowe (bez liczenia)', self.cb_og_gotowe); f.addRow('Czas okienka 11', self.cb_og_czas)
+        bt_eks = QToolButton(); bt_eks.setText('⇅ plik…')
+        bt_eks.setToolTip('Eksport policzonych pułapek i pomiarów do pliku albo wczytanie ich z pliku zamiast liczenia\n'
+                          '(okno „Obliczenia: eksport i import”).')
+        bt_eks.clicked.connect(self.okno_obliczen)
+        w_ = QWidget(); l_ = QHBoxLayout(w_); l_.setContentsMargins(0, 0, 0, 0); l_.addWidget(self.cb_og_gotowe, 1); l_.addWidget(bt_eks)
+        f.addRow(self.ch_og); f.addRow('Gotowe (bez liczenia)', w_); f.addRow('Czas okienka 11', self.cb_og_czas)
         f.addRow(self.ch_og_pole); f.addRow('Dokładność', self.cb_og_dokl)
         f.addRow('Siatka (węzłów na bok)', self.sp_og_G); f.addRow('Zasięg siatki', self.sp_og_zas)
         w_ = QWidget(); l_ = QHBoxLayout(w_); l_.setContentsMargins(0, 0, 0, 0); l_.addWidget(self.ed_og_razem, 1); l_.addWidget(self.bt_og_razem)
@@ -542,6 +547,23 @@ class TrapMixin:
         w = getattr(self, '_pom_watek', None)
         if w is not None and w.isRunning():
             return
+        from laser_app.compute import trap_measurements
+        p = trap_measurements.plik(self.h, self.sp_tok.value(), self.sp_pom_G.value())
+        if p.exists():                                                   # już policzone: nie liczymy od nowa bez pytania
+            import time as _t
+            from PyQt6.QtWidgets import QMessageBox
+            try:
+                with np.load(p, allow_pickle=False) as z_:
+                    ile = len(z_['kroki'])
+            except (OSError, KeyError, ValueError):
+                ile = '?'
+            opis = (f'Pomiar cząsteczki {self.sp_tok.value()} (siatka {self.sp_pom_G.value()}³) jest już policzony: {ile} checkpointów, '
+                    f'{_t.strftime("%Y-%m-%d %H:%M", _t.localtime(p.stat().st_mtime))}.\n{p}')
+            if QMessageBox.question(self, 'Pomiar w podkrokach', opis + '\n\nPoliczyć ponownie (plik zostanie zastąpiony)?',
+                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                    QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                self.lb_pom.setText('Gotowe, bez liczenia: ' + opis.replace('\n', ' '))
+                return
         w = TrapMeasurementsWorker(self.h, self.sp_tok.value(), self.sp_pom_co.value(), self.sp_pom_G.value())
         w.postep.connect(lambda i, n, t: (self.pasek_pom.setMaximum(n), self.pasek_pom.setValue(i), self.lb_pom.setText(t)))
         w.koniec.connect(lambda t: (self.lb_pom.setText(t), self.bt_pom.setEnabled(True), self.bt_pom_stop.setEnabled(False)))
@@ -571,8 +593,12 @@ class TrapMixin:
                 self._pp_pole = None
                 dd = dict(d); dd['baza'] = self._baza_pod
                 kc = getattr(self, '_kol_cz', None)
+                kc = None if kc is None else np.ascontiguousarray(kc[:, :3], np.float32)
+                from laser_app.compute import disk_cache
+                plik = disk_cache.plik(self.h.katalog, 'pole_podkrokow', t=j, G=klucz[3], z=klucz[4], kc=b'' if kc is None else kc,
+                                       k=int(d['krok']))                 # ten sam checkpoint drugi raz: z dysku, bez liczenia
                 self.watek_pp.zlec(klucz, self.h.wagi, int(d['krok']), self.h.rgb, j, dd, G=klucz[3], zasieg=klucz[4],
-                                   kol_cz=None if kc is None else kc[:, :3])
+                                   kol_cz=kc, plik=plik)
         if self._pp_pole is None:
             self.eog_pp.setVisible(False)
             return '  [pole w komórce: liczę…]'

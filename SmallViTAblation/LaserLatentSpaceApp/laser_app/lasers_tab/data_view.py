@@ -139,8 +139,10 @@ class DataMixin:
     def _wczytaj_z_cache(self):
         try:
             wagi, kroki, rgb, gt, okno = self._wybor()
-            if rgb is not None and len(kroki) >= 2 and (hist.CACHE / hist.klucz(wagi, kroki, rgb, gt, okno) / 'dane.npz').exists():
-                self._licz()
+            if rgb is None or len(kroki) < 2:
+                return
+            if (hist.CACHE / hist.klucz(wagi, kroki, rgb, gt, okno) / 'dane.npz').exists() or                     hist.znajdz_przenosna(hist.klucz_przenosny(sorted(set(int(k) for k in kroki)), rgb, gt, okno, wagi)) is not None:
+                self._licz()                                             # z cache: wczytanie bez liczenia
         except Exception:                                                # noqa: BLE001
             pass
 

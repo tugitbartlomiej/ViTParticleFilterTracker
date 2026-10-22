@@ -62,7 +62,9 @@ class MechanicsMixin:
         lic = getattr(self.watek_mech, '_liczydlo', None)
         if zr == 'zbior' and (lic is None or lic._zbior is None):
             self.lb_mech.setText('Wczytuję 64 klatki zbioru uczącego z archiwów (raz)…')
-        self.watek_mech.zlec(k, h, i, k[2], zr, k[4], 80)
+        from laser_app.compute import disk_cache
+        plik = disk_cache.plik(h.katalog, 'mechanika', t=k[4], c=k[2], zr=zr, n=80, k=int(h.kroki[i]))
+        self.watek_mech.zlec(k, h, i, k[2], zr, k[4], 80, plik=plik)
 
     def _mech_gotowe(self, klucz, d):
         if 'blad_watku' in d:

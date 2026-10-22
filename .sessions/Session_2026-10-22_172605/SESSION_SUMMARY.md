@@ -205,3 +205,21 @@ pakiet, angielskie nazwy plików i klas; funkcje, zmienne, komentarze i napisy G
 Po każdym etapie: import wszystkich modułów, sprawdzenie nazw niezdefiniowanych (tools/sprawdz_nazwy.py), 119 testów
 modułów, 38 testów GUI na ekranie, próba dymna okna (tools/proba_dymna.py: okienka 1–14, R0–R12, pułapka i mapa z pliku,
 etykiety, dolina, mechanika, podkroki, popupy, układy, odtwarzanie) bez błędów, start przez run.py 2,5 s.
+
+## Kontynuacja (21:30–22:30): zwijanie, stereo, eksport i import obliczeń
+
+- Błąd: zwinięcie i rozwinięcie całej sekcji (np. przy wypożyczeniu do okienka ustawień) pokazywało wszystkie widżety,
+  także wiersze zwiniętych grup, które nakładały się na nagłówki. CollapsibleSection pamięta teraz, co było ukryte
+  (test `test_rozwiniecie_sekcji_nie_pokazuje_wierszy_zwinietej_grupy`).
+- Stereo SBS: sprawdzone we wszystkich okienkach 3D (sfera, 11–14, R1–R12: dwie połówki z paralaksą; elementy GPU biorą
+  macierz przez mvpMatrix widoku). Widoki płaskie 1–5 mają połówki identyczne (płaszczyzna zerowego rozrzutu).
+- Eksport i import obliczeń: compute/exports.py (lista, zip z manifestem i SHA256, import do historii o tym samym kluczu
+  albo kluczu przenośnym, przebiegi cząsteczek na sferze do CSV/NPZ), ui/computations_dialog.py (Plik → Obliczenia,
+  Ctrl+Shift+E; przyciski w sekcjach wyboru cząsteczek i pułapki).
+- Klucz przenośny historii (history.klucz_przenosny: wersja danych, bieg uczenia z dwóch członów ścieżki wag, kroki, okno,
+  ramka, zdjęcie): historia z F: znajdowana na W: (7992… ≡ 1408…); różne wersje danych i różne biegi nie kolidują.
+- Pamięć dyskowa obliczeń na żądanie (compute/disk_cache.py, `<historia>/pamiec/`): pole w podkrokach, dolina (6,4 → 0,13 s),
+  mechanika; zapis bez pickle (struktura JSON + tablice npz).
+- Pomiar w podkrokach: pytanie zamiast ponownego liczenia, gdy plik już jest.
+- Testy: 125 modułów (w tym 5 eksportu i pamięci), 38 GUI, próba dymna i próby tools/proba_zwijania.py, proba_stereo.py,
+  proba_pamieci.py. Pliki pamięci utworzone przez próby w historii 2cca… usunięte.

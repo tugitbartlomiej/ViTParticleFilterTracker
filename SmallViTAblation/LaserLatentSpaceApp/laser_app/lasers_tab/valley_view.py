@@ -86,7 +86,9 @@ class ValleyMixin:
             return
         self._dol_zlecony = k
         from laser_app.compute import valley
-        self.watek_dol.zlec(k, self.h, k[1], k[2], valley.BAZY[k[3]], k[4], k[5])
+        from laser_app.compute import disk_cache
+        plik = disk_cache.plik(self.h.katalog, 'dolina', t=k[2], baza=valley.BAZY[k[3]], G=k[4], z=k[5], k=int(self.h.kroki[k[1]]))
+        self.watek_dol.zlec(k, self.h, k[1], k[2], valley.BAZY[k[3]], k[4], k[5], plik=plik)
 
     def _dol_czas(self, tryb_pod):
         if self.h is None:

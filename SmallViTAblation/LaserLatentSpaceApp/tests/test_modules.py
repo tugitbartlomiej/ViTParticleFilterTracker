@@ -1168,5 +1168,88 @@ class TestPulapkiWsadowo(unittest.TestCase):
         self.assertEqual(typ[0].tolist(), [1, 0, 3, 1])                          # bez zera w komórce: 0
 
 
+class TestEksportObliczen(unittest.TestCase):
+    """compute/exports.py i disk_cache.py: lista obliczeń, eksport do zip, import do innej historii o tym samym kluczu przenośnym,
+    kontrola SHA256, brak historii, pamięć dyskowa wyników."""
+
+    def setUp(self):
+        from laser_app.compute import history
+        self.tmp = Path(tempfile.mkdtemp())
+        self.kroki = np.arange(0, 50, 10)
+        self.rgb = (np.arange(320 * 480 * 3) % 251).astype(np.uint8).reshape(320, 480, 3)
+        self.zrodlo = self._historia(self.tmp / 'cacheA', 'aaaa', r'F:\x\MalyViT_s47\wagi')
+        (self.zrodlo / 'ogniskowa_t226_G9_z100.npz').write_bytes(b'pole' * 100)
+        (self.zrodlo / 'ogniskowa_t226_G9_z100.json').write_text('{}', encoding='utf-8')
+        (self.zrodlo / 'pulapka_podkrokow_t012_G5.npz').write_bytes(b'pomiar' * 50)
+        from laser_app.compute import disk_cache
+        disk_cache.zapisz(disk_cache.plik(self.zrodlo, 'dolina', t=226, baza='sfera', G=40, z=0.6, k=10), dict(Z=np.ones(3), baza='sfera', i=1))
+        self.history = history
+
+    def _historia(self, cache, klucz, wagi):
+        kat = Path(cache) / klucz
+        kat.mkdir(parents=True)
+        np.savez(kat / 'dane.npz', kroki=self.kroki, rgb=self.rgb)
+        (kat / 'Z.npy').write_bytes(b'Z' * 1000)
+        (kat / 'opis.json').write_text(json.dumps(dict(wagi=wagi, kroki=len(self.kroki), okno=300, gt=[1.0, 2.0, 3.0, 4.0], wersja=3)),
+                                       encoding='utf-8')
+        return kat
+
+    def test_lista_grupuje_obliczenia(self):
+        from laser_app.compute import exports
+        w = {(x['rodzaj'], x['tok']) for x in exports.lista(self.zrodlo)}
+        self.assertTrue({('historia', None), ('pulapka', 226), ('pomiar', 12), ('pamiec', 226)} <= w, w)
+        pul = next(x for x in exports.lista(self.zrodlo) if x['rodzaj'] == 'pulapka')
+        self.assertEqual(sorted(pul['pliki']), ['ogniskowa_t226_G9_z100.json', 'ogniskowa_t226_G9_z100.npz'])
+
+    def test_eksport_import_do_historii_z_innym_dyskiem(self):
+        """Obliczenia cząsteczki 226 z historii na F: trafiają do tej samej historii policzonej na W: (inny klucz, ten sam przenośny)."""
+        from laser_app.compute import exports
+        cel_hist = self._historia(self.tmp / 'cacheB', 'bbbb', r'W:\y\MalyViT_s47\wagi')
+        wpisy = [x for x in exports.lista(self.zrodlo) if x['tok'] == 226]
+        z = exports.eksportuj(self.zrodlo, wpisy, self.tmp / 'e.zip')
+        kat, zapisane, pominiete, bledy = exports.importuj(z, self.tmp / 'cacheB')
+        self.assertEqual(kat, cel_hist)
+        self.assertEqual(bledy, [])
+        self.assertEqual((cel_hist / 'ogniskowa_t226_G9_z100.npz').read_bytes(), b'pole' * 100)
+        kat, zapisane2, pominiete2, _ = exports.importuj(z, self.tmp / 'cacheB')       # drugi raz: nic nie nadpisuje
+        self.assertEqual(zapisane2, []); self.assertEqual(sorted(pominiete2), sorted(zapisane))
+
+    def test_inny_bieg_uczenia_to_inna_historia(self):
+        """Te same kroki i zdjęcie, ale inne wagi (inny bieg): klucz przenośny inny, import nie trafia do cudzej historii."""
+        from laser_app.compute import exports
+        self._historia(self.tmp / 'cacheC', 'cccc', r'W:\y\MalyViT_s99\wagi')
+        z = exports.eksportuj(self.zrodlo, [x for x in exports.lista(self.zrodlo) if x['tok'] == 226], self.tmp / 'e.zip')
+        kat, zapisane, _, bledy = exports.importuj(z, self.tmp / 'cacheC')
+        self.assertEqual(zapisane, [])
+        self.assertTrue(bledy and 'brak historii' in bledy[0], bledy)
+
+    def test_uszkodzony_plik_wykryty(self):
+        import zipfile
+        from laser_app.compute import exports
+        cel_hist = self._historia(self.tmp / 'cacheD', 'aaaa', r'F:\x\MalyViT_s47\wagi')
+        z = exports.eksportuj(self.zrodlo, [x for x in exports.lista(self.zrodlo) if x['rodzaj'] == 'pulapka'], self.tmp / 'e.zip')
+        z2 = self.tmp / 'zly.zip'
+        with zipfile.ZipFile(z) as a, zipfile.ZipFile(z2, 'w') as b:
+            for n in a.namelist():
+                b.writestr(n, b'zepsute' if n.endswith('.npz') else a.read(n))
+        _, zapisane, _, bledy = exports.importuj(z2, self.tmp / 'cacheD')
+        self.assertTrue(any('SHA256' in b_ for b_ in bledy), bledy)
+        self.assertFalse((cel_hist / 'ogniskowa_t226_G9_z100.npz').exists())
+
+    def test_pamiec_dyskowa(self):
+        from laser_app.compute import disk_cache
+        p = disk_cache.plik(self.zrodlo, 'pole_podkrokow', t=5, G=17, z=1.0, kc=np.ones((3, 3), np.float32), k=120)
+        self.assertTrue(disk_cache.zapisz(p, dict(pole=np.arange(6.0).reshape(2, 3), G=17, opis='x')))
+        d = disk_cache.wczytaj(p)
+        self.assertEqual(d['G'], 17); self.assertEqual(d['opis'], 'x'); self.assertEqual(d['pole'].shape, (2, 3))
+        z = dict(lista=[np.ones(2), np.ones(3)], prog=dict(b=1.5, db=np.float32(2)), krotka=(1, 'a'), brak=None)   # jak mechanika
+        self.assertTrue(disk_cache.zapisz(p.with_name('zagn.npz'), z))
+        w = disk_cache.wczytaj(p.with_name('zagn.npz'))
+        self.assertEqual(w['lista'][1].shape, (3,)); self.assertEqual(w['prog'], dict(b=1.5, db=2.0))
+        self.assertEqual(w['krotka'], (1, 'a')); self.assertIsNone(w['brak'])
+        self.assertFalse(disk_cache.zapisz(p.with_name('obj.npz'), dict(x=object())))         # obiekt klasy: nie zapisuje
+        self.assertIsNone(disk_cache.wczytaj(p.with_name('obj.npz')))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -151,17 +151,23 @@ class SubstepFieldWorker(QThread):
         super().__init__()
         self._zlecenie = None
 
-    def zlec(self, klucz, *args, **kw):
-        self._zlecenie = (klucz, args, kw)
+    def zlec(self, klucz, *args, plik=None, **kw):
+        """plik: pamięć dyskowa wyniku (disk_cache): gdy jest, wynik z dysku; inaczej liczenie i zapis."""
+        self._zlecenie = (klucz, args, kw, plik)
         if not self.isRunning():
             self.start()
 
     def run(self):
-        from laser_app.compute import substep_field
+        from laser_app.compute import disk_cache, substep_field
         while self._zlecenie is not None:
-            klucz, args, kw = self._zlecenie; self._zlecenie = None
+            klucz, args, kw, plik = self._zlecenie; self._zlecenie = None
             try:
-                self.gotowe.emit(klucz, substep_field.policz(*args, **kw))
+                d = disk_cache.wczytaj(plik) if plik is not None else None
+                if d is None:
+                    d = substep_field.policz(*args, **kw)
+                    if plik is not None:
+                        disk_cache.zapisz(plik, d)
+                self.gotowe.emit(klucz, d)
             except Exception as e:                                       # noqa: BLE001
                 import traceback
                 traceback.print_exc()
@@ -177,19 +183,24 @@ class ValleyWorker(QThread):
         self._zlecenie = None
         self._liczydlo = None
 
-    def zlec(self, klucz, h, *args):
-        self._zlecenie = (klucz, h, args)
+    def zlec(self, klucz, h, *args, plik=None):
+        self._zlecenie = (klucz, h, args, plik)
         if not self.isRunning():
             self.start()
 
     def run(self):
-        from laser_app.compute import valley
+        from laser_app.compute import disk_cache, valley
         while self._zlecenie is not None:
-            klucz, h, args = self._zlecenie; self._zlecenie = None
+            klucz, h, args, plik = self._zlecenie; self._zlecenie = None
             try:
-                if self._liczydlo is None or self._liczydlo.h is not h:
-                    self._liczydlo = valley.ValleySolver(h)
-                self.gotowe.emit(klucz, self._liczydlo.policz(*args))
+                d = disk_cache.wczytaj(plik) if plik is not None else None
+                if d is None:
+                    if self._liczydlo is None or self._liczydlo.h is not h:
+                        self._liczydlo = valley.ValleySolver(h)
+                    d = self._liczydlo.policz(*args)
+                    if plik is not None:
+                        disk_cache.zapisz(plik, d)
+                self.gotowe.emit(klucz, d)
             except Exception as e:                                       # noqa: BLE001
                 import traceback
                 traceback.print_exc()
@@ -197,7 +208,7 @@ class ValleyWorker(QThread):
 
 
 class MechanicsWorker(QThread):
-    """Mechanika reflektora (reflector_mechanics.ValleySolver.policz) w tle. Zlecenia nadpisują się: liczy się tylko ostatnie."""
+    """Mechanika reflektora (reflector_mechanics.MechanicsSolver.policz) w tle. Zlecenia nadpisują się: liczy się tylko ostatnie."""
     gotowe = pyqtSignal(object, object)
 
     def __init__(self):
@@ -205,19 +216,24 @@ class MechanicsWorker(QThread):
         self._zlecenie = None
         self._liczydlo = None
 
-    def zlec(self, klucz, h, *args):
-        self._zlecenie = (klucz, h, args)
+    def zlec(self, klucz, h, *args, plik=None):
+        self._zlecenie = (klucz, h, args, plik)
         if not self.isRunning():
             self.start()
 
     def run(self):
-        from laser_app.compute import reflector_mechanics
+        from laser_app.compute import disk_cache, reflector_mechanics
         while self._zlecenie is not None:
-            klucz, h, args = self._zlecenie; self._zlecenie = None
+            klucz, h, args, plik = self._zlecenie; self._zlecenie = None
             try:
-                if self._liczydlo is None or self._liczydlo.h is not h:
-                    self._liczydlo = reflector_mechanics.MechanicsSolver(h)
-                self.gotowe.emit(klucz, self._liczydlo.policz(*args))
+                d = disk_cache.wczytaj(plik) if plik is not None else None
+                if d is None:
+                    if self._liczydlo is None or self._liczydlo.h is not h:
+                        self._liczydlo = reflector_mechanics.MechanicsSolver(h)
+                    d = self._liczydlo.policz(*args)
+                    if plik is not None:
+                        disk_cache.zapisz(plik, d)
+                self.gotowe.emit(klucz, d)
             except Exception as e:                                       # noqa: BLE001
                 import traceback
                 traceback.print_exc()

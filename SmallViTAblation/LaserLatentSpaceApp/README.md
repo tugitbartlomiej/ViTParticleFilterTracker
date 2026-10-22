@@ -199,6 +199,30 @@ i w zerze (λ), liniowe oszacowanie zera, r_kom. Cała historia (806 checkpoint�
   informacją jest kształt pola w samej cząsteczce. W checkpoincie 101 prawie wszystkie cząsteczki siedzą w siodle (585 z
   600, 591 z wirem), w checkpoincie 701 większość pól już ściąga (481 ściąga, 119 siodło, 376 z wirem).
 
+## Obliczenia: eksport, import, pamięć na dysku (2026-10-22)
+
+Długie obliczenia liczy się raz; potem aplikacja je wczytuje, a plik eksportu przenosi je na inny komputer albo do innej
+ścieżki wag. Okno **Plik → Obliczenia: eksport i import…** (Ctrl+Shift+E; też przyciski „Obliczenia i przebiegi…” przy
+wyborze cząsteczek i „⇅ plik…” przy gotowych pułapkach):
+
+- lista obliczeń bieżącej historii z rozmiarem i datą (`compute/exports.lista`): historia uczenia, etykieta, rzuty 192D,
+  przejścia przez sieć, pułapki cząsteczek, mapa pułapek, pomiary w podkrokach, pamięć obliczeń na żądanie; stan wybranej
+  cząsteczki („Cząsteczka 226: pułapka…; pomiar…; pole w podkrokach: 35 checkpointów”);
+- **Eksportuj zaznaczone…**: zip z `manifest.json` (klucz historii, opis, pliki z SHA256), opcjonalnie z przebiegami;
+  „Zaznacz obliczenia cząsteczek” zaznacza wszystko, co jest policzone dla cząsteczek z pola „Cząsteczki”;
+- **Wczytaj obliczenia z pliku…**: pliki trafiają do historii o tym samym kluczu albo do historii o tych samych
+  checkpointach, zdjęciu, ramce i biegu uczenia na innym dysku (klucz przenośny `history.klucz_przenosny`: wersja danych,
+  dwa ostatnie człony ścieżki wag, kroki, okno, ramka GT, zdjęcie); sumy SHA256 sprawdzane, istniejące pliki zostają
+  (chyba że „nadpisz”); plik z samą historią tworzy ją w cache, plik z samymi obliczeniami bez historii jest odrzucany;
+- **Przebiegi → CSV…**: położenia cząsteczek na sferze przez wszystkie checkpointy (`exports.przebiegi`: krok, epoka,
+  cząsteczka, rzut P3, ekran sfery, r99, narzędzie) i NPZ obok.
+
+Pamięć na dysku obliczeń liczonych na żądanie (`compute/disk_cache.py`, `<historia>/pamiec/`): pole w podkrokach (okienko 11),
+dolina (12) i mechanika (13) dla danego checkpointu i parametrów liczą się raz; ten sam checkpoint potem z pliku (dolina
+6,4 s → 0,13 s). Zapis bez pickle: struktura wyniku w JSON, tablice w npz. Historia liczona na innym dysku (F: zamiast W:)
+jest znajdowana po kluczu przenośnym i wczytywana zamiast liczona od nowa. „Policz pułapkę w podkrokach…” pyta, gdy pomiar
+już jest, zamiast liczyć go od nowa.
+
 ## Pomiar pułapki w podkrokach: szybciej
 
 `trap_measurements.policz_historie`: wagi wczytywane raz na checkpoint, z wyprzedzeniem w 4 wątkach (wcześniej dwa razy,
@@ -220,6 +244,8 @@ wygładzany ± n checkpointów. Mediana przesunięcia tokenu na krok checkpointu
 - `laser_app/ui/tooltips.py`: każdy parametr ma dymek z objaśnieniem (co to jest i co zmienia); ten sam dymek ma nazwa wiersza w panelu.
 - `laser_app/ui/parameter_groups.py`: nagłówki podgrup w długich sekcjach (pułapka: liczenie, wiązki, światło, obrys, wkłady, mgła pola,
   strzałki pola, oznaczenia, ślad i kadr; sfera, dane, dolina, podkroki, zapis).
+- Zwinięcie i rozwinięcie całej sekcji pokazuje z powrotem tylko to, co było widoczne przed zwinięciem: wiersze zwiniętych
+  grup i opcje ukryte przez program zostają ukryte (wcześniej nakładały się na nagłówki grup).
 - Okienka sterujące (panel parametrów, podkroki) mają zawartość w przewijanym polu (`dock_windows.ScrollWrapper`): po włączeniu
   podkroków pasek podkroków (dwa wiersze opcji i schemat sieci, ponad 1100 px szerokości) nie rozpycha już okna i nie wchodzi
   na panel parametrów ani na widoki; gdy brakuje miejsca, przewija się. Wysokość okienka podkroków dopasowuje się do treści.

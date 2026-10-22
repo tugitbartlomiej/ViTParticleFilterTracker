@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
-from PyQt6.QtWidgets import QCheckBox, QFormLayout, QLabel, QMenu, QToolButton
+from PyQt6.QtWidgets import QCheckBox, QFormLayout, QHBoxLayout, QLabel, QMenu, QToolButton, QWidget
 
 from laser_app.compute import history as hist
 from laser_app.lasers_tab.workers import plaski_podkrokow
@@ -25,8 +25,27 @@ class LabelsMixin:
         for kod, nazwa in ((3, 'narzędzie'), (2, 'źrenica'), (1, 'rogówka'), (0, 'tło'), (-1, 'wyczyść')):
             a = m.addAction(nazwa); a.triggered.connect(lambda _=False, k=kod: self._zaznacz_obszar(k))
         bt.setMenu(m)
-        f.addRow('', bt)
+        bt_ob = QToolButton(); bt_ob.setText('Obliczenia i przebiegi…')
+        bt_ob.setToolTip('Co jest policzone dla tych cząsteczek (pułapki, pomiary, pamięć pól i doliny), eksport do pliku i wczytanie\n'
+                         'z pliku zamiast liczenia, przebiegi cząsteczek na sferze do CSV (okno „Obliczenia: eksport i import”).')
+        bt_ob.clicked.connect(self.okno_obliczen)
+        w_ = QWidget(); l_ = QHBoxLayout(w_); l_.setContentsMargins(0, 0, 0, 0); l_.addWidget(bt); l_.addWidget(bt_ob); l_.addStretch(1)
+        f.addRow('', w_)
         self._sek['wybor'] = g
+
+    def okno_obliczen(self):
+        """Okno „Obliczenia: eksport i import” dla bieżącej historii i wybranych cząsteczek."""
+        from laser_app.ui.computations_dialog import ComputationsDialog
+        d = ComputationsDialog(self, self.window())
+        d.exec()
+
+    def po_imporcie_obliczen(self):
+        """Po imporcie do bieżącej historii: listy gotowych pułapek, mapa i pułapka z nowych plików (bez liczenia)."""
+        self._og_lista_gotowych()
+        if getattr(self, '_mp', None) is None and self.ch_mp.isChecked():
+            self._mp_zlec()
+        if self.ch_og.isChecked() and getattr(self, '_og', None) is None:
+            self._og_zlec()
 
     def _buduj_etykiety(self):
         from laser_app.compute import tool_labels

@@ -183,5 +183,24 @@ class TestGrupy(unittest.TestCase):
         f = sek.layout()
         self.assertTrue(f.isRowVisible(parameter_groups.wiersz(f, Z.cb_og_strz)))
 
+    def test_rozwiniecie_sekcji_nie_pokazuje_wierszy_zwinietej_grupy(self):
+        """Zwinięta grupa, potem zwinięcie i rozwinięcie całej sekcji (np. wypożyczenie do okienka ustawień): wiersze grupy zostają
+        ukryte, a nagłówek grupy dalej mówi „zwinięta” (dawniej rozwinięcie sekcji pokazywało wszystkie widżety)."""
+        sek = Z._sek['sfera']
+        g = _naglowki_grup(sek)[0]
+        f = g.formularz
+        wiersze = g._wiersze()
+        try:
+            g.zwin(True)
+            sek.naglowek.setChecked(False); sek.naglowek.setChecked(True)
+            for rr in wiersze:
+                for rola in (QFormLayout.ItemRole.LabelRole, QFormLayout.ItemRole.FieldRole):
+                    el = f.itemAt(rr, rola)
+                    if el is not None and el.widget() is not None:
+                        self.assertTrue(el.widget().isHidden(), f'wiersz {rr} zwiniętej grupy widoczny po rozwinięciu sekcji')
+            self.assertTrue(g.zwiniety)
+        finally:
+            g.zwin(False)
+
 if __name__ == '__main__':
     unittest.main()
