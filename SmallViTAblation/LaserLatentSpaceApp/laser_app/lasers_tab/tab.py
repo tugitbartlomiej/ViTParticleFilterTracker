@@ -94,10 +94,10 @@ class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixi
         from laser_app.ui import dock_windows
         self.ch_pelny_nakladki = QCheckBox('pełny ekran pozwala nakładkom (Odyssey 3D Hub: SBS → 3D)')
         self.ch_pelny_nakladki.setChecked(dock_windows.PELNY_DLA_NAKLADEK)
-        self.ch_pelny_nakladki.setToolTip('Włączone: okienko w pełnym ekranie (🖵, F11) jest oknem bez ramki o 2 px większym od ekranu (wystaje poza\n'
-                                          'dolną albo górną krawędź, za którą nie ma innego monitora), więc pozostaje zwykłym oknem i Odyssey 3D Hub (i inne nakładki) może się\n'
-                                          'nad nim położyć i zamienić obraz SBS na 3D, tak jak przy YouTube.\n'
-                                          'Wyłączone: klasyczny pełny ekran; sterownik OpenGL może go wziąć na wyłączność i nic się nad nim nie pokaże.')
+        self.ch_pelny_nakladki.setToolTip('Włączone: okienko w pełnym ekranie (🖵, F11) zajmuje dokładnie cały monitor (Odyssey 3D Hub widzi pełny ekran\n'
+                                          'i pokazuje swoje okienko SBS → 3D), ale ma ramkę 1 px, więc sterownik OpenGL nie bierze go na wyłączność\n'
+                                          'i okno Huba może się nad nim położyć, tak jak przy YouTube.\n'
+                                          'Wyłączone: klasyczny pełny ekran bez ramki; sterownik może go wziąć na wyłączność i nic się nad nim nie pokaże.')
         self.ch_pelny_nakladki.toggled.connect(dock_windows.ustaw_pelny_dla_nakladek)
         g = CollapsibleSection('Stereo 3D (monitor 3D, wszystkie widoki)'); f = QFormLayout(g); f.addRow(wiersz_st)
         f.addRow(self.ch_pelny_nakladki)

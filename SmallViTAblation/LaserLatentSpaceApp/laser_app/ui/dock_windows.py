@@ -62,40 +62,44 @@ def przelacz_dok(d):
     d.raise_(); d.activateWindow()
 
 
-# Pełny ekran a nakładki (np. konwersja SBS → 3D w Odyssey 3D Hub): okno OpenGL bez ramki dokładnie na cały monitor sterownik
-# Windows bierze za pełny ekran na wyłączność (jak gra) i nic nie da się położyć nad nim, także okna zawsze-na-wierzchu innych
-# programów (YouTube w przeglądarce działa, bo przeglądarka składa obraz przez DWM). Dlatego domyślnie okienko nie przechodzi
-# w stan pełnego ekranu, tylko staje się oknem bez ramki o 2 px większym od ekranu (wystaje krawędzią, przy której nie ma
-# innego monitora; 1 px przy skalowaniu 150 % Qt zaokrągla do rozmiaru ekranu i sam przełącza okno w pełny ekran). Windows
-# dalej chowa pasek zadań, ale okno nie pokrywa się z monitorem co do piksela, więc zostaje zwykłym oknem składanym przez DWM
-# (SHQueryUserNotificationState: 2 = zwykły pełny ekran zamiast 3 = Direct3D na wyłączność). Ramka WS_BORDER, czyli Qt-owe
-# setHasBorderInFullScreen, w oknie bez ramki nie zmienia obszaru klienta, więc tu nie pomaga.
-# PELNY_DLA_NAKLADEK = False: klasyczny pełny ekran (showFullScreen).
+# Pełny ekran a nakładki (konwersja SBS → 3D w Odyssey 3D Hub). Hub włącza się, gdy jakiś program przejdzie w pełny ekran
+# (okno równe monitorowi), a potem jego okno musi leżeć nad tym programem. Okno OpenGL, którego obszar rysowania pokrywa się
+# z monitorem co do piksela, sterownik bierze za pełny ekran na wyłączność (jak gra) i nic nie położy się nad nim (YouTube
+# w przeglądarce działa, bo przeglądarka składa obraz przez DWM). Okno o 2 px większe od ekranu nie jest na wyłączność, ale
+# Hub nie uznaje go za pełny ekran i się nie włącza. Dlatego okno jest dokładnie na cały monitor, a ma styl WS_BORDER: ramka
+# 1 px zmniejsza obszar rysowania OpenGL o 1 px z każdej strony (3838 × 2158 na monitorze 3840 × 2160), więc sterownik
+# zostawia je zwykłym oknem. To samo robi Qt-owe QWindowsWindowFunctions::setHasBorderInFullScreen (PyQt6 go nie udostępnia);
+# w oknie z FramelessWindowHint Qt nie oddaje ramki z obszaru klienta, więc na czas pełnego ekranu okno traci tę flagę.
+# PELNY_DLA_NAKLADEK = False: klasyczny pełny ekran bez ramki.
 PELNY_DLA_NAKLADEK = True
-
-WYSTAJE = 2                                                       # o tyle pikseli logicznych okno wystaje poza ekran
-_KRAWEDZIE = ((0, 0, 0, WYSTAJE), (0, -WYSTAJE, 0, 0), (0, 0, WYSTAJE, 0), (-WYSTAJE, 0, 0, 0))   # dół, góra, prawa, lewa
+_GWL_STYLE, _WS_BORDER = -16, 0x00800000
 
 
-def krawedz_dla_nakladek(e):
-    """Krawędź ekranu e, przy której okno „pełny ekran dla nakładek” wystaje o WYSTAJE px: pierwsza (dół, góra, prawa, lewa),
-    za którą nie ma innego monitora; gdy wszystkie z kimś sąsiadują, dół. Najpierw dół i góra: obraz SBS nie przesuwa się
-    w poziomie, więc połówki oczu zostają na swoich miejscach. Zwraca przesunięcia rogów (x0, y0, x1, y1)."""
-    g = e.geometry(); n = WYSTAJE
-    inne = [s.geometry() for s in QGuiApplication.screens() if s is not e]
-    pasy = (QRect(g.left(), g.bottom() + 1, g.width(), n), QRect(g.left(), g.top() - n, g.width(), n),
-            QRect(g.right() + 1, g.top(), n, g.height()), QRect(g.left() - n, g.top(), n, g.height()))
-    for pas, k in zip(pasy, _KRAWEDZIE):
-        if not any(pas.intersects(x) for x in inne):
-            return k
-    return _KRAWEDZIE[0]
+def _styl_okna(okno, dodaj=0):
+    """Windows: styl okna najwyższego poziomu (GWL_STYLE), po dodaniu bitów `dodaj` (z przeliczeniem ramki); inny system: None."""
+    import sys
+    if sys.platform != 'win32':
+        return None
+    import ctypes
+    from ctypes import wintypes
+    u = ctypes.windll.user32
+    pobierz, ustaw = u.GetWindowLongPtrW, u.SetWindowLongPtrW
+    pobierz.restype = ustaw.restype = ctypes.c_ssize_t
+    pobierz.argtypes = [wintypes.HWND, ctypes.c_int]; ustaw.argtypes = [wintypes.HWND, ctypes.c_int, ctypes.c_ssize_t]
+    hwnd = wintypes.HWND(int(okno.winId()))
+    styl = pobierz(hwnd, _GWL_STYLE)
+    if dodaj and (styl & dodaj) != dodaj:
+        ustaw(hwnd, _GWL_STYLE, styl | dodaj)
+        # SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED: przelicza ramkę, okno zostaje na miejscu
+        u.SetWindowPos(hwnd, None, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020)
+        styl = pobierz(hwnd, _GWL_STYLE)
+    return styl
 
 
-def _pilnuj_nakladek(d):
-    """Okno „pełny ekran dla nakładek”, które Qt przełączył w stan pełnego ekranu (rozmiar równy ekranowi): z powrotem większe."""
-    if getattr(d, '_okna_pelny', None) is not None and PELNY_DLA_NAKLADEK and d.isFullScreen():
-        d.setWindowState(Qt.WindowState.WindowNoState)
-        d.setGeometry(d._okna_cel)
+def _pilnuj_ramki(d):
+    """Okienko w pełnym ekranie dla nakładek: ramka WS_BORDER dalej jest (Qt przy zmianie stanu okna potrafi ustawić styl od nowa)."""
+    if getattr(d, '_okna_pelny', None) is not None and getattr(d, '_okna_ramka', False):
+        _styl_okna(d, _WS_BORDER)
 
 
 def w_pelnym_ekranie(d):
@@ -115,39 +119,43 @@ def ustaw_pelny_dla_nakladek(wlacz):
 
 
 def _pelny_dok(d):
-    """Okienko-dok na cały ekran, na którym leży (bez ramki i paska zadań); drugi raz wraca. Wymagane m.in. do stereo SBS
-    na monitorze 3D. Esc też wychodzi z pełnego ekranu. Tryb: PELNY_DLA_NAKLADEK (opis wyżej)."""
+    """Okienko-dok na cały ekran, na którym leży (bez paska tytułu i paska zadań); drugi raz wraca. Wymagane m.in. do stereo
+    SBS na monitorze 3D. Esc też wychodzi z pełnego ekranu. Tryb: PELNY_DLA_NAKLADEK (opis wyżej)."""
     if w_pelnym_ekranie(d):
         m = getattr(d, '_okna_pelny', None)
-        if d.isFullScreen():
-            d.showNormal()
+        d._okna_pelny = None
+        d.showNormal()
+        ramka, d._okna_ramka = getattr(d, '_okna_ramka', False), False
         pasek = d.titleBarWidget()
         if pasek is not None:
             pasek.show()
-        if m is not None:
-            if m[0]:
+        if m is not None and not m[0]:
+            d.setFloating(False)                                     # przypięcie samo ustawia flagi okna doku
+        else:
+            if ramka:                                                # z powrotem zwykłe okno bez ramki systemu (_niezalezne)
+                d.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint)
+            if m is not None:
                 d.setGeometry(m[1])
-            else:
-                d.setFloating(False)
-        d._okna_pelny = None
+        d.show(); d.raise_()                                         # przypięte w grupie kart: jego karta na wierzch
         return
     d._okna_pelny = (d.isFloating(), d.geometry())
     e = ekran(d)
     if not d.isFloating():
         d.setFloating(True)
-    d.show()
     pasek = d.titleBarWidget()
     if pasek is not None:
         pasek.hide()
+    d._okna_ramka = PELNY_DLA_NAKLADEK
     if PELNY_DLA_NAKLADEK:
-        d._okna_cel = e.geometry().adjusted(*krawedz_dla_nakladek(e))
-        d.setGeometry(d._okna_cel)
+        d.setWindowFlags(Qt.WindowType.Window)                       # bez FramelessWindowHint: ramka 1 px zabiera obszar klienta
+    d.show()
+    d.setGeometry(e.geometry())
+    d.showFullScreen()
+    if PELNY_DLA_NAKLADEK:
+        _styl_okna(d, _WS_BORDER)
         from PyQt6.QtCore import QTimer
-        for ms in (100, 500):                                        # Qt potrafi sam przełączyć okno na cały ekran: wtedy wraca
-            QTimer.singleShot(ms, lambda d=d: _pilnuj_nakladek(d))
-    else:
-        d.setGeometry(e.geometry())
-        d.showFullScreen()
+        for ms in (100, 500):
+            QTimer.singleShot(ms, lambda d=d: _pilnuj_ramki(d))
     d.raise_(); d.activateWindow()
     if not hasattr(d, '_okna_esc'):
         d._okna_esc = QShortcut(QKeySequence(Qt.Key.Key_Escape), d)

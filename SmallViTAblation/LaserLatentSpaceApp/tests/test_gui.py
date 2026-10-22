@@ -135,25 +135,35 @@ class TestOknoMenu(BazaOkna):
                 skroty[nazwa].trigger(); gui.przetworz(5)
             self.assertTrue(dok.isVisible(), f'{nazwa} nie pokazał doku (okno aktywne: {aktywne})')
 
+    @unittest.skipUnless(sys.platform == 'win32', 'okno Windows')
     def test_05_pelny_ekran_pozwala_nakladkom(self):
-        """Pełny ekran okienka (🖵 / F11) dla nakładek (Odyssey 3D Hub): okno bez stanu pełnego ekranu, pokrywa cały ekran i wystaje
-        o WYSTAJE px, więc nie pokrywa się z monitorem co do piksela; pole w sekcji Stereo przełącza na klasyczny pełny ekran także
-        w trakcie; drugie przełączenie wraca do układu."""
+        """Pełny ekran okienka (🖵 / F11) dla nakładek (Odyssey 3D Hub): okno dokładnie na cały monitor (Hub uznaje je za pełny
+        ekran), ale z ramką WS_BORDER, więc obszar rysowania OpenGL jest o 1 px mniejszy z każdej strony (sterownik nie bierze go
+        na wyłączność); stałe po chwili. Pole w sekcji Stereo przełącza na klasyczny pełny ekran także w trakcie; drugie
+        przełączenie wraca do układu, z kartą okienka na wierzchu."""
+        import ctypes
+        from ctypes import wintypes
         from laser_app.ui import dock_windows as dw
+
+        def okno_klient():
+            h = wintypes.HWND(int(d.winId())); r = wintypes.RECT(); c = wintypes.RECT()
+            ctypes.windll.user32.GetWindowRect(h, ctypes.byref(r)); ctypes.windll.user32.GetClientRect(h, ctypes.byref(c))
+            return (r.right - r.left, r.bottom - r.top), (c.right, c.bottom)
         z = self.z; d = z.doki['p']; d.show(); d.raise_(); gui.przetworz(3)
         self.assertTrue(z.ch_pelny_nakladki.isChecked())
         try:
-            dw._pelny_dok(d); gui.przetworz(8)
-            e = dw.ekran(d).geometry(); g = d.frameGeometry()
-            self.assertTrue(dw.w_pelnym_ekranie(d)); self.assertFalse(d.isFullScreen())
-            self.assertTrue(g.contains(e), (g, e))
-            self.assertEqual((g.width() - e.width()) + (g.height() - e.height()), dw.WYSTAJE, (g, e))   # wystaje jedną krawędzią
-            gui.przetworz(40)                                           # Qt nie przełącza go po chwili w stan pełnego ekranu
-            self.assertFalse(d.isFullScreen()); self.assertEqual(d.frameGeometry(), g)
-            z.ch_pelny_nakladki.setChecked(False); gui.przetworz(8)
-            self.assertTrue(d.isFullScreen())                           # klasyczny pełny ekran
-            z.ch_pelny_nakladki.setChecked(True); gui.przetworz(8)
-            self.assertTrue(dw.w_pelnym_ekranie(d)); self.assertFalse(d.isFullScreen())
+            dw._pelny_dok(d); gui.przetworz(40)
+            self.assertTrue(dw.w_pelnym_ekranie(d))
+            okno, klient = okno_klient()
+            e = dw.ekran(d)                                            # prostokąt okna (natywnie) = monitor w pikselach fizycznych
+            self.assertEqual(okno, (round(e.geometry().width() * e.devicePixelRatio()), round(e.geometry().height() * e.devicePixelRatio())))
+            self.assertEqual((okno[0] - klient[0], okno[1] - klient[1]), (2, 2), (okno, klient))
+            self.assertTrue(dw._styl_okna(d) & dw._WS_BORDER)
+            z.ch_pelny_nakladki.setChecked(False); gui.przetworz(10)
+            self.assertTrue(d.isFullScreen())                           # klasyczny pełny ekran: obszar rysowania = monitor
+            okno, klient = okno_klient(); self.assertEqual(okno, klient)
+            z.ch_pelny_nakladki.setChecked(True); gui.przetworz(10)
+            okno, klient = okno_klient(); self.assertEqual((okno[0] - klient[0], okno[1] - klient[1]), (2, 2))
         finally:
             z.ch_pelny_nakladki.setChecked(True)
             if dw.w_pelnym_ekranie(d):
@@ -161,6 +171,7 @@ class TestOknoMenu(BazaOkna):
             gui.przetworz(5)
         self.assertFalse(dw.w_pelnym_ekranie(d))
         self.assertFalse(d.isFloating())
+        self.assertTrue(d.isVisible()); self.assertFalse(d.visibleRegion().isEmpty())
 
 
 # ====================================================================== 2. panel parametrów

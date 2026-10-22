@@ -241,15 +241,16 @@ dotyczą tylko okienka P.
 
 ## Pełny ekran i Odyssey 3D Hub (konwersja SBS → 3D)
 
-Okno OpenGL bez ramki dokładnie na cały monitor sterownik Windows bierze za pełny ekran na wyłączność (SHQueryUserNotificationState
-= 3, Direct3D full screen): nic nie położy się nad nim, także Odyssey 3D Hub, który musi zakryć obraz SBS, żeby pokazać go w 3D
-(YouTube w przeglądarce działa, bo przeglądarka składa obraz przez DWM). Pełny ekran okienka (🖵, F11) jest więc domyślnie oknem
-bez ramki o 2 px większym od ekranu (`dock_windows.WYSTAJE`), wystającym poza dolną albo górną krawędź bez sąsiedniego monitora
-(poziomo obraz SBS się nie przesuwa): pasek zadań dalej znika, a Windows widzi zwykły pełny ekran (stan 2). 1 px nie wystarcza:
-przy skalowaniu 150 % Qt zaokrągla go do rozmiaru ekranu i sam przełącza okno w stan pełnego ekranu (`_pilnuj_nakladek` to
-cofa). Ramka WS_BORDER (Qt-owe setHasBorderInFullScreen) w oknie bez ramki nie zmienia obszaru klienta, więc nie pomaga.
-Sekcja Stereo 3D: pole „pełny ekran pozwala nakładkom” (wyłączone = klasyczny `showFullScreen`). Próba:
-`.sessions/Session_2026-10-22_172605/tools/proba_pelnego_ekranu.py 0|1`.
+Hub włącza konwersję, gdy program przejdzie w pełny ekran (okno równe monitorowi; wtedy pokazuje okienko wyboru SBS), a potem
+jego okno musi leżeć nad tym programem. Okno OpenGL, którego obszar rysowania pokrywa się z monitorem co do piksela, sterownik
+bierze za pełny ekran na wyłączność (SHQueryUserNotificationState = 3, Direct3D full screen) i nic się nad nim nie położy
+(YouTube w przeglądarce działa, bo przeglądarka składa obraz przez DWM). Okno większe od ekranu nie jest na wyłączność, ale Hub
+nie uznaje go za pełny ekran i się nie włącza (sprawdzone przez użytkownika). Dlatego pełny ekran okienka (🖵, F11) jest
+dokładnie na cały monitor, a ma styl WS_BORDER: ramka 1 px zmniejsza obszar rysowania o 1 px z każdej strony (3838 × 2158 na
+3840 × 2160), jak Qt-owe setHasBorderInFullScreen (PyQt6 go nie udostępnia). Na czas pełnego ekranu okno traci
+FramelessWindowHint, bo w oknie bez ramki Qt nie oddaje ramki z obszaru klienta. Sekcja Stereo 3D: pole „pełny ekran pozwala
+nakładkom” (wyłączone = klasyczny pełny ekran bez ramki). Po wyjściu z pełnego ekranu przypięte okienko wraca z kartą na
+wierzchu (wcześniej w grupie kart zostawało pod inną kartą). Próba: `.sessions/Session_2026-10-22_172605/tools/proba_pelnego_ekranu.py 0|1`.
 
 ## R12 kNN 3D: bez skoków
 

@@ -1,4 +1,4 @@
-"""Pełny ekran okienka sfery ze stereo: tryb dla nakładek (okno o 2 px większe od ekranu, dla Odyssey 3D Hub) i klasyczny.
+"""Pełny ekran okienka sfery ze stereo: tryb dla nakładek (okno równe monitorowi z ramką 1 px, dla Odyssey 3D Hub) i klasyczny.
 Każdy tryb w osobnym procesie: python proba_pelnego_ekranu.py 0|1. Wypisuje prostokąt okna i obszar klienta (piksele fizyczne),
 czy widok OpenGL rysuje stereo (grabFramebuffer, bez zrzutu ekranu) i SHQueryUserNotificationState (2 = zwykły pełny ekran,
 3 = Direct3D na wyłączność, 5 = pulpit). Błąd kończy próbę (bez zawieszenia)."""
