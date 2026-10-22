@@ -1,4 +1,4 @@
-// Uruchamiacz edytora latentu: nie pakuje Pythona ani torcha, tylko startuje zainstalowany pythonw
+// Uruchamiacz aplikacji „Lasery i koloidy”: nie pakuje Pythona ani torcha, tylko startuje zainstalowany pythonw
 // (z jego torchem i CUDA) ze skryptem start.py leżącym obok exe.
 // Ścieżkę Pythona można nadpisać plikiem python.txt obok exe (jedna linia, pełna ścieżka do pythonw.exe).
 using System;
@@ -8,6 +8,8 @@ using System.Windows.Forms;
 
 static class Uruchamiacz
 {
+    const string TYTUL = "Lasery i koloidy";
+
     [STAThread]
     static int Main()
     {
@@ -15,10 +17,10 @@ static class Uruchamiacz
         string skrypt = Path.Combine(katalog, "start.py");
         if (!File.Exists(skrypt))
         {
-            MessageBox.Show("Brak start.py obok exe:\n" + skrypt, "Edytor latentu", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show("Brak start.py obok exe:\n" + skrypt, TYTUL, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
-        string python = @"F:\Python\3.13\pythonw.exe";
+        string python = @"W:\Python\3.11\pythonw.exe";
         string plik = Path.Combine(katalog, "python.txt");
         if (File.Exists(plik))
             python = File.ReadAllText(plik).Trim().Trim('"');
@@ -36,7 +38,7 @@ static class Uruchamiacz
         {
             MessageBox.Show("Nie udało się uruchomić Pythona:\n" + python + "\n\n" + e.Message +
                             "\n\nWpisz pełną ścieżkę do pythonw.exe w pliku python.txt obok exe.",
-                            "Edytor latentu", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            TYTUL, MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
         return 0;

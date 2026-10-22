@@ -30,9 +30,8 @@ ZAKLADKI_LENIWE = (
     ('zakladka_korekty', 'Korekta latentu', 'Korekta latentu: cel i dynamika', 'zakladka_korekty', 'ZakladkaKorekty',
      ('zakladka_uczenia',)),
     ('zakladka_ruchu', 'Ruch zbioru', 'Ruch zbioru: cząsteczki i optymalizacja', 'zakladka_ruchu', 'ZakladkaRuchu', ()),
-    ('zakladka_laserow', 'Lasery i koloidy', 'Lasery i koloidy: oś czasu uczenia jednego zdjęcia — reflektory, studnie, drgania, '
-     'atencja 6 bloków, IoU i pewność (filmy 2, 12, 16)', 'zakladka_laserow', 'ZakladkaLaserow', ()),
 )
+# „Lasery i koloidy” to od 2026-10-22 osobna aplikacja: ../LaserLatentSpaceApp (Lasery i koloidy.exe)
 OPIS_EDYTORA = 'Edytor SD: latent 600 tokenów × 768 kanałów edytowany suwakami i generowanie obrazu z SD'
 
 
