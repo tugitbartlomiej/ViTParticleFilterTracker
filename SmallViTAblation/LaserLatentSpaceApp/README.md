@@ -25,14 +25,28 @@ LaserLatentSpaceApp/
   run.py, run.bat, Lasery i koloidy.exe     start (okienko ładowania), uruchamiacz
   laser_app/                                pakiet aplikacji
     __init__.py, __main__.py                PyOpenGL bez glGetError; python -m laser_app
-    main_window.py                          MainWindow: menu, ustawienia, zrzuty
+    main_window.py                          MainWindow: menu, ustawienia, zrzuty okienek
     settings.py, paths.py                   zapis ustawień (settings.json), ścieżki aplikacji i projektu
-    lasers_tab/                             główna zakładka: LasersTab (okienka 1–14, sfera, przejście), wątki
-    ui/                                     widżety Qt: panel parametrów i okienka ustawień, doki, GLView, dymki,
-                                            grupy parametrów, podgląd etykiety, okienka rzutów R0–R12, styl
-    gpu/                                    elementy OpenGL 4.3 (shadery, SSBO): sfera, pułapka, mapy, rzuty
-    compute/                                obliczenia bez Qt: historia uczenia, pułapka optyczna i mapa pułapek,
-                                            pole w podkrokach, rzuty, etykiety narzędzia, obszary oka, dolina, mechanika
+    lasers_tab/                             główna zakładka
+      tab.py                                LasersTab: budowa (sekcje panelu, okienka), opcje, ustaw_czas
+      layout.py, data_view.py, image_set_view.py, labels_view.py, substeps_view.py,
+      trap_view.py, trap_map_view.py, valley_view.py, mechanics_view.py, playback.py
+                                            mixiny LasersTab (okienka-doki, dane, zestaw zdjęć, etykiety, podkroki,
+                                            pułapka 11, mapa pułapek 14, dolina 12, mechanika 13, oś czasu)
+      workers.py, widgets.py, shared.py     wątki (QThread), widżety zakładki, stałe
+    ui/                                     widżety Qt
+      settings_panel.py, parameter_groups.py, tooltips.py, label_preview.py, widgets.py,
+      dock_windows.py, gl_view.py, input_comfort.py, style.py
+      projections_view.py                   ProjectionWindows: okienka rzutów R0–R12 (dane, czas, budowa)
+      projection_windows/                   mixiny okienek R (zdjęcie i LDA, miary R11, kNN R12, panel R8, ramy B i C,
+                                            bazy, rysowanie i opisy), wątki, sceny 3D, stałe
+    gpu/                                    elementy OpenGL 4.3 (GLSL 4.30, SSBO)
+      base.py                               stałe, kompilacja shaderów, _GPUElement, wspólne funkcje
+      sphere_gl.py, focal_field_gl.py, planar_gl.py, image_maps_gl.py, network_passage_gl.py,
+      valley_gl.py, schematic_gl.py, trap_map_gl.py, projections_gl.py
+    compute/                                obliczenia bez Qt: history, focal_trap, trap_map, substep_field,
+                                            trap_measurements, passage_store, projections, tool_labels, valley,
+                                            reflector_mechanics, reflector_drawing, checkpoint_histories, common
   tests/                                    unittest (conftest.py, _gui_common.py, test_*.py)
   launcher/                                 źródło exe i ikona
   sample_images/                            zdjęcia testowe

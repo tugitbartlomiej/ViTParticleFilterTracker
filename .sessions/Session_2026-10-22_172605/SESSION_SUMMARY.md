@@ -180,3 +180,28 @@ pełny pomiar użytkownika jest w historii `140854f7a6dbcbe5` i nie był ruszany
 
 ### Testy
 153 testy w pełnym przebiegu OK (3 pominięte), `testy.test_gui` osobno na ekranie 38 OK, `testy.test_dymki` 14 OK.
+
+## Kontynuacja (19:50–21:30): refaktor katalogów, nazw i kodu
+
+### Prośba
+Lepsza organizacja katalogów, angielskie nazwy plików i klas, dobry refaktor kodu. Wybrany zakres (pytanie w sesji):
+pakiet, angielskie nazwy plików i klas; funkcje, zmienne, komentarze i napisy GUI zostają po polsku; ustawienia bez migracji kluczy.
+
+### Zrobione (commity 76d9680b, a015de39, dfc5f4dd i ostatni)
+- Pakiet `laser_app/` (compute, gpu, ui, lasers_tab, main_window, settings, paths), `tests/`, `launcher/`, `sample_images/`,
+  `run.py`/`run.bat`, `python -m laser_app`; exe przebudowany (startuje run.py).
+- Zmiana nazw skryptem na tokenach (tools/migracja.py): moduły, aliasy (LD → hist, OGN → focal_trap…), 60 klas
+  (ZakladkaLaserow → LasersTab, Historia → History, PoleOgniskowej → FocalField, WidokGL → GLView…); napisy GUI bez zmian.
+- tab.py 3545 → ~540 wierszy: 10 mixinów + workers/widgets/shared; _buduj (703 w.) rozbite na metody sekcji (tools/podzial_tab.py).
+- gpu/lasers_gpu.py (2179 w.) → base + 7 modułów *_gl (tools/podzial_gpu.py); projections_view.py (1751 w.) → 468 w. +
+  pakiet ui/projection_windows (7 mixinów, wątki, sceny, stałe; tools/podzial_rzuty.py).
+- Usunięty martwy kod po edytorze latentu (~1300 w.: silnik SD, detektor, MP4, układ przepływowy, panele, widok 3D,
+  obszary_oka), jedna klasa Interrupted, adnotacje Cataract-LMM i ramka GT w tool_labels, ścieżki w paths.py,
+  settings.json (ustawienia.json przenoszony przy starcie), uporządkowane importy.
+- Znalezione i naprawione przy okazji: lista zdjęć testowych wskazywała nieistniejący katalog po przeniesieniu;
+  domyślny plik ustawień wiązany przy imporcie; dwa wyścigi w testach wątków wysyłki.
+
+### Kontrola
+Po każdym etapie: import wszystkich modułów, sprawdzenie nazw niezdefiniowanych (tools/sprawdz_nazwy.py), 119 testów
+modułów, 38 testów GUI na ekranie, próba dymna okna (tools/proba_dymna.py: okienka 1–14, R0–R12, pułapka i mapa z pliku,
+etykiety, dolina, mechanika, podkroki, popupy, układy, odtwarzanie) bez błędów, start przez run.py 2,5 s.

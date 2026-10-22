@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import QApplication, QDockWidget, QFileDialog, QLabel, QMai
 
 from laser_app.compute import tool_labels  # noqa: E402
 from laser_app.ui import projections_view  # noqa: E402
+from laser_app.ui.projection_windows.shared import OKIENKA  # noqa: E402
 from laser_app import settings  # noqa: E402
 from laser_app.ui.settings_panel import SettingsPopup  # noqa: E402
 from laser_app.ui.gl_view import GLView  # noqa: E402
@@ -81,7 +82,7 @@ class TestOknoMenu(BazaOkna):
         self.assertTrue(o.isVisible())
         self.assertIs(o.centralWidget(), z)
         self.assertIsInstance(z.okna, QMainWindow)
-        oczekiwane = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', 's', 'p'} | {k for k, _, _ in projections_view.OKIENKA}
+        oczekiwane = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', 's', 'p'} | {k for k, _, _ in OKIENKA}
         self.assertTrue(oczekiwane <= set(z.doki), f'brak okienek: {oczekiwane - set(z.doki)}')
         self.assertEqual(set(z.doki_ster), {'parametry', 'podkroki'})
         for k, d in z.doki.items():
