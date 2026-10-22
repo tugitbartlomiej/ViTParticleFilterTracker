@@ -6,7 +6,7 @@ Oś czasu uczenia jednego zdjęcia przez checkpointy małego ViT: sfera reflekto
   - okienka-doki z widokami (każde można przesunąć, połączyć w karty, odpiąć jako osobne okno albo rozwinąć na ekran),
   - „Parametry”: zwarta lista sekcji i jedna strona naraz, też odpinana (F2 chowa i pokazuje),
   - „Podkroki sieci”: osobne okienko z suwakiem przejścia przez 6 bloków,
-  - prawy klik w dowolne okienko: jego ustawienia przy kursorze (📌 przypina je jako małe okno).
+  - prawy klik w dowolne okienko: jego ustawienia przy kursorze, od razu jako osobne okno (⊟ / ⊞ zwijają i rozwijają grupy).
 Menu „Ustawienia” zapisuje stan kontrolek i układ okienek do `ustawienia.json` (wczytywany przy starcie).
 Uruchomienie: python start.py (okienko ładowania), „Lasery i koloidy.exe” albo python app.py.
 """
@@ -29,7 +29,7 @@ from styl import STYL  # noqa: E402
 SKROTY = """<b>Oś czasu</b>: spacja odtwarza / zatrzymuje, strzałki ← → krok, Home początek.<br>
 <b>Widoki 3D</b> (okienko pod kursorem): LPM obrót, Ctrl+LPM albo ŚPM przesuwanie, kółko zbliża do kursora, PPM + przeciągnięcie zbliża,
 W/S/A/D obrót, Q/E oddal/zbliż, I/J/K/L przesuwanie, Home albo 0 kadr startowy, Shift szybciej, Ctrl wolniej.<br>
-<b>Prawy klik</b> (bez przeciągania) w okienko: jego ustawienia; 📌 przypina je jako osobne okno, ⇤ pokazuje je w panelu.<br>
+<b>Prawy klik</b> (bez przeciągania) w okienko: jego ustawienia w osobnym oknie (zostaje otwarte, można je przesuwać); klik w nagłówek grupy zwija ją, ⊟ / ⊞ zwijają i rozwijają wszystkie, ⇤ pokazuje je w panelu.<br>
 <b>F2</b> panel parametrów, <b>F3</b> podkroki sieci, <b>F11</b> pełny ekran okienka pod kursorem (Esc wraca).<br>
 <b>Ctrl+Shift+1..3</b> zapamiętuje układ okienek, <b>Ctrl+1..3</b> go przywraca."""
 
@@ -164,7 +164,7 @@ class Okno(QMainWindow):
     def closeEvent(self, e):
         import ustawienia as U
         from panel_ustawien import PopupUstawien
-        for p in list(PopupUstawien.otwarte):                   # przypięte popupy oddają sekcje panelowi przed zapisem
+        for p in list(PopupUstawien.otwarte):                   # okienka ustawień oddają sekcje panelowi przed zapisem
             p.close()
         if self.akcja_autozapis.isChecked() and not _bez_ustawien():
             try:

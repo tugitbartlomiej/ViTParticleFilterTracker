@@ -3,7 +3,12 @@
 `zastosuj(z)` (z = zbudowana `ZakladkaLaserow`) wstawia do formularzy sekcji (`z._sek[klucz].layout()`, QFormLayout) wiersze z krótkim
 nagłówkiem (pogrubiony tytuł i cienka linia), tuż przed pierwszą kontrolką każdej grupy. Grupy opisuje `GRUPY`: klucz sekcji →
 lista (tytuł, nazwa atrybutu pierwszej kontrolki grupy), w kolejności wierszy. Brakujący atrybut pomija nagłówek bez błędu;
-nagłówki mają objectName „naglowek_grupy”, więc powtórne wywołanie niczego nie dubluje."""
+nagłówki mają objectName „naglowek_grupy”, więc powtórne wywołanie niczego nie dubluje.
+
+Klik w nagłówek zwija (▸) i rozwija (▾) wiersze jego grupy (do następnego nagłówka); `zwin_wszystko(korzen, zwin)` robi to
+naraz dla wszystkich grup pod widżetem `korzen` (okienko ustawień z prawego kliku, strona panelu), a sekcje bez grup zwija
+w całości (nagłówek sekcji Zwijana)."""
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFormLayout, QLabel, QLayout, QWidget
 
 NAZWA_NAGLOWKA = 'naglowek_grupy'
@@ -15,7 +20,8 @@ GRUPY = {
               ('Wektory i ścieżki', 'cb_wek_kol'), ('Wygładzanie i zanik', 'cb_wyg')],
     'pulapka': [('Liczenie pułapki', 'ch_og'), ('Pomiar w podkrokach dla całej historii', 'bt_pom'),
                 ('Wiązki zbiegające się w cząsteczce', 'ch_og_wiazki'), ('Światło ogniska', 'ch_og_sw'),
-                ('Obrys ogniska 3D', 'ch_og_obrys'), ('Wkłady do skoku', 'cb_og_wk'), ('Lokalne pole: mgła i strzałki', 'ch_og_mgla'),
+                ('Obrys ogniska 3D', 'ch_og_obrys'), ('Wkłady do skoku', 'cb_og_wk'), ('Lokalne pole: mgła', 'ch_og_mgla'),
+                ('Strzałki pola', 'cb_og_strz'),
                 ('Oznaczenia w kadrze: osie, skok, ruch, tło', 'ch_og_osie'), ('Ślad, kadr i odtwarzanie', 'cb_og_slad')],
     'dolina': [('Liczenie doliny', 'ch_dol'), ('Progi pewności i IoU', 'sp_dol_p'), ('Wygląd', 'ch_dol_mgla')],
     'przejscie': [('Uwaga: siły między cząsteczkami', 'cb_sily'), ('Lasery MLP', 'ch_lasery'), ('Tory i kolory', 'cb_tory')],
@@ -51,10 +57,81 @@ def _formularz_widzeta(sek, w):
     return None
 
 
+class NaglowekGrupy(QLabel):
+    """Nagłówek grupy: pogrubiony tytuł z cienką linią; klik zwija i rozwija wiersze grupy w formularzu `formularz`.
+    Tytuł bez strzałki: `tytul_grupy`. Wiersze ukryte przez program przed zwinięciem (np. zależne od trybu) zostają ukryte."""
+
+    def __init__(self, tytul):
+        super().__init__()
+        self.tytul_grupy = tytul
+        self.formularz = None
+        self.zwiniety = False
+        self._ukryte = set()
+        self.setObjectName(NAZWA_NAGLOWKA); self.setStyleSheet(STYL_NAGLOWKA)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip('Kliknij, żeby zwinąć (▸) albo rozwinąć (▾) tę grupę ustawień.')
+        self._napis()
+
+    def _napis(self):
+        self.setText(('▸ ' if self.zwiniety else '▾ ') + self.tytul_grupy)
+
+    def _wiersze(self):
+        """Wiersze grupy: od wiersza pod nagłówkiem do następnego nagłówka (albo końca formularza)."""
+        f = self.formularz
+        r = wiersz(f, self) if f is not None else -1
+        if r < 0:
+            return []
+        out = []
+        for rr in range(r + 1, f.rowCount()):
+            el = f.itemAt(rr, QFormLayout.ItemRole.SpanningRole)
+            if el is not None and isinstance(el.widget(), NaglowekGrupy):
+                break
+            out.append(rr)
+        return out
+
+    def zwin(self, zwin=True):
+        if zwin == self.zwiniety:
+            return
+        f = self.formularz
+        if zwin:
+            rows = self._wiersze()
+            self._ukryte = {rr for rr in rows if not f.isRowVisible(rr)}
+            for rr in rows:
+                f.setRowVisible(rr, False)
+        else:
+            for rr in self._wiersze():
+                if rr not in self._ukryte:
+                    f.setRowVisible(rr, True)
+        self.zwiniety = zwin
+        self._napis()
+
+    def mousePressEvent(self, e):
+        if e.button() == Qt.MouseButton.LeftButton:
+            self.zwin(not self.zwiniety)
+            e.accept()
+            return
+        super().mousePressEvent(e)
+
+
 def naglowek(tekst):
-    """Widżet nagłówka grupy: pogrubiony tytuł z cienką linią pod spodem."""
-    lb = QLabel(tekst); lb.setObjectName(NAZWA_NAGLOWKA); lb.setStyleSheet(STYL_NAGLOWKA)
-    return lb
+    """Widżet nagłówka grupy: pogrubiony tytuł z cienką linią pod spodem (klik zwija grupę)."""
+    return NaglowekGrupy(tekst)
+
+
+def zwin_wszystko(korzen, zwin=True):
+    """Zwija (rozwija) wszystkie grupy pod `korzen`; sekcje Zwijana bez grup zwija (rozwija) w całości. Zwraca liczbę zmienionych."""
+    from zakladka_laserow import Zwijana
+    n = 0
+    for g in korzen.findChildren(NaglowekGrupy):
+        if g.zwiniety != zwin:
+            g.zwin(zwin); n += 1
+    sekcje = korzen.findChildren(Zwijana) + ([korzen] if isinstance(korzen, Zwijana) else [])
+    for s in sekcje:
+        if zwin and s.findChildren(NaglowekGrupy):
+            continue                                                 # sekcja z grupami: zwinięte grupy, nagłówki zostają widoczne
+        if s.zwinieta() != zwin:
+            s.naglowek.setChecked(not zwin); n += 1
+    return n
 
 
 def zastosuj(z, grupy=None):
@@ -73,12 +150,13 @@ def zastosuj(z, grupy=None):
             f = _formularz_widzeta(sek, w)
             if f is None:
                 continue
-            istnieje = any(isinstance(l, QLabel) and l.objectName() == NAZWA_NAGLOWKA and l.text() == tytul
+            istnieje = any(isinstance(l, QLabel) and l.objectName() == NAZWA_NAGLOWKA and getattr(l, 'tytul_grupy', l.text()) == tytul
                            for l in sek.findChildren(QLabel))
             if not istnieje:
                 cele.append((f, wiersz(f, w), tytul))
         n = 0
         for f, r, tytul in sorted(cele, key=lambda c: c[1], reverse=True):     # od końca, żeby numery wierszy zostały ważne
-            f.insertRow(r, naglowek(tytul)); n += 1
+            lb = naglowek(tytul); lb.formularz = f
+            f.insertRow(r, lb); n += 1
         wstawione[klucz] = n
     return wstawione

@@ -125,12 +125,12 @@ class TestGrupy(unittest.TestCase):
     def test_naglowek_stoi_tuz_przed_pierwsza_kontrolka_grupy(self):
         """Nagłówek „Liczenie pułapki” leży w wierszu bezpośrednio przed wierszem kontrolki ch_og, a „Światło ogniska” przed ch_og_sw."""
         f = Z._sek['pulapka'].layout()
-        for tytul, atr in (('Liczenie pułapki', 'ch_og'), ('Światło ogniska', 'ch_og_sw'), ('Lokalne pole: mgła i strzałki', 'ch_og_mgla')):
+        for tytul, atr in (('Liczenie pułapki', 'ch_og'), ('Światło ogniska', 'ch_og_sw'), ('Lokalne pole: mgła', 'ch_og_mgla'), ('Strzałki pola', 'cb_og_strz')):
             r = GP.wiersz(f, getattr(Z, atr))
             naglowek = f.itemAt(r - 1, QFormLayout.ItemRole.SpanningRole)
             self.assertIsNotNone(naglowek, tytul)
             self.assertEqual(naglowek.widget().objectName(), GP.NAZWA_NAGLOWKA)
-            self.assertEqual(naglowek.widget().text(), tytul)
+            self.assertEqual(naglowek.widget().tytul_grupy, tytul)
 
     def test_kolejnosc_grup_zgodna_z_kolejnoscia_wierszy(self):
         """Nagłówki pułapki idą w kolejności wierszy z GRUPY (wstawianie od końca nie przestawia numerów)."""
@@ -139,7 +139,7 @@ class TestGrupy(unittest.TestCase):
         for r in range(f.rowCount()):
             el = f.itemAt(r, QFormLayout.ItemRole.SpanningRole)
             if el is not None and el.widget() is not None and el.widget().objectName() == GP.NAZWA_NAGLOWKA:
-                teksty.append(el.widget().text())
+                teksty.append(el.widget().tytul_grupy)
         self.assertEqual(teksty, [t for t, _ in GP.GRUPY['pulapka']])
 
     def test_brakujacy_atrybut_jest_pomijany(self):
@@ -149,6 +149,39 @@ class TestGrupy(unittest.TestCase):
         self.assertEqual(wynik, {'pulapka': 0})
         self.assertEqual(len(_naglowki_grup(Z._sek['pulapka'])), przed)
 
+
+    def test_zwijanie_grupy_ukrywa_tylko_jej_wiersze(self):
+        """Klik w „Strzałki pola” zwija wiersze od rodzaju strzałek do tempa płynięcia, a nie rusza grupy obok; rozwinięcie
+        przywraca wiersze, ale nie pokazuje wiersza, który był ukryty już przed zwinięciem."""
+        f = Z._sek['pulapka'].layout()
+        g = next(l for l in _naglowki_grup(Z._sek['pulapka']) if l.tytul_grupy == 'Strzałki pola')
+        r_strz, r_tempo, r_osie = (GP.wiersz(f, getattr(Z, a)) for a in ('cb_og_strz', 'sp_og_tempo', 'ch_og_osie'))
+        r_pods = GP.wiersz(f, Z.sp_og_pods)
+        f.setRowVisible(r_pods, False)                               # wiersz ukryty przez program przed zwinięciem
+        try:
+            g.zwin(True)
+            self.assertTrue(g.text().startswith('▸'))
+            self.assertFalse(f.isRowVisible(r_strz)); self.assertFalse(f.isRowVisible(r_tempo))
+            self.assertTrue(f.isRowVisible(r_osie))
+            g.zwin(False)
+            self.assertTrue(g.text().startswith('▾'))
+            self.assertTrue(f.isRowVisible(r_strz)); self.assertTrue(f.isRowVisible(r_tempo))
+            self.assertFalse(f.isRowVisible(r_pods))
+        finally:
+            g.zwin(False); f.setRowVisible(r_pods, True)
+
+    def test_zwin_i_rozwin_wszystko(self):
+        """zwin_wszystko na sekcji pułapki zwija każdą jej grupę (sekcja z grupami zostaje rozwinięta), rozwiń przywraca wszystko."""
+        sek = Z._sek['pulapka']
+        try:
+            self.assertGreater(GP.zwin_wszystko(sek, True), 5)
+            self.assertTrue(all(g.zwiniety for g in _naglowki_grup(sek)))
+            self.assertFalse(sek.zwinieta())
+        finally:
+            GP.zwin_wszystko(sek, False)
+        self.assertFalse(any(g.zwiniety for g in _naglowki_grup(sek)))
+        f = sek.layout()
+        self.assertTrue(f.isRowVisible(GP.wiersz(f, Z.cb_og_strz)))
 
 if __name__ == '__main__':
     unittest.main()

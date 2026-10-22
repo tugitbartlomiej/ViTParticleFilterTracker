@@ -102,6 +102,9 @@ def ustaw(korzen, ustawienia):
                 i = w.findText(v.get('tekst', ''))
                 i = i if i >= 0 else (v.get('indeks', -1) if v.get('indeks', -1) < w.count() else -1)
                 if i < 0:
+                    if w.count() == 0 and v.get('indeks', -1) < 0 and not v.get('tekst', ''):   # pusta lista zapisana i pusta teraz (zestaw bez zdjęć)
+                        ok += 1
+                        continue
                     pom += 1
                     continue
                 if i != w.currentIndex():

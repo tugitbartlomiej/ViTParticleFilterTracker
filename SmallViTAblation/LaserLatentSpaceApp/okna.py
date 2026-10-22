@@ -8,9 +8,9 @@
 - `skrot_f11(okno)`: F11 w całej aplikacji (okno główne, okna odpięte, okienka-doki) przełącza maksymalizację tego okna,
   w którym jest kursor klawiatury.
 """
-from PyQt6.QtCore import QRect, Qt
+from PyQt6.QtCore import QRect, QSize, Qt
 from PyQt6.QtGui import QCursor, QGuiApplication, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QApplication, QDockWidget, QHBoxLayout, QLabel, QSizePolicy, QToolButton, QWidget
+from PyQt6.QtWidgets import QApplication, QDockWidget, QFrame, QHBoxLayout, QLabel, QScrollArea, QSizePolicy, QToolButton, QWidget
 
 
 def ekran(w):
@@ -182,6 +182,26 @@ def _niezalezne(d, plywa):
     d.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint)
     d.setGeometry(g)
     d.show(); d.raise_(); d.activateWindow()
+
+
+class Przewijane(QScrollArea):
+    """Zawartość okienka sterującego (podkroki, panel) w przewijanym polu: jej minimalny rozmiar (np. 1146 px szerokości paska podkroków
+    z drugim wierszem opcji) nie rozpycha już okna głównego, więc przypięte okienka nie wchodzą na siebie ani na panel parametrów.
+    Gdy brakuje miejsca, pojawia się pasek przewijania; zwykły rozmiar (sizeHint) to rozmiar zawartości."""
+    def __init__(self, w, min_szer=200, min_wys=40):
+        super().__init__()
+        self.setWidget(w); self.setWidgetResizable(True); self.setFrameShape(QFrame.Shape.NoFrame)
+        self._min = QSize(min_szer, min_wys)
+
+    def sizeHint(self):
+        w = self.widget()
+        s = w.sizeHint().expandedTo(w.minimumSizeHint()) if w is not None else QSize()
+        return s + QSize(2 * self.frameWidth(), 2 * self.frameWidth())
+
+    def minimumSizeHint(self):
+        w = self.widget()
+        wys = min(self._min.height() if w is None else w.minimumSizeHint().height(), 120)   # wysokość: jak treść, najwyżej 120 px
+        return QSize(self._min.width(), max(self._min.height(), wys))
 
 
 def skrot_f11(okno):

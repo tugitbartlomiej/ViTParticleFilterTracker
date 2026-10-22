@@ -4,8 +4,8 @@
   zwijanych sekcji. Leży w okienku-doku, które można odpiąć jako osobne okno (np. na drugi monitor) albo schować (F2).
 - `PopupUstawien`: prawy klik w okienko (widok 3D, wykres, pasek tytułu) otwiera przy kursorze ustawienia właśnie tego
   okienka. Popup nie ma własnych kontrolek: wypożycza sekcje z panelu (te same pola, ta sama logika i zapis ustawień);
-  w panelu stoi w tym czasie zastępnik, a po zamknięciu sekcja wraca na swoje miejsce. 📌 przypina popup jako zwykłe
-  okienko narzędziowe, które zostaje otwarte i można je przesunąć gdziekolwiek.
+  w panelu stoi w tym czasie zastępnik, a po zamknięciu sekcja wraca na swoje miejsce. Od razu jest osobnym oknem
+  (zostaje otwarte, można je swobodnie przesuwać i zmieniać mu rozmiar); ⊟ / ⊞ zwijają i rozwijają wszystkie grupy.
 - `podlacz_menu(korzen, fn)`: prawy klik bez przeciągania w każdym widoku OpenGL (WidokGL.prawy_px), w wykresie pyqtgraph
   i w pozostałych miejscach okienka woła fn(pozycja_globalna). Prawe przeciąganie w widokach 3D dalej zbliża i oddala.
 """
@@ -34,6 +34,7 @@ class PanelParametrow(QWidget):
     def __init__(self):
         super().__init__()
         lay = QHBoxLayout(self); lay.setContentsMargins(0, 0, 0, 0); lay.setSpacing(2)
+        lewa = QVBoxLayout(); lewa.setContentsMargins(0, 0, 0, 0); lewa.setSpacing(2)
         self.lista = QListWidget()
         self.lista.setFixedWidth(118)
         self.lista.setStyleSheet('QListWidget { background: #17191d; border: none; font-size: 9pt; }'
@@ -41,7 +42,13 @@ class PanelParametrow(QWidget):
                                  'QListWidget::item:selected { background: #2459ad; color: white; }')
         self.lista.setWordWrap(True)
         self.strony = QStackedWidget()
-        lay.addWidget(self.lista); lay.addWidget(self.strony, 1)
+        dol = QHBoxLayout(); dol.setSpacing(2)
+        for znak, opis, zwin in (('⊟ zwiń', 'Zwiń wszystkie grupy ustawień na tej stronie (klik w nagłówek rozwija jedną).', True),
+                                 ('⊞ rozwiń', 'Rozwiń wszystkie grupy ustawień na tej stronie.', False)):
+            b = QToolButton(); b.setText(znak); b.setToolTip(opis); b.setAutoRaise(True)
+            b.clicked.connect(lambda _=False, zwin=zwin: self.zwin_strone(zwin)); dol.addWidget(b)
+        lewa.addWidget(self.lista, 1); lewa.addLayout(dol)
+        lay.addLayout(lewa); lay.addWidget(self.strony, 1)
         self._klucze = []
         self.lista.currentRowChanged.connect(self._wybrano)
 
@@ -71,6 +78,13 @@ class PanelParametrow(QWidget):
     def pokaz(self, klucz):
         if klucz in self._klucze:
             self.lista.setCurrentRow(self._klucze.index(klucz))
+
+    def zwin_strone(self, zwin=True):
+        """Zwija (rozwija) wszystkie grupy na bieżącej stronie."""
+        from grupy_parametrow import zwin_wszystko
+        w = self.strony.currentWidget()
+        if w is not None:
+            zwin_wszystko(w, zwin)
 
     def biezaca(self):
         i = self.lista.currentRow()
@@ -107,18 +121,31 @@ class _Wypozyczenie:
 
 
 class PopupUstawien(QFrame):
-    """Ustawienia jednego okienka przy kursorze. Zamyka się klikiem obok (jak menu), Esc albo ✕; 📌 przypina."""
+    """Ustawienia jednego okienka: od razu osobne okno przy kursorze (zostaje otwarte, swobodnie przesuwane, zwykły rozmiar
+    okna), zamykane ✕ albo Esc. ⊟ / ⊞ zwijają i rozwijają wszystkie grupy ustawień, klik w nagłówek grupy zwija jedną."""
 
-    otwarte = []                                         # przypięte popupy (żeby nie zniknęły po wyjściu z funkcji)
+    otwarte = []                                         # otwarte okienka ustawień (żeby nie zniknęły po wyjściu z funkcji)
     _u_kogo = {}                                         # id(sekcji) → popup, który ją teraz wypożycza
 
+    @classmethod
+    def istniejacy(cls, klucz, sekcje):
+        """Otwarte okienko ustawień tego samego okienka (klucz) z tymi samymi sekcjami: drugi prawy klik tylko je przywołuje.
+        Inne okienko z tymi samymi sekcjami (np. R1 i R3) dostaje własne okno (z własnym tytułem i przyciskami)."""
+        if not sekcje:
+            return None
+        p = cls._u_kogo.get(id(sekcje[0]))
+        if p is None or getattr(p, 'klucz', None) != klucz or len(p._wyp) != len(sekcje):
+            return None
+        return p if all(cls._u_kogo.get(id(s)) is p for s in sekcje) else None
+
     def __init__(self, tytul, sekcje, akcje=(), na_panel=None):
-        super().__init__(None, Qt.WindowType.Popup)
+        super().__init__(None, Qt.WindowType.Window)
         self.setObjectName('popup_ustawien')
         self.setStyleSheet(f'QFrame#popup_ustawien {{ background: {TLO_POPUPU}; border: 1px solid #4c86e6; }}')
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self._wyp = []
-        self._przypiety = False
+        self._przypiety = True
+        PopupUstawien.otwarte.append(self)
         v = QVBoxLayout(self); v.setContentsMargins(4, 3, 4, 4); v.setSpacing(3)
         gora = QHBoxLayout(); gora.setSpacing(2)
         lb = QLabel(f'<b>{tytul}</b>'); lb.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
@@ -132,9 +159,9 @@ class PopupUstawien(QFrame):
         for znak, opis, fn in akcje:
             przycisk(znak, opis, lambda _=False, fn=fn: (fn(), self.close()))
         if na_panel is not None:
-            przycisk('⇤', 'Pokaż te ustawienia w panelu parametrów (zamyka okienko podręczne).', lambda: (self.close(), na_panel()))
-        self.bt_pin = przycisk('📌', 'Przypnij: okienko zostaje otwarte jako osobne okno (można je przesunąć), aż je zamkniesz.',
-                               self.przypnij)
+            przycisk('⇤', 'Pokaż te ustawienia w panelu parametrów (zamyka to okienko).', lambda: (self.close(), na_panel()))
+        przycisk('⊟', 'Zwiń wszystkie grupy ustawień (klik w nagłówek grupy rozwija jedną).', lambda: self.zwin_wszystko(True))
+        przycisk('⊞', 'Rozwiń wszystkie grupy ustawień.', lambda: self.zwin_wszystko(False))
         przycisk('✕', 'Zamknij (Esc).', self.close)
         v.addLayout(gora)
         tresc = QWidget(); tv = QVBoxLayout(tresc); tv.setContentsMargins(0, 0, 0, 0); tv.setSpacing(4)
@@ -156,17 +183,11 @@ class PopupUstawien(QFrame):
         v.addWidget(self.sc, 1)
 
     def przypnij(self):
-        """Popup → zwykłe okno z ramką (zostaje otwarte, można je przesunąć, zmienić mu rozmiar i schować pod inne okna;
-        nie zawsze na wierzchu, żeby nie zasłaniało okna głównego)."""
-        if self._przypiety:
-            return
-        g = self.geometry()
-        self._przypiety = True
-        self.setWindowFlags(Qt.WindowType.Window)
-        self.bt_pin.setEnabled(False)
-        PopupUstawien.otwarte.append(self)
-        self.setGeometry(g)
-        self.show()
+        """Zgodność wsteczna: okienko ustawień jest od razu osobnym oknem (zwykłe okno z ramką, nie zawsze na wierzchu)."""
+
+    def zwin_wszystko(self, zwin=True):
+        from grupy_parametrow import zwin_wszystko
+        zwin_wszystko(self.sc.widget(), zwin)
 
     def pokaz_przy(self, pos: QPoint):
         """Pokazuje popup przy kursorze, w całości na ekranie, na którym jest kursor."""
@@ -178,7 +199,7 @@ class PopupUstawien(QFrame):
         wys = min(tresc.sizeHint().height() + 46, int(r.height() * 0.85))
         x = min(max(pos.x(), r.left()), r.right() - szer); y = min(max(pos.y(), r.top()), r.bottom() - wys)
         self.setGeometry(x, y, szer, wys)
-        self.show()
+        self.show(); self.raise_()
         self.activateWindow()
 
     def keyPressEvent(self, e):

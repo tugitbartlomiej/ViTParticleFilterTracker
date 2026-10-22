@@ -1099,5 +1099,31 @@ class TestWyslijPorcjami(unittest.TestCase):
         self.assertLessEqual(st['kolejka'].qsize(), 4)
 
 
+class TestJakobianPulapki(unittest.TestCase):
+    """ogniskowa._jakobian (analityczny, Newton pułapki) = autograd tej samej funkcji f(u) = PV (GELU(W1 LN(xj + P3ᵀu) + b1) − z̄)."""
+
+    def test_zgodny_z_autogradem(self):
+        import torch
+        import torch.nn.functional as Fn
+        import ogniskowa as OGN
+        g = torch.Generator().manual_seed(0)
+        d, n = 192, 768
+        r = lambda *s: torch.randn(*s, generator=g, dtype=torch.float64)
+        xj, g_, be_, W1, b1, PV = r(d) * 2 + 0.3, 1 + 0.1 * r(d), 0.1 * r(d), r(n, d) / d ** 0.5, 0.1 * r(n), r(3, n)
+        P3 = torch.linalg.qr(r(d, 3))[0].T.contiguous()
+        eps = 1e-6
+
+        def f(u):
+            x = xj + u @ P3
+            m = x.mean(); v = ((x - m) ** 2).mean()
+            return PV @ Fn.gelu(((x - m) / torch.sqrt(v + eps) * g_ + be_) @ W1.T + b1)
+
+        for u in (torch.zeros(3, dtype=torch.float64), 0.7 * r(3)):
+            J = OGN._jakobian(xj, u, P3, g_, be_, eps, W1, b1, PV)
+            Ja = torch.autograd.functional.jacobian(f, u)
+            self.assertEqual(tuple(J.shape), (3, 3))
+            self.assertLess(float((J - Ja).abs().max() / Ja.abs().max()), 1e-10)
+
+
 if __name__ == '__main__':
     unittest.main()

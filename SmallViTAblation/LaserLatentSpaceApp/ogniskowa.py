@@ -63,12 +63,42 @@ def _rzut_P3(net, dev, wagi, krok_ost):
 def policz(h, tok, G=17, zasieg=1.0, postep=None, przerwij=None, urzadzenie='cuda'):
     """Pole wiązek i pułapka wokół koloidu `tok` we wszystkich checkpointach historii h (lasery_dane.Historia).
     Zwraca słownik tablic (i zapisuje go obok historii). postep(i, n, opis); przerwij() → True kończy (wyjątek Przerwano)."""
+    return policz_wiele(h, [tok], G, zasieg, postep, przerwij, urzadzenie)[int(tok)]
+
+
+def _jakobian(xj, u, P3, g_, be_, eps, W1, b1, PV):
+    """∂f/∂u (3 × 3) analitycznie: f(u) = PV (GELU(W1 LN(xj + P3ᵀu) + b1) − z̄); pochodna LayerNorm, GELU (erf) i rzutu.
+    Zamiast torch.autograd.functional.jacobian (3 przejścia wstecz z budową grafu w każdym kroku Newtona); zgodne z autogradem
+    do błędu zaokrągleń float64 (testy/test_moduly.py)."""
+    import math
+    import torch
+    x = xj + u @ P3
+    n = x.shape[0]
+    xc = x - x.mean(); sd = torch.sqrt((xc * xc).mean() + eps); xh = xc / sd
+    a = (xh * g_ + be_) @ W1.T + b1
+    Tc = P3 - P3.mean(1, keepdim=True)                                         # styczne: kierunki P3 w 192D
+    dxh = (Tc - xh[None] * (Tc @ xh)[:, None] / n) / sd                         # pochodna LN wzdłuż każdego kierunku
+    dg = 0.5 * (1 + torch.erf(a / math.sqrt(2))) + a * torch.exp(-0.5 * a * a) / math.sqrt(2 * math.pi)
+    dz = ((dxh * g_) @ W1.T) * dg                                               # (3, 768): ∂z/∂u_k
+    return (dz @ PV.T).T                                                        # J[i, k] = ∂f_i/∂u_k
+
+
+def policz_wiele(h, toki, G=17, zasieg=1.0, postep=None, przerwij=None, urzadzenie='cuda'):
+    """Pułapki kilku koloidów naraz: wczytanie wag i przejście sieci są wspólne dla wszystkich tokenów w checkpoincie, osobno
+    liczy się tylko pole w komórce każdego tokenu (Newton, siatka G³, wartości własne). Tokeny z gotowym plikiem są brane z dysku.
+    Zwraca {tok: wynik} i zapisuje każdy wynik osobno (ten sam plik co policz dla jednego tokenu)."""
     import torch
     import torch.nn.functional as Fn
-    d = wczytaj(h, tok, G, zasieg)
-    if d is not None:
-        return d
-    tok, G = int(tok), int(G)
+    G = int(G)
+    toki = list(dict.fromkeys(int(t) for t in toki))
+    wyniki = {}
+    for t in toki:
+        d = wczytaj(h, t, G, zasieg)
+        if d is not None:
+            wyniki[t] = d
+    licz = [t for t in toki if t not in wyniki]
+    if not licz:
+        return wyniki
     dev = torch.device(urzadzenie if torch.cuda.is_available() else 'cpu')
     M = LD.modul_modelu()
     net = M.MalyViT().to(dev).eval().requires_grad_(False)
@@ -85,21 +115,26 @@ def policz(h, tok, G=17, zasieg=1.0, postep=None, przerwij=None, urzadzenie='cud
     gz, gy, gx = torch.meshgrid(lin, lin, lin, indexing='ij')
     SIATKA = torch.stack([gx.reshape(-1), gy.reshape(-1), gz.reshape(-1)], 1)      # (N, 3), indeks i = ix + G·iy + G²·iz
     N = G ** 3
-    POLE = np.zeros((K, N, 4), np.float16); KOLOR = np.zeros((K, N, 4), np.float16)
-    SRODEK = np.zeros((K, 3), np.float32); SIATKA_S = np.zeros((K, 3), np.float32); OGN = np.zeros((K, 3), np.float32); ZB = np.zeros(K, bool)
-    SKOK = np.zeros((K, 3), np.float32); L = np.zeros(K, np.float32); FMED = np.zeros(K, np.float32)
-    FOGN = np.zeros(K, np.float32); LAM = np.zeros((K, 3), np.complex64); WEK = np.zeros((K, 3, 3), np.complex64)
-    LAM0 = np.zeros((K, 3), np.complex64); WEK0 = np.zeros((K, 3, 3), np.complex64); OGN_LIN = np.zeros((K, 3), np.float32)
-    TOPO = np.zeros((K, 5), np.int16); TOPO_U = np.zeros((K, 5), np.float32)
-    PVK = np.zeros((K, 768, 3), np.float32); ZJ = np.zeros((K, 768), np.float32); ZBAR = np.zeros((K, 768), np.float32)
-    TOPK = np.zeros((K, 5), np.int16); TOPK_U = np.zeros((K, 5), np.float32); BLAD = np.zeros(K, np.float32)
-    POS_BLAD = np.zeros(K, np.float32); BLAD_SKOK = np.zeros(K, np.float32); RKOM = np.zeros(K, np.float32); SASIAD = np.zeros(K, np.int16)
+
+    def tablice():
+        return dict(pole=np.zeros((K, N, 4), np.float16), kolor=np.zeros((K, N, 4), np.float16), srodek=np.zeros((K, 3), np.float32),
+                    srodek_siatki=np.zeros((K, 3), np.float32), ogn=np.zeros((K, 3), np.float32), zb=np.zeros(K, bool),
+                    skok=np.zeros((K, 3), np.float32), L=np.zeros(K, np.float32), fmed=np.zeros(K, np.float32), fogn=np.zeros(K, np.float32),
+                    lam=np.zeros((K, 3), np.complex64), wek=np.zeros((K, 3, 3), np.complex64), lam0=np.zeros((K, 3), np.complex64),
+                    wek0=np.zeros((K, 3, 3), np.complex64), ogn_lin=np.zeros((K, 3), np.float32),
+                    top_ogn=np.zeros((K, 5), np.int16), top_ogn_u=np.zeros((K, 5), np.float32), pv=np.zeros((K, 768, 3), np.float32),
+                    zj=np.zeros((K, 768), np.float32), zbar=np.zeros((K, 768), np.float32), top_kol=np.zeros((K, 5), np.int16),
+                    top_kol_u=np.zeros((K, 5), np.float32), blad_z=np.zeros(K, np.float32), blad_pos=np.zeros(K, np.float32),
+                    blad_skok=np.zeros(K, np.float32), r_kom=np.zeros(K, np.float32), sasiad=np.zeros(K, np.int16))
+
+    T = {t: tablice() for t in licz}
     znaki = None
     from concurrent.futures import ThreadPoolExecutor
     pula = ThreadPoolExecutor(4)
     odczyt = lambda k: (lambda st: st.get('net', st))(torch.load(Path(h.wagi) / f'k{k:05d}.pt', map_location='cpu', weights_only=True))
     kolejka = [pula.submit(odczyt, k) for k in kroki[:6]]
     t0 = time.time()
+    opis_tok = str(licz[0]) if len(licz) == 1 else f'{len(licz)} cząsteczek ({", ".join(map(str, licz))})'
     try:
         for i, k in enumerate(kroki):
             if przerwij is not None and przerwij():
@@ -121,11 +156,9 @@ def policz(h, tok, G=17, zasieg=1.0, postep=None, przerwij=None, urzadzenie='cud
                 return Fn.gelu(((X - m) / torch.sqrt(v + eps) * g_ + be_) @ W1.T + b1)
 
             Zt = jasnosci(xs); zbar = Zt.mean(0)
-            BLAD[i] = float((Zt.float() - pam['z'][0].float()).abs().max())          # zgodność z przejściem sieci
+            blad_z = float((Zt.float() - pam['z'][0].float()).abs().max())          # zgodność z przejściem sieci
             # kontrola, że wiązki naprawdę przesuwają koloid: Σ_c (z_jc − z̄_c) v_c = (stan po bloku 6 − stan przed MLP), względem środka chmury, 192D
             Fm = pam['xa'][0].double() - xs; Fm = Fm - Fm.mean(0, keepdim=True)
-            Fw = (Zt[tok] - zbar) @ W2.T
-            BLAD_SKOK[i] = float((Fw - Fm[tok]).norm() / Fm[tok].norm().clamp_min(1e-30))
             pc = (xs - xs.mean(0, keepdim=True)) @ P3.T                           # (600, 3) położenia jak h.pos
             pos_h = torch.from_numpy(np.asarray(h.pos[i], np.float64)).to(dev)
             if znaki is None:                                                     # znak kierunków SVD jak w cache historii
@@ -138,90 +171,94 @@ def policz(h, tok, G=17, zasieg=1.0, postep=None, przerwij=None, urzadzenie='cud
                     U_, _, Vt_ = torch.linalg.svd(A, full_matrices=False)
                     P3 = U_ @ Vt_; pc = Xc @ P3.T
                 PV = P3 @ W2
-            POS_BLAD[i] = float(np.abs(pc.float().cpu().numpy() - h.pos[i]).max() / max(np.abs(h.pos[i]).max(), 1e-9))
-            xj = xs[tok]
-            r99 = float(h.r99[i])
-            odl = (pc - pc[tok]).norm(dim=1); odl[tok] = float('inf')                # komórka tokenu: połowa odległości do sąsiada
-            sas = int(odl.argmin()); rk = 0.5 * float(odl[sas])
-            Li = float(zasieg * rk); RKOM[i] = rk; SASIAD[i] = sas
+            blad_pos = float(np.abs(pc.float().cpu().numpy() - h.pos[i]).max() / max(np.abs(h.pos[i]).max(), 1e-9))
             nv = PV.norm(dim=0)                                                   # |P3 v_c|
+            PVT = PV.T.float().cpu().numpy(); ZBAR_i = zbar.float().cpu().numpy()
+            for tok in licz:                                                      # osobno tylko komórka każdego tokenu
+                A_ = T[tok]
+                A_['blad_z'][i] = blad_z; A_['blad_pos'][i] = blad_pos
+                Fw = (Zt[tok] - zbar) @ W2.T
+                A_['blad_skok'][i] = float((Fw - Fm[tok]).norm() / Fm[tok].norm().clamp_min(1e-30))
+                xj = xs[tok]
+                odl = (pc - pc[tok]).norm(dim=1); odl[tok] = float('inf')            # komórka tokenu: połowa odległości do sąsiada
+                sas = int(odl.argmin()); rk = 0.5 * float(odl[sas])
+                Li = float(zasieg * rk); A_['r_kom'][i] = rk; A_['sasiad'][i] = sas
 
-            def pole(U):                                                          # U (n, 3) → f (n, 3), z − z̄ (n, 768)
-                dz = jasnosci(xj + U @ P3) - zbar
-                return dz @ PV.T, dz
+                def pole(U, xj=xj):                                               # U (n, 3) → f (n, 3), z − z̄ (n, 768)
+                    dz = jasnosci(xj + U @ P3) - zbar
+                    return dz @ PV.T, dz
 
-            jac = lambda u: torch.autograd.functional.jacobian(lambda v: pole(v[None])[0][0], u)
-            with torch.no_grad():
-                f0, dz0 = pole(torch.zeros(1, 3, dtype=torch.float64, device=dev))
-            # Newton od koloidu: f(u) = 0, tylko wewnątrz sześcianu komórki (|u_x|, |u_y|, |u_z| ≤ L)
-            u = torch.zeros(3, dtype=torch.float64, device=dev)
-            n0 = float(f0.norm()); zb = False
-            for _ in range(60 if szukaj else 0):
+                def jac(u, xj=xj):
+                    return _jakobian(xj, u, P3, g_, be_, eps, W1, b1, PV)
+
                 with torch.no_grad():
+                    f0, dz0 = pole(torch.zeros(1, 3, dtype=torch.float64, device=dev))
+                    # Newton od koloidu: f(u) = 0, tylko wewnątrz sześcianu komórki (|u_x|, |u_y|, |u_z| ≤ L)
+                    u = torch.zeros(3, dtype=torch.float64, device=dev)
+                    n0 = float(f0.norm()); zb = False
+                    for _ in range(60 if szukaj else 0):
+                        fu = pole(u[None])[0][0]
+                        if float(fu.norm()) <= 1e-6 * max(n0, 1e-30):
+                            zb = True; break
+                        du = -torch.linalg.lstsq(jac(u), fu[:, None]).solution[:, 0]
+                        if float(du.norm()) > 0.3 * Li:
+                            du = du * (0.3 * Li / float(du.norm()))
+                        u = u + du
+                        if float(u.abs().max()) > Li:
+                            break
                     fu = pole(u[None])[0][0]
-                if float(fu.norm()) <= 1e-6 * max(n0, 1e-30):
-                    zb = True; break
-                du = -torch.linalg.lstsq(jac(u), fu[:, None]).solution[:, 0]
-                if float(du.norm()) > 0.3 * Li:
-                    du = du * (0.3 * Li / float(du.norm()))
-                u = u + du
-                if float(u.abs().max()) > Li:
-                    break
-            with torch.no_grad():
-                fu = pole(u[None])[0][0]
-            if szukaj and not zb and float(fu.norm()) <= 1e-4 * max(n0, 1e-30):
-                zb = True
-            zb = zb and float(u.abs().max()) <= Li                               # zero liczy się tylko w komórce tokenu
-            c_off = torch.zeros(3, dtype=torch.float64, device=dev)              # siatka zawsze wokół koloidu, nie rośnie
-            with torch.no_grad():
-                U = c_off + SIATKA * Li
-                f, dz = pole(U)
-                w = dz.abs() * nv
-                tw, ti = w.topk(3, dim=1)
-                suma = w.sum(1).clamp_min(1e-30)
-                mix = (tw[..., None] * kol[ti]).sum(1) / tw.sum(1, keepdim=True).clamp_min(1e-30)
-                fm = f.norm(dim=1)
-                POLE[i, :, :3] = f.float().cpu().numpy(); POLE[i, :, 3] = fm.float().cpu().numpy()
-                KOLOR[i, :, :3] = mix.float().cpu().numpy(); KOLOR[i, :, 3] = (tw[:, 0] / suma).float().cpu().numpy()
-                FMED[i] = float(fm.median())
-            SKOK[i] = f0[0].float().cpu().numpy()
-            SRODEK[i] = pc[tok].float().cpu().numpy(); SIATKA_S[i] = (pc[tok] + c_off).float().cpu().numpy()
-            if not zb:                                                            # zastępczo: minimum |f| na siatce
-                u = U[int(fm.argmin())].clone()
-            with torch.no_grad():
-                fu, dzu = pole(u[None])
-            OGN[i] = (pc[tok] + u).float().cpu().numpy(); ZB[i] = zb; FOGN[i] = float(fu.norm())
-            ev, evec = np.linalg.eig(jac(u).cpu().numpy())
-            o = np.argsort(ev.real); LAM[i] = ev[o]; WEK[i] = evec[:, o]
-            J0 = jac(torch.zeros(3, dtype=torch.float64, device=dev))
-            ev, evec = np.linalg.eig(J0.cpu().numpy())
-            o = np.argsort(ev.real); LAM0[i] = ev[o]; WEK0[i] = evec[:, o]
-            # liniowe oszacowanie pułapki z kształtu pola w koloidzie: u = −J₀⁻¹ f(0) (bez ograniczenia zasięgu)
-            OGN_LIN[i] = (pc[tok] - torch.linalg.lstsq(J0, f0[0][:, None]).solution[:, 0]).float().cpu().numpy()
-            for (dzz, TI, TU) in ((dzu[0], TOPO, TOPO_U), (dz0[0], TOPK, TOPK_U)):
-                ww = dzz.abs() * nv; tv, tix = ww.topk(5)
-                TI[i] = tix.cpu().numpy(); TU[i] = (tv / ww.sum().clamp_min(1e-30)).float().cpu().numpy()
-            L[i] = Li
-            PVK[i] = PV.T.float().cpu().numpy(); ZJ[i] = Zt[tok].float().cpu().numpy(); ZBAR[i] = zbar.float().cpu().numpy()
+                    if szukaj and not zb and float(fu.norm()) <= 1e-4 * max(n0, 1e-30):
+                        zb = True
+                    zb = zb and float(u.abs().max()) <= Li                           # zero liczy się tylko w komórce tokenu
+                    c_off = torch.zeros(3, dtype=torch.float64, device=dev)          # siatka zawsze wokół koloidu, nie rośnie
+                    U = c_off + SIATKA * Li
+                    f, dz = pole(U)
+                    w = dz.abs() * nv
+                    tw, ti = w.topk(3, dim=1)
+                    suma = w.sum(1).clamp_min(1e-30)
+                    mix = (tw[..., None] * kol[ti]).sum(1) / tw.sum(1, keepdim=True).clamp_min(1e-30)
+                    fm = f.norm(dim=1)
+                    A_['pole'][i, :, :3] = f.float().cpu().numpy(); A_['pole'][i, :, 3] = fm.float().cpu().numpy()
+                    A_['kolor'][i, :, :3] = mix.float().cpu().numpy(); A_['kolor'][i, :, 3] = (tw[:, 0] / suma).float().cpu().numpy()
+                    A_['fmed'][i] = float(fm.median())
+                    A_['skok'][i] = f0[0].float().cpu().numpy()
+                    A_['srodek'][i] = pc[tok].float().cpu().numpy(); A_['srodek_siatki'][i] = (pc[tok] + c_off).float().cpu().numpy()
+                    if not zb:                                                        # zastępczo: minimum |f| na siatce
+                        u = U[int(fm.argmin())].clone()
+                    fu, dzu = pole(u[None])
+                    A_['ogn'][i] = (pc[tok] + u).float().cpu().numpy(); A_['zb'][i] = zb; A_['fogn'][i] = float(fu.norm())
+                    ev, evec = np.linalg.eig(jac(u).cpu().numpy())
+                    o = np.argsort(ev.real); A_['lam'][i] = ev[o]; A_['wek'][i] = evec[:, o]
+                    J0 = jac(torch.zeros(3, dtype=torch.float64, device=dev))
+                    ev, evec = np.linalg.eig(J0.cpu().numpy())
+                    o = np.argsort(ev.real); A_['lam0'][i] = ev[o]; A_['wek0'][i] = evec[:, o]
+                    # liniowe oszacowanie pułapki z kształtu pola w koloidzie: u = −J₀⁻¹ f(0) (bez ograniczenia zasięgu)
+                    A_['ogn_lin'][i] = (pc[tok] - torch.linalg.lstsq(J0, f0[0][:, None]).solution[:, 0]).float().cpu().numpy()
+                    for (dzz, ti_, tu_) in ((dzu[0], 'top_ogn', 'top_ogn_u'), (dz0[0], 'top_kol', 'top_kol_u')):
+                        ww = dzz.abs() * nv; tv, tix = ww.topk(5)
+                        A_[ti_][i] = tix.cpu().numpy(); A_[tu_][i] = (tv / ww.sum().clamp_min(1e-30)).float().cpu().numpy()
+                A_['L'][i] = Li
+                A_['pv'][i] = PVT; A_['zj'][i] = Zt[tok].float().cpu().numpy(); A_['zbar'][i] = ZBAR_i
             if postep is not None:
-                postep(i + 1, K, f'pułapka: checkpoint {i + 1}/{K} (krok {k}), {time.time() - t0:.0f} s')
+                postep(i + 1, K, f'pułapka {opis_tok}: checkpoint {i + 1}/{K} (krok {k}), {time.time() - t0:.0f} s')
     finally:
         for f_ in kolejka:
             f_.cancel()
         pula.shutdown(wait=False)
-    wynik = dict(wersja=WERSJA, tok=tok, G=G, zasieg=float(zasieg), kroki=np.asarray(kroki, np.int64), pole=POLE, kolor=KOLOR,
-                 srodek=SRODEK, srodek_siatki=SIATKA_S, ogn=OGN, zb=ZB, skok=SKOK, L=L, fmed=FMED, fogn=FOGN, lam=LAM, wek=WEK, lam0=LAM0, wek0=WEK0,
-                 ogn_lin=OGN_LIN, r99=np.asarray(h.r99, np.float32), pv=PVK, zj=ZJ, zbar=ZBAR,
-                 top_ogn=TOPO, top_ogn_u=TOPO_U, top_kol=TOPK, top_kol_u=TOPK_U, blad_z=BLAD, blad_pos=POS_BLAD, blad_skok=BLAD_SKOK,
-                 r_kom=RKOM, sasiad=SASIAD)
-    p = plik(h, tok, G, zasieg)
-    tmp = p.with_name(p.stem + '_tmp.npz')
-    np.savez(tmp, **wynik)
-    tmp.replace(p)
-    (p.with_suffix('.json')).write_text(json.dumps(dict(tok=tok, G=G, zasieg=zasieg, K=K, czas_s=round(time.time() - t0),
-                                                        blad_z_maks=float(BLAD.max()), blad_pos_maks=float(POS_BLAD.max()), blad_skok_maks=float(BLAD_SKOK.max()),
-                                                        zbiezne=float(ZB.mean())), ensure_ascii=False, indent=1), encoding='utf-8')
-    return wynik
+    czas = time.time() - t0
+    for tok in licz:
+        A_ = T[tok]
+        wynik = dict(wersja=WERSJA, tok=tok, G=G, zasieg=float(zasieg), kroki=np.asarray(kroki, np.int64), r99=np.asarray(h.r99, np.float32), **A_)
+        p = plik(h, tok, G, zasieg)
+        tmp = p.with_name(p.stem + '_tmp.npz')
+        np.savez(tmp, **wynik)
+        tmp.replace(p)
+        (p.with_suffix('.json')).write_text(json.dumps(dict(tok=tok, G=G, zasieg=zasieg, K=K, czas_s=round(czas), razem_z=licz,
+                                                            blad_z_maks=float(A_['blad_z'].max()), blad_pos_maks=float(A_['blad_pos'].max()),
+                                                            blad_skok_maks=float(A_['blad_skok'].max()), zbiezne=float(A_['zb'].mean())),
+                                                       ensure_ascii=False, indent=1), encoding='utf-8')
+        wyniki[tok] = wynik
+    return wyniki
 
 
 def opis_lambda(lam):

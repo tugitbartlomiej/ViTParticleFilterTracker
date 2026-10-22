@@ -30,7 +30,9 @@ rzuty z 192 wymiarów, dolina pewności i IoU, mechanika reflektora (filmy 2, 12
   czasu i przenikaniem uwaga ↔ MLP; można je odpiąć i postawić gdziekolwiek.
 - **Prawy klik w okienko** (bez przeciągania; w widokach 3D prawe przeciąganie dalej zbliża): ustawienia tego okienka przy
   kursorze (`panel_ustawien.PopupUstawien`). To te same sekcje co w panelu (wypożyczone na czas otwarcia, w panelu stoi
-  zastępnik), więc wszystko działa i zapisuje się tak samo. Przyciski: 📌 przypina popup jako osobne okno, ⇤ pokazuje
+  zastępnik), więc wszystko działa i zapisuje się tak samo. Okienko ustawień jest od razu osobnym oknem (zostaje otwarte,
+  swobodnie przesuwane, drugi prawy klik w to samo okienko tylko je przywołuje). Grupy ustawień zwija i rozwija klik w ich
+  nagłówek (▾ / ▸); ⊟ zwija wszystkie, ⊞ rozwija wszystkie (te same przyciski pod listą stron panelu). Przyciski: ⇤ pokazuje
   sekcję w panelu, ⧉ odpina okienko, ⛶ maksymalizuje, 🖵 pełny ekran, 🗙 zamyka okienko. Sfera dostaje też wybór
   cząsteczki i reflektora, wykresy 6–10 sekcję „Dane”, okienka R — swoje podsekcje rzutów.
 - **Menu „Okienka”**: okienka pogrupowane (ruch i mapy, sfera i pułapka, rzuty), „Układy okienek”: domyślny, sfera +
@@ -107,16 +109,28 @@ Lista zdjęć zestawu zapisuje się w `ustawienia.json` (liczy się dopiero na �
   położenia koloidu. Wcześniej liczył się w każdej klatce i odtwarzanie z obrysem traciło płynność.
 - Obrys, światło ogniska i wkłady działają też przy wyłączonych liniach wiązek („768 wiązek zbiegających się…” steruje teraz
   tylko liniami wiązek i wiązkami od reflektorów).
-- Pułapka (liczenie dla całej historii, ~0,2 s na checkpoint, ok. 2,6 min na cząsteczkę, potem z pliku) startuje dopiero,
-  gdy okienko 11 albo pułapka na sferze jest widoczna.
+- Pułapka (liczenie dla całej historii, potem z pliku) startuje dopiero, gdy okienko 11 albo pułapka na sferze jest widoczna.
+- Między checkpointami pułapka jest interpolowana na GPU (pole, kolory, wiązki, koloid: ułamek kroku), więc odtwarzanie
+  jest płynne; powolne było tylko pierwsze liczenie z wag (i dawniej obrys w każdej klatce).
+- Liczenie przyspieszone (`ogniskowa.policz_wiele`): jakobian 3 × 3 w metodzie Newtona liczony analitycznie
+  (`ogniskowa._jakobian`: pochodna LayerNorm, GELU i rzutu; zgodny z autogradem do 1e-10, test `TestJakobianPulapki`)
+  zamiast `torch.autograd.functional.jacobian`. Siatka 17, RTX 3070: 68 ms na checkpoint (wcześniej 100 ms; pierwsze
+  uruchomienie z rozgrzewką karty dłużej), ok. 1 min na 806 checkpointów. Wyniki identyczne ze starą wersją (różnice < 1e-3).
+- **Licz razem z** (sekcja pułapki): dodatkowe cząsteczki (do 8) liczone w tym samym przejściu: wagi i przejście sieci są
+  wspólne, osobno tylko komórka każdej cząsteczki. 3 cząsteczki: 114 ms na checkpoint (38 ms na cząsteczkę). Każda trafia do
+  własnego pliku `ogniskowa_t<tok>_…npz`, więc przełączenie „Cząsteczka” albo „▾ policzone” pokazuje ją od razu; wybór
+  cząsteczki liczonej właśnie razem z inną nie przerywa liczenia.
 
 ## Okna, dymki, grupy parametrów
 
-- Odpięte okienka (panel F2, podkroki F3, widoki) i przypięty popup ustawień to zwykłe okna, nie okna narzędziowe Qt: nie
+- Odpięte okienka (panel F2, podkroki F3, widoki) i okienka ustawień z prawego kliku to zwykłe okna, nie okna narzędziowe Qt: nie
   leżą zawsze nad oknem głównym i nad sobą, można je schować pod inne i przełączać Alt+Tab (`okna._niezalezne`).
 - `dymki.py`: każdy parametr ma dymek z objaśnieniem (co to jest i co zmienia); ten sam dymek ma nazwa wiersza w panelu.
-- `grupy_parametrow.py`: nagłówki podgrup w długich sekcjach (pułapka: liczenie, wiązki, światło, obrys, wkłady, pole,
-  oznaczenia, ślad i kadr; sfera, dane, dolina, podkroki, zapis).
+- `grupy_parametrow.py`: nagłówki podgrup w długich sekcjach (pułapka: liczenie, wiązki, światło, obrys, wkłady, mgła pola,
+  strzałki pola, oznaczenia, ślad i kadr; sfera, dane, dolina, podkroki, zapis).
+- Okienka sterujące (panel parametrów, podkroki) mają zawartość w przewijanym polu (`okna.Przewijane`): po włączeniu
+  podkroków pasek podkroków (dwa wiersze opcji i schemat sieci, ponad 1100 px szerokości) nie rozpycha już okna i nie wchodzi
+  na panel parametrów ani na widoki; gdy brakuje miejsca, przewija się. Wysokość okienka podkroków dopasowuje się do treści.
 
 ## Poprawki działania (2026-10-22)
 

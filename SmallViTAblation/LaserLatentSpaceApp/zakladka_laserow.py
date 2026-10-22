@@ -123,20 +123,23 @@ class ZestawLiczenie(QThread):
 
 
 class OgniskowaWatek(QThread):
-    """Pułapka optyczna (ogniskowa.policz) dla jednej cząsteczki we wszystkich checkpointach historii, w tle."""
+    """Pułapka optyczna we wszystkich checkpointach historii, w tle: wybrana cząsteczka i (opcjonalnie) cząsteczki „razem”
+    w jednym przejściu (ogniskowa.policz_wiele: wagi i sieć wspólne). gotowe(args, {cząsteczka: wynik})."""
     postep = pyqtSignal(int, int, str)
     gotowe = pyqtSignal(object, object)
     blad = pyqtSignal(str)
 
-    def __init__(self, h, tok, G, zasieg):
+    def __init__(self, h, tok, G, zasieg, razem=()):
         super().__init__()
         self.h, self.args = h, (int(tok), int(G), float(zasieg))
+        self.toki = list(dict.fromkeys([int(tok)] + [int(t) for t in razem]))
         self.stop = False
 
     def run(self):
         try:
-            d = OGN.policz(self.h, *self.args, postep=lambda i, n, o: self.postep.emit(i, n, o), przerwij=lambda: self.stop)
-            self.gotowe.emit(self.args, d)
+            W = OGN.policz_wiele(self.h, self.toki, *self.args[1:], postep=lambda i, n, o: self.postep.emit(i, n, o),
+                                 przerwij=lambda: self.stop)
+            self.gotowe.emit(self.args, W)
         except OGN.Przerwano:
             self.blad.emit('przerwano')
         except Exception as e:                                           # noqa: BLE001
@@ -859,8 +862,9 @@ class ZakladkaLaserow(QWidget):
                                    'w podkrokach MLP ognisko 768 wiązek danego bloku, w podkrokach uwagi 600 wkładów od innych cząsteczek '
                                    '(tam cząsteczkę przesuwają inne cząsteczki, nie lasery); w każdym podkroku suma wkładów = prawdziwy ruch.')
         self.ch_og_pole = QCheckBox('licz też lokalne pole na siatce i szukaj zera (wolniej)'); self.ch_og_pole.setChecked(False)
-        self.ch_og_pole.setToolTip('Bez tego liczone są tylko wiązki wybranej cząsteczki (około 0,15 s na checkpoint). Z tym: pole na siatce G³, '
-                                   'zero pola (Newton) i kształt pola w koloidzie (około 0,35 s na checkpoint).')
+        self.ch_og_pole.setToolTip('Bez tego liczone są tylko wiązki wybranej cząsteczki. Z tym: pole na siatce G³, zero pola (Newton, jakobian\n'
+                                   'analityczny) i kształt pola w koloidzie: około 0,07 s na checkpoint przy siatce 17 (RTX 3070), czyli około\n'
+                                   'minuty na 806 checkpointów; każda dodatkowa cząsteczka „Licz razem z” około 0,04 s na checkpoint.')
         self.sp_og_G = _spin(9, 33, 17, 2); self.sp_og_G.setToolTip('Węzłów siatki pola na bok (G³ punktów).')
         self.cb_og_lupa = QComboBox(); self.cb_og_lupa.addItems(['lupa: kula pola = ułamek długości wiązek', 'prawdziwa skala (bez lupy)'])
         self.cb_og_lupa.setToolTip('Podkroki: komórka tokenu ma tylko 1–15 % długości wiązek, więc pole w prawdziwej skali chowa się w jasnym\n'
@@ -870,6 +874,15 @@ class ZakladkaLaserow(QWidget):
         self.sp_og_lupa.setToolTip('Promień pokazanej kuli pola (z lupą) jako ułamek długości wiązek okienka 11.')
         for w_ in (self.cb_og_lupa, self.sp_og_lupa):
             (w_.currentIndexChanged if w_ is self.cb_og_lupa else w_.valueChanged).connect(lambda *_: self._og_opcje())
+        self.ed_og_razem = QLineEdit(); self.ed_og_razem.setPlaceholderText('np. 12, 101 (najwyżej 8)')
+        self.ed_og_razem.setToolTip('Pułapki tych cząsteczek liczą się RAZEM z wybraną, w jednym przejściu przez checkpointy: wczytanie wag\n'
+                                    'i przejście sieci są wspólne, osobno liczy się tylko pole w komórce każdej cząsteczki. Trzy cząsteczki\n'
+                                    'zajmują około 1,7 × czasu jednej. Każda zostaje w osobnym pliku obok historii, więc przełączenie\n'
+                                    '„Cząsteczka” na którąś z nich (albo „▾ policzone”) pokazuje jej pułapkę od razu, bez liczenia.')
+        self.bt_og_razem = QToolButton(); self.bt_og_razem.setText('▾ policzone')
+        self.bt_og_razem.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.bt_og_razem.setToolTip('Przejście do cząsteczki, której pułapka jest już policzona (z tej listy i wybrana), z tą samą siatką i zasięgiem.')
+        m_ = QMenu(self.bt_og_razem); m_.aboutToShow.connect(lambda m_=m_: self._og_menu_policzone(m_)); self.bt_og_razem.setMenu(m_)
         self.sp_og_zas = _spin(0.05, 1.0, 1.0, 0.05, 2, ' × komórki')
         self.sp_og_zas.setToolTip('Pole liczy się tylko w komórce tokenu: połowa boku sześcianu = ułamek r_kom, gdzie r_kom = połowa odległości '
                                   'do najbliższego innego tokenu w rzucie 3D (w każdym checkpoincie). Przy 1 żaden inny token nie leży w sześcianie. '
@@ -986,6 +999,8 @@ class ZakladkaLaserow(QWidget):
         self.lb_og = QLabel('—'); self.lb_og.setWordWrap(True)
         f.addRow(self.ch_og); f.addRow('Czas okienka 11', self.cb_og_czas); f.addRow(self.ch_og_pole)
         f.addRow('Siatka (węzłów na bok)', self.sp_og_G); f.addRow('Zasięg siatki', self.sp_og_zas)
+        w_ = QWidget(); l_ = QHBoxLayout(w_); l_.setContentsMargins(0, 0, 0, 0); l_.addWidget(self.ed_og_razem, 1); l_.addWidget(self.bt_og_razem)
+        f.addRow('Licz razem z', w_)
         w_ = QWidget(); l_ = QHBoxLayout(w_); l_.setContentsMargins(0, 0, 0, 0); l_.addWidget(self.cb_og_lupa, 1); l_.addWidget(self.sp_og_lupa)
         f.addRow('Pole w podkrokach', w_)
         f.addRow(hb); f.addRow(self.pasek_og)
@@ -1001,7 +1016,7 @@ class ZakladkaLaserow(QWidget):
         f.addRow('  krycie obrysu', self.sp_og_jobr); f.addRow('  powiększenie obrysu', self.sp_og_pobr); f.addRow('Wkłady', self.cb_og_wk); f.addRow('  długość wkładów', self.sp_og_dlwk)
         f.addRow(self.ch_og_mgla); f.addRow('Jasność mgły', self.sp_og_jas); f.addRow('Ostrość ogniska', self.sp_og_ostr)
         f.addRow('Tło pola', self.sp_og_tlo); f.addRow('Rozmycie', self.sp_og_rozm)
-        f.addRow('Strzałki', self.cb_og_strz); f.addRow('Długość strzałek', self.sp_og_strz); f.addRow('Strzałka co', self.sp_og_pods)
+        f.addRow('Rodzaj strzałek', self.cb_og_strz); f.addRow('  długość', self.sp_og_strz); f.addRow('  gęstość: co', self.sp_og_pods)
         f.addRow(self.ch_og_plyn); f.addRow('  tempo płynięcia', self.sp_og_tempo)
         f.addRow(self.ch_og_osie); f.addRow(self.ch_og_skok); f.addRow(self.ch_og_ruch)
         f.addRow(self.ch_og_tlo); f.addRow('  jasność tła', self.sp_og_jtlo)
@@ -1313,7 +1328,8 @@ class ZakladkaLaserow(QWidget):
     def _dok_sterowania(self, klucz, tytul, widget):
         """Okienko sterujące (parametry, podkroki): jak okienka widoków można je odpiąć i przesunąć, ale nie należy do self.doki
         (nie jest widokiem osi czasu)."""
-        d = QDockWidget(tytul, self.okna); d.setObjectName(f'dok_lasery_ster_{klucz}'); d.setWidget(widget)
+        from okna import Przewijane
+        d = QDockWidget(tytul, self.okna); d.setObjectName(f'dok_lasery_ster_{klucz}'); d.setWidget(Przewijane(widget))
         d.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetClosable | QDockWidget.DockWidgetFeature.DockWidgetMovable
                       | QDockWidget.DockWidgetFeature.DockWidgetFloatable)
         d.toggleViewAction().setText(tytul)
@@ -1605,9 +1621,14 @@ class ZakladkaLaserow(QWidget):
                      ('⛶', 'Maksymalizuj okienko na jego ekranie (drugi raz wraca).', lambda: przelacz_dok(d)),
                      ('🖵', 'Pełny ekran okienka (Esc wraca), np. stereo na monitorze 3D.', lambda: przelacz(d.widget())),
                      ('🗙', 'Zamknij okienko (wraca z menu „Okienka”).', d.close)]
+        p = PopupUstawien.istniejacy(klucz, sekcje)
+        if p is not None:                                                # to samo okienko drugi raz: przywołanie, bez przestawiania
+            p.show(); p.raise_(); p.activateWindow()
+            return
         tytul = d.windowTitle() if d is not None else klucz
         p = PopupUstawien(tytul.split(':')[0], sekcje, akcje,
                           na_panel=(lambda: (self.dok_panel.show(), self.dok_panel.raise_(), self.panel.pokaz(strona))) if strona else None)
+        p.klucz = klucz
         from wygoda import ulatw
         ulatw(p)
         p.pokaz_przy(pos)
@@ -2031,8 +2052,19 @@ class ZakladkaLaserow(QWidget):
         self.v1.kadruj(0, 0, 2 * zakres[0], 2 * zakres[1])
         self.ustaw_podkrok(self.s_pod)
 
+    def _dopasuj_podkroki(self):
+        """Okienko podkroków przypięte u góry albo u dołu dostaje wysokość treści (schemat sieci i drugi wiersz opcji pokazują się
+        dopiero w trybie podkroków); szerokości nie rusza, a gdy jej brakuje, treść się przewija zamiast rozpychać okno."""
+        d = self.dok_podkroki
+        if d.isFloating() or not d.isVisible() or self.okna.dockWidgetArea(d) not in (Qt.DockWidgetArea.TopDockWidgetArea,
+                                                                                      Qt.DockWidgetArea.BottomDockWidgetArea):
+            return
+        wys = d.widget().sizeHint().height() + (d.titleBarWidget().sizeHint().height() if d.titleBarWidget() else 0) + 4
+        self.okna.resizeDocks([d], [min(wys, max(120, self.okna.height() // 2))], Qt.Orientation.Vertical)
+
     def _tryb_podkrokow(self, on):
         self.diagram.setVisible(on); self._rp2.setVisible(on)            # drugi wiersz opcji podkroków tylko w trybie podkroków
+        QTimer.singleShot(0, self._dopasuj_podkroki)
         h = self.h
         if h is None:
             return
@@ -2454,18 +2486,24 @@ class ZakladkaLaserow(QWidget):
         if w is not None and w.isRunning():
             if getattr(w, 'klucz', None) == klucz:
                 return
+            k_ = getattr(w, 'klucz', None)
+            if k_ is not None and (k_[0], k_[2], k_[3]) == (klucz[0], klucz[2], klucz[3]) and klucz[1] in w.toki:
+                self.lb_og.setText(f'Pułapka cząsteczki {klucz[1]} liczy się razem z {", ".join(map(str, w.toki))}; pokaże się po skończeniu.')
+                return                                                   # ta cząsteczka już się liczy razem z inną: czekamy
             w.stop = True
             self._og_stare = [x for x in getattr(self, '_og_stare', []) if x.isRunning()] + [w]
         d = OGN.wczytaj(h, *klucz[1:])
         if d is not None:
             self._og_zastosuj(klucz, d)
             return
-        w = OgniskowaWatek(h, *klucz[1:]); w.klucz = klucz
+        razem = [t for t in lista_liczb(self.ed_og_razem.text(), self._n_tok()) if t != klucz[1]][:8]
+        w = OgniskowaWatek(h, *klucz[1:], razem=razem); w.klucz = klucz
         w.postep.connect(self._og_postep)
-        w.gotowe.connect(lambda args, d, k=klucz: self._og_gotowe(k, d))
+        w.gotowe.connect(lambda args, W, k=klucz: self._og_gotowe(k, W))
         w.blad.connect(self._og_blad)
         self._og_watek = w; self.bt_og_stop.setEnabled(True); self.pasek_og.setValue(0)
-        self.lb_og.setText(f'Liczę pułapkę cząsteczki {klucz[1]} we wszystkich {h.K} checkpointach (w tle)…')
+        self.lb_og.setText(f'Liczę pułapkę cząsteczki {klucz[1]}' + (f' (razem z {", ".join(map(str, razem))})' if razem else '')
+                           + f' we wszystkich {h.K} checkpointach (w tle)…')
         w.start()
 
     def _og_przerwij(self):
@@ -2479,10 +2517,34 @@ class ZakladkaLaserow(QWidget):
         self.bt_og_stop.setEnabled(False)
         self.lb_og.setText(f'Pułapka: {tekst}')
 
-    def _og_gotowe(self, klucz, d):
+    def _og_gotowe(self, klucz, W):
+        """W = {cząsteczka: wynik} (wybrana i liczone razem z nią); pokazujemy tę, która jest wybrana TERAZ (mogła się zmienić na
+        jedną z liczonych razem w trakcie liczenia)."""
         self.bt_og_stop.setEnabled(False)
-        if self.h is not None and klucz == self._og_klucz_teraz():
-            self._og_zastosuj(klucz, d)
+        if self.h is None:
+            return
+        teraz = self._og_klucz_teraz()
+        if (teraz[0], teraz[2], teraz[3]) == (klucz[0], klucz[2], klucz[3]) and teraz[1] in W:
+            self._og_zastosuj(teraz, W[teraz[1]])
+        elif teraz != self._og_klucz:
+            self._og_zlec()                                              # wybrano coś innego w trakcie: teraz to
+
+    def _n_tok(self):
+        return int(self.sp_tok.maximum()) + 1
+
+    def _og_menu_policzone(self, m):
+        """Menu „▾ policzone”: wybrana cząsteczka i cząsteczki z „Licz razem z”, ✓ = pułapka gotowa na dysku (ta sama siatka i zasięg)."""
+        m.clear()
+        h = self.h
+        if h is None:
+            m.addAction('najpierw wczytaj historię').setEnabled(False)
+            return
+        _, tok, G, zas = self._og_klucz_teraz()
+        toki = list(dict.fromkeys([tok] + lista_liczb(self.ed_og_razem.text(), self._n_tok())))
+        for t in toki:
+            gotowa = OGN.plik(h, t, G, zas).exists()
+            a = m.addAction(f'{"✓" if gotowa else "…"} cząsteczka {t}' + (' (wybrana)' if t == tok else ''))
+            a.triggered.connect(lambda _=False, t=t: self.sp_tok.setValue(t))
 
     def _og_zastosuj(self, klucz, d, kamera=True):
         h = self.h
