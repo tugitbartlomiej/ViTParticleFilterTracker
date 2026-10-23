@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtWidgets import (QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton, QSizePolicy,
+from PyQt6.QtWidgets import (QAbstractSpinBox, QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton, QSizePolicy,
                              QSlider, QVBoxLayout, QWidget)
 
 from laser_app.compute import history as hist, passage_store
@@ -56,7 +56,8 @@ class SubstepsMixin:
         self.bt_pod.setToolTip('Animacja przejścia sygnału przez sieć dla bieżącego checkpointu (w pętli).')
         self.suwak_pod = QSlider(Qt.Orientation.Horizontal); self.suwak_pod.setRange(0, 1200)
         self.suwak_pod.valueChanged.connect(lambda x: None if self._blokada else self.ustaw_podkrok(x / 100.0))
-        self.sp_pod_tempo = _spin(0.1, 12, 1.0, 0.1, 1, ' podkr./s')
+        self.sp_pod_tempo = _spin(0.1, 600, 1.0, 0.1, 1, ' podkr./s')   # 600 = 50 przejść sieci/s; krok rośnie z wartością
+        self.sp_pod_tempo.setStepType(QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
         self.lb_podkrok = QLabel('podkrok 0/12: wejście bloków (łodyga + PE)'); _staly_uklad(self.lb_podkrok)
         self.ch_sync = QCheckBox('synchronizuj kroki z podkrokami')
         self.ch_sync.setToolTip('Odtwarzanie osi czasu (▶ na górze): w każdym checkpoincie przechodzą wszystkie 12 podkroków sieci '
@@ -480,8 +481,8 @@ class SubstepsMixin:
     def _klatka_podkrokow(self):
         """Pętla 0 → 12 podkroków i krótka pauza na wyjściu sieci."""
         a = getattr(self, '_s_anim', self.s_pod) + self.sp_pod_tempo.value() * self._dt('pod')
-        if a > 12.8:
-            a = 0.0
+        if a > 12.8:                                                 # reszta przechodzi na następną pętlę (stałe tempo także przy setkach podkr./s)
+            a %= 12.8
         self._s_anim = a
         self.ustaw_podkrok(min(a, 12.0))
 

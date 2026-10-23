@@ -121,7 +121,7 @@ DYMKI = {
     'sp_sync_co': 'Przy odtwarzaniu z synchronizacją: po pełnym przejściu przez sieć skacze co tyle checkpointów. 1 = każdy checkpoint, większe = szybsze odtwarzanie historii.',
     'cb_kolor_cz': 'Kolor cząsteczek: kolor patcha ze zdjęcia, położenie patcha na obrazie, narzędzie albo obszary oka (narzędzie, źrenica, rogówka, tło).',
     # ---------------------------------------------------------------- sekcja „Podkroki” i pasek czasu
-    'sp_pod_tempo': 'Tempo animacji podkroków: ile z 12 podkroków przejścia przez sieć przypada na sekundę.',
+    'sp_pod_tempo': 'Tempo animacji podkroków: ile z 12 podkroków przejścia przez sieć przypada na sekundę (0,1–600; 12 = jedno przejście na sekundę). Przy synchronizacji z krokami wyznacza też tempo odtwarzania historii; powyżej ~120 podkr./s klatka obrazu obejmuje kilka podkroków.',
     'bt_okna': 'Menu okienek: pokazuje i chowa okienka widoków, a także zapamiętuje i przywraca układy okienek.',
     # ---------------------------------------------------------------- etykiety
     'sp_etyk_prog': 'Próg pokrycia patcha narzędziem (0–1) w trybie „pokrycie ≥ próg”. Większy = tylko patche w większości zajęte przez narzędzie.',
