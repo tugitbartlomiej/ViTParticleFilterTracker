@@ -580,7 +580,8 @@ class TestObrazIPrawyKlik(BazaOkna):
         """Sygnał prawy_px widoku OpenGL (GLView) otwiera SettingsPopup właściwego okienka (podlacz_menu); zamknięcie zwraca sekcje."""
         z = self.z
         for widok, klucz, tytul in ((z.vs, 's', 'Sfera'), (z.vog, '11', '11. Pułapka'), (z.vdol, '12', '12. Dolina'),
-                                    (z.vmech, '13', '13. Reflektor'), (z.v1, '1', '1. Ruch'), (z.vp, 'p', 'Przejście')):
+                                    (z.vmech, '13', '13. Reflektor'), (z.v1, '1', '1. Ruch'), (z.vp, 'p', 'Przejście'),
+                                    (z.vm, 'm', 'M. Mikrosoczewki')):
             with self.subTest(okienko=klucz):
                 sek = _sekcje(z, klucz)
                 przed = {id(s): _zapis(s) for s in sek}
@@ -727,6 +728,28 @@ class TestHistoriaWidocznosc(BazaHistorii):
                 self.assertTrue(z.widac(ukryty), f'{ukryty} wyniesiony na wierzch, a widac() False')
                 self.assertFalse(z.widac(wierzch), f'{wierzch} przykryty, a widac() True')
                 z.doki[wierzch].raise_(); gui.przetworz(4)
+
+    def test_04_okienko_m_mikrosoczewki(self):
+        """Okienko M wyniesione na wierzch zleca przejście bieżącego checkpointu; po policzeniu scena ma głowę na 13 stanach
+        (G (13, 600, 5): sigmoid ciepła w 0..1, ramki 13 stanów), druga sfera jest w trybie podkroków (K = 13), rysowanie bez
+        błędu GL, napis pod widokiem opisuje cień; zmiana podkroku i trybu ekranu nie zgłaszają wyjątków."""
+        z = self.z
+        z.doki['m'].raise_(); gui.przetworz(6)
+        self.assertTrue(z.widac('m'))
+        self.assertTrue(gui.czekaj(lambda: z.emk.G is not None, timeout=180.0), 'przejście dla okienka M nie policzyło się')
+        self.assertEqual(z.emk.G.shape, (13, 600, 5))
+        self.assertTrue(np.all((z.emk.G[..., 0] >= 0) & (z.emk.G[..., 0] <= 1)))
+        self.assertEqual(z.em.K, 13)
+        for s in (0.0, 6.5, 12.0):
+            z.ustaw_podkrok(s); gui.przetworz(4); QTest.qWait(60); gui.przetworz(2)
+            self.assertEqual(z.emk.blad, '', z.emk.blad); self.assertEqual(z.em.blad, '', z.em.blad)
+        self.assertIn('cień', z.lbm.text())
+        for i in (1, 2, 0):
+            z.cb_mk_ekran.setCurrentIndex(i); gui.przetworz(3)
+        self.assertEqual(z.emk.opcje['ekran'], 0)
+        z.cb_mk_sonda.setCurrentIndex(1); gui.przetworz(3); self.assertIn('stan końcowy', z.lbm.text())
+        z.cb_mk_sonda.setCurrentIndex(0); gui.przetworz(3)
+        self.assertEqual(gui.WYJATKI, [])
 
     def test_02_zamkniete_i_odpiete(self):
         """Zamknięty dok: widac() False; odpięty dok otwarty: widac() True."""

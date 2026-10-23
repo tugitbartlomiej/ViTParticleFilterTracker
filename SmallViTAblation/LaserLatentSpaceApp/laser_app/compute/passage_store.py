@@ -75,7 +75,7 @@ def wczytaj(kat, krok):
         return None
     try:
         with np.load(p) as f:
-            if int(f['wersja']) != WERSJA:
+            if int(f['wersja']) != WERSJA or 'glowa' not in f.files:    # bez głowy na 13 stanach (zapis sprzed okienka M): od nowa
                 return None
             d, lod = {}, {}
             for k in f.files:

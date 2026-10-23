@@ -10,6 +10,7 @@ Okienka (każde można zamknąć, odpiąć jako osobne okno albo przesunąć; me
   10. Obrót igieł reflektorów (gradient, film 23); na sferze strzałki obrotu („Strzałki obrotu” w sekcji sfery)
   11. Pułapka optyczna (ogniskowa wiązek)     12. Dolina pewności i IoU wybranej cząsteczki (valley.py; też na sferze)
   13. Reflektor: mechanika (reflector_mechanics.py): odrzut wiązek i wykonany ruch igły, celownika i progu
+  M. Mikrosoczewki (microlens_gl.py): zdjęcie naświetla soczewki przez łodygę, sfera je formuje, lampa rzuca cień na ekran
   R1–R8. Rzuty z 192 wymiarów z miernikiem wierności (sekcja „Rzuty z 192 wymiarów”, projections_view.py, projections.py):
       mapa klas, siły, wiązki ważone, rama siły, rama Schura, wędrówka w czasie uczenia, 7 widoków Fano i panel bez rzutu
 Wszystkie okienka pokazują tę samą chwilę osi czasu (suwak, odtwarzanie, klik w wykres). Rysują shadery (pakiet laser_app/gpu).
@@ -34,6 +35,7 @@ from laser_app.lasers_tab.image_set_view import ImageSetMixin
 from laser_app.lasers_tab.labels_view import LabelsMixin
 from laser_app.lasers_tab.layout import LayoutMixin
 from laser_app.lasers_tab.mechanics_view import MechanicsMixin
+from laser_app.lasers_tab.microlens_view import MicrolensMixin
 from laser_app.lasers_tab.playback import PlaybackMixin
 from laser_app.lasers_tab.shared import EP, pl, TLO
 from laser_app.lasers_tab.substeps_view import SubstepsMixin
@@ -48,7 +50,8 @@ from laser_app.ui.gl_view import GLView
 from laser_app.ui.widgets import CollapsibleSection, lista_liczb, NarrowCombo, _spin, _staly_uklad
 
 
-class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixin, TrapMixin, TrapMapMixin, ValleyMixin, MechanicsMixin, PlaybackMixin, QWidget):
+class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixin, TrapMixin, TrapMapMixin, ValleyMixin, MechanicsMixin,
+                MicrolensMixin, PlaybackMixin, QWidget):
     """Zakładka „Lasery i koloidy”: okno aplikacji bez menu. Metody są pogrupowane w mixinach (pliki obok);
     tu: budowa (sekcje panelu i okienka), wspólne opcje rysowania i ustawienie chwili osi czasu we wszystkich widocznych okienkach."""
 
@@ -114,6 +117,7 @@ class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixi
         self._buduj_sek_mapy()
         self._buduj_sek_dolina()
         self._buduj_sek_mech()
+        self._buduj_sek_mikro()
         self._buduj_okienka()
 
     def _buduj_sek_rzuty(self):
@@ -369,6 +373,8 @@ class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixi
         self._dok('14', '14. Mapa pułapek: wszystkie 600 cząsteczek, kształt pola i zera pola w komórkach (blok 6)',
                   self._z_napisem(self.vmp, 'lb14'))
         self.doki['14'].visibilityChanged.connect(lambda on: self._mp_zlec() if on else None)
+        # okienko M: mikrosoczewki (microlens_gl.py, microlens_view.py): zdjęcie → łodyga → sfera (formowanie) → lampa i ekran
+        self._buduj_okienko_mikro()
         self.rzuty.buduj_okienka()                                      # okienka R1–R8: rzuty z 192 wymiarów
         self._buduj_przejscie()
         self._buduj_panel()
@@ -380,7 +386,7 @@ class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixi
             m.addAction(d.toggleViewAction())
         m.addSeparator()
         grupy = (('Ruch i mapy (1–10)', ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10')),
-                 ('Sfera, pułapka, dolina, mechanika', ('s', '11', '14', '12', '13', 'p')),
+                 ('Sfera, pułapka, dolina, mechanika, mikrosoczewki', ('s', '11', '14', '12', '13', 'p', 'm')),
                  ('Rzuty z 192 wymiarów (R0–R12)', tuple(k for k in self.doki if k.startswith('R'))))
         for nazwa, klucze in grupy:
             pm = m.addMenu(nazwa)
@@ -469,6 +475,7 @@ class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixi
             e.ramki = dict(model=self.ch_rm.isChecked(), gt=self.ch_rg.isChecked()); e.update()
         if hasattr(self, 'ep'):
             self._opcje_przejscia()
+        self._opcje_mikro()
         if self.h is not None:
             self.ustaw_czas(self.t)
 

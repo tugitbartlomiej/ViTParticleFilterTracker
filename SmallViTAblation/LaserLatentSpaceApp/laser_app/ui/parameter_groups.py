@@ -29,6 +29,8 @@ GRUPY = {
     'przejscie': [('Widoczność: wszystkie wiązki naraz', 'ch_p_wiazki'), ('Uwaga: siły między cząsteczkami', 'cb_sily'),
                   ('Lasery MLP', 'ch_lasery'), ('Tory, przesunięcia i kolory', 'cb_tory')],
     'zapis': [('Zapis policzonych przejść', 'ch_prz_zapis'), ('Zapis wszystkich checkpointów', 'sp_prz_co')],
+    'mikro': [('Naświetlenie: zdjęcie i płyty łodygi', 'ch_mk_obraz'), ('Formowanie: promienie, linki i sfera', 'cb_mk_prom'),
+              ('Lampa, matryca soczewek i ekran', 'ch_mk_socz')],
 }
 
 

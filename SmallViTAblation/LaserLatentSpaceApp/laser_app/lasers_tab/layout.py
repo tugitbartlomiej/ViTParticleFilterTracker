@@ -18,7 +18,7 @@ class LayoutMixin:
     # ------------------------------------------------------------------ panel parametrów i ustawienia okienek pod prawym klikiem
     # okienko → sekcje panelu z jego ustawieniami (prawy klik w okienko wypożycza je do popupu); R* pyta rzuty_okienka
     SEKCJE_OKIENEK = {'1': ('plaskie',), '2': ('plaskie',), '3': ('plaskie',), 's': ('sfera', 'wybor'), '4': ('mapy',), '5': ('mapy',),
-                      '11': ('pulapka',), '14': ('mapa_pul',), '12': ('dolina',), '13': ('mech',), 'p': ('przejscie',),
+                      '11': ('pulapka',), '14': ('mapa_pul',), '12': ('dolina',), '13': ('mech',), 'p': ('przejscie',), 'm': ('mikro',),
                       '6': ('dane',), '7': ('dane',), '8': ('dane',), '9': ('dane',), '10': ('dane',)}
 
     # strony panelu: (klucz, nazwa na liście, sekcje, dymek)
@@ -33,6 +33,7 @@ class LayoutMixin:
               ('mapy', 'Mapy 4–5', ('mapy',), 'Atencja i mapy na zdjęciu'),
               ('dolina', 'Dolina (12)', ('dolina',), 'Dolina pewności i IoU'),
               ('mech', 'Mechanika (13)', ('mech',), 'Mechanika reflektora'),
+              ('mikro', 'Mikrosoczewki (M)', ('mikro',), 'Zdjęcie naświetla soczewki, lasery i gwiazda je formują, lampa rzuca cień na ekran'),
               ('widok', 'Widok', ('stereo',), 'Stereo 3D'))
 
     def _z_napisem(self, widok, nazwa):
@@ -176,7 +177,7 @@ class LayoutMixin:
         o.addDockWidget(A.TopDockWidgetArea, s['podkroki'], Vt)
         o.addDockWidget(A.TopDockWidgetArea, d['s'], Vt)
         o.splitDockWidget(d['s'], d['11'], Hz)
-        for a, b in (('11', '14'), ('14', '12'), ('12', '13'), ('13', 'p')):
+        for a, b in (('11', '14'), ('14', '12'), ('12', '13'), ('13', 'p'), ('p', 'm')):
             o.tabifyDockWidget(d[a], d[b])
         d['11'].raise_()
         o.addDockWidget(A.BottomDockWidgetArea, d['1'], Hz)

@@ -1,0 +1,36 @@
+{
+ "eksperyment": "plaszczyzna_krok_podkrok_replikacja_3047_20261023__02-16-41",
+ "typ": "pomiar na istniejących checkpointach i klatkach, bez treningu; predykcje zapisane przed pomiarem (Opis/PREDYKCJE_PRZED_POMIAREM.md)",
+ "rodzic": {
+  "nazwa": "kroki_podkroki_afinicznosc_uwagi_20261023__00-41-29",
+  "sciezka": "experiments/kroki_podkroki_afinicznosc_uwagi_20261023__00-41-29",
+  "wykorzystane": "definicje obserwabli (pomiar_kroki_podkroki.py, jakobiany_podkrokow.py), tezy T0–T4 i predykcje P1–P7 (reports/Tezy artykułu o płaszczyźnie krok × podkrok.md)",
+  "motywacja": "tezy sformułowano na jednym biegu (s47) i jednej klatce TRAIN; replikacja na innym seedzie i klatkach spoza treningu",
+  "zmiany": "seed 3047 zamiast 47; 46 checkpointów 0–400 ep zamiast 806 checkpointów 0–60 ep; 10 klatek TEST zamiast 1 klatki TRAIN; etykieta cystotom ≥ 0,25 zamiast obrys wszystkich narzędzi ≥ 0,5; udział translacji w 192D; obserwable liczone bez zapisu przejść"
+ },
+ "checkpointy": {
+  "sciezka": "experiments/skae_replikacja_mapy_vit3047_20261022__17-14-27/Wyniki/Dane/Wejscia/wagi",
+  "liczba": 46,
+  "kroki": "0, 300, 1000, 3000, 6000, 10000, 16000, 24000, 33000, 44000, 55000, 65640, potem co 10 epok (10937.5 kroku) do 437500",
+  "na_epoke": 1093.75,
+  "zrodla": [
+   "trening kompensacja_funkcjonalna_dgx2_20261017 (0–100 ep; kopie w pulapki_napedzane_przeplyw_0_100_20261021__16-57-38/Wyniki/Dane/Wejscia/wagi)",
+   "experiments/vit_kontynuacja_do_200epok_20261020__19-06-42/Wyniki/Dane/checkpoints (70–200 ep)",
+   "experiments/vit_kontynuacja_do_400epok_20261020__23-50-57/Wyniki/Dane/checkpoints (210–400 ep, chronione)"
+  ],
+  "sha256": {
+   "k000000.pt": "763896859e5ad1497bfa1c164074e062f3e676cd925ae355eac6f60b2c7786af",
+   "k065640.pt": "f3f07670a6acaf79fc91f7100b7dd35580a9d2552eac5c72048b9cfac39a3d2a",
+   "k218750.pt": "bfa43a3ef0bf2d24aab72d3bb58e1ea01cf97bd0fd2b47850ccef25a2e44dd20",
+   "k437500.pt": "5df6566278e7bb398b7330ecd669ce43076e8ce896c9be5fa1683eddb0bf8d79"
+  },
+  "optimizer_sampler_rng": "nie dotyczy (brak wznowienia treningu)"
+ },
+ "dane": {
+  "podzial": "outputs/kompensacja_funkcjonalna_dgx2_20261017/download/unpacked_20261018_035119/input/split_manifest.json (25 filmów test)",
+  "adnotacje": "Dataset/Cataract-LMM/3_Object_Tracking/annotations/<film>.zip (annotation.csv: cystotome_seg, cystotome_bbox)",
+  "klatki": "Wyniki/Dane/klatki.json (film, klatka, liczba łat, ramka GT, SHA256 JPG)"
+ },
+ "kod_git": "8821939a8f15189372587789ed24c00fe3ccbf65 (feature/rzuty-192d-okienka-gpu)",
+ "model_kod": "experiments/maly_vit_od_zera_35000_21epok_20261009/kod/model.py"
+}

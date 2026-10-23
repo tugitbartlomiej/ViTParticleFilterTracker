@@ -204,6 +204,7 @@ class DataMixin:
         self._og_lista_gotowych()
         self._dol = None; self._dol_zlecony = None; self.edol.czysc(); self.es_dol.czysc(); self.es_dol.setVisible(False)
         self._mech = None; self._mech_zlecony = None; self.emech.czysc()
+        self.emk.czysc(); self.em.czysc_slad(); self.em.K = 0; self._mk_klucz = None; self._mk_zdjecie = None   # okienko M
         self._prz_opis()
         self._opcje()
         self.rzuty.ustaw_historie(h)

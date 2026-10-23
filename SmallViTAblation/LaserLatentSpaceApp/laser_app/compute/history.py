@@ -473,10 +473,12 @@ def podkroki(wagi, krok, rgb, urzadzenie='cuda', baza=None, st=None, lodyga=True
             stany.append(t[0]); Z.append(pam['z'][0]); V2.append(blk.mlp.fc2.weight); B2.append(blk.mlp.fc2.bias)
         o = net.glowa(net.norm(t)).view(1, h, w, 5)
         X = torch.stack(stany)                                                             # (13, 600, 192)
+        G = net.glowa(net.norm(X))                                                         # (13, 600, 5) głowa na każdym stanie
+        # (stan 12 = prawdziwe wyjście; wcześniejsze = sonda „logit lens” do okienka M: mikrosoczewki)
         AH = torch.stack(AH); U = torch.stack(U); BO = torch.stack(BO); B2 = torch.stack(B2)
         Z = torch.stack(Z); V2 = torch.stack(V2).transpose(1, 2)                          # (6, 768, 192) kolumny fc2 = v_c
         cpu = lambda a: a.float().cpu().numpy()
-        wynik = dict(krok=int(krok), ah=cpu(AH), z=cpu(Z))
+        wynik = dict(krok=int(krok), ah=cpu(AH), z=cpu(Z), glowa=cpu(G))
         # układy: '' = surowy strumień rezydualny (widać wspólny dryf w głąb sieci), '_c' = względem środka chmury w każdym
         # stanie (x − średnia tokenów, jak rzuty filmów), '_n' = jak '_c' podzielone przez JEDNĄ liczbę na checkpoint (średnia
         # norma tokenu po 13 stanach), czyli '_c' w innej skali; każdy z własnym rzutem PCA 3D.

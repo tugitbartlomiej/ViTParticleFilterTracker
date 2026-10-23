@@ -1129,6 +1129,45 @@ class TestJakobianPulapki(unittest.TestCase):
             self.assertLess(float((J - Ja).abs().max() / Ja.abs().max()), 1e-10)
 
 
+class TestMikrosoczewki(unittest.TestCase):
+    """microlens_gl: cel ciepła jak model.cele, ramka szczytu jak model.dekoduj, sigmoid/exp głowy, kolory łat."""
+
+    def test_cel_ciepla(self):
+        from laser_app.gpu import microlens_gl as m
+        c = m.cel_ciepla(None)
+        self.assertEqual(c.shape, (600,)); self.assertEqual(float(c.max()), 0.0)
+        c = m.cel_ciepla([194.0, 116.0, 334.67, 138.67]).reshape(20, 30)
+        self.assertEqual(float(c.max()), 1.0)
+        iy, ix = np.unravel_index(int(np.argmax(c)), c.shape)
+        self.assertEqual((iy, ix), (int(round((116 + 138.67) / 2 / 16 - .5)), int(round((194 + 334.67) / 2 / 16 - .5))))
+        self.assertLess(float(c[0, 0]), 1e-6)
+        self.assertGreater(float(c[iy, ix + 1]), 0.3)                  # szerokie narzędzie: Gauss rozciągnięty w poziomie
+
+    def test_glowa_i_ramka_szczytu(self):
+        from laser_app.gpu import microlens_gl as m
+        g = np.zeros((13, 600, 5)); g[12, 7 * 30 + 5] = (3.0, np.log(2.0), np.log(1.0), np.log(3.0), np.log(0.5))
+        G = m.glowa_na_komorki(g)
+        self.assertAlmostEqual(float(G[12, 7 * 30 + 5, 0]), 1 / (1 + np.exp(-3.0)), 6)
+        self.assertAlmostEqual(float(G[0, 0, 0]), 0.5, 6); self.assertAlmostEqual(float(G[0, 0, 1]), 1.0, 6)
+        R, J = m.ramki_szczytu(G)
+        self.assertEqual(int(J[12]), 7 * 30 + 5)
+        cx, cy = (5 + .5) * 16, (7 + .5) * 16
+        np.testing.assert_allclose(R[12], (cx - 2 * 16, cy - 16, cx + 3 * 16, cy + 8), rtol=1e-6)
+        # ta sama ramka co model.dekoduj dla tego samego wyjścia
+        import torch
+        M = hist.modul_modelu()
+        bx, sc = M.dekoduj(torch.as_tensor(g[12], dtype=torch.float32).view(1, 20, 30, 5), k=1)
+        np.testing.assert_allclose(R[12], bx[0, 0].numpy(), rtol=1e-5)
+        self.assertAlmostEqual(float(sc[0, 0]), float(G[12, 7 * 30 + 5, 0]), 5)
+
+    def test_kolory_lat(self):
+        from laser_app.gpu import microlens_gl as m
+        rgb = np.zeros((320, 480, 3), np.uint8); rgb[16:32, 32:48] = (255, 0, 0)            # łata (1, 2) cała czerwona
+        k = m.kolory_lat(rgb)
+        self.assertEqual(k.shape, (600, 3))
+        np.testing.assert_allclose(k[1 * 30 + 2], (1.0, 0.0, 0.0)); np.testing.assert_allclose(k[0], (0.0, 0.0, 0.0))
+
+
 class TestPulapkiWsadowo(unittest.TestCase):
     """focal_trap.rozwiaz3 (odwracanie 3 × 3 na GPU), _jakobian_wsadowo = _jakobian dla każdej cząsteczki, trap_map.charakter."""
 

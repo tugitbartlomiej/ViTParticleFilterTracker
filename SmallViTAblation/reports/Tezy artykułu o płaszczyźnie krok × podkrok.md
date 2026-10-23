@@ -157,3 +157,26 @@ warsztat ICLR/NeurIPS o dynamice uczenia. Wybór zależy od tego, czy akcent ma 
 - Pomiary i wykresy: `experiments/kroki_podkroki_afinicznosc_uwagi_20261023__00-41-29/` (RAPORT.md, F1–F9, WNIOSEK.txt, dane).
 - Zasady i wcześniejsze liczby: `outputs/porownanie_szklo_20261010/film_krysztal/ZASADY_LASER_KOLOID.md`, `KURCZENIE_UWAGA_MLP.json`.
 - Literatura: `.../Wyniki/Dane/literatura_undermind.md` (klucze Undermind, DOI).
+
+## 8. Stan po replikacji na seedzie 3047 (2026-10-23; `experiments/plaszczyzna_krok_podkrok_replikacja_3047_20261023__02-16-41`)
+
+46 checkpointów 0–400 ep, 10 klatek TEST z cystotomem po 20 łat (udział ≥ 0,25). Werdykt na progach zapisanych przed pomiarem: **2/7 PASS**
+(P5, P6), 5 FAIL — z czego P2, P3, P4 o włos (0,886 vs 0,90; 1,203 vs 1,2; 0,036 vs 0,03), P1 i P7 to różnice czasu między seedami.
+
+Co się powtórzyło (liczby = średnie po 10 klatkach):
+- translacja na starcie (udział 0,999–1,000 w 192D; 573–590 źródeł) → gwiazda: 3 najwięksi odbiorcy uwagi w obrysie ∪ halo w 83–90 % par
+  w blokach 3–6; udział tokenów narzędzia w pełnym jakobianie uwagi 0,56–0,77 (start 0,03); część barycentryczna 0,96–0,98 → 0,3–0,66;
+- MLP 1 rozpychacz (×1,04 → ×1,97 w 22 ep → ×1,62 w 400 ep), **MLP 4 rośnie do końca** (×1,03 → ×1,21 (60 ep) → ×1,40 (100) → ×1,57 (400)),
+  MLP 6 lekko kurczy od 100 ep (×0,98–0,99) i pcha do środka (cos −0,21);
+- wskaźnik balistyczny 1,01 → 2,78 (k1000) → 1,02 (60 ep) → 0,90 (400 ep); cos kolejnych MLP 0,55 → 0,1, b5→6 ujemny (−0,13) w 400 ep;
+- front Fishera: skok w m4 w 90 % par; Fisher m4 1,33 (1 ep) → 3,11 (60) → 3,66 (200) przy IoU płaskim od ~10 ep; blok 6 obniża;
+- siodło w każdym podkroku (0,49–0,53), złożenie 0,48–0,56, nakładanie bliskie losowego (+0,01…+0,03, najwięcej w fazie spójnej 1–3 ep);
+  przejście ściska coraz mocniej: log σ_max 0,87 → 2,85, log σ_min −0,96 → −6,5, Σ log|det| narzędzia −0,1 → −26,9 (400 ep), tła −18,8;
+- uwaga na sąsiadach ≤ 0,018, wygładza MLP (Dirichlet −0,08…−0,20 vs −0,02…−0,03).
+
+Co się różni: kolejność kolapsu bloków (3047: bloki 3, 1, 4 do 3 ep, blok 5 dopiero po 160 ep; s47: bloki 5 i 4 pierwsze); początek
+kontrakcji objętości (3047: między 9 a 22 ep; s47: między 5 a 10 ep); MLP 2 staje się skrajnie nieliniowy (CV-R² 0,15 w 300–400 ep).
+Wnioski do tez: T1, T2, T4 trzymają się; w T3 „kolejność faz” trzeba zapisać bez przypisywania bloków (kolaps uwagi w pierwszej epoce
+w części bloków; spójna inflacja do ~3 ep; dekoherencja; front w bloku 4), a progi liczbowe przeskalować (wzbogacenie względem maksimum
+1/udział narzędzia).
+

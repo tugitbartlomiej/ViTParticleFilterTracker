@@ -1,0 +1,31 @@
+{
+ "eksperyment": "temperatura_widoczna_dla_glowy_20261023__18-38-56",
+ "typ": "pomiar na istniejących checkpointach, bez treningu i bez Edena",
+ "rodzic": {
+  "nazwa": "plaszczyzna_krok_podkrok_replikacja_3047_20261023__02-16-41",
+  "sciezka": "W:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/plaszczyzna_krok_podkrok_replikacja_3047_20261023__02-16-41",
+  "wykorzystane": ["Kod_eksperymentu/wspolne.py (siec, wczytaj, checkpointy, obraz, etykieta_cystotomu, przejscie, iou, PROG_NARZ)", "Wyniki/Dane/klatki.json (10 klatek TEST)"]
+ },
+ "checkpointy": {
+  "seed": 3047,
+  "sciezka_wag": "experiments/skae_replikacja_mapy_vit3047_20261022__17-14-27/Wyniki/Dane/Wejscia/wagi",
+  "liczba": 46,
+  "kroki": "0, 300, 1000, 3000, 6000, 10000, 16000, 24000, 33000, 44000, 55000, 65640, potem co 10 epok (76563 ... 437500)",
+  "epoka_kroki": 1093.75,
+  "sha256_k000000": "763896859e5ad1497bfa1c164074e062f3e676cd925ae355eac6f60b2c7786af",
+  "sha256_k437500": "5df6566278e7bb398b7330ecd669ce43076e8ce896c9be5fa1683eddb0bf8d79"
+ },
+ "klatki": "experiments/plaszczyzna_krok_podkrok_replikacja_3047_20261023__02-16-41/Wyniki/Dane/klatki.json (10 klatek TEST; narzędzie: udział >= 0,25, tło: udział == 0)",
+ "modul": "experiments/plaszczyzna_krok_podkrok_replikacja_3047_20261023__02-16-41/Kod_eksperymentu/wspolne.py",
+ "model_py": "experiments/maly_vit_od_zera_35000_21epok_20261009/kod/model.py",
+ "data": "2026-10-23, 18:38 (Europe/Warsaw)",
+ "kod_git": "41b2f0c28fd54cb9b2fff824049214dc83f18488",
+ "optimizer_sampler_rng": "nie dotyczy (brak treningu i wznowienia); losowe podprzestrzenie: torch.Generator seed 0",
+ "motywacja": "pytanie użytkownika z 2026-10-23: czy sieć uczy się dalej w kierunkach, których strata nie widzi; rozkład 'temperatury' tokenów na składową widoczną dla głowy (wiersze jakobianu) i niewidoczną",
+ "polecenia_odtwarzania": [
+  "cd <eksperyment>/Kod_eksperymentu && PYTHONIOENCODING=utf-8 W:/Python/3.11/python.exe temperatura_glowy.py ../Wyniki/Dane",
+  "cd <eksperyment>/Wyniki/Code_Interpretujacy_Wyniki && PYTHONIOENCODING=utf-8 W:/Python/3.11/python.exe odczyt_temperatura.py ../Dane"
+ ],
+ "srodowisko": "Python 3.11 (W:/Python/3.11), torch 2.14.1+cu126, jakobiany float64 CPU, przejścia w przód float32 GPU (TF32 wyłączone)",
+ "materialy": {"wykresy": false, "raport": false, "krotki_wniosek": false}
+}

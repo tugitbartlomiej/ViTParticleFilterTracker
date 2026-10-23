@@ -264,7 +264,7 @@ class SubstepsMixin:
     def _zlec_podkroki(self):
         h = self.h
         widac = self.doki['p'].isVisible() and (not self.doki['p'].visibleRegion().isEmpty() or self.doki['p'].isFloating())
-        if h is None or not (widac or self.ch_pod.isChecked() or self._og_tryb_pod()):
+        if h is None or not (widac or self.widac('m') or self.ch_pod.isChecked() or self._og_tryb_pod()):
             return
         krok = int(h.kroki[int(np.clip(round(self.t), 0, h.K - 1))])
         if self.d_pod is not None and self.d_pod.get('krok') == krok and self.d_pod.get('_wagi') == h.wagi:
@@ -357,6 +357,7 @@ class SubstepsMixin:
             if not self._kamera_pod:
                 self._kadruj_przejscie(); self._kamera_pod = True
         self._opcje_przejscia()
+        self._mk_przejscie(d)                                        # okienko M: mikrosoczewki (to samo przejście)
         self.diagram.ustaw_lodyge(self.h.rgb, d)
         self._stat_pod = self._statystyki_podkrokow(d)
         if self.ch_pod.isChecked():
@@ -474,6 +475,7 @@ class SubstepsMixin:
             self.lbs.setText(f'podkroki: {nazwa};  sfera = stany względem środka, jedna skala na checkpoint, reflektory bloku {k // 2 + 1} '
                              f'(błękit = ujemna jasność)')
         self._opis_podkroku()
+        self._mk_podkrok(s)
         if self._og_tryb_pod():
             self._og_podkrok(s)
 

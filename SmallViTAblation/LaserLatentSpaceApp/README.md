@@ -30,9 +30,9 @@ LaserLatentSpaceApp/
     lasers_tab/                             główna zakładka
       tab.py                                LasersTab: budowa (sekcje panelu, okienka), opcje, ustaw_czas
       layout.py, data_view.py, image_set_view.py, labels_view.py, substeps_view.py,
-      trap_view.py, trap_map_view.py, valley_view.py, mechanics_view.py, playback.py
+      trap_view.py, trap_map_view.py, valley_view.py, mechanics_view.py, microlens_view.py, playback.py
                                             mixiny LasersTab (okienka-doki, dane, zestaw zdjęć, etykiety, podkroki,
-                                            pułapka 11, mapa pułapek 14, dolina 12, mechanika 13, oś czasu)
+                                            pułapka 11, mapa pułapek 14, dolina 12, mechanika 13, mikrosoczewki M, oś czasu)
       workers.py, widgets.py, shared.py     wątki (QThread), widżety zakładki, stałe
     ui/                                     widżety Qt
       settings_panel.py, parameter_groups.py, tooltips.py, label_preview.py, widgets.py,
@@ -243,6 +243,30 @@ cząsteczka, grubość linii; uwaga: linie / wektory sił, jedna głowa albo wsz
 ujemne), tylko N najsilniejszych (próg z |z| N-tego lasera, `NetworkPassageGPU._prog_laserow`), próg |z|, krycie;
 przesunięcia w podkroku. Tryb sił uwagi (`cb_sily`) jest wspólny ze sferą w trybie podkroków; pozostałe przełączniki
 dotyczą tylko okienka P.
+
+## Okienko M: mikrosoczewki (2026-10-23)
+
+Druga wersja wizualizacji przejścia przez sieć, według alegorii z rozmowy 2026-10-23 (`gpu/microlens_gl.py`, `lasers_tab/microlens_view.py`,
+menu „Okienka → Sfera, pułapka, …, mikrosoczewki”, strona panelu „Mikrosoczewki (M)”, prawy klik w okienko). Jedna scena 3D w trzech
+piętrach, wzdłuż osi Z:
+
+- **na dole zdjęcie** (klatka 480×320) i cztery **płyty łodygi** (wyjścia konwolucji jako obrazy PCA-RGB, z przejścia `lodyga_0..3`):
+  zdjęcie nie przechodzi na ekran, lecz przez filtry łodygi **naświetla** półfabrykaty 600 mikrosoczewek (stan 0 = łodyga + kodowanie
+  pozycji); promienie naświetlenia biegną od komórki zdjęcia do jej koloidu w sferze (kolor = kolor łaty; narzędzie, wybrane albo wszystkie);
+- **w środku sfera reflektorów** (drugi `ReflectorSphere` o tych samych ustawieniach co duża sfera, zawsze w trybie przejścia przez sieć):
+  koloid = kształt mikrosoczewki (położenie w 192 wymiarach), lasery bloku i linie uwagi (gwiazda) go formują przez 12 podkroków;
+- **na górze lampa, matryca mikrosoczewek i ekran**: jednostajna lampa prześwietla matrycę 30 × 20 (kółko = soczewka, jasność =
+  transmisja = sigmoid ciepła z głowy); każda soczewka świeci tylko na własną komórkę ekranu (głowa działa na token, bez mieszania);
+  ekran = cień (mapa ciepła), różnica cień − kalka (czerwony za jasno, niebieski za ciemno; to prowadzi uczenie) albo kalka z etykiety
+  (Gauss wokół środka narzędzia jak w `model.cele`); ramki: błękitna z głowy (prostokąt plamki najjaśniejszej soczewki: komórka
+  szczytu i jej l, t, r, b), biała GT; żółty obrys = wybrane cząsteczki (na matrycy i na ekranie).
+
+Czas okienka = podkrok 0..12 bieżącego checkpointu (suwak podkroków, ▶ podkroki, synchronizacja z osią uczenia), dane = to samo
+przejście co okienko P (`history.podkroki`, zlecane także gdy widać okienko M). Przejście niesie teraz klucz `glowa` (13 × 600 × 5:
+głowa na każdym z 13 stanów); zapisane wcześniej przejścia bez tego klucza liczą się od nowa (`passage_store.wczytaj`). Domyślnie
+ekran pokazuje **sondę**: tę samą głowę przyłożoną do stanu po bieżącym podkroku (jak cień powstaje w głąb sieci; sieć tak nie robi,
+czyta tylko stan 12; napis pod widokiem to zaznacza); opcja „głowa czyta tylko stan końcowy (jak sieć)”. Napis pod widokiem: maks.
+ciepło i jego komórka, mediana tła, liczba jasnych komórek, IoU ramki szczytu z GT.
 
 ## Pełny ekran i Odyssey 3D Hub (konwersja SBS → 3D)
 
