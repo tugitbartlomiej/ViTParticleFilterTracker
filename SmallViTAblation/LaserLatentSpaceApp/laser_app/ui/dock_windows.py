@@ -215,6 +215,10 @@ class DockTitleBar(QWidget):
         self.tytul.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)   # długi tytuł nie poszerza okienka
         lay.addWidget(bez_ukladu(self.tytul, self.tytul.sizeHint().height() + 2), 1)   # tytuł zmieniany w czasie (11): bez przeliczeń
         for znak, opis, fn in (
+                ('⟲', 'Resetuj widok 3D tego okienka: kamera wraca sprzed obracania, przesuwania i przybliżania\n'
+                      '(też Home albo 0 w widoku, podwójny środkowy przycisk; wszystkie naraz: Ctrl+Shift+R).\n'
+                      'Strzałka obok: widok wzdłuż osi X, Y, Z albo izometryczny (w widoku też klawisze X, Y, Z, Shift = z drugiej strony, O).',
+                 lambda: resetuj_widoki(dok)),
                 ('⛶', 'Maksymalizuj na tym ekranie, na którym jest okienko (wyskakuje z układu i wypełnia ekran).\n'
                       'Drugie kliknięcie przypina je z powrotem. To samo: podwójne kliknięcie w pasek albo F11.',
                  lambda: przelacz_dok(dok)),
@@ -223,11 +227,42 @@ class DockTitleBar(QWidget):
             b = QToolButton(); b.setText(znak); b.setAutoRaise(True); b.setToolTip(opis); b.setFixedSize(22, 18)
             b.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             b.clicked.connect(fn); lay.addWidget(b)
+            if znak == '⟲':                                             # strzałka obok: menu ustawień wzdłuż osi X, Y, Z
+                self.bt_reset = b
+                b.setMenu(menu_osi(b, dok)); b.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup); b.setFixedSize(34, 18)
         dok.windowTitleChanged.connect(self.tytul.setText)
+
+    def showEvent(self, ev):
+        self.bt_reset.setVisible(bool(widoki_3d(self.dok)))           # ⟲ tylko w okienkach z widokiem OpenGL
+        super().showEvent(ev)
 
     def mouseDoubleClickEvent(self, e):
         przelacz_dok(self.dok)
         e.accept()
+
+
+def widoki_3d(w):
+    """Widoki OpenGL (GLView) w widżecie w i jego potomkach."""
+    from laser_app.ui.gl_view import GLView
+    return ([w] if isinstance(w, GLView) else []) + w.findChildren(GLView)
+
+
+def resetuj_widoki(w):
+    """Reset kamery wszystkich widoków OpenGL okienka w (GLView.resetuj_widok)."""
+    for v in widoki_3d(w):
+        v.resetuj_widok()
+
+
+def menu_osi(rodzic, w=None):
+    """Menu ustawień kamery wzdłuż osi X, Y, Z (i izometrycznego) dla widoków okienka w; w = None: wszystkie widoki OpenGL."""
+    from PyQt6.QtWidgets import QMenu
+    from laser_app.ui.gl_view import GLView
+    m = QMenu(rodzic)
+    for os_, opis in GLView.NAZWY_OSI.items():
+        skrot = {'X': 'X', '−X': 'Shift+X', 'Y': 'Y', '−Y': 'Shift+Y', 'Z': 'Z', '−Z': 'Shift+Z', 'izo': 'O'}[os_]
+        a = m.addAction(f'Widok {opis}\t{skrot}')
+        a.triggered.connect(lambda _=False, o=os_: [v.ustaw_os(o) for v in widoki_3d(w)] if w is not None else GLView.os_wszystkie(o))
+    return m
 
 
 def pasek_doku(d):

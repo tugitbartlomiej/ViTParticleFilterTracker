@@ -620,3 +620,9 @@ w pasku okienka nadal robi zwykłą maksymalizację. Dla okien innych niż doki 
 fokusu. Przytrzymanie klawisza działa płynnie (timer 16 ms): W/S obrót w górę/dół (60°/s), A/D obrót w lewo/prawo (90°/s), Q/E (też −/+)
 oddalanie i zbliżanie, I/K/J/L przesuwanie w płaszczyźnie widoku, Home albo 0 powrót do kadru; Shift = 3× szybciej, Ctrl = 0,3×.
 W widoku z góry WASD przesuwa. Strzałki i spacja zostają dla osi czasu zakładki.
+
+Reset i osie (2026-10-23): ⟲ w pasku tytułu każdego okienka z widokiem 3D (też Home / 0, podwójny ŚPM, prawy klik → ⟲) przywraca
+kamerę sprzed obracania, przesuwania i przybliżania (zapamiętaną przy pierwszym ręcznym ruchu; kamery ustawianej przez program to
+nie cofa). Strzałka przy ⟲, przyciski X…−Z w menu prawego kliku i klawisze X, Y, Z (Shift: z ujemnej strony), O ustawiają kamerę
+wzdłuż osi sceny albo izometrycznie (środek i odległość zostają). Wszystkie widoki naraz: „Okienka ▾ → Resetuj wszystkie widoki 3D”
+(Ctrl+Shift+R) i „Wszystkie widoki 3D wzdłuż osi X, Y, Z”.

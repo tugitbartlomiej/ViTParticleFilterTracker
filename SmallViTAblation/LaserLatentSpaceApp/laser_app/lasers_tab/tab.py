@@ -382,6 +382,11 @@ class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixi
                 if k in self.doki:
                     pm.addAction(self.doki[k].toggleViewAction())
         m.addSeparator()
+        a = QAction('Resetuj wszystkie widoki 3D', self); a.setShortcut('Ctrl+Shift+R')
+        a.setToolTip('Kamera każdego widoku OpenGL wraca sprzed obracania, przesuwania i przybliżania (jedno okienko: ⟲ albo Home).')
+        a.triggered.connect(GLView.resetuj_wszystkie); m.addAction(a); self.addAction(a)
+        from laser_app.ui.dock_windows import menu_osi
+        mo = menu_osi(self); mo.setTitle('Wszystkie widoki 3D wzdłuż osi X, Y, Z'); m.addMenu(mo)
         mu = m.addMenu('Układy okienek')
         for nazwa, fn in (('Domyślny: sfera duża, rzuty i wykresy w kartach', self._przywroc_uklad),
                           ('Sfera + pułapka optyczna obok siebie', lambda: self._uklad_gotowy('pulapka')),

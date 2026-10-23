@@ -118,7 +118,8 @@ class LayoutMixin:
 
     def menu_okienka(self, klucz, pos):
         """Prawy klik w okienko: popup z jego ustawieniami (sekcje panelu wypożyczone na czas otwarcia) i akcjami okienka."""
-        from laser_app.ui.dock_windows import przelacz, przelacz_dok
+        from laser_app.ui.dock_windows import przelacz, przelacz_dok, resetuj_widoki, widoki_3d
+        from laser_app.ui.gl_view import GLView
         from laser_app.ui.settings_panel import SettingsPopup
         d = self.doki.get(klucz) or self.doki_ster.get(klucz)
         if klucz.startswith('R') and hasattr(self.rzuty, 'sekcje_okienka'):
@@ -134,6 +135,12 @@ class LayoutMixin:
                      ('⛶', 'Maksymalizuj okienko na jego ekranie (drugi raz wraca).', lambda: przelacz_dok(d)),
                      ('🖵', 'Pełny ekran okienka (Esc wraca), np. stereo na monitorze 3D.', lambda: przelacz(d.widget())),
                      ('🗙', 'Zamknij okienko (wraca z menu „Okienka”).', d.close)]
+            if widoki_3d(d):
+                akcje[:0] = [('⟲', 'Resetuj widok 3D okienka (kamera sprzed obracania i przybliżania; też Home albo 0).',
+                              lambda: resetuj_widoki(d))] + [
+                    (o, f'Widok {opis} (w widoku: klawisz {o[-1]}{", Shift" if o.startswith("−") else ""}).',
+                     lambda o=o: [v.ustaw_os(o) for v in widoki_3d(d)])
+                    for o, opis in GLView.NAZWY_OSI.items() if o != 'izo']
         p = SettingsPopup.istniejacy(klucz, sekcje)
         if p is not None:                                                # to samo okienko drugi raz: przywołanie, bez przestawiania
             p.show(); p.raise_(); p.activateWindow()

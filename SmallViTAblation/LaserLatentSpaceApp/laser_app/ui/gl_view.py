@@ -37,7 +37,8 @@ class GLView(gl.GLViewWidget):
 
     # ------------------------------------------------------------------ klawiatura w aktywnym widoku (pod kursorem myszy albo po kliknięciu)
     # W/S obrót w górę/dół, A/D obrót w lewo/prawo, Q/E oddal/zbliż (też −/+), I/K/J/L przesuwanie w płaszczyźnie widoku,
-    # Home albo 0: powrót do kadru, Shift = szybciej (×3), Ctrl = wolniej (×0,3). W widoku z góry WASD przesuwa. Strzałki i spacja
+    # Home albo 0: reset kamery, X/Y/Z: widok wzdłuż osi (Shift: z ujemnej strony), O: izometryczny,
+    # Shift = szybciej (×3), Ctrl = wolniej (×0,3). W widoku z góry WASD przesuwa. Strzałki i spacja
     # zostają dla osi czasu zakładki.
     _KLAWISZE = {Qt.Key.Key_W: 'w', Qt.Key.Key_S: 's', Qt.Key.Key_A: 'a', Qt.Key.Key_D: 'd', Qt.Key.Key_Q: 'q', Qt.Key.Key_E: 'e',
                  Qt.Key.Key_Minus: 'q', Qt.Key.Key_Plus: 'e', Qt.Key.Key_Equal: 'e', Qt.Key.Key_I: 'i', Qt.Key.Key_K: 'k',
@@ -51,12 +52,78 @@ class GLView(gl.GLViewWidget):
             self.setFocus(Qt.FocusReason.MouseFocusReason)
         super().enterEvent(ev)
 
+    # ------------------------------------------------------------------ reset kamery i ustawienia wzdłuż osi
+    # Kamera sprzed pierwszego ręcznego ruchu (mysz, kółko, klawisze, oś X/Y/Z) jest zapamiętywana; reset do niej wraca. Kamery
+    # ustawianej przez program (dopasowanie do chmury, śledzenie) to nie dotyczy: zapamiętuje się dopiero ruch użytkownika.
+    _kam0 = None
+    # oś → (elevation, azimuth) kamery patrzącej na środek z dodatniej strony osi; „−” = z ujemnej strony
+    OSIE = {'X': (0.0, 0.0), '−X': (0.0, 180.0), 'Y': (0.0, 90.0), '−Y': (0.0, -90.0), 'Z': (90.0, -90.0), '−Z': (-90.0, -90.0),
+            'izo': (35.264, 45.0)}
+    NAZWY_OSI = {'X': 'z osi +X (płaszczyzna Y–Z)', '−X': 'z osi −X', 'Y': 'z osi +Y (płaszczyzna X–Z)', '−Y': 'z osi −Y',
+                 'Z': 'z góry, z osi +Z (płaszczyzna X–Y)', '−Z': 'z dołu, z osi −Z', 'izo': 'izometryczny (X, Y, Z pod równymi kątami)'}
+
+    def _ruch_uzytkownika(self):
+        if self._kam0 is None:
+            o = self.opts
+            self._kam0 = dict(center=type(o['center'])(o['center']), distance=float(o['distance']),
+                              elevation=float(o['elevation']), azimuth=float(o['azimuth']), fov=float(o['fov']))
+
+    def resetuj_widok(self):
+        """Powrót kamery: widok z góry do swojego kadru, inne do kamery sprzed ręcznej nawigacji (i dopasowania sceny, jeśli jest).
+        Też Home / 0 i podwójny środkowy przycisk w widoku."""
+        if getattr(self, '_kadr', None) is not None and hasattr(self, 'kadruj'):
+            self._kam0 = None
+            self.kadruj(*self._kadr)
+            return
+        k = self._kam0
+        if k is not None:
+            self._kam0 = None
+            self.opts['center'] = k['center']; self.opts['fov'] = k['fov']
+            self.setCameraPosition(distance=k['distance'], elevation=k['elevation'], azimuth=k['azimuth'])
+        if callable(getattr(self, 'reset_widoku', None)):
+            self.reset_widoku()
+        self.update()
+
+    def ustaw_os(self, os_):
+        """Kamera patrzy na środek wzdłuż osi sceny (klucz OSIE: 'X', '−X', 'Y', '−Y', 'Z', '−Z', 'izo'); środek i odległość zostają.
+        Widok z góry (bez obrotu) zostaje bez zmian. W widoku też klawisze X, Y, Z (Shift: z ujemnej strony) i O (izometryczny)."""
+        if not self.obrot or os_ not in self.OSIE:
+            return
+        self._ruch_uzytkownika()
+        el, az = self.OSIE[os_]
+        self.setCameraPosition(elevation=el, azimuth=az)
+        self.update()
+
+    @classmethod
+    def resetuj_wszystkie(cls):
+        """Reset kamery wszystkich widoków OpenGL naraz."""
+        cls._dla_wszystkich(lambda w: w.resetuj_widok())
+
+    @classmethod
+    def os_wszystkie(cls, os_):
+        """Wszystkie widoki OpenGL (z obrotem) wzdłuż tej samej osi."""
+        cls._dla_wszystkich(lambda w: w.ustaw_os(os_))
+
+    @staticmethod
+    def _dla_wszystkich(fn):
+        for w in list(GLView._instancje):
+            try:
+                fn(w)
+            except RuntimeError:                         # widok już usunięty
+                pass
+
+    _KLAWISZE_OSI = {Qt.Key.Key_X: 'X', Qt.Key.Key_Y: 'Y', Qt.Key.Key_Z: 'Z', Qt.Key.Key_O: 'izo'}
+
     def keyPressEvent(self, ev):
         if ev.key() in (Qt.Key.Key_Home, Qt.Key.Key_0):
-            if getattr(self, '_kadr', None) is not None and hasattr(self, 'kadruj'):
-                self.kadruj(*self._kadr)
-            elif callable(getattr(self, 'reset_widoku', None)):
-                self.reset_widoku()
+            self.resetuj_widok()
+            ev.accept()
+            return
+        os_ = self._KLAWISZE_OSI.get(ev.key())
+        if os_ is not None and not (ev.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.AltModifier)):
+            if ev.modifiers() & Qt.KeyboardModifier.ShiftModifier and os_ != 'izo':
+                os_ = '−' + os_
+            self.ustaw_os(os_)
             ev.accept()
             return
         k = self._KLAWISZE.get(ev.key())
@@ -91,6 +158,7 @@ class GLView(gl.GLViewWidget):
         mod = QGuiApplication.keyboardModifiers()
         v = 3.0 if mod & Qt.KeyboardModifier.ShiftModifier else (0.3 if mod & Qt.KeyboardModifier.ControlModifier else 1.0)
         kl = self._klawisze
+        self._ruch_uzytkownika()
         h = (('d' in kl) - ('a' in kl)); u = (('w' in kl) - ('s' in kl))
         if h or u:
             if self.obrot:
@@ -145,6 +213,8 @@ class GLView(gl.GLViewWidget):
         self.mousePos = p
         d = p - poprz
         b, ctrl = ev.buttons(), bool(ev.modifiers() & Qt.KeyboardModifier.ControlModifier)
+        if b in (Qt.MouseButton.LeftButton, Qt.MouseButton.MiddleButton, Qt.MouseButton.RightButton):
+            self._ruch_uzytkownika()
         if b == Qt.MouseButton.LeftButton:
             if ctrl or not self.obrot:
                 self.pan(d.x(), d.y(), 0, relative='view')
@@ -161,6 +231,7 @@ class GLView(gl.GLViewWidget):
 
     def wheelEvent(self, ev):
         delta = ev.angleDelta().y() or ev.angleDelta().x()
+        self._ruch_uzytkownika()
         if ev.modifiers() & Qt.KeyboardModifier.ControlModifier:
             self.opts['fov'] = float(np.clip(self.opts['fov'] * 0.999 ** delta, 5, 120))
             self.update()
@@ -173,13 +244,9 @@ class GLView(gl.GLViewWidget):
         self.update()
 
     def mouseDoubleClickEvent(self, ev):
-        if ev.button() == Qt.MouseButton.MiddleButton:       # podwójny ŚPM: wróć do kadru (widok z góry albo funkcja sceny)
-            if getattr(self, '_kadr', None) is not None and hasattr(self, 'kadruj'):
-                self.kadruj(*self._kadr)
-                return
-            if callable(getattr(self, 'reset_widoku', None)):
-                self.reset_widoku()
-                return
+        if ev.button() == Qt.MouseButton.MiddleButton:       # podwójny ŚPM: reset kamery (kadr, kamera sprzed nawigacji, scena)
+            self.resetuj_widok()
+            return
         super().mouseDoubleClickEvent(ev)
 
     def mouseReleaseEvent(self, ev):
