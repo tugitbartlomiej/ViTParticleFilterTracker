@@ -1,0 +1,40 @@
+{
+ "eksperyment": "kroki_podkroki_afinicznosc_uwagi_20261023__00-41-29",
+ "typ": "pomiar na zapisanych danych, bez treningu",
+ "rodzice": [
+  {
+   "nazwa": "aplikacja Lasery i koloidy (LaserLatentSpaceApp), zapisane przejścia przez sieć",
+   "sciezka": "LaserLatentSpaceApp/cache_uczenia/lasery/7992f2317c64a2e3/przejscia/k*.npz (807 plików, float32, 17 GB)",
+   "opis": "jedno przejście w przód rozłożone na 13 stanów strumienia rezydualnego dla każdego z 806 checkpointów; history.podkroki",
+   "baza_sha256": "3fdc24eefa0f5be01b0bc8d01c68b2bca53a7510e0ae2170b0833f86a5e8e786",
+   "wykorzystane_pola": ["xn", "rms", "pos", "pos_c", "ah", "z", "s_krok", "s_pewnosc", "s_sprawdzenie_c"]
+  },
+  {
+   "nazwa": "etykieta narzędzia z obrysu Cataract-LMM dla tej samej klatki",
+   "sciezka": "LaserLatentSpaceApp/cache_uczenia/lasery/140854f7a6dbcbe5/etykieta_obrys.npz",
+   "sha256": "52ac71f19b31698e3bc9f9316f66e262ad0cd6aaa6247660140e77a8fddb6d12",
+   "kontrola": "Z[0] obu historii identyczne bit w bit (ta sama klatka TR_0050_S1_P03, klatka 1629, ramka GT [194, 116, 334.7, 138.7])"
+  },
+  {
+   "nazwa": "zasady i pomiary filmów (ZASADY_LASER_KOLOID.md, KURCZENIE_UWAGA_MLP.json, NADAZANIE_PULAPKI_S47.md)",
+   "sciezka": "outputs/porownanie_szklo_20261010/film_krysztal/",
+   "opis": "KURCZENIE mierzył r_po/r_przed w 12 podkrokach na 40 checkpointach × 4 zdjęcia; tu to samo na 806 checkpointach plus nowe obserwable"
+  },
+  {
+   "nazwa": "pomiar pułapki w podkrokach cząsteczki 226",
+   "sciezka": "LaserLatentSpaceApp/cache_uczenia/lasery/eafb5a973be3d490/pulapka_podkrokow_t226_G5.csv",
+   "opis": "806 checkpointów × 12 podkroków: dywergencja, wir, promień spektralny I+J, efektywne źródła uwagi (tylko czytany)"
+  }
+ ],
+ "model": {
+  "bieg": "assets/MalyViT_35000_od_zera_s47 (ziarno 47, 806 checkpointów co ok. 80 kroków, 0–65 640 = 60 epok po 1094 kroki)",
+  "kod": "experiments/maly_vit_od_zera_35000_21epok_20261009/kod/model.py",
+  "checkpointy_jakobianow": [0, 1094, 5470, 10940, 21880, 43760, 65640],
+  "sha256_k00000": "cca40384f3ef1d4dc3c6bc5ae32c212aa461ae3d16768691e95564b44d625108",
+  "sha256_k65640": "09d3eddc44c4ea88dee32b1802197477f086c06da69024a3a2d9e60b70af477f"
+ },
+ "dane": "jedna klatka TRAIN 0 zbioru uczącego biegu 35 000 (rgb 320 × 480 w dane.npz historii), 600 tokenów: 3 narzędzie (udział ≥ 0,5), 13 mieszanych, 584 tło",
+ "optimizer_sampler_rng": "nie dotyczy (brak treningu i wznowienia)",
+ "kod_git": "8821939a8f15189372587789ed24c00fe3ccbf65",
+ "motywacja": "pytanie użytkownika z 2026-10-23: co widać tylko na płaszczyźnie krok uczenia × podkrok przejścia; czy uwaga jest przekształceniem afinicznym chmury i czy to widać na cząsteczkach; analogie fizyczne (pułapki optyczne, pola)"
+}
