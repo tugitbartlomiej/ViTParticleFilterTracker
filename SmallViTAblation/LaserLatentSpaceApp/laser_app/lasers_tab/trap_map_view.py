@@ -45,15 +45,34 @@ class TrapMapMixin:
         self.ch_mp_sfera = QCheckBox('pokaż mapę także na dużej sferze'); self.ch_mp_sfera.setChecked(False)
         self.ch_mp_sfera.setToolTip('Te same kropki, linie i wektory na sferze reflektorów (w jej skali i skali chmury).')
         self.lb_mp = QLabel('—'); self.lb_mp.setWordWrap(True)
+        # strzałki pola: siatka G³ w komórce każdej z 600 cząsteczek, pole liniowe f(0) + J₀ u (jak strzałki okienka 11, ale wszędzie)
+        self.cb_mp_strz = NarrowCombo(); self.cb_mp_strz.addItems(['brak', 'pole wiązek (pełne pchnięcie)',
+                                                                   'kształt pułapki (pole względem skoku cząsteczki)'])
+        self.cb_mp_strz.setCurrentIndex(2)
+        self.cb_mp_strz.setToolTip('Strzałki pola bloku 6 w komórkach wszystkich 600 cząsteczek naraz (pole liniowe f(0) + J₀ u z jakobianu\n'
+                                   'w cząsteczce). Pełne pchnięcie: dokąd wiązki pchają cząstkę postawioną w punkcie (prawie równoległe,\n'
+                                   'bo zera pola w komórkach prawie nie ma). Kształt pułapki: to samo minus skok f(0), czyli J₀ u: zbiega się\n'
+                                   '(ściąga), rozbiega (wypycha), siodło albo wir wokół każdej cząsteczki.')
+        self.sp_mp_G = _spin(1, 5, 3, 1, sufiks=' na bok')
+        self.sp_mp_G.setToolTip('Strzałek na bok komórki (G³ na cząsteczkę; 1 = jedna w cząsteczce).')
+        self.cb_mp_strz_dl = NarrowCombo()
+        self.cb_mp_strz_dl.addItems(['długość ∝ |f| (wspólna skala w checkpoincie)', 'jednakowa długość (sam kierunek)'])
+        self.cb_mp_strz_dl.setToolTip('∝ |f|: 95. percentyl długości = odstęp strzałek, więc silne pole widać jako dłuższe strzałki.\n'
+                                      'Jednakowa: każda strzałka ma długość odstępu, widać tylko kierunek pola.')
+        self.sp_mp_strz = _spin(0.1, 10, 0.8, 0.1, 1, ' ×')
+        self.sp_mp_strz.setToolTip('Długość strzałek (1 = odstęp między strzałkami w komórce).')
+        self.sp_mp_krycie = _spin(0.05, 1.0, 0.8, 0.05, 2); self.sp_mp_krycie.setToolTip('Krycie strzałek pola (gęste pole: mniejsze).')
         f.addRow(self.ch_mp)
         hb = QHBoxLayout(); hb.addWidget(self.bt_mp); hb.addWidget(self.bt_mp_stop); f.addRow(hb); f.addRow(self.pasek_mp)
+        f.addRow('Strzałki', self.cb_mp_strz); f.addRow('  siatka', self.sp_mp_G); f.addRow('  długość', self.cb_mp_strz_dl)
+        f.addRow('  mnożnik', self.sp_mp_strz); f.addRow('  krycie', self.sp_mp_krycie)
         f.addRow('Kolor', self.cb_mp_kolor); f.addRow('Wyróżnij', self.cb_mp_filtr); f.addRow('Kropki', self.sp_mp_rozm)
         f.addRow(self.ch_mp_pul); f.addRow('  lupa', self.sp_mp_lupa); f.addRow(self.ch_mp_skok); f.addRow('  długość', self.sp_mp_skok)
         f.addRow(self.ch_mp_sfera); f.addRow(self.lb_mp)
         self.ch_mp.toggled.connect(lambda on: (self._mp_zlec(), self._mp_czas(self.t)) if self.h is not None else None)
-        for w_ in (self.cb_mp_kolor, self.cb_mp_filtr):
+        for w_ in (self.cb_mp_kolor, self.cb_mp_filtr, self.cb_mp_strz, self.cb_mp_strz_dl):
             w_.currentIndexChanged.connect(lambda *_: self._mp_czas(self.t) if self.h is not None else None)
-        for w_ in (self.sp_mp_rozm, self.sp_mp_lupa, self.sp_mp_skok):
+        for w_ in (self.sp_mp_rozm, self.sp_mp_lupa, self.sp_mp_skok, self.sp_mp_G, self.sp_mp_strz, self.sp_mp_krycie):
             w_.valueChanged.connect(lambda *_: self._mp_czas(self.t) if self.h is not None else None)
         for w_ in (self.ch_mp_pul, self.ch_mp_skok, self.ch_mp_sfera):
             w_.toggled.connect(lambda *_: (self._mp_zlec(), self._mp_czas(self.t)) if self.h is not None else None)
@@ -137,13 +156,46 @@ class TrapMapMixin:
             dl = self.sp_mp_skok.value()
             sk = (1 - f) * d['skok'][a] * s[a] + f * d['skok'][b] * s[b]
             S = np.stack([P, P + dl * sk], 1)
+        pole, opis_pola = self._mp_strzalki(d, a, b, f, s, P, kol)
         tok = int(self.sp_tok.value())
         wyb = P[tok] if 0 <= tok < len(P) else None
         rozm = self.sp_mp_rozm.value()
         if self.widac('14'):
-            self.gl_mp.ustaw(P, kol, rozm, Q, kq, S, wyb)
+            self.gl_mp.ustaw(P, kol, rozm, Q, kq, S, wyb, pole)
         if self.ch_mp_sfera.isChecked() and self.widac('s'):
-            self.gl_mp_s.ustaw(P, kol, rozm, Q, kq, S, wyb)
+            self.gl_mp_s.ustaw(P, kol, rozm, Q, kq, S, wyb, pole)
         k = int(round(t))
         self.lb14.setText(f'Checkpoint {k + 1}/{K} (krok {int(h.kroki[k])}): {trap_map.statystyki(d, k)}.  Zielony ściąga, żółty siodło, '
-                          f'czerwony wypycha, błękitny odcień = wir; biała obwódka = wybrana cząsteczka {tok}.')
+                          f'czerwony wypycha, błękitny odcień = wir; biała obwódka = wybrana cząsteczka {tok}.{opis_pola}')
+
+    def _mp_strzalki(self, d, a, b, f, s, P, kol):
+        """Strzałki pola w komórkach wszystkich cząsteczek (G³ na cząsteczkę) w chwili między checkpointami a i b (waga f):
+        punkty siatki i wektory na ekranie interpolowane jak położenia, kolor = kolor cząsteczki. Zwraca (pole dla TrapMapGL, opis)."""
+        tryb = self.cb_mp_strz.currentIndex()
+        if not tryb or 'J0' not in d:
+            return None, ''
+        G = int(self.sp_mp_G.value()); wzgl = tryb == 2; jedn = self.cb_mp_strz_dl.currentIndex() == 1
+        mn = self.sp_mp_strz.value()
+
+        def ekran(k):
+            U, F, odst = trap_map.pole_w_komorkach(d, k, G, wzgl)
+            odst_e = odst * s[k]                                                   # odstęp strzałek na ekranie, (n,)
+            m = np.linalg.norm(F, axis=2)
+            if jedn:
+                V = F / np.maximum(m, 1e-30)[..., None] * odst_e[:, None, None]
+            else:
+                V = F * (float(np.median(odst_e)) / max(float(np.percentile(m, 95)), 1e-30))
+            return U * s[k], mn * V, m
+
+        Ua, Va, ma = ekran(a)
+        Ub, Vb, _ = ekran(b) if b != a and f > 0 else (Ua, Va, ma)
+        P0 = P[:, None] + (1 - f) * Ua + f * Ub
+        V = (1 - f) * Va + f * Vb
+        c = np.repeat(np.asarray(kol, np.float32), G ** 3, axis=0); c[:, 3] *= self.sp_mp_krycie.value()
+        pole = trap_map_gl.odcinki_strzalek(P0.reshape(-1, 3), V.reshape(-1, 3), c)
+        k = a if f < 0.5 else b
+        rogi = 2 * trap_map.siatka_komorki(2)[None] * (float(d.get('zasieg', 1.0)) * d['r_kom'][k])[:, None, None]
+        Jr = np.einsum('nab,ngb->nga', d['J0'][k], rogi)                          # J₀ u w rogach komórki wobec skoku
+        ksz = np.linalg.norm(Jr, axis=2).max(1) / np.maximum(np.linalg.norm(d['skok'][k], axis=1), 1e-30)
+        return pole, (f'  Strzałki pola: {len(P0) * G ** 3} ({G}³ na cząsteczkę); kształt pola J₀u w rogu komórki to mediana '
+                      f'{float(np.median(ksz)):.1%} skoku f(0).')

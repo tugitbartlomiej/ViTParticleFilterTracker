@@ -195,6 +195,11 @@ i w zerze (λ), liniowe oszacowanie zera, r_kom. Cała historia (806 checkpoint�
   zera w komórce, siła skoku, odległość zera od cząsteczki / r_kom; „Wyróżnij” przyciemnia pozostałe (siodła, wiry…).
 - Linie od cząsteczek do zer pola w komórce (lupa), wektory skoku, wybrana cząsteczka w białej obwódce; położenia, odcinki i
   kolory interpolowane między checkpointami. Ta sama mapa opcjonalnie na dużej sferze.
+- Strzałki pola w całej chmurze (od 2026-10-23, mapa w wersji 2 zapisuje jakobian J₀ w cząsteczce): w komórce każdej z 600
+  cząsteczek siatka G³ strzałek (1–5 na bok) pola liniowego f(0) + J₀ u, bez ponownego liczenia sieci. „Kształt pułapki”
+  pokazuje samo J₀ u (zbiega się = ściąga, rozbiega = wypycha, siodło, wir), „pole wiązek” pełne pchnięcie. Długość ∝ |f|
+  (wspólna skala w checkpoincie) albo jednakowa; kolor strzałek = kolor cząsteczki, więc „Wyróżnij” przygasza też strzałki.
+  Starsza mapa (wersja 1) liczy się ponownie przy pierwszym pokazaniu okienka 14.
 - Co widać na historii `2cca2743e1c74b14`: zero pola wewnątrz komórki ma tylko 0,005 % par checkpoint × cząsteczka, więc
   informacją jest kształt pola w samej cząsteczce. W checkpoincie 101 prawie wszystkie cząsteczki siedzą w siodle (585 z
   600, 591 z wirem), w checkpoincie 701 większość pól już ściąga (481 ściąga, 119 siodło, 376 z wirem).

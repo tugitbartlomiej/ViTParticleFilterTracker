@@ -1167,6 +1167,23 @@ class TestPulapkiWsadowo(unittest.TestCase):
         typ, _ = trap_map.charakter(lam, np.array([[True, False, True, True]]))
         self.assertEqual(typ[0].tolist(), [1, 0, 3, 1])                          # bez zera w komórce: 0
 
+    def test_strzalki_pola_w_komorkach(self):
+        from laser_app.compute import trap_map
+        from laser_app.gpu import trap_map_gl
+        self.assertEqual(trap_map.siatka_komorki(1).tolist(), [[0.0, 0.0, 0.0]])
+        self.assertEqual(trap_map.siatka_komorki(3).shape, (27, 3))
+        J = np.stack([-np.eye(3), np.diag([1.0, -1.0, 1.0])])[None].astype(np.float32)        # (K=1, n=2, 3, 3)
+        d = dict(zasieg=1.0, r_kom=np.array([[0.5, 1.0]], np.float32), J0=J, skok=np.array([[[1.0, 0, 0], [0, 2.0, 0]]], np.float32))
+        U, F, odst = trap_map.pole_w_komorkach(d, 0, 2, wzgledem_skoku=True)
+        self.assertEqual(U.shape, (2, 8, 3)); self.assertTrue(np.allclose(np.abs(U[0]), 0.25)); self.assertTrue(np.allclose(odst, [0.5, 1.0]))
+        self.assertTrue(np.allclose(F[0], -U[0]))                                # ściąga: strzałki do cząsteczki
+        _, Fp, _ = trap_map.pole_w_komorkach(d, 0, 2)
+        self.assertTrue(np.allclose(Fp - F, d['skok'][0][:, None]))              # pełne pole = kształt + skok
+        pos, kol = trap_map_gl.odcinki_strzalek(np.zeros((2, 3)), np.array([[0, 0, 1.0], [0, 0, 0]]), np.ones((2, 4)))
+        self.assertEqual(pos.shape, (20, 3)); self.assertEqual(kol.shape, (20, 4))
+        self.assertTrue(np.allclose(pos[1], [0, 0, 1])); self.assertAlmostEqual(float(kol[0, 3]), 0.25)
+        self.assertTrue(np.isfinite(pos).all())                                  # zerowy wektor bez NaN
+
 
 class TestEksportObliczen(unittest.TestCase):
     """compute/exports.py i disk_cache.py: lista obliczeń, eksport do zip, import do innej historii o tym samym kluczu przenośnym,

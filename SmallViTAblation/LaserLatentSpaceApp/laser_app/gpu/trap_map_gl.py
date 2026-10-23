@@ -51,6 +51,21 @@ def maska_filtru(d, k, filtr):
     return wir[0] if filtr == 4 else typ[0] == {1: 2, 2: 1, 3: 3}[filtr]
 
 
+def odcinki_strzalek(P0, V, kol, grot=0.3):
+    """Strzałki 3D jako odcinki GL: trzon P0 → P0 + V (ogon przygaszony) i grot z 4 odcinków w dwóch prostopadłych płaszczyznach,
+    widoczny z każdej strony kamery. P0, V (m, 3), kol (m, 4) → (pos (10 m, 3), kolory (10 m, 4))."""
+    P0 = np.asarray(P0, np.float32); V = np.asarray(V, np.float32); kol = np.asarray(kol, np.float32)
+    dl = np.linalg.norm(V, axis=1, keepdims=True)
+    t = V / np.maximum(dl, 1e-30)
+    os_ = np.eye(3, dtype=np.float32)[np.argmin(np.abs(t), axis=1)]           # oś najmniej równoległa do strzałki
+    n1 = np.cross(t, os_); n1 /= np.maximum(np.linalg.norm(n1, axis=1, keepdims=True), 1e-30); n2 = np.cross(t, n1)
+    q = P0 + V; b = q - grot * V; w = 0.45 * grot * dl
+    pos = np.stack([P0, q, q, b + w * n1, q, b - w * n1, q, b + w * n2, q, b - w * n2], 1).reshape(-1, 3)
+    ogon = kol.copy(); ogon[:, 3] *= 0.25
+    c = np.stack([ogon] + [kol] * 9, 1).reshape(-1, 4)
+    return pos, c
+
+
 class TrapMapGL:
     """Rysunek mapy w jednym widoku GL: kropki cząsteczek (kolor wg trybu), linie cząsteczka → pułapka (lupa) i wektory skoku.
     Dwa egzemplarze: okienko 14 i nakładka na dużej sferze (element GL należy do jednego widoku)."""
@@ -59,8 +74,9 @@ class TrapMapGL:
         self.kropki = _gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=6, pxMode=True)
         self.pulapki = _gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=1.5, antialias=True)
         self.skoki = _gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=1, antialias=True)
+        self.pole = _gl.GLLinePlotItem(pos=np.zeros((2, 3), np.float32), mode='lines', width=1.2, antialias=True)
         self.wybrana = _gl.GLScatterPlotItem(pos=np.zeros((1, 3), np.float32), size=16, color=(1, 1, 1, 0.9), pxMode=True)
-        self.elementy = (self.skoki, self.pulapki, self.kropki, self.wybrana)
+        self.elementy = (self.pole, self.skoki, self.pulapki, self.kropki, self.wybrana)
         for e in self.elementy:
             e.setGLOptions('translucent')
         self.wybrana.setDepthValue(3)
@@ -73,8 +89,14 @@ class TrapMapGL:
         for e in self.elementy:
             e.setVisible(bool(on))
 
-    def ustaw(self, P, kol, rozm=6.0, Q=None, kol_q=None, S=None, wybrana=None):
-        """P (n, 3) kropki, kol (n, 4); Q (m, 2, 3) odcinki do pułapek z kolorami kol_q (m, 4); S (n, 2, 3) wektory skoku."""
+    def ustaw(self, P, kol, rozm=6.0, Q=None, kol_q=None, S=None, wybrana=None, pole=None):
+        """P (n, 3) kropki, kol (n, 4); Q (m, 2, 3) odcinki do pułapek z kolorami kol_q (m, 4); S (n, 2, 3) wektory skoku;
+        pole = (pos, kolory) strzałek pola w komórkach (odcinki_strzalek) albo None."""
+        if pole is not None and len(pole[0]):
+            self.pole.setData(pos=pole[0], color=pole[1])
+            self.pole.setVisible(True)
+        else:
+            self.pole.setVisible(False)
         self.kropki.setData(pos=np.asarray(P, np.float32), color=np.asarray(kol, np.float32), size=float(rozm))
         if Q is not None and len(Q):
             self.pulapki.setData(pos=np.asarray(Q, np.float32).reshape(-1, 3), color=np.repeat(np.asarray(kol_q, np.float32), 2, axis=0))

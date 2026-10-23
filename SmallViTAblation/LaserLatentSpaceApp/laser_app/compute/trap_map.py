@@ -7,7 +7,9 @@ cząsteczek oglądanych z bliska w okienku 11):
   jakobian w float32, reszta f w float64), zb = czy zero jest w komórce;
 - charakter pułapki z wartości własnych λ jakobianu 3 × 3 w zerze (gdy go nie ma: w koloidzie): ściąga (wszystkie Re λ < 0),
   wypycha (wszystkie > 0), siodło (znaki mieszane), wir = para zespolona (obrót wokół osi);
-- liniowe oszacowanie zera u = −J₀⁻¹ f(0) i |f| w zerze względem |f(0)|.
+- liniowe oszacowanie zera u = −J₀⁻¹ f(0) i |f| w zerze względem |f(0)|;
+- jakobian J₀ = ∂f/∂u w cząsteczce (3 × 3, wersja 2): z niego strzałki pola w komórkach wszystkich cząsteczek naraz,
+  f(u) ≈ f(0) + J₀ u (pole w komórce jest prawie liniowe, R² > 0,99 w okienku 11), bez ponownego liczenia sieci.
 Wynik: `<katalog historii>/mapa_pulapek_z<zasięg·100>.npz` (tablice (K, 600, …)); liczy się raz, potem z pliku.
 Na RTX 3070: ok. 30–40 ms na checkpoint dla wszystkich 600 cząsteczek (wczytanie wag i przejście sieci są większą częścią).
 """
@@ -21,7 +23,7 @@ import numpy as np
 
 from laser_app.compute import focal_trap
 
-WERSJA = 1
+WERSJA = 2                                                       # 2: jakobian J₀ w cząsteczce (strzałki pola)
 TYPY = ('brak zera w komórce', 'ściąga', 'siodło', 'wypycha')
 
 
@@ -62,6 +64,7 @@ def policz(h, zasieg=1.0, postep=None, przerwij=None, urzadzenie='cuda', dokladn
     n = int(np.asarray(h.pos).shape[1])
     T = dict(ogn=np.zeros((K, n, 3), np.float32), zb=np.zeros((K, n), bool), skok=np.zeros((K, n, 3), np.float32),
              lam=np.zeros((K, n, 3), np.complex64), lam0=np.zeros((K, n, 3), np.complex64), ogn_lin=np.zeros((K, n, 3), np.float32),
+             J0=np.zeros((K, n, 3, 3), np.float32),
              r_kom=np.zeros((K, n), np.float32), fogn=np.zeros((K, n), np.float32), sasiad=np.zeros((K, n), np.int16),
              iteracje=np.zeros(K, np.int16), blad_pos=np.zeros(K, np.float32))
     t0 = time.time()
@@ -77,6 +80,7 @@ def policz(h, zasieg=1.0, postep=None, przerwij=None, urzadzenie='cuda', dokladn
             J = par.jakobian(X); J0 = par.jakobian(xs)
             ulin = -focal_trap.rozwiaz3(J0, f0)
         Jn, J0n = J.cpu().numpy(), J0.cpu().numpy()
+        T['J0'][i] = J0n
         for nazwa, M in (('lam', Jn), ('lam0', J0n)):
             ev = np.linalg.eigvals(M)                                              # (n, 3) wszystkie cząsteczki naraz
             T[nazwa][i] = np.take_along_axis(ev, np.argsort(ev.real, axis=1), axis=1)
@@ -109,3 +113,21 @@ def statystyki(d, k):
     zb = int(d['zb'][k].sum())
     return (f'pole w cząsteczce: ściąga {int((typ0 == 1).sum())}, siodło {int((typ0 == 2).sum())}, wypycha {int((typ0 == 3).sum())}, '
             f'z wirem {int(wir0.sum())} (z {n});  zero pola w komórce: {zb} cząsteczek;  Newton {int(d["iteracje"][k])} iteracji')
+
+
+def siatka_komorki(G):
+    """Środki G³ podkomórek sześcianu [−1, 1]³ (G³, 3); G = 1: sam środek (cząsteczka)."""
+    g = (2 * np.arange(G) + 1) / G - 1
+    return np.stack(np.meshgrid(g, g, g, indexing='ij'), -1).reshape(-1, 3)
+
+
+def pole_w_komorkach(d, k, G=3, wzgledem_skoku=False):
+    """Liniowe pole bloku 6 w komórkach wszystkich cząsteczek w checkpoincie k: U (n, G³, 3) punkty siatki względem cząsteczki
+    (sześcian o połowie boku zasięg · r_kom, środki podkomórek), F (n, G³, 3) pole f(u) ≈ f(0) + J₀ u (wzgledem_skoku: sam
+    kształt J₀ u), odstęp (n,) węzłów siatki. Jednostki jak położenia w rzucie 3D."""
+    L = float(d.get('zasieg', 1.0)) * np.asarray(d['r_kom'][k], np.float64)
+    U = siatka_komorki(G)[None] * L[:, None, None]
+    F = np.einsum('nab,ngb->nga', np.asarray(d['J0'][k], np.float64), U)
+    if not wzgledem_skoku:
+        F = F + np.asarray(d['skok'][k], np.float64)[:, None]
+    return U, F, 2 * L / G
