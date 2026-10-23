@@ -20,6 +20,7 @@ layout(std430, binding = 10) readonly buffer BOD { vec4 OD[]; };  // [K*768] obr
 layout(std430, binding = 11) readonly buffer BOJ { vec4 OJ[]; };  // [K*768] obrót igły, drganie (≥ 100 kroków)
 layout(std430, binding = 12) readonly buffer BW { float WY[]; };  // wybór: [768] maska reflektorów, [600] maska cząsteczek, listy indeksów
 layout(std430, binding = 13) readonly buffer BZH { uint ZH[]; };  // [K*T*768] całe natężenia z_jc historii, float16 parami (unpackHalf2x16)
+layout(std430, binding = 14) readonly buffer BPS { vec4 PS[]; };  // [K*T] koloid do ścieżek i wektorów (wygładzony albo = P)
 bool wyb_r(uint c) { return WY[c] > 0.5; }
 uniform int u_T;                          // cząsteczek na sferze: 600 × liczba zdjęć zestawu (podkroki: 600)
 bool wyb_t(uint j) { return WY[768u + j] > 0.5; }
@@ -48,9 +49,9 @@ float nat(uint j, uint c) {
     if (u_zcale == 1) return 0.5 * mix(zh(uint(u_ka), j, c), zh(uint(u_kb), j, c), u_pu);   // z / 2 jak film 12
     return mix(I[j * 768u + c], I[uint(u_T) * 768u + j * 768u + c], u_pu);
 }
-vec3 w_chwili(uint j, float tt) {          // koloid (u_cel 0) albo pułapka (1) w ułamkowej chwili tt
+vec3 w_chwili(uint j, float tt) {          // koloid (u_cel 0, ścieżka: PS) albo pułapka (1) w ułamkowej chwili tt
     float t2 = clamp(tt, 0.0, float(u_K - 1)); uint a = uint(floor(t2)); uint b = min(a + 1u, uint(u_K - 1)); float f = t2 - float(a);
-    return u_skala * (u_cel == 0 ? mix(P[a * uint(u_T) + j].xyz, P[b * uint(u_T) + j].xyz, f) : mix(C[a * uint(u_T) + j].xyz, C[b * uint(u_T) + j].xyz, f));
+    return u_skala * (u_cel == 0 ? mix(PS[a * uint(u_T) + j].xyz, PS[b * uint(u_T) + j].xyz, f) : mix(C[a * uint(u_T) + j].xyz, C[b * uint(u_T) + j].xyz, f));
 }
 bool odrzuc(uint j) { return (u_filtr == 1 && P[j].w < 0.5) || (u_filtr == 2 && !wyb_t(j)); }
 vec3 kolor_drogi(uint j, vec3 p, float tt) {  // u_kol_sciezki: 0 jednolity, 1 kolor cząsteczki, 2 odpływ od adresu (plasma)
@@ -175,7 +176,7 @@ void main() { vec3 c = texture(u_hdr, v_uv).rgb * u_ekspozycja; c = 1.0 - exp(-c
 
 
 class ReflectorSphere(_GPUElement):
-    BUFORY = ('RF', 'KC', 'P', 'D', 'I', 'SF', 'AT', 'C', 'KP', 'KR', 'OD', 'OJ', 'WY', 'ZH')
+    BUFORY = ('RF', 'KC', 'P', 'D', 'I', 'SF', 'AT', 'C', 'KP', 'KR', 'OD', 'OJ', 'WY', 'ZH', 'PS')
 
     def __init__(self, R=34.0):
         super().__init__()
@@ -247,22 +248,27 @@ class ReflectorSphere(_GPUElement):
         self.ustaw_bufor('KR', kr.astype(np.float32))
         self._wyslij_pulapki()
 
-    def ustaw_wygladzanie(self, tryb, okno, alfa):
-        """Wygładzanie pułapek wzdłuż checkpointów (podkroków): 0 brak, 1 średnia ważona krocząca (wagi 1..okno, tylko przeszłość),
-        2 EMA (alfa na checkpoint), 3 najpierw średnia krocząca, potem EMA. Zmienia pułapki we wszystkich widokach sfery."""
-        self._wyg = (int(tryb), int(okno), float(alfa))
-        self._wyslij_pulapki()
+    def ustaw_wygladzanie(self, tryb, okno, alfa, zakres=2):
+        """Wygładzanie wzdłuż checkpointów (podkroków): 0 brak, 1 średnia ważona krocząca (wagi 1..okno, tylko przeszłość),
+        2 EMA (alfa na checkpoint), 3 najpierw średnia krocząca, potem EMA. zakres: 0 pułapki (średnie skoków), 1 ścieżki i wektory
+        koloidów, 2 oba. Kropki koloidów zostają w prawdziwych położeniach. Zmienia wszystkie widoki sfery."""
+        self._wyg = (int(tryb), int(okno), float(alfa), int(zakres))
+        self._wyslij_pulapki(); self._wyslij_sciezki()
 
-    def _wyslij_pulapki(self):
-        C = getattr(self, '_C_surowe', None)
-        if C is None:
-            return
-        tryb, okno, alfa = getattr(self, '_wyg', (0, 10, 0.2))
-        X = C[..., :3].astype(np.float64)
+    def ustaw_bufor(self, nazwa, a):
+        super().ustaw_bufor(nazwa, a)
+        if nazwa == 'P':                                             # każdy nowy stan koloidów (historia, podkroki, przejście): ścieżki
+            self._P_surowe = np.asarray(a, np.float32).reshape(-1, self.T, 4)
+            self._wyslij_sciezki()
+
+    @staticmethod
+    def _wygladz(X, tryb, okno, alfa):
+        """X (K, n, 3) wygładzone wzdłuż osi 0 (tylko przeszłość): WMA (tryb 1, 3), potem EMA (2, 3)."""
+        X = np.asarray(X, np.float64)
         if tryb in (1, 3) and okno > 1:                              # WMA: Σ w_k x_{t−k}, w = okno, okno−1, …, 1
             w = np.arange(okno, 0, -1, dtype=np.float64)
             Y = np.zeros_like(X); S = np.zeros(len(X))
-            for k, wk in enumerate(w):
+            for k, wk in enumerate(w[:len(X)]):
                 Y[k:] += wk * X[:len(X) - k]; S[k:] += wk
             X = Y / S[:, None, None]
         if tryb in (2, 3):                                           # EMA: y_t = α x_t + (1 − α) y_{t−1}
@@ -270,9 +276,28 @@ class ReflectorSphere(_GPUElement):
             for t in range(1, len(X)):
                 Y[t] = alfa * X[t] + (1 - alfa) * Y[t - 1]
             X = Y
+        return X
+
+    def _wyslij_pulapki(self):
+        C = getattr(self, '_C_surowe', None)
+        if C is None:
+            return
+        tryb, okno, alfa, zakres = getattr(self, '_wyg', (0, 10, 0.2, 2))
+        X = self._wygladz(C[..., :3], tryb if zakres in (0, 2) else 0, okno, alfa)
         W = C.copy(); W[..., :3] = X
         self.ustaw_bufor('C', np.ascontiguousarray(W.reshape(-1, 4), np.float32))
         self.dnorm_p = float(np.percentile(np.linalg.norm(X - X[:1], axis=2), 99))
+
+    def _wyslij_sciezki(self):
+        """Ścieżki i wektory koloidów (bufor PS): P wygładzone jak pułapki, gdy zakres obejmuje koloidy; inaczej kopia P."""
+        P = getattr(self, '_P_surowe', None)
+        if P is None:
+            return
+        tryb, okno, alfa, zakres = getattr(self, '_wyg', (0, 10, 0.2, 2))
+        W = P
+        if zakres in (1, 2) and tryb:
+            W = P.copy(); W[..., :3] = self._wygladz(P[..., :3], tryb, okno, alfa)
+        super().ustaw_bufor('PS', np.ascontiguousarray(W.reshape(-1, 4), np.float32))
 
     @staticmethod
     def _tryb_koloru(o):

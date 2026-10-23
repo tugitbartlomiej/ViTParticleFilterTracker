@@ -228,15 +228,21 @@ class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixi
                                        'według odległości od położenia w kroku 0 (adres), skala plasma jak strzałki w okienku 2: '
                                        'ciemny fiolet = przy adresie, żółty = 99. percentyl odpływu.')
         self.cb_wyg = NarrowCombo(); self.cb_wyg.addItems(['brak', 'średnia ważona krocząca', 'EMA', 'średnia krocząca + EMA'])
-        self.cb_wyg.setToolTip('Wygładzanie średnich skoków wzdłuż checkpointów (tylko przeszłość, wagi rosnące ku teraźniejszości / wykładnicze). '
-                               'Dotyczy drogi, wektorów i poświaty średnich skoków. Nakłada się na już symetryczną średnią ±okno, więc przyszłe kroki zostają w środku. Uwaga: odstępy checkpointów to 10 kroków do kroku 1000, potem 100.')
+        self.cb_wyg.setToolTip('Wygładzanie ścieżek wzdłuż checkpointów (tylko przeszłość, wagi rosnące ku teraźniejszości / wykładnicze). '
+                               'Średnie skoków: droga, wektory i poświata (nakłada się na już symetryczną średnią ±okno). Koloidy: droga („cała '
+                               'historia”) i wektory; kropki koloidów zostają w prawdziwych położeniach, więc wygładzona droga może za nimi '
+                               'nie nadążać. Uwaga: odstępy checkpointów to 10 kroków do kroku 1000, potem 100.')
+        self.cb_wyg_zakres = NarrowCombo()
+        self.cb_wyg_zakres.addItems(['średnie skoków', 'ścieżki i wektory koloidów', 'koloidy i średnie skoków'])
+        self.cb_wyg_zakres.setCurrentIndex(2)
+        self.cb_wyg_zakres.setToolTip('Czego dotyczy wygładzanie: dróg i wektorów średnich skoków (pułapek), koloidów albo obu.')
         self.sp_wyg_okno = _spin(2, 300, 10, 1, sufiks=' ckpt'); self.sp_wyg_okno.setToolTip('Okno średniej ważonej (wagi okno, okno−1, …, 1).')
         self.sp_wyg_alfa = _spin(0.005, 1.0, 0.2, 0.05, 3); self.sp_wyg_alfa.setToolTip('EMA: y = α·x + (1 − α)·y_poprzednie (na checkpoint).')
         self.sp_zanik = _spin(0, 70000, 0, 100, sufiks=' kroków'); self.sp_zanik.setSpecialValueText('bez zaniku')
         self.sp_zanik.setToolTip('Droga gaśnie z wiekiem: jasność exp(−3·wiek/zanik), wiek w krokach uczenia (w podkrokach: w podkrokach). 0 = bez zaniku.')
-        f.addRow('Kolor ścieżek', self.cb_kol_sciezki); f.addRow('Wygładzanie średnich skoków', self.cb_wyg)
+        f.addRow('Kolor ścieżek', self.cb_kol_sciezki); f.addRow('Wygładzanie ścieżek', self.cb_wyg); f.addRow('  wygładzać', self.cb_wyg_zakres)
         f.addRow('Okno średniej', self.sp_wyg_okno); f.addRow('EMA α', self.sp_wyg_alfa); f.addRow('Zanik historii', self.sp_zanik)
-        for w_ in (self.cb_kol_sciezki, self.cb_wyg):
+        for w_ in (self.cb_kol_sciezki, self.cb_wyg, self.cb_wyg_zakres):
             w_.currentIndexChanged.connect(self._opcje)
         for w_ in (self.sp_wyg_okno, self.sp_wyg_alfa, self.sp_zanik):
             w_.valueChanged.connect(self._opcje)
@@ -434,7 +440,7 @@ class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixi
                  rozm_pul=self.sp_rozm_pul.value(), jas_pul=self.sp_jas_pul.value(), skala_chmury=self.sp_skala_chm.value(),
                  obrot=self.cb_obrot.currentIndex(), dl_obr=self.sp_dl_obr.value())
         if self.h is not None:
-            wyg = (self.cb_wyg.currentIndex(), self.sp_wyg_okno.value(), self.sp_wyg_alfa.value())
+            wyg = (self.cb_wyg.currentIndex(), self.sp_wyg_okno.value(), self.sp_wyg_alfa.value(), self.cb_wyg_zakres.currentIndex())
             if getattr(self.es, '_wyg', None) != wyg:
                 self.es.ustaw_wygladzanie(*wyg)
             ks = self.cb_kol_sciezki.currentIndex()

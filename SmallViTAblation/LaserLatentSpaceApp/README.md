@@ -440,7 +440,7 @@ W trybie podkroków pułapka pokrywa się z koloidem: „z kroku na krok” to p
 
 Opcje ścieżek na sferze:
 - **kolor ścieżek:** jednolity, kolor patcha ze zdjęcia, położenie na siatce albo narzędzie;
-- **wygładzanie pułapek** wzdłuż checkpointów: średnia ważona krocząca (wagi okno, okno−1, …, 1; tylko przeszłość), EMA (α na checkpoint) albo obie naraz; dotyczy drogi, wektorów i poświaty pułapek;
+- **wygładzanie pułapek** wzdłuż checkpointów: średnia ważona krocząca (wagi okno, okno−1, …, 1; tylko przeszłość), EMA (α na checkpoint) albo obie naraz; dotyczy drogi, wektorów i poświaty pułapek oraz (od 2026-10-23, „wygładzać”) drogi i wektorów koloidów: osobny bufor ścieżek PS, kropki koloidów zostają w prawdziwych położeniach;
 - **zanik historii:** jasność odcinka exp(−3·wiek/zanik), gdzie wiek liczony jest w krokach uczenia.
 
 Panel po lewej ma sekcje zwijane polem przy tytule, pionowe przewijanie i przeciągany podział szerokości.
