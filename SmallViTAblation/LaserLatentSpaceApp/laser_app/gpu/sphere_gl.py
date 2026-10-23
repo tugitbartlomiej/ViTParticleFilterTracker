@@ -20,7 +20,8 @@ layout(std430, binding = 10) readonly buffer BOD { vec4 OD[]; };  // [K*768] obr
 layout(std430, binding = 11) readonly buffer BOJ { vec4 OJ[]; };  // [K*768] obrót igły, drganie (≥ 100 kroków)
 layout(std430, binding = 12) readonly buffer BW { float WY[]; };  // wybór: [768] maska reflektorów, [600] maska cząsteczek, listy indeksów
 layout(std430, binding = 13) readonly buffer BZH { uint ZH[]; };  // [K*T*768] całe natężenia z_jc historii, float16 parami (unpackHalf2x16)
-layout(std430, binding = 14) readonly buffer BPS { vec4 PS[]; };  // [K*T] koloid do ścieżek i wektorów (wygładzony albo = P)
+layout(std430, binding = 14) readonly buffer BPS { vec4 PS[]; };  // [(u_off+K)*T] koloid do ścieżek i wektorów (wygładzony albo = P);
+                                                                  // w podkrokach przed stanami checkpointu: u_off stanów poprzednich przejść
 bool wyb_r(uint c) { return WY[c] > 0.5; }
 uniform int u_T;                          // cząsteczek na sferze: 600 × liczba zdjęć zestawu (podkroki: 600)
 bool wyb_t(uint j) { return WY[768u + j] > 0.5; }
@@ -30,6 +31,7 @@ uint lista_t(uint k) { return uint(WY[1536u + uint(u_T) + k]); }  // k-ta wybran
 VS_S = "#version 430\n" + _SSBO_S + _CZAS + _LUT + """
 uniform mat4 u_mvp;
 uniform int u_tryb, u_wiazki, u_seg, u_tok, u_refl, u_blokD, u_cel, u_filtr, u_kol_sciezki;
+uniform int u_off;                        // stanów poprzednich przejść przed bieżącymi w PS (ścieżki podkroków przez checkpointy)
 uniform float u_zanik, u_dnorm, u_skala;   // u_skala: mnożnik rozmiaru chmury koloidów i pułapek w sferze            // u_dnorm: odpływ od adresu dający pełny kolor (99. percentyl)
 uniform float u_R, u_gain, u_prog, u_rozm, u_pu;
 uniform float u_neg;                      // wzmocnienie ujemnej jasności (|z| ≤ 0,17); 1 = prawdziwa proporcja
@@ -49,9 +51,13 @@ float nat(uint j, uint c) {
     if (u_zcale == 1) return 0.5 * mix(zh(uint(u_ka), j, c), zh(uint(u_kb), j, c), u_pu);   // z / 2 jak film 12
     return mix(I[j * 768u + c], I[uint(u_T) * 768u + j * 768u + c], u_pu);
 }
-vec3 w_chwili(uint j, float tt) {          // koloid (u_cel 0, ścieżka: PS) albo pułapka (1) w ułamkowej chwili tt
+vec3 w_chwili(uint j, float tt) {          // koloid (u_cel 0, ścieżka: PS) albo pułapka (1) w ułamkowej chwili tt; tt < 0: poprzednie przejścia
+    if (u_cel == 0) {
+        float t3 = clamp(tt + float(u_off), 0.0, float(u_off + u_K - 1)); uint a = uint(floor(t3)); uint b = min(a + 1u, uint(u_off + u_K - 1));
+        return u_skala * mix(PS[a * uint(u_T) + j].xyz, PS[b * uint(u_T) + j].xyz, t3 - float(a));
+    }
     float t2 = clamp(tt, 0.0, float(u_K - 1)); uint a = uint(floor(t2)); uint b = min(a + 1u, uint(u_K - 1)); float f = t2 - float(a);
-    return u_skala * (u_cel == 0 ? mix(PS[a * uint(u_T) + j].xyz, PS[b * uint(u_T) + j].xyz, f) : mix(C[a * uint(u_T) + j].xyz, C[b * uint(u_T) + j].xyz, f));
+    return u_skala * mix(C[a * uint(u_T) + j].xyz, C[b * uint(u_T) + j].xyz, f);
 }
 bool odrzuc(uint j) { return (u_filtr == 1 && P[j].w < 0.5) || (u_filtr == 2 && !wyb_t(j)); }
 vec3 kolor_drogi(uint j, vec3 p, float tt) {  // u_kol_sciezki: 0 jednolity, 1 kolor cząsteczki, 2 odpływ od adresu (plasma)
@@ -111,9 +117,12 @@ void main() {
         gl_Position = u_mvp * vec4(v == 0 ? p0 : p0 + (p1 - p0) * u_gain, 1.0);
     } else if (u_tryb == 10) {                // cała historia: droga od checkpointu 0 do teraz (instancja = cząsteczka, wierzchołek = checkpoint)
         uint j = uint(gl_InstanceID); if (odrzuc(j)) { gl_Position = POZA; return; }
-        float tt = min(float(v), u_t);
+        float tt = min(float(v) - float(u_off), u_t);   // wierzchołki 0..u_off−1: poprzednie przejścia (podkroki), potem bieżące
         float al;
-        if (u_zanik > 0.0) {                   // zanik: odcinek sprzed u_zanik kroków prawie znika (exp(−3·wiek/u_zanik))
+        if (u_zanik > 0.0 && u_off > 0) {      // zanik w podkrokach (przez kolejne checkpointy): wiek w podkrokach
+            al = exp(-3.0 * max(u_t - tt, 0.0) / u_zanik);
+            if (al < 0.01) { gl_Position = POZA; return; }
+        } else if (u_zanik > 0.0) {            // zanik: odcinek sprzed u_zanik kroków prawie znika (exp(−3·wiek/u_zanik))
             float k1 = clamp(u_t, 0.0, float(u_K - 1)); uint a1 = uint(floor(k1));
             float teraz = mix(KR[a1], KR[min(a1 + 1u, uint(u_K - 1))], k1 - float(a1));
             uint iv = uint(min(float(v), float(u_K - 1)));
@@ -121,7 +130,7 @@ void main() {
             al = exp(-3.0 * wiek / u_zanik);
             if (al < 0.01) { gl_Position = POZA; return; }
         } else {
-            al = 0.15 + 0.85 * float(v) / max(u_t, 1.0);
+            al = 0.15 + 0.85 * float(v) / max(u_t + float(u_off), 1.0);
         }
         vec3 pv = w_chwili(j, tt);
         v_k = vec4(kolor_drogi(j, pv, tt), u_kol.a * al);
@@ -230,6 +239,7 @@ class ReflectorSphere(_GPUElement):
             self._zh_zrodlo = h.Z
 
     def ustaw_skale(self, h, stala):
+        self._slad = []; self.n_slad = 0; self._slad_klucz = None          # oś uczenia: bez śladu poprzednich przejść podkroków
         r = (h.r99[-1] * np.ones(h.K) if stala else h.r99).astype(np.float32)
         self.T = T = int(h.pos.shape[1])                              # 600 × zdjęcia zestawu
         P = np.zeros((h.K, T, 4), np.float32)
@@ -293,6 +303,8 @@ class ReflectorSphere(_GPUElement):
         P = getattr(self, '_P_surowe', None)
         if P is None:
             return
+        if self.n_slad and P.shape[1] == TOK:                         # podkroki: poprzednie przejścia przed bieżącymi stanami
+            P = np.concatenate(list(self._slad) + [P], 0)
         tryb, okno, alfa, zakres = getattr(self, '_wyg', (0, 10, 0.2, 2))
         W = P
         if zakres in (1, 2) and tryb:
@@ -329,8 +341,40 @@ class ReflectorSphere(_GPUElement):
         r = float(np.percentile(np.linalg.norm(pos, axis=2), 99))
         return (pos / max(r, 1e-9) * 0.55 * self.R).astype(np.float32)
 
+    # ------------------------------------------------------------------ ścieżki podkroków przez kolejne checkpointy
+    # Przy odtwarzaniu z synchronizacją (kroki × podkroki) każdy checkpoint wymienia 13 stanów P; bez pamięci ścieżka zaczynałaby się
+    # od nowa w każdym checkpoincie. dolacz_slad = True (ustawia odtwarzanie tuż przed wymianą) dopisuje dotychczasowe stany do śladu,
+    # inna wymiana (skok osi czasu, zmiana historii) go czyści. slad_max = ile ostatnich przejść (checkpointów) zostaje.
+    dolacz_slad = False
+    slad_max = 50
+    n_slad = 0
+    _slad = ()
+
+    def _aktualizuj_slad(self, klucz):
+        """Przed wymianą stanów P podkroków / przejścia: dopisuje poprzednie stany do śladu albo go czyści (klucz = ten sam stan)."""
+        if klucz is not None and klucz == getattr(self, '_slad_klucz', None):
+            return                                                   # te same dane drugi raz (np. odświeżenie): ślad bez zmian
+        stare = getattr(self, '_P_surowe', None)
+        if self.dolacz_slad and self.slad_max > 0 and stare is not None and getattr(self, '_slad_klucz', None) is not None \
+                and stare.shape[1] == TOK:
+            ogon = [stare]
+            if klucz is not None and klucz[0] == 'pod' and getattr(self, '_slad_klucz', ('',))[0] == 'prz':
+                ogon = [stare[:1]]                                   # przejście: tylko wyjście poprzedniego (wejście = stan 0 nowego)
+            self._slad = (list(self._slad) + ogon)
+            while len(self._slad) > 2 * self.slad_max:               # przejście (13 stanów) i powrót (1 stan) na checkpoint
+                self._slad.pop(0)
+        else:
+            self._slad = []
+        self.n_slad = int(sum(len(b) for b in self._slad))
+        self._slad_klucz = klucz
+
+    def czysc_slad(self):
+        self._slad = []; self.n_slad = 0; self._slad_klucz = None
+        self._wyslij_sciezki()
+
     def ustaw_przejscie(self, Pa, Pb, narz):
         """Płynny powrót do wejścia sieci: 2 stany (wyjście poprzedniego checkpointu → wejście następnego), czas 0..1, bez wiązek."""
+        self._aktualizuj_slad(('prz', id(Pa)))
         self.T = TOK; P = np.zeros((2, TOK, 4), np.float32); P[0, :, :3] = Pa; P[1, :, :3] = Pb; P[..., 3] = narz
         self.ustaw_bufor('P', P.reshape(-1, 4)); self._C_surowe = P; self._wyslij_pulapki()
         self.pod = None; self.przejscie = True; self.K = 2; self.t = 0.0
@@ -340,6 +384,7 @@ class ReflectorSphere(_GPUElement):
         """Przejście przez sieć jednego checkpointu: 13 stanów strumienia rezydualnego (układ znormowany '_n') jako czas cząsteczek,
         w podkroku MLP bloku b reflektory i wiązki tego bloku, w podkroku uwagi linie atencji między cząsteczkami."""
         pos = d['pos_n']
+        self._aktualizuj_slad(('pod', d.get('krok')))
         r = float(np.percentile(np.linalg.norm(pos, axis=2), 99))                  # jedna skala na checkpoint: ruch tylko od sił
         self.T = TOK; P = np.zeros((13, TOK, 4), np.float32)
         P[..., :3] = pos / max(r, 1e-9) * 0.55 * self.R
@@ -402,7 +447,7 @@ class ReflectorSphere(_GPUElement):
         pod = self.pod is not None
         wm = float(getattr(self, 'm_pod', 0.0)) if pod else 1.0     # waga wiązek MLP (podkroki: 1 MLP, 0 uwaga, pomiędzy = przenikanie)
         uwaga = pod and wm < 0.5                     # podkrok uwagi: zamiast wiązek laserów linie sił między cząsteczkami
-        self._ui('s', u_mvp=mvp, u_t=self.t, u_K=self.K, u_R=self.R, u_gain=float(o['gain']), u_prog=float(o['prog']),
+        self._ui('s', u_mvp=mvp, u_t=self.t, u_K=self.K, u_R=self.R, u_off=int(self.n_slad), u_gain=float(o['gain']), u_prog=float(o['prog']),
                  u_neg=float(o.get('neg', 1.0)),             # 1 = prawdziwa proporcja do dodatnich (zgodnie z ViT)
                  u_tok=int(o['tok']), u_refl=int(o['refl']), u_pu=0.0 if pod else self.u_pary, u_blokD=self.blok if pod else -1,
                  u_skala=float(o.get('skala_chmury', 1.0)), u_T=int(self.T), u_zcale=int(not pod and self.duzy_gotowy('ZH')),
@@ -478,7 +523,7 @@ class ReflectorSphere(_GPUElement):
                          u_kol_sciezki=self._tryb_koloru(o), u_zanik=float(o.get('zanik', 0.0)), u_lut=1,
                          u_dnorm=getattr(self, 'dnorm_p' if cel else 'dnorm_k', 1.0))
                 self._addytywnie(False); GL.glLineWidth(1.4 if filtr else 1.0)
-                GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, int(np.floor(self.t)) + 2, self.T)
+                GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, int(np.floor(self.t)) + 2 + (self.n_slad if cel == 0 else 0), self.T)
         if widok in (1, 2):                                               # pułapki: zielona poświata studni
             self._ui('s', u_tryb=8, u_cel=1, u_filtr=0, u_rozm=float(o.get('rozm_pul', 13.0)), u_ksztalt=0,
                      u_kol=(0, 0, 0, float(o.get('jas_pul', 0.55))), u_punkty=1)

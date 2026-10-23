@@ -63,6 +63,11 @@ class SubstepsMixin:
         self.ch_sync.setToolTip('Odtwarzanie osi czasu (▶ na górze): w każdym checkpoincie przechodzą wszystkie 12 podkroków sieci '
                                 '(tempo: podkr./s), dopiero potem następny checkpoint (co n).')
         self.sp_sync_co = _spin(1, 200, 1, 1, sufiks=' ckpt'); self.sp_sync_co.setToolTip('Co ile checkpointów skakać po pełnym przejściu sieci.')
+        self.sp_slad_pod = _spin(0, 500, 50, 5, sufiks=' ckpt'); self.sp_slad_pod.setSpecialValueText('od nowa')
+        self.sp_slad_pod.setToolTip('Przy synchronizacji kroków z podkrokami ścieżki koloidów na sferze („cała historia”) i tory okienka P\n'
+                                    'nie zaczynają się od nowa w kolejnym checkpoincie: zostają przejścia tylu ostatnich checkpointów\n'
+                                    '(ze stanami powrotu). „od nowa” = jak dawniej, ścieżka tylko bieżącego przejścia.')
+        self.sp_slad_pod.valueChanged.connect(self._slad_podkrokow)
         self.sp_przejscie = _spin(0, 6, 0.5, 0.25, 2, ' podkr.')
         self.sp_przejscie.setToolTip('Długość płynnego powrotu z wyjścia sieci do wejścia następnego checkpointu (w podkrokach); 0 = natychmiast.')
         self.ch_wyp = QCheckBox('wypadkowe wektory'); self.ch_wyp.setChecked(True)
@@ -81,7 +86,7 @@ class SubstepsMixin:
         for x in (self.ch_pod, self.bt_pod, self.suwak_pod, self.sp_pod_tempo, self.lb_podkrok):
             rp.addWidget(bez_ukladu(x) if x is self.lb_podkrok else x, 3 if x is self.suwak_pod else 2 if x is self.lb_podkrok else 0)
         rp2 = QHBoxLayout()
-        for x in (self.ch_sync, self.sp_sync_co, QLabel('powrót'), self.sp_przejscie, self.ch_wyp, QLabel('długość'), self.sp_skala_wyp,
+        for x in (self.ch_sync, self.sp_sync_co, QLabel('ścieżki przez'), self.sp_slad_pod, QLabel('powrót'), self.sp_przejscie, self.ch_wyp, QLabel('długość'), self.sp_skala_wyp,
                   self.cb_plynnie, self.sp_plynnie):
             rp2.addWidget(x)
         rp2.addStretch(1)
@@ -471,6 +476,13 @@ class SubstepsMixin:
         self._opis_podkroku()
         if self._og_tryb_pod():
             self._og_podkrok(s)
+
+    def _slad_podkrokow(self, n):
+        """Ile ostatnich przejść (checkpointów) pamiętają ścieżki sfery i tory okienka P przy synchronizacji; 0 czyści ślad."""
+        self.es.slad_max = self.ep.slad_max = int(n)
+        if not n:
+            self.es.czysc_slad()
+            self.ep.n_slad = 0; self.ep._slad = []; self.ep.update()
 
     def _graj_podkroki(self, on):
         self.bt_pod.setText('⏸ podkroki' if on else '▶ podkroki')

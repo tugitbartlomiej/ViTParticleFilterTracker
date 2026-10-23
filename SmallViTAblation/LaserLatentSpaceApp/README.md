@@ -544,6 +544,7 @@ ma kształt siodła z wirem (np. ściąga −0,19, obraca 0,21); liniowe oszacow
 - Animacje odtwarzania liczą czas rzeczywisty (60 kl/s), więc tempo nie zależy od liczby klatek.
 - Napisy pod widokami nie zmieniają układu okien. Wcześniej zmiana długości tekstu zmieniała rozmiar widoków OpenGL i dawała przerwy ponad 100 ms.
 - Okienko szczegółów podkroków dostaje dane tylko wtedy, gdy jest widoczne.
+- Ścieżki nie zaczynają się od nowa w kolejnym checkpoincie (2026-10-23): droga koloidów na sferze („cała historia”) i tory okienka P zachowują przejścia ostatnich N checkpointów (pole „ścieżki przez”, domyślnie 50; „od nowa” = dawne zachowanie), razem ze stanami powrotu, wygładzane jak ścieżki. Ręczny skok osi czasu albo wyjście z podkroków czyści ślad.
 
 Pomiar: około 45 kl/s, 95% klatek do 38 ms, przy zmianie checkpointu najwyżej około 60 ms.
 

@@ -13,6 +13,7 @@ layout(std430, binding = 4) readonly buffer BZ { float Z[]; };    // [6*600*768]
 layout(std430, binding = 5) readonly buffer BV { vec4 PV[]; };    // [6*768] kierunek lasera v_c w rzucie
 layout(std430, binding = 6) readonly buffer BC { vec4 KC[]; };    // [768] kolor lasera
 layout(std430, binding = 7) readonly buffer BF { float AF[]; };   // [6*3*600*600] atencja do sił f_ij: surowa albo A_ij − ā_j (układy '_c', '_n')
+layout(std430, binding = 8) readonly buffer BTR { vec4 TR[]; };   // [u_off*600] stany poprzednich przejść (tory przez kolejne checkpointy)
 """
 VS_P = "#version 430\n" + _SSBO_P + """
 uniform mat4 u_mvp;
@@ -23,6 +24,7 @@ uniform int u_znak;                        // lasery: 0 = wszystkie, 1 = tylko d
 uniform float u_alfa;                      // krycie laserów
 uniform int u_blok1;                       // płynne przejście: blok + 1 do narysowania (0 = blok bieżącego podkroku)
 uniform float u_zgas;                      // płynne przejście: 0 pełne siły / lasery, 1 zgaszone (krótsze i ciemniejsze)
+uniform int u_off;                         // stanów poprzednich przejść przed bieżącymi 13 (tory nie zaczynają się od nowa)
 uniform vec4 u_kol;
 out vec4 v_k;
 const vec4 POZA = vec4(2.0, 2.0, 2.0, 1.0);
@@ -50,9 +52,10 @@ void main() {
     } else if (u_tryb == 1) {                  // tory w głębokości: stany 0 .. bieżący (instancja = cząsteczka)
         uint i = uint(gl_InstanceID);
         if (u_g == 1 && int(i) != u_tok) { gl_Position = POZA; return; }
-        int s0 = int(floor(clamp(u_s, 0.0, 12.0)));
-        vec3 p = v <= s0 ? xs(uint(v), i) : teraz(i);
-        v_k = u_g == 1 ? u_kol : vec4(KOL[i].rgb, u_kol.a);
+        int s0 = int(floor(clamp(u_s, 0.0, 12.0))), vs = v - u_off;
+        vec3 p = vs < 0 ? TR[uint(v) * 600u + i].xyz : vs <= s0 ? xs(uint(vs), i) : teraz(i);
+        float al = u_off > 0 && vs < 0 ? 0.25 + 0.75 * float(v) / float(u_off) : 1.0;     // starsze przejścia słabiej
+        v_k = u_g == 1 ? vec4(u_kol.rgb, u_kol.a * al) : vec4(KOL[i].rgb, u_kol.a * al);
         gl_Position = u_mvp * vec4(p, 1.0);
     } else if (u_tryb == 2) {                  // linie uwagi i – j (jasność = średnia atencja głów); u_g = 1: tylko i = wybrana
         uint i = uint(gl_InstanceID / 600), j = uint(gl_InstanceID % 600);
@@ -92,7 +95,11 @@ void main() { o = u_punkty == 1 ? ksztalt(v_k) : v_k; }
 class NetworkPassageGPU(_GPUElement):
     """Podkroki jednego przejścia w przód: 13 stanów strumienia rezydualnego 600 tokenów (rzut 3D), siły uwagi f_ij między cząsteczkami
     i wektory 768 laserów MLP. CPU podaje tylko u_s (ułamkowy podkrok 0..12) i opcje."""
-    BUFORY = ('X', 'KOL', 'AH', 'UH', 'Z', 'PV', 'KC', 'AF')
+    BUFORY = ('X', 'KOL', 'AH', 'UH', 'Z', 'PV', 'KC', 'AF', 'TR')
+    # tory przez kolejne checkpointy (jak ścieżki sfery): dolacz_slad = True tuż przed wymianą przy odtwarzaniu z synchronizacją
+    dolacz_slad = False
+    slad_max = 50
+    n_slad = 0
 
     def __init__(self):
         super().__init__()
@@ -113,6 +120,16 @@ class NetworkPassageGPU(_GPUElement):
         na checkpoint (nie LayerNorm). W '_c'/'_n' siły są wycentrowane jak położenia (A_ij − ā_j, z_jc − z̄_c, bez biasów),
         więc suma rysowanych wektorów = rysowany ruch cząsteczki (dokładnie, jak w ViT)."""
         X = np.zeros((13 * TOK, 4), np.float32); X[:, :3] = d['pos' + uklad].reshape(-1, 3)
+        klucz = (d.get('krok'), uklad)
+        if klucz != getattr(self, '_slad_klucz', None):
+            stare = getattr(self, '_X', None)
+            if self.dolacz_slad and self.slad_max > 0 and stare is not None and getattr(self, '_slad_klucz', (None, None))[1] == uklad:
+                self._slad = (getattr(self, '_slad', []) + [stare])[-self.slad_max:]
+            else:
+                self._slad = []
+            self._slad_klucz = klucz; self._X = X
+            self.n_slad = 13 * len(self._slad)
+            self.ustaw_bufor('TR', np.concatenate(self._slad, 0) if self._slad else np.zeros((1, 4), np.float32))
         U = np.zeros((6 * 3 * TOK, 4), np.float32); U[:, :3] = d['uh' + uklad].reshape(-1, 3)
         PV = np.zeros((6 * NK, 4), np.float32); PV[:, :3] = d['pv' + uklad].reshape(-1, 3)
         dane = [('X', X), ('KOL', kolory), ('UH', U), ('PV', PV)]
@@ -151,7 +168,7 @@ class NetworkPassageGPU(_GPUElement):
     def _rysuj(self, mvp):
         o = self.opcje
         GL.glUseProgram(self._prog['p'])
-        self._ui('p', u_mvp=mvp, u_s=self.s, u_tok=int(o['tok']))
+        self._ui('p', u_mvp=mvp, u_s=self.s, u_tok=int(o['tok']), u_off=int(self.n_slad))
         k = int(np.clip(np.floor(self.s), 0, 11)); w_ruchu = self.s < 12.0
         wm, bm, ba = przenikanie(self.s, float(o.get('plynnie', 0.0)))   # waga laserów MLP; uwaga ma 1 − wm
         uwaga = w_ruchu and wm < 0.999
@@ -160,10 +177,10 @@ class NetworkPassageGPU(_GPUElement):
         self._ui('p', u_glowa=int(o.get('glowa', 0)))
         if wiazki and o['tory'] == 2:                 # tory w głębokości wszystkich cząsteczek (słabo)
             self._ui('p', u_tryb=1, u_g=0, u_kol=(1, 1, 1, 0.10), u_punkty=0); self._addytywnie(False); GL.glLineWidth(g)
-            GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, 13, TOK)
+            GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, 13 + self.n_slad, TOK)
         if wiazki and o['tory'] >= 1:                 # tor wybranej cząsteczki przez wszystkie podkroki
             self._ui('p', u_tryb=1, u_g=1, u_kol=(1.0, 0.85, 0.2, 0.9), u_punkty=0); self._addytywnie(False); GL.glLineWidth(2.0 * g)
-            GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, 13, TOK)
+            GL.glDrawArraysInstanced(GL.GL_LINE_STRIP, 0, 13 + self.n_slad, TOK)
         if wiazki and w_ruchu and o['przes']:
             self._ui('p', u_tryb=5, u_punkty=0); self._addytywnie(False); GL.glLineWidth(g)
             GL.glDrawArrays(GL.GL_LINES, 0, 2 * TOK)

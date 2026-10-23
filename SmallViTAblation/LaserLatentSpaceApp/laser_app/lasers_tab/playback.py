@@ -123,15 +123,23 @@ class PlaybackMixin:
     def _nowy_checkpoint(self, j):
         self._w_przejsciu = False; self._sync_stan = 'pod'
         self.s_pod = 0.0
-        self.ustaw_czas(float(j))                                    # weźmie podkroki z pamięci i ustawi podkrok 0
-        self.ustaw_podkrok(0.0)
+        self.es.dolacz_slad = self.ep.dolacz_slad = True             # ścieżki i tory ciągną się dalej (nie od nowa w każdym checkpoincie)
+        try:
+            self.ustaw_czas(float(j))                                # weźmie podkroki z pamięci i ustawi podkrok 0
+            self.ustaw_podkrok(0.0)
+        finally:
+            self.es.dolacz_slad = self.ep.dolacz_slad = False
 
     def _start_przejscia(self, dn):
         """Wyjście sieci bieżącego checkpointu (stan 12) → wejście następnego (stan 0): sfera i rzuty 1–3 jako 2 stany, czas 0..1."""
         from types import SimpleNamespace
         self._w_przejsciu = True
         Pa = self.es.pozycje_podkrokow(self.d_pod)[12]; Pb = self.es.pozycje_podkrokow(dn)[0]
-        self.es.ustaw_przejscie(Pa, Pb, self.h.narz)
+        self.es.dolacz_slad = True
+        try:
+            self.es.ustaw_przejscie(Pa, Pb, self.h.narz)
+        finally:
+            self.es.dolacz_slad = False
         stare, nowe = self._pp, self._plaski_podkrokow(dn)
         st = lambda a, b: np.stack([a, b])
         pp2 = SimpleNamespace(K=2, g=stare.g, narz=stare.narz, qc=st(stare.qc[12], nowe.qc[0]), ac=st(stare.qc[12], nowe.qc[0]),
