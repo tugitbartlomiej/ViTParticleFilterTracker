@@ -79,3 +79,43 @@ Zobacz `Wyniki/Dane/Eden/STATUS_EDEN.txt` i koniec tego pliku (uzupełniany po p
   w 61 s. Wyniki prób: `Wyniki/Dane/proby_dymne/` i `Wyniki/Dane/ablacje_smoke/`; nie wchodzą do oceny.
 - 2026-10-26 13:46: zgłoszone pełne tablice: pomiar 24 seedów (1930576, zadania _0…_23) i ablacje 18 biegów (1930577, _0…_17);
   partycja short, 1 × A100 + 16 CPU na zadanie.
+- 2026-10-26 14:25: węzły z wolnymi GPU (dgx-1, dgx-2, dgx-3) nie miały wolnych CPU, więc zadania z 16 CPU czekały. Oczekujące
+  zakresy anulowane (`scancel 1930574_[8-23] 1930577_[0-17]`; ukończone i liczące się zadania 1930574_0…_7 zostały) i zgłoszone
+  ponownie z mniejszą liczbą CPU: pomiar 1930605 (zadania 8–23, 2 CPU; pula 16 procesów na 2 rdzeniach wydłuża część A),
+  ablacje 1930606 (0–17, 3 CPU). Numery zarejestrowane w narzędziu eden.py; anulowane zakresy nie policzyły niczego.
+- 2026-10-26 15:30: wstępny odczyt na 8 ukończonych seedach (pobrane do `Wyniki/Dane/pomiar/`, przed końcem tablicy). Poprawka
+  w `ocena_predykcji.py` (nie w progach): lista `miary_A` w npz zaczyna się od 5 etykiet wierszy, przez co pierwsza wersja oceny
+  czytała dla P1/P2/P3/P10 złe kolumny (np. liczbę zespolonych λ zamiast ‖N‖/‖J‖). Po poprawce kolumny zgodne z docstringiem pomiaru.
+  Progi z PREDYKCJE_PRZED_POMIAREM.md bez zmian; ocena końcowa po 24 seedach.
+
+- 2026-10-26 17:25: część 1 ukończona (24/24 zadania COMPLETED, 19–40 min każde), wyniki pobrane. Ocena na 24 seedach (progi bez zmian):
+  P1 24/24 (‖N‖/‖J‖ bloku 4: 0,899–0,939 przy k65640, 0,759–0,768 przy k0), P2 24/24, P4 24/24, P6 24/24 (Σ Δsep MLP 0,88–1,35 wobec
+  uwagi 0,10–0,44), P8 24/24, P10 22/24 (2 seedy: ρ(sep, IoU) przy k0 = −0,35/−0,37, reszta warunków spełniona), P7b 1/1 (ρ = 0,50).
+  FAIL: P3 11/24 (tr J narzędzia nie jest systematycznie niższy niż tła), P5 14/24 (uwaga bloków 1–5 styczna 0,94–0,99 we wszystkich
+  seedach; blok 6 schodzi do 0,80–0,90 w 10 seedach), P7a 0/24 (ρ(sep₁₂, IoU) per klatka 0,34–0,48, próg 0,5 za wysoki), P9 10/24
+  (szczyt defektu komutatora w bloku 3 w 13 seedach, 4–5 w 10, 2 w 1). AP@0,5 przy k65640: mediana 0,879 (0,827–0,902).
+- 2026-10-26 17:25: część 2: 9/18 biegów ukończonych (trening ~55–75 min + pomiar ~30 min na A100), 9 się liczy. Wstępnie (dane pobrane bez wag):
+  A2 0/2 (parallel AP 0,895/0,873 ≥ base 0,888/0,864: kolejność uwaga→MLP nie ma znaczenia dla AP), A3 0/1 (frozen_mlp s5047 AP 0,884
+  = base; separację przejmuje uwaga: Σ Δsep uwaga 0,73, MLP −0,06; ‖N‖/‖J‖ bloku 4 zostaje 0,76), A4 0/3 (frozen_attn: iloczyn
+  kontrakcji uwagi 0,62–0,66 → 0,92–0,97, czyli uwaga o zamrożonych wagach staje się prawie identycznością, bo zmienia się rozkład
+  wejść; AP 0,861/0,861/0,786; MLP nadal rozdziela 0,52–0,85, ‖N‖/‖J‖ 0,95–0,97). Predykcja A4 była źle postawiona: kontrakcja uwagi
+  zależy od stanu tokenów, nie tylko od wag. Ocena końcowa A1–A6 po 18 biegach.
+- 2026-10-26 18:26: część 2 ukończona (18/18 COMPLETED, 1 h 09 – 1 h 46 każde). Ocena końcowa `Wyniki/Dane/OCENA_PREDYKCJI.{json,txt}`:
+  część 1 jak wyżej; część 2: **A5 PASS 3/3** (no_wd: ‖N‖/‖J‖ bloku 4 0,90–0,93, nienormalność nie pochodzi z weight decay),
+  A1 1/3 (base na A100 odtwarza P1, P4, P6; pada tylko P9, szczyt komutatora w bloku 3 i 5), A2 0/3 (parallel AP 0,895/0,869/0,873
+  wobec base 0,888/0,885/0,864: kolejność uwaga→MLP bez znaczenia dla AP; separację dzielą uwaga i MLP po równo, +0,44…+0,67 / +0,27…+0,50),
+  A3 0/3 (frozen_mlp AP 0,866/0,857/0,884 = base; Σ Δsep uwaga +0,42…+0,80, MLP −0,06…+0,01; ‖N‖/‖J‖ zostaje 0,76), A4 0/3
+  (frozen_attn: iloczyn kontrakcji uwagi 0,62–0,66 → 0,92–0,97, AP 0,861/0,861/0,786; MLP rozdziela +0,52…+0,85, ‖N‖/‖J‖ 0,95–0,97),
+  A6 0/3 (shuffled_labels: AP 0,005–0,009 zgodnie z oczekiwaniem, ale ‖N‖/‖J‖ bloku 4 rośnie do 0,92–0,96 i Σ Δsep MLP = +0,23…+0,28;
+  nienormalność pola MLP rośnie także przy zapamiętywaniu losowych etykiet, więc nie jest sygnaturą nauczenia zadania).
+- 2026-10-26 18:26: konfundator P7. ρ(sep₁₂, IoU) ≈ 0,34–0,48 w P7a liczone było po wszystkich 12 checkpointach razem i odzwierciedla
+  trajektorię treningu (s3047: mediana sep₁₂ 1,13 → 2,33 i mediana IoU 0 → 0,80 rosną wspólnie). Per klatka przy k65640 ρ = −0,16…+0,11
+  (mediana −0,035, 24 seedy; ablacje −0,07…+0,14, shuffled_labels +0,24). Separacja klas nie przewiduje IoU klatki; jest miarą postępu
+  treningu. Dodatkowo sep₁₂ silnie zależy od liczby tokenów narzędzia (ρ = −0,71), a IoU od niej rośnie (ρ = +0,36). Wniosek do
+  raportu: P7a odrzucona z powodu, a P7b (ρ = 0,50 między seedami, 24 punkty) to słaby dowód.
+- Interpretacja całości: tezy A i B (nienormalne ścinanie w MLP, uwaga ściska / MLP rozdziela, trening przenosi ściskanie) replikują się
+  na 24 seedach jako opis wyuczonego rozwiązania, ale ablacje pokazują, że to podział pracy z wyboru, nie z konieczności: sieć
+  kompensuje zamrożenie MLP (uwaga przejmuje separację) i zamrożenie uwagi (MLP robi wszystko, uwaga staje się identycznością), a blok
+  równoległy nie traci AP. Teza C (kolejność w blokach 4–5) odrzucona. Nienormalność rośnie także bez weight decay i przy losowych
+  etykietach. Lokalizacja w narzędziu (P3) nie replikuje się.
+- 2026-10-26 18:31: na zlecenie użytkownika zapisane `Wyniki/Krótki_Wniosek/WNIOSEK.md` i `Wyniki/Raport/RAPORT.md` (tabele predykcji, miar A/B/C po 24 seedach, ablacji, rozbiór konfundatora P7). Wykresy nie były zamawiane.

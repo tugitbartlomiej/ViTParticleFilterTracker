@@ -32,8 +32,9 @@ class Seed:
         self.kat = Path(kat)
         z = np.load(self.kat / 'wyniki.npz', allow_pickle=False)
         self.kroki = [int(k) for k in z['kroki']]; self.B = z['B_stan']; self.Bp = z['B_pol']; self.C = z['C']; self.iou = z['iou']
-        self.A = z['A']; self.mA = list(z['miary_A']); self.mB = list(z['miary_B_stan']); self.mBp = list(z['miary_B_pol']); self.mC = list(z['miary_C'])
+        self.A = z['A']; self.mA = list(z['miary_A'])[5:]; self.mB = list(z['miary_B_stan']); self.mBp = list(z['miary_B_pol']); self.mC = list(z['miary_C'])
         self.ps = json.loads((self.kat / 'podsumowanie.json').read_text(encoding='utf-8'))
+        # miary_A w npz zaczyna się od 5 etykiet wierszy (krok, klatka, blok, token, narz); kolumny miar liczone od 5
 
     def ik(self, k):
         return self.kroki.index(k)
