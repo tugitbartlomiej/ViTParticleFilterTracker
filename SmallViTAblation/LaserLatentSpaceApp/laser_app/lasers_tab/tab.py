@@ -549,6 +549,7 @@ class LasersTab(LayoutMixin, DataMixin, ImageSetMixin, LabelsMixin, SubstepsMixi
         self._og_czas(t)
         self._mp_czas(t)
         self._dol_czas(tryb_pod)
+        self._mk_czas(t)                                             # okienko M: płynnie między checkpointami
         if not tryb_pod and getattr(self, '_mech', None) is not None and self.widac('13'):
             self._mech_zlec(); self._mech_rysuj()                   # ruch w obrębie checkpointu: u = t − i
         self.rzuty.ustaw_czas(t)                                     # okienka R1–R8 (tylko widoczne)

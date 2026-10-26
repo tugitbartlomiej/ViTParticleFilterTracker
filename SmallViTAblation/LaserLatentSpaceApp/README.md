@@ -268,6 +268,57 @@ ekran pokazuje **sondę**: tę samą głowę przyłożoną do stanu po bieżący
 czyta tylko stan 12; napis pod widokiem to zaznacza); opcja „głowa czyta tylko stan końcowy (jak sieć)”. Napis pod widokiem: maks.
 ciepło i jego komórka, mediana tła, liczba jasnych komórek, IoU ramki szczytu z GT.
 
+**Szkło jako maź formowana polem z jakobianu; ognisko u\* usunięte (2026-10-24).** „Wygląd szkła” w sekcji Mikrosoczewki: szklane
+kulki albo (domyślnie) półprzezroczysta maź skupiająca światło. Przejście niesie klucz `jak_n` (6 × 600 × 3 × 3):
+`history.jakobiany_mlp` liczy dokładnie z wag (LayerNorm, fc1, GELU′, fc2) jakobian pola MLP każdego bloku w każdym koloidzie
+w rzucie `_n`, J = P·∂MLP/∂x·Pᵀ (zgodność z autogradem 6·10⁻⁷; zapisy bez `jak_n` liczą się od nowa). `MicrolensMixin.pole_z_jakobianu`
+daje bufor JK (600 × 3 × 4): część symetryczna S (siodło: osie rozciągania λ > 0 i ściskania λ < 0), oś wiru ω z części
+antysymetrycznej, |F| względne. Maź (tryb 16, drobiny w FBO gęstości → powierzchnia z gradientu → refrakcja ekranowa światła HDR,
+`FS_MAZ`) i soczewki matrycy (tryb 4) są odkształcane S i obracane ω·czas; ruch w podkroku rozciąga maź i zostawia ogon.
+
+Pierwsza wersja rysowała też ognisko pułapki u\* = −J⁻¹F z typem (ściąga / siodło / wypycha / zero poza komórką) jako pierścień
+na soczewce i ściągała do niego wnętrze mazi. **Usunięte po pomiarze** na ostatnim checkpoincie historii `90f58d4f8b263d8b`
+(k65640; skrypt `diagnostyki_rzutu.py` z sesji 2026-10-24, pełny jakobian 192 × 192 każdego koloidu, U = Pᵀ, Q = I − UUᵀ), blok 4,
+mediany po 600 koloidach: widoczna część pola ‖PF‖/‖F‖ = 0,41 (tokeny narzędzia 0,73), defekt niezmienniczości ‖QJU‖/‖JU‖ = 0,80,
+defekt zamknięcia ‖PJQ‖/‖PJ‖ = 0,93, ‖PJPᵀ‖/‖J‖ = 0,19 (losowe 3 kierunki: 0,016). Zero zlinearyzowanego rzutu u\* leży
+median 55 promieni komórki od koloidu (w programie wszystkie 600 obrysów miało typ „zero poza komórką”), zero pełnego pola
+192-D median 450 komórek, a kierunki obu są nieskorelowane (cos median −0,08). W 192 wymiarach każdy koloid jest siodłem
+(ok. 92 dodatnie i 98 ujemnych wartości własnych, wszystkie z parą zespoloną), a liniowość w komórce jest dobra (błąd 2 %):
+na koloid działa prawie jednorodny prąd laserów z lekkim ścinaniem, nie pułapka. S i ω zostają: są dokładnymi kompresjami
+pełnych S₁₉₂ i Ω₁₉₂ (wartości własne S przeplatają się z pełnymi), choć 80 % odpowiedzi ucieka z rzutu. Literatura
+(Embree 2017 o niestabilnych modach kompresji, Carden–Embree 2012 o wartościach Ritza macierzy nienormalnych, Horstmeyer–Atay 2016
+o lumpability) mówi to samo: kompresja P J Pᵀ nie klasyfikuje punktów stałych pełnego pola.
+
+**Kropla w ścinaniu, skupianie z kontrakcji uwagi, jasność promieni (2026-10-26).** Obraz okienka M nie sugeruje już fizyki,
+której pomiary nie potwierdziły. (1) Druga pozycja „Wygląd szkła” to teraz „kropla w ścinaniu (maź odkształcana polem laserów,
+światło skupiane kontrakcją uwagi)”, nagłówek grupy „Szkło: kropla w ścinaniu albo kulki, drobiny super szkła”: maź rysuje kroplę
+w przepływie liniowym (Taylor 1934, model elipsoidalny Maffettone–Minale 1998), rozciąganą wzdłuż osi rozciągania części
+symetrycznej S jakobianu pola MLP, ściskaną wzdłuż osi ściskania i obracaną wirowością ω (kształt z S, ω w JK bez zmian w kodzie).
+Pomiar z 24.10.2026 (`experiments/schur_qr_jakobiany_mlp_20261024__10-03-40`): 86 % energii S i 91 % energii ω pochodzi z części
+nienormalnej jakobianu (‖N‖/‖J‖ ≈ 0,93 wobec 0,71 losowo), więc to ścinanie, nie wir ani soczewka, a pole nie ma zera w pobliżu
+koloidów (brak pułapki). (2) Nowa lista `cb_mk_skup` (opcja sceny `skup_z`, uniform `u_skup_z`): „skupianie mazi: kontrakcja uwagi
+(zbliżanie do sąsiadów w półkroku uwagi tego bloku)” (domyślna) albo „skupianie mazi: ciepło głowy (odczyt, jak dotąd)”.
+Kontrakcja `MicrolensMixin.kontrakcja_uwagi(xa, xb, k=5, sfera=True, wzgledem_chmury=True)`: xa = `xn[2b]`, xb = `xn[2b+1]`
+(pełne stany 192-D przed i po półkroku uwagi bloku b), na sferze chmury (środkowane po tokenach i znormowane per token, więc
+liczy się kierunek, a jednorodne skalowanie daje κ = 0); dla każdego tokenu 5 najbliższych sąsiadów w xa, d_przed = średnia
+odległość do nich w xa, d_po = do tych samych sąsiadów w xb, κ = 1 − d_po/d_przed, a „względem chmury” dzieli d_po/d_przed
+przez średni stosunek wszystkich tokenów. Lista ma trzy pozycje: względem chmury (domyślna), bezwzględna, ciepło głowy.
+Powód odniesienia do chmury (k65640, mediany narzędzie / tło, κ bezwzględna na sferze): blok 1 +0,020 / +0,017, blok 2
++0,081 / +0,007, blok 3 +0,021 / +0,002, blok 4 −0,010 / −0,030, blok 5 −0,005 / −0,002, blok 6 −0,020 / −0,005: w blokach
+1–3 sąsiedztwo narzędzia ściska się mocniej niż tła, w bloku 4 wszystkie sąsiedztwa się rozchodzą (narzędzia najmniej:
+względem chmury +0,025 / +0,006), więc bez odniesienia maź w bloku 4 byłaby cała ciemna. Pierwsza wersja liczyła κ na
+stanach `xn` bez normowania per token i dawała w bloku 4 narzędzie −0,004 wobec tła −0,0002 (ruch radialny mieszał się
+ze stycznym). `pole_z_jakobianu(J, F, kappa)` wpisuje κ/κ₉₅ (95. percentyl |κ|, obcięte do [−1,5; 1,5]) do `JK[:, 2, 2]` (bez `xn` w starych
+zapisach: 0); przy mieszaniu checkpointów κ obu miesza się ułamkiem f. W trybie kontrakcji drobina mazi (tryb 16) ma jasność
+i krycie z clamp(κ, 0, 1,5) zamiast ciepła, przy κ < 0 jest szersza (maź ciemniejsza i rozmyta), a `FS_MAZ` mnoży skupianie przez
+średnie clamp(κ, 0, 1,5) drobin w pikselu (drugie wyjście FBO mazi, `COLOR_ATTACHMENT1`). Uzasadnienie: pomiar z 25.10.2026
+(`experiments/kontrakcja_komutator_polkrokow_20261025__02-12-46`) pokazał, że chmurę ściskają półkroki uwagi (ruch styczny do sfery
+97–99 %), a separację klas robi MLP; skupianie narzędzia bierze się ze ściskania przez uwagę, a ciepło jest tylko odczytem głowy.
+(3) Nowa opcja `ch_mk_jas_zdj` „jasność promieni ze zdjęcia (tylko ilustracja: sieć nie przenosi jasności łat)” (opcja `jas_zdj`,
+uniform `u_jas_zdj`), domyślnie wyłączona: promienie naświetlenia (tryb 2, wszystkie cztery warianty) mają barwę łaty o stałej
+luminancji 0,5 (`jas_laty` w `VS_M`), dalej × jasność, krycie, wzmocnienie i ciepło jak dotąd; włączona przywraca jasność ze
+zdjęcia. Luminancja łaty nie ma odpowiednika w sieci: łata wchodzi do konwolucji łodygi, nie do szkła.
+
 ## Pełny ekran i Odyssey 3D Hub (konwersja SBS → 3D)
 
 Hub włącza konwersję, gdy program przejdzie w pełny ekran (okno równe monitorowi; wtedy pokazuje okienko wyboru SBS), a potem

@@ -29,7 +29,7 @@ GRUPY = {
     'przejscie': [('Widoczność: wszystkie wiązki naraz', 'ch_p_wiazki'), ('Uwaga: siły między cząsteczkami', 'cb_sily'),
                   ('Lasery MLP', 'ch_lasery'), ('Tory, przesunięcia i kolory', 'cb_tory')],
     'zapis': [('Zapis policzonych przejść', 'ch_prz_zapis'), ('Zapis wszystkich checkpointów', 'sp_prz_co')],
-    'mikro': [('Naświetlenie: zdjęcie i płyty łodygi', 'ch_mk_obraz'), ('Formowanie: promienie, linki i sfera', 'cb_mk_prom'),
+    'mikro': [('Naświetlenie: zdjęcie i płyty łodygi', 'ch_mk_obraz'), ('Formowanie: promienie, linki i sfera', 'cb_mk_prom'), ('Lasery i uwaga w sferze okienka', 'cb_mk_las'), ('Wiązki jak światło', 'ch_mk_sw'), ('Pole laserów formuje mikrosoczewki', 'ch_mk_pole_las'), ('Szkło: kropla w ścinaniu albo kulki, drobiny super szkła', 'ch_mk_szklo'),
               ('Lampa, matryca soczewek i ekran', 'ch_mk_socz')],
 }
 

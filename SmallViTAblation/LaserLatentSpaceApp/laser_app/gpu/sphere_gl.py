@@ -397,7 +397,45 @@ class ReflectorSphere(_GPUElement):
         self._wyslij_pulapki()
         self.pod = d; self.przejscie = False; self.blok = -1; self.K = 13; self.u_pary = 0.0; self.para = (-1, -1)
         self.blok_a = -1; self._rf_klucz = None; self.m_pod = 0.0
+        self.pod_b = None; self.f_pary = 0.0; self._para_klucz = None
         self.ustaw_podkrok(self.t)
+
+    @staticmethod
+    def _skaluj_podkroki(d, R):
+        pos = np.asarray(d['pos_n'], np.float32)
+        r = float(np.percentile(np.linalg.norm(pos, axis=2), 99))
+        return pos / max(r, 1e-9) * 0.55 * R
+
+    def ustaw_pare_podkrokow(self, da, db, f, narz):
+        """Przejście „między” checkpointami a i b (f = 0..1), mieszane na karcie: natężenia laserów bloku obu checkpointów leżą
+        w buforze I (para), shader miesza je parametrem u_pu = f, więc zmiana f nie wysyła natężeń od nowa. Na procesorze mieszane
+        są tylko małe bufory: położenia 13 stanów (każdy checkpoint w swojej skali), kierunki laserów i średnia uwaga głów bloku."""
+        klucz = (id(da), id(db))
+        if klucz != getattr(self, '_para_klucz', None):
+            self.ustaw_podkroki(da, narz)
+            self.pod_b = db; self._para_klucz = klucz
+            self._Pa = self._skaluj_podkroki(da, self.R)
+            self._Pb = self._skaluj_podkroki(db, self.R) if db is not None else self._Pa
+            self._Da = np.asarray(da['dirs_n'], np.float32)
+            self._Db = np.asarray(db['dirs_n'], np.float32) if db is not None else self._Da
+            self._srednie_uwagi = {}
+            self.blok = -1; self.blok_a = -1
+        f = float(np.clip(f, 0.0, 1.0)) if db is not None else 0.0
+        if f != getattr(self, '_f_wyslane', None) or self.blok == -1:
+            P = np.zeros((13, TOK, 4), np.float32); P[..., :3] = (1 - f) * self._Pa + f * self._Pb; P[..., 3] = narz
+            dn = (1 - f) * self._Da + f * self._Db; dn /= np.maximum(np.linalg.norm(dn, axis=2, keepdims=True), 1e-12)
+            Dd = np.zeros((6, NK, 4), np.float32); Dd[..., :3] = dn
+            self.ustaw_bufor('P', P.reshape(-1, 4)); self.ustaw_bufor('D', Dd.reshape(-1, 4)); self._C_surowe = P
+            self._f_wyslane = f; self.blok_a = -1                    # uwaga zależy od f: średnia głów wysyłana od nowa (mała)
+        self.f_pary = f
+        self.ustaw_podkrok(self.t)
+
+    def _srednia_uwagi(self, d, ba):
+        k = (id(d), ba)
+        c = self.__dict__.setdefault('_srednie_uwagi', {})
+        if k not in c:
+            c[k] = np.asarray(d['ah'][ba], np.float32).mean(0)
+        return c[k]
 
     def ustaw_podkrok(self, s):
         """s = ułamkowy podkrok 0..12; przy zmianie bloku wysyła natężenia (blok MLP) i atencję (blok uwagi), reflektory w chwili s.
@@ -407,12 +445,19 @@ class ReflectorSphere(_GPUElement):
         f = float(self.opcje.get('plynnie', 0.0))
         self.m_pod, bm, ba = przenikanie(self.t, f)
         if self.pod is not None:
+            pb = getattr(self, 'pod_b', None)
             if bm != self.blok:
                 z = np.asarray(self.pod['z'][bm], np.float32) / 2.0                 # ze znakiem: ujemna jasność na błękitno
-                self.ustaw_bufor('I', np.concatenate([z.reshape(-1), z.reshape(-1)]).astype(np.float32))
+                zb = z if pb is None else np.asarray(pb['z'][bm], np.float32) / 2.0   # para checkpointów: shader miesza u_pu
+                self.ustaw_bufor('I', np.concatenate([z.reshape(-1), zb.reshape(-1)]).astype(np.float32))
                 self.blok = bm
             if ba != getattr(self, 'blok_a', -1):
-                self.ustaw_bufor('AT', self.pod['ah'][ba].mean(0).astype(np.float32).reshape(-1))
+                if pb is None:
+                    AT = self._srednia_uwagi(self.pod, ba)
+                else:
+                    fp = float(getattr(self, 'f_pary', 0.0))
+                    AT = (1 - fp) * self._srednia_uwagi(self.pod, ba) + fp * self._srednia_uwagi(pb, ba)
+                self.ustaw_bufor('AT', np.ascontiguousarray(AT, np.float32).reshape(-1))
                 self.blok_a = ba
             kier, kol, kl = reflektory_przejscia(self.pod, self.t, f)
             if kl != getattr(self, '_rf_klucz', None):
@@ -449,7 +494,7 @@ class ReflectorSphere(_GPUElement):
         uwaga = pod and wm < 0.5                     # podkrok uwagi: zamiast wiązek laserów linie sił między cząsteczkami
         self._ui('s', u_mvp=mvp, u_t=self.t, u_K=self.K, u_R=self.R, u_off=int(self.n_slad), u_gain=float(o['gain']), u_prog=float(o['prog']),
                  u_neg=float(o.get('neg', 1.0)),             # 1 = prawdziwa proporcja do dodatnich (zgodnie z ViT)
-                 u_tok=int(o['tok']), u_refl=int(o['refl']), u_pu=0.0 if pod else self.u_pary, u_blokD=self.blok if pod else -1,
+                 u_tok=int(o['tok']), u_refl=int(o['refl']), u_pu=(float(getattr(self, 'f_pary', 0.0)) if getattr(self, 'pod_b', None) is not None else 0.0) if pod else self.u_pary, u_blokD=self.blok if pod else -1,
                  u_skala=float(o.get('skala_chmury', 1.0)), u_T=int(self.T), u_zcale=int(not pod and self.duzy_gotowy('ZH')),
                  u_ka=int(getattr(self, 'zh_para', (0, 0))[0]), u_kb=int(getattr(self, 'zh_para', (0, 0))[1]))
         if o['sfera'] > 0:

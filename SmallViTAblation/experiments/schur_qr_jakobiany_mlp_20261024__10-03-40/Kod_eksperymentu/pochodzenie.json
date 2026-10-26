@@ -1,0 +1,27 @@
+{
+ "eksperyment": "schur_qr_jakobiany_mlp_20261024__10-03-40",
+ "rodzaj": "pomiar lokalny bez treningu, bez Edena",
+ "rodzic": {
+  "opis": "pomiar diagnostyk rzutu z sesji 2026-10-24 (okienko M aplikacji LaserLatentSpaceApp)",
+  "skrypt_wzorcowy": "C:/Users/bartl/AppData/Local/Temp/claude/W--Studia-PhD-projekt-VIT-ViTParticleFilterTracker/7a3f5b79-c883-4cdf-9559-5f8815a97330/scratchpad/diagnostyki_rzutu.py",
+  "odziedziczone": "pełny jakobian J = W2 diag(GELU'(a)) W1 J_LN w float64 z wag, przejście w przód hist.podkroki + ręczna pętla po blokach (wejścia MLP), rzut P = baza['P_n'] z passage_store.wczytaj_baze(.../przejscia)",
+  "zmienione": "zamiast diagnostyk rzutu: rozkład Schura (Keylock 2018), S/Ω, niezmienniki Q, R, widmo dla każdego tokenu i bloku; seria 6 checkpointów"
+ },
+ "dane": {
+  "historia": "W:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/LaserLatentSpaceApp/cache_uczenia/lasery/90f58d4f8b263d8b",
+  "wagi": "W:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/assets/MalyViT_35000_od_zera_s47/wagi",
+  "zdjecie": "History.rgb (320 x 480 x 3) -> 20 x 30 = 600 tokenów",
+  "etykieta_narzedzia": "History.narz po History.ustaw_etykiete() domyślnie (tryb 'dotkniete'): obrys TR_0127_S1_P03 kl. 1 (cystotome), 17 łat",
+  "krokow_na_epoke": 1094
+ },
+ "checkpointy": [
+  {"krok": 0, "indeks_w_historii": 0, "epoka": 0.0, "sha256": "cca40384f3ef1d4dc3c6bc5ae32c212aa461ae3d16768691e95564b44d625108"},
+  {"krok": 6564, "indeks_w_historii": 161, "epoka": 6.0, "sha256": "5754d645752f8c73b04d9cd79724584bea416b48b22c3974223ffca2d2c85031"},
+  {"krok": 21300, "indeks_w_historii": 322, "epoka": 19.47, "sha256": "e01782ba3eab7b6aab2d99da1165802488a13ad75a57db144535e0c5f2e33014"},
+  {"krok": 36100, "indeks_w_historii": 483, "epoka": 33.0, "sha256": "a34fdcf675cb6e85f09a88d79e3fff70ff514f6cf95d386a4ec22a41a3b36f2a"},
+  {"krok": 50800, "indeks_w_historii": 644, "epoka": 46.44, "sha256": "ccec9ab907ac402696b7a433e121e1c348754c250b1fc89ec0d4cd2489d4ae24"},
+  {"krok": 65640, "indeks_w_historii": 805, "epoka": 60.0, "sha256": "09d3eddc44c4ea88dee32b1802197477f086c06da69024a3a2d9e60b70af477f"}
+ ],
+ "wznowienie_treningu": "nie dotyczy (tylko wczytanie wag do przejścia w przód)",
+ "srodowisko": "W:/Python/3.11/python.exe, torch 2.14.1+cu126 (RTX 3070, jakobiany float64 na GPU), numpy 2.4.6, scipy 1.17.1 (LAPACK zgees, eig, SVD na CPU, 12 procesów)"
+}

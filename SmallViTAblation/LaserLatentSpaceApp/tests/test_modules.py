@@ -31,10 +31,16 @@ from laser_app.compute import common  # noqa: E402
 HISTORIA = hist.CACHE / '2cca2743e1c74b14'
 
 
+_APP = None
+
+
 def _qapp():
-    """QApplication offscreen (jedna na proces)."""
+    """QApplication offscreen (jedna na proces); referencja trzymana w module, bo PyQt6 nie trzyma jej sam i Qt może zwolnić
+    aplikację między setUpClass a testem (widżet bez QApplication = twarde zakończenie procesu, kod 0xC0000409)."""
+    global _APP
     from PyQt6.QtWidgets import QApplication
-    return QApplication.instance() or QApplication(sys.argv[:1])
+    _APP = QApplication.instance() or QApplication(sys.argv[:1])
+    return _APP
 
 
 # ====================================================================================================== 1. izopowierzchnia
@@ -1159,6 +1165,127 @@ class TestMikrosoczewki(unittest.TestCase):
         bx, sc = M.dekoduj(torch.as_tensor(g[12], dtype=torch.float32).view(1, 20, 30, 5), k=1)
         np.testing.assert_allclose(R[12], bx[0, 0].numpy(), rtol=1e-5)
         self.assertAlmostEqual(float(sc[0, 0]), float(G[12, 7 * 30 + 5, 0]), 5)
+
+    def test_mieszanie_przejsc_miedzy_checkpointami(self):
+        """microlens_view.mieszaj_przejscia: f = 0 / 1 zwraca przejście a / b, pośrednie f miesza położenia, głowę, natężenia
+        i uwagę liniowo (leniwie, tylko potrzebny blok), kierunki laserów są znormowane, slot zostaje z a."""
+        from laser_app.lasers_tab.microlens_view import mieszaj_przejscia
+        g = np.random.default_rng(0)
+
+        def przejscie(krok):
+            return dict(krok=krok, pos_n=g.normal(size=(13, 600, 3)).astype(np.float32), glowa=g.normal(size=(13, 600, 5)).astype(np.float32),
+                        dirs_n=g.normal(size=(6, 768, 3)).astype(np.float32), z=g.normal(size=(6, 600, 768)).astype(np.float16),
+                        ah=g.random((6, 3, 600, 600), dtype=np.float32), slot=np.arange(6 * 768).reshape(6, 768))
+        da, db = przejscie(100), przejscie(200)
+        self.assertIs(mieszaj_przejscia(da, db, 0.0), da); self.assertIs(mieszaj_przejscia(da, db, 1.0), db)
+        self.assertIs(mieszaj_przejscia(da, None, 0.5), da)
+        m = mieszaj_przejscia(da, db, 0.25)
+        np.testing.assert_allclose(m['pos_n'], 0.75 * da['pos_n'] + 0.25 * db['pos_n'], rtol=1e-5, atol=1e-6)
+        np.testing.assert_allclose(m['glowa'], 0.75 * da['glowa'] + 0.25 * db['glowa'], rtol=1e-5, atol=1e-6)
+        np.testing.assert_allclose(m['z'][3], 0.75 * da['z'][3].astype(np.float32) + 0.25 * db['z'][3].astype(np.float32), rtol=1e-5, atol=1e-5)
+        np.testing.assert_allclose(m['ah'][2].mean(0), (0.75 * da['ah'][2] + 0.25 * db['ah'][2]).mean(0), rtol=1e-5, atol=1e-6)
+        np.testing.assert_allclose(np.linalg.norm(m['dirs_n'], axis=2), 1.0, rtol=1e-5)
+        self.assertIs(m['slot'], da['slot']); self.assertEqual(m['krok'], 100)
+
+    def test_zalamanie_na_wyjsciu_ze_sfery_spelnia_prawo_snella(self):
+        """microlens_gl.wyjscie_ze_szkla (wzorzec procedury z shadera): punkt wyjścia e leży na sferze, n·sin θ_szkło = sin θ_powietrze,
+        promień w szkle, normalna i promień w powietrzu są współpłaszczyznowe; n = 1 daje prostą q → T; q poza sferą: bez zmian."""
+        from laser_app.gpu.microlens_gl import wyjscie_ze_szkla
+        g = np.random.default_rng(1); R = 34.0
+        for _ in range(200):
+            q = g.normal(size=3); q = q / np.linalg.norm(q) * R * g.uniform(0.05, 0.85)
+            T = np.array([g.uniform(-30, 30), g.uniform(-20, 20), 78.0])
+            for n in (1.0, 1.5, 2.0):
+                e = wyjscie_ze_szkla(q, T, R, n); nr = e / R
+                self.assertAlmostEqual(float(np.linalg.norm(e)), R, places=6)
+                di = (e - q) / np.linalg.norm(e - q); do = (T - e) / np.linalg.norm(T - e)
+                self.assertLess(abs(n * np.linalg.norm(np.cross(di, nr)) - np.linalg.norm(np.cross(do, nr))), 1e-5)
+                self.assertLess(abs(np.cross(di, nr) @ do), 1e-6)
+                if n == 1.0:
+                    self.assertLess(float(np.linalg.norm(np.cross(di, do))), 1e-6)
+        q = np.array([0.0, 0.0, 40.0]); np.testing.assert_allclose(wyjscie_ze_szkla(q, np.array([0, 0, 78.0]), R, 1.5), q)
+
+    def test_zalamanie_na_wejsciu_do_sfery_spelnia_prawo_snella(self):
+        """microlens_gl.wejscie_do_szkla (wzorzec z shadera): pionowy promień (+z) trafia w dolną półkulę w e, sin θ_powietrze =
+        n·sin θ_szkło, promień w szkle biegnie z e prosto do q, wszystko w jednej płaszczyźnie; n = 1: e leży pod q (pionowo);
+        q poza sferą albo w cieniu kuli: None."""
+        from laser_app.gpu.microlens_gl import wejscie_do_szkla
+        g = np.random.default_rng(2); R = 34.0; I = np.array([0.0, 0.0, 1.0]); trafione = 0
+        for _ in range(200):
+            q = g.normal(size=3); q = q / np.linalg.norm(q) * R * g.uniform(0.05, 0.6)
+            for n in (1.0, 1.5):
+                e = wejscie_do_szkla(q, R, n)
+                if e is None:
+                    continue
+                trafione += 1
+                self.assertAlmostEqual(float(np.linalg.norm(e)), R, places=6); self.assertLess(e[2], 0.0)
+                N = e / R; t = (q - e) / np.linalg.norm(q - e)
+                self.assertLess(abs(np.linalg.norm(np.cross(I, N)) - n * np.linalg.norm(np.cross(t, N))), 1e-5)
+                self.assertLess(abs(np.cross(I, N) @ t), 1e-6)
+                if n == 1.0:
+                    np.testing.assert_allclose(e[:2], q[:2], atol=1e-4)
+        self.assertGreater(trafione, 380)                              # w środkowej części sfery fala dociera prawie wszędzie
+        self.assertIsNone(wejscie_do_szkla(np.array([0.0, 0.0, 40.0]), R, 1.5))
+
+    def test_jakobian_mlp_zgodny_z_autogradem(self):
+        """history.jakobiany_mlp (dokładnie z wag: LayerNorm, fc1, GELU', fc2) = autograd P · MLP_b(x + Pᵀu) w u = 0, każdy blok."""
+        import torch
+        M = hist.modul_modelu(); torch.manual_seed(0)
+        net = M.MalyViT().eval()
+        X = torch.randn(6, 5, 192) * 1.5
+        AM = [blk.mlp.fc1(blk.norm2(X[b])) for b, blk in enumerate(net.bloki)]
+        P = torch.linalg.qr(torch.randn(192, 3))[0].T.contiguous()
+        J = hist.jakobiany_mlp(net, [X[b] for b in range(6)], AM, P).detach()
+        for b, blk in enumerate(net.bloki):
+            for j in range(5):
+                Ja = torch.autograd.functional.jacobian(lambda u: P @ blk.mlp(blk.norm2(X[b, j] + P.T @ u)), torch.zeros(3))
+                self.assertLess(float((J[b, j] - Ja).abs().max() / Ja.abs().max()), 1e-4)
+
+    def test_pole_z_jakobianu_siodlo_i_wir(self):
+        """MicrolensMixin.pole_z_jakobianu: (N, 3, 4) = S symetryczne (siodło) i ω (oś wiru) względem 95. percentyla max|λ(S)|,
+        |F| względem 99. percentyla, JK[:, 2, 2] = κ/κ₉₅ obcięte do [−1.5, 1.5] (bez κ zero); bez ogniska u* i typu pułapki
+        (usunięte 2026-10-24)."""
+        from laser_app.lasers_tab.microlens_view import MicrolensMixin
+        J = np.stack([-np.eye(3), np.diag([1.0, -1.0, -2.0]), np.array([[-1.0, -2.0, 0], [2.0, -1.0, 0], [0, 0, -1.0]])])
+        F = np.array([[1.0, 0, 0], [0, 0, 0], [0, 0, 0.5]])
+        JK = MicrolensMixin.pole_z_jakobianu(J, F)
+        self.assertEqual(JK.shape, (3, 3, 4))
+        sc = float(np.percentile([1.0, 2.0, 1.0], 95))                                  # max|λ(S)| koloidów: 1, 2, 1
+        np.testing.assert_allclose(JK[0, 0, :3], [-1 / sc, 0, 0], atol=1e-6)            # S00, S01, S02 dla −I
+        np.testing.assert_allclose([JK[1, 1, 0], JK[1, 1, 2]], [-1 / sc, -2 / sc], atol=1e-6)   # S11, S22 siodła
+        np.testing.assert_allclose(JK[2, 0, 1], 0.0, atol=1e-6)                         # część antysymetryczna nie wchodzi do S
+        np.testing.assert_allclose(JK[:, 0, 3], 0.0, atol=1e-6); np.testing.assert_allclose(JK[:, 1, 3], 0.0, atol=1e-6)
+        np.testing.assert_allclose(JK[:, 2, 0], [0, 0, 2 / sc], atol=1e-6)              # ω_z tylko dla obrotu wokół z
+        self.assertGreater(JK[0, 2, 1], JK[2, 2, 1]); self.assertGreater(JK[2, 2, 1], 0); self.assertEqual(JK[1, 2, 1], 0)   # |F| wzgl.
+        np.testing.assert_allclose(JK[:, 2, 2:], 0.0)                                   # bez κ: zero
+        kap = np.array([0.2, -0.1, 0.05])
+        JKk = MicrolensMixin.pole_z_jakobianu(J, F, kap)
+        km = float(np.percentile(np.abs(kap), 95))
+        np.testing.assert_allclose(JKk[:, 2, 2], np.clip(kap / km, -1.5, 1.5), atol=1e-6)   # κ/κ₉₅, obcięte
+        self.assertLessEqual(float(np.abs(JKk[:, 2, 2]).max()), 1.5 + 1e-6)
+        np.testing.assert_allclose(JKk[:, 2, 3], 0.0); np.testing.assert_allclose(JKk[:, :2], JK[:, :2])   # reszta bez zmian
+        np.testing.assert_allclose(JKk[:, 2, :2], JK[:, 2, :2])
+
+    def test_kontrakcja_uwagi(self):
+        """MicrolensMixin.kontrakcja_uwagi: bez sfery i bez odniesienia do chmury: xb = xa → κ = 0, przesunięcie o 50 % w stronę
+        średniej 5 sąsiedztwa z xa → κ > 0 wszędzie, xb = 2·xa → κ = −1 dokładnie; na sferze jednorodne skalowanie daje κ = 0;
+        względem chmury: jednorodne ściskanie wszystkich sąsiedztw daje κ = 0, a ściśnięcie tylko części tokenów daje im κ > 0."""
+        from laser_app.lasers_tab.microlens_view import MicrolensMixin
+        g = np.random.default_rng(7)
+        xa = g.normal(size=(600, 192))
+        sur = dict(sfera=False, wzgledem_chmury=False)
+        k0 = MicrolensMixin.kontrakcja_uwagi(xa, xa.copy(), **sur)
+        self.assertEqual(k0.shape, (600,)); self.assertEqual(k0.dtype, np.float64)
+        np.testing.assert_allclose(k0, 0.0, atol=1e-12)
+        D = np.linalg.norm(xa[:, None] - xa[None], axis=2); np.fill_diagonal(D, np.inf)
+        idx = np.argsort(D, axis=1)[:, :5]
+        xb = xa + 0.5 * (xa[idx].mean(1) - xa)
+        self.assertTrue(bool((MicrolensMixin.kontrakcja_uwagi(xa, xb, **sur) > 0).all()))
+        np.testing.assert_array_equal(MicrolensMixin.kontrakcja_uwagi(xa, 2.0 * xa, **sur), -1.0)
+        np.testing.assert_allclose(MicrolensMixin.kontrakcja_uwagi(xa, 2.0 * xa, sfera=True, wzgledem_chmury=False), 0.0, atol=1e-12)
+        np.testing.assert_allclose(MicrolensMixin.kontrakcja_uwagi(xa, 0.5 * xa, sfera=False, wzgledem_chmury=True), 0.0, atol=1e-12)
+        kw = MicrolensMixin.kontrakcja_uwagi(xa, np.where(np.arange(600)[:, None] < 100, xb, xa), sfera=False, wzgledem_chmury=True)
+        self.assertGreater(float(np.median(kw[:100])), float(np.median(kw[100:])))
 
     def test_kolory_lat(self):
         from laser_app.gpu import microlens_gl as m

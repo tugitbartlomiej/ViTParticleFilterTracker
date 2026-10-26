@@ -346,6 +346,7 @@ class SubstepsMixin:
             pam.popitem(last=False)
         if self._baza_pod is None:
             self._baza_pod = d.get('baza')                           # wspólny rzut 3D dla kolejnych checkpointów
+        self._mk_odswiez()                                           # okienko M: także przejście policzone z wyprzedzeniem
         krok_teraz = int(self.h.kroki[int(np.clip(round(self.t), 0, self.h.K - 1))])
         if d['krok'] != krok_teraz or getattr(self, '_w_przejsciu', False):
             return                                                   # policzony z wyprzedzeniem: czeka w pamięci
@@ -357,7 +358,6 @@ class SubstepsMixin:
             if not self._kamera_pod:
                 self._kadruj_przejscie(); self._kamera_pod = True
         self._opcje_przejscia()
-        self._mk_przejscie(d)                                        # okienko M: mikrosoczewki (to samo przejście)
         self.diagram.ustaw_lodyge(self.h.rgb, d)
         self._stat_pod = self._statystyki_podkrokow(d)
         if self.ch_pod.isChecked():

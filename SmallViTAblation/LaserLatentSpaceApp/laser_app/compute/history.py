@@ -455,6 +455,7 @@ def podkroki(wagi, krok, rgb, urzadzenie='cuda', baza=None, st=None, lodyga=True
         else:
             lodyga = []
         stany, AH, U, BO, B2, Z, V2 = [t[0]], [], [], [], [], [], []
+        XM, AM = [], []                                                                    # wejście MLP i przed-aktywacje (jakobiany)
         for blk in net.bloki:
             at = blk.attn
             xn = blk.norm1(t)
@@ -466,6 +467,7 @@ def podkroki(wagi, krok, rgb, urzadzenie='cuda', baza=None, st=None, lodyga=True
             u = torch.stack([v[0, g] @ Wo[:, g * hd:(g + 1) * hd].T for g in range(at.num_heads)])   # (3, 600, 192)
             t = t + blk.ls1(at(xn))
             stany.append(t[0]); AH.append(A); U.append(u); BO.append(at.proj.bias)
+            XM.append(t[0]); AM.append(blk.mlp.fc1(blk.norm2(t))[0])
             pam = {}
             hak = blk.mlp.act.register_forward_hook(lambda m_, a_, o_: pam.__setitem__('z', o_))
             t = t + blk.ls2(blk.mlp(blk.norm2(t)))
@@ -512,6 +514,7 @@ def podkroki(wagi, krok, rgb, urzadzenie='cuda', baza=None, st=None, lodyga=True
             wynik['sprawdzenie' + suf] = max(float((F_ - dU).abs().max() / dU.abs().max().clamp_min(1e-12)),
                                              float((L_ - dM).abs().max() / dM.abs().max().clamp_min(1e-12)))
         wynik['rms'] = cpu(rms)
+        wynik['jak_n'] = cpu(jakobiany_mlp(net, XM, AM, torch.as_tensor(wynik['baza']['P_n'], device=dev, dtype=XM[0].dtype)))
         # wagi uwagi i jasności względem średniej po tokenach (do sił w układach '_c' i '_n')
         wynik['ah_c'] = cpu(AH - AH.mean(2, keepdim=True)); wynik['z_c'] = cpu(Z - Z.mean(1, keepdim=True))
         wynik['xn'] = cpu(Xc / rms[:, None, None])                                     # (13, 600, 192) do rzutów płaskich
@@ -535,6 +538,27 @@ def podkroki(wagi, krok, rgb, urzadzenie='cuda', baza=None, st=None, lodyga=True
     wynik.update(mapa=cpu(o[0, ..., 0].sigmoid().reshape(-1)), ramka=bx[0, 0].numpy(), pewnosc=float(sc[0, 0]), lodyga=lodyga,
                  lodyga_ksztalty=[tuple(int(v) for v in e.shape) for e in etapy] + [(C, h, w), (C, h, w)])
     return wynik
+
+
+
+def jakobiany_mlp(net, XM, AM, P):
+    """Jakobian pola MLP każdego bloku b w każdym tokenie j w rzucie P (3 × 192): J_bj = P · ∂MLP_b(x)/∂x |_{x_j} · Pᵀ, (6, N, 3, 3).
+    Dokładnie, bez różniczkowania automatycznego: ∂LN(x)/∂x · v = γ ⊙ (v − mean(v) − x̂ · mean(x̂ ⊙ v)) / σ, potem fc1, GELU'(a)
+    (dokładne, erf: Φ(a) + a·φ(a)) i fc2. XM: wejścia MLP (N, 192), AM: przed-aktywacje fc1 (N, 768). Pole f(u) wokół koloidu
+    w rzucie: f(u) ≈ f(0) + J u; część symetryczna J = siodło (osie rozciągania i ściskania), antysymetryczna = wir (okienko M).
+    To kompresja P·J₁₉₂·Pᵀ: nie klasyfikuje punktów stałych pełnego pola (pomiar 2026-10-24 w README)."""
+    import math
+    import torch
+    V = P.T                                                                             # (192, 3)
+    wynik = []
+    for blk, xm, a in zip(net.bloki, XM, AM):
+        ln = blk.norm2; C = xm.shape[-1]
+        mu = xm.mean(-1, keepdim=True); sig = (xm.var(-1, unbiased=False, keepdim=True) + ln.eps).sqrt(); xh = (xm - mu) / sig
+        JV = (V[None] - V.mean(0)[None, None] - xh[:, :, None] * (xh @ V)[:, None, :] / C) * (ln.weight[None, :, None] / sig[:, :, None])
+        gp = 0.5 * (1 + torch.erf(a / math.sqrt(2.0))) + a * torch.exp(-0.5 * a * a) / math.sqrt(2 * math.pi)
+        H = torch.einsum('cd,jdk->jck', blk.mlp.fc1.weight, JV) * gp[:, :, None]
+        wynik.append(torch.einsum('md,jdk->jmk', P, torch.einsum('dc,jck->jdk', blk.mlp.fc2.weight, H)))
+    return torch.stack(wynik)
 
 
 def _rgb_pca(F, h, w):

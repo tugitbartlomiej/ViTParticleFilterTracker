@@ -1,0 +1,79 @@
+{
+ "eksperyment": "kontrakcja_komutator_polkrokow_20261025__02-12-46",
+ "rodzaj": "pomiar lokalny bez treningu, bez Edena (tylko wczytanie wag do przejścia w przód)",
+ "rodzic": {
+  "nazwa": "schur_qr_jakobiany_mlp_20261024__10-03-40",
+  "sciezka": "W:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/experiments/schur_qr_jakobiany_mlp_20261024__10-03-40",
+  "odziedziczone": "historia lasery 90f58d4f8b263d8b, te same 6 checkpointów (np.linspace po indeksie historii), etykieta narzędzia History.narz (17 tokenów), ręczna pętla po blokach timm z pomiar_schur_qr.py",
+  "zmienione": "zamiast jakobianów MLP: miary geometrii chmury tokenów na sferze LayerNorm w 13 stanach / 12 półkrokach (most 2) i defekt komutatora uwaga–MLP na blok (most 3); skalary mostu 2 dla wszystkich 806 checkpointów; wyniki rodzica nieużywane"
+ },
+ "dane": {
+  "historia": "W:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/LaserLatentSpaceApp/cache_uczenia/lasery/90f58d4f8b263d8b",
+  "dane_npz_sha256": "b10d0eba4c2f5bd6fdc757c4706a4701df1a3c7c5bcf4749dbbc230186ca8113",
+  "wagi": "W:/Studia/PhD_projekt/VIT/ViTParticleFilterTracker/SmallViTAblation/assets/MalyViT_35000_od_zera_s47/wagi",
+  "zdjecie": "History.rgb (320 x 480 x 3) -> 20 x 30 = 600 tokenów",
+  "gt_xyxy": [
+   239.3333282470703,
+   88.0,
+   376.6666564941406,
+   136.6666717529297
+  ],
+  "etykieta_narzedzia": "obrys TR_0127_S1_P03 kl. 1 (cystotome), dotknięte: 17 łat",
+  "n_narz": 17,
+  "n_tlo": 583,
+  "krokow_na_epoke": 1094,
+  "K_checkpointow": 806,
+  "sha256_wszystkich_wag": "Wyniki/Dane/wagi_sha256_wszystkie.csv (liczone z tych samych bajtów, które wczytano)"
+ },
+ "checkpointy_6": [
+  {
+   "krok": 0,
+   "indeks_w_historii": 0,
+   "epoka": 0.0,
+   "sha256": "cca40384f3ef1d4dc3c6bc5ae32c212aa461ae3d16768691e95564b44d625108"
+  },
+  {
+   "krok": 6564,
+   "indeks_w_historii": 161,
+   "epoka": 6.0,
+   "sha256": "5754d645752f8c73b04d9cd79724584bea416b48b22c3974223ffca2d2c85031"
+  },
+  {
+   "krok": 21300,
+   "indeks_w_historii": 322,
+   "epoka": 19.47,
+   "sha256": "e01782ba3eab7b6aab2d99da1165802488a13ad75a57db144535e0c5f2e33014"
+  },
+  {
+   "krok": 36100,
+   "indeks_w_historii": 483,
+   "epoka": 33.0,
+   "sha256": "a34fdcf675cb6e85f09a88d79e3fff70ff514f6cf95d386a4ec22a41a3b36f2a"
+  },
+  {
+   "krok": 50800,
+   "indeks_w_historii": 644,
+   "epoka": 46.44,
+   "sha256": "ccec9ab907ac402696b7a433e121e1c348754c250b1fc89ec0d4cd2489d4ae24"
+  },
+  {
+   "krok": 65640,
+   "indeks_w_historii": 805,
+   "epoka": 60.0,
+   "sha256": "09d3eddc44c4ea88dee32b1802197477f086c06da69024a3a2d9e60b70af477f"
+  }
+ ],
+ "kod_zrodlowy_sha256": {
+  "LaserLatentSpaceApp/laser_app/compute/history.py": "1b80b938876547f3f2c357bc2f53bbbed473e013066226f46dec76dcb4a87a9e",
+  "experiments/maly_vit_od_zera_35000_21epok_20261009/kod/model.py": "0570c957a23a75283102806160fa197c5ba66c27776d05b27a3ed461929da57a",
+  "Kod_eksperymentu/pomiar_mosty.py": "235abf624e69926630e2755c53f9d51de6439556beb47e0ed320c1b161df4028"
+ },
+ "wznowienie_treningu": "nie dotyczy",
+ "srodowisko": "W:/Python/3.11/python.exe, torch 2.14.1+cu126 (RTX 3070: przejście w przód float32, miary float64 na GPU), numpy 2.4.6 (eigvalsh kowariancji na CPU), scipy 1.17.1",
+ "literatura": [
+  "Criscitiello i in. 2024 (synchronizacja/konsensus na sferze)",
+  "Markdahl 2016 (konsensus na sferze)",
+  "Isobe i in. 2026 (ucieczka z klastrowania)",
+  "Mudarisov i in. 2026, Feed-Forward Steering in Transformer Residual Dynamics"
+ ]
+}
