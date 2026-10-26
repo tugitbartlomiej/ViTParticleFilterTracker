@@ -501,6 +501,8 @@ class ReflectorSphere(_GPUElement):
             self._ui('s', u_tryb=3, u_kol=(0.45, 0.6, 0.75, float(o['sfera'])), u_punkty=0)
             self._addytywnie(False); GL.glLineWidth(1.0)
             GL.glDrawArrays(GL.GL_LINES, 0, self.n_sf)
+        if o.get('tylko_siatka'):                    # okienko M bez koloidów i laserów: sama szklana sfera
+            return
         tryb_w = 0 if getattr(self, 'przejscie', False) else int(o['wiazki'])
         tryb_a = int(o.get('sily', 1)) if pod and wm < 0.999 else 0
         if pod and wm < 1e-3:

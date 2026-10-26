@@ -150,12 +150,14 @@ class PlaybackMixin:
         for e in (self.e1, self.e2, self.e3):
             e.ustaw_historie(pp2); e.opcje['pod_kol'] = None; e.opcje['L'] = 0
         self._krok_prz = (int(self.d_pod['krok']), int(dn['krok']))
+        self._mk_start_przejscia(self.d_pod, dn)                     # okienko M: ten sam powrót
 
     def _ustaw_przejscie(self, u):
         u = float(np.clip(u, 0, 1)); g = u * u * (3 - 2 * u)                # łagodny start i koniec
         self.es.ustaw_czas(g)
         for e in (self.e1, self.e2, self.e3):
             e.ustaw_czas(g)
+        self._mk_ustaw_przejscie(g)
         a, b = self._krok_prz
         self.lb_podkrok.setText(f'przejście: wyjście sieci w kroku {a} → wejście sieci w kroku {b}  ({u:.0%})')
         cz = self._pp_prz.cz[0] * (1 - g) + self._pp_prz.cz[1] * g

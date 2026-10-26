@@ -129,6 +129,9 @@ def _pelny_dok(d):
         pasek = d.titleBarWidget()
         if pasek is not None:
             pasek.show()
+        for lb in getattr(d, '_okna_napisy', ()):                   # napisy pod widokami wracają
+            lb.show()
+        d._okna_napisy = ()
         if m is not None and not m[0]:
             d.setFloating(False)                                     # przypięcie samo ustawia flagi okna doku
         else:
@@ -145,6 +148,9 @@ def _pelny_dok(d):
     pasek = d.titleBarWidget()
     if pasek is not None:
         pasek.hide()
+    d._okna_napisy = [lb for lb in d.findChildren(_LayoutShield) if lb.isVisible()]
+    for lb in d._okna_napisy:                                        # sam obraz: napisy pod widokami znikają na czas pełnego ekranu
+        lb.hide()
     d._okna_ramka = PELNY_DLA_NAKLADEK
     if PELNY_DLA_NAKLADEK:
         d.setWindowFlags(Qt.WindowType.Window)                       # bez FramelessWindowHint: ramka 1 px zabiera obszar klienta

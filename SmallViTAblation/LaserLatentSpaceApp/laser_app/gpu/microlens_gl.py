@@ -536,6 +536,7 @@ class MicrolensScene(_GPUElement):
         self.czas = 0.0                          # czas animacji super szkła [s]
         self.n_las = 0                           # laserów na soczewkę w buforze LT (0 = brak pola)
         self.ma_jk = False                       # pole wokół koloidów z jakobianu (bufor JK)
+        self.prz = False                         # powrót między checkpointami: 2 stany (G, P), bez sondy
         self.ustaw_wybor([0])
 
     def czysc(self):
@@ -730,7 +731,7 @@ class MicrolensScene(_GPUElement):
     def _rysuj(self, mvp):
         o = self.opcje
         GL.glUseProgram(self._prog['m'])
-        self._ui('m', u_mvp=mvp, u_s=self.t, u_skala=float(o.get('skala', 1.0)), u_sonda=int(o.get('sonda', 0)), u_rgb=0, u_lut=1,
+        self._ui('m', u_mvp=mvp, u_s=self.t, u_skala=float(o.get('skala', 1.0)), u_sonda=0 if self.prz else int(o.get('sonda', 0)), u_rgb=0, u_lut=1,
                  u_gamma=float(o.get('gamma', 1.0)), u_punkty=0, u_tex=0, u_kolo=0)
         self._addytywnie(False)
         tryb_w = int(o.get('rownolegle', 0))       # 0 ogniskowanie na ekranie, 1 skupianie w soczewce, 2 z oryginalnej łaty, 3 pod koloidem

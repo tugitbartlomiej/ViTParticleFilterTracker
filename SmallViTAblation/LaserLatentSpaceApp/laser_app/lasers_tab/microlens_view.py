@@ -114,6 +114,9 @@ class MicrolensMixin:
         self.ch_mk_sfera = QCheckBox('sfera reflektorów w środku: koloidy, lasery bloku, linie uwagi'); self.ch_mk_sfera.setChecked(True)
         self.ch_mk_sfera.setToolTip('Druga sfera reflektorów (te same ustawienia co duża sfera, sekcja „Sfera”) w trybie przejścia przez sieć:\n'
                                     'w podkroku MLP świecą lasery bloku, w podkroku uwagi linie między cząsteczkami. Formowanie soczewek.')
+        self.sp_mk_siatka = _spin(0.0, 1.0, 0.3, 0.02, 2); self.sp_mk_siatka.setSpecialValueText('brak')
+        self.sp_mk_siatka.setToolTip('Krycie siatki szklanej sfery w okienku M (0 = brak). Niezależne od dużej sfery i widoczne także wtedy,\n'
+                                     'gdy sfera reflektorów (koloidy, lasery, linie uwagi) jest wyłączona: widać, gdzie leży szkło między zdjęciem a matrycą.')
         self.cb_mk_las = NarrowCombo()
         self.cb_mk_las.addItems(['lasery: jak na dużej sferze', 'lasery: brak', 'lasery: wszystkie wiązki (768 × 600)',
                                  'lasery: do wybranych cząsteczek', 'lasery: z wybranych reflektorów'])
@@ -229,7 +232,7 @@ class MicrolensMixin:
         f.addRow(self.ch_mk_obraz); f.addRow(self.ch_mk_plyty); f.addRow('  krycie płyt', self.sp_mk_krycie_plyt)
         f.addRow(self.cb_mk_prom); f.addRow(self.cb_mk_rown); f.addRow('  promieni w pęku', self.sp_mk_pek_n); f.addRow('  apertura koloidu', self.sp_mk_pek_ap); f.addRow(self.ch_mk_zal); f.addRow('  współczynnik załamania', self.sp_mk_n); f.addRow('  wzmocnienie wyjścia', self.sp_mk_wzm);
         f.addRow(self.ch_mk_pole); f.addRow('  jasność pola', self.sp_mk_jas_pola); f.addRow('  wielkość chmury', self.sp_mk_skala); f.addRow(self.cb_mk_linki); f.addRow('  jasność promieni', self.sp_mk_jas_prom)
-        f.addRow('  krycie promieni', self.sp_mk_krycie_prom); f.addRow(self.ch_mk_jas_zdj); f.addRow(self.ch_mk_sfera)
+        f.addRow('  krycie promieni', self.sp_mk_krycie_prom); f.addRow(self.ch_mk_jas_zdj); f.addRow(self.ch_mk_sfera); f.addRow('  siatka szklanej sfery', self.sp_mk_siatka)
         f.addRow(self.cb_mk_las); f.addRow('  jasność laserów', self.sp_mk_las_gain); f.addRow('  próg laserów', self.sp_mk_las_prog)
         f.addRow('  ekspozycja laserów', self.sp_mk_las_eksp); f.addRow(self.cb_mk_uw); f.addRow(self.ch_mk_refl)
         f.addRow(self.ch_mk_sw); f.addRow('  ekspozycja wiązek', self.sp_mk_sw_eksp); f.addRow('  poświata', self.sp_mk_sw_blum)
@@ -254,7 +257,7 @@ class MicrolensMixin:
         for w in (self.sp_mk_mz_r, self.sp_mk_mz_def, self.sp_mk_mz_wir, self.sp_mk_mz_n, self.sp_mk_mz_prog,
                   self.sp_mk_mz_kr, self.sp_mk_mz_skup, self.sp_mk_mz_refr, self.sp_mk_pole_k, self.sp_mk_pole_def, self.sp_mk_pole_dl, self.sp_mk_pole_jas, self.sp_mk_n, self.sp_mk_las_gain, self.sp_mk_las_prog, self.sp_mk_las_eksp, self.sp_mk_sw_eksp, self.sp_mk_sw_blum,
                   self.sp_mk_sw_szer, self.sp_mk_sw_prog, self.sp_mk_sw_grub, self.sp_mk_skala, self.sp_mk_szklo_r, self.sp_mk_szklo_kr, self.sp_mk_wzm, self.sp_mk_jas_pola, self.sp_mk_pek_n, self.sp_mk_pek_ap, self.sp_mk_maz_n, self.sp_mk_maz_r, self.sp_mk_maz_lep, self.sp_mk_maz_tempo, self.sp_mk_maz_jas, self.sp_mk_maz_pkt,
-                  self.sp_mk_krycie_plyt, self.sp_mk_jas_prom, self.sp_mk_krycie_prom, self.sp_mk_jas_lampy, self.sp_mk_prog, self.sp_mk_gamma):
+                  self.sp_mk_krycie_plyt, self.sp_mk_siatka, self.sp_mk_jas_prom, self.sp_mk_krycie_prom, self.sp_mk_jas_lampy, self.sp_mk_prog, self.sp_mk_gamma):
             w.valueChanged.connect(self._opcje_mikro)
         self._sek['mikro'] = g
 
@@ -308,6 +311,10 @@ class MicrolensMixin:
         h = self.h
         if h is None or not hasattr(self, 'emk') or not self.widac('m'):
             return
+        if getattr(self, '_mk_w_prz', False):
+            if getattr(self, '_w_przejsciu', False):
+                return                                                 # trwa powrót między checkpointami (_mk_start_przejscia)
+            self._mk_w_prz = False; self.emk.prz = False; self._mk_klucz = None
         pam = self._pamiec_pod()
         t = float(np.clip(self.t, 0, h.K - 1)); a = int(np.floor(t)); b = min(a + 1, h.K - 1); f = t - a
         da, db = pam.get(int(h.kroki[a])), pam.get(int(h.kroki[b]))
@@ -345,22 +352,47 @@ class MicrolensMixin:
             return
         from laser_app.gpu.base import przenikanie, reflektory_przejscia
         da, db, f = para; fpl = self._plynnie(); _, bm, _ = przenikanie(s, fpl)
+        b0, b1, w = self.bloki_pola(s, fpl)                           # płynnie: w podkroku uwagi pole bloku b0 przechodzi w b1
         K = int(self.sp_mk_pole_k.value())
         skup = int(self.emk.opcje.get('skup_z', 0))
-        klucz = (id(da), id(db), round(f, 3), bm, K, skup)
+        klucz = (id(da), id(db), round(f, 3), b0, b1, round(w, 2), bm, K, skup)
         if klucz == getattr(self, '_mk_pole_klucz', None) or 'pv_n' not in da:
             return
         self._mk_pole_klucz = klucz
-        z = np.asarray(da['z'][bm], np.float32); pv = np.asarray(da['pv_n'][bm], np.float32)
-        if db is not None and f > 1e-4 and 'pv_n' in db:
-            z = (1 - f) * z + f * np.asarray(db['z'][bm], np.float32); pv = (1 - f) * pv + f * np.asarray(db['pv_n'][bm], np.float32)
-        zc = z - z.mean(0, keepdims=True)
-        F = zc @ pv                                                    # (600, 3): Σ_c (z_jc − z̄_c) v_c, w rzucie sceny
+
+        def blok(b):
+            z = np.asarray(da['z'][b], np.float32); pv = np.asarray(da['pv_n'][b], np.float32)
+            if db is not None and f > 1e-4 and 'pv_n' in db:
+                z = (1 - f) * z + f * np.asarray(db['z'][b], np.float32); pv = (1 - f) * pv + f * np.asarray(db['pv_n'][b], np.float32)
+            zc = z - z.mean(0, keepdims=True)
+            return zc, pv, zc @ pv                                     # F (600, 3): Σ_c (z_jc − z̄_c) v_c, w rzucie sceny
+        zc, pv, F = blok(bm)
+        if b0 != b1 and 0.0 < w < 1.0:                                 # bm to b0 albo b1 (wiązki przełączają się w połowie)
+            F0 = F if bm == b0 else blok(b0)[2]; F1 = F if bm == b1 else blok(b1)[2]
+            F = (1 - w) * F0 + w * F1
         K = min(K, zc.shape[1]); idx = np.argpartition(-np.abs(zc), K - 1, axis=1)[:, :K]
         zt = np.take_along_axis(zc, idx, axis=1)
         _, kol, _ = reflektory_przejscia(da, s, fpl)
         kappa = self._mk_kontrakcja(da, db, f, bm, skup)              # skupianie mazi: kontrakcja w półkroku uwagi bloku bm (2 = ciepło: brak)
-        self.emk.ustaw_pole_laserow(F, idx, zt, pv, kol, self._mk_pole_jakobianu(da, db, f, bm, F, kappa))
+        JK = self._mk_pole_jakobianu(da, db, f, bm, F, kappa)
+        if JK is not None and b0 != b1 and 0.0 < w < 1.0:              # kropla w ścinaniu: jakobian i κ obu bloków mieszane wagą w
+            ka, kb = self._mk_kontrakcja(da, db, f, b0, skup), self._mk_kontrakcja(da, db, f, b1, skup)
+            kap = None if ka is None or kb is None else (1 - w) * ka + w * kb
+            JK = self._mk_pole_jakobianu(da, db, f, (b0, b1, w), F, kap)
+        self.emk.ustaw_pole_laserow(F, idx, zt, pv, kol, JK)
+
+    @staticmethod
+    def bloki_pola(s, fpl):
+        """Pole laserów formujące soczewki w chwili s: (b0, b1, w) = pole (1 − w)·blok b0 + w·blok b1. Płynnie (fpl > 0): w podkroku
+        uwagi bloku b (s ∈ [2b, 2b + 1)) pole bloku MLP b − 1 przechodzi łagodnie (smoothstep) w pole bloku b, w podkroku MLP stoi
+        pole bloku b; skokowo (fpl = 0) blok zmienia się w połowie podkroku uwagi, jak wiązki (`przenikanie`)."""
+        from laser_app.gpu.base import przenikanie
+        s = float(np.clip(s, 0, 12)); k = int(np.clip(np.floor(s), 0, 11)); b = k // 2
+        if fpl <= 0 or k % 2 or b == 0:
+            bm = przenikanie(s, fpl)[1]
+            return bm, bm, 1.0
+        u = s - k
+        return b - 1, b, float(u * u * (3 - 2 * u))
 
     @staticmethod
     def kontrakcja_uwagi(xa, xb, k=5, sfera=True, wzgledem_chmury=True):
@@ -438,15 +470,51 @@ class MicrolensMixin:
         jakobianów."""
         if 'jak_n' not in da:
             return None
-        J = np.asarray(da['jak_n'][bm], np.float64)
-        if db is not None and f > 1e-4 and 'jak_n' in db:
-            J = (1 - f) * J + f * np.asarray(db['jak_n'][bm], np.float64)
-        return self.pole_z_jakobianu(J, F, kappa)
+
+        def jeden(b):
+            J = np.asarray(da['jak_n'][b], np.float64)
+            if db is not None and f > 1e-4 and 'jak_n' in db:
+                J = (1 - f) * J + f * np.asarray(db['jak_n'][b], np.float64)
+            return J
+        if isinstance(bm, tuple):                                      # (b0, b1, w): jakobiany dwóch bloków mieszane wagą w
+            b0, b1, w = bm
+            return self.pole_z_jakobianu((1 - w) * jeden(b0) + w * jeden(b1), F, kappa)
+        return self.pole_z_jakobianu(jeden(bm), F, kappa)
+
+    def _mk_start_przejscia(self, da, dn):
+        """Synchronizacja kroków i podkroków: płynny powrót okienka M z wyjścia sieci checkpointu da (stan 12) do wejścia następnego
+        dn (stan 0), jak duża sfera. Koloidy jadą po prostej w skali sfery, ciepło głowy (cień na ekranie) przechodzi z 12 stanu da
+        w stan 0 dn (sonda: w stan 12 dn); wiązki zgasają, płyty łodygi i pole soczewek zostają z da do pierwszego podkroku dn."""
+        if not hasattr(self, 'emk') or not self.widac('m') or self.emk.G is None or 'glowa' not in da or 'glowa' not in dn:
+            return
+        Pa = self.em.pozycje_podkrokow(da)[12]; Pb = self.em.pozycje_podkrokow(dn)[0]
+        sonda = int(self.emk.opcje.get('sonda', 0))
+        ga = np.asarray(da['glowa'][12], np.float32); gb = np.asarray(dn['glowa'][12 if sonda else 0], np.float32)
+        self.em.ustaw_przejscie(Pa, Pb, self.h.narz); self.em._para_klucz = None
+        P = np.repeat(Pb[None], 13, 0); P[0] = Pa
+        G = np.repeat(gb[None], 13, 0); G[0] = ga
+        self.emk.ustaw_przejscie({'glowa': G}, P); self.emk.prz = True
+        self._mk_w_prz = True; self._mk_klucz = None; self._mk_prz_kroki = (int(da['krok']), int(dn['krok']))
+        self._mk_ustaw_przejscie(0.0)
+
+    def _mk_ustaw_przejscie(self, g):
+        """Chwila g = 0..1 (już wygładzona) powrotu okienka M."""
+        if not getattr(self, '_mk_w_prz', False):
+            return
+        self.em.ustaw_czas(g); self.emk.ustaw_czas(g)
+        a, b = self._mk_prz_kroki
+        self.lbm.setText(f'przejście: wyjście sieci w kroku {a} → wejście sieci w kroku {b}  ({g:.0%});  '
+                         'koloidy wracają do wejścia, cień przechodzi w ' + ('stan końcowy' if self.emk.opcje.get('sonda') else 'stan 0')
+                         + ' następnego checkpointu')
 
     def _mk_podkrok(self, s):
         """Chwila podkroku 0..12 (ułamkowa) w okienku M: sfera i scena; napis pod widokiem."""
         if not hasattr(self, 'emk') or not self.widac('m'):
             return
+        if getattr(self, '_mk_w_prz', False):
+            if getattr(self, '_w_przejsciu', False):
+                return
+            self._mk_odswiez(); return                                # koniec powrotu: _mk_odswiez kończy go i ustawia podkrok
         self.em.ustaw_podkrok(s); self.emk.ustaw_czas(s); self._mk_pole(s)
         self.lbm.setText(self.emk.opis(s, hist.iou))
 
@@ -494,7 +562,9 @@ class MicrolensMixin:
         if iu:
             so['sily'] = iu - 1
         so['reflektory'] = self.ch_mk_refl.isChecked(); so['ekspozycja'] = self.sp_mk_las_eksp.value()
-        self.em.setVisible(self.ch_mk_sfera.isChecked())
+        so['sfera'] = self.sp_mk_siatka.value()                        # własna siatka szklanej sfery (duża sfera może jej nie mieć)
+        so['tylko_siatka'] = not self.ch_mk_sfera.isChecked()
+        self.em.setVisible(self.ch_mk_sfera.isChecked() or so['sfera'] > 0)
         anim = self._mk_animuj()
         if anim and not self._mk_anim.isActive():
             self._mk_anim.start()

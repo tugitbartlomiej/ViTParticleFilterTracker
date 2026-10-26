@@ -319,6 +319,16 @@ uniform `u_jas_zdj`), domyślnie wyłączona: promienie naświetlenia (tryb 2, w
 luminancji 0,5 (`jas_laty` w `VS_M`), dalej × jasność, krycie, wzmocnienie i ciepło jak dotąd; włączona przywraca jasność ze
 zdjęcia. Luminancja łaty nie ma odpowiednika w sieci: łata wchodzi do konwolucji łodygi, nie do szkła.
 
+Okienko M, 2026-10-26: (1) własna siatka szklanej sfery („siatka szklanej sfery”, `sp_mk_siatka`, domyślnie krycie 0,3, opcja
+`sfera` w `_mk_opcje_sfery`), niezależna od dużej sfery i widoczna także przy wyłączonej sferze reflektorów (`tylko_siatka`:
+`ReflectorSphere._rysuj` rysuje wtedy samą siatkę). (2) Synchronizacja kroków i podkroków: w czasie powrotu (wyjście sieci
+checkpointu → wejście następnego) okienko M jedzie razem z dużą sferą (`_mk_start_przejscia`, `_mk_ustaw_przejscie`): koloidy
+po prostej, ciepło głowy ze stanu 12 w stan 0 następnego (sonda: w stan 12), wiązki zgaszone; wcześniej stało na stanie 12
+i skakało. (3) Płynne podkroki: pole laserów formujące soczewki i maź (`_mk_pole`) w podkroku uwagi bloku b przechodzi
+smoothstepem z pola bloku MLP b − 1 w pole bloku b (`bloki_pola`; F, jakobian i κ mieszane), zamiast przeskoku w połowie
+podkroku; przy „osobnych podkrokach” jak dawniej. Pomiar: maks. zmiana pola na 0,05 podkroku 0,054 (mediana 0,003), skok
+koloidu na granicach powrotu ≤ 0,8 przy medianie ruchu 1,4 na klatkę.
+
 ## Pełny ekran i Odyssey 3D Hub (konwersja SBS → 3D)
 
 Hub włącza konwersję, gdy program przejdzie w pełny ekran (okno równe monitorowi; wtedy pokazuje okienko wyboru SBS), a potem
@@ -330,7 +340,7 @@ dokładnie na cały monitor, a ma styl WS_BORDER: ramka 1 px zmniejsza obszar ry
 3840 × 2160), jak Qt-owe setHasBorderInFullScreen (PyQt6 go nie udostępnia). Na czas pełnego ekranu okno traci
 FramelessWindowHint, bo w oknie bez ramki Qt nie oddaje ramki z obszaru klienta. Sekcja Stereo 3D: pole „pełny ekran pozwala
 nakładkom” (wyłączone = klasyczny pełny ekran bez ramki). Po wyjściu z pełnego ekranu przypięte okienko wraca z kartą na
-wierzchu (wcześniej w grupie kart zostawało pod inną kartą). Próba: `.sessions/Session_2026-10-22_172605/tools/proba_pelnego_ekranu.py 0|1`.
+wierzchu (wcześniej w grupie kart zostawało pod inną kartą). W pełnym ekranie znikają napisy pod widokami (wracają po wyjściu). Próba: `.sessions/Session_2026-10-22_172605/tools/proba_pelnego_ekranu.py 0|1`.
 
 ## R12 kNN 3D: bez skoków
 
