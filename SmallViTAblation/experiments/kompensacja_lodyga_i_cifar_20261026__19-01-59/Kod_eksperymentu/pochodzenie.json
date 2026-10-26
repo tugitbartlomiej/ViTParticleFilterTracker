@@ -1,0 +1,48 @@
+{
+ "eksperyment": "kompensacja_lodyga_i_cifar_20261026__19-01-59",
+ "typ": "część K: 3 treningi od zera (wariant frozen_both) z pomiarem; część C: pomiar na istniejących checkpointach 6 biegów CIFAR-10 (bez treningu); predykcje zapisane przed pomiarem (Opis/PREDYKCJE_PRZED_POMIAREM.md)",
+ "rodzice": [
+  {
+   "nazwa": "mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+   "sciezka": "experiments/mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+   "wykorzystane": "kod pomiaru pomiar_mosty_eden.py (bez zmian poza dodaniem 'frozen_both' do WARIANTY), trener trening_ablacje.py (dodany wariant frozen_both), model.py; wyniki 24 seedów i 18 ablacji jako źródło predykcji; biegi base/frozen_mlp/frozen_attn seedów 3047/4047/5047 jako odniesienie dla K1–K4",
+   "zmiany": "nowy wariant frozen_both (uwaga, LN1, MLP, LN2 zamrożone; uczone: łodyga, norma końcowa, głowa); 3 CPU na zadanie"
+  },
+  {
+   "nazwa": "deit_cifar10_20261013",
+   "sciezka": "experiments/deit_cifar10_20261013",
+   "wykorzystane": "checkpointy 6 biegów CIFAR-10 (s47_obciecie, s47_bez_obciecia, maly_s47_obciecie, maly_s48_obciecie, maly_s47_wd0, maly_s47_losowe_etykiety), model_deit_cifar.py (kopia), dane cifar10_uint8.npz (zbiór testowy)",
+   "zmiany": "tylko pomiar; nowy skrypt pomiar_mosty_cifar.py (model DeiT/MałyViT-CIFAR, separacja klas na poziomie obrazów, dokładność zamiast IoU)"
+  }
+ ],
+ "checkpointy_czesci_C": {
+  "sciezka_eden": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/wyniki/<bieg>/wagi/k<krok>.pt ({'net', 'krok'})",
+  "biegi": {"s47_obciecie": "deit", "s47_bez_obciecia": "deit", "maly_s47_obciecie": "malyvit", "maly_s48_obciecie": "malyvit", "maly_s47_wd0": "malyvit", "maly_s47_losowe_etykiety": "malyvit"},
+  "kroki": [0, 300, 1000, 3000, 6000, 10000, 16000, 24000, 33000, 44000, 55000, 65000, 80000, 93780],
+  "na_epoke": 1563,
+  "przepis": "jak s47: paczka 32, AdamW 5e-4, wd 0,05 (wd0: 0), rozgrzewka 300, stały lr, bf16, odbicie 0,5, jasność/kontrast ±20 %, obcięcie normy gradientu 1 (bez_obciecia: 0), ziarno 47 lub 48, 60 epok",
+  "sha256_wag": "zapisywane przez każde zadanie do Wyniki/Dane/cifar/<bieg>/WAGI_SHA256.txt",
+  "dokladnosc_koncowa_z_treningu": {"s47_obciecie": 0.7496, "s47_bez_obciecia": 0.753, "maly_s47_obciecie": 0.8523, "maly_s48_obciecie": 0.8541, "maly_s47_wd0": 0.8516, "maly_s47_losowe_etykiety": 0.0509},
+  "ochrona": "checkpointy biegów CIFAR nie są modyfikowane ani przenoszone"
+ },
+ "dane": {
+  "cifar10": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/dane/cifar10_uint8.npz (SHA256 68e07d955b627c168b2265659ef8c62593c7548b33e1cb988ba924e24b466ada); pomiar na X_test: 2000 obrazów (200 na klasę, ziarno 2026), 100 diagnostycznych (10 na klasę)",
+  "czesc_K": "jak w rodzicu: training_manifest.jsonl kampanii kompensacja_funkcjonalna_dgx2_20261017 (SHA256 1c224daa…), archiwa zip annotations; pomiar na 500 klatkach TEST kampanii"
+ },
+ "model": {
+  "malyvit": "Kod_eksperymentu/model.py (SHA256 prefix 0570c957a23a7528; identyczny z deit_cifar10_20261013/kod/z_edena/model.py użytym w biegach CIFAR); na CIFAR owinięty jak Klasyfikator('vit'): głowa gęsta = Identity, głowa liniowa na średniej tokenów, obraz ×4",
+  "deit": "Kod_eksperymentu/model_deit_cifar.py (timm VisionTransformer: 192 wymiarów, 12 bloków, 3 głowy, łatka 4, CLS, pos_embed uczone)"
+ },
+ "czesc_K": {
+  "warianty": ["frozen_both"],
+  "seedy": [3047, 4047, 5047],
+  "kod": "Kod_eksperymentu/trening_ablacje.py (kopia rodzica + wariant frozen_both)",
+  "wznowienie": "restart.pt co 1094 kroki (wagi, AdamW, kolejka permutacji, RNG); tryb 'wznow' w ablacje_lodyga.slurm",
+  "sprzet": "A100 (partycja short), deterministyczne algorytmy; porównania z biegami rodzica liczonymi tak samo na A100"
+ },
+ "eden": {
+  "baza": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/kompensacja_lodyga_i_cifar_20261026__19-01-59",
+  "python": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/przeciwstawne_eden_20261017/environment/venv/bin/python (torch 2.10.0, timm 1.0.24, numpy 2.2.6)",
+  "transport": "experiments/eden.py (init, push, submit, watch, pull)"
+ }
+}

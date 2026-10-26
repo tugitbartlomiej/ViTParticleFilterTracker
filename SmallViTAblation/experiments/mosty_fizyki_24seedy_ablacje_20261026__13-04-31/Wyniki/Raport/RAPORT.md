@@ -93,8 +93,12 @@ P7a liczyła Spearmana po parach (checkpoint, klatka), 12 × 472 punktów. ρ = 
 - sep₁₂ zależy od liczby tokenów narzędzia (ρ = −0,71: duże narzędzie, mała separacja na sferze), a IoU od niej rośnie (ρ = +0,36).
   Dodatnie ρ w shuffled_labels (model bez detekcji) pokazuje, że korelacje tego rzędu mogą być czysto geometryczne.
 - P7b (ρ = 0,50 między seedami, 24 punkty) pozostaje jedynym dodatnim wynikiem, słabym przy tej liczbie punktów.
+- Korelacja częściowa po uwarunkowaniu na liczbę tokenów narzędzia (reszty rang): ρ(sep₁₂, IoU | rozmiar) = 0,13 … 0,35
+  (mediana 0,25, 24 seedy, k65640). Rozmiar narzędzia maskuje więc słaby dodatni związek, który istnieje per klatka, ale jest
+  daleki od ρ = 0,76 zmierzonego na seedzie 47.
 
-Wniosek: separacja klas w stanie końcowym jest miarą postępu treningu, nie jakości detekcji klatki. P7a odrzucona z powodu, nie progiem.
+Wniosek: separacja klas w stanie końcowym jest przede wszystkim miarą postępu treningu; per klatka, po odjęciu rozmiaru narzędzia,
+zostaje słaby związek z IoU (0,25). P7a odrzucona z powodu, nie progiem.
 
 ## 6. Teza C: kolejność uwaga → MLP
 
@@ -120,7 +124,10 @@ Wniosek: separacja klas w stanie końcowym jest miarą postępu treningu, nie ja
 
 - **frozen_mlp.** Losowy, zamrożony MLP (i norm2) we wszystkich blokach kosztuje ≤ 0,03 AP. Separację klas w całości przejmuje uwaga
   (Σ Δsep 0,42–0,80 wobec 0,10–0,44 w base), MLP nie rozdziela (−0,06 … +0,01). Nienormalność zostaje na poziomie losowym (0,76), więc
-  nienormalne ścinanie w MLP nie jest potrzebne do detekcji.
+  nienormalne ścinanie w MLP nie jest potrzebne do detekcji. Kto kompensuje (s3047, sep_u po stanach): łodyga daje trochę więcej
+  (stan 0: 1,02 wobec 0,94 w base), kroki MLP nic (1,08 → 1,08, 1,36 → 1,36), kroki uwagi resztę; separacja końcowa 1,76 wobec 2,39
+  w base, czyli o 30 % niższa przy tym samym AP. Detektorowi wystarcza ok. 1,8 separacji na sferze; nadmiar w base nie przekłada się
+  na wynik. Ile daje sama łodyga z głową, sprawdza eksperyment pochodny `kompensacja_lodyga_i_cifar_20261026__19-01-59` (frozen_both).
 - **frozen_attn.** Zamrożona uwaga (i norm1) kosztuje 0,03–0,08 AP. Iloczyn kontrakcji uwagi dochodzi do 0,92–0,97: sieć przestawia
   rozkład wejść tak, że zamrożona uwaga prawie nic nie robi (ruch w 100 % styczny, Σ Δsep 0,03–0,07), a MLP ściska mocniej (0,73–0,87)
   i jest bardziej nienormalny (0,95–0,97). Predykcja A4 zakładała, że kontrakcja to własność wag; jest własnością pary (wagi, stan).
@@ -130,6 +137,11 @@ Wniosek: separacja klas w stanie końcowym jest miarą postępu treningu, nie ja
   ściska (0,73–0,78), uwaga przestaje ściskać (1,02–1,04), separacja prawdziwych klas rośnie o 0,23–0,28 po MLP. Nienormalność i
   „MLP ściska” są więc ogólnym skutkiem treningu gradientowego tego bloku, nie sygnaturą nauczenia zadania. Zadanie od szumu odróżnia
   wielkość separacji (1,0 vs 0,25) i to, że w szumie uwaga nie ściska.
+- **Skala pola (uwaga po fakcie).** ‖N‖/‖J‖ jest bezskalowy; sama norma ‖J‖ bloku 4 (mediana tokenów, k0 → k65640) rozdziela
+  zadanie od szumu: base 3,3 → 4,7, no_wd 3,3 → 4,0, frozen_attn 3,3 → 11,2, **shuffled_labels 3,3 → 0,5** (max Re λ 0,23 → 0,04).
+  Przy losowych etykietach pole MLP kurczy się prawie do zera, a przy zamrożonej uwadze rośnie trzykrotnie. W base ‖J‖ najpierw spada
+  (3,2 → 1,5 po 1000 kroków), potem rośnie do 4,2. Poprawne sformułowanie tezy A: nienormalność to kształt, który trening nadaje MLP
+  niezależnie od sygnału; sygnał decyduje o wielkości pola. A6 „pada” tylko na stosunku.
 
 ## 8. Co z tego wynika dla tez
 

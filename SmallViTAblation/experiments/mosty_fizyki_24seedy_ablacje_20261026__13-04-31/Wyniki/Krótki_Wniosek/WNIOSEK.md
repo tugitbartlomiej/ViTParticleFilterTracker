@@ -17,7 +17,13 @@ per klatka przy końcowym checkpoincie ρ = −0,03 (P7a 0/24); między seedami 
 (iloczyn 0,92–0,97), MLP robi wszystko (A4 pada; była źle postawiona, bo kontrakcja zależy od stanu tokenów, nie tylko od wag).
 Blok równoległy: AP 0,869–0,895, bez straty, separację dzielą uwaga i MLP po równo (A2 pada, teza C odrzucona). Losowe etykiety:
 AP ≈ 0,005, a mimo to ‖N‖/‖J‖ rośnie do 0,92–0,96 (A6 pada): nienormalność jest skutkiem treningu gradientowego MLP, nie sygnaturą
-nauczenia zadania.
+nauczenia zadania. Skala mówi co innego: ‖J‖ bloku 4 przy losowych etykietach spada z 3,3 do 0,5, w base rośnie do 4,7, przy zamrożonej
+uwadze do 11,2. Trening nadaje MLP kształt (nienormalny) niezależnie od sygnału; sygnał decyduje o wielkości pola.
+
+**Trzy uwagi po fakcie.** (1) Per klatka separacja nie przewiduje IoU (ρ ≈ 0), ale po odjęciu rozmiaru narzędzia zostaje słaby związek
+(ρ częściowa 0,25). (2) Zamrożony MLP kompensuje uwaga, z niewielką pomocą łodygi; separacja końcowa jest o 30 % niższa przy tym samym
+AP, więc detektorowi wystarcza ok. 1,8 separacji na sferze. (3) Ile daje sama łodyga z głową, sprawdza eksperyment pochodny
+`kompensacja_lodyga_i_cifar_20261026__19-01-59` razem z drugim zbiorem i architekturą (CIFAR-10, DeiT-Tiny).
 
 **Do publikacji.** Nadaje się: (1) pre-rejestrowana replikacja nienormalnego ścinania w MLP i podziału pracy uwaga / MLP na 24 seedach,
 (2) kompensacja funkcjonalna w ablacjach, która tę replikowaną strukturę relatywizuje, (3) negatywny wynik o separacji i IoU z rozbiorem
