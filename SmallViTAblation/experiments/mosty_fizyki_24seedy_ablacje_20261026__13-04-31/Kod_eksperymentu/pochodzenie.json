@@ -1,0 +1,47 @@
+{
+ "eksperyment": "mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+ "typ": "część 1: pomiar na istniejących checkpointach (bez treningu); część 2: 18 treningów od zera z pomiarem; predykcje zapisane przed pomiarem (Opis/PREDYKCJE_PRZED_POMIAREM.md)",
+ "rodzice": [
+  {
+   "nazwa": "schur_qr_jakobiany_mlp_20261024__10-03-40",
+   "sciezka": "experiments/schur_qr_jakobiany_mlp_20261024__10-03-40",
+   "wykorzystane": "definicje miar nienormalności (Henrici), ‖Ω‖/‖S‖, znaków widma, |1+λ|>1, Q, R; wyniki na seedzie 47 jako źródło predykcji P1–P3",
+   "zmiany": "bez scipy: ‖N‖² = ‖J‖² − Σ|λ|²; 24 seedy × 12 checkpointów × 50 klatek TEST zamiast 1 seedu × 6 checkpointów × 1 klatki TRAIN; tokeny: wszystkie narzędzia + 60 tła na klatkę"
+  },
+  {
+   "nazwa": "kontrakcja_komutator_polkrokow_20261025__02-12-46",
+   "sciezka": "experiments/kontrakcja_komutator_polkrokow_20261025__02-12-46",
+   "wykorzystane": "definicje kontrakcji na sferze, parametru porządku, separacji klas, rangi efektywnej, udziału stycznego, komutatora S/R/P i skutku dla wyjścia; wyniki na seedzie 47 jako źródło predykcji P4–P9",
+   "zmiany": "500 klatek TEST zamiast 1 klatki TRAIN; 12 checkpointów zamiast 806; sfera u = LayerNorm bez afinicznych (jak w rodzicu); maska narzędzia z ramek GT (poz > 0 w model.cele) zamiast obrysu"
+  }
+ ],
+ "checkpointy_czesci_1": {
+  "kampania": "outputs/kompensacja_funkcjonalna_dgx2_20261017 (EDEN_STATUS: COMPLETE_VERIFIED_REPORTED, 2026-10-18)",
+  "sciezka_eden": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/kompensacja_funkcjonalna_dgx2_20261017/replications/s<seed>/weights/k<krok>.pt",
+  "sciezka_lokalna": "outputs/kompensacja_funkcjonalna_dgx2_20261017/download/unpacked_20261018_035119/replications/s<seed>/weights",
+  "seedy": [3047, 4047, 5047, 6047, 7047, 8047, 9047, 10047, 11047, 12047, 13047, 14047, 15047, 16047, 17047, 18047, 19047, 20047, 21047, 22047, 23047, 24047, 25047, 26047],
+  "kroki": [0, 300, 1000, 3000, 6000, 10000, 16000, 24000, 33000, 44000, 55000, 65640],
+  "na_epoke": 1094,
+  "przepis": "train_replicate.py kampanii: 35 000 klatek TRAIN, paczka 32, AdamW 5e-4, wd 0,05, rozgrzewka 300, bf16, odbicie 0,5, jasność/kontrast ±20 %, deterministycznie",
+  "sha256_wag": "zapisywane przez każde zadanie do Wyniki/Dane/pomiar/s<seed>/WAGI_SHA256.txt",
+  "model_sha256_prefix": "0570c957a23a7528 (code/model.py kampanii = Kod_eksperymentu/model.py)",
+  "ochrona": "checkpointy kampanii nie są modyfikowane ani przenoszone"
+ },
+ "dane": {
+  "klatki_pomiaru": "input/dataset.json kampanii: role 'evaluation' (500 klatek TEST, 25 filmów spoza treningu, 20 na film; 50 diagnostycznych: indeksy 5 i 15), dataset_sha256 4d09c4ebf6d6765769c422061bc6aff89651fb9188a088ee69ae17d5dc758940",
+  "manifest_treningu": "input/training_manifest.jsonl kampanii, sha256 1c224daa64646802ec27b1cf14a5c0edb9f369866a5785503a509fe4df97daa8",
+  "archiwa": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_data/cataract_lmm/3_Object_Tracking/annotations (zip, SHA256 każdej klatki sprawdzane z manifestem)"
+ },
+ "czesc_2": {
+  "warianty": ["base", "parallel", "frozen_mlp", "frozen_attn", "no_wd", "shuffled_labels"],
+  "seedy": [3047, 4047, 5047],
+  "kod": "Kod_eksperymentu/trening_ablacje.py (wyprowadzony z train_replicate.py kampanii; te same ustawienia i siatka checkpointów; warianty opisane w docstringu)",
+  "wznowienie": "restart.pt co 1094 kroki: wagi, AdamW, kolejka permutacji, RNG numpy/torch/cuda/python; tryb 'wznow' w ablacje.slurm odtwarza wszystko i zachowuje globalny krok",
+  "sprzet": "A100 (partycja short), deterministyczne algorytmy; nie jest bitowo zgodne z H100 kampanii, dlatego wariant base jest kontrolą"
+ },
+ "eden": {
+  "baza": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+  "python": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/przeciwstawne_eden_20261017/environment/venv/bin/python",
+  "transport": "experiments/eden.py (init, push, submit, watch, pull)"
+ }
+}
