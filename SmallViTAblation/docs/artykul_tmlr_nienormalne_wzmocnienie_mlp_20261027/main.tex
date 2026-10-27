@@ -1,0 +1,357 @@
+% Szkic artykułu pod TMLR (2026-10-27). Kompilacja: Overleaf z oficjalnym szablonem TMLR (plik tmlr.sty obok main.tex);
+% bez tmlr.sty plik kompiluje się w zwykłym układzie article. Każda liczba ma źródło w README.md (tabela źródeł).
+\documentclass[10pt]{article}
+\IfFileExists{tmlr.sty}{\usepackage{tmlr}}{%
+  \usepackage[margin=1in]{geometry}\usepackage[round]{natbib}\bibliographystyle{plainnat}}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{xcolor}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\dep}{\operatorname{dep}}
+\newcommand{\R}{\mathbb{R}}
+
+\title{Gradient training turns transformer MLP sublayers into\\ non-normal transient amplifiers}
+\author{Anonymous authors\\ Paper under double-blind review}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We measure the token-wise Jacobian of the MLP sublayer of vision transformers across training and ask what its structure is and what it
+is for. In a 6-block detection ViT trained with 24 seeds, and in a SmallViT and a DeiT-Tiny trained on CIFAR-10, gradient training makes
+this Jacobian strongly non-normal: Henrici's departure from normality rises from the random-matrix level of 0.76 to 0.88--0.94, in every
+seed, without weight decay and even with random labels, where the shape is kept but the scale of the field collapses. The non-normality is
+dynamically real. The Kreiss constant grows during training, and nonlinear perturbations of the network along the worst direction are
+amplified by exactly the largest singular value of the linearisation (to 1\%), up to $4.5\times$ per sublayer while its spectral
+radius stays at 1.1--1.6. Its structure matches the algebra of balanced amplification in cortex: the nilpotent part of the Schur form concentrates in 3--8
+modes, and what the field writes is read back by it only weakly. Where the amplified mode reads and writes differs from the cortical
+picture. Its input direction is aligned with the gradient of the network's readout ($30$--$50\times$ chance) and is shared by the MLPs of
+successive blocks. Its output direction is read weakly and diffusely by everyone downstream, so the MLPs act as parallel amplifiers on a
+shared task coordinate rather than as a feedforward chain. Ablations show that this structure is one of several equivalent solutions:
+freezing the MLP at random initialisation costs at most 0.03 AP, because attention compensates. All predictions were registered with
+numeric thresholds before each measurement, and we report all 79 of them, 40 of which failed.
+\end{abstract}
+
+\section{Introduction}
+
+The MLP sublayer holds two thirds of the parameters of a transformer block. Interpretability work has read it as a key--value memory
+\citep{geva2021transformer} or as a steering field acting on the residual stream \citep{mudarisov2026feedforward}, and spectral studies of
+trained transformers have recently turned to the geometry of block Jacobians \citep{aubry2025transformer,fernando2026dynamics} and to
+the non-normality of the attention propagator \citep{li2026transient}. What has not been measured is the linear operator the MLP
+applies to a token, $J=\partial\,\mathrm{MLP}(x)/\partial x$, as it changes during training, and whether its structure has a dynamical
+consequence that eigenvalues do not reveal.
+
+Non-normal operators, whose eigenvectors are not orthogonal, are the textbook example of such hidden structure. A stable spectrum does
+not bound their response in finite time: perturbations along particular directions grow transiently before they decay
+\citep{trefethen1993hydrodynamic,trefethen2005spectra,schmid2007nonmodal}. The same mathematics explains subcritical transition in shear
+flows, reactivity of ecological communities \citep{neubert1997alternatives}, transient amplification in directed networks
+\citep{asllani2018structure}, anomalous amplification in lossy photonic media \citep{makris2014anomalous}, and, in cortex,
+\emph{balanced amplification}: strong recurrent excitation stabilised by inhibition hides a feedforward chain in the Schur basis of the
+connectivity matrix, which selectively and rapidly amplifies particular activity patterns \citep{murphy2009balanced,hennequin2012nonnormal,
+hennequin2014optimal}, an effect now measured in primate neocortex \citep{pattadkal2023primate}.
+
+We ask whether gradient training installs this structure in the MLPs of vision transformers \citep{dosovitskiy2021image}, and if so, what
+the network uses it for. Our
+contributions are:
+\begin{enumerate}
+\item \textbf{A replicated, pre-registered measurement.} Training makes the token-wise MLP Jacobian non-normal in 24/24 seeds of a detection
+  ViT and in two CIFAR-10 architectures; the shape is installed by gradient descent regardless of the label signal, while the signal
+  sets the scale (\S\ref{sec:installs}).
+\item \textbf{Causal relativisation.} Freezing, parallelising and removing sublayers shows that the structure is not necessary for the task:
+  attention or the MLP alone recovers the function (\S\ref{sec:compensation}).
+\item \textbf{A dynamical consequence, verified nonlinearly.} Transient amplification and the Kreiss constant grow in training; the
+  network itself amplifies worst-direction perturbations by the predicted singular value, while its output stays robust
+  (\S\ref{sec:transient}).
+\item \textbf{The structure of the amplifier.} A low-rank hidden feedforward chain with a ``valve'', originating in the weights $W_2W_1$ and
+  scaled per token by the number of active GELU units (\S\ref{sec:schur}).
+\item \textbf{Where it reads and writes.} The amplified mode reads the network's readout coordinate, shared across blocks, and writes
+  a weak, diffuse correction; a fifth of its write in the detection model changes the token norm, which turns out to be functionally
+  irrelevant for the readout (\S\ref{sec:readwrite}).
+\end{enumerate}
+
+\section{Background and related work}
+\label{sec:background}
+
+\paragraph{Non-normality.} A matrix $J$ is normal if $JJ^\top=J^\top J$. Write its Schur form $J=Q(\Lambda+N)Q^*$ with $N$ strictly upper
+triangular; Henrici's departure from normality is $\|N\|_F^2=\|J\|_F^2-\sum_i|\lambda_i|^2$ \citep{henrici1962bounds}. We report the
+scale-free ratio $\dep(J)=\|N\|_F/\|J\|_F\in[0,1]$; for a real Ginibre matrix of size 192 it is about $0.71$, and for the MLP Jacobian at
+initialisation we measure $0.76$. For the residual update $A=I+J$ we use the one-step transient gain $G_1=\|A\|_2/\rho(A)$ with
+$\rho(A)=\max_i|1+\lambda_i|$, the $k$-step gain $G_k=\|A^k\|_2/\rho(A)^k$, the numerical abscissa
+$\omega=\lambda_{\max}\big((J+J^\top)/2\big)$ compared with $\max_i\mathrm{Re}\,\lambda_i$, and the Kreiss constant
+$\mathcal{K}(A)=\sup_{|z|>\rho}(|z|-\rho)\,\|(zI-A)^{-1}\|_2$ evaluated on a grid \citep{trefethen2005spectra}. All four exceed their
+spectral values only for non-normal $A$.
+
+\paragraph{Balanced amplification and related effects.} In excitatory--inhibitory networks, the Schur form of the connectivity contains
+large feedforward weights from ``difference'' to ``sum'' patterns; the network amplifies selected inputs quickly without slow modes
+\citep{murphy2009balanced}. Hidden feedforward chains also store memory without feedback \citep{goldman2009memory,ganguli2008memory}, and
+trained recurrent networks develop chain-like non-normal dynamics \citep{orhan2019improved,kerg2019nonnormal,bondanelli2020coding,
+christodoulou2022regimes}. Inhibition stabilisation and the paradoxical response are related but distinct diagnostics
+\citep{ozeki2009inhibitory,rubin2015stabilized,sadeh2021inhibitory}. Across fields the common object is direction-selective finite-time
+gain of a spectrally stable operator \citep{mccoy2013amplification,dixon2016transient,symon2018nonnormality,baggio2020efficient}, and
+controlling it improves long rollouts of learned dynamics models \citep{pervez2026controlling}; its measured size depends
+on the norm, the horizon and the choice of input and readout \citep{trefethen2005spectra,baggio2020efficient}, which we therefore state
+for every measurement.
+
+\paragraph{Spectral analyses of transformers.} \citet{aubry2025transformer} relate coupling of the top singular vectors of block Jacobians
+across depth to generalisation in LLMs. \citet{fernando2026dynamics} report a monotonic depth gradient from non-normal early to nearly
+symmetric late blocks of the whole residual block in LLMs. \citet{li2026transient} analyse transient reserves in the attention
+propagator. Activation sparsity of MLPs arises even with random labels \citep{li2023lazy}, the linearity of feed-forward blocks is learned
+\citep{whipp2026linear}, and the eigenspectrum of FFN activations has been tracked in LLMs \citep{jha2026nerve}. Parallel attention/FFN
+blocks have been studied in language models \citep{sonkar2023investigating}. To our knowledge no prior work measures the Jacobian of the
+MLP sublayer itself across training, its Schur structure, or its alignment with the readout; our audit of the literature is summarised in
+\S\ref{sec:discussion}.
+
+\section{Setup}
+\label{sec:setup}
+
+\paragraph{Models and data.} \emph{Detection:} a SmallViT with a four-layer convolutional stem, six pre-LayerNorm transformer blocks
+(width 192, MLP width 768, GELU), 600 tokens per frame and a per-token head predicting a heat logit and four box offsets, trained to
+localise the tip of a surgical instrument in cataract-surgery video frames. Twenty-four seeds were trained with the same recipe
+(60 epochs, 65\,640 steps); test AP@0.5 is 0.827--0.902 over seeds on 500 frames from 25 held-out videos (472 with a ground-truth box).
+\emph{Classification:} DeiT-Tiny \citep{touvron2021training} (12 blocks, CLS token, patch size 4, 65 tokens) and a SmallViT-CIFAR (the same
+backbone with $4\times$ bilinear upsampling and a mean-pooled linear head) trained on CIFAR-10 for 93\,780 steps, plus runs with random
+labels and without weight decay. Checkpoints span initialisation ($k_0$), an early checkpoint and the end of training.
+\todo{Training recipe details (optimiser, schedule, augmentation) from the training scripts; CIFAR test accuracy of all runs.}
+
+\paragraph{The MLP field Jacobian.} For a token in state $x$ (the input of the MLP sublayer of block $b$) we compute
+\begin{equation}
+J=W_2\,\mathrm{diag}\big(\mathrm{GELU}'(a)\big)\,W_1\,J_{\mathrm{LN}}(x),\qquad a=W_1\,\mathrm{LN}(x)+c_1,
+\end{equation}
+a $192\times192$ matrix in float64, for all instrument tokens and 20 background tokens of each of 50 diagnostic frames (detection), or 16
+tokens of each of 50 diagnostic images (CIFAR). Its leading singular pair $(u_1,v_1,\sigma_1)$, $Jv_1=\sigma_1u_1$, defines the direction
+the field \emph{reads} ($v_1$) and the direction it \emph{writes} ($u_1$). Medians are taken over tokens and frames; blocks are reported
+individually or as the middle block.
+
+\paragraph{Pre-registration.} The study consists of six measurement experiments. Before running any job of an experiment we wrote its
+predictions with numeric thresholds and a decision rule, and we wrote its evaluation script before reading any output. Thresholds were
+never changed afterwards; observations made after the fact are labelled as such. Predictions are evaluated by a sign test over runs
+(24/24 seeds, $p\approx10^{-7}$; 5/5 runs, $p=0.031$). Appendix~\ref{app:prereg} lists all 79 predictions and controls with their
+outcome: 39 passed and 40 failed.
+
+\section{Results}
+
+\subsection{Training installs non-normality: shape from gradient, scale from signal}
+\label{sec:installs}
+
+\begin{table}[t]
+\centering
+\caption{Departure from normality $\dep(J)$ of the MLP Jacobian, medians over 24 seeds (detection).}
+\label{tab:dep}
+\begin{tabular}{lcccccc}
+\toprule
+block & 1 & 2 & 3 & 4 & 5 & 6\\
+\midrule
+initialisation ($k_0$) & 0.763 & 0.762 & 0.762 & 0.763 & 0.762 & 0.762\\
+end of training & 0.879 & 0.909 & 0.911 & 0.916 & 0.916 & 0.886\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+In every one of the 24 detection seeds, $\dep(J)$ of block 4 rises from 0.759--0.768 at initialisation to 0.899--0.939 at the end of
+training (Table~\ref{tab:dep}). The rise happens in the first five epochs together with the task: in block 4 it goes 0.763, 0.772,
+0.829, 0.902, 0.923, 0.927 at steps 0, 300, 1\,000, 3\,000, 6\,000, 10\,000 and settles at 0.916, while AP reaches 0.54 at step 1\,000
+and 0.82 at step 6\,000. The depth profile is not monotonic: blocks 3--5 are the most non-normal and block 4 exceeds block 6 in every
+seed, in contrast with the monotonic depth gradient reported for whole residual blocks of LLMs \citep{fernando2026dynamics}. Each token
+is a saddle of the field (about 92 eigenvalues with positive and 98 with negative real part). Both CIFAR architectures replicate the
+effect (middle block 0.75--0.77 to 0.92--0.93), but there the last block is the most non-normal (0.95--0.96).
+
+Non-normality is not a signature of learning the task. Without weight decay it reaches 0.900--0.927. With random labels the detector
+reaches AP 0.005--0.009 and $\dep(J)$ still rises to 0.925--0.955; on CIFAR, random labels give 0.93. What the label signal controls is the
+\emph{scale} of the field: the median $\|J\|$ of block 4 goes from 3.3 to 4.7 in normal training, to 0.5 with random labels, and to 11.2
+when attention is frozen; on CIFAR with random labels it falls from 3.26 to 0.41. Gradient descent gives the MLP its non-normal shape
+regardless of the signal; the signal decides how large the field is.
+
+\subsection{The structure is one of several equivalent solutions}
+\label{sec:compensation}
+
+In the trained detector the MLP builds the class separation between instrument and background tokens on the LayerNorm sphere (sum of
+separation gains over blocks 0.69--1.35 for MLP sublayers versus 0.12--0.42 for attention, 24/24 seeds), while attention contracts the
+token cloud by motion tangent to the sphere. Ablations retrained from scratch (three seeds each) show that this division of labour is a
+property of the learned solution, not a necessity (Table~\ref{tab:ablation}). Freezing every MLP at its random initialisation keeps
+$\dep(J)$ at 0.76 and costs at most 0.03 AP; attention then builds the separation (0.42--0.80). Freezing attention costs 0.02--0.08 AP;
+the frozen attention becomes almost an identity (contraction product 0.92--0.97) and the MLP becomes more non-normal (0.95--0.97).
+A parallel block loses nothing. Only freezing both sublayers, so that only the stem and the head learn, removes 0.25--0.43 AP. The one
+component that is critical in all three systems is the MLP of the first block: removing it lowers the detector's median IoU from 0.80 to
+0.24, DeiT-Tiny accuracy from 0.76 to 0.09--0.11 and SmallViT-CIFAR accuracy from 0.85 to 0.55--0.72.
+
+\begin{table}[t]
+\centering
+\caption{Ablations (detection, seeds 3047 / 4047 / 5047): AP@0.5 and $\dep(J)$ of block 4 at the end of training.}
+\label{tab:ablation}
+\begin{tabular}{lll}
+\toprule
+variant & AP@0.5 & $\dep(J)$ block 4\\
+\midrule
+base & 0.888 / 0.885 / 0.864 & 0.93 / 0.93 / 0.90\\
+parallel attention + MLP & 0.895 / 0.869 / 0.873 & 0.93 / 0.92 / 0.92\\
+MLP frozen at initialisation & 0.866 / 0.857 / 0.884 & 0.76\\
+attention frozen at initialisation & 0.861 / 0.861 / 0.786 & 0.95 / 0.97 / 0.95\\
+both frozen (stem and head learn) & 0.463 / 0.491 / 0.618 & 0.76\\
+no weight decay & 0.886 / 0.873 / 0.865 & 0.92 / 0.93 / 0.90\\
+random labels & 0.005 / 0.005 / 0.009 & 0.92 / 0.96 / 0.94\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Non-normality has a dynamical consequence}
+\label{sec:transient}
+
+We measured five runs (three detection seeds, SmallViT-CIFAR, DeiT-Tiny) at initialisation, early and at the end of training. In all five,
+the Kreiss constant of the middle block grows from 2.0--2.5 to 3.0--5.1, and the gap between the numerical abscissa and the spectral
+abscissa grows 2--10$\times$. The effect is strong in detection, where the one-step gain $G_1$ reaches 2.15 / 2.59 / 1.66 and the
+largest $k$-step gain ($k\le6$) 5.1 / 5.3 / 3.7, and weak in classification ($G_1$ 1.30 for SmallViT-CIFAR and 1.14 for DeiT-Tiny, against
+1.07--1.13 at initialisation).
+
+The linearisation is faithful. We perturbed a token at the input of the MLP sublayer by $\delta=0.01$ of its norm along the leading right
+singular vector and propagated it through the nonlinear network. The measured amplification equals $\sigma_{\max}$ to within 1\% in all
+runs (measured / predicted: 3.21 / 3.22, 4.47 / 4.51, 2.06 / 2.07, 1.47 / 1.48, 1.21 / 1.21). The worst direction changes the output
+2.6--7$\times$ more than a random direction of the same size. The output itself is robust. A worst-direction perturbation of $\delta=0.03$
+changes the IoU of the detected box by 0.005--0.013 (CIFAR margin: 0.07--0.11), no block dominates the sensitivity, and composing the
+blocks does not compound the gain in detection: the product of six residual updates amplifies less (0.97--1.21) than the median single
+block (1.65--1.76), because the worst directions of consecutive blocks are not aligned. Background tokens are amplified more than
+instrument tokens (for one seed $G_1$ 2.76 versus 1.44).
+
+\subsection{A hidden low-rank feedforward chain with a valve}
+\label{sec:schur}
+
+\begin{table}[t]
+\centering
+\caption{Schur structure of the MLP Jacobian, middle block, initialisation $\to$ end of training (five runs).}
+\label{tab:schur}
+\begin{tabular}{lll}
+\toprule
+quantity & initialisation & end of training\\
+\midrule
+share of $\|N\|_F^2$ in the top 5 singular values of $N$ ($c_5$) & 0.15--0.16 & 0.63--0.74\\
+effective rank of $N$ ($\mathrm{PR}_N$) & 60--63 & 3.3--8.3\\
+valve $\|Ju_1\|/\sigma_1$ & 0.39--0.45 & 0.18--0.36\\
+$\dep(W_2W_1)$ (weights only) & 0.73--0.74 & 0.85--0.90\\
+$|\cos(w_{1,i},w_{2,i})|$, gate-weighted mean over units & 0.053--0.059 & 0.10--0.16\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Schur form makes the structure explicit (Table~\ref{tab:schur}). We computed it without SciPy by eigendecomposition, QR of the
+eigenvectors and $T=R\Lambda R^{-1}$, and took $N$ as the strictly upper part of $T$. At initialisation the nilpotent part is spread over
+60--63 effective dimensions, as for a random matrix. After training, 63--74\% of $\|N\|_F^2$ sits in five modes and its effective rank is
+3.3--8.3, in all five runs: a low-rank hidden feedforward chain in the sense of \citet{murphy2009balanced} and \citet{goldman2009memory}.
+The leading mode has a valve: what the field writes, $u_1$, is mapped by the field with only 0.18--0.36 of the gain $\sigma_1$, against
+0.39--0.45 at initialisation.
+
+The non-normality originates in the weights. The product $W_2W_1$ alone reaches $\dep=0.85$--$0.90$ (0.73 at initialisation), and
+inserting the mean gate, $W_2\,\mathrm{diag}(\bar g)\,W_1$, matches $\dep(J)$ to within 0.02 in detection (0.05--0.06 on CIFAR). The gate
+controls the size of the amplification per token: across tokens of the middle block, the number of active units ($0.1<\mathrm{GELU}'<0.9$)
+correlates with $G_1$ at 0.41--0.84 at the end of training ($-0.38$ to $+0.11$ at initialisation). On instrument tokens the MLP is almost
+switched off: they have fewer active units than background tokens (73--103 versus 127--162) and a mean gate derivative near zero, which
+explains their smaller transient gain. Individual units become partly reciprocal (they write closer to the direction they read,
+$|\cos(w_{1,i},w_{2,i})|$ 0.10--0.16 against 0.057 for random weights) while the non-normality of the whole field grows; a minority of
+reciprocal units coexists with a majority forming the chain.
+
+\subsection{What the amplified mode reads, and who reads what it writes}
+\label{sec:readwrite}
+
+\paragraph{It reads the readout coordinate, shared across blocks.} Let $r$ be the gradient of the token's own output (detection: its heat
+logit; CIFAR: the class margin) with respect to the token state after block $b$. In detection the \emph{input} direction $v_1$ of the
+amplified mode is aligned with $r$: $\cos^2(v_1,r)=0.06$--$0.11$ in the middle block, 30--50$\times$ the random level of 0.002. Its
+\emph{output} direction is not ($\cos^2(u_1,r)=0.003$--$0.008$). This reverses our pre-registered prediction, which, following the cortical
+picture, expected the written direction to be aligned with the readout. In the subspace spanned by the gradients of all five outputs of
+the token, $v_1$ carries 0.14--0.17 of its energy (random directions 0.022--0.023). The input directions of successive blocks coincide:
+$\cos^2(v_1^{b},v_1^{b+1})=0.09$--$0.21$, against 0.003 at initialisation and 0.0052 for random directions.
+
+\paragraph{The write is not a message to a specific reader.} We tested the candidate readers of $u_1$ directly. The detection head does
+not read it: its energy in the box-output subspace is 0.021--0.039 (chance $4/192=0.021$) and in the five-output subspace 0.030--0.046
+(random directions 0.022--0.023); only in the last block does it enter the head subspace (4--6$\times$ chance). The next MLP does not read it with its leading direction
+($\cos^2(u_1^b,v_1^{b+1})=0.008$--$0.021$). For attention in block $b+1$ we computed the linear read maps $W_{q,k,v}J_{\mathrm{LN}}$ and the
+gain of $u_1$ relative to random directions of the same token. Attention reads $u_1$ through queries/keys $2.3$--$4.0\times$ chance (DeiT
+3.6) and through values $2.1$--$2.4\times$ (DeiT 4.5), with a ceiling of 16--26 for the best direction of each reader; the next MLP reads it
+with 1.7--3.4$\times$ and the head with 1.8--2.4$\times$ in detection (4.3--4.6$\times$ on CIFAR). Nonlinearly, writing along $u_1$ in one token changes the attention output of the
+\emph{other} tokens 1.5--1.8$\times$ more than a random write (DeiT 2.3), below our pre-registered 2$\times$ threshold, and it shifts the
+balance between routing and content exactly as a random write does. The write is not lost: the sensitivity of the network output along
+$u_1$ is 1.3--2.2$\times$ chance (5/5 runs); in detection it is 2--3$\times$ smaller than along the read directions, on CIFAR the two are
+comparable. By contrast, the read direction of the next block is read strongly by everyone (next MLP 9--12$\times$ and head
+21--22$\times$ in detection).
+
+\paragraph{On CIFAR the write goes to the readout.} With a global readout the picture changes: $u_1$ carries 0.17--0.20 of its energy in the
+subspace of the ten logit gradients in the middle block (random directions 0.048--0.050), 0.82 in the last block of SmallViT-CIFAR, and the
+leading direction of the next MLP picks it up above our threshold ($\cos^2(u_1^b,v_1^{b+1})=0.017$--$0.021$, 3--4$\times$ chance). The
+direction of alignment with the task therefore depends on the type of readout: per-token in detection, global in classification.
+
+\paragraph{A fifth of the write changes the token norm, without functional effect.} In the detection model 20--25\% of the energy of $u_1$
+lies in the null space of the next LayerNorm (8\% for SmallViT-CIFAR; 0.7\% for DeiT-Tiny, the same as for random directions). Decomposing this null space,
+virtually all of it is the radial direction of the centred token (energy 0.197 / 0.253 / 0.240 in the three detection seeds), not the
+mean direction ($\le0.001$); it is learned (0.001--0.005 at initialisation). When a token is pushed towards higher readout along $v_1$, the
+MLP shrinks its norm in 66--71\% of tokens (oriented radial cosine $-0.23$ to $-0.25$), although its actual update inflates tokens by
+16--21\% per block. Because every downstream reader sits behind LayerNorm, the norm only matters through the relative size of later updates.
+We measured this counterfactually by removing the radial component of the MLP response and propagating through the rest of the network:
+it accounts for at most 0.14\% of the change in the token's readout ($\le1.5\%$ at $\delta=0.1$), against 18--24\% carried by the
+perpendicular part of the response and 77--80\% by the identity path. Our pre-registered hypothesis that the norm acts as a divisive,
+stabilising channel \citep{carandini2012normalization} is rejected; the norm channel exists but is irrelevant for the readout.
+
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{What the MLP is doing.} Taken together, the measurements describe each MLP sublayer as a non-normal amplifier connected to a
+shared bus, in the sense in which the residual stream is a shared communication channel \citep{elhage2021mathematical}. All blocks read the same task coordinate, the one the head reads; each amplifies selected perturbations of it transiently,
+by up to $4.5\times$ per sublayer; and each writes the result into directions that the field itself and the following readers pick up only
+weakly and diffusely. This is closer to a set of parallel differential amplifiers than to the feedforward chain of balanced amplification,
+in which the amplified pattern is passed on and read downstream \citep{murphy2009balanced,goldman2009memory}. It also differs from the
+coupling of top singular vectors across blocks reported for LLMs \citep{aubry2025transformer}: we find coupling of what blocks read, not of
+what one block writes and the next reads. In the key--value reading of MLPs \citep{geva2021transformer}, our result says that the keys of
+the most amplified mode are tuned to the readout coordinate while its values are spread; the amplification is an internal property of the
+representation rather than a direct contribution to the output, which stays robust.
+
+\paragraph{Shape and scale.} The non-normal shape appears with random labels, without weight decay and at the same early stage of training
+in every seed, while its scale follows the label signal. This places it with the cases where non-normality is created by optimisation
+rather than given by design, as in trained recurrent networks \citep{orhan2019improved} and in the optimal control of cortical dynamics
+\citep{hennequin2014optimal}. Because freezing the MLP at initialisation hardly hurts the detector, the structure should be read as the
+generic solution gradient descent finds for this sublayer, not as a mechanism the task requires.
+
+\paragraph{The physics analogy, stated precisely.} The shared mathematics is that of a spectrally stable operator whose finite-time gain is
+set by its singular vectors, pseudospectra and Kreiss constant \citep{trefethen2005spectra,schmid2007nonmodal,symon2018nonnormality}.
+The MLP Jacobian has the algebra of balanced amplification (a low-rank Schur chain, a valve, stable eigenvalues) but not its
+excitatory--inhibitory origin, and its alignment with the task is on the input side. In the language of non-normal photonic amplifiers,
+the optimal excitation of the medium lies along the readout direction \citep{makris2014anomalous}, and the valve is the analogue of
+directional amplification \citep{midya2022topological,ramos2021topological}. The norm channel of \S\ref{sec:readwrite} is reminiscent of
+the high-norm tokens triggered by the leading right singular vector of a module's linearisation in large models
+\citep{wang2025demystifying}, although in our detector it has no measurable effect on the readout. Measures of
+non-normal amplification depend on norm, horizon, input and readout \citep{baggio2020efficient}; we report all four, and we validate every
+linear prediction on the nonlinear network.
+
+\paragraph{Novelty.} A literature audit (two systematic searches, 21 and 134 papers) found no measurement of the MLP sublayer Jacobian in
+trained transformers with Schur structure, Kreiss constant or readout alignment; the closest works analyse attention \citep{li2026transient}
+or whole residual blocks \citep{fernando2026dynamics,aubry2025transformer} in language models.
+
+\section{Limitations}
+
+The models are small (width 192, 6 and 12 blocks) and the tasks are two; whether the structure persists in large pretrained ViTs is the
+most important open question, and methods that infer non-normal amplification from activations alone \citep{saiprasad2026inferring}
+could extend the measurement to models whose Jacobians are too costly to compute per token. The mechanistic measurements (\S\ref{sec:transient}--\ref{sec:readwrite}) use five runs, three of them
+seeds of one detector and one seed per CIFAR architecture, which supports the direction of effects but not tight intervals. The analysis
+is local, around the trained trajectory, although every linear prediction we rely on was checked nonlinearly. Readouts are single outputs
+per token (detection heat logit) or the class margin; other readouts could change the alignment results. We have not found an
+intervention that removes the non-normal structure while keeping the learned function, so our causal statements are limited to the
+ablations of \S\ref{sec:compensation}. \todo{Figures: departure across training; Schur concentration; nonlinear gain vs.\ $\sigma_{\max}$;
+read/write alignment diagram.}
+
+\section{Conclusion}
+
+Gradient training gives the MLP sublayer of vision transformers a non-normal, low-rank, valved Jacobian whose amplified mode reads the
+network's readout coordinate. The amplification is real and predicted to 1\% by the singular values, yet the output stays robust and the
+written signal is received only diffusely. The structure is the generic product of gradient descent on this sublayer, its scale is set by
+the task signal, and the network can do without it.
+
+\bibliography{references}
+\IfFileExists{tmlr.sty}{\bibliographystyle{tmlr}}{}
+
+\appendix
+\section{Pre-registered predictions and their outcomes}
+\label{app:prereg}
+\todo{Full table of all predictions per experiment with thresholds and outcomes, generated from the OCENA\_PREDYKCJI files of the six
+experiments (see README).}
+
+\end{document}

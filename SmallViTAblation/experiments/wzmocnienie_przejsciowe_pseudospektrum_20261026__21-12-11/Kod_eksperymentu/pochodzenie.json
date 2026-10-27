@@ -1,0 +1,31 @@
+{
+ "eksperyment": "wzmocnienie_przejsciowe_pseudospektrum_20261026__21-12-11",
+ "typ": "pomiar na istniejących checkpointach trzech układów (bez treningu); predykcje zapisane przed pomiarem (Opis/PREDYKCJE_PRZED_POMIAREM.md)",
+ "rodzice": [
+  {
+   "nazwa": "mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+   "sciezka": "experiments/mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+   "wykorzystane": "pomiar_mosty_eden.py (klatki diagnostyczne, maski, wczytywanie sieci, przejście, jakobiany, reszta sieci, ramki szczytu), model.py; wynik: nienormalność 0,76 → 0,92 na 24 seedach jako motywacja",
+   "zmiany": "tylko import; nowe miary W (‖Aᵏ‖₂/ρᵏ, Kreiss, abscysa numeryczna, złożenie bloków) i F (zaburzenia tokenów) w wzmocnienie_eden.py"
+  },
+  {
+   "nazwa": "kompensacja_lodyga_i_cifar_20261026__19-01-59",
+   "sciezka": "experiments/kompensacja_lodyga_i_cifar_20261026__19-01-59",
+   "wykorzystane": "pomiar_mosty_cifar.py (modele MałyViT-CIFAR i DeiT, dane CIFAR, przejście, reszta sieci, margines), model_deit_cifar.py; wynik C1 (nienormalność w DeiT i MałymViT na CIFAR) jako motywacja",
+   "zmiany": "tylko import"
+  }
+ ],
+ "checkpointy": {
+  "detekcja": {"sciezka_eden": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/kompensacja_funkcjonalna_dgx2_20261017/replications/s<seed>/weights/k<krok>.pt", "seedy": [3047, 4047, 5047], "kroki": [0, 3000, 65640], "dane": "input kampanii: 50 klatek diagnostycznych TEST (role evaluation, diagnostic)"},
+  "cifar_maly": {"sciezka_eden": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/wyniki/maly_s47_obciecie/wagi/k<krok>.pt", "kroki": [0, 3000, 93780]},
+  "cifar_deit": {"sciezka_eden": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/wyniki/s47_obciecie/wagi/k<krok>.pt", "kroki": [0, 3000, 93780]},
+  "dane_cifar": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/dane/cifar10_uint8.npz (SHA256 68e07d95…); 50 obrazów testowych (5 na klasę, ziarno 2026)",
+  "sha256_wag": "zapisywane przez każde zadanie do Wyniki/Dane/pomiar/<bieg>/WAGI_SHA256.txt",
+  "ochrona": "checkpointy nie są modyfikowane ani przenoszone"
+ },
+ "eden": {
+  "baza": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/wzmocnienie_przejsciowe_pseudospektrum_20261026__21-12-11",
+  "python": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/przeciwstawne_eden_20261017/environment/venv/bin/python (torch 2.10.0, timm 1.0.24, numpy 2.2.6, bez scipy)",
+  "transport": "experiments/eden.py (init, push, submit, watch, pull)"
+ }
+}

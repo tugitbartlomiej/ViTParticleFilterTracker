@@ -11,8 +11,11 @@ import numpy as np
 E = Path(__file__).resolve().parents[2]
 DANE = E / 'Wyniki' / 'Dane'
 RODZIC = E.parent / 'mosty_fizyki_24seedy_ablacje_20261026__13-04-31' / 'Wyniki' / 'Dane' / 'ablacje'
-sys.path.insert(0, str(E.parent / 'mosty_fizyki_24seedy_ablacje_20261026__13-04-31' / 'Wyniki' / 'Code_Interpretujacy_Wyniki'))
-from ocena_predykcji import Seed, KK as KK_DET, K0  # noqa: E402  (klasa Seed rodzica czyta wyniki.npz części K)
+import importlib.util  # noqa: E402  (moduł oceny rodzica ładowany po ścieżce: ta sama nazwa pliku co tutaj)
+_spec = importlib.util.spec_from_file_location('ocena_rodzica', E.parent / 'mosty_fizyki_24seedy_ablacje_20261026__13-04-31' / 'Wyniki'
+                                               / 'Code_Interpretujacy_Wyniki' / 'ocena_predykcji.py')
+_rodzic = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_rodzic)
+Seed, KK_DET, K0 = _rodzic.Seed, _rodzic.KK, _rodzic.K0               # klasa Seed rodzica czyta wyniki.npz części K
 
 SEEDY_K = [3047, 4047, 5047]
 BIEGI_C = {'s47_obciecie': 'deit', 's47_bez_obciecia': 'deit', 'maly_s47_obciecie': 'malyvit', 'maly_s48_obciecie': 'malyvit',

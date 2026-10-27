@@ -1,0 +1,36 @@
+{
+ "eksperyment": "balanced_amplification_schur_odczyt_20261027__00-31-41",
+ "typ": "pomiar na istniejących checkpointach trzech układów (bez treningu); predykcje zapisane przed pomiarem (Opis/PREDYKCJE_PRZED_POMIAREM.md)",
+ "rodzice": [
+  {
+   "nazwa": "wzmocnienie_przejsciowe_pseudospektrum_20261026__21-12-11",
+   "sciezka": "experiments/wzmocnienie_przejsciowe_pseudospektrum_20261026__21-12-11",
+   "wykorzystane": "klasa Uklad (modele, dane, wybór tokenów, reszta sieci), wynik W/F (Kreiss rośnie, wzmocnienie najgorszego kierunku = σ_max) jako motywacja, literatura Undermind (Murphy–Miller, Hennequin, Makris, Midya)",
+   "zmiany": "nowe miary: forma Schura bez scipy (c5, PR_N), para osobliwa A (|⟨v₁,u₁⟩|, zawór), odczyt przez autograd, żywe reflektory, nienormalność wag W₂W₁ i W₂ḡW₁, wzajemność reflektorów |cos(w₁ᵢ,w₂ᵢ)|"
+  },
+  {
+   "nazwa": "mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+   "sciezka": "experiments/mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+   "wykorzystane": "pomiar_mosty_eden.py (jakobiany, klatki, maski, model), model.py; checkpointy kampanii seedów 3047/4047/5047",
+   "zmiany": "tylko import (przez rodzica)"
+  },
+  {
+   "nazwa": "kompensacja_lodyga_i_cifar_20261026__19-01-59",
+   "sciezka": "experiments/kompensacja_lodyga_i_cifar_20261026__19-01-59",
+   "wykorzystane": "pomiar_mosty_cifar.py (MałyViT-CIFAR, DeiT, dane CIFAR), model_deit_cifar.py; biegi maly_s47_obciecie i s47_obciecie",
+   "zmiany": "tylko import (przez rodzica)"
+  }
+ ],
+ "checkpointy": {
+  "detekcja": {"sciezka_eden": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/kompensacja_funkcjonalna_dgx2_20261017/replications/s<seed>/weights/k<krok>.pt", "seedy": [3047, 4047, 5047], "kroki": [0, 3000, 65640]},
+  "cifar_maly": {"sciezka_eden": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/wyniki/maly_s47_obciecie/wagi/k<krok>.pt", "kroki": [0, 3000, 93780]},
+  "cifar_deit": {"sciezka_eden": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/wyniki/s47_obciecie/wagi/k<krok>.pt", "kroki": [0, 3000, 93780]},
+  "sha256_wag": "zapisywane przez każde zadanie do Wyniki/Dane/pomiar/<bieg>/WAGI_SHA256.txt",
+  "ochrona": "checkpointy nie są modyfikowane ani przenoszone"
+ },
+ "eden": {
+  "baza": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/balanced_amplification_schur_odczyt_20261027__00-31-41",
+  "python": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/przeciwstawne_eden_20261017/environment/venv/bin/python (torch 2.10.0, timm 1.0.24, numpy 2.2.6, bez scipy)",
+  "transport": "experiments/eden.py (init, push, submit, watch, pull)"
+ }
+}

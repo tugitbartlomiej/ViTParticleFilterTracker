@@ -78,3 +78,28 @@ Zobacz `Wyniki/Dane/Eden/STATUS_EDEN.txt` i koniec tego pliku (uzupełniany po p
   `Wyniki/Dane/ablacje_smoke/`; nie wchodzą do oceny. Lokalnie przed wysłaniem: test z losowymi wagami obu modeli (152 / 96 kluczy).
 - 2026-10-26 19:13: zgłoszone pełne tablice: CIFAR 1932996 (zadania 0–5, 1 × A100 + 3 CPU, 6 h) i frozen_both 1932997 (0–2, 3 CPU, 6 h),
   partycja short; GPU zajęte innymi zadaniami, zadania czekają na zasoby.
+- 2026-10-26 20:53: część C ukończona (1932996_0…_5 COMPLETED; DeiT 1 h 32 min, MałyViT 42–47 min), wyniki pobrane, ocena (progi bez zmian):
+  **C1 PASS 5/5** (‖N‖/‖J‖ bloku środkowego: k0 0,75–0,77 → koniec 0,92–0,93 w DeiT i MałymViT), **C1z PASS** (losowe etykiety 0,93),
+  **C2z PASS** (losowe etykiety: ‖J‖ 3,26 → 0,41), **C6 MałyViT PASS 3/3** (Σ Δsep MLP 0,55–0,56 vs uwaga 0,27–0,36), **C7 PASS 6/6**,
+  **C8 PASS**, **C9b PASS 5/5**. FAIL: C2 0/5 (‖J‖ bloku środkowego spada w treningu i nie wraca do poziomu k0: DeiT 2,09 → 0,90/0,92,
+  MałyViT 3,26/3,34 → 1,41/2,10/1,91; minimum 0,1–0,7 przy 3000–10 000 krokach), C3 0/5 (w CIFAR ostatni blok jest najbardziej
+  nienormalny, 0,95–0,96, odwrotnie niż w detekcji), C4a 4/6 (uwaga DeiT przy k0 prawie nie ściska, iloczyn 0,954), C4b 2/5 (MałyViT:
+  uwaga przestaje ściskać 0,60–0,62 → 0,89–0,96, ale MLP ściska tylko w wd0; DeiT: MLP ściska 1,00 → 0,78/0,84, uwaga w biegu z obcięciem
+  ściska mocniej), C5 4/5 (uwaga styczna 0,93–0,99 we wszystkich blokach poza blokiem 1 DeiT bez obcięcia, 0,89), C6 DeiT 0/2 (separacja
+  średniej tokenów prawie nie rośnie, 0,64 → 0,79/0,92; separacja CLS rośnie 0,6 → 1,1 głównie w blokach 8–12), C9a 0/5 (szczyt defektu
+  komutatora zawsze w bloku 1).
+- Obserwacja wspólna z detekcją (opisowa): blok 1 jest krytyczny. Usunięcie MLP bloku 1 (tylko uwaga) obniża dokładność DeiT
+  0,76 → 0,09–0,11, MałyViT 0,85 → 0,55–0,72 (w detekcji IoU 0,80 → 0,24); zamiana na równoległy kosztuje 0,05–0,11 tylko w bloku 1,
+  w pozostałych blokach ≤ 0,01. ‖J‖ MLP bloku 1 przy końcu: DeiT 71–77, MałyViT 10–37 (inne bloki 0,8–3,6).
+- Losowe etykiety w CIFAR (inaczej niż w detekcji): uwaga ściska silnie (iloczyn 0,16), ruch w blokach 5–6 przestaje być styczny
+  (0,28–0,35); chmura tokenów zapada się.
+- 2026-10-26 21:35: część K ukończona (1932997_0…_2 COMPLETED, 1 h 31 – 1 h 46; trening frozen_both ~50 min, pomiar ~35 min), wyniki pobrane, ocena:
+  **K1 PASS 3/3** (AP@0,5 frozen_both 0,463 / 0,491 / 0,618 wobec base 0,888 / 0,885 / 0,864, frozen_mlp 0,866 / 0,857 / 0,884,
+  frozen_attn 0,861 / 0,861 / 0,786: sama łodyga z głową daje 52–72 % detekcji, więc kompensacja w ablacjach rodzica jest prawdziwa),
+  **K2 PASS 3/3** (zamrożone bloki nie budują separacji: Σ Δsep uwaga −0,004…+0,008, MLP −0,034…−0,047; separacja przez bloki lekko spada),
+  **K3 FAIL 1/3** (separacja po łodydze 1,05 / 1,07 / 1,10 wobec base 0,93–0,94 i frozen_mlp 1,02–1,03: łodyga przejmuje część, ale próg
+  1,10 osiąga tylko s5047), **K4 PASS 3/3** (iloczyn kontrakcji uwagi 0,62–0,66 → 1,00: uwaga o zamrożonych wagach staje się dokładnie
+  identycznością, jak w frozen_attn), **K5 PASS 3/3** (‖N‖/‖J‖ bloku 4 = 0,76, poziom losowy).
+- Wniosek części K: bez uczonych bloków AP spada o 0,27–0,42, czyli ok. 40 % detekcji pochodzi z bloków, ale z dowolnego ich
+  podzbioru (uczona sama uwaga albo sam MLP daje tyle samo co oba). Separacja na sferze nie jest tym, co bloki wnoszą (K2);
+  ich wkład nie jest widoczny w miarach geometrycznych rodzica.

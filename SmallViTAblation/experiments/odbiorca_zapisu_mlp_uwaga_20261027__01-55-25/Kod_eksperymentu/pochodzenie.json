@@ -1,0 +1,53 @@
+{
+ "eksperyment": "odbiorca_zapisu_mlp_uwaga_20261027__01-55-25",
+ "typ": "pomiar na istniejących checkpointach trzech układów (bez treningu); predykcje zapisane przed pomiarem (Opis/PREDYKCJE_PRZED_POMIAREM.md)",
+ "pytanie": "kto czyta to, co pisze wzmacniany mod MLP (u₁ pary osobliwej jakobianu pola MLP): uwaga kolejnych bloków (q/k vs v), MLP następnego bloku, głowa, czy nikt",
+ "rodzice": [
+  {
+   "nazwa": "balanced_amplification_schur_odczyt_20261027__00-31-41",
+   "sciezka": "experiments/balanced_amplification_schur_odczyt_20261027__00-31-41",
+   "rola": "rodzic",
+   "wykorzystane": "wynik wersji 2 (BA3c FAIL 0/3, BA3d FAIL 3/5: u₁ nie leży w odczycie głowy ani w v₁ᵇ⁺¹; cos²(v₁ᵇ, v₁ᵇ⁺¹) 0,09–0,21) jako motywacja; balanced_eden.py importowany przez importlib (C, N_ODCZYT; definicja J, pary osobliwej i odczytu głowy); te same biegi, checkpointy, dane i reguła tokenów",
+   "zmiany": "para osobliwa J przez eigh JᵀJ na GPU (równoważne SVD rodzica, sprawdzone lokalnie cos² = 1); nowe miary: odczyt uwagi R_q/R_k/R_v = W_q/k/v·J_LN1 i MLP R_m = W₁·J_LN2 bloków b+1 i b+2 (względny zysk g, energia w top-16), jądro J_LN, zaburzenia nieliniowe przez blok b+1 (tor q/k/v osobno, własny vs inne tokeny), JVP reszty sieci; cała sieć w float64 z ręcznie liczoną uwagą"
+  },
+  {
+   "nazwa": "wzmocnienie_przejsciowe_pseudospektrum_20261026__21-12-11",
+   "sciezka": "experiments/wzmocnienie_przejsciowe_pseudospektrum_20261026__21-12-11",
+   "rola": "dziadek",
+   "wykorzystane": "klasa Uklad (wczytaj, przejscie, tokeny, dane) z wzmocnienie_eden.py, import przez importlib bez zmian",
+   "zmiany": "brak"
+  },
+  {
+   "nazwa": "mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+   "sciezka": "experiments/mosty_fizyki_24seedy_ablacje_20261026__13-04-31",
+   "rola": "dziadek",
+   "wykorzystane": "pomiar_mosty_eden.py (jakobiany, klatki, maski, model) przez kopię w folderze dziadka wzmocnienie_przejsciowe (SHA256 identyczne); checkpointy kampanii seedów 3047/4047/5047",
+   "zmiany": "tylko import"
+  },
+  {
+   "nazwa": "kompensacja_lodyga_i_cifar_20261026__19-01-59",
+   "sciezka": "experiments/kompensacja_lodyga_i_cifar_20261026__19-01-59",
+   "rola": "dziadek",
+   "wykorzystane": "pomiar_mosty_cifar.py (MałyViT-CIFAR, DeiT, dane CIFAR), model_deit_cifar.py przez kopię w folderze wzmocnienie_przejsciowe; biegi maly_s47_obciecie i s47_obciecie",
+   "zmiany": "tylko import"
+  }
+ ],
+ "checkpointy": {
+  "detekcja": {"sciezka_eden": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/kompensacja_funkcjonalna_dgx2_20261017/replications/s<seed>/weights/k<krok>.pt", "seedy": [3047, 4047, 5047], "kroki": [0, 3000, 65640]},
+  "cifar_maly": {"sciezka_eden": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/wyniki/maly_s47_obciecie/wagi/k<krok>.pt", "kroki": [0, 3000, 93780]},
+  "cifar_deit": {"sciezka_eden": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/wyniki/s47_obciecie/wagi/k<krok>.pt", "kroki": [0, 3000, 93780]},
+  "sha256_wag": "zapisywane przez każde zadanie do Wyniki/Dane/pomiar/<bieg>/WAGI_SHA256.txt (porównanie z WAGI_SHA256.txt rodzica w Opis/OPIS_EKSPERYMENTU.md)",
+  "wznowienie": "nie dotyczy (bez treningu; tylko wagi, tryb eval)",
+  "ochrona": "checkpointy nie są modyfikowane ani przenoszone"
+ },
+ "dane": {
+  "detekcja": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/kompensacja_funkcjonalna_dgx2_20261017/input (50 klatek diagnostycznych roli evaluation)",
+  "cifar": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/dane/cifar10_uint8.npz (50 obrazów diagnostycznych, 5 na klasę)"
+ },
+ "eden": {
+  "baza": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/odbiorca_zapisu_mlp_uwaga_20261027__01-55-25",
+  "python": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/przeciwstawne_eden_20261017/environment/venv/bin/python (torch 2.10.0, timm 1.0.24, numpy 2.2.6, bez scipy)",
+  "wezly": "dgx-1…dgx-4 (A100, partycja short) na polecenie użytkownika",
+  "transport": "experiments/eden.py (init, push, submit / register-job, status, pull)"
+ }
+}

@@ -1,0 +1,37 @@
+{
+ "eksperyment": "znak_kanalu_normy_mlp_20261027__02-47-19",
+ "typ": "pomiar na istniejących checkpointach trzech układów (bez treningu); predykcje zapisane przed pomiarem (Opis/PREDYKCJE_PRZED_POMIAREM.md)",
+ "pytanie": "czy część zapisu u₁ w jądrze LayerNorm to norma (kierunek radialny) czy średnia; jaki jest znak zmiany normy przy pchnięciu tokenu w stronę odczytu (narzędzie / tło); czy kanał normy stabilizuje czy utrwala skutek pchnięcia dla wyjścia",
+ "rodzice": [
+  {
+   "nazwa": "odbiorca_zapisu_mlp_uwaga_20261027__01-55-25",
+   "sciezka": "experiments/odbiorca_zapisu_mlp_uwaga_20261027__01-55-25",
+   "rola": "rodzic",
+   "wykorzystane": "wynik O8 (20–26 % energii u₁ w jądrze J_LN1 = span{1̂, x̂} w detekcji, 8 % MałyViT CIFAR, 0,7 % DeiT) jako motywacja i kontrola K1; odbiorca_eden.py importowany przez importlib bez zmian (blok_reczny, reszta_reczna, jedn, sprawdz_reczny; przez niego WZ, PM, BE)",
+   "zmiany": "rozdzielenie jądra LN na 1̂ i ê; odczyt tokenu r_a, r_c (autograd); orientacja pchnięć znakiem ⟨d, r_a⟩; rozkład liniowy skutku na tor tożsamości, radialny, średniej i prostopadły; kontrfakty nieliniowe (bez_rad, bez_mean, bez_perp, bez_mlp) przez resztę sieci; wybór tokenów do odczytu warstwowany (detekcja: do 4 narzędzia + tło)"
+  },
+  {"nazwa": "balanced_amplification_schur_odczyt_20261027__00-31-41", "sciezka": "experiments/balanced_amplification_schur_odczyt_20261027__00-31-41", "rola": "dziadek",
+   "wykorzystane": "definicja J i pary osobliwej (przez rodzica); BA5b (MLP prawie wyłączony na tokenach narzędzia) jako uzasadnienie T1", "zmiany": "brak"},
+  {"nazwa": "wzmocnienie_przejsciowe_pseudospektrum_20261026__21-12-11", "sciezka": "experiments/wzmocnienie_przejsciowe_pseudospektrum_20261026__21-12-11", "rola": "pradziadek",
+   "wykorzystane": "klasa Uklad (wczytaj, przejscie, tokeny, dane) przez rodzica; wynik odporności wyjścia (ΔIoU ≤ 0,013) jako uzasadnienie S1", "zmiany": "brak"}
+ ],
+ "checkpointy": {
+  "detekcja": {"sciezka_eden": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/kompensacja_funkcjonalna_dgx2_20261017/replications/s<seed>/weights/k<krok>.pt", "seedy": [3047, 4047, 5047], "kroki": [0, 3000, 65640]},
+  "cifar_maly": {"sciezka_eden": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/wyniki/maly_s47_obciecie/wagi/k<krok>.pt", "kroki": [0, 3000, 93780]},
+  "cifar_deit": {"sciezka_eden": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/wyniki/s47_obciecie/wagi/k<krok>.pt", "kroki": [0, 3000, 93780]},
+  "sha256_wag": "zapisywane przez każde zadanie do Wyniki/Dane/pomiar/<bieg>/WAGI_SHA256.txt; porównanie z WAGI_SHA256.txt rodzica w ocenie",
+  "wznowienie": "nie dotyczy (bez treningu; tylko wagi, tryb eval)",
+  "ochrona": "checkpointy nie są modyfikowane ani przenoszone"
+ },
+ "dane": {
+  "detekcja": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/kompensacja_funkcjonalna_dgx2_20261017/input (50 klatek diagnostycznych roli evaluation)",
+  "cifar": "/home2/faculty/bpiotrowski/smallvit_runs/2026-10-13_deit_cifar10/dane/cifar10_uint8.npz (50 obrazów diagnostycznych, 5 na klasę)"
+ },
+ "tokeny": "reguła rodzica (WZ.Uklad.tokeny, ziarno 2026 per checkpoint: te same tokeny co w rodzicu); wybór 8 tokenów do odczytu ziarnem 2028; kierunki losowe ziarnem 2029",
+ "eden": {
+  "baza": "/mnt/evafs/groups/transformers_vsc/bpiotrowski/ViTParticleFilterTracker/SmallViTAblation/experiments/znak_kanalu_normy_mlp_20261027__02-47-19",
+  "python": "/mnt/evafs/faculty/home/bpiotrowski/smallvit_runs/SmallViTAblation/outputs/przeciwstawne_eden_20261017/environment/venv/bin/python (torch 2.10.0, timm 1.0.24, numpy 2.2.6, bez scipy)",
+  "wezly": "dgx-1…dgx-4 (A100, partycja short) na polecenie użytkownika",
+  "transport": "experiments/eden.py (init, push, submit / register-job, status, pull)"
+ }
+}
